@@ -1,0 +1,136 @@
+--- b/apps/api/src/services/scheduledJobs.ts	2026-08-13 18:45:58.000000000 +0000
++++ c/apps/api/src/services/scheduledJobs.ts	2026-08-14 00:50:54.000000000 +0000
+@@ -4,6 +4,19 @@
+ import { eq, and, lte, sql, inArray } from "drizzle-orm";
+ import { logger } from "@armsphere/core";
+ 
++function isDbConnectionError(err: any): boolean {
++  if (!err) return false;
++  const msg = (err.message || String(err)).toLowerCase();
++  const code = (err.code || "").toLowerCase();
++  return (
++    msg.includes("econnrefused") ||
++    msg.includes("connection refused") ||
++    msg.includes("connect") ||
++    msg.includes("timeout") ||
++    code.includes("econnrefused")
++  );
++}
++
+ // Mock/stub storage for processed outcomes to verify during testing
+ export const processedJobsTracker = {
+   offlineSyncCompleted: [] as any[],
+@@ -121,10 +134,7 @@
+     }
+     return recoveredJobs.length;
+   } catch (err: any) {
+-    const isConnRefused = err?.code === "ECONNREFUSED" || err?.message?.includes("ECONNREFUSED");
+-    if (isConnRefused) {
+-      logger.warn("⚠️ Database connection refused at 127.0.0.1:5432. Stale scheduled jobs recovery skipped (database is likely offline).");
+-    } else {
++    if (!isDbConnectionError(err)) {
+       logger.error({ error: err?.message || err }, "Failed to recover stale scheduled jobs");
+     }
+     return 0;
+@@ -139,38 +149,37 @@
+   const now = new Date();
+   logger.info("Polling for due postgres scheduled jobs...");
+ 
+-  try {
+-    // Recover any stale running jobs first
+-    await recoverStaleScheduledJobs();
++  // Recover any stale running jobs first
++  await recoverStaleScheduledJobs();
+ 
+-    // Atomic claim using transaction and FOR UPDATE SKIP LOCKED
+-    let dueJobs: any[] = [];
+-    try {
+-      dueJobs = await db.transaction(async (tx) => {
+-        const dueIdsResult = await tx.execute(sql`
+-          SELECT id FROM scheduled_jobs
+-          WHERE status = 'pending' AND scheduled_for <= ${now}
+-          FOR UPDATE SKIP LOCKED
+-          LIMIT 50
+-        `);
+-        const rows = dueIdsResult.rows || [];
+-        if (rows.length === 0) return [];
++  // Atomic claim using transaction and FOR UPDATE SKIP LOCKED
++  let dueJobs: any[] = [];
++  try {
++    dueJobs = await db.transaction(async (tx) => {
++      const dueIdsResult = await tx.execute(sql`
++        SELECT id FROM scheduled_jobs
++        WHERE status = 'pending' AND scheduled_for <= ${now}
++        FOR UPDATE SKIP LOCKED
++        LIMIT 50
++      `);
++      const rows = dueIdsResult.rows || [];
++      if (rows.length === 0) return [];
+ 
+-        const ids = rows.map((r: any) => r.id);
+-        const claimed = await tx
+-          .update(scheduledJobs)
+-          .set({ status: "running", updatedAt: now })
+-          .where(inArray(scheduledJobs.id, ids))
+-          .returning();
+-        return claimed;
+-      });
+-    } catch (claimErr: any) {
+-      const isConnError = claimErr?.code === "ECONNREFUSED" || claimErr?.message?.includes("ECONNREFUSED");
+-      if (isConnError) {
+-        throw claimErr;
+-      }
++      const ids = rows.map((r: any) => r.id);
++      const claimed = await tx
++        .update(scheduledJobs)
++        .set({ status: "running", updatedAt: now })
++        .where(inArray(scheduledJobs.id, ids))
++        .returning();
++      return claimed;
++    });
++  } catch (claimErr: any) {
++    if (isDbConnectionError(claimErr)) {
++      return { executedCount: 0, results: [] };
++    }
+ 
+-      // Fallback simple query if transaction/locking unsupported in memory store
++    // Fallback simple query if transaction/locking unsupported in memory store
++    try {
+       dueJobs = await db
+         .select()
+         .from(scheduledJobs)
+@@ -187,11 +196,17 @@
+           .set({ status: "running", updatedAt: now })
+           .where(eq(scheduledJobs.id, job.id));
+       }
++    } catch (fallbackErr: any) {
++      if (isDbConnectionError(fallbackErr)) {
++        return { executedCount: 0, results: [] };
++      }
++      throw fallbackErr;
+     }
++  }
+ 
+-    logger.info({ count: dueJobs.length }, "Claimed due scheduled jobs to execute");
++  logger.info({ count: dueJobs.length }, "Claimed due scheduled jobs to execute");
+ 
+-    const results: any[] = [];
++  const results: any[] = [];
+ 
+   for (const job of dueJobs) {
+     const payload = (job.payload as Record<string, any>) || {};
+@@ -334,14 +349,6 @@
+   }
+ 
+   return { executedCount: dueJobs.length, results };
+-  } catch (err: any) {
+-    const isConnRefused = err?.code === "ECONNREFUSED" || err?.message?.includes("ECONNREFUSED");
+-    if (isConnRefused) {
+-      logger.warn("⚠️ Database connection refused at 127.0.0.1:5432. Skipping scheduled jobs polling (database is offline).");
+-      return { executedCount: 0, results: [] };
+-    }
+-    throw err;
+-  }
+ }
+ 
+ let scheduledRunnerInterval: NodeJS.Timeout | null = null;

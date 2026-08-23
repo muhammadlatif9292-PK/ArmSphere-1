@@ -1,0 +1,221 @@
+--- apps/api/src/tests/tournament.test.ts	2026-08-14 07:01:11.629418898 +0000
++++ armsphere/apps/api/src/tests/tournament.test.ts	2026-08-14 07:01:11.696882154 +0000
+@@ -845,218 +845,5 @@
+         expect(auditEntries[0].actorId).toBe("00000000-0000-0000-0000-000000000099"); // admin's default id
+       });
+     });
+-
+-    describe("Double Elimination Bracket Generation and Progression Engine", () => {
+-      beforeEach(() => {
+-        testDbStore.brackets = [];
+-        testDbStore.bracketSeeds = [];
+-        testDbStore.tournamentMatches = [];
+-      });
+-
+-      it("should generate proper 4-player double elimination structure with Winners, Losers, and Grand Final matches", async () => {
+-        // Seed Bracket
+-        const bracketId = "de-bracket-4";
+-        testDbStore.brackets.push({
+-          id: bracketId,
+-          eventId: "event-1",
+-          name: "DE 4-Player Bracket",
+-          format: "DOUBLE_ELIMINATION",
+-          status: "DRAFT",
+-          seedingLocked: true,
+-          createdAt: new Date(),
+-          updatedAt: new Date(),
+-        });
+-
+-        // Seed 4 Athletes
+-        testDbStore.bracketSeeds.push(
+-          { id: "s-1", bracketId, athleteId: "ath-1", seedPosition: 1, isManualOverride: false },
+-          { id: "s-2", bracketId, athleteId: "ath-2", seedPosition: 2, isManualOverride: false },
+-          { id: "s-3", bracketId, athleteId: "ath-3", seedPosition: 3, isManualOverride: false },
+-          { id: "s-4", bracketId, athleteId: "ath-4", seedPosition: 4, isManualOverride: false }
+-        );
+-
+-        const response = await request(app)
+-          .post(`/tournaments/brackets/${bracketId}/generate`)
+-          .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+-
+-        expect(response.status).toBe(200);
+-
+-        // For N=4:
+-        // WB Round 1: 2 matches (wb-de-bracket-4-1-1 and wb-de-bracket-4-1-2)
+-        // WB Round 2: 1 match (wb-de-bracket-4-2-1)
+-        // LB Round 1: 1 match (lb-de-bracket-4-1-1)
+-        // LB Round 2: 1 match (lb-de-bracket-4-2-1)
+-        // GF Round 1: 1 match (gf-de-bracket-4-1-1)
+-        // GF Round 2: 1 match (gf-de-bracket-4-2-1)
+-        // Total = 2 + 1 + 1 + 1 + 2 = 7 matches
+-        expect(testDbStore.tournamentMatches).toHaveLength(7);
+-
+-        const wb1_1 = testDbStore.tournamentMatches.find(m => m.id === `wb-${bracketId}-1-1`);
+-        const wb1_2 = testDbStore.tournamentMatches.find(m => m.id === `wb-${bracketId}-1-2`);
+-        expect(wb1_1).toBeDefined();
+-        expect(wb1_2).toBeDefined();
+-
+-        expect(wb1_1.athleteAId).toBe("ath-1");
+-        expect(wb1_1.athleteBId).toBe("ath-4");
+-        expect(wb1_1.status).toBe("READY");
+-
+-        expect(wb1_2.athleteAId).toBe("ath-2");
+-        expect(wb1_2.athleteBId).toBe("ath-3");
+-        expect(wb1_2.status).toBe("READY");
+-      });
+-
+-      it("should handle odd participant count (3 athletes) and propagate byes correctly in 4-player double elimination", async () => {
+-        const bracketId = "de-bracket-bye";
+-        testDbStore.brackets.push({
+-          id: bracketId,
+-          eventId: "event-1",
+-          name: "DE 3-Player Bracket",
+-          format: "DOUBLE_ELIMINATION",
+-          status: "DRAFT",
+-          seedingLocked: true,
+-          createdAt: new Date(),
+-          updatedAt: new Date(),
+-        });
+-
+-        // 3 athletes, so position 4 is null (BYE)
+-        testDbStore.bracketSeeds.push(
+-          { id: "s-1", bracketId, athleteId: "ath-1", seedPosition: 1, isManualOverride: false },
+-          { id: "s-2", bracketId, athleteId: "ath-2", seedPosition: 2, isManualOverride: false },
+-          { id: "s-3", bracketId, athleteId: "ath-3", seedPosition: 3, isManualOverride: false }
+-        );
+-
+-        const response = await request(app)
+-          .post(`/tournaments/brackets/${bracketId}/generate`)
+-          .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+-
+-        expect(response.status).toBe(200);
+-
+-        // wb-1-1 is ath-1 vs BYE (athleteBId is null). So status is BYE, winnerId is ath-1.
+-        const wb1_1 = testDbStore.tournamentMatches.find(m => m.id === `wb-${bracketId}-1-1`);
+-        expect(wb1_1.status).toBe("BYE");
+-        expect(wb1_1.winnerId).toBe("ath-1");
+-
+-        // The bye winner should have been propagated to wb-2-1 athleteAId!
+-        const wb2_1 = testDbStore.tournamentMatches.find(m => m.id === `wb-${bracketId}-2-1`);
+-        expect(wb2_1.athleteAId).toBe("ath-1");
+-
+-        // Since wb-1-1 was a BYE, no loser drops to losers bracket. So lb-1-1 (which is WB R1 losers)
+-        // has no athleteAId. Since only 1 loser exists (from wb-1-2), lb-1-1 has only 1 participant,
+-        // so it should automatically be resolved as a BYE for that loser, propagating them to lb-2-1!
+-        const lb1_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-1-1`);
+-        expect(lb1_1.status).toBe("BYE");
+-      });
+-
+-      it("should progress winner to nextWinners and loser to losers bracket, then progress winners through grand final", async () => {
+-        const bracketId = "de-bracket-prog";
+-        testDbStore.brackets.push({
+-          id: bracketId,
+-          eventId: "event-1",
+-          name: "DE Progression",
+-          format: "DOUBLE_ELIMINATION",
+-          status: "DRAFT",
+-          seedingLocked: true,
+-          createdAt: new Date(),
+-          updatedAt: new Date(),
+-        });
+-
+-        testDbStore.bracketSeeds.push(
+-          { id: "s-1", bracketId, athleteId: "ath-1", seedPosition: 1, isManualOverride: false },
+-          { id: "s-2", bracketId, athleteId: "ath-2", seedPosition: 2, isManualOverride: false },
+-          { id: "s-3", bracketId, athleteId: "ath-3", seedPosition: 3, isManualOverride: false },
+-          { id: "s-4", bracketId, athleteId: "ath-4", seedPosition: 4, isManualOverride: false }
+-        );
+-
+-        await request(app)
+-          .post(`/tournaments/brackets/${bracketId}/generate`)
+-          .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+-
+-        // Submit WB R1-1: ath-1 beats ath-4
+-        let res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `wb-${bracketId}-1-1`, winnerId: "ath-1", scoreLine: "3-0" });
+-        if (res.status !== 200) {
+-          console.error("DEBUG SUBMIT ERROR:", JSON.stringify(res.body, null, 2));
+-        }
+-        expect(res.status).toBe(200);
+-
+-        // Submit WB R1-2: ath-2 beats ath-3
+-        res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `wb-${bracketId}-1-2`, winnerId: "ath-2", scoreLine: "3-1" });
+-        expect(res.status).toBe(200);
+-
+-        // Verify Winners Final (wb-2-1) is READY with ath-1 vs ath-2
+-        const wb2_1 = testDbStore.tournamentMatches.find(m => m.id === `wb-${bracketId}-2-1`);
+-        expect(wb2_1.status).toBe("READY");
+-        expect(wb2_1.athleteAId).toBe("ath-1");
+-        expect(wb2_1.athleteBId).toBe("ath-2");
+-
+-        // Verify Losers Round 1 (lb-1-1) has the two losers (ath-4 vs ath-3) and is READY
+-        const lb1_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-1-1`);
+-        expect(lb1_1.status).toBe("READY");
+-        expect(lb1_1.athleteAId).toBe("ath-4");
+-        expect(lb1_1.athleteBId).toBe("ath-3");
+-
+-        // Play Losers Round 1: ath-3 beats ath-4
+-        res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `lb-${bracketId}-1-1`, winnerId: "ath-3", scoreLine: "3-2" });
+-        expect(res.status).toBe(200);
+-
+-        // Play Winners Final: ath-1 beats ath-2 (ath-1 goes to GF-1, ath-2 drops to LB R2)
+-        res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `wb-${bracketId}-2-1`, winnerId: "ath-1", scoreLine: "3-0" });
+-        expect(res.status).toBe(200);
+-
+-        // Verify Losers Final (lb-2-1) has ath-3 (winner of lb-1-1) vs ath-2 (loser of Winners Final)
+-        const lb2_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-2-1`);
+-        expect(lb2_1.status).toBe("READY");
+-        expect(lb2_1.athleteAId).toBe("ath-3");
+-        expect(lb2_1.athleteBId).toBe("ath-2");
+-
+-        // Play Losers Final: ath-2 beats ath-3
+-        res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `lb-${bracketId}-2-1`, winnerId: "ath-2", scoreLine: "3-1" });
+-        expect(res.status).toBe(200);
+-
+-        // Verify Grand Final (gf-1-1) has ath-1 (Winners Winner) vs ath-2 (Losers Winner)
+-        const gf1_1 = testDbStore.tournamentMatches.find(m => m.id === `gf-${bracketId}-1-1`);
+-        expect(gf1_1.status).toBe("READY");
+-        expect(gf1_1.athleteAId).toBe("ath-1");
+-        expect(gf1_1.athleteBId).toBe("ath-2");
+-
+-        // Play Grand Final: Loser's Winner ath-2 wins! This triggers a rematch (bracket reset)
+-        res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `gf-${bracketId}-1-1`, winnerId: "ath-2", scoreLine: "3-2" });
+-        expect(res.status).toBe(200);
+-
+-        // Verify Grand Final Round 2 is now READY with both athletes
+-        const gf2_1 = testDbStore.tournamentMatches.find(m => m.id === `gf-${bracketId}-2-1`);
+-        expect(gf2_1.status).toBe("READY");
+-        expect(gf2_1.athleteAId).toBe("ath-1");
+-        expect(gf2_1.athleteBId).toBe("ath-2");
+-
+-        // Play GF Round 2: ath-1 wins and becomes ultimate champion!
+-        res = await request(app)
+-          .post("/tournaments/matches/result")
+-          .set("Authorization", authHeader(UserRole.REFEREE))
+-          .send({ matchId: `gf-${bracketId}-2-1`, winnerId: "ath-1", scoreLine: "3-1" });
+-        expect(res.status).toBe(200);
+-
+-        // Bracket status should be COMPLETED
+-        const updatedBracket = testDbStore.brackets.find(b => b.id === bracketId);
+-        expect(updatedBracket?.status).toBe("COMPLETED");
+-      });
+-    });
+   });
+ });

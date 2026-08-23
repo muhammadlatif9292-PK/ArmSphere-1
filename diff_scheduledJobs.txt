@@ -1,0 +1,132 @@
+--- apps/api/src/services/scheduledJobs.ts	2026-08-14 07:01:11.784413884 +0000
++++ armsphere/apps/api/src/services/scheduledJobs.ts	2026-08-14 07:01:11.634109502 +0000
+@@ -121,12 +121,7 @@
+     }
+     return recoveredJobs.length;
+   } catch (err: any) {
+-    const isConnRefused = err?.code === "ECONNREFUSED" || err?.message?.includes("ECONNREFUSED");
+-    if (isConnRefused) {
+-      logger.warn("⚠️ Database connection refused at 127.0.0.1:5432. Stale scheduled jobs recovery skipped (database is likely offline).");
+-    } else {
+-      logger.error({ error: err?.message || err }, "Failed to recover stale scheduled jobs");
+-    }
++    logger.error({ error: err?.message || err }, "Failed to recover stale scheduled jobs");
+     return 0;
+   }
+ }
+@@ -139,59 +134,53 @@
+   const now = new Date();
+   logger.info("Polling for due postgres scheduled jobs...");
+ 
++  // Recover any stale running jobs first
++  await recoverStaleScheduledJobs();
++
++  // Atomic claim using transaction and FOR UPDATE SKIP LOCKED
++  let dueJobs: any[] = [];
+   try {
+-    // Recover any stale running jobs first
+-    await recoverStaleScheduledJobs();
++    dueJobs = await db.transaction(async (tx) => {
++      const dueIdsResult = await tx.execute(sql`
++        SELECT id FROM scheduled_jobs
++        WHERE status = 'pending' AND scheduled_for <= ${now}
++        FOR UPDATE SKIP LOCKED
++        LIMIT 50
++      `);
++      const rows = dueIdsResult.rows || [];
++      if (rows.length === 0) return [];
+ 
+-    // Atomic claim using transaction and FOR UPDATE SKIP LOCKED
+-    let dueJobs: any[] = [];
+-    try {
+-      dueJobs = await db.transaction(async (tx) => {
+-        const dueIdsResult = await tx.execute(sql`
+-          SELECT id FROM scheduled_jobs
+-          WHERE status = 'pending' AND scheduled_for <= ${now}
+-          FOR UPDATE SKIP LOCKED
+-          LIMIT 50
+-        `);
+-        const rows = dueIdsResult.rows || [];
+-        if (rows.length === 0) return [];
+-
+-        const ids = rows.map((r: any) => r.id);
+-        const claimed = await tx
+-          .update(scheduledJobs)
+-          .set({ status: "running", updatedAt: now })
+-          .where(inArray(scheduledJobs.id, ids))
+-          .returning();
+-        return claimed;
+-      });
+-    } catch (claimErr: any) {
+-      const isConnError = claimErr?.code === "ECONNREFUSED" || claimErr?.message?.includes("ECONNREFUSED");
+-      if (isConnError) {
+-        throw claimErr;
+-      }
++      const ids = rows.map((r: any) => r.id);
++      const claimed = await tx
++        .update(scheduledJobs)
++        .set({ status: "running", updatedAt: now })
++        .where(inArray(scheduledJobs.id, ids))
++        .returning();
++      return claimed;
++    });
++  } catch (claimErr) {
++    // Fallback simple query if transaction/locking unsupported in memory store
++    dueJobs = await db
++      .select()
++      .from(scheduledJobs)
++      .where(
++        and(
++          eq(scheduledJobs.status, "pending"),
++          lte(scheduledJobs.scheduledFor, now)
++        )
++      );
+ 
+-      // Fallback simple query if transaction/locking unsupported in memory store
+-      dueJobs = await db
+-        .select()
+-        .from(scheduledJobs)
+-        .where(
+-          and(
+-            eq(scheduledJobs.status, "pending"),
+-            lte(scheduledJobs.scheduledFor, now)
+-          )
+-        );
+-
+-      for (const job of dueJobs) {
+-        await db
+-          .update(scheduledJobs)
+-          .set({ status: "running", updatedAt: now })
+-          .where(eq(scheduledJobs.id, job.id));
+-      }
++    for (const job of dueJobs) {
++      await db
++        .update(scheduledJobs)
++        .set({ status: "running", updatedAt: now })
++        .where(eq(scheduledJobs.id, job.id));
+     }
++  }
+ 
+-    logger.info({ count: dueJobs.length }, "Claimed due scheduled jobs to execute");
++  logger.info({ count: dueJobs.length }, "Claimed due scheduled jobs to execute");
+ 
+-    const results: any[] = [];
++  const results: any[] = [];
+ 
+   for (const job of dueJobs) {
+     const payload = (job.payload as Record<string, any>) || {};
+@@ -334,14 +323,6 @@
+   }
+ 
+   return { executedCount: dueJobs.length, results };
+-  } catch (err: any) {
+-    const isConnRefused = err?.code === "ECONNREFUSED" || err?.message?.includes("ECONNREFUSED");
+-    if (isConnRefused) {
+-      logger.warn("⚠️ Database connection refused at 127.0.0.1:5432. Skipping scheduled jobs polling (database is offline).");
+-      return { executedCount: 0, results: [] };
+-    }
+-    throw err;
+-  }
+ }
+ 
+ let scheduledRunnerInterval: NodeJS.Timeout | null = null;

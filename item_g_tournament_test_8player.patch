@@ -1,0 +1,206 @@
+--- b/apps/api/src/tests/tournament.test.ts	2026-08-13 18:45:58.000000000 +0000
++++ c/apps/api/src/tests/tournament.test.ts	2026-08-14 00:50:54.000000000 +0000
+@@ -1057,6 +1057,203 @@
+         const updatedBracket = testDbStore.brackets.find(b => b.id === bracketId);
+         expect(updatedBracket?.status).toBe("COMPLETED");
+       });
++
++      it("should generate proper 8-player double elimination structure and process full progression", async () => {
++        const bracketId = "de-bracket-8";
++        testDbStore.brackets.push({
++          id: bracketId,
++          eventId: "event-1",
++          name: "DE 8-Player Bracket",
++          format: "DOUBLE_ELIMINATION",
++          status: "DRAFT",
++          seedingLocked: true,
++          createdAt: new Date(),
++          updatedAt: new Date(),
++        });
++
++        // Seed 8 Athletes
++        testDbStore.bracketSeeds.push(
++          { id: "s-1", bracketId, athleteId: "ath-1", seedPosition: 1, isManualOverride: false },
++          { id: "s-2", bracketId, athleteId: "ath-2", seedPosition: 2, isManualOverride: false },
++          { id: "s-3", bracketId, athleteId: "ath-3", seedPosition: 3, isManualOverride: false },
++          { id: "s-4", bracketId, athleteId: "ath-4", seedPosition: 4, isManualOverride: false },
++          { id: "s-5", bracketId, athleteId: "ath-5", seedPosition: 5, isManualOverride: false },
++          { id: "s-6", bracketId, athleteId: "ath-6", seedPosition: 6, isManualOverride: false },
++          { id: "s-7", bracketId, athleteId: "ath-7", seedPosition: 7, isManualOverride: false },
++          { id: "s-8", bracketId, athleteId: "ath-8", seedPosition: 8, isManualOverride: false }
++        );
++
++        const response = await request(app)
++          .post(`/tournaments/brackets/${bracketId}/generate`)
++          .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
++
++        expect(response.status).toBe(200);
++
++        // 8-Player DE bracket contains exactly 15 matches
++        expect(testDbStore.tournamentMatches).toHaveLength(15);
++
++        // Play WB Round 1:
++        // wb-1-1: ath-1 beats ath-8 (ath-8 drops to lb-1-1 A)
++        let res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-1-1`, winnerId: "ath-1", scoreLine: "3-0" });
++        expect(res.status).toBe(200);
++
++        // wb-1-2: ath-2 beats ath-7 (ath-7 drops to lb-1-1 B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-1-2`, winnerId: "ath-2", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // wb-1-3: ath-3 beats ath-6 (ath-6 drops to lb-1-2 A)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-1-3`, winnerId: "ath-3", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // wb-1-4: ath-4 beats ath-5 (ath-5 drops to lb-1-2 B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-1-4`, winnerId: "ath-4", scoreLine: "3-2" });
++        expect(res.status).toBe(200);
++
++        // Verify LB Round 1 matches are READY and populated with the correct losers
++        const lb1_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-1-1`);
++        const lb1_2 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-1-2`);
++        expect(lb1_1?.status).toBe("READY");
++        expect(lb1_1?.athleteAId).toBe("ath-8");
++        expect(lb1_1?.athleteBId).toBe("ath-7");
++        expect(lb1_2?.status).toBe("READY");
++        expect(lb1_2?.athleteAId).toBe("ath-6");
++        expect(lb1_2?.athleteBId).toBe("ath-5");
++
++        // Play WB Round 2:
++        // wb-2-1: ath-1 beats ath-2 (ath-2 drops to lb-2-1 B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-2-1`, winnerId: "ath-1", scoreLine: "3-0" });
++        expect(res.status).toBe(200);
++
++        // wb-2-2: ath-3 beats ath-4 (ath-4 drops to lb-2-2 B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-2-2`, winnerId: "ath-3", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // Play LB Round 1:
++        // lb-1-1: ath-8 beats ath-7 (ath-7 eliminated, ath-8 goes to lb-2-1 A)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `lb-${bracketId}-1-1`, winnerId: "ath-8", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // lb-1-2: ath-6 beats ath-5 (ath-5 eliminated, ath-6 goes to lb-2-2 A)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `lb-${bracketId}-1-2`, winnerId: "ath-6", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // Verify LB Round 2 matches are READY and populated
++        const lb2_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-2-1`);
++        const lb2_2 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-2-2`);
++        expect(lb2_1?.status).toBe("READY");
++        expect(lb2_1?.athleteAId).toBe("ath-8");
++        expect(lb2_1?.athleteBId).toBe("ath-2");
++        expect(lb2_2?.status).toBe("READY");
++        expect(lb2_2?.athleteAId).toBe("ath-6");
++        expect(lb2_2?.athleteBId).toBe("ath-4");
++
++        // Play WB Round 3 (Winners Bracket Final):
++        // wb-3-1: ath-1 beats ath-3 (ath-1 goes to GF Slot A, ath-3 drops to lb-4-1 B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `wb-${bracketId}-3-1`, winnerId: "ath-1", scoreLine: "3-0" });
++        expect(res.status).toBe(200);
++
++        // Play LB Round 2:
++        // lb-2-1: ath-2 beats ath-8 (ath-8 eliminated, ath-2 goes to lb-3-1 A)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `lb-${bracketId}-2-1`, winnerId: "ath-2", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // lb-2-2: ath-4 beats ath-6 (ath-6 eliminated, ath-4 goes to lb-3-1 B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `lb-${bracketId}-2-2`, winnerId: "ath-4", scoreLine: "3-2" });
++        expect(res.status).toBe(200);
++
++        // Verify LB Round 3 is READY and populated
++        const lb3_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-3-1`);
++        expect(lb3_1?.status).toBe("READY");
++        expect(lb3_1?.athleteAId).toBe("ath-2");
++        expect(lb3_1?.athleteBId).toBe("ath-4");
++
++        // Play LB Round 3:
++        // lb-3-1: ath-2 beats ath-4 (ath-4 eliminated, ath-2 goes to lb-4-1 A)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `lb-${bracketId}-3-1`, winnerId: "ath-2", scoreLine: "3-2" });
++        expect(res.status).toBe(200);
++
++        // Verify LB Round 4 (Losers Bracket Final) is READY and populated
++        const lb4_1 = testDbStore.tournamentMatches.find(m => m.id === `lb-${bracketId}-4-1`);
++        expect(lb4_1?.status).toBe("READY");
++        expect(lb4_1?.athleteAId).toBe("ath-2");
++        expect(lb4_1?.athleteBId).toBe("ath-3");
++
++        // Play LB Round 4:
++        // lb-4-1: ath-2 beats ath-3 (ath-3 eliminated, ath-2 goes to GF Slot B)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `lb-${bracketId}-4-1`, winnerId: "ath-2", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // Verify Grand Final Round 1 is READY and populated
++        const gf1_1 = testDbStore.tournamentMatches.find(m => m.id === `gf-${bracketId}-1-1`);
++        expect(gf1_1?.status).toBe("READY");
++        expect(gf1_1?.athleteAId).toBe("ath-1");
++        expect(gf1_1?.athleteBId).toBe("ath-2");
++
++        // Play Grand Final Round 1:
++        // gf-1-1: ath-2 beats ath-1 (rematch required, both now have exactly 1 loss)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `gf-${bracketId}-1-1`, winnerId: "ath-2", scoreLine: "3-2" });
++        expect(res.status).toBe(200);
++
++        // Verify Grand Final Round 2 is READY and populated with rematch
++        const gf2_1 = testDbStore.tournamentMatches.find(m => m.id === `gf-${bracketId}-2-1`);
++        expect(gf2_1?.status).toBe("READY");
++        expect(gf2_1?.athleteAId).toBe("ath-1");
++        expect(gf2_1?.athleteBId).toBe("ath-2");
++
++        // Play Grand Final Round 2:
++        // gf-2-1: ath-1 beats ath-2 (ath-1 becomes ultimate champion!)
++        res = await request(app)
++          .post("/tournaments/matches/result")
++          .set("Authorization", authHeader(UserRole.REFEREE))
++          .send({ matchId: `gf-${bracketId}-2-1`, winnerId: "ath-1", scoreLine: "3-1" });
++        expect(res.status).toBe(200);
++
++        // Verify tournament state completes successfully
++        const finalBracket = testDbStore.brackets.find(b => b.id === bracketId);
++        expect(finalBracket?.status).toBe("COMPLETED");
++      });
+     });
+   });
+ });

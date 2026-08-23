@@ -1,0 +1,20 @@
+{
+  "name": "armsphere-root",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@armsphere/api",
+    "build": "npm run build --workspace=@armsphere/types && npm run build --workspace=@armsphere/core && npm run build --workspace=@armsphere/cryptography && npm run build --workspace=@armsphere/db-schema && npm run build --workspace=@armsphere/api && npm run build --workspace=@armsphere/admin-web",
+    "start": "node apps/api/dist/server.js",
+    "lint": "npm run lint --workspace=@armsphere/api && npm run lint --workspace=@armsphere/admin-web"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^5.0.0",
+    "tsx": "^4.7.1"
+  }
+}

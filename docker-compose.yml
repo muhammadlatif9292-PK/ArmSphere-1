@@ -1,0 +1,98 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: armsphere-db
+    environment:
+      POSTGRES_USER: armsphere
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev-password-change-in-production}
+      POSTGRES_DB: armsphere
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U armsphere"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - armsphere-network
+
+  # API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: armsphere-api
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://armsphere:${DB_PASSWORD:-dev-password-change-in-production}@postgres:5432/armsphere
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-in-production}
+      CRON_SECRET: ${CRON_SECRET:-change-this-in-production}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - armsphere-network
+    restart: unless-stopped
+
+  # Admin Web Frontend
+  admin-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin-web
+    container_name: armsphere-admin-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - armsphere-network
+    restart: unless-stopped
+
+  # Optional: Adminer for database management (development only)
+  adminer:
+    image: adminer:latest
+    container_name: armsphere-adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - armsphere-network
+    profiles:
+      - dev
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  armsphere-network:
+    driver: bridge

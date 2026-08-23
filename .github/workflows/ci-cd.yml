@@ -1,0 +1,38 @@
+name: "ArmSphere Enterprise CI/CD Pipeline"
+
+on:
+  push:
+    branches:
+      - "main"
+      - "develop"
+  pull_request:
+    branches:
+      - "main"
+      - "develop"
+
+permissions:
+  contents: "read"
+
+jobs:
+  # 1. Validation & Test Job
+  validate-and-test:
+    name: "Lint & Validate Application Modules"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout Codebase"
+        uses: "actions/checkout@v4"
+
+      - name: "Setup Node.js Runtime Environment"
+        uses: "actions/setup-node@v4"
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: "Install Monorepo Workspace Dependencies"
+        run: "npm ci"
+
+      - name: "Execute Code Linters"
+        run: "npm run lint --workspaces --if-present"
+
+      - name: "Run Platform Tests"
+        run: "npm run test --workspaces --if-present"

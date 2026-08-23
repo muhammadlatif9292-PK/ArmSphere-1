@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "regional_coverage" varchar(100);

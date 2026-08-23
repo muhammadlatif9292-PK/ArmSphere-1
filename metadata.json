@@ -1,0 +1,7 @@
+{
+  "name": "ArmSphere 1.",
+  "description": "The complete, interactive product blueprint and architecture for ArmSphere, the competitive armwrestling ecosystem.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
