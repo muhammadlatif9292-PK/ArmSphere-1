@@ -10,6 +10,7 @@ import '../../../core/widgets/achievements_section.dart';
 import '../../../core/widgets/ambient_particle_background.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/performance_graph_card.dart';
+import '../../../core/widgets/premium_floating_nav_bar.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/stats_overview_section.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';

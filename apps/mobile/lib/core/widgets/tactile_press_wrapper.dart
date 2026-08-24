@@ -5,11 +5,19 @@ class TactilePressWrapper extends StatefulWidget {
   final VoidCallback? onTap;
   final String? semanticLabel;
 
+  /// Whether to lift the child upward while pressed.
+  final bool enableLift;
+
+  /// Vertical offset applied while lifted when [enableLift] is true.
+  final double liftDistance;
+
   const TactilePressWrapper({
     Key? key,
     required this.child,
     required this.onTap,
     this.semanticLabel,
+    this.enableLift = false,
+    this.liftDistance = -4.0,
   }) : super(key: key);
 
   @override
@@ -20,6 +28,7 @@ class _TactilePressWrapperState extends State<TactilePressWrapper>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _liftAnimation;
 
   @override
   void initState() {
@@ -29,6 +38,12 @@ class _TactilePressWrapperState extends State<TactilePressWrapper>
       duration: const Duration(milliseconds: 100),
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _liftAnimation = Tween<double>(
+      begin: 0.0,
+      end: widget.enableLift ? widget.liftDistance : 0.0,
+    ).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -68,9 +83,12 @@ class _TactilePressWrapperState extends State<TactilePressWrapper>
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
+          return Transform.translate(
+            offset: Offset(0, _liftAnimation.value),
+            child: Transform.scale(
+              scale: _scaleAnimation.value,
+              child: child,
+            ),
           );
         },
         child: widget.child,

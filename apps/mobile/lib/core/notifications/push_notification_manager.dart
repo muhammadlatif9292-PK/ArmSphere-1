@@ -28,9 +28,9 @@ class PushNotificationManager {
   bool _initialized = false;
   String? _cachedToken;
   String? _deviceId;
-  Ref? _widgetRef;
+  dynamic _widgetRef;
 
-  Future<void> initialize(Ref ref) async {
+  Future<void> initialize(dynamic ref) async {
     if (_initialized) return;
     _widgetRef = ref;
 

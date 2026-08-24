@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/state_providers.dart';
+import '../../../core/providers/live_matches_provider.dart';
 
 /// Referee Dashboard Screen
 class RefereeDashboardScreen extends ConsumerWidget {

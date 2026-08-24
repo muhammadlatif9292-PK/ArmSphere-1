@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import 'dependency_providers.dart';
 
 class RefereeNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override

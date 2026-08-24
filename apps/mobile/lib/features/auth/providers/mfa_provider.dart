@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_provider.dart';
+import '../../../core/providers/dependency_providers.dart';
 
 class MfaState {
   final bool isLoading;

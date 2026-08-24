@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mobile/main.dart';
 import 'package:mobile/core/providers/state_providers.dart';
+import 'package:mobile/core/providers/dependency_providers.dart';
 import 'package:mobile/core/providers/tournament_provider.dart';
 import 'package:mobile/core/api/repositories.dart';
 import 'package:mobile/core/storage/hive_storage.dart';

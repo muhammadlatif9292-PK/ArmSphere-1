@@ -4,6 +4,7 @@ import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'core/providers/dependency_providers.dart';
 import 'core/storage/hive_storage.dart';
 import 'core/notifications/push_notification_manager.dart';
 

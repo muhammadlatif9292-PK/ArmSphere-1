@@ -43,6 +43,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _init();
   }
 
+  /// Re-checks cached session state and restores authentication.
+  Future<void> checkInitialSession() => _init();
+
   void _initializeSync() {
     try {
       final diffSync = ref.read(differentialSyncManagerProvider);
