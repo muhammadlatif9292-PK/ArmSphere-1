@@ -23,6 +23,7 @@ describe("ArmSphere Production Security Penetration Test Suite", () => {
       body: {},
       query: {},
       params: {},
+      path: "/athletes",
       socket: { remoteAddress: "127.0.0.1" } as any,
       log: {
         warn: vi.fn(),
@@ -86,6 +87,34 @@ describe("ArmSphere Production Security Penetration Test Suite", () => {
             error: "CSRF Validation Failed",
           })
         );
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
+
+    it("should exempt identity-establishing auth endpoints because native clients hold no cookies", () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "production";
+      try {
+        const credentialPaths = [
+          "/auth/register",
+          "/api/v1/auth/register",
+          "/auth/login",
+          "/auth/refresh",
+          "/auth/mfa/verify",
+          "/api/v1/auth/password-reset/request",
+        ];
+        for (const path of credentialPaths) {
+          mockRequest.method = "POST";
+          mockRequest.path = path;
+          mockRequest.cookies = {};
+          mockRequest.headers!["x-test-force-csrf"] = "true";
+
+          csrfProtection(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          expect(nextFunction).toHaveBeenCalled();
+          expect(mockResponse.status).not.toHaveBeenCalledWith(403);
+        }
       } finally {
         process.env.NODE_ENV = originalNodeEnv;
       }

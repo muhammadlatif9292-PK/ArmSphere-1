@@ -89,6 +89,16 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
+  // Exempt identity-establishing auth endpoints. They accept explicit body
+  // credentials and never rely on ambient cookie sessions, so double-submit
+  // CSRF does not apply; native clients hold neither cookies nor a Bearer
+  // token before their first login. These routes are guarded by rate limiting.
+  const credentialEndpoint =
+    /^\/auth\/(register|login|refresh|mfa\/verify|mfa\/recovery|password-reset\/request|password-reset\/reset|verify-email\/confirm)$/;
+  if (credentialEndpoint.test(req.path.replace(/^\/api\/v1/, ""))) {
+    return next();
+  }
+
   // Safe HTTP methods do not require CSRF validation
   const safeMethods = ["GET", "HEAD", "OPTIONS"];
   if (safeMethods.includes(req.method)) {
