@@ -35,14 +35,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
+      // Registration establishes an authenticated session; the router's
+      // auth-state listener then routes into role-intent selection.
       await ref.read(authProvider.notifier).register(
             _emailController.text.trim(),
             _passwordController.text,
             _nameController.text.trim(),
           );
-      if (mounted) {
-        context.go('/onboarding');
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

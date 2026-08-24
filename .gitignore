@@ -8,3 +8,11 @@ coverage/
 .env*
 !.env.example
 !.env.production.example
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/

@@ -204,36 +204,43 @@ class DioClient {
         if (err.type == DioExceptionType.badResponse && err.response != null) {
           final response = err.response!;
           
-          // Check if we hit a 401 and can try to refresh the token
           if (response.statusCode == 401) {
             final requestOptions = response.requestOptions;
-            
+
             // If the request was actually to refresh, we fail immediately to prevent loops
             if (requestOptions.path.contains('/auth/refresh')) {
               await secureStorage.clearSession();
               return handler.next(err);
             }
 
-            try {
-              final refreshedToken = await _refreshTokenAndRetry();
-              
-              // Re-inject token and replay original request
-              requestOptions.headers['Authorization'] = 'Bearer $refreshedToken';
-              final replayedResponse = await dio.fetch(requestOptions);
-              return handler.resolve(replayedResponse);
-            } catch (refreshErr) {
-              // Token refresh failed - invalidate session and reject
-              await secureStorage.clearSession();
-              return handler.reject(DioException(
-                requestOptions: requestOptions,
-                error: ApiException(
-                  type: 'auth:session-expired',
-                  title: 'Session Expired',
-                  status: 401,
-                  detail: 'Please log in again.',
-                ),
-                type: DioExceptionType.badResponse,
-              ));
+            // Credential endpoints own their error semantics: a rejected
+            // login/MFA attempt must surface the server's message, never
+            // masquerade as an expired session via the refresh cycle.
+            const credentialPaths = ['/auth/login', '/auth/register', '/auth/mfa'];
+            final isCredentialRequest =
+                credentialPaths.any(requestOptions.path.contains);
+            if (!isCredentialRequest) {
+              try {
+                final refreshedToken = await _refreshTokenAndRetry();
+
+                // Re-inject token and replay original request
+                requestOptions.headers['Authorization'] = 'Bearer $refreshedToken';
+                final replayedResponse = await dio.fetch(requestOptions);
+                return handler.resolve(replayedResponse);
+              } catch (refreshErr) {
+                // Token refresh failed - invalidate session and reject
+                await secureStorage.clearSession();
+                return handler.reject(DioException(
+                  requestOptions: requestOptions,
+                  error: ApiException(
+                    type: 'auth:session-expired',
+                    title: 'Session Expired',
+                    status: 401,
+                    detail: 'Please log in again.',
+                  ),
+                  type: DioExceptionType.badResponse,
+                ));
+              }
             }
           }
 

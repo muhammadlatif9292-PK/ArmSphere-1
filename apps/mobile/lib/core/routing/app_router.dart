@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
@@ -9,12 +11,14 @@ import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/auth/screens/mfa_setup_screen.dart';
 import '../../features/auth/screens/mfa_verification_screen.dart';
 import '../../features/auth/screens/recovery_codes_screen.dart';
+import '../../features/auth/screens/role_intent_screen.dart';
 import '../../features/athlete/screens/onboarding_screen.dart';
 import '../../features/athlete/screens/athlete_screens.dart';
 import '../../features/athlete/screens/public_profile_screen.dart';
 import '../../features/athlete/screens/training_log_screen.dart';
 import '../../features/athlete/screens/followers_list_screen.dart';
 import '../../features/athlete/screens/rankings_screen.dart';
+import '../../features/home/screens/discover_screen.dart';
 import '../../features/referee/screens/referee_screens.dart';
 import '../../features/tournament/screens/tournament_screens.dart';
 import '../../features/tournament/screens/tournament_operations_screen.dart';
@@ -44,55 +48,66 @@ import '../../features/informal_event/screens/create_informal_event_screen.dart'
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
 
+/// Cold-start journey enforced by [redirect]:
+///   splash → welcome → register/login → role intent → athlete onboarding → home
+///
+/// Auth-state changes are delivered through [GoRouter.refreshListenable] so a
+/// sign-in/out never rebuilds the route table itself.
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final refreshNotifier = ValueNotifier<int>(0);
+  ref.listen(authProvider, (_, __) => refreshNotifier.value++);
+  ref.onDispose(refreshNotifier.dispose);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/',
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final status = authState.status;
       final location = state.uri.toString();
 
-      final isPublicRoute = location == '/login' ||
-          location == '/register' ||
-          location == '/forgot-password' ||
-          location == '/reset-password';
-
+      // Hold everyone on the splash until session restore resolves.
       if (status == AuthStatus.unknown) {
-        return null;
+        return location == '/' ? null : '/';
       }
 
-      if (status == AuthStatus.unauthenticated) {
-        return isPublicRoute ? null : '/login';
-      }
+      const publicRoutes = <String>{
+        '/welcome',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+      };
 
-      if (status == AuthStatus.mfaRequired) {
-        return location.startsWith('/mfa/verify') ? null : '/mfa/verify';
-      }
+      switch (status) {
+        case AuthStatus.unauthenticated:
+          return publicRoutes.contains(location) ? null : '/welcome';
 
-      if (status == AuthStatus.onboardingRequired) {
-        return location == '/onboarding' ? null : '/onboarding';
-      }
+        case AuthStatus.mfaRequired:
+          return location.startsWith('/mfa/verify') ? null : '/mfa/verify';
 
-      if (status == AuthStatus.authenticated) {
-        if (location == '/' ||
-            location == '/dashboard' ||
-            location == '/login' ||
-            location == '/register' ||
-            location == '/onboarding' ||
-            location.startsWith('/mfa/verify')) {
-          final role = authState.userProfile?['role']?.toString().toUpperCase() ?? '';
-          if (role == 'REFEREE') {
-            return '/referee/dashboard';
-          } else if (role == 'TOURNAMENT_DIRECTOR' || role == 'ADMIN' || role == 'TOURNAMENT_ADMIN') {
-            return '/tournament/dashboard';
-          } else {
-            return '/discover';
-          }
-        }
-      }
+        case AuthStatus.onboardingRequired:
+          const setupRoutes = <String>{'/role-intent', '/onboarding'};
+          return setupRoutes.contains(location) ? null : '/role-intent';
 
-      return null;
+        case AuthStatus.authenticated:
+          const entryRoutes = <String>{
+            '/',
+            '/welcome',
+            '/login',
+            '/register',
+            '/forgot-password',
+            '/reset-password',
+            '/role-intent',
+            '/onboarding',
+          };
+          final atEntry =
+              location == '/' || entryRoutes.contains(location) || location.startsWith('/mfa/verify');
+          return atEntry ? '/home' : null;
+
+        case AuthStatus.unknown:
+          return location == '/' ? null : '/';
+      }
     },
     routes: [
       GoRoute(
@@ -101,6 +116,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
           child: const SplashScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/welcome',
+        name: 'welcome',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const WelcomeScreen(),
         ),
       ),
       GoRoute(
@@ -166,6 +189,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/role-intent',
+        name: 'role_intent',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const RoleIntentScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/onboarding',
         name: 'onboarding',
         pageBuilder: (context, state) => AppTransitionPage(
@@ -181,6 +212,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/home',
+                name: 'home',
+                builder: (context, state) => const AthleteDashboardScreen(),
+              ),
+              GoRoute(
                 path: '/athlete/dashboard',
                 name: 'athlete_dashboard',
                 builder: (context, state) => const AthleteDashboardScreen(),
@@ -192,7 +228,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/discover',
                 name: 'discover',
-                builder: (context, state) => const RankingsScreen(),
+                builder: (context, state) => const DiscoverScreen(),
               ),
               GoRoute(
                 path: '/rankings',
@@ -204,23 +240,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/community/feed',
-                name: 'community_feed',
-                builder: (context, state) => const CommunityFeedScreen(),
+                path: '/tournaments',
+                name: 'tournaments_tab',
+                builder: (context, state) => const TournamentsListScreen(),
+              ),
+              GoRoute(
+                path: '/tournament/dashboard',
+                name: 'tournament_dashboard_tab',
+                builder: (context, state) => const TournamentsListScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/tournament/dashboard',
-                name: 'tournament_dashboard_tab',
-                builder: (context, state) => const TournamentsListScreen(),
-              ),
-              GoRoute(
-                path: '/tournaments',
-                name: 'tournaments_tab',
-                builder: (context, state) => const TournamentsListScreen(),
+                path: '/community/feed',
+                name: 'community_feed',
+                builder: (context, state) => const CommunityFeedScreen(),
               ),
             ],
           ),
@@ -746,20 +782,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-});
 
-class AppRouter {
-  @Deprecated('Use routerProvider in ProviderScope instead')
-  static final router = GoRouter(
-    initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        pageBuilder: (context, state) => AppTransitionPage(
-          key: state.pageKey,
-          child: const SplashScreen(),
-        ),
-      ),
-    ],
-  );
-}
+  ref.onDispose(router.dispose);
+  return router;
+});

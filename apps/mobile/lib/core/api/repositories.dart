@@ -80,88 +80,63 @@ abstract class BaseRepository {
 class AuthRepository extends BaseRepository {
   AuthRepository({required super.dioClient, required super.hiveStorage});
 
+  /// Unwraps the `{ success, data: ... }` envelope used by the auth API.
+  Map<String, dynamic> _unwrap(dynamic data) {
+    if (data is Map && data['data'] is Map) {
+      return Map<String, dynamic>.from(data['data'] as Map);
+    }
+    return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+  }
+
+  /// Surfaces interceptor-produced exceptions as-is so the UI shows the
+  /// real problem (invalid credentials, offline, session expired).
+  Never _rethrowAuthError(DioException e) {
+    final inner = e.error;
+    if (inner is ApiException) throw inner;
+    if (inner is OfflineException) throw inner;
+    rethrow;
+  }
+
+  /// Credential flows never go through [BaseRepository.executeRequest]:
+  /// that helper caches successful payloads into plaintext Hive, which must
+  /// never hold bearer tokens. Session persistence is owned by AuthNotifier.
   Future<Map<String, dynamic>> register(String email, String password, String fullName, {CancelToken? cancelToken}) async {
     final username = email.split('@').first.trim();
-    final response = await executeRequest(
-      cacheKey: 'auth_registration_$email',
-      cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post('/auth/register', data: {
+    try {
+      final response = await dioClient.dio.post('/auth/register', data: {
         'email': email,
         'username': username,
         'password': password,
         'fullName': fullName,
-      }, cancelToken: token),
-      parse: (data) {
-        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
-        return Map<String, dynamic>.from(payload);
-      },
-    );
-
-    return response;
+      }, cancelToken: cancelToken);
+      return _unwrap(response.data);
+    } on DioException catch (e) {
+      _rethrowAuthError(e);
+    }
   }
 
   Future<Map<String, dynamic>> login(String email, String password, {CancelToken? cancelToken}) async {
-    final response = await executeRequest(
-      cacheKey: 'auth_session_user',
-      cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post('/auth/login', data: {
+    try {
+      final response = await dioClient.dio.post('/auth/login', data: {
         'email': email,
         'password': password,
-      }, cancelToken: token),
-      parse: (data) {
-        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
-        return Map<String, dynamic>.from(payload);
-      },
-    );
-
-    final payload = response;
-    final accessToken = payload['accessToken']?.toString();
-    final refreshToken = payload['refreshToken']?.toString();
-    final user = payload['user'] is Map ? Map<String, dynamic>.from(payload['user']) : null;
-
-    if (accessToken != null && accessToken.isNotEmpty) {
-      await dioClient.secureStorage.setAccessToken(accessToken);
+      }, cancelToken: cancelToken);
+      return _unwrap(response.data);
+    } on DioException catch (e) {
+      _rethrowAuthError(e);
     }
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      await dioClient.secureStorage.setRefreshToken(refreshToken);
-    }
-    if (user != null) {
-      await dioClient.secureStorage.setSessionUserData(user.toString());
-    }
-
-    return response;
   }
 
   Future<Map<String, dynamic>> verifyMfa(String code, {required String userId, CancelToken? cancelToken}) async {
-    final response = await executeRequest(
-      cacheKey: 'auth_mfa_$userId',
-      cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post('/auth/mfa/verify', data: {
+    try {
+      final response = await dioClient.dio.post('/auth/mfa/verify', data: {
         'userId': userId,
         'code': code,
-      }, cancelToken: token),
-      parse: (data) {
-        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
-        return Map<String, dynamic>.from(payload);
-      },
-    );
-
-    final payload = response;
-    final accessToken = payload['accessToken']?.toString();
-    final refreshToken = payload['refreshToken']?.toString();
-    final user = payload['user'] is Map ? Map<String, dynamic>.from(payload['user']) : null;
-
-    if (accessToken != null && accessToken.isNotEmpty) {
-      await dioClient.secureStorage.setAccessToken(accessToken);
+      }, cancelToken: cancelToken);
+      return _unwrap(response.data);
+    } on DioException catch (e) {
+      _rethrowAuthError(e);
     }
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      await dioClient.secureStorage.setRefreshToken(refreshToken);
-    }
-    if (user != null) {
-      await dioClient.secureStorage.setSessionUserData(user.toString());
-    }
-
-    return response;
   }
 
   Future<void> logout({CancelToken? cancelToken}) async {

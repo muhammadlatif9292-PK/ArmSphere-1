@@ -67,26 +67,28 @@ class MainShellScreen extends StatelessWidget {
             fontWeight: FontWeight.w500,
             letterSpacing: 0.2,
           ),
+          // Order mirrors the shell branches declared in app_router.dart:
+          // /home, /discover, /tournaments, /community/feed, /athlete/profile.
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.travel_explore_outlined),
+              activeIcon: Icon(Icons.travel_explore),
+              label: 'Discover',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.emoji_events_outlined),
               activeIcon: Icon(Icons.emoji_events),
-              label: 'Rankings',
+              label: 'Competitions',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.forum_outlined),
               activeIcon: Icon(Icons.forum),
-              label: 'Feed',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.sports_kabaddi_outlined),
-              activeIcon: Icon(Icons.sports_kabaddi),
-              label: 'Events',
+              label: 'Community',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
