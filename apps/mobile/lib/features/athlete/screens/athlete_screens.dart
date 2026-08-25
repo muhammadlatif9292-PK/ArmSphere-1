@@ -4,7 +4,19 @@ import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/achievements_section.dart';
-import '../../../core/providers/state_providers.dart';
+import '../../../core/providers/athlete_provider.dart';
+import '../../../core/providers/live_matches_provider.dart';
+
+const Map<int, String> _months = {
+  1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+  7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec',
+};
+
+String _fmtDate(dynamic iso) {
+  final d = DateTime.tryParse(iso?.toString() ?? '');
+  if (d == null) return '';
+  return '${d.day} ${_months[d.month] ?? ''} ${d.year}';
+}
 
 /// Athlete Dashboard Screen
 class AthleteDashboardScreen extends ConsumerWidget {
@@ -16,6 +28,13 @@ class AthleteDashboardScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final profile = authState.userProfile ?? {};
     final displayName = profile['displayName'] ?? 'Athlete';
+    final profileAsync = ref.watch(athleteProfileProvider);
+    // Match rows and PRs are keyed by the athlete PROFILE id, not the auth user id.
+    final myProfileId = profileAsync.value?['id']?.toString();
+    final matchesAsync = ref.watch(liveMatchesProvider);
+    final prsAsync = myProfileId == null
+        ? const AsyncValue<List<Map<String, dynamic>>>.data([])
+        : ref.watch(trainingLogPRsProvider(myProfileId));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -52,78 +71,107 @@ class AthleteDashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Rating specs Card
-          GlassCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'ELO RATING',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Class: Heavyweight',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        Text(
-                          '1,842',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          'Right Arm',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    VerticalDivider(width: 1, thickness: 1),
-                    Column(
-                      children: [
-                        Text(
-                          '1,695',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Text(
-                          'Left Arm',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+          // Rating specs Card — real per-arm ELO from the athlete profile API
+          profileAsync.when(
+            loading: () => const GlassCard(
+              padding: EdgeInsets.all(20),
+              child: SizedBox(
+                height: 90,
+                child: Center(child: CircularProgressIndicator()),
+              ),
             ),
+            error: (err, _) => GlassCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Text('Could not load your rating',
+                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => ref.invalidate(athleteProfileProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+            data: (p) {
+              final rightElo = (p['rightArmElo'] as num?)?.toInt();
+              final leftElo = (p['leftArmElo'] as num?)?.toInt();
+              final weightClass = p['weightClass']?.toString();
+
+              return GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'ELO RATING',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            weightClass == null || weightClass.isEmpty ? 'Open Class' : 'Class: $weightClass',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            Text(
+                              rightElo?.toString() ?? '—',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const Text(
+                              'Right Arm',
+                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                        const VerticalDivider(width: 1, thickness: 1),
+                        Column(
+                          children: [
+                            Text(
+                              leftElo?.toString() ?? '—',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const Text(
+                              'Left Arm',
+                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
 
@@ -173,11 +221,160 @@ class AthleteDashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Horizontal Achievements Section widget
-          const AchievementsSection(),
+          // Recent verified matches — real match history
+          Text(
+            'RECENT MATCHES',
+            style: theme.textTheme.labelMedium?.copyWith(
+              letterSpacing: 1.0,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 12),
+          matchesAsync.when(
+            loading: () => const Center(child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            )),
+            error: (err, _) => Text(
+              'Could not load matches',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
+            data: (matches) {
+              if (matches.isEmpty) {
+                return Text(
+                  'No verified matches yet — record your first result to start climbing the rankings.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                );
+              }
+              final recent = matches.take(5).toList();
+              return Column(
+                children: [
+                  for (final m in recent)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GlassCard(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'vs ${m['opponentName'] ?? 'Unknown'}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    [
+                                      m['arm']?.toString(),
+                                      _fmtDate(m['verifiedAt'] ?? m['createdAt']),
+                                    ].where((v) => v != null && v.isNotEmpty).join(' • '),
+                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Builder(builder: (context) {
+                              final winnerId = m['winnerId']?.toString();
+                              final isWin = myProfileId != null && winnerId == myProfileId;
+                              final decided = winnerId != null && winnerId.isNotEmpty;
+                              final color = !decided
+                                  ? Colors.grey
+                                  : (isWin ? Colors.green : Colors.redAccent);
+                              final label = !decided
+                                  ? (m['status']?.toString() ?? 'PENDING')
+                                  : (isWin ? 'WIN' : 'LOSS');
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: color,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+
+          // Personal records — real training-log PRs (hidden until any exist)
+          prsAsync.maybeWhen(
+            data: (prs) {
+              if (prs.isEmpty) return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PERSONAL RECORDS',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final pr in prs)
+                        GlassCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _prettyExercise(pr['exerciseType']?.toString()),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${(pr['weightKg'] as num?)?.toInt() ?? '—'} kg',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
         ],
       ),
     );
+  }
+
+  static String _prettyExercise(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Exercise';
+    return raw
+        .toLowerCase()
+        .split('_')
+        .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 }
 
