@@ -64,9 +64,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                'Link submitted for moderation. It will appear once approved.',
+          SnackBar(
+            content: const Text(
+                'Link submitted for moderation. It will appear once approved.'),
             backgroundColor: Colors.green,
           ),
         );

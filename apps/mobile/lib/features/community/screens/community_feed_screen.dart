@@ -76,11 +76,15 @@ class CommunityFeedScreen extends ConsumerWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.all(20),
                 itemCount: posts.length,
-                separatorBuilder: (_, __) => const SizedBox.height(16),
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final post = posts[index];
                   final athlete =
                       post['athlete'] is Map ? post['athlete'] as Map : null;
+                  final athleteName =
+                      athlete?['displayName']?.toString() ?? '';
+                  final athletePhoto =
+                      athlete?['profilePhoto']?.toString() ?? '';
                   final platform = post['platform']?.toString() ?? '';
                   final embedUrl =
                       EmbedUrlBuilder.getEmbedUrl(
@@ -97,20 +101,11 @@ class CommunityFeedScreen extends ConsumerWidget {
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundImage:
-                                  athlete?['profilePhoto'] != null &&
-                                          athlete!['profilePhoto']
-                                              .toString()
-                                              .isNotEmpty
-                                      ? NetworkImage(
-                                          athlete['profilePhoto'].toString())
+                              backgroundImage: athletePhoto.isNotEmpty
+                                      ? NetworkImage(athletePhoto)
                                       : null,
-                              child: athlete?['profilePhoto'] == null ||
-                                      athlete!['profilePhoto']
-                                          .toString()
-                                          .isEmpty
-                                      ? Text(_initial(athlete['displayName']
-                                            ?.toString()))
+                              child: athletePhoto.isEmpty
+                                      ? Text(_initial(athleteName))
                                       : null,
                             ),
                             const SizedBox(width: 12),
