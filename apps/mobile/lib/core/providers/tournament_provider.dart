@@ -16,21 +16,17 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     required String arm,
     String? notes,
   }) async {
-    try {
-      final repo = ref.read(tournamentRepositoryProvider);
-      final response = await repo.registerAthlete(
-        eventId: eventId,
-        athleteId: athleteId,
-        division: division,
-        weightClass: weightClass,
-        arm: arm,
-        notes: notes,
-      );
-      ref.invalidateSelf();
-      return response;
-    } catch (_) {
-      return null;
-    }
+    final repo = ref.read(tournamentRepositoryProvider);
+    final response = await repo.registerAthlete(
+      eventId: eventId,
+      athleteId: athleteId,
+      division: division,
+      weightClass: weightClass,
+      arm: arm,
+      notes: notes,
+    );
+    ref.invalidateSelf();
+    return response;
   }
 
   Future<bool> patchEvent({
@@ -64,6 +60,11 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
 
 final tournamentProvider = AsyncNotifierProvider.autoDispose<TournamentNotifier, List<Map<String, dynamic>>>(() {
   return TournamentNotifier();
+});
+
+final eventDetailProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.getEventById(eventId: eventId);
 });
 
 final eventRegistrationsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {

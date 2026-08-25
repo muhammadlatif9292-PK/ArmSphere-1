@@ -347,6 +347,18 @@ class TournamentRepository extends BaseRepository {
     );
   }
 
+  Future<Map<String, dynamic>> getEventById({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_detail_$eventId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/tournaments/events/$eventId', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
   Future<Map<String, dynamic>> registerAthlete({
     required String eventId,
     required String athleteId,
