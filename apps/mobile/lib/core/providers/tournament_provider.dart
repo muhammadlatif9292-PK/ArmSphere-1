@@ -50,11 +50,28 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     try {
       final repo = ref.read(tournamentRepositoryProvider);
       await repo.confirmManualPayment(registrationId: registrationId);
-      ref.invalidate(eventRegistrationsProvider(eventId));
+      _refreshEventScopes(eventId);
       return true;
     } catch (_) {
       return false;
     }
+  }
+
+  void _refreshEventScopes(String eventId) {
+    ref.invalidate(eventRegistrationsProvider(eventId));
+    ref.invalidate(eventStatsProvider(eventId));
+    ref.invalidate(eventBracketsProvider(eventId));
+  }
+
+  /// Runs a lifecycle mutation and refreshes every event-scoped list on success.
+  /// Rethrows so the console can surface the backend's real error message.
+  Future<Map<String, dynamic>> runLifecycleAction({
+    required String eventId,
+    required Future<Map<String, dynamic>> Function() action,
+  }) async {
+    final result = await action();
+    _refreshEventScopes(eventId);
+    return result;
   }
 }
 
@@ -80,6 +97,19 @@ final bracketDetailsProvider = FutureProvider.autoDispose.family<Map<String, dyn
 final bracketsListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.listBrackets();
+});
+
+/// Brackets belonging to one event. The API lists all brackets without an
+/// eventId filter, so the scoping happens client-side.
+final eventBracketsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  final all = await repo.listBrackets();
+  return all.where((b) => b['eventId']?.toString() == eventId).toList();
+});
+
+final eventStatsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.getEventStats(eventId: eventId);
 });
 
 final ticketTypesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {

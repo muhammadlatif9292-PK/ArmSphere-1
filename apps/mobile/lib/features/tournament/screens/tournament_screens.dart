@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
+import '../../../features/auth/providers/auth_provider.dart';
 
 /// Shared formatting helpers for event data (used by list, detail and
 /// registration screens so every surface renders the same real values).
@@ -210,6 +211,15 @@ class TournamentDetailScreen extends ConsumerWidget {
         data: (event) {
           final status = (event['status']?.toString() ?? '').toUpperCase();
           final canRegister = status == 'PUBLISHED';
+          // Operations entry — visible to the event's organizer or to
+          // director/admin roles only. The backend remains authoritative;
+          // this merely avoids showing a door the viewer cannot walk through.
+          final auth = ref.watch(authProvider);
+          final role = auth.userProfile?['role']?.toString().toUpperCase();
+          const operatorRoles = {'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+          final canOperate = operatorRoles.contains(role) ||
+              (event['organizerId'] != null &&
+                  event['organizerId'].toString() == auth.userProfile?['id']?.toString());
           final location = [
             event['venueName']?.toString(),
             event['city']?.toString(),
@@ -289,6 +299,14 @@ class TournamentDetailScreen extends ConsumerWidget {
                   onPressed: () => context.push('/tournament/$tournamentId/brackets'),
                   child: const Text('View Match Brackets'),
                 ),
+                if (canOperate) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => context.push('/tournament/$tournamentId/operations'),
+                    icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+                    label: const Text('Event Operations'),
+                  ),
+                ],
               ],
             ),
           );
@@ -312,60 +330,239 @@ class TournamentDetailScreen extends ConsumerWidget {
 }
 
 /// Tournament Brackets Screen
-class TournamentBracketsScreen extends StatefulWidget {
+class TournamentBracketsScreen extends ConsumerStatefulWidget {
   final String tournamentId;
 
   const TournamentBracketsScreen({super.key, required this.tournamentId});
 
   @override
-  State<TournamentBracketsScreen> createState() => _TournamentBracketsScreenState();
+  ConsumerState<TournamentBracketsScreen> createState() => _TournamentBracketsScreenState();
 }
 
-class _TournamentBracketsScreenState extends State<TournamentBracketsScreen> {
+class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScreen> {
+  String? _selectedBracketId;
+
   @override
   Widget build(BuildContext context) {
-    final matches = [
-      {'round': 'Quarterfinals', 'p1': 'Zain Shah', 'p2': 'Farhan Ahmed', 'winner': 'Zain Shah'},
-      {'round': 'Semifinals', 'p1': 'Zain Shah', 'p2': 'Haider Khan', 'winner': 'Pending'},
-    ];
+    final bracketsAsync = ref.watch(eventBracketsProvider(widget.tournamentId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tournament Brackets'),
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: matches.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final m = matches[index];
-          return GlassCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  m['round']!,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.amber),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(m['p1']!, style: TextStyle(fontWeight: m['winner'] == m['p1'] ? FontWeight.bold : FontWeight.normal)),
-                    const Text('vs'),
-                    Text(m['p2']!, style: TextStyle(fontWeight: m['winner'] == m['p2'] ? FontWeight.bold : FontWeight.normal)),
-                  ],
-                ),
-                const Divider(height: 20),
-                Text(
-                  'Winner: ${m['winner']}',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+      appBar: AppBar(title: const Text('Tournament Brackets')),
+      body: bracketsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            const SizedBox(height: 80),
+            const Center(child: Icon(Icons.error_outline, size: 44, color: Colors.red)),
+            const SizedBox(height: 12),
+            Center(child: Text('Could not load brackets', style: Theme.of(context).textTheme.titleSmall)),
+            const SizedBox(height: 12),
+            Center(
+              child: ElevatedButton(
+                onPressed: () => ref.invalidate(eventBracketsProvider(widget.tournamentId)),
+                child: const Text('Retry'),
+              ),
+            ),
+          ],
+        ),
+        data: (brackets) {
+          if (brackets.isEmpty) {
+            return ListView(
+              padding: const EdgeInsets.all(20),
+              children: const [
+                SizedBox(height: 100),
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.account_tree_outlined, size: 48, color: Colors.grey),
+                      SizedBox(height: 12),
+                      Text('No brackets published yet.', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
               ],
-            ),
+            );
+          }
+          final selected = _selectedBracketId != null && brackets.any((b) => b['id']?.toString() == _selectedBracketId)
+              ? _selectedBracketId!
+              : brackets.first['id']?.toString();
+
+          return Column(
+            children: [
+              // Bracket selector — one chip per category bracket.
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  children: [
+                    for (final b in brackets)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(
+                            '${b['division'] ?? ''} ${b['weightClass'] ?? ''} ${b['arm'] ?? ''}'.trim(),
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          selected: b['id']?.toString() == selected,
+                          onSelected: (_) => setState(() => _selectedBracketId = b['id']?.toString()),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(child: _buildBracketMatches(selected)),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildBracketMatches(String? bracketId) {
+    if (bracketId == null || bracketId.isEmpty) {
+      return const Center(child: Text('Select a bracket.', style: TextStyle(color: Colors.grey)));
+    }
+    final detailAsync = ref.watch(bracketDetailsProvider(bracketId));
+    return RefreshIndicator(
+      onRefresh: () async => ref.invalidate(bracketDetailsProvider(bracketId)),
+      child: detailAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => ListView(
+          padding: const EdgeInsets.all(20),
+          children: [Text('Could not load bracket: $e', textAlign: TextAlign.center)],
+        ),
+        data: (bracket) {
+          final status = (bracket['status']?.toString() ?? '').toUpperCase();
+          final matches = (bracket['matches'] as List?) ?? const [];
+          if (matches.isEmpty) {
+            return ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                GlassCard(
+                  child: ListTile(
+                    leading: const Icon(Icons.hourglass_empty),
+                    title: Text(status.isEmpty ? 'Bracket pending' : 'Status: $status'),
+                    subtitle: const Text('Matchups appear once the organizer generates them.'),
+                  ),
+                ),
+              ],
+            );
+          }
+
+          // Group by round for honest round-by-round rendering.
+          final rounds = <int, List<Map<String, dynamic>>>{};
+          for (final raw in matches) {
+            final m = Map<String, dynamic>.from(raw);
+            final round = (m['round'] as num?)?.toInt() ?? 0;
+            rounds.putIfAbsent(round, () => []).add(m);
+          }
+          final sortedRounds = rounds.keys.toList()..sort();
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: sortedRounds.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final round = sortedRounds[index];
+              final roundMatches = rounds[round]!
+                ..sort((a, b) => ((a['matchIndex'] as num?)?.toInt() ?? 0)
+                    .compareTo((b['matchIndex'] as num?)?.toInt() ?? 0));
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    bracket['format']?.toString() == 'DOUBLE_ELIMINATION'
+                        ? 'Round $round (${_bracketTypeLabel(roundMatches.first)})'
+                        : 'Round $round',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.amber),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final m in roundMatches)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _matchCard(m),
+                    ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  String _bracketTypeLabel(Map<String, dynamic> m) {
+    switch ((m['bracketType']?.toString() ?? '').toUpperCase()) {
+      case 'WINNERS':
+        return 'Winners';
+      case 'LOSERS':
+        return 'Losers';
+      case 'GRAND_FINAL':
+        return 'Grand Final';
+      default:
+        return m['bracketType']?.toString() ?? '';
+    }
+  }
+
+  Widget _matchCard(Map<String, dynamic> m) {
+    final aName = m['athleteAName']?.toString() ?? 'TBD';
+    final bName = m['athleteBName']?.toString() ?? 'TBD';
+    final winnerId = m['winnerId']?.toString() ?? '';
+    final aWins = winnerId.isNotEmpty && winnerId == (m['athleteAId']?.toString() ?? '');
+    final bWins = winnerId.isNotEmpty && winnerId == (m['athleteBId']?.toString() ?? '');
+    final scoreLine = m['scoreLine']?.toString() ?? '';
+
+    return GlassCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(aName,
+                    style: TextStyle(fontWeight: aWins ? FontWeight.bold : FontWeight.normal)),
+              ),
+              Text('vs', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              Expanded(
+                child: Text(bName,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(fontWeight: bWins ? FontWeight.bold : FontWeight.normal)),
+              ),
+            ],
+          ),
+          if ((m['athleteAElo'] != null || m['athleteBElo'] != null))
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'ELO ${(m['athleteAElo'] as num?)?.toInt() ?? '—'} : ${(m['athleteBElo'] as num?)?.toInt() ?? '—'}',
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+            ),
+          const Divider(height: 16),
+          Row(
+            children: [
+              Icon(
+                (m['status']?.toString().toUpperCase()) == 'COMPLETED'
+                    ? Icons.check_circle_outline
+                    : Icons.schedule,
+                size: 14,
+                color: Colors.grey,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  scoreLine.isNotEmpty
+                      ? '${m['status'] ?? ''} • $scoreLine'
+                      : '${m['status'] ?? 'SCHEDULED'}',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -438,6 +438,137 @@ class TournamentRepository extends BaseRepository {
     );
   }
 
+  Future<Map<String, dynamic>> getEventStats({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_stats_$eventId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/tournaments/events/$eventId/stats', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> approveRegistration({
+    required String registrationId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'approve_reg_$registrationId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/approve', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> recordWeighIn({
+    required String registrationId,
+    required double weightKg,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'weighin_$registrationId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/weighins', data: {
+        'registrationId': registrationId,
+        'weight': weightKg,
+      }, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> certifyWeighIn({
+    required String registrationId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'certify_weighin_$registrationId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/certify', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> reassignRegistration({
+    required String registrationId,
+    required String newDivision,
+    required String newWeightClass,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'reassign_$registrationId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/registrations/reassign', data: {
+        'registrationId': registrationId,
+        'newDivision': newDivision,
+        'newWeightClass': newWeightClass,
+      }, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> createBracket({
+    required String eventId,
+    required String name,
+    required String format,
+    required String division,
+    required String weightClass,
+    required String arm,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'create_bracket_$eventId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/brackets', data: {
+        'eventId': eventId,
+        'name': name,
+        'format': format,
+        'division': division,
+        'weightClass': weightClass,
+        'arm': arm,
+      }, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  /// Returns the generated seed rows: [{bracketId, athleteId, seedPosition, isManualOverride}]
+  Future<List<Map<String, dynamic>>> generateSeeds({
+    required String bracketId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'generate_seeds_$bracketId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/seeds', cancelToken: token),
+      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+    );
+  }
+
+  Future<Map<String, dynamic>> lockSeeds({
+    required String bracketId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'lock_seeds_$bracketId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/seeds/lock', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> generateBracketMatches({
+    required String bracketId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'gen_matches_$bracketId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/generate', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getTicketTypes({
     required String eventId,
     CancelToken? cancelToken,
