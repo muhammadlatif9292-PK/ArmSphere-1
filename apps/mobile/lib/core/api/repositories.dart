@@ -856,6 +856,10 @@ class NotificationRepository extends BaseRepository {
     }
   }
 
+  Future<void> markAllAsRead({CancelToken? cancelToken}) async {
+    await dioClient.dio.post('/communication/notifications/read-all', cancelToken: cancelToken);
+  }
+
   Future<Map<String, dynamic>> registerDevice({
     required String deviceId,
     required String platform,

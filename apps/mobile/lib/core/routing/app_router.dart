@@ -524,6 +524,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/messages',
+        name: 'conversations_list',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const ConversationsListScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/messages/:conversationId',
         name: 'messaging_thread',
         pageBuilder: (context, state) {

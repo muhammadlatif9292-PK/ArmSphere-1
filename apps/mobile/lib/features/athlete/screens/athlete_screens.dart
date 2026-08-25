@@ -228,6 +228,12 @@ class AthleteDashboardScreen extends ConsumerWidget {
                 color: Colors.blue,
                 onTap: () => context.push('/teams'),
               ),
+              _ShortcutButton(
+                icon: Icons.inbox_outlined,
+                label: 'Inbox',
+                color: Colors.purple,
+                onTap: () => context.push('/messages'),
+              ),
             ],
           ),
           const SizedBox(height: 24),

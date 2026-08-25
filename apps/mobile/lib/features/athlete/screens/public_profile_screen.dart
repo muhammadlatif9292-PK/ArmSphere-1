@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/social_provider.dart';
+import '../../../core/providers/messaging_provider.dart';
 
 class PublicAthleteProfileScreen extends ConsumerWidget {
   final String athleteId;
@@ -159,8 +160,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () =>
-                              context.push('/messages/conv_$athleteId'),
+                          onPressed: () => _startConversation(context, ref, p),
                           child: const Text('Message'),
                         ),
                       ),
@@ -220,6 +220,45 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  /// Opens (or creates) a DIRECT conversation with this athlete and
+  /// navigates to the chat thread.
+  Future<void> _startConversation(
+      BuildContext context, WidgetRef ref, Map<String, dynamic> profile) async {
+    final targetUserId = profile['userId']?.toString();
+    if (targetUserId == null || targetUserId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('This athlete cannot be messaged yet'),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    try {
+      final conversation = await ref
+          .read(conversationsProvider.notifier)
+          .getOrCreateConversation(targetUserId);
+      if (!context.mounted) return;
+      if (conversation == null || conversation['id'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Could not start conversation'),
+              backgroundColor: Colors.red),
+        );
+        return;
+      }
+      context.push('/messages/${conversation['id']}');
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Could not start conversation'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 }
 
