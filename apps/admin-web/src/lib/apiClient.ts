@@ -42,4 +42,25 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Surface real server failure details instead of swallowing them.
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const detail = error?.response?.data?.detail || error?.response?.data?.message;
+    if (detail) {
+      error.message = Array.isArray(detail) ? detail.map((d: any) => d?.message || String(d)).join('; ') : String(detail);
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Unwrap a { success, data } envelope and reject business-level failures.
+export function unwrapMutationData(response: { data: any }): any {
+  const payload = response.data;
+  if (payload && typeof payload === 'object' && payload.success === false) {
+    throw new Error(payload.detail || payload.message || 'Request failed.');
+  }
+  return payload && typeof payload === 'object' && 'data' in payload ? payload.data : payload;
+}
+
 

@@ -1,108 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './apiClient';
-import { 
-  AthleteAdminView, 
-  ReviewProfilePayload, 
-  SuspendAthletePayload, 
-  BlacklistAthletePayload, 
-  ManualCorrectionPayload,
-  RefereeCertification,
-  IssueCertificationPayload
-} from '../types';
+import { apiClient, unwrapMutationData } from './apiClient';
+import { AthleteAdminView, RefereeCertification, IssueCertificationPayload } from '../types';
 
-const getBaseUrlWithoutV1 = () => {
-  const baseURL = apiClient.defaults.baseURL || '/api/v1';
-  if (baseURL.endsWith('/api/v1')) {
-    return baseURL.slice(0, -7) || '/';
-  }
-  return baseURL;
-};
-
-export const DEFAULT_ATHLETES: AthleteAdminView[] = [
-  {
-    id: 'ATH-101',
-    userId: 'USR-101',
-    displayName: 'Usman Riaz',
-    province: 'Punjab',
-    city: 'Lahore',
-    handedness: 'RIGHT',
-    dominantArm: 'RIGHT',
-    weightClass: '105kg+',
-    leftArmElo: 1720,
-    rightArmElo: 1850,
-    isActive: true,
-    verificationStatus: 'VERIFIED',
-    rejectionReason: null,
-  },
-  {
-    id: 'ATH-102',
-    userId: 'USR-102',
-    displayName: 'Muhammad Ali',
-    province: 'Federal',
-    city: 'Islamabad',
-    handedness: 'BOTH',
-    dominantArm: 'RIGHT',
-    weightClass: '85kg',
-    leftArmElo: 1590,
-    rightArmElo: 1620,
-    isActive: true,
-    verificationStatus: 'PENDING',
-    rejectionReason: null,
-  },
-  {
-    id: 'ATH-103',
-    userId: 'USR-103',
-    displayName: 'Zubair Khan',
-    province: 'KPK',
-    city: 'Peshawar',
-    handedness: 'RIGHT',
-    dominantArm: 'RIGHT',
-    weightClass: '95kg',
-    leftArmElo: 1510,
-    rightArmElo: 1540,
-    isActive: true,
-    verificationStatus: 'VERIFIED',
-    rejectionReason: null,
-  },
-];
-
-// 1. GET /athletes
 export function useAthletes(filters?: { search?: string; status?: string; province?: string }) {
   return useQuery<AthleteAdminView[]>({
-    queryKey: ['admin', 'athletes', filters],
+    queryKey: ['admin', 'athletes', filters ?? {}],
     queryFn: async () => {
-      try {
-        const response = await apiClient.get('/admin/athletes', {
-          baseURL: getBaseUrlWithoutV1(),
-          params: filters,
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data?.data || response.data || [];
-        }
-      } catch (err) {
-        // Fallback
+      const response = await apiClient.get('/admin/athletes', {
+        params: {
+          search: filters?.search || undefined,
+          status: filters?.status || undefined,
+          province: filters?.province || undefined,
+        },
+      });
+      const payload = unwrapMutationData(response);
+      if (!Array.isArray(payload)) {
+        throw new Error('Invalid athletes payload from server.');
       }
-      return DEFAULT_ATHLETES;
+      return payload as AthleteAdminView[];
     },
   });
 }
 
-// 2. POST /athletes/:id/review
 export function useReviewProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: ReviewProfilePayload }) => {
-      try {
-        const response = await apiClient.post(`/admin/athletes/${id}/review`, payload, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Profile reviewed' };
+    mutationFn: async ({ id, payload }: { id: string; payload: { status: string; reason?: string } }) => {
+      const response = await apiClient.post(`/admin/athletes/${id}/review`, payload);
+      return unwrapMutationData(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'athletes'] });
@@ -110,22 +35,12 @@ export function useReviewProfile() {
   });
 }
 
-// 3. POST /athletes/:id/suspend
 export function useSuspendAthlete() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: SuspendAthletePayload }) => {
-      try {
-        const response = await apiClient.post(`/admin/athletes/${id}/suspend`, payload, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Athlete suspended' };
+    mutationFn: async ({ id, payload }: { id: string; payload: { reason: string; durationDays?: number } }) => {
+      const response = await apiClient.post(`/admin/athletes/${id}/suspend`, payload);
+      return unwrapMutationData(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'athletes'] });
@@ -133,22 +48,12 @@ export function useSuspendAthlete() {
   });
 }
 
-// 4. POST /athletes/:id/blacklist
 export function useBlacklistAthlete() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: BlacklistAthletePayload }) => {
-      try {
-        const response = await apiClient.post(`/admin/athletes/${id}/blacklist`, payload, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Athlete blacklisted' };
+    mutationFn: async ({ id, payload }: { id: string; payload: { reason: string } }) => {
+      const response = await apiClient.post(`/admin/athletes/${id}/blacklist`, payload);
+      return unwrapMutationData(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'athletes'] });
@@ -156,22 +61,12 @@ export function useBlacklistAthlete() {
   });
 }
 
-// 5. POST /athletes/:id/recover
 export function useRecoverAthlete() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      try {
-        const response = await apiClient.post(`/admin/athletes/${id}/recover`, {}, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Athlete recovered' };
+    mutationFn: async (athleteId: string) => {
+      const response = await apiClient.post(`/admin/athletes/${athleteId}/recover`);
+      return unwrapMutationData(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'athletes'] });
@@ -179,22 +74,12 @@ export function useRecoverAthlete() {
   });
 }
 
-// 6. PATCH /athletes/:id/correct
 export function useCorrectAthlete() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: ManualCorrectionPayload }) => {
-      try {
-        const response = await apiClient.patch(`/admin/athletes/${id}/correct`, payload, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Correction applied' };
+    mutationFn: async ({ id, payload }: { id: string; payload: Record<string, any> }) => {
+      const response = await apiClient.patch(`/admin/athletes/${id}/correct`, payload);
+      return unwrapMutationData(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'athletes'] });
@@ -202,71 +87,43 @@ export function useCorrectAthlete() {
   });
 }
 
-// 7. GET /referees/:userId/certifications
 export function useRefereeCertifications(userId?: string) {
   return useQuery<RefereeCertification[]>({
-    queryKey: ['referees', 'certifications', userId],
+    queryKey: ['referee-certifications', userId],
     queryFn: async () => {
-      if (!userId) return [];
-      try {
-        const response = await apiClient.get(`/referees/${userId}/certifications`, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data?.data || response.data || [];
-        }
-      } catch (err) {
-        // Fallback
+      const response = await apiClient.get(`/referees/${userId}/certifications`);
+      const payload = unwrapMutationData(response);
+      if (!Array.isArray(payload)) {
+        throw new Error('Invalid referee certifications payload from server.');
       }
-      return [];
+      return payload as RefereeCertification[];
     },
     enabled: !!userId,
   });
 }
 
-// 8. POST /referees/:userId/certifications
-export function useIssueRefereeCertification() {
+export function useIssueRefereeCertification(userId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, payload }: { userId: string; payload: IssueCertificationPayload }) => {
-      try {
-        const response = await apiClient.post(`/referees/${userId}/certifications`, payload, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data?.data || response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Certification issued' };
+      const response = await apiClient.post(`/referees/${userId}/certifications`, payload);
+      return unwrapMutationData(response);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['referees', 'certifications', variables.userId] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['referee-certifications', variables.userId] });
     },
   });
 }
 
-// 9. PATCH /referees/certifications/:id/revoke
-export function useRevokeRefereeCertification() {
+export function useRevokeRefereeCertification(userId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id }: { id: string; userId: string }) => {
-      try {
-        const response = await apiClient.patch(`/referees/certifications/${id}/revoke`, {}, {
-          baseURL: getBaseUrlWithoutV1(),
-        });
-        if (response.data && response.data.success !== false) {
-          return response.data?.data || response.data;
-        }
-      } catch (err) {
-        // Fallback
-      }
-      return { success: true, message: 'Certification revoked' };
+      const response = await apiClient.patch(`/referees/certifications/${id}/revoke`);
+      return unwrapMutationData(response);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['referees', 'certifications', variables.userId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['referee-certifications', userId] });
     },
   });
 }
-

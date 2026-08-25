@@ -70,9 +70,7 @@ export interface DashboardStats {
   };
   systemStatus: {
     database: string;
-    redis: string;
-    websockets: string;
-    workers: string;
+    scheduledJobs: string;
     latencyMs: number;
   };
 }

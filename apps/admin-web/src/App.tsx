@@ -161,16 +161,6 @@ export default function App() {
                 }
               />
               <Route
-                path="/registrations"
-                element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <AthletesPage />
-                    </AdminShell>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/moderation"
                 element={
                   <ProtectedRoute>
@@ -201,41 +191,11 @@ export default function App() {
                 }
               />
               <Route
-                path="/records"
-                element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <GovernancePage />
-                    </AdminShell>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/verification"
-                element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <AthletesPage />
-                    </AdminShell>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/audit"
                 element={
                   <ProtectedRoute>
                     <AdminShell>
-                      <GovernancePage />
-                    </AdminShell>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/platform-health"
-                element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <AnalyticsPage />
+                      <AuditPage />
                     </AdminShell>
                   </ProtectedRoute>
                 }
