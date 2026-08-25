@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import 'tournament_screens.dart';
 
 const List<String> _kDivisions = ['SENIOR', 'JUNIOR', 'FEMALE'];
 const List<String> _kWeightClasses = ['-70kg', '-85kg', '-95kg', '+95kg'];
-const List<String> _kArms = ['RIGHT', 'LEFT', 'BOTH'];
 
 /// Live operator console for one event: registration approvals, manual
 /// payment confirmation, weigh-ins and bracket production. Every action
@@ -63,7 +63,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       case 'PENDING':
         return Colors.orange;
       case 'PENDING_PAYMENT':
-        return Colors.amber.sh700;
+        return Colors.amber.shade700;
       case 'WAITLISTED':
         return Colors.purple;
       case 'FAILED':
@@ -177,7 +177,6 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       return;
     }
     String combo = available.first;
-    final parts = combo.split('|');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
