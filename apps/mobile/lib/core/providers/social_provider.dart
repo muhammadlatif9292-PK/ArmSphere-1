@@ -167,6 +167,20 @@ final teamCreationProvider = AsyncNotifierProvider.autoDispose<TeamCreationNotif
   return TeamCreationNotifier();
 });
 
+/// Notifier to fetch the teams the current user belongs to.
+class MyTeamsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
+  @override
+  Future<List<Map<String, dynamic>>> build() async {
+    final repo = ref.watch(socialRepositoryProvider);
+    return repo.getMyTeams();
+  }
+}
+
+/// Provider for MyTeamsNotifier.
+final myTeamsProvider = AsyncNotifierProvider.autoDispose<MyTeamsNotifier, List<Map<String, dynamic>>>(() {
+  return MyTeamsNotifier();
+});
+
 /// Notifier to list and manage blocked users
 class BlockedUsersNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override

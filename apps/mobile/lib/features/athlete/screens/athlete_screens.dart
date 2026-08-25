@@ -226,7 +226,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                 icon: Icons.group,
                 label: 'My Team',
                 color: Colors.blue,
-                onTap: () => context.push('/teams/my-team-id'),
+                onTap: () => context.push('/teams'),
               ),
             ],
           ),

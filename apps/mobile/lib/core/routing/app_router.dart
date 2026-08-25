@@ -324,6 +324,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/teams',
+        name: 'teams_list',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const TeamsListScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/teams/create',
         name: 'create_team',
         pageBuilder: (context, state) => AppTransitionPage(

@@ -197,7 +197,22 @@ class AthleteRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'athlete_search_$query',
       cancelToken: cancelToken,
-      request: (token) => dioClient.dio.get('/athletes/search', queryParameters: {'q': query}, cancelToken: token),
+      request: (token) => dioClient.dio.get('/athletes/search', queryParameters: {'displayName': query}, cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getClubs({CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'athlete_clubs',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/athletes/clubs', cancelToken: token),
       parse: (data) {
         final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
         if (payload is List) {
@@ -1344,6 +1359,24 @@ class SocialRepository extends BaseRepository {
       parse: (data) {
         final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
         return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getMyTeams({CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'my_teams',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/social/my-teams',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
       },
     );
   }

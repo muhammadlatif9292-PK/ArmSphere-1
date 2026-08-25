@@ -48,6 +48,11 @@ final athleteSearchProvider = FutureProvider.autoDispose<List<Map<String, dynami
   return repo.searchAthletes(query);
 });
 
+final clubsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(athleteRepositoryProvider);
+  return repo.getClubs();
+});
+
 final publicAthleteProfileProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, athleteId) async {
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getProfile(athleteId);

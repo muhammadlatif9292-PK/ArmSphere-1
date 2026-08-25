@@ -23,5 +23,6 @@ socialRouter.post("/teams", authenticate, SocialController.createTeam);
 socialRouter.post("/teams/:teamId/members", authenticate, SocialController.addTeamMember);
 socialRouter.delete("/teams/:teamId/members/:athleteId", authenticate, SocialController.removeTeamMember);
 socialRouter.get("/teams/:teamId", authenticate, SocialController.getTeam);
+socialRouter.get("/my-teams", authenticate, SocialController.getMyTeams);
 
 export default socialRouter;

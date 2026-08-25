@@ -234,6 +234,25 @@ export class SocialController {
   }
 
   /**
+   * Get all teams the calling user belongs to
+   */
+  static async getMyTeams(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const athleteId = await SocialController.getAthleteProfileIdForUser(userId);
+
+      const teamsList = await SocialService.getMyTeams(athleteId);
+
+      res.status(200).json({
+        success: true,
+        data: teamsList,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Check if caller is following a target athlete
    */
   static async getFollowStatus(req: Request, res: Response, next: NextFunction) {

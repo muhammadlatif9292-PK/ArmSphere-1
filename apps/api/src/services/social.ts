@@ -420,6 +420,31 @@ export class SocialService {
   }
 
   /**
+   * Retrieve all teams the calling user belongs to via their membership
+   */
+  static async getMyTeams(athleteId: string) {
+    const memberships = await db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        description: teams.description,
+        foundedAt: teams.foundedAt,
+        clubId: teams.clubId,
+        createdAt: teams.createdAt,
+        role: teamMembers.role,
+        joinedAt: teamMembers.joinedAt,
+        clubName: athleteClubs.name,
+      })
+      .from(teamMembers)
+      .innerJoin(teams, eq(teamMembers.teamId, teams.id))
+      .leftJoin(athleteClubs, eq(teams.clubId, athleteClubs.id))
+      .where(eq(teamMembers.athleteId, athleteId))
+      .orderBy(desc(teamMembers.joinedAt));
+
+    return memberships;
+  }
+
+  /**
    * Check if a follower is following a target athlete
    */
   static async isFollowing(followerId: string, followingId: string): Promise<boolean> {
