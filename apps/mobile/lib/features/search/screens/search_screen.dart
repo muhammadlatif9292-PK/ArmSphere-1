@@ -141,7 +141,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                                         : null,
                                   ),
                                   title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: subtitle.isNotEmpty ? Text(subtitle, fontSize: 12) : null,
+                                  subtitle: subtitle.isNotEmpty ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
                                   trailing: const Icon(Icons.chevron_right),
                                 ),
                               ),

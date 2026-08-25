@@ -94,7 +94,7 @@ class AuthRepository extends BaseRepository {
     final inner = e.error;
     if (inner is ApiException) throw inner;
     if (inner is OfflineException) throw inner;
-    rethrow;
+    throw e;
   }
 
   /// Credential flows never go through [BaseRepository.executeRequest]:

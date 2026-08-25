@@ -126,7 +126,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: ActionChip(
+                child: InputChip(
                   label: Text('Province: $province', style: const TextStyle(fontSize: 11)),
                   onDeleted: () => ref.read(rankingsProvinceProvider.notifier).state = '',
                 ),
