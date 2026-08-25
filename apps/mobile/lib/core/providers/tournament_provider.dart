@@ -61,6 +61,9 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     ref.invalidate(eventRegistrationsProvider(eventId));
     ref.invalidate(eventStatsProvider(eventId));
     ref.invalidate(eventBracketsProvider(eventId));
+    ref.invalidate(eventMatchesProvider(eventId));
+    ref.invalidate(matchTablesProvider);
+    ref.invalidate(refereeDirectoryProvider);
   }
 
   /// Runs a lifecycle mutation and refreshes every event-scoped list on success.
@@ -110,6 +113,24 @@ final eventBracketsProvider = FutureProvider.autoDispose.family<List<Map<String,
 final eventStatsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, eventId) async {
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getEventStats(eventId: eventId);
+});
+
+/// Every bracket match in one event (match-day board + referee assignments).
+final eventMatchesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.getEventMatches(eventId: eventId);
+});
+
+/// Physical match tables (IDLE/ACTIVE) used for match calls.
+final matchTablesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.listTables();
+});
+
+/// Referee directory (admin surface; director roles only).
+final refereeDirectoryProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.listReferees();
 });
 
 final ticketTypesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {

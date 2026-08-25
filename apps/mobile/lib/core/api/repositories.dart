@@ -569,6 +569,108 @@ class TournamentRepository extends BaseRepository {
     );
   }
 
+  // --- Match-day operations (Phase 5: officials) ---
+
+  /// Every bracket match in one event, with athlete names and referee/table ids.
+  Future<List<Map<String, dynamic>>> getEventMatches({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_matches_$eventId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/tournaments/events/$eventId/matches', cancelToken: token),
+      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listTables({CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'match_tables',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/tournaments/tables', cancelToken: token),
+      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+    );
+  }
+
+  Future<Map<String, dynamic>> createTable({
+    required String name,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'create_table',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/tables', data: {'name': name}, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  /// Referee directory from the admin surface (director roles only).
+  Future<List<Map<String, dynamic>>> listReferees({CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'referee_directory',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/admin/referees', cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> assignReferee({
+    required String matchId,
+    required String refereeId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'assign_referee_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/matches/referee', data: {
+        'matchId': matchId,
+        'refereeId': refereeId,
+      }, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> callMatchToTable({
+    required String matchId,
+    required String tableId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'call_match_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/matches/call', data: {
+        'matchId': matchId,
+        'tableId': tableId,
+      }, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> submitTournamentResult({
+    required String matchId,
+    required String winnerId,
+    required String scoreLine,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'match_result_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/matches/result', data: {
+        'matchId': matchId,
+        'winnerId': winnerId,
+        'scoreLine': scoreLine,
+      }, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getTicketTypes({
     required String eventId,
     CancelToken? cancelToken,

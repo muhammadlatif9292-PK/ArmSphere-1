@@ -456,4 +456,24 @@ export class TournamentController {
       next(error);
     }
   }
+
+  static async listTables(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tables = await TournamentService.listTables();
+      res.json(tables);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getEventMatches(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await TournamentService.getEvent(id); // 404s when the event does not exist
+      const matches = await TournamentService.getEventMatches(id);
+      res.json(matches);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

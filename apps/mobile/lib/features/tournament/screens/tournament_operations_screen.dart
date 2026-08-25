@@ -8,6 +8,7 @@ import 'tournament_screens.dart';
 
 const List<String> _kDivisions = ['SENIOR', 'JUNIOR', 'FEMALE'];
 const List<String> _kWeightClasses = ['-70kg', '-85kg', '-95kg', '+95kg'];
+const List<String> _kScoreOptions = ['3-0', '3-1', '3-2', '2-3', '1-3', '0-3'];
 
 /// Live operator console for one event: registration approvals, manual
 /// payment confirmation, weigh-ins and bracket production. Every action
@@ -228,12 +229,215 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     );
   }
 
+  Future<void> _createTableDialog() async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Match Table'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Table name'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Add')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final name = controller.text.trim();
+    if (name.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Table name needs at least 2 characters.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).createTable(name: name),
+      successMessage: 'Table added.',
+    );
+  }
+
+  Future<void> _assignRefereeDialog(Map<String, dynamic> match) async {
+    List<Map<String, dynamic>> referees;
+    try {
+      referees = await ref.read(refereeDirectoryProvider.future);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load referee directory: $e'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (referees.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No certified referees registered in the federation directory yet.')),
+      );
+      return;
+    }
+    String refereeId = match['refereeId']?.toString() ?? '';
+    final validCurrent = referees.any((r) => r['id']?.toString() == refereeId);
+    if (!validCurrent) refereeId = referees.first['id'].toString();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Assign Referee — R${match['round']} M${match['matchIndex']}'),
+          content: DropdownButtonFormField<String>(
+            value: refereeId,
+            isExpanded: true,
+            items: [
+              for (final r in referees)
+                DropdownMenuItem(
+                  value: r['id'].toString(),
+                  child: Text(r['fullName']?.toString() ?? r['email']?.toString() ?? 'Referee',
+                      overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (v) => setDialogState(() => refereeId = v ?? refereeId),
+            decoration: const InputDecoration(labelText: 'Certified referee'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Assign')),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).assignReferee(matchId: match['id'].toString(), refereeId: refereeId),
+      successMessage: 'Referee assigned.',
+    );
+  }
+
+  Future<void> _callToTableDialog(Map<String, dynamic> match) async {
+    List<Map<String, dynamic>> tables;
+    try {
+      tables = await ref.read(matchTablesProvider.future);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not load tables: $e'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    final idle = tables.where((t) => (t['status']?.toString().toUpperCase()) == 'IDLE').toList();
+    if (!mounted) return;
+    if (idle.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No idle tables available. Add a table or free one up first.')),
+      );
+      return;
+    }
+    String tableId = idle.first['id'].toString();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Call to Table — R${match['round']} M${match['matchIndex']}'),
+          content: DropdownButtonFormField<String>(
+            value: tableId,
+            isExpanded: true,
+            items: [
+              for (final t in idle)
+                DropdownMenuItem(
+                  value: t['id'].toString(),
+                  child: Text(t['name']?.toString() ?? 'Table', overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (v) => setDialogState(() => tableId = v ?? tableId),
+            decoration: const InputDecoration(labelText: 'Idle table'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Call')),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).callMatchToTable(matchId: match['id'].toString(), tableId: tableId),
+      successMessage: 'Match called to table.',
+    );
+  }
+
+  Future<void> _submitResultDialog(Map<String, dynamic> match) async {
+    final athleteAId = match['athleteAId']?.toString() ?? '';
+    final athleteBId = match['athleteBId']?.toString() ?? '';
+    final nameA = match['athleteAName']?.toString() ?? 'Athlete A';
+    final nameB = match['athleteBName']?.toString() ?? 'Athlete B';
+    if (athleteAId.isEmpty || athleteBId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Both slots must be filled before a result can be recorded.')),
+      );
+      return;
+    }
+    String winnerId = athleteAId;
+    String scoreLine = _kScoreOptions.first;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('Record Result — R${match['round']} M${match['matchIndex']}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: winnerId,
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem(value: athleteAId, child: Text(nameA, overflow: TextOverflow.ellipsis)),
+                  DropdownMenuItem(value: athleteBId, child: Text(nameB, overflow: TextOverflow.ellipsis)),
+                ],
+                onChanged: (v) => setDialogState(() => winnerId = v ?? winnerId),
+                decoration: const InputDecoration(labelText: 'Winner'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: scoreLine,
+                items: [for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s))],
+                onChanged: (v) => setDialogState(() => scoreLine = v ?? scoreLine),
+                decoration: const InputDecoration(labelText: 'Score (winner perspective)'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Submit')),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).submitTournamentResult(
+            matchId: match['id'].toString(),
+            winnerId: winnerId,
+            scoreLine: scoreLine,
+          ),
+      successMessage: 'Result recorded — bracket progression updated.',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
     final statsAsync = ref.watch(eventStatsProvider(widget.tournamentId));
     final regsAsync = ref.watch(eventRegistrationsProvider(widget.tournamentId));
     final bracketsAsync = ref.watch(eventBracketsProvider(widget.tournamentId));
+    final tablesAsync = ref.watch(matchTablesProvider);
+    final matchesAsync = ref.watch(eventMatchesProvider(widget.tournamentId));
+    final refereesAsync = ref.watch(refereeDirectoryProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Event Operations')),
@@ -242,6 +446,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
           ref.invalidate(eventStatsProvider(widget.tournamentId));
           ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
           ref.invalidate(eventBracketsProvider(widget.tournamentId));
+          ref.invalidate(matchTablesProvider);
+          ref.invalidate(eventMatchesProvider(widget.tournamentId));
+          ref.invalidate(refereeDirectoryProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -347,6 +554,51 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                       child: ListTile(title: Text('No brackets yet. Create one from approved registrations.')));
                 }
                 return Column(children: [for (final b in brackets) _bracketCard(b)]);
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // --- Match-day tables ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('MATCH TABLES',
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold)),
+                TextButton.icon(
+                  onPressed: _busy ? null : _createTableDialog,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            tablesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => GlassCard(child: ListTile(title: Text('Could not load tables: $e'))),
+              data: (tables) {
+                if (tables.isEmpty) {
+                  return const GlassCard(child: ListTile(title: Text('No tables registered yet. Add one to start calling matches.')));
+                }
+                return Column(children: [for (final t in tables) _tableTile(t)]);
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // --- Match-day board ---
+            Text('MATCH-DAY BOARD',
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            matchesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => GlassCard(child: ListTile(title: Text('Could not load matches: $e'))),
+              data: (matches) {
+                if (matches.isEmpty) {
+                  return const GlassCard(
+                      child: ListTile(title: Text('No matches generated yet. Generate matches from a locked bracket above.')));
+                }
+                return Column(children: [for (final m in matches) _matchDayCard(m, refereesAsync.value ?? const [])]);
               },
             ),
           ],
@@ -513,6 +765,128 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                   ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _matchStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+        return Colors.green;
+      case 'CALLED':
+        return Colors.blue;
+      case 'READY':
+        return Colors.orange;
+      default:
+        return Colors.blueGrey; // BYE and unknowns
+    }
+  }
+
+  Widget _tableTile(Map<String, dynamic> t) {
+    final status = (t['status']?.toString() ?? 'IDLE').toUpperCase();
+    final busy = status == 'ACTIVE';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+        child: ListTile(
+          leading: Icon(busy ? Icons.sports : Icons.table_restaurant,
+              color: busy ? Colors.orange : Colors.green, size: 22),
+          title: Text(t['name']?.toString() ?? 'Table',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: busy ? const Text('Match in progress', style: TextStyle(fontSize: 11)) : null,
+          trailing: Chip(
+            label: Text(status,
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            backgroundColor:
+                (busy ? Colors.orange : Colors.green).withOpacity(0.15),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _matchDayCard(Map<String, dynamic> m, List<Map<String, dynamic>> referees) {
+    final status = (m['status']?.toString() ?? '').toUpperCase();
+    final isBye = status == 'BYE';
+    final completed = status == 'COMPLETED';
+    final nameA = m['athleteAName']?.toString() ?? 'TBD';
+    final nameB = m['athleteBName']?.toString() ?? 'TBD';
+    final category =
+        '${m['division'] ?? ''} • ${m['weightClass'] ?? ''} • ${m['arm'] ?? ''}';
+    final refereeId = m['refereeId']?.toString();
+    final refereeName = refereeId == null || refereeId.isEmpty
+        ? null
+        : referees
+            .where((r) => r['id']?.toString() == refereeId)
+            .map((r) => r['fullName']?.toString() ?? r['email']?.toString() ?? 'Referee')
+            .firstOrNull;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GlassCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'R${m['round']} • M${m['matchIndex']} — ${m['bracketName'] ?? 'Bracket'}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Chip(
+                  label: Text(status.isEmpty ? 'UNKNOWN' : status,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                  backgroundColor: _matchStatusColor(status).withOpacity(0.15),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(category, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Text(isBye ? '$nameA — BYE (advances)' : '$nameA  vs  $nameB',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            if (completed && m['scoreLine'] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('Final score: ${m['scoreLine']}',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              ),
+            if (refereeName != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text('Referee: $refereeName',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              ),
+            if (!isBye && !completed) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: _busy ? null : () => _assignRefereeDialog(m),
+                    child: Text(refereeName == null ? 'Assign Referee' : 'Change Referee'),
+                  ),
+                  if (status == 'READY')
+                    OutlinedButton(
+                      onPressed: _busy ? null : () => _callToTableDialog(m),
+                      child: const Text('Call to Table'),
+                    ),
+                  OutlinedButton(
+                    onPressed: _busy ? null : () => _submitResultDialog(m),
+                    child: const Text('Record Result'),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -35,12 +35,14 @@ class LiveMatchesNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dyna
     try {
       final repo = ref.read(matchRepositoryProvider);
       await repo.submitMatchResult(matchPayload);
-      
+
       // Refresh database to overwrite with real server state
       ref.invalidateSelf();
     } catch (e) {
-      // Rollback to original valid server state on total network exception
+      // Rollback to original valid server state on total network exception,
+      // then rethrow so callers can surface the real backend error.
       state = originalState;
+      rethrow;
     }
   }
 }

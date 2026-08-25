@@ -151,11 +151,25 @@ tournamentRouter.post(
 );
 
 // --- Table & Referee Match Management ---
+tournamentRouter.get(
+  "/tables",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.listTables
+);
+
 tournamentRouter.post(
   "/tables",
   authenticate,
   requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.createTable
+);
+
+tournamentRouter.get(
+  "/events/:id/matches",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.getEventMatches
 );
 
 tournamentRouter.post(

@@ -28,6 +28,10 @@ class AthleteDashboardScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final profile = authState.userProfile ?? {};
     final displayName = profile['displayName'] ?? 'Athlete';
+    // Officials get a direct console entry on the home tab.
+    final role = profile['role']?.toString().toUpperCase();
+    const officialRoles = {'REFEREE', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+    final isOfficial = role != null && officialRoles.contains(role);
     final profileAsync = ref.watch(athleteProfileProvider);
     // Match rows and PRs are keyed by the athlete PROFILE id, not the auth user id.
     final myProfileId = profileAsync.value?['id']?.toString();
@@ -193,6 +197,13 @@ class AthleteDashboardScreen extends ConsumerWidget {
             crossAxisSpacing: 16,
             childAspectRatio: 2.2,
             children: [
+              if (isOfficial)
+                _ShortcutButton(
+                  icon: Icons.sports,
+                  label: 'Referee Console',
+                  color: Colors.deepOrange,
+                  onTap: () => context.push('/referee/dashboard'),
+                ),
               _ShortcutButton(
                 icon: Icons.sports_kabaddi,
                 label: 'Record Match',

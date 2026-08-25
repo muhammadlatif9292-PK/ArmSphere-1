@@ -5,8 +5,10 @@ import 'dependency_providers.dart';
 class RefereeNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    // Real federation referee directory (admin surface). Returns
+    // { success, data } envelope with referee users + certification metrics.
     final dioClient = ref.watch(dioClientProvider);
-    final response = await dioClient.dio.get('/matches');
+    final response = await dioClient.dio.get('/admin/referees');
     final body = response.data;
     final payload = (body is Map && body.containsKey('data'))
         ? body['data']
@@ -16,32 +18,6 @@ class RefereeNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>
       return payload.map((e) => Map<String, dynamic>.from(e)).toList();
     }
     return [];
-  }
-
-  Future<bool> verifyMatch(String matchId, {required int scoreA, required int scoreB}) async {
-    try {
-      final dioClient = ref.read(dioClientProvider);
-      await dioClient.dio.post('/matches/$matchId/verify', data: {
-        'scoreA': scoreA,
-        'scoreB': scoreB,
-        'status': 'VERIFIED',
-      });
-      ref.invalidateSelf();
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> submitMatchScorepad(Map<String, dynamic> matchData) async {
-    try {
-      final dioClient = ref.read(dioClientProvider);
-      await dioClient.dio.post('/matches', data: matchData);
-      ref.invalidateSelf();
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 }
 

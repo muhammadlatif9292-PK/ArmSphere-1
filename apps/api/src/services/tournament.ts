@@ -1,4 +1,5 @@
 import { eq, and, desc, asc, not, isNull, sql, inArray } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../config/db.js";
 import crypto from "crypto";
 import { 
@@ -1028,6 +1029,11 @@ export class TournamentService {
     return table;
   }
 
+  static async listTables() {
+    logger.info("Listing match tables");
+    return db.select().from(matchTables).orderBy(asc(matchTables.name));
+  }
+
   static async assignReferee(matchId: string, refereeId: string) {
     logger.info({ matchId, refereeId }, "Assigning referee to tournament match");
 
@@ -1575,6 +1581,42 @@ export class TournamentService {
       .from(eventRegistrations)
       .innerJoin(athleteProfiles, eq(athleteProfiles.id, eventRegistrations.athleteId))
       .where(eq(eventRegistrations.eventId, eventId));
+  }
+
+  /// Every bracket match across one event, with athlete display names and the
+  /// bracket category — powers the operator match-day board and referee
+  /// assignment views without N+1 bracket fetches.
+  static async getEventMatches(eventId: string) {
+    logger.info({ eventId }, "Getting all bracket matches for tournament event");
+    const athleteA = alias(athleteProfiles, "athlete_a");
+    const athleteB = alias(athleteProfiles, "athlete_b");
+    return db
+      .select({
+        id: tournamentMatches.id,
+        bracketId: tournamentMatches.bracketId,
+        bracketName: brackets.name,
+        division: brackets.division,
+        weightClass: brackets.weightClass,
+        arm: brackets.arm,
+        round: tournamentMatches.round,
+        matchIndex: tournamentMatches.matchIndex,
+        bracketType: tournamentMatches.bracketType,
+        athleteAId: tournamentMatches.athleteAId,
+        athleteBId: tournamentMatches.athleteBId,
+        athleteAName: athleteA.displayName,
+        athleteBName: athleteB.displayName,
+        winnerId: tournamentMatches.winnerId,
+        scoreLine: tournamentMatches.scoreLine,
+        status: tournamentMatches.status,
+        tableId: tournamentMatches.tableId,
+        refereeId: tournamentMatches.refereeId
+      })
+      .from(tournamentMatches)
+      .innerJoin(brackets, eq(brackets.id, tournamentMatches.bracketId))
+      .leftJoin(athleteA, eq(athleteA.id, tournamentMatches.athleteAId))
+      .leftJoin(athleteB, eq(athleteB.id, tournamentMatches.athleteBId))
+      .where(eq(brackets.eventId, eventId))
+      .orderBy(asc(tournamentMatches.round), asc(tournamentMatches.matchIndex));
   }
 
   static async confirmManualPayment(registrationId: string, actorId: string, actorRole: string) {
