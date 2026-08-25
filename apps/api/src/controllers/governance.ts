@@ -58,7 +58,7 @@ export class GovernanceController {
    */
   static async listDisputes(req: Request, res: Response, next: NextFunction) {
     try {
-      const disputesList = await GovernanceService.listDisputes();
+      const disputesList = await GovernanceService.listDisputes(req.user!);
       res.status(200).json(disputesList);
     } catch (error) {
       next(error);
@@ -128,7 +128,8 @@ export class GovernanceController {
         submitterId,
         validated.fileType,
         validated.fileUrl,
-        validated.rawFileContent
+        validated.rawFileContent,
+        req.user!.role
       );
 
       res.status(201).json({
@@ -150,7 +151,7 @@ export class GovernanceController {
       const validated = addCommentSchema.parse(req.body);
       const authorId = req.user!.id;
 
-      const comment = await GovernanceService.addComment(id, authorId, validated.comment);
+      const comment = await GovernanceService.addComment(id, authorId, validated.comment, req.user!.role);
 
       res.status(201).json({
         success: true,

@@ -134,6 +134,15 @@ export const envSchema = z.object({
         message: "Production JWT secrets must not use placeholder or default fallback values.",
       });
     }
+
+    // An empty webhook secret makes constructEvent HMACs trivially forgeable.
+    if (!data.STRIPE_WEBHOOK_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["STRIPE_WEBHOOK_SECRET"],
+        message: "Production STRIPE_WEBHOOK_SECRET is required to verify Stripe webhook signatures.",
+      });
+    }
   }
 });
 

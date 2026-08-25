@@ -1,4 +1,6 @@
 import { Router, Request, Response } from "express";
+import { authenticate, requireRole } from "../middlewares/auth.js";
+import { UserRole } from "@armsphere/types";
 import { db } from "../config/db.js";
 import { sql } from "drizzle-orm";
 
@@ -90,6 +92,12 @@ export async function metricsHandler(req: Request, res: Response) {
 observabilityRouter.get("/health", healthHandler);
 observabilityRouter.get("/ready", readyHandler);
 observabilityRouter.get("/live", liveHandler);
-observabilityRouter.get("/metrics", metricsHandler);
+// Process-level telemetry is infrastructure-sensitive; restrict to federation staff.
+observabilityRouter.get(
+  "/metrics",
+  authenticate,
+  requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR),
+  metricsHandler
+);
 
 export default observabilityRouter;

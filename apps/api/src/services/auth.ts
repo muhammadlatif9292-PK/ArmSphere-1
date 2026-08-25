@@ -384,6 +384,94 @@ export class AuthService {
   }
 
   /**
+   * Issues the session for a login whose second factor (TOTP challenge or
+   * recovery code) has already been verified upstream. Mirrors the token,
+   * session-row, and audit behavior of a successful `login` — without any
+   * password check.
+   */
+  static async completeMfaLogin(
+    userId: string,
+    context?: { ipAddress?: string; userAgent?: string; rememberDevice?: boolean }
+  ) {
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+    if (!user.isActive) {
+      throw new UnauthorizedError("Your user account has been disabled. Please contact support.");
+    }
+
+    const userAny = user as any;
+    const ip = context?.ipAddress || "unknown-ip";
+    const userAgent = context?.userAgent || "unknown-ua";
+
+    const tokenFamily = uuidv4();
+    const accessToken = jwt.sign(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role as UserRole,
+        type: "access" as const,
+        mfaRequired: !!userAny.mfaEnabled,
+        mfaVerified: true,
+      },
+      env.JWT_ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+    const refreshToken = generateRefreshToken(user.id, user.email, user.role as UserRole, tokenFamily, env.JWT_REFRESH_SECRET);
+
+    const refreshTokenHash = sha256(refreshToken);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 Days
+
+    await db.insert(userSessions).values({
+      userId: user.id,
+      tokenFamily,
+      refreshTokenHash,
+      isRevoked: false,
+      expiresAt,
+      ipAddress: ip,
+      userAgent: userAgent,
+    });
+
+    let deviceTrustToken = null;
+    if (context?.rememberDevice) {
+      const deviceTrustPayload = {
+        sub: user.id,
+        email: user.email,
+        type: "device_trust" as const,
+      };
+      deviceTrustToken = jwt.sign(deviceTrustPayload, env.JWT_ACCESS_SECRET, { expiresIn: "30d" });
+    }
+
+    await db.insert(auditLogs).values({
+      userId: user.id,
+      action: "AUTH_LOGIN",
+      details: { tokenFamily, mfaCompleted: true },
+      ipAddress: ip,
+      userAgent: userAgent,
+    });
+
+    const [athleteProfile] = await db
+      .select()
+      .from(athleteProfiles)
+      .where(and(eq(athleteProfiles.userId, user.id), eq(athleteProfiles.isDeleted, false)))
+      .limit(1);
+    const isOnboarded = !!athleteProfile;
+
+    const { passwordHash, ...userResponse } = user;
+    return {
+      mfaRequired: false,
+      user: {
+        ...userResponse,
+        isOnboarded,
+      },
+      accessToken,
+      refreshToken,
+      deviceTrustToken,
+    };
+  }
+
+  /**
    * Validates and rotates refresh tokens. Detects and mitigates session hijacking attempts.
    */
   static async rotateSession(
@@ -583,28 +671,37 @@ export class AuthService {
     }
 
     if (activeFamily) {
+      // Revoke every active session outside the current family. Rotated-out
+      // rows of the current family stay revoked so replay detection keeps
+      // working — only the caller's own row is re-activated.
+      const [currentSession] = await db
+        .select()
+        .from(userSessions)
+        .where(
+          and(
+            eq(userSessions.userId, userId),
+            eq(userSessions.tokenFamily, activeFamily),
+            eq(userSessions.isRevoked, false)
+          )
+        )
+        .limit(1);
+
       await db
         .update(userSessions)
         .set({ isRevoked: true })
         .where(
           and(
             eq(userSessions.userId, userId),
-            eq(userSessions.isRevoked, false),
-            // Ensure we do not revoke the active session family
-            and(eq(userSessions.isRevoked, false), eq(userSessions.userId, userId))
+            eq(userSessions.isRevoked, false)
           )
         );
 
-      // Re-activate current session family
-      await db
-        .update(userSessions)
-        .set({ isRevoked: false })
-        .where(
-          and(
-            eq(userSessions.userId, userId),
-            eq(userSessions.tokenFamily, activeFamily)
-          )
-        );
+      if (currentSession) {
+        await db
+          .update(userSessions)
+          .set({ isRevoked: false })
+          .where(eq(userSessions.id, currentSession.id));
+      }
     } else {
       await db
         .update(userSessions)

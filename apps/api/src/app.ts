@@ -27,6 +27,7 @@ import { refereeCertificationRouter } from "./routes/refereeCertification.js";
 import { informalEventRouter } from "./routes/informalEvent.js";
 import { ticketRouter } from "./routes/ticket.js";
 import { internalRouter } from "./routes/internal.js";
+import env from "./config/env.js";
 
 export const app = express();
 
@@ -54,9 +55,29 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Strict allowlist: production serves the SPA from the same origin (Netlify),
+// so browsers never need cross-origin credentials. Native clients are not
+// subject to CORS at all. Never reflect arbitrary origins with credentials.
+const allowedOrigins = [
+  "https://api.armsphere.com",
+  "https://armsphere.com",
+  "https://www.armsphere.com",
+];
+if (env.CORS_ORIGIN) {
+  allowedOrigins.push(
+    ...env.CORS_ORIGIN.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean)
+  );
+}
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Non-browser/native clients send no Origin header — allow.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
     credentials: true,
   })
 );

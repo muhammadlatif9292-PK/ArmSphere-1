@@ -37,7 +37,20 @@ export function rateLimiter(windowMs: number = 60 * 1000, maxRequests: number = 
   };
 }
 
-// --- 2. Helmet-equivalent Security Headers & CSP ---
+// --- 3. Internal secret comparison (constant-time) ---
+export function safeSecretCompare(a?: string, b?: string): boolean {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    // Still burn a comparison to keep timing uniform for wrong-length guesses.
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// --- 4. Helmet-equivalent Security Headers & CSP ---
 // Derived strictly from audited application requirements:
 //  - API hosts the admin SPA + Swagger UI (scripts/styles/images all same-origin bundles)
 //  - Admin SPA loads Google Fonts CSS + font binaries

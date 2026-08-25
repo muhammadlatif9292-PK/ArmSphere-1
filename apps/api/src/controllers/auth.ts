@@ -284,17 +284,19 @@ export class AuthController {
         throw new BadRequestError("User ID is required when verifying without active session.");
       }
 
-      const profile = await AuthService.getUserProfile(userId);
+      // Existence check: rejects unknown challenge identities before TOTP verification.
+      await AuthService.getUserProfile(userId);
       const verified = await MFAService.verifyTOTP(userId, code);
       if (!verified) {
         throw new UnauthorizedError("The Multi-Factor authentication code provided is invalid.");
       }
 
-      // Complete authentication since MFA verified successfully
-      const result = await AuthService.login(profile.email, "", {
+      // Complete authentication directly from the challenge identity. The password
+      // factor was already proven when the MFA challenge was issued; calling login
+      // with an empty password here always fails and strands MFA-enrolled users.
+      const result = await AuthService.completeMfaLogin(userId, {
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        mfaCode: code,
         rememberDevice: !!rememberDevice,
       });
 
@@ -352,11 +354,12 @@ export class AuthController {
 
       const recoveryResult = await MFAService.recoverMFA(email, recoveryCode);
 
-      // Successfully bypassed! Complete login and issue tokens
-      const loginResult = await AuthService.login(email, "", {
+      // Issue a session directly from the verified recovery identity — never
+      // call login with an empty password (it always fails and would strand
+      // users after their recovery code has already been consumed).
+      const loginResult = await AuthService.completeMfaLogin(recoveryResult.userId, {
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        mfaCode: undefined, // Bypassed via recovery code!
       });
 
       res.status(200).json({

@@ -18,6 +18,14 @@ export class PaymentController {
       return;
     }
 
+    // Defense in depth: an unset/empty secret turns signature verification into
+    // an HMAC keyed with "" — forgeable by anyone. Refuse to process events.
+    if (!webhookSecret) {
+      logger.error("STRIPE_WEBHOOK_SECRET is not configured; rejecting all webhook deliveries.");
+      res.status(503).json({ error: "Webhook processing unavailable" });
+      return;
+    }
+
     let event: Stripe.Event;
 
     try {
@@ -32,22 +40,13 @@ export class PaymentController {
 
     try {
       // Idempotency check: Ensure the event has not been processed yet
-      const isAlreadyProcessed = await db.transaction(async (tx) => {
-        const [existing] = await tx
-          .select()
-          .from(processedStripeEvents)
-          .where(eq(processedStripeEvents.id, event.id))
-          .limit(1);
+      const [existingEvent] = await db
+        .select()
+        .from(processedStripeEvents)
+        .where(eq(processedStripeEvents.id, event.id))
+        .limit(1);
 
-        if (existing) {
-          return true;
-        }
-
-        await tx.insert(processedStripeEvents).values({ id: event.id });
-        return false;
-      });
-
-      if (isAlreadyProcessed) {
+      if (existingEvent) {
         logger.info({ eventId: event.id }, "Stripe event already processed. Skipping webhook handling.");
         res.status(200).json({ received: true, duplicate: true });
         return;
@@ -157,6 +156,11 @@ export class PaymentController {
           }
         }
       }
+
+      // Mark the event processed only AFTER the side effects above succeeded,
+      // so a mid-handling failure lets Stripe's redelivery retry the work
+      // instead of being swallowed as an already-seen duplicate.
+      await db.insert(processedStripeEvents).values({ id: event.id });
 
       res.status(200).json({ received: true });
     } catch (error) {

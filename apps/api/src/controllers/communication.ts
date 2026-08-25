@@ -2,13 +2,28 @@ import { Request, Response, NextFunction } from "express";
 import { NotificationService, notificationMetrics } from "../services/notification.js";
 import { MessagingService } from "../services/messaging.js";
 import { AnnouncementService } from "../services/announcement.js";
-import { BadRequestError } from "@armsphere/core";
+import { BadRequestError, ForbiddenError } from "@armsphere/core";
 
 export class CommunicationController {
   // --- Notifications ---
   
   static async createNotification(req: Request, res: Response, next: NextFunction) {
     try {
+      // Notifications target arbitrary users and fan out through push/email/SMS,
+      // so only federation staff may create them.
+      const STAFF_ROLES = [
+        "SYSTEM_ADMIN",
+        "NATIONAL_DIRECTOR",
+        "PROVINCIAL_DIRECTOR",
+        "COMPLIANCE_OFFICER",
+        "SUPPORT_AGENT",
+        "REFEREE",
+        "TOURNAMENT_OPERATOR",
+      ];
+      if (!req.user || !STAFF_ROLES.includes(req.user.role)) {
+        throw new ForbiddenError("Only federation staff can send direct notifications.");
+      }
+
       const { userId, title, content, priority, category, groupId, expiresAt, metadata } = req.body;
       const result = await NotificationService.createNotification({
         userId,

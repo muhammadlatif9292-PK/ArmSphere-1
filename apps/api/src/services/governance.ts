@@ -43,10 +43,33 @@ export class GovernanceService {
   };
 
   /**
-   * List all disputes chronologically
+   * List disputes. Ordinary users only see their own filings; privileged
+   * federation roles see the full docket (mirrors the admin console gate).
    */
-  public static async listDisputes() {
-    return await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+  public static async listDisputes(requester?: { id: string; role: string }) {
+    const privilegedRoles = [
+      "SYSTEM_ADMIN",
+      "NATIONAL_DIRECTOR",
+      "PROVINCIAL_DIRECTOR",
+      "COMPLIANCE_OFFICER",
+      "SUPPORT_AGENT",
+      "REFEREE",
+    ];
+    if (
+      requester &&
+      requester.role &&
+      privilegedRoles.includes(requester.role)
+    ) {
+      return await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    }
+    if (!requester) {
+      throw new ForbiddenError("Requester context is required to list disputes.");
+    }
+    return await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.creatorId, requester.id))
+      .orderBy(desc(disputes.createdAt));
   }
 
   /**
@@ -230,7 +253,8 @@ export class GovernanceService {
     submitterId: string,
     fileType: "VIDEO" | "IMAGE" | "DOCUMENT",
     fileUrl: string,
-    rawFileContent?: string
+    rawFileContent?: string,
+    actorRole?: string
   ): Promise<any> {
     const [dispute] = await db
       .select()
@@ -240,6 +264,18 @@ export class GovernanceService {
 
     if (!dispute) {
       throw new NotFoundError("Dispute not found");
+    }
+
+    // Only the dispute creator, the assigned reviewer, or federation staff may
+    // attach evidence to a dispute.
+    const isStaff =
+      submitterId === dispute.creatorId ||
+      submitterId === dispute.assignedReviewerId ||
+      ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR", "COMPLIANCE_OFFICER", "REFEREE"].includes(
+        actorRole || ""
+      );
+    if (!isStaff) {
+      throw new ForbiddenError("Only the dispute creator, assigned reviewer, or federation staff can submit evidence.");
     }
 
     // SHA-256 Integrity Hash calculation
@@ -287,7 +323,8 @@ export class GovernanceService {
   public static async addComment(
     disputeId: string,
     authorId: string,
-    commentText: string
+    commentText: string,
+    actorRole?: string
   ): Promise<any> {
     const [dispute] = await db
       .select()
@@ -297,6 +334,18 @@ export class GovernanceService {
 
     if (!dispute) {
       throw new NotFoundError("Dispute not found");
+    }
+
+    // Comments are limited to the dispute creator, the assigned reviewer, and
+    // federation staff — not arbitrary authenticated users.
+    const isParticipant =
+      authorId === dispute.creatorId ||
+      authorId === dispute.assignedReviewerId ||
+      ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR", "COMPLIANCE_OFFICER", "REFEREE"].includes(
+        actorRole || ""
+      );
+    if (!isParticipant) {
+      throw new ForbiddenError("Only dispute participants or federation staff can comment.");
     }
 
     const [newComment] = await db
@@ -391,6 +440,11 @@ export class GovernanceService {
 
     if (dispute.status !== "RESOLVED" && dispute.status !== "REJECTED") {
       throw new BadRequestError("Only resolved or rejected disputes can be appealed");
+    }
+
+    // Only the original filer may appeal a decision on their dispute.
+    if (actorId !== dispute.creatorId) {
+      throw new ForbiddenError("Only the dispute creator can appeal this resolution.");
     }
 
     const [updated] = await db
