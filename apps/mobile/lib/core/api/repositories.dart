@@ -492,11 +492,26 @@ class TournamentRepository extends BaseRepository {
 class RankingsRepository extends BaseRepository {
   RankingsRepository({required super.dioClient, required super.hiveStorage});
 
-  Future<List<Map<String, dynamic>>> getLeaderboards({CancelToken? cancelToken}) async {
+  Future<List<Map<String, dynamic>>> getLeaderboards({
+    String arm = 'RIGHT',
+    String? province,
+    String? search,
+    int limit = 20,
+    CancelToken? cancelToken,
+  }) async {
     return executeRequest(
-      cacheKey: 'leaderboards_cache',
+      cacheKey: 'leaderboards_${arm}_${province ?? 'all'}_${search ?? ''}_$limit',
       cancelToken: cancelToken,
-      request: (token) => dioClient.dio.get('/rankings/leaderboard', cancelToken: token),
+      request: (token) => dioClient.dio.get(
+        '/rankings/leaderboard',
+        queryParameters: {
+          'arm': arm,
+          'limit': limit,
+          if (province != null && province.isNotEmpty) 'province': province,
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        cancelToken: token,
+      ),
       parse: (data) {
         final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
         if (payload is Map && payload.containsKey('items')) {
