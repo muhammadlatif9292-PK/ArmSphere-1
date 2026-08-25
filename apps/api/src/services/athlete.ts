@@ -167,19 +167,35 @@ export class AthleteService {
 
   /**
    * Retrieve complete athlete profile aggregated with verification status, biometrics, measurements, and social links
+   *
+   * Accepts either an auth user id (self flows) or an athlete profile id
+   * (search / leaderboard / social list rows carry profile ids) so that
+   * profile navigation works from every surface.
    */
-  static async getProfileByUserId(userId: string, viewerUserId?: string) {
-    const [profile] = await db
+  static async getProfileByUserId(userIdOrProfileId: string, viewerUserId?: string) {
+    let [profile] = await db
       .select()
       .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.userId, userId), eq(athleteProfiles.isDeleted, false)))
+      .where(and(eq(athleteProfiles.userId, userIdOrProfileId), eq(athleteProfiles.isDeleted, false)))
       .limit(1);
+
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!profile && UUID_RE.test(userIdOrProfileId)) {
+      [profile] = await db
+        .select()
+        .from(athleteProfiles)
+        .where(and(eq(athleteProfiles.id, userIdOrProfileId), eq(athleteProfiles.isDeleted, false)))
+        .limit(1);
+    }
 
     if (!profile) {
       throw new NotFoundError("Athlete profile not found");
     }
 
-    if (viewerUserId && viewerUserId !== userId) {
+    // Supporting tables are keyed by the owner's auth user id
+    const ownerUserId = profile.userId;
+
+    if (viewerUserId && viewerUserId !== ownerUserId) {
       if (profile.profileVisibility === "GYM_ONLY") {
         // Fetch viewer's profile to check their clubId
         const [viewerProfile] = await db
@@ -209,28 +225,28 @@ export class AthleteService {
     const [verification] = await db
       .select()
       .from(athleteVerifications)
-      .where(eq(athleteVerifications.athleteId, userId))
+      .where(eq(athleteVerifications.athleteId, ownerUserId))
       .limit(1);
 
     // Resolve biometrics
     const [biometrics] = await db
       .select()
       .from(athleteBiometrics)
-      .where(eq(athleteBiometrics.athleteId, userId))
+      .where(eq(athleteBiometrics.athleteId, ownerUserId))
       .limit(1);
 
     // Resolve measurements
     const [measurements] = await db
       .select()
       .from(athleteMeasurements)
-      .where(eq(athleteMeasurements.athleteId, userId))
+      .where(eq(athleteMeasurements.athleteId, ownerUserId))
       .limit(1);
 
     // Resolve social links
     const [socials] = await db
       .select()
       .from(athleteSocialLinks)
-      .where(eq(athleteSocialLinks.athleteId, userId))
+      .where(eq(athleteSocialLinks.athleteId, ownerUserId))
       .limit(1);
 
     return {

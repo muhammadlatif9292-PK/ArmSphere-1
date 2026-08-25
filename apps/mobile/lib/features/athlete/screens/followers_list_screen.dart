@@ -1,7 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../core/providers/state_providers.dart';
+import '../../../core/providers/social_provider.dart';
+
+/// Shared list rendering for followers / following rows.
+class _AthleteRows extends ConsumerWidget {
+  final AsyncValue<List<Map<String, dynamic>>> listAsync;
+  final VoidCallback onRetry;
+
+  const _AthleteRows({required this.listAsync, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return listAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 80),
+          const Center(
+            child: Icon(Icons.error_outline, size: 44, color: Colors.red),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Text('Could not load list',
+                style: Theme.of(context).textTheme.titleSmall),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ),
+        ],
+      ),
+      data: (rows) {
+        if (rows.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: const [
+              SizedBox(height: 100),
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.group_outlined, size: 48, color: Colors.grey),
+                    SizedBox(height: 12),
+                    Text('Nobody here yet',
+                        style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(20),
+          itemCount: rows.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final row = rows[index];
+            final name = row['displayName']?.toString() ?? 'Athlete';
+            final photo = row['profilePhoto']?.toString() ?? '';
+            final subtitle = [
+              row['city']?.toString(),
+              row['province']?.toString(),
+            ].where((v) => v != null && v.isNotEmpty).join(', ');
+
+            return GestureDetector(
+              onTap: () {
+                final id = row['id']?.toString();
+                if (id != null && id.isNotEmpty) context.push('/athlete/$id');
+              },
+              child: GlassCard(
+                padding: const EdgeInsets.all(12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                    backgroundImage:
+                        photo.isNotEmpty ? NetworkImage(photo) : null,
+                    onBackgroundImageError:
+                        photo.isNotEmpty ? (exception, stackTrace) {} : null,
+                    child: photo.isEmpty
+                        ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?')
+                        : null,
+                  ),
+                  title: Text(name,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: subtitle.isNotEmpty
+                      ? Text(subtitle, style: const TextStyle(fontSize: 12))
+                      : null,
+                  trailing: const Icon(Icons.chevron_right),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
 
 /// Followers List Screen
 class FollowersListScreen extends ConsumerWidget {
@@ -11,40 +111,15 @@ class FollowersListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final followers = [
-      {'name': 'Zain "The Zephyr" Shah', 'location': 'Islamabad, Pakistan'},
-      {'name': 'Arsalan "Apex" Malik', 'location': 'Karachi, Pakistan'},
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Followers'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: followers.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final item = followers[index];
-          return GlassCard(
-            padding: const EdgeInsets.all(12),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-                child: const Icon(Icons.person),
-              ),
-              title: Text(item['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(item['location']!, style: const TextStyle(fontSize: 12)),
-              trailing: TextButton(
-                onPressed: () {},
-                child: const Text('Remove'),
-              ),
-            ),
-          );
-        },
+      body: _AthleteRows(
+        listAsync: ref.watch(followersProvider(athleteId)),
+        onRetry: () => ref.invalidate(followersProvider(athleteId)),
       ),
     );
   }
@@ -58,40 +133,15 @@ class FollowingListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final following = [
-      {'name': 'Haider "The Hammer" Khan', 'location': 'Lahore, Pakistan'},
-      {'name': 'Farhan "Flash" Ahmed', 'location': 'Peshawar, Pakistan'},
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Following'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: following.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final item = following[index];
-          return GlassCard(
-            padding: const EdgeInsets.all(12),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-                child: const Icon(Icons.person),
-              ),
-              title: Text(item['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(item['location']!, style: const TextStyle(fontSize: 12)),
-              trailing: OutlinedButton(
-                onPressed: () {},
-                child: const Text('Unfollow'),
-              ),
-            ),
-          );
-        },
+      body: _AthleteRows(
+        listAsync: ref.watch(followingProvider(athleteId)),
+        onRetry: () => ref.invalidate(followingProvider(athleteId)),
       ),
     );
   }
