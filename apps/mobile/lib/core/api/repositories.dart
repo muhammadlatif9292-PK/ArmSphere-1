@@ -823,6 +823,34 @@ class DisputeRepository extends BaseRepository {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> escalateDispute(String disputeId, String escalationReason, {CancelToken? cancelToken}) async {
+    final response = await dioClient.dio.post(
+      '/governance/disputes/$disputeId/escalate',
+      data: {'escalationReason': escalationReason},
+      cancelToken: cancelToken,
+    );
+    final payload = (response.data is Map && response.data.containsKey('dispute')) ? response.data['dispute'] : response.data;
+    return Map<String, dynamic>.from(payload);
+  }
+
+  Future<Map<String, dynamic>> appealDispute(String disputeId, String appealReason, {CancelToken? cancelToken}) async {
+    final response = await dioClient.dio.post(
+      '/governance/disputes/$disputeId/appeal',
+      data: {'appealReason': appealReason},
+      cancelToken: cancelToken,
+    );
+    final payload = (response.data is Map && response.data.containsKey('dispute')) ? response.data['dispute'] : response.data;
+    return Map<String, dynamic>.from(payload);
+  }
+
+  Future<void> submitDisputeEvidence(String disputeId, String fileType, String fileUrl, {CancelToken? cancelToken}) async {
+    await dioClient.dio.post(
+      '/governance/disputes/$disputeId/evidence',
+      data: {'fileType': fileType, 'fileUrl': fileUrl},
+      cancelToken: cancelToken,
+    );
+  }
 }
 
 class NotificationRepository extends BaseRepository {

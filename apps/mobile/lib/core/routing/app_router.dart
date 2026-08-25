@@ -24,6 +24,7 @@ import '../../features/tournament/screens/tournament_screens.dart';
 import '../../features/tournament/screens/tournament_operations_screen.dart';
 import '../../features/tournament/screens/event_registration_screen.dart';
 import '../../features/governance/screens/governance_screens.dart';
+import '../../features/governance/screens/submit_complaint_screen.dart';
 import '../../features/notifications/screens/notification_screens.dart';
 import '../../features/session/screens/session_screens.dart';
 import '../../features/championship/screens/championship_screens.dart';
