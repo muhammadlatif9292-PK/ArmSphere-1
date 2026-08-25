@@ -12,6 +12,7 @@ import AthletesPage from './pages/AthletesPage';
 import ModerationQueuePage from './pages/ModerationQueuePage';
 import VenuesPage from './pages/VenuesPage';
 import NominationsPage from './pages/NominationsPage';
+import AuditPage from './pages/AuditPage';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

@@ -102,7 +102,7 @@ export function useRefereeCertifications(userId?: string) {
   });
 }
 
-export function useIssueRefereeCertification(userId?: string) {
+export function useIssueRefereeCertification(_userId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, payload }: { userId: string; payload: IssueCertificationPayload }) => {
