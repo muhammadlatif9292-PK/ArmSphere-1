@@ -22,6 +22,7 @@ describe("Environment Configuration Validation", () => {
       CRON_SECRET: "test_cron_secret_key_1234567890_armsphere",
       JWT_ACCESS_SECRET: "super_secret_armsphere_access_jwt_key_with_length_greater_than_32",
       JWT_REFRESH_SECRET: "super_secret_armsphere_refresh_jwt_key_with_length_greater_than_32",
+      STRIPE_WEBHOOK_SECRET: "whsec_test_webhook_signing_secret_1234567890",
     };
 
     const result = envSchema.safeParse(input);
@@ -37,12 +38,32 @@ describe("Environment Configuration Validation", () => {
       CRON_SECRET: "test_cron_secret_key_1234567890_armsphere",
       JWT_ACCESS_SECRET: "super_secret_armsphere_access_jwt_key_with_length_greater_than_32",
       JWT_REFRESH_SECRET: "super_secret_armsphere_refresh_jwt_key_with_length_greater_than_32",
+      STRIPE_WEBHOOK_SECRET: "whsec_test_webhook_signing_secret_1234567890",
     };
 
     const result = envSchema.safeParse(input);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.PORT).toBe(3001);
+    }
+  });
+
+  it("rejects production configuration without STRIPE_WEBHOOK_SECRET", () => {
+    const neonUrl = "postgresql://armsphere_user:pass123@ep-example-123456.us-east-2.aws.neon.tech/neondb?sslmode=require";
+
+    const input = {
+      NODE_ENV: "production",
+      DATABASE_URL: neonUrl,
+      CRON_SECRET: "test_cron_secret_key_1234567890_armsphere",
+      JWT_ACCESS_SECRET: "super_secret_armsphere_access_jwt_key_with_length_greater_than_32",
+      JWT_REFRESH_SECRET: "super_secret_armsphere_refresh_jwt_key_with_length_greater_than_32",
+    };
+
+    const result = envSchema.safeParse(input);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes("STRIPE_WEBHOOK_SECRET"));
+      expect(issue?.message).toContain("STRIPE_WEBHOOK_SECRET");
     }
   });
 

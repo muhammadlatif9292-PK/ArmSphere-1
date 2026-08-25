@@ -631,8 +631,19 @@ describe("ArmSphere Authentication System Integration & Unit Tests", () => {
       expect(liveResponse.status).toBe(200);
       expect(liveResponse.body.live).toBe(true);
 
-      // Metrics endpoint
-      const metricsResponse = await request(app).get("/api/v1/observability/metrics");
+      // Metrics endpoint: process telemetry is staff-only since Phase 10 hardening.
+      const anonymousMetrics = await request(app).get("/api/v1/observability/metrics");
+      expect(anonymousMetrics.status).toBe(401);
+
+      const metricsAdminToken = generateAccessToken(
+        "metrics-admin-id",
+        "metrics-admin@armsphere.com",
+        UserRole.SYSTEM_ADMIN,
+        env.JWT_ACCESS_SECRET
+      );
+      const metricsResponse = await request(app)
+        .get("/api/v1/observability/metrics")
+        .set("Authorization", `Bearer ${metricsAdminToken}`);
       expect(metricsResponse.status).toBe(200);
       expect(metricsResponse.body.success).toBe(true);
       expect(metricsResponse.body.data.system).toBeDefined();
