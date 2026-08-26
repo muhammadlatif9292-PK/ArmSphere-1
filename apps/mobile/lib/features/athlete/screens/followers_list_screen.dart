@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/social_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Shared list rendering for followers / following rows.
 class _AthleteRows extends ConsumerWidget {
@@ -20,7 +21,7 @@ class _AthleteRows extends ConsumerWidget {
         children: [
           const SizedBox(height: 80),
           const Center(
-            child: Icon(Icons.error_outline, size: 44, color: Colors.red),
+            child: Icon(Icons.error_outline, size: 44, color: AppTheme.error),
           ),
           const SizedBox(height: 12),
           Center(

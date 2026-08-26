@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -161,7 +162,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary,
                                 ),
                               )
                             : const Text('Reset Password'),

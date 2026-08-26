@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -132,7 +133,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary,
                                 ),
                               )
                             : const Text('Send Reset Link'),

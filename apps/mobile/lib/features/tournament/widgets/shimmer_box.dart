@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/theme/app_theme.dart';
+
 class ShimmerBox extends StatelessWidget {
   final double width;
   final double height;
@@ -25,13 +27,12 @@ class ShimmerBox extends StatelessWidget {
           begin: Alignment(-1.5 + (percent * 3), 0),
           end: Alignment(-0.5 + (percent * 3), 0),
           colors: const [
-            Color(0xFF141E2F),
-            Color(0xFF23324A),
-            Color(0xFF141E2F),
+            AppTheme.shimmerBase,
+            AppTheme.shimmerHighlight,
+            AppTheme.shimmerBase,
           ],
         ),
       ),
     );
   }
 }
-

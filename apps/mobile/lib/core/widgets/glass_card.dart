@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../theme/app_theme.dart';
 
 /// Ultra-Premium Glassmorphic Container designed for Concept 2 (Glass Morphism Luxury)
 /// Combines backdrop blur, 1px subtle gold/frost rim borders, deep radial gradient backgrounds,
@@ -80,7 +81,7 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final effectiveBorderColor = widget.borderColor ?? const Color(0x26D4AF37); // 15% opacity gold
-    final effectiveBgColor = widget.backgroundColor ?? const Color(0xCC121622); // Deep glass onyx
+    final effectiveBgColor = widget.backgroundColor ?? AppTheme.glassSurface; // Deep glass onyx
     final effectiveGlowColor = widget.glowColor ?? const Color(0x26D4AF37);
 
     Widget content = Container(

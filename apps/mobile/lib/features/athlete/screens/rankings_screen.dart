@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/providers/rankings_provider.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});
@@ -262,11 +263,11 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                     Center(
                       child: Column(
                         children: [
-                          const Icon(Icons.error_outline, size: 44, color: Colors.red),
+                          Icon(Icons.error_outline, size: 44, color: AppTheme.error),
                           const SizedBox(height: 12),
                           Text('Error loading rankings: $err',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.redAccent)),
+                              style: const TextStyle(color: AppTheme.error)),
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: () => ref.invalidate(rankingsProvider),

@@ -5,6 +5,7 @@ import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Shared formatting helpers for event data (used by list, detail and
 /// registration screens so every surface renders the same real values).
@@ -56,14 +57,14 @@ class TournamentsListScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AppTheme.error),
               const SizedBox(height: 12),
               Text('Could not load competitions', style: theme.textTheme.titleSmall),
               const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text('$error', textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -197,7 +198,7 @@ class TournamentDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(Icons.error_outline, size: 48, color: AppTheme.error),
               const SizedBox(height: 12),
               Text('Could not load tournament', style: theme.textTheme.titleSmall),
               const SizedBox(height: 16),
@@ -354,7 +355,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
           padding: const EdgeInsets.all(20),
           children: [
             const SizedBox(height: 80),
-            const Center(child: Icon(Icons.error_outline, size: 44, color: Colors.red)),
+            Center(child: Icon(Icons.error_outline, size: 44, color: AppTheme.error)),
             const SizedBox(height: 12),
             Center(child: Text('Could not load brackets', style: Theme.of(context).textTheme.titleSmall)),
             const SizedBox(height: 12),

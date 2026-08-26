@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 class MyNominationsScreen extends StatelessWidget {
   const MyNominationsScreen({super.key});
@@ -35,11 +36,11 @@ class MyNominationsScreen extends StatelessWidget {
                     children: [
                       Text(n['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
-                      Text('Status: ${n['status']}', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                      Text('Status: ${n['status']}', style: const TextStyle(color: AppTheme.secondaryAccent, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.bottomRight,
-                        child: Text(n['date']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        child: Text(n['date']!, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
                       ),
                     ],
                   ),

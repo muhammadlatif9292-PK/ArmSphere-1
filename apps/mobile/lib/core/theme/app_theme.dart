@@ -34,6 +34,13 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF94A3B8);
   static const Color textMuted = Color(0xFF8493A5); // High-contrast Muted Slate Blue (passes 4.5:1 against surface & bg)
 
+  // Skeleton shimmer surfaces (loading placeholders)
+  static const Color shimmerBase = Color(0xFF141E2F);
+  static const Color shimmerHighlight = Color(0xFF23324A);
+
+  // Ambient background particle glow (shell-level decoration)
+  static const Color ambientGlow = Color(0x0F1B2A4A);
+
   // Spacing Scale
   static const double space4 = 4.0;
   static const double space8 = 8.0;

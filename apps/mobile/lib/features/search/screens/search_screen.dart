@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Real global search over athletes via GET /athletes/search.
 /// Other entity types (events/clubs/venues) surface through their own
@@ -88,7 +89,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 44, color: Colors.red),
+                            Icon(Icons.error_outline, size: 44, color: AppTheme.error),
                             const SizedBox(height: 12),
                             Text('Search failed', style: Theme.of(context).textTheme.titleSmall),
                             const SizedBox(height: 4),

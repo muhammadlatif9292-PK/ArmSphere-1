@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
 
 class MainShellScreen extends StatelessWidget {
@@ -25,7 +26,7 @@ class MainShellScreen extends StatelessWidget {
       body: Stack(
         children: [
           const AmbientParticleBackground(
-            particleColor: Color(0x0F1B2A4A),
+            particleColor: AppTheme.ambientGlow,
           ),
           SafeArea(
             child: navigationShell,

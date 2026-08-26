@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/theme/app_theme.dart';
+
 class GlassShimmerSkeletonList extends StatefulWidget {
   const GlassShimmerSkeletonList({Key? key}) : super(key: key);
 
@@ -40,9 +42,9 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: Color(0xFF101728).withOpacity(0.9),
+                color: AppTheme.elevatedSurface.withOpacity(0.9),
                 border: Border.all(
-                  color: Color(0xFF00E5FF).withOpacity(0.15),
+                  color: AppTheme.info.withOpacity(0.15),
                 ),
               ),
               child: Stack(

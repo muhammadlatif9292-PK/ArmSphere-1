@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/state_providers.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Active Sessions List Screen
 class ActiveSessionsListScreen extends ConsumerWidget {
@@ -39,7 +40,7 @@ class ActiveSessionsListScreen extends ConsumerWidget {
                       children: [
                         Text(s['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text(s['location']!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(s['location']!, style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                       ],
                     ),
                   ),
@@ -77,7 +78,7 @@ class _ActiveSessionControlScreenState extends State<ActiveSessionControlScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.timer_outlined, size: 64, color: Colors.teal),
+              Icon(Icons.timer_outlined, size: 64, color: AppTheme.info),
               const SizedBox(height: 16),
               const Text('Session In Progress', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               const SizedBox(height: 8),

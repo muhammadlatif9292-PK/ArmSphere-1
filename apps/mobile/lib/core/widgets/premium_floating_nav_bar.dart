@@ -45,7 +45,7 @@ class PremiumFloatingNavBar extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xCC121622),
+              color: AppTheme.glassSurface,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: AppTheme.goldPrimary.withOpacity(0.25),
