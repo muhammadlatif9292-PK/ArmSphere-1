@@ -158,11 +158,21 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
               },
               error: (err, stack) => GlassCard(
                 padding: const EdgeInsets.all(20),
-                child: Center(
-                  child: Text(
-                    'Error: $err',
-                    style: const TextStyle(color: Colors.redAccent),
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Error: $err',
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => ref.invalidate(paymentMethodsProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
               loading: () => const Center(

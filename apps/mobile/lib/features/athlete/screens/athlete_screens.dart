@@ -253,9 +253,16 @@ class AthleteDashboardScreen extends ConsumerWidget {
               padding: EdgeInsets.all(16),
               child: CircularProgressIndicator(),
             )),
-            error: (err, _) => Text(
-              'Could not load matches',
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+            error: (err, _) => Column(
+              children: [
+                Text('Could not load matches',
+                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => ref.invalidate(liveMatchesProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
             data: (matches) {
               if (matches.isEmpty) {

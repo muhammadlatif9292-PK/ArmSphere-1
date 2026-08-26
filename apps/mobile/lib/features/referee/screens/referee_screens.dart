@@ -257,7 +257,15 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               )),
               error: (e, _) => GlassCard(
                 padding: const EdgeInsets.all(16),
-                child: Text('Could not load events: $e', style: const TextStyle(fontSize: 13)),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('Could not load events: $e', style: const TextStyle(fontSize: 13))),
+                    TextButton(
+                      onPressed: () => ref.invalidate(tournamentProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
               ),
               data: (events) {
                 final selectable = events

@@ -592,7 +592,15 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             const SizedBox(height: 12),
             matchesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => GlassCard(child: ListTile(title: Text('Could not load matches: $e'))),
+              error: (e, _) => GlassCard(
+                child: ListTile(
+                  title: Text('Could not load matches: $e'),
+                  trailing: TextButton(
+                    onPressed: () => ref.invalidate(eventMatchesProvider(widget.tournamentId)),
+                    child: const Text('Retry'),
+                  ),
+                ),
+              ),
               data: (matches) {
                 if (matches.isEmpty) {
                   return const GlassCard(

@@ -45,6 +45,11 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(publicAthleteProfileProvider(athleteId)),
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),

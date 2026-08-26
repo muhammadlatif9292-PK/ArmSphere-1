@@ -432,7 +432,16 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ListView(
           padding: const EdgeInsets.all(20),
-          children: [Text('Could not load bracket: $e', textAlign: TextAlign.center)],
+          children: [
+            Text('Could not load bracket: $e', textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: () => ref.invalidate(bracketDetailsProvider(bracketId)),
+                child: const Text('Retry'),
+              ),
+            ),
+          ],
         ),
         data: (bracket) {
           final status = (bracket['status']?.toString() ?? '').toUpperCase();
