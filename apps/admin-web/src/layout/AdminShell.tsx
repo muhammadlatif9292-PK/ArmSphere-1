@@ -34,7 +34,7 @@ function SidebarLink({ to, icon, label, onClick }: SidebarLinkProps) {
         `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all ${
           isActive
             ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm font-bold'
-            : 'text-slate-400 hover:text-slate-100 hover:bg-[#161F30]'
+            : 'text-slate-400 hover:text-slate-100 hover:bg-brand-raised'
         }`
       }
     >
@@ -69,12 +69,12 @@ export default function AdminShell({ children }: AdminShellProps) {
   };
 
   return (
-    <div className="flex h-screen bg-[#070A11] text-slate-100 overflow-hidden font-sans">
+    <div className="flex h-screen bg-brand-canvas text-slate-100 overflow-hidden font-sans">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden lg:flex w-64 bg-[#0F172A] border-r border-slate-800/90 flex-col justify-between shrink-0 z-30">
+      <aside className="hidden lg:flex w-64 bg-brand-panel border-r border-slate-800/90 flex-col justify-between shrink-0 z-30">
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
           {/* Header Branding */}
-          <div className="p-4 border-b border-slate-800/90 flex items-center gap-3 bg-[#0B0F19]">
+          <div className="p-4 border-b border-slate-800/90 flex items-center gap-3 bg-brand-bg">
             <div className="p-2 bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded-lg text-amber-400 border border-amber-500/30">
               <Shield className="w-5 h-5" />
             </div>
@@ -134,8 +134,8 @@ export default function AdminShell({ children }: AdminShellProps) {
         </div>
 
         {/* Footer User Card */}
-        <div className="p-4 border-t border-slate-800 bg-[#0B0F19] space-y-3">
-          <div className="flex items-center gap-2.5 p-2 bg-[#161F30] border border-slate-800/80 rounded-lg">
+        <div className="p-4 border-t border-slate-800 bg-brand-bg space-y-3">
+          <div className="flex items-center gap-2.5 p-2 bg-brand-raised border border-slate-800/80 rounded-lg">
             <UserCircle className="w-7 h-7 text-amber-400 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-slate-200 truncate">
@@ -160,7 +160,7 @@ export default function AdminShell({ children }: AdminShellProps) {
       {/* MOBILE DRAWER OVERLAY */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex">
-          <div className="w-72 bg-[#0F172A] h-full border-r border-slate-800 flex flex-col justify-between p-4 overflow-y-auto">
+          <div className="w-72 bg-brand-panel h-full border-r border-slate-800 flex flex-col justify-between p-4 overflow-y-auto">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
                 <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export default function AdminShell({ children }: AdminShellProps) {
             </div>
 
             <div className="pt-4 border-t border-slate-800 mt-4 space-y-3">
-              <div className="p-2 bg-[#161F30] rounded-lg">
+              <div className="p-2 bg-brand-raised rounded-lg">
                 <p className="text-xs font-bold text-slate-200 truncate">{user?.fullName || user?.email || 'Signed-in admin'}</p>
                 <p className="text-[10px] font-mono text-amber-400">{getRoleLabel(user?.role)}</p>
               </div>
@@ -226,11 +226,11 @@ export default function AdminShell({ children }: AdminShellProps) {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* MOBILE TOP BAR */}
-        <header className="lg:hidden flex items-center justify-between p-4 bg-[#0B0F19] border-b border-slate-800">
+        <header className="lg:hidden flex items-center justify-between p-4 bg-brand-bg border-b border-slate-800">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="p-1.5 bg-[#0F172A] border border-slate-800 rounded-lg text-slate-300 hover:text-white"
+              className="p-1.5 bg-brand-panel border border-slate-800 rounded-lg text-slate-300 hover:text-white"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -242,7 +242,7 @@ export default function AdminShell({ children }: AdminShellProps) {
         </header>
 
         {/* PAGE CONTENT CONTAINER */}
-        <main className="flex-1 overflow-y-auto bg-[#070A11]">
+        <main className="flex-1 overflow-y-auto bg-brand-canvas">
           <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
             {children}
           </div>

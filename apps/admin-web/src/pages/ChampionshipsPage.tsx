@@ -131,7 +131,7 @@ export default function ChampionshipsPage() {
     return (
       <div className="space-y-8">
         <div className="border-b border-slate-800 pb-6">
-          <h2 className="text-3xl font-display font-bold text-slate-100">Championships Registry</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Championships Registry</h1>
           <p className="text-slate-400 text-sm mt-1">Federation titles, active weight divisions, and pending challenges.</p>
         </div>
 
@@ -160,7 +160,7 @@ export default function ChampionshipsPage() {
       {/* Header Summary */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-slate-100">Championships Registry</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Championships Registry</h1>
           <p className="text-slate-400 text-sm mt-1">Federation titles, active weight divisions, and pending title challenges.</p>
         </div>
         
@@ -460,7 +460,7 @@ export default function ChampionshipsPage() {
       {/* Create Title Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#1E293B] border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in duration-250">
+          <div className="bg-[#1E293B] border border-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20">
                 <Trophy className="w-6 h-6" />

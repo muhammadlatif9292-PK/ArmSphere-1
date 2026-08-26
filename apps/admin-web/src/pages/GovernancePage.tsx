@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Scale, 
   AlertTriangle, 
@@ -114,7 +114,7 @@ export default function GovernancePage() {
     return (
       <div className="space-y-8">
         <div className="border-b border-slate-800 pb-6">
-          <h2 className="text-3xl font-display font-bold text-slate-100">Governance Portal</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Governance Portal</h1>
           <p className="text-slate-400 text-sm mt-1">Dispute reports, regulatory appeals, and compliance workflows.</p>
         </div>
 
@@ -138,17 +138,19 @@ export default function GovernancePage() {
     );
   }
 
-  // Auto-select first dispute if none selected
-  if (disputes && disputes.length > 0 && !selectedDispute) {
-    handleSelectDispute(disputes[0]);
-  }
+  // Auto-select first dispute once data arrives (effect, not render-phase side effect)
+  useEffect(() => {
+    if (disputes && disputes.length > 0 && !selectedDispute) {
+      handleSelectDispute(disputes[0]);
+    }
+  }, [disputes, selectedDispute, handleSelectDispute]);
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-slate-100">Governance Portal</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Governance Portal</h1>
           <p className="text-slate-400 text-sm mt-1">Review federation rules, resolve dispute reports, and monitor incident reports.</p>
         </div>
         

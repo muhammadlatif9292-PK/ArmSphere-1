@@ -6,8 +6,13 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-display: "Space Grotesk", sans-serif;
 
-  --color-brand-bg: #0B0F19;
-  --color-brand-card: #1E293B;
+  /* Unified dark surface scale (matches AdminShell's established palette). */
+  --color-brand-canvas: #070A11; /* deepest backdrop (main content area) */
+  --color-brand-bg: #0B0F19; /* chrome bars / sidebar header */
+  --color-brand-panel: #0F172A; /* sidebar + elevated panels */
+  --color-brand-raised: #161F30; /* hover raise / inset cards */
+  --color-brand-card: #1E293B; /* primary card surface */
+  --color-brand-border: #334155; /* slate-700 hairlines */
   --color-brand-accent: #f59e0b; /* amber-500 */
 }
 

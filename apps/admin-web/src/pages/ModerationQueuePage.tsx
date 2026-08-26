@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Video, 
   AlertTriangle, 
@@ -115,7 +115,7 @@ export default function ModerationQueuePage() {
     return (
       <div className="space-y-8">
         <div className="border-b border-slate-800 pb-6">
-          <h2 className="text-3xl font-display font-bold text-slate-100">Video Moderation Queue</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Video Moderation Queue</h1>
           <p className="text-slate-400 text-sm mt-1">Review training video and tutorial submissions from the athletic community.</p>
         </div>
 
@@ -137,7 +137,7 @@ export default function ModerationQueuePage() {
     return (
       <div className="space-y-8">
         <div className="border-b border-slate-800 pb-6">
-          <h2 className="text-3xl font-display font-bold text-slate-100">Video Moderation Queue</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Video Moderation Queue</h1>
           <p className="text-slate-400 text-sm mt-1">Review training video and tutorial submissions from the athletic community.</p>
         </div>
 
@@ -161,10 +161,12 @@ export default function ModerationQueuePage() {
     );
   }
 
-  // Auto-select first submission if none selected
-  if (submissions && submissions.length > 0 && !selectedSubmission) {
-    setSelectedSubmission(submissions[0]);
-  }
+  // Auto-select first submission once data arrives (effect, not render-phase side effect)
+  useEffect(() => {
+    if (submissions && submissions.length > 0 && !selectedSubmission) {
+      setSelectedSubmission(submissions[0]);
+    }
+  }, [submissions, selectedSubmission]);
 
   const embedUrl = selectedSubmission ? getEmbedUrl(selectedSubmission.externalUrl, selectedSubmission.platform) : null;
 
@@ -173,7 +175,7 @@ export default function ModerationQueuePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-slate-100">Video Moderation Queue</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Video Moderation Queue</h1>
           <p className="text-slate-400 text-sm mt-1">Approve or reject video link submissions from athletes to manage the main community feed.</p>
         </div>
         

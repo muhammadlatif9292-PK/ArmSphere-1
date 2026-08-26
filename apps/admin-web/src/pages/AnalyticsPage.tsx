@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
     return (
       <div className="space-y-8">
         <div className="border-b border-slate-800 pb-6">
-          <h2 className="text-3xl font-display font-bold text-slate-100">Analytics Hub</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Analytics Hub</h1>
           <p className="text-slate-400 text-sm mt-1">Ecosystem intelligence feeds and ELO distributions.</p>
         </div>
 
@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
       {/* Upper header summary bar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-slate-100">Analytics Hub</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Analytics Hub</h1>
           <p className="text-slate-400 text-sm mt-1">Federation ecosystem insights, match metrics, and competitor rating analytics.</p>
         </div>
         

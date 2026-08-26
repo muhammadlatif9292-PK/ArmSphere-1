@@ -11,6 +11,7 @@ import {
 import { useAuditEvents, useVerifyLedger } from '../lib/auditApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
+import { ErrorBanner } from '../components/ui';
 
 function formatDateTime(value?: string): string {
   if (!value) return '--';
@@ -32,11 +33,11 @@ export default function AuditPage() {
   const canVerify = user?.role === UserRole.SYSTEM_ADMIN || user?.role === UserRole.COMPLIANCE_OFFICER;
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto" id="audit-page-container">
+    <div className="space-y-6" id="audit-page-container">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2 font-display">
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight flex items-center gap-2">
             <ScrollText className="w-6 h-6 text-amber-400" />
             Immutable Audit Ledger
           </h1>
@@ -108,13 +109,10 @@ export default function AuditPage() {
 
       {/* Error state */}
       {isError && (
-        <div className="p-4 border border-red-500/30 bg-red-500/5 rounded-xl text-sm text-red-300 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <div>
-            <p className="font-medium">Failed to load audit ledger.</p>
-            <p className="text-xs mt-1 font-mono opacity-80">{(error as any)?.message || 'Unknown server error.'}</p>
-          </div>
-        </div>
+        <ErrorBanner
+          message={`Failed to load audit ledger. ${(error as any)?.message || 'Unknown server error.'}`}
+          onRetry={() => refetch()}
+        />
       )}
 
       {/* Loading state */}
@@ -128,7 +126,7 @@ export default function AuditPage() {
 
       {/* Ledger table */}
       {!isLoading && !isError && (
-        <div className="bg-[#0F172A] border border-slate-800 rounded-xl overflow-hidden">
+        <div className="bg-brand-panel border border-slate-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-800">
               <thead className="bg-slate-900/60">
@@ -166,7 +164,7 @@ export default function AuditPage() {
                       <td className="px-4 py-3 text-right text-[11px] text-slate-500">{expandedId === event.id ? 'Hide' : 'Details'}</td>
                     </tr>
                     {expandedId === event.id && (
-                      <tr className="bg-[#070A11]">
+                      <tr className="bg-brand-canvas">
                         <td colSpan={6} className="px-4 py-4 space-y-3">
                           <div>
                             <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500 mb-1">Payload</p>

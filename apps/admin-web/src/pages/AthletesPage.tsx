@@ -9,11 +9,10 @@ import {
   RefreshCw, 
   UserMinus, 
   UserCheck, 
-  UserX, 
-  Check, 
-  X, 
-  Loader2, 
-  AlertTriangle,
+  UserX,
+  Check,
+  X,
+  Loader2,
   Info,
   MapPin,
   Award
@@ -31,6 +30,7 @@ import {
 } from '../lib/athletesApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, AthleteAdminView } from '../types';
+import { LoadingCard, ErrorPanel, EmptyState } from '../components/ui';
 
 export default function AthletesPage() {
   const { user } = useAuth();
@@ -291,7 +291,7 @@ export default function AthletesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-3xl font-display font-bold text-slate-100">Athletes Directory</h2>
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-slate-100 tracking-tight">Athletes Directory</h1>
           <p className="text-slate-400 text-sm mt-1">Review active athlete profile listings, handle sanctions, and calibrate Elo ratings.</p>
         </div>
         
@@ -366,28 +366,20 @@ export default function AthletesPage() {
       {/* Main Table */}
       <div className="bg-[#1E293B] border border-slate-800 rounded-xl shadow-xl overflow-hidden">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-24 space-y-3">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-            <p className="text-xs text-slate-400">Loading federated athletes list...</p>
-          </div>
+          <LoadingCard label="Loading federated athletes list..." />
         ) : isError ? (
-          <div className="p-16 text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-semibold text-slate-200">Failed to Retrieve Athletes</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              {(error as any)?.message || 'An unexpected error occurred during client-side ledger queries.'}
-            </p>
-          </div>
+          <ErrorPanel
+            title="Failed to Retrieve Athletes"
+            message={(error as any)?.message || 'An unexpected error occurred during client-side ledger queries.'}
+            onRetry={() => refetch()}
+            retryLabel="Retry Fetch"
+          />
         ) : athletes.length === 0 ? (
-          <div className="p-20 text-center space-y-3">
-            <Users className="w-12 h-12 text-slate-600 mx-auto" />
-            <h3 className="text-sm font-semibold text-slate-400">No Athletes Found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Try adjusting your query inputs or synchronization filters to capture valid registered armwrestlers.
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="No Athletes Found"
+            subtitle="Try adjusting your query inputs or synchronization filters to capture valid registered armwrestlers."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
