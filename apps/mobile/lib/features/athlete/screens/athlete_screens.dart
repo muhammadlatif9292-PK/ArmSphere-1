@@ -549,24 +549,12 @@ class AthleteProfileScreen extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               children: [
                 ListTile(
-                  leading: const Icon(Icons.payment),
-                  title: const Text('Payment Methods'),
+                  leading: const Icon(Icons.settings_outlined),
+                  title: const Text('Account & Settings'),
+                  subtitle: const Text(
+                      'Security, payments, tickets, privacy and legal'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/settings/payment-methods'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.local_activity_outlined),
-                  title: const Text('My Tickets'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/settings/tickets'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.block_flipped),
-                  title: const Text('Blocked Users'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/settings/blocked'),
+                  onTap: () => context.push('/settings'),
                 ),
                 const Divider(height: 1),
                 ListTile(

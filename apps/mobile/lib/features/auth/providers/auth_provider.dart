@@ -347,6 +347,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(status: AuthStatus.unauthenticated);
     }
   }
+
+  /// Phase 12: real in-app account deletion (DELETE /auth/me).
+  /// Server deactivates + anonymizes the account and revokes every session;
+  /// local session material is cleared unconditionally.
+  Future<void> deleteAccount() async {
+    _disposeSync();
+    final repo = ref.read(authRepositoryProvider);
+    try {
+      await repo.deleteAccount();
+    } finally {
+      state = AuthState(status: AuthStatus.unauthenticated);
+    }
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

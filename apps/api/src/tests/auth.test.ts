@@ -814,6 +814,82 @@ describe("ArmSphere Authentication System Integration & Unit Tests", () => {
   });
 
   // ==========================================
+  // ACCOUNT DELETION (Phase 12 store readiness)
+  // ==========================================
+  describe("DELETE /auth/me (Account Deletion)", () => {
+    let deletionToken: string;
+
+    beforeEach(async () => {
+      testDbStore.users.push({
+        id: "delete-user-id",
+        email: "doomed@armsphere.com",
+        username: "doomed_user",
+        passwordHash: await hashPassword("DeleteMe123!"),
+        role: UserRole.ATHLETE,
+        fullName: "Doomed Athlete",
+        isActive: true,
+      });
+      testDbStore.userSessions.push({
+        id: "session-doomed-1",
+        userId: "delete-user-id",
+        tokenFamily: "family-doomed",
+        refreshTokenHash: "hash-doomed",
+        isRevoked: false,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+      deletionToken = generateAccessToken("delete-user-id", "doomed@armsphere.com", UserRole.ATHLETE, env.JWT_ACCESS_SECRET);
+    });
+
+    it("rejects anonymous deletion attempts", async () => {
+      const response = await request(app).delete("/auth/me");
+      expect(response.status).toBe(401);
+
+      const user = testDbStore.users.find(u => u.id === "delete-user-id");
+      expect(user?.isActive).toBe(true);
+    });
+
+    it("deactivates, anonymizes PII, revokes sessions and writes an audit trail", async () => {
+      const response = await request(app)
+        .delete("/auth/me")
+        .set("Authorization", `Bearer ${deletionToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      const user = testDbStore.users.find(u => u.id === "delete-user-id");
+      expect(user).toBeDefined();
+      // Deactivated credential — login is impossible
+      expect(user?.isActive).toBe(false);
+      // Identity scrubbed; unique columns preserved
+      expect(user?.email).toMatch(/^deleted-/);
+      expect(user?.email).not.toBe("doomed@armsphere.com");
+      expect(user?.username).toMatch(/^deleted_/);
+      expect(user?.username).not.toBe("doomed_user");
+      expect(user?.fullName).toBe("Deleted User");
+      // Old password no longer valid
+      expect(await comparePassword("DeleteMe123!", user!.passwordHash)).toBe(false);
+      // All sessions revoked
+      expect(testDbStore.userSessions.find(s => s.id === "session-doomed-1")?.isRevoked).toBe(true);
+      // Audit trail written and free of live PII
+      const audit = testDbStore.auditLogs.find(l => l.action === "AUTH_ACCOUNT_DELETED");
+      expect(audit).toBeDefined();
+      expect(JSON.stringify(audit)).not.toContain("doomed@armsphere.com");
+    });
+
+    it("prevents login after deletion", async () => {
+      await request(app)
+        .delete("/auth/me")
+        .set("Authorization", `Bearer ${deletionToken}`);
+
+      const response = await request(app)
+        .post("/auth/login")
+        .send({ email: "doomed@armsphere.com", password: "DeleteMe123!" });
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  // ==========================================
   // SOCIAL OAUTH BOUNDARIES
   // ==========================================
   describe("Social OAuth Boundaries", () => {

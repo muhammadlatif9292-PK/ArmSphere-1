@@ -147,6 +147,16 @@ class AuthRepository extends BaseRepository {
       await hiveStorage.evictCache('auth_session_user');
     }
   }
+
+  Future<void> deleteAccount({CancelToken? cancelToken}) async {
+    try {
+      await dioClient.dio.delete('/auth/me', cancelToken: cancelToken);
+    } finally {
+      await dioClient.secureStorage.clearSession();
+      await hiveStorage.evictCache('auth_session_user');
+      await hiveStorage.evictCache('auth_role_intent');
+    }
+  }
 }
 
 class AthleteRepository extends BaseRepository {

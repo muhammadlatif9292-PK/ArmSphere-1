@@ -601,6 +601,81 @@ export class AuthService {
     };
   }
 
+  /**
+   * Phase 12 store-readiness: real account deletion path.
+   * Deactivates the credential, anonymizes identity fields, soft-deletes the
+   * athlete profile, and revokes every session. Audit records are retained
+   * without carrying live PII.
+   */
+  static async deleteAccount(userId: string, context?: { ipAddress?: string; userAgent?: string }) {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      throw new NotFoundError("Requested user profile was not found.");
+    }
+
+    const now = new Date();
+    const suffix = userId.replace(/-/g, "").slice(0, 12);
+
+    // Anonymize identity while preserving referential integrity (unique columns).
+    await db
+      .update(users)
+      .set({
+        email: `deleted-${suffix}@deleted.armsphere.invalid`,
+        username: `deleted_${suffix}`,
+        fullName: "Deleted User",
+        passwordHash: await hashPassword(crypto.randomBytes(32).toString("hex")),
+        isActive: false,
+        mfaSecret: null,
+        mfaEnabled: false,
+        mfaRecoveryCodes: null,
+        googleId: null,
+        appleId: null,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId));
+
+    // Soft-delete the athlete profile so historical results stay intact.
+    await db
+      .update(athleteProfiles)
+      .set({
+        isDeleted: true,
+        deletedAt: now,
+        displayName: "Deleted User",
+        biography: null,
+        profilePhoto: null,
+        isSearchable: false,
+        profileVisibility: "PRIVATE",
+        updatedAt: now,
+      })
+      .where(eq(athleteProfiles.userId, userId));
+
+    // Kill every active session across all devices.
+    await db
+      .update(userSessions)
+      .set({ isRevoked: true })
+      .where(
+        and(
+          eq(userSessions.userId, userId),
+          eq(userSessions.isRevoked, false)
+        )
+      );
+
+    await db.insert(auditLogs).values({
+      userId,
+      action: "AUTH_ACCOUNT_DELETED",
+      details: { anonymizedIdentifier: suffix },
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
+    return { message: "Account permanently deleted." };
+  }
+
   // --- DEVICE & SESSION MANAGEMENT ---
 
   /**

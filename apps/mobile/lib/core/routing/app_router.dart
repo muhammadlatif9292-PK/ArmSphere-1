@@ -32,6 +32,7 @@ import '../../features/messaging/screens/messaging_screens.dart';
 import '../../features/messaging/screens/announcement_screens.dart';
 import '../../features/settings/screens/settings_screens.dart';
 import '../../features/settings/screens/payment_methods_screen.dart';
+import '../../features/settings/screens/settings_hub_screens.dart';
 import '../../features/team/screens/team_screens.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/search/screens/search_screen.dart';
@@ -600,6 +601,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
           child: const BlockedUsersScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings_hub',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const SettingsHubScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings/deletion',
+        name: 'account_deletion',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const AccountDeletionScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings/terms',
+        name: 'terms',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const TermsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings/privacy',
+        name: 'privacy_policy',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyScreen(),
         ),
       ),
       GoRoute(

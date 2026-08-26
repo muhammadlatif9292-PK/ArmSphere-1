@@ -9,6 +9,7 @@ authRouter.post("/login", AuthController.login);
 authRouter.post("/refresh", AuthController.refresh);
 authRouter.post("/logout", AuthController.logout);
 authRouter.get("/me", authenticate, AuthController.me);
+authRouter.delete("/me", authenticate, AuthController.deleteAccount);
 
 // --- Session & Device Management ---
 authRouter.get("/sessions", authenticate, AuthController.getSessions);

@@ -195,6 +195,26 @@ export class AuthController {
   // --- DEVICE & SESSION MANAGEMENT ---
 
   /**
+   * Handles account deletion DELETE /auth/me (Phase 12 store readiness).
+   */
+  static async deleteAccount(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new BadRequestError("User not logged in.");
+      const result = await AuthService.deleteAccount(req.user.id, {
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || "",
+      });
+      res.clearCookie("refreshToken");
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /auth/sessions - Get active user sessions
    */
   static async getSessions(req: Request, res: Response, next: NextFunction) {
