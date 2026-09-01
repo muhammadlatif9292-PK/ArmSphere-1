@@ -1,0 +1,37 @@
+feat: community, messaging & notifications - remove all production mocks
+
+Replace all seven fake screens in the community/messaging/notifications
+areas with real implementations wired to the existing providers and
+backend endpoints (POST /community/links, /community/feed, likes,
+comments; /communication notifications, conversations, messages,
+announcements). No new backend surface needed except one client method.
+
+Community:
+- CommunityFeedScreen: real approved video-link posts with author,
+  category chip, caption, in-app WebView player (EmbedUrlBuilder +
+  VideoPlayerModal), optimistic like toggle via postLikeProvider,
+  comments entry, pull-to-refresh and infinite scroll via loadMore.
+  Like/comment counts intentionally not shown: feed API exposes
+  likedByViewer only - no fabricated numbers.
+- PostCommentsScreen: real GET/POST comments with athlete avatars.
+- CreatePostScreen: real link submission honoring backend rules
+  (YouTube/TikTok/Facebook only, GYM-only exercise fields), honest
+  moderation-pending messaging instead of fake instant success.
+
+Messaging:
+- ConversationsListScreen: real inbox from conversationsProvider
+  (10s polling), unread badges, last-message snippets. Newly routed
+  at /messages and reachable via a new dashboard Inbox shortcut.
+- ChatScreen: real thread with sequence-ordered bubbles, own-message
+  detection from auth userId, send/edit/delete-backed provider,
+  deleted messages rendered honestly as "Message deleted".
+- Public profile Message button now creates/opens a real DIRECT
+  conversation via getOrCreateConversation(profile.userId) instead of
+  pushing hardcoded /messages/conv_<athleteId>.
+
+Notifications & announcements:
+- NotificationsListScreen: real list with unread dot, priority-tinted
+  category icons, tap-to-mark-read, and mark-all-as-read backed by the
+  new NotificationRepository.markAllAsRead (read-all endpoint).
+- AnnouncementsListScreen: real published announcements with pin
+  indicator and dates from /communication/announcements.

@@ -220,7 +220,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                 icon: Icons.fitness_center,
                 label: 'Training Log',
                 color: Colors.teal,
-                onTap: () => context.push('/athlete/self/training-log'),
+                onTap: () => context.push('/athlete/${myProfileId}/training-log'),
               ),
               _ShortcutButton(
                 icon: Icons.group,

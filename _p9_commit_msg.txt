@@ -1,0 +1,25 @@
+feat(admin): phase 9 - honest enterprise control plane
+
+Strip all silent fallback fabrication from admin-web API libraries:
+queries now throw on invalid payloads instead of rendering invented
+DEFAULT_* constants; mutations surface real server failures through a
+normalized axios error interceptor plus unwrapMutationData envelope
+validation. An offline operator can no longer see a fabricated
+success after resolving a dispute or viewing the dashboard.
+
+- Rewrite DashboardPage to render exclusively real getDashboardStats
+  fields (kpis, matchStats, disputeStats, eloHealth,
+  verificationBacklog, systemStatus) with an active-dispute preview
+  from GET /admin/disputes; removed fabricated pipeline stages,
+  attention items, activity timeline, live-tournament card, and all
+  hardcoded fallback numbers.
+- De-fabricate AdminShell: drop mock entity-search modal, fake
+  notification popover/badges, hardcoded counters, and TLS/telemetry
+  claims; navigation now lists only routes that exist.
+- Add AuditPage wired to the immutable SHA-256 audit ledger endpoints
+  (GET /admin/audit/events, GET /admin/audit/verify) with the SA/CO
+  verify gate mirrored honestly via explanatory disabled state.
+- Remove accidental alias routes (/registrations, /records,
+  /verification, /platform-health); /audit renders the real page.
+- Correct DashboardStats.systemStatus type to server truth
+  (database/scheduledJobs/latencyMs).

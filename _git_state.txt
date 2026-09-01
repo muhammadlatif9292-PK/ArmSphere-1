@@ -1,0 +1,86 @@
+ M apps/mobile/lib/features/athlete/screens/athlete_screens.dart
+ M apps/mobile/lib/features/athlete/screens/public_profile_screen.dart
+ M apps/mobile/lib/features/athlete/screens/training_log_screen.dart
+ M apps/mobile/lib/features/championship/screens/championship_screens.dart
+ M apps/mobile/lib/features/informal_event/screens/create_informal_event_screen.dart
+ M apps/mobile/lib/features/informal_event/screens/informal_event_detail_screen.dart
+ M apps/mobile/lib/features/informal_event/screens/informal_event_directory_screen.dart
+ M apps/mobile/lib/features/nomination/screens/my_nominations_screen.dart
+ M apps/mobile/lib/features/referee/screens/referee_screens.dart
+ M apps/mobile/lib/features/session/screens/session_screens.dart
+ M apps/mobile/lib/features/settings/screens/payment_methods_screen.dart
+ M apps/mobile/lib/features/settings/screens/settings_screens.dart
+ M apps/mobile/lib/features/tournament/screens/tournament_operations_screen.dart
+ M apps/mobile/lib/features/tournament/screens/tournament_screens.dart
+ M apps/mobile/lib/features/venue/screens/venue_detail_screen.dart
+ M apps/mobile/lib/features/venue/screens/venue_directory_screen.dart
+?? ArmSphere_Current_Repository_Complete_Product_Flow_Master_Spec.md
+?? _commit_msg_p5.txt
+?? _copied.txt
+?? _e2e_result.txt
+?? _e2e_step4.ps1
+?? _e2e_step4.txt
+?? _e2e_verify.ps1
+?? _flutter_loc.txt
+?? _git_branch.txt
+?? _git_count.txt
+?? _git_diff.txt
+?? _git_editmsg.txt
+?? _git_log.txt
+?? _git_log2.txt
+?? _git_log3.txt
+?? _git_remote.txt
+?? _git_status.txt
+?? _git_status2.txt
+?? _git_status_full.txt
+?? _health_check.ps1
+?? _health_check.txt
+?? _health_poll.ps1
+?? _health_poll.txt
+?? _p10_msg.txt
+?? _p11_add_err.txt
+?? _p11_add_out.txt
+?? _p11_build.txt
+?? _p11_commit_err.txt
+?? _p11_commit_msg.txt
+?? _p11_commit_out.txt
+?? _p11_log.txt
+?? _p11_push_err.txt
+?? _p11_push_out.txt
+?? _p11_staged.txt
+?? _p11_staged_err.txt
+?? _p11_status.txt
+?? _p11b_add_err.txt
+?? _p11b_add_out.txt
+?? _p11b_commit_err.txt
+?? _p11b_commit_msg.txt
+?? _p11b_commit_out.txt
+?? _p11b_push_err.txt
+?? _p11b_push_out.txt
+?? _p11b_staged.txt
+?? _p11b_status.txt
+?? _p6_check.txt
+?? _p6_commit_msg.txt
+?? _p6_commit_out.txt
+?? _p6_status.txt
+?? _p7_check.txt
+?? _p7_commit_msg.txt
+?? _p8_check.txt
+?? _p8_commit_msg.txt
+?? _p8_fetch_logs.ps1
+?? _p8_logs/
+?? _p8_sev.ps1
+?? _p9_ci_poll.ps1
+?? _p9_ci_status.txt
+?? _p9_commit_msg.txt
+?? _p9_fetch_failures.ps1
+?? _p9_fix_msg.txt
+?? _p9_logs/
+?? apps/api/_p10_test_out.txt
+?? apps/api/_p10_vitest_out.txt
+?? flutter_analyze_errors_report.md
+---BRANCH---
+* main ba04ee0 [origin/main] feat(mobile): phase 11b - tokenize raw color leaks into AppTheme
+---REMOTE---
+origin	https://github.com/muhammadlatif9292-PK/ArmSphere-1.git (fetch)
+origin	https://github.com/muhammadlatif9292-PK/ArmSphere-1.git (push)

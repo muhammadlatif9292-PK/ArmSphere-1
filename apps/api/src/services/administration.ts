@@ -18,7 +18,8 @@ import {
   auditLogs,
   refereeCertifications
 } from "@armsphere/db-schema";
-import { BadRequestError, NotFoundError, logger } from "@armsphere/core";
+import { BadRequestError, ForbiddenError, NotFoundError, logger } from "@armsphere/core";
+import { UserRole } from "@armsphere/types";
 import { scheduleJob, SCHEDULED_JOB_TYPES, processedJobsTracker } from "./scheduledJobs.js";
 import { MatchService } from "./match.js";
 import crypto from "crypto";
@@ -480,7 +481,31 @@ export class AdministrationService {
     });
   }
 
-  static async inspectMatch(matchId: string) {
+  static async inspectMatch(matchId: string, reviewerId?: string) {
+    // Authorization check - validate reviewer permissions
+    if (!reviewerId) {
+      throw new ForbiddenError("Authentication required for match inspection");
+    }
+    
+    const [reviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (!reviewer) {
+      throw new NotFoundError("Reviewer user not found");
+    }
+    
+    // Check if reviewer has authorization to inspect matches
+    const hasInspectAuthority = [
+      UserRole.SYSTEM_ADMIN,
+      UserRole.NATIONAL_DIRECTOR,
+      UserRole.PROVINCIAL_DIRECTOR,
+      UserRole.REFEREE,
+    ].includes(reviewer.role as UserRole);
+    
+    if (!hasInspectAuthority) {
+      throw new ForbiddenError(
+        "You do not have permission to inspect match details. Required roles: SYSTEM_ADMIN, NATIONAL_DIRECTOR, PROVINCIAL_DIRECTOR, or REFEREE."
+      );
+    }
+    
     const [matchRecord] = await db.select().from(matches).where(eq(matches.id, matchId));
     if (!matchRecord) {
       throw new NotFoundError("Match not found");
@@ -489,6 +514,15 @@ export class AdministrationService {
     const [challenger] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, matchRecord.challengerId));
     const [opponent] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, matchRecord.opponentId));
     const [referee] = await db.select().from(users).where(eq(users.id, matchRecord.refereeId));
+
+    // For PROVINCIAL_DIRECTOR, check if they have jurisdiction over the match
+    if (reviewer.role === UserRole.PROVINCIAL_DIRECTOR) {
+      if (challenger?.province !== reviewer.province || opponent?.province !== reviewer.province) {
+        throw new ForbiddenError(
+          "You can only inspect matches within your provincial jurisdiction"
+        );
+      }
+    }
 
     return {
       match: matchRecord,

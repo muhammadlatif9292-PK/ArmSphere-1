@@ -1,0 +1,14 @@
+feat: phase 12 store readiness - real account deletion, settings hub & legal surfaces
+
+API: DELETE /auth/me deactivates the credential, anonymizes identity
+fields, soft-deletes the athlete profile, revokes all sessions and
+writes a PII-free audit trail, with full integration test coverage
+(anonymous rejection, scrubbing verification, post-deletion login block).
+
+Mobile: account deletion flow with explicit acknowledgment wired to the
+real endpoint via AuthNotifier.deleteAccount; Settings hub exposing all
+spec sections (profile, security/sessions, notifications, payments,
+tickets, blocked users, support tickets, terms, privacy policy,
+deletion, logout); Terms of Service and Privacy Policy screens that
+describe actual implemented behavior; profile card now routes into the
+hub instead of a flat inline list.

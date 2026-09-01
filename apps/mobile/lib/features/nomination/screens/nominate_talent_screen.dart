@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/api/repositories.dart';
 
 class NominateTalentScreen extends StatefulWidget {
   const NominateTalentScreen({super.key});
@@ -29,12 +31,22 @@ class _NominateTalentScreenState extends State<NominateTalentScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final name = _nameController.text.trim();
+      final reason = _reasonController.text.trim();
+      final nominationRepository = ref.read(nominationRepositoryProvider);
+      await nominationRepository.nominateTalent(name, reason);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Nomination filed successfully!'), backgroundColor: Colors.green),
         );
         Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Theme.of(context).colorScheme.error),
+        );
       }
     } finally {
       if (mounted) {

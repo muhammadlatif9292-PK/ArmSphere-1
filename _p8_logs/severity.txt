@@ -1,0 +1,11 @@
+error-severity: 5
+warning-severity: 13
+info-severity: 1384
+other-dart-bullet-lines: 0
+
+=== NON-INFO/WARNING LINES (first 60) ===
+2026-08-25T12:51:28.7230303Z   error • The class 'SizedBox' doesn't have a constant constructor 'height'. Try calling a different constructor • lib/features/community/screens/community_feed_screen.dart:79:61 • const_with_undefined_constructor
+2026-08-25T12:51:28.7235017Z   error • The method '[]' can't be unconditionally invoked because the receiver can be 'null'. Try making the call conditional (using '?.') or adding a null check to the target ('!') • lib/features/community/screens/community_feed_screen.dart:112:62 • unchecked_use_of_nullable_value
+2026-08-25T12:51:28.7242190Z   error • A value of type 'String' can't be assigned to a parameter of type 'Widget' in a const constructor. Try using a subtype, or removing the keyword 'const' • lib/features/community/screens/create_post_screen.dart:68:13 • const_constructor_param_type_mismatch
+2026-08-25T12:51:28.7245848Z   error • The argument type 'String' can't be assigned to the parameter type 'Widget'.  • lib/features/community/screens/create_post_screen.dart:69:17 • argument_type_not_assignable
+2026-08-25T12:51:28.7429389Z   error • Undefined name 'notificationRepositoryProvider'. Try correcting the name to one that is defined, or defining the name • lib/features/notifications/screens/notification_screens.dart:35:29 • undefined_identifier

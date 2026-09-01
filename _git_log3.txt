@@ -1,0 +1,26 @@
+ba04ee0|2026-08-26 09:28:51 +0500|feat(mobile): phase 11b - tokenize raw color leaks into AppTheme
+dda3236|2026-08-26 08:22:46 +0500|feat(admin-web): phase 11 - unify design system tokens and shared state primitives
+e98f885|2026-08-26 01:38:29 +0500|test(api): align auth/env tests with phase 10 hardening
+f0d9632|2026-08-26 01:30:21 +0500|fix(api): phase 10 - security & data integrity hardening
+4a10be4|2026-08-25 22:31:12 +0500|fix(admin): phase 9 CI - add missing AuditPage import, silence unused param
+9347d43|2026-08-25 22:25:52 +0500|feat(admin): phase 9 - honest enterprise control plane
+1f05a6f|2026-08-25 18:49:53 +0500|feat: governance & championships - real dispute workflows, remove fake federation surface
+8266828|2026-08-25 18:36:42 +0500|fix: resolve 5 analyzer errors that failed CI on b3b33e9
+b3b33e9|2026-08-25 17:49:49 +0500|feat: community, messaging & notifications - remove all production mocks
+ba7679c|2026-08-25 17:16:30 +0500|feat: organizations - real teams, roster management & my-teams endpoint
+6428be6|2026-08-25 15:55:41 +0500|feat: officials & match day - tables, referee assignment, calls, results, real scorepad & certs
+8a472fa|2026-08-25 14:38:23 +0500|fix(mobile): operations console ΓÇö shade700 typo, add state_providers import, drop dead locals
+e5f50a4|2026-08-25 14:26:41 +0500|feat(mobile): competition lifecycle ΓÇö operator console, weigh-ins, seeding, real brackets
+7678f94|2026-08-25 13:47:24 +0500|fix(mobile): resolve 3 analyzer errors (rethrow outside catch, invalid onDeleted/fontSize params)
+72a0537|2026-08-25 13:32:52 +0500|chore(mobile): remove unrouted mock athlete_profile_screen and 20 orphaned fake widgets
+1fc6cb4|2026-08-25 13:26:26 +0500|fix(api+mobile): profile endpoint accepts athlete profile ids; real public profile and followers/following lists
+26313b0|2026-08-25 13:12:37 +0500|feat(mobile): athlete home wired to real data - per-arm ELO, verified match history with win/loss, training PRs; fake medals removed; matches/PRs now resolve by athlete profile id
+82dade1|2026-08-25 12:59:38 +0500|feat(mobile): rankings filters wired to real leaderboard params (arm/province/search) and real response fields, mock list removed
+4b4de62|2026-08-25 12:55:53 +0500|feat(mobile): real athlete search replaces mock global search - debounced live results from GET /athletes/search
+2b5bbd5|2026-08-25 12:50:35 +0500|feat(mobile): real competition data - events list/detail from live API and genuine tournament registration flow
+b4cf6cc|2026-08-25 05:37:58 +0500|feat(db): stage Supabase production migration chain 0000-0015 (zero-cost Postgres)
+dd1b63a|2026-08-24 18:23:53 +0500|fix(api): exempt credential auth endpoints from double-submit CSRF so native clients can register and login
+5a98ab5|2026-08-24 17:10:13 +0500|feat: polished first-run journey - welcome screen, role intent, onboarding wizard, auth-driven router
+f43de85|2026-08-24 15:17:45 +0500|fix: correct app_theme.dart import path in premium floating nav bar
+537c47b|2026-08-24 14:41:54 +0500|feat: add premium floating nav bar and polish mobile screens
+84fd144|2026-08-24 00:54:05 +0500|feat: complete ArmSphere security and production hardening

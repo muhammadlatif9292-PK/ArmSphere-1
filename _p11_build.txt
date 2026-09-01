@@ -1,0 +1,1 @@
+﻿npm error command C:\Windows\system32\cmd.exe /d /s /c tsc && vite build

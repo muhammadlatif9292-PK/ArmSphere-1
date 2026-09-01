@@ -1,0 +1,5 @@
+﻿=== STEP4/5 retry via /api prefix 2026-08-25T10:23:02.0935898+05:00 ===
+LOGIN OK isOnboardedBeforeProfile=False
+STEP4 ATHLETE PROFILE (POST /api/v1/athletes): OK id=d4b59780-38a4-48bc-aad3-fe560962d213 displayName=E2E Athlete
+STEP5 RELOGIN: OK isOnboardedAfterProfile=True
+=== END ===

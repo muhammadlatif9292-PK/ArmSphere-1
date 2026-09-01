@@ -1,0 +1,18 @@
+fix(api): phase 10 - security & data integrity hardening
+
+- IDOR: scope dispute listing to creator unless privileged staff; gate
+  evidence submission and comments to dispute participants or staff;
+  restrict escalation and appeal to the dispute creator
+- Notifications: restrict direct notification sending to federation staff
+- CORS: replace origin reflection with a strict allowlist (same-origin SPA
+  proxy + native mobile clients; optional CORS_ORIGIN extensions)
+- Secrets: constant-time CRON_SECRET comparison; reject webhook deliveries
+  when STRIPE_WEBHOOK_SECRET is unset; require it in production env schema
+- Payments: mark Stripe events processed only after side effects succeed,
+  so failed handling can be redelivered instead of being swallowed
+- MFA: complete login via dedicated completeMfaLogin for the TOTP challenge
+  and recovery flows (empty-password login always failed and stranded users
+  whose recovery code was already consumed)
+- Sessions: revokeOtherSessions no longer reactivates rotated tokens,
+  keeping refresh-token reuse detection intact
+- Observability: /metrics now requires SYSTEM_ADMIN or NATIONAL_DIRECTOR

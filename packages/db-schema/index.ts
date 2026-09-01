@@ -312,6 +312,7 @@ export const disputes = pgTable("disputes", {
   status: varchar("status", { length: 50 }).notNull().default("OPEN"),
   resolutionDetails: text("resolution_details"),
   assignedReviewerId: uuid("assigned_reviewer_id").references(() => users.id),
+  province: varchar("province", { length: 100 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -345,6 +346,7 @@ export const sanctions = pgTable("sanctions", {
   startsAt: timestamp("starts_at").notNull(),
   endsAt: timestamp("ends_at"),
   status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
+  province: varchar("province", { length: 100 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

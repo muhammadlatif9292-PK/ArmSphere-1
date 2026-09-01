@@ -1,0 +1,7 @@
+﻿feat(mobile): phase 11b - tokenize raw color leaks into AppTheme
+
+Centralize skeleton shimmer surfaces and ambient glow constants in
+AppTheme; replace off-palette cyan skeleton border, nav-bar/shell hex
+leaks, Colors.red error icons, teal/amber oddballs, grey text, and
+auth spinner colors with theme tokens. Zero behavior change.
+

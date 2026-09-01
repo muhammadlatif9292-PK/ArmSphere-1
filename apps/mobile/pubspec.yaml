@@ -54,6 +54,7 @@ flutter:
     - assets/sounds/
 
   fonts:
+    # Mobile fonts (used on native platforms)
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-Regular.ttf
@@ -74,3 +75,7 @@ flutter:
           weight: 600
         - asset: assets/fonts/SpaceGrotesk-Bold.ttf
           weight: 700
+
+  # Web fonts (fallbacks for Flutter Web)
+  web:
+    renderer: html

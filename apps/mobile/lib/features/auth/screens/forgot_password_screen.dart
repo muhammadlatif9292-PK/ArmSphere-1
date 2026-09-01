@@ -29,8 +29,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
 
     try {
-      // Simulate sending reset email
-      await Future.delayed(const Duration(seconds: 1));
+      final email = _emailController.text.trim();
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.requestPasswordReset(email);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

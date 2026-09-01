@@ -50,6 +50,28 @@ import '../../features/informal_event/screens/create_informal_event_screen.dart'
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
 
+/// Roles that route to the referee / official dashboard.
+bool _isRefereeLikeRole(String? role) {
+  const refereeRoles = {
+    'REFEREE',
+    'PROVINCIAL_DIRECTOR',
+    'NATIONAL_DIRECTOR',
+    'SYSTEM_ADMIN',
+  };
+  return role != null && refereeRoles.contains(role);
+}
+
+/// Roles that route to the governance dashboard.
+bool _isGovernanceRole(String? role) {
+  const govRoles = {
+    'TOURNAMENT_OPERATOR',
+    'COMPLIANCE_OFFICER',
+    'SUPPORT_AGENT',
+    'ORGANIZATION_LEADER',
+  };
+  return role != null && govRoles.contains(role);
+}
+
 /// Cold-start journey enforced by [redirect]:
 ///   splash → welcome → register/login → role intent → athlete onboarding → home
 ///
@@ -105,7 +127,28 @@ final routerProvider = Provider<GoRouter>((ref) {
           };
           final atEntry =
               location == '/' || entryRoutes.contains(location) || location.startsWith('/mfa/verify');
-          return atEntry ? '/home' : null;
+          
+          if (atEntry) {
+            // Get verified server-side role from profile for routing decision
+            final userRole = authState.userProfile?['role']?.toString().toUpperCase();
+            
+            if (_isRefereeLikeRole(userRole)) {
+              return '/referee/dashboard';
+            }
+            // For athletes or pending roles, go to home
+            return '/home';
+          }
+          
+          // After authentication — redirect away from entry routes to the
+          // correct dashboard. Route is based solely on the verified server-
+          // side role; the client roleIntent is never used for authorization.
+          final userRole = authState.userProfile?['role']?.toString().toUpperCase();
+          if (_isRefereeLikeRole(userRole)) {
+            return '/referee/dashboard';
+          } else if (_isGovernanceRole(userRole)) {
+            return '/governance';
+          }
+          return null; // Already at a non-entry route — allow navigation
 
         case AuthStatus.unknown:
           return location == '/' ? null : '/';
@@ -222,6 +265,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/athlete/dashboard',
                 name: 'athlete_dashboard',
                 builder: (context, state) => const AthleteDashboardScreen(),
+              ),
+              GoRoute(
+                path: '/referee/dashboard',
+                name: 'referee_dashboard',
+                builder: (context, state) => const RefereeDashboardScreen(),
+              ),
+              GoRoute(
+                path: '/governance',
+                name: 'governance',
+                builder: (context, state) => const GovernanceDashboardScreen(),
               ),
             ],
           ),

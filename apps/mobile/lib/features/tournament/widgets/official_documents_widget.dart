@@ -80,21 +80,45 @@ class _OfficialDocumentsWidgetState extends State<OfficialDocumentsWidget> {
       _documents[index]['downloadState'] = 'downloading';
     });
 
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      HapticFeedback.lightImpact();
-      setState(() {
-        _documents[index]['downloadState'] = 'completed';
-      });
+    _performDownload(index);
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✓ ${_documents[index]['title']} downloaded successfully'),
-          backgroundColor: _documents[index]['accentColor'] as Color,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    });
+  Future<void> _performDownload(int index) async {
+    try {
+      final tournamentId = widget.tournament['id']?.toString() ?? '';
+      final documentId = _documents[index]['id']?.toString() ?? '';
+      final tournamentRepository = ref.read(tournamentRepositoryProvider);
+      await tournamentRepository.downloadDocument(tournamentId, documentId);
+      
+      if (mounted) {
+        HapticFeedback.lightImpact();
+        setState(() {
+          _documents[index]['downloadState'] = 'completed';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✓ ${_documents[index]['title']} downloaded successfully'),
+            backgroundColor: _documents[index]['accentColor'] as Color,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        HapticFeedback.lightImpact();
+        setState(() {
+          _documents[index]['downloadState'] = 'idle';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download ${_documents[index]['title']}: \${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   @override

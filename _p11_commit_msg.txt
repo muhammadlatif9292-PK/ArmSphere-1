@@ -1,0 +1,9 @@
+feat(admin-web): phase 11 - unify design system tokens and shared state primitives
+
+Extend index.css @theme with brand surface scale (canvas/bg/panel/raised/
+card/border/accent), adopt tokens across AdminShell chrome, add shared
+LoadingCard/ErrorPanel/EmptyState/ErrorBanner primitives, port VenuesPage
+from light-theme island to dark tokens with query retry, de-drift
+NominationsPage palette (fix invalid divide-slate-850 / hover:bg-rose-450),
+remove dead animate-in classes, fix render-phase auto-select side effects,
+and standardize page headings on h1 text-2xl md:text-3xl font-display.

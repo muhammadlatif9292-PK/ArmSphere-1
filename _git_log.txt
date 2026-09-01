@@ -1,0 +1,1 @@
+﻿8a472fa fix(mobile): operations console ΓÇö shade700 typo, add state_providers import, drop dead locals

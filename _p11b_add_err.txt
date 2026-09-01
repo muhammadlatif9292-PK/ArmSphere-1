@@ -1,0 +1,17 @@
+warning: in the working copy of 'apps/mobile/lib/core/theme/app_theme.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/core/widgets/glass_card.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/core/widgets/main_shell_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/core/widgets/premium_floating_nav_bar.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/athlete/screens/followers_list_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/athlete/screens/rankings_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/auth/screens/forgot_password_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/auth/screens/login_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/auth/screens/mfa_verification_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/auth/screens/register_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/auth/screens/reset_password_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/nomination/screens/my_nominations_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/search/screens/search_screen.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/session/screens/session_screens.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/tournament/screens/tournament_screens.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/tournament/widgets/glass_shimmer_skeleton_list.dart', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/features/tournament/widgets/shimmer_box.dart', LF will be replaced by CRLF the next time Git touches it

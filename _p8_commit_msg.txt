@@ -1,0 +1,29 @@
+feat: governance & championships - real dispute workflows, remove fake federation surface
+
+Replace the fabricated governance screens with real implementations
+backed by GET/POST /governance/disputes and the escalate/appeal/
+evidence endpoints. Delete the unrouted FederationGovernanceScreen
+island of fabricated stats, fake audit logs, and sound-effect-only
+modals.
+
+Data layer:
+- DisputeRepository: escalateDispute, appealDispute,
+  submitDisputeEvidence (VIDEO/IMAGE/DOCUMENT + URL) matching backend
+  schemas (min lengths enforced server-side)
+- DisputeNotifier: corresponding actions with invalidateSelf so lists
+  and detail views refetch after every state change
+
+UI:
+- GovernanceDashboardScreen: real disputes list with status chips
+  (OPEN/ESCALATED/AWAITING_EVIDENCE/RESOLVED/REJECTED), pull-to-
+  refresh, honest empty/error states, complaint entry point
+- DisputeDetailScreen: real lookup from disputes list with title,
+  status, description and resolution notes; working Escalate (reason
+  prompt), Add Evidence Link (typed URL sheet), and Appeal Resolution
+  gated to terminal statuses exactly as backend allows; honest
+  not-found state for unknown IDs
+- SubmitComplaintScreen: real POST /governance/disputes with client
+  validation mirroring backend minimums; success navigates to the
+  real disputes queue instead of fabricating a review code
+- Router: submit-complaint now uses the new screen file; deleted
+  federation_governance_screen.dart (was never routed)

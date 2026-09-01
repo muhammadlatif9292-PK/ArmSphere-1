@@ -1,0 +1,10 @@
+feat(mobile): wire remaining static-mock screens to real providers and complete retry coverage
+
+C1: trailing Retry buttons on error states across tournament operations,
+referee, athlete and settings screens.
+
+C2: nominations, blocked users, tickets, championships + belt lineage,
+venues, account-security sessions, informal events (browse/join/leave/
+cancel/create) and training log (PRs + session history from GYM posts)
+all read live API data via existing Riverpod providers. Fake success
+snackbars and invented backends removed.

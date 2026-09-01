@@ -1,0 +1,11 @@
+warning: in the working copy of 'apps/admin-web/src/index.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/layout/AdminShell.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/AnalyticsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/AthletesPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/AuditPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/ChampionshipsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/GovernancePage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/ModerationQueuePage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/NominationsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/pages/VenuesPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/admin-web/src/components/ui.tsx', LF will be replaced by CRLF the next time Git touches it

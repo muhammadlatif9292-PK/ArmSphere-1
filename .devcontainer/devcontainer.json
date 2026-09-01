@@ -1,0 +1,31 @@
+{
+  "name": "ArmSphere Flutter Web Preview",
+  "image": "ghcr.io/cirruslabs/flutter:stable",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "postCreateCommand": "cd apps/mobile && flutter pub get && cd ../api && npm install",
+  "forwardPorts": [3000, 4000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Flutter Web Preview",
+      "onAutoForward": "openPreview",
+      "visibility": "public"
+    },
+    "4000": {
+      "label": "ArmSphere API",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.flutter",
+        "Dart-Code.dart-code"
+      ]
+    }
+  }
+}

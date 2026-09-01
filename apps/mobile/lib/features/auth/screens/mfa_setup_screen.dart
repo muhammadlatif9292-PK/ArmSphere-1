@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class MfaSetupScreen extends StatefulWidget {
   const MfaSetupScreen({super.key});
@@ -27,7 +29,13 @@ class _MfaSetupScreenState extends State<MfaSetupScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final code = _codeController.text.trim();
+      final authRepository = ref.read(authRepositoryProvider);
+      final authState = ref.read(authProvider);
+      final currentUser = authState.userProfile?['user'] as Map<String, dynamic>? ?? authState.userProfile ?? {};
+      final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
+      await authRepository.verifyMfa(code, userId: userId);
+      
       if (mounted) {
         context.pushReplacement('/recovery-codes');
       }

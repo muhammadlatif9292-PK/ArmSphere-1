@@ -1,0 +1,16 @@
+feat: officials & match day - tables, referee assignment, calls, results, real scorepad & certs
+
+- API: read-only GET /tournaments/tables and GET /tournaments/events/:id/matches
+  (referee+director guarded) exposing existing matchTables/tournamentMatches rows
+- Mobile data layer: 7 TournamentRepository methods + eventMatches/matchTables/
+  refereeDirectory providers wired into event scope invalidation
+- Referee console rewrite: real dashboard (event picker, my assignments,
+  call-to-table, submit result), real certifications screen, real-contract
+  scorepad (POST /matches {challengerId, opponentId, arm, winnerId, scoreLine}),
+  honest unsupported-evidence screen
+- Operator console: match tables strip (add table), match-day board with
+  assign-referee / call-to-table / record-result driving bracket progression
+- Fixes: live_matches rethrows after rollback so backend errors surface;
+  refereeProvider retargeted from nonexistent GET /matches to /admin/referees,
+  dead verifyMatch/submitMatchScorepad removed; referee dashboard logout now
+  signs out for real; role-gated Referee Console shortcut on home tab

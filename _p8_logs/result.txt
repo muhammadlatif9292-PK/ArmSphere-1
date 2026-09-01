@@ -1,0 +1,16 @@
+step: dir ready
+step: credential fill done
+step: token extracted
+step: http status OK
+step: zip downloaded (431662 bytes)
+FATAL: System.Management.Automation.MethodInvocationException: Exception calling "ExtractToDirectory" with "2" argument(s): "End of Central Directory record could not be found." ---> System.IO.InvalidDataException: End of Central Directory record could not be found.
+   at System.IO.Compression.ZipArchive.ReadEndOfCentralDirectory()
+   at System.IO.Compression.ZipArchive.Init(Stream stream, ZipArchiveMode mode, Boolean leaveOpen)
+   at System.IO.Compression.ZipFile.Open(String archiveFileName, ZipArchiveMode mode, Encoding entryNameEncoding)
+   at System.IO.Compression.ZipFile.ExtractToDirectory(String sourceArchiveFileName, String destinationDirectoryName, Encoding entryNameEncoding)
+   at CallSite.Target(Closure , CallSite , Type , Object , String )
+   --- End of inner exception stack trace ---
+   at System.Management.Automation.ExceptionHandlingOps.CheckActionPreference(FunctionContext funcContext, Exception exception)
+   at System.Management.Automation.Interpreter.ActionCallInstruction`2.Run(InterpretedFrame frame)
+   at System.Management.Automation.Interpreter.EnterTryCatchFinallyInstruction.Run(InterpretedFrame frame)
+   at System.Management.Automation.Interpreter.EnterTryCatchFinallyInstruction.Run(InterpretedFrame frame)

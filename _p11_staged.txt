@@ -1,0 +1,11 @@
+apps/admin-web/src/components/ui.tsx
+apps/admin-web/src/index.css
+apps/admin-web/src/layout/AdminShell.tsx
+apps/admin-web/src/pages/AnalyticsPage.tsx
+apps/admin-web/src/pages/AthletesPage.tsx
+apps/admin-web/src/pages/AuditPage.tsx
+apps/admin-web/src/pages/ChampionshipsPage.tsx
+apps/admin-web/src/pages/GovernancePage.tsx
+apps/admin-web/src/pages/ModerationQueuePage.tsx
+apps/admin-web/src/pages/NominationsPage.tsx
+apps/admin-web/src/pages/VenuesPage.tsx

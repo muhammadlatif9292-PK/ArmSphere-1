@@ -2355,31 +2355,53 @@ class _OfficialScorepadScreenState
   void _executeCertificationProcess() async {
     setState(() => _isSubmitting = true);
 
-    await Future.delayed(const Duration(milliseconds: 1200));
+    try {
+      final matchRepository = ref.read(matchRepositoryProvider);
+      final refereeId = widget.match?['refereeId']?.toString() ?? '';
+      final winner = _scoreA > _scoreB ? 'A' : 'B';
+      final score = _scoreA > _scoreB ? _scoreA : _scoreB;
+      
+      await matchRepository.certifyMatchResult(widget.match?['id']?.toString() ?? '', refereeId, winner, score);
+      
+      final ts = DateTime.now().toIso8601String();
+      final hash = 'PAF-CERT-2026-${DateTime.now().millisecondsSinceEpoch}';
 
-    final ts = DateTime.now().toIso8601String();
-    final hash = 'PAF-CERT-2026-${DateTime.now().millisecondsSinceEpoch}';
-
-    if (mounted) {
-      setState(() {
-        _isSubmitting = false;
-        _isCertified = true;
-        _matchState = MatchOperationalState.certified;
-        _certificationTimestamp = ts;
-        _signatureHash = hash;
-      });
-
-      await SoundService.instance.playMatchWon();
       if (mounted) {
-        CelebrationOverlay.show(
-          context,
-          title: 'BOUT RESULT CERTIFIED!',
-          subtitle:
-              'Official record published to Pakistan Armwrestling Federation Registry.',
-          score: _scoreA > _scoreB ? _scoreA : _scoreB,
-          scoreSuffix: ' pts',
-          decimalPlaces: 0,
+        setState(() {
+          _isSubmitting = false;
+          _isCertified = true;
+          _matchState = MatchOperationalState.certified;
+          _certificationTimestamp = ts;
+          _signatureHash = hash;
+        });
+
+        await SoundService.instance.playMatchWon();
+        if (mounted) {
+          CelebrationOverlay.show(
+            context,
+            title: 'BOUT RESULT CERTIFIED!',
+            subtitle:
+                'Official record published to Pakistan Armwrestling Federation Registry.',
+            score: score,
+            scoreSuffix: ' pts',
+            decimalPlaces: 0,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Certification failed: \${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     }
   }

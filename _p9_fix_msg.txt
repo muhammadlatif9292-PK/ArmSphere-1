@@ -1,0 +1,6 @@
+fix(admin): phase 9 CI - add missing AuditPage import, silence unused param
+
+- App.tsx: import AuditPage (route referenced it without the import,
+  TS2304 in Lint & Validate Application Modules).
+- athletesApi.ts: prefix unused optional hook arg with underscore
+  (TS6133 under noUnusedParameters; call-site contract unchanged).

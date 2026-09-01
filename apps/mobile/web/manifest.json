@@ -1,0 +1,35 @@
+{
+    "name": "ArmSphere",
+    "short_name": "ArmSphere",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0B0F19",
+    "theme_color": "#0B0F19",
+    "description": "ArmSphere \u2014 competitive armwrestling platform: rankings, tournaments, community and matches.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

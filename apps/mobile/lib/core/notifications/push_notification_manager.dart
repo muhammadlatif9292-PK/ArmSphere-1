@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -33,6 +33,22 @@ class PushNotificationManager {
   Future<void> initialize(dynamic ref) async {
     if (_initialized) return;
     _widgetRef = ref;
+
+    if (kIsWeb) {
+      // FCM web push requires its own Firebase Web app config (apiKey/appId/
+      // messagingSenderId), a VAPID key, and a firebase-messaging-sw.js
+      // service worker under web/ — none of which exist in this repo yet
+      // (there is no google-services.json/firebase_options.dart for any
+      // platform in this checkout). Rather than half-initialize FCM against
+      // absent config, the web build cleanly skips push registration; every
+      // other feature (auth, navigation, tournaments, community, etc.) is
+      // unaffected. In-app/local notification UI still works normally.
+      debugPrint(
+        "PushNotificationManager: skipping FCM/device registration on web preview (no Firebase Web config present).",
+      );
+      _initialized = true;
+      return;
+    }
 
     try {
       // Initialize Firebase App
@@ -185,9 +201,11 @@ class PushNotificationManager {
       final deviceId = await _getUniqueDeviceId();
       final packageInfo = await PackageInfo.fromPlatform();
       final appVersion = packageInfo.version;
-      final locale = Platform.localeName;
+      final locale = PlatformDispatcher.instance.locale.toLanguageTag();
       final timezone = DateTime.now().timeZoneName;
-      final platform = Platform.isAndroid ? 'android' : (Platform.isIOS ? 'ios' : 'unknown');
+      final platform = defaultTargetPlatform == TargetPlatform.android
+          ? 'android'
+          : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'unknown');
 
       final repository = _widgetRef!.read(notificationRepositoryProvider);
       
@@ -211,10 +229,10 @@ class PushNotificationManager {
 
     final deviceInfo = DeviceInfoPlugin();
     try {
-      if (Platform.isAndroid) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         final androidInfo = await deviceInfo.androidInfo;
         _deviceId = androidInfo.id; // Unique ID on Android
-      } else if (Platform.isIOS) {
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         final iosInfo = await deviceInfo.iosInfo;
         _deviceId = iosInfo.identifierForVendor ?? const Uuid().v4();
       } else {

@@ -32,7 +32,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final token = _tokenController.text.trim();
+      final password = _passwordController.text;
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.resetPassword(token, password);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

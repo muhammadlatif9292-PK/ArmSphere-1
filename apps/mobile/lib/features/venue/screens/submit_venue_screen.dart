@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/api/repositories.dart';
 
 class SubmitVenueScreen extends StatefulWidget {
   const SubmitVenueScreen({super.key});
@@ -29,12 +31,22 @@ class _SubmitVenueScreenState extends State<SubmitVenueScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final name = _nameController.text.trim();
+      final address = _addressController.text.trim();
+      final venueRepository = ref.read(venueRepositoryProvider);
+      await venueRepository.submitVenue(name, address);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Venue submitted for certification!'), backgroundColor: Colors.green),
         );
         Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Theme.of(context).colorScheme.error),
+        );
       }
     } finally {
       if (mounted) {

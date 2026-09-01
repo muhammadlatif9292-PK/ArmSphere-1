@@ -1,0 +1,30 @@
+feat: organizations - real teams, roster management & my-teams endpoint
+
+Replace all three fake team screens with real implementations wired to
+the existing social APIs. Add a minimal read-only GET /social/my-teams
+backend endpoint (Phase 5 precedent) so athletes can list their own
+teams honestly.
+
+Backend:
+- SocialService.getMyTeams: memberships joined with team + club name
+- GET /social/my-teams route + controller (authenticate only)
+
+Mobile data layer:
+- SocialRepository.getMyTeams / getClubs
+- myTeamsProvider, clubsProvider
+- Fix searchAthletes sending 'q' where backend expects 'displayName'
+
+Mobile UI (all fake data removed):
+- TeamsListScreen: real My Teams list from myTeamsProvider with role
+  badges, club labels, skeletons, honest empty/error states
+- TeamDetailScreen: real team info + roster; captain-gated add member
+  sheet (debounced athlete search, MEMBER/CAPTAIN role chips) and
+  remove-member confirm; ApiException.detail surfaced
+- CreateTeamScreen: real POST /social/teams via teamCreationProvider,
+  optional club picker from GET /athletes/clubs, foundedAt picker;
+  navigates to the created team instead of faking success
+- Router: new /teams list route; athlete dashboard "My Team" shortcut
+  no longer points to hardcoded /teams/my-team-id
+
+Invitation/approval workflows are intentionally not built: they do not
+exist server-side and would violate the no-invented-dimensions rule.

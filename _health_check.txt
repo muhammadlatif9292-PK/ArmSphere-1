@@ -1,0 +1,2 @@
+﻿HEALTH STATUS: 200
+HEALTH BODY: {"success":true,"status":"healthy","timestamp":"2026-08-25T04:57:54.228Z","details":{"database":"healthy","queues":"postgresql-scheduled-jobs"}}

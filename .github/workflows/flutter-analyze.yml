@@ -35,3 +35,66 @@ jobs:
     - name: Run Flutter Analyze
       run: flutter analyze --no-fatal-infos --no-fatal-warnings
       working-directory: apps/mobile
+
+  build-android-release:
+    name: Android Release Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+        working-directory: apps/mobile
+
+      - name: Point Android Gradle at Flutter and Android SDKs
+        run: |
+          echo "sdk.dir=${ANDROID_HOME}" > android/local.properties
+          echo "flutter.sdk=${FLUTTER_ROOT}" >> android/local.properties
+        working-directory: apps/mobile
+
+      - name: Generate placeholder launcher icons
+        run: |
+          R=app/src/main/res
+          for pair in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            d=${pair%%:*}; s=${pair##*:}
+            mkdir -p "$R/mipmap-$d"
+            convert -size ${s}x${s} gradient:'#0B1220-#1E293B' \
+              -stroke '#38BDF8' -strokewidth $((s/24)) \
+              -fill none -draw "ellipse $((s/2)),$((s/2)) $((s*82/200)),$((s*82/200)) -60,240" \
+              -fill white -font DejaVu-Sans-Bold -pointsize $((s*40/100)) -gravity center \
+              -draw "text 0,$((s/50)) 'AS'" "$R/mipmap-$d/ic_launcher.png"
+            convert "$R/mipmap-$d/ic_launcher.png" \
+              -resize $((s*66/100))x$((s*66/100)) \
+              -background none -gravity center -extent ${s}x${s} \
+              "$R/mipmap-$d/ic_launcher_foreground.png"
+          done
+        working-directory: apps/mobile/android
+
+      - name: Bootstrap Gradle wrapper
+        run: gradle wrapper --gradle-version 8.12 --distribution-type bin
+        working-directory: apps/mobile/android
+
+      - name: Build release APK (production build verification)
+        run: flutter build apk --release
+        working-directory: apps/mobile
+
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: armsphere-release-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
