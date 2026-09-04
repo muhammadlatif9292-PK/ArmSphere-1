@@ -176,7 +176,11 @@ export class GovernanceController {
         id,
         validated.resolutionDetails,
         validated.decision,
-        actorId
+        {
+          id: req.user!.id,
+          role: req.user!.role,
+          province: req.user!.province,
+        }
       );
 
       res.status(200).json({
@@ -198,7 +202,11 @@ export class GovernanceController {
       const validated = escalateDisputeSchema.parse(req.body);
       const actorId = req.user!.id;
 
-      const dispute = await GovernanceService.escalateDispute(id, validated.escalationReason, actorId);
+      const dispute = await GovernanceService.escalateDispute(id, validated.escalationReason, {
+        id: req.user!.id,
+        role: req.user!.role,
+        province: req.user!.province,
+      });
 
       res.status(200).json({
         success: true,
@@ -222,7 +230,11 @@ export class GovernanceController {
       const validated = appealResolutionSchema.parse(req.body);
       const actorId = req.user!.id;
 
-      const dispute = await GovernanceService.appealResolution(id, validated.appealReason, actorId);
+      const dispute = await GovernanceService.appealResolution(id, validated.appealReason, {
+        id: req.user!.id,
+        role: req.user!.role,
+        province: req.user!.province,
+      });
 
       res.status(200).json({
         success: true,
