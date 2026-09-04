@@ -30,13 +30,28 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            def keystoreProps = new Properties()
+            def keystorePropsFile = file('keystore.properties')
+            if (keystorePropsFile.exists()) {
+                keystoreProps.load(new FileInputStream(keystorePropsFile))
+                storeFile file(keystoreProps['storeFile'] ?: 'upload-keystore.jks')
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            } else {
+                // If configuration is missing, explicitly fail to prevent insecure debug fallback
+                throw new GradleException("Production keystore.properties missing. Cannot sign release build.")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Debug signing is intentional for CI verification builds only.
-            // Play Store submission requires a dedicated upload keystore.
-            signingConfig = signingConfigs.debug
-            minifyEnabled = false
-            shrinkResources = false
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }

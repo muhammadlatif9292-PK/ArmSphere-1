@@ -16,3 +16,8 @@ coverage/
 .packages
 .pub-cache/
 .pub/
+
+# Signing
+keystore.properties
+*.jks
+*.keystore
