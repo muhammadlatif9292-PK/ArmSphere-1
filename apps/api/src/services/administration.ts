@@ -517,7 +517,7 @@ export class AdministrationService {
 
     // For PROVINCIAL_DIRECTOR, check if they have jurisdiction over the match
     if (reviewer.role === UserRole.PROVINCIAL_DIRECTOR) {
-      if (challenger?.province !== reviewer.province || opponent?.province !== reviewer.province) {
+      if (challenger?.province !== reviewer.regionalCoverage || opponent?.province !== reviewer.regionalCoverage) {
         throw new ForbiddenError(
           "You can only inspect matches within your provincial jurisdiction"
         );

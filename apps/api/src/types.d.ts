@@ -7,6 +7,7 @@ declare global {
         id: string;
         email: string;
         role: UserRole;
+        province?: string | null;
       };
       log?: any;
     }

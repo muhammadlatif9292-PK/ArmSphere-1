@@ -121,11 +121,11 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > apps/mobile/android/app/upload-keystore.jks
           chmod 600 apps/mobile/android/app/upload-keystore.jks
           cat > apps/mobile/android/app/keystore.properties << 'EOF'
-storeFile=upload-keystore.jks
-storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-EOF
+          storeFile=upload-keystore.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
           chmod 600 apps/mobile/android/app/keystore.properties
           echo "Signing keystore and properties created."
 

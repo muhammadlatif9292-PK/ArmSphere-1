@@ -179,7 +179,7 @@ export class GovernanceController {
         {
           id: req.user!.id,
           role: req.user!.role,
-          province: req.user!.province,
+          province: req.user!.province || null,
         }
       );
 
@@ -205,7 +205,7 @@ export class GovernanceController {
       const dispute = await GovernanceService.escalateDispute(id, validated.escalationReason, {
         id: req.user!.id,
         role: req.user!.role,
-        province: req.user!.province,
+        province: req.user!.province || null,
       });
 
       res.status(200).json({
@@ -233,7 +233,7 @@ export class GovernanceController {
       const dispute = await GovernanceService.appealResolution(id, validated.appealReason, {
         id: req.user!.id,
         role: req.user!.role,
-        province: req.user!.province,
+        province: req.user!.province || null,
       });
 
       res.status(200).json({
