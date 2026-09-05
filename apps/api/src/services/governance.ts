@@ -47,7 +47,7 @@ export class GovernanceService {
    * federation roles see the full docket (mirrors the admin console gate).
    * PROVINCIAL_DIRECTOR role only sees disputes from their assigned province.
    */
-  public static async listDisputes(requester?: { id: string; role: string; province?: string }) {
+  public static async listDisputes(requester?: { id: string; role: string; province?: string | null }) {
     const privilegedRoles = [
       "SYSTEM_ADMIN",
       "NATIONAL_DIRECTOR",

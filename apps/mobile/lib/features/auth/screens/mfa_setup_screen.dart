@@ -4,54 +4,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class MfaSetupScreen extends StatefulWidget {
+class MfaSetupScreen extends ConsumerWidget {
   const MfaSetupScreen({super.key});
 
   @override
-  State<MfaSetupScreen> createState() => _MfaSetupScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final _codeController = TextEditingController();
+    bool _isLoading = false;
 
-class _MfaSetupScreenState extends State<MfaSetupScreen> {
-  final _codeController = TextEditingController();
-  bool _isLoading = false;
+    Future<void> _verify() async {
+      if (_codeController.text.trim().length != 6) return;
 
-  @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
+      setState(() {
+        _isLoading = true;
+      });
 
-  Future<void> _verify() async {
-    if (_codeController.text.trim().length != 6) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final code = _codeController.text.trim();
-      final authRepository = ref.read(authRepositoryProvider);
-      final authState = ref.read(authProvider);
-      final currentUser = authState.userProfile?['user'] as Map<String, dynamic>? ?? authState.userProfile ?? {};
-      final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
-      await authRepository.verifyMfa(code, userId: userId);
-      
-      if (mounted) {
-        context.pushReplacement('/recovery-codes');
-      }
-    } catch (_) {
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      try {
+        final code = _codeController.text.trim();
+        final authRepository = ref.read(authRepositoryProvider);
+        final authState = ref.read(authProvider);
+        final currentUser = authState.userProfile?['user'] as Map<String, dynamic>? ?? authState.userProfile ?? {};
+        final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
+        await authRepository.verifyMfa(code, userId: userId);
+        
+        if (context.mounted) {
+          context.pushReplacement('/recovery-codes');
+        }
+      } catch (_) {
+      } finally {
+        if (context.mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -66,16 +53,16 @@ class _MfaSetupScreenState extends State<MfaSetupScreen> {
           children: [
             Text(
               'Secure Your Account',
-              style: theme.textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: theme.colorScheme.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Scan the QR code with an authenticator app (Google Authenticator, Authy, etc.) and enter the 6-digit code below.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 32),

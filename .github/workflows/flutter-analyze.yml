@@ -72,6 +72,9 @@ jobs:
           echo "flutter.sdk=${FLUTTER_ROOT}" >> android/local.properties
         working-directory: apps/mobile
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
       - name: Generate placeholder launcher icons
         run: |
           R=app/src/main/res
