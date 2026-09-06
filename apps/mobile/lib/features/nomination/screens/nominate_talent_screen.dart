@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/api/repositories.dart';
 
-class NominateTalentScreen extends ConsumerStatefulWidget {
+class NominateTalentScreen extends StatefulWidget {
   const NominateTalentScreen({super.key});
 
   @override
-  ConsumerState<NominateTalentScreen> createState() => _NominateTalentScreenState();
+  State<NominateTalentScreen> createState() => _NominateTalentScreenState();
 }
 
-class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
+class _NominateTalentScreenState extends State<NominateTalentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _reasonController = TextEditingController();

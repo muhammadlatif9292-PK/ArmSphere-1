@@ -4,16 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class MfaSetupScreen extends ConsumerStatefulWidget {
+class MfaSetupScreen extends StatefulWidget {
   const MfaSetupScreen({super.key});
 
   @override
-  ConsumerState<MfaSetupScreen> createState() => _MfaSetupScreenState();
+  State<MfaSetupScreen> createState() => _MfaSetupScreenState();
 }
 
-class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
+class _MfaSetupScreenState extends State<MfaSetupScreen> {
   final _codeController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
 
   Future<void> _verify() async {
     if (_codeController.text.trim().length != 6) return;
@@ -30,7 +36,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
       final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
       await authRepository.verifyMfa(code, userId: userId);
       
-      if (context.mounted) {
+      if (mounted) {
         context.pushReplacement('/recovery-codes');
       }
     } catch (_) {
@@ -44,13 +50,9 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
   }
 
   @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Setup MFA'),
@@ -64,16 +66,16 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
           children: [
             Text(
               'Secure Your Account',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: Theme.of(context).colorScheme.primary,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Scan the QR code with an authenticator app (Google Authenticator, Authy, etc.) and enter the 6-digit code below.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 32),

@@ -2327,7 +2327,7 @@ class _OfficialScorepadScreenState
                       onPressed: confirmedStatement
                           ? () {
                               Navigator.pop(context);
-                              _executeCertificationProcess(ref);
+                              _executeCertificationProcess();
                             }
                           : null,
                       icon: const Icon(Icons.draw,
