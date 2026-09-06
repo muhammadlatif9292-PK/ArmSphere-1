@@ -72,6 +72,16 @@ jobs:
           echo "flutter.sdk=${FLUTTER_ROOT}" >> android/local.properties
         working-directory: apps/mobile
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Bootstrap Gradle wrapper
+        run: |
+          curl -L -o /tmp/gradle-8.13-bin.zip https://services.gradle.org/distributions/gradle-8.13-bin.zip
+          unzip -q /tmp/gradle-8.13-bin.zip -d /tmp
+          /tmp/gradle-8.13/bin/gradle wrapper --gradle-version 8.13 --distribution-type bin
+        working-directory: apps/mobile/android
+
       - name: Generate placeholder launcher icons
         run: |
           R=app/src/main/res
@@ -89,45 +99,6 @@ jobs:
               "$R/mipmap-$d/ic_launcher_foreground.png"
           done
         working-directory: apps/mobile/android
-
-      - name: Bootstrap Gradle wrapper
-        run: gradle wrapper --gradle-version 8.12 --distribution-type bin
-        working-directory: apps/mobile/android
-
-      - name: Validate production signing secrets
-        run: |
-          set -e
-          if [[ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]]; then
-            echo "ERROR: ANDROID_KEYSTORE_BASE64 secret is not set."
-            exit 1
-          fi
-          if [[ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ]]; then
-            echo "ERROR: ANDROID_KEYSTORE_PASSWORD secret is not set."
-            exit 1
-          fi
-          if [[ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ]]; then
-            echo "ERROR: ANDROID_KEY_ALIAS secret is not set."
-            exit 1
-          fi
-          if [[ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ]]; then
-            echo "ERROR: ANDROID_KEY_PASSWORD secret is not set."
-            exit 1
-          fi
-          echo "Production signing secrets are present."
-
-      - name: Create signing keystore and properties
-        run: |
-          mkdir -p apps/mobile/android/app
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > apps/mobile/android/app/upload-keystore.jks
-          chmod 600 apps/mobile/android/app/upload-keystore.jks
-          cat > apps/mobile/android/app/keystore.properties << 'EOF'
-          storeFile=upload-keystore.jks
-          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          EOF
-          chmod 600 apps/mobile/android/app/keystore.properties
-          echo "Signing keystore and properties created."
 
       - name: Build release APK (production build verification)
         run: flutter build apk --release

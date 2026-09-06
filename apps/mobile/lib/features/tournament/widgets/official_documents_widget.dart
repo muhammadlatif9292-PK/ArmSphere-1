@@ -1,21 +1,22 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
-class OfficialDocumentsWidget extends StatefulWidget {
+import '../../../core/api/repositories.dart';
+class OfficialDocumentsWidget extends ConsumerStatefulWidget {
   final Map<String, dynamic> tournament;
 
   const OfficialDocumentsWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
-  State<OfficialDocumentsWidget> createState() => _OfficialDocumentsWidgetState();
+  ConsumerState<OfficialDocumentsWidget> createState() => _OfficialDocumentsWidgetState();
 }
 
-class _OfficialDocumentsWidgetState extends State<OfficialDocumentsWidget> {
+class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidget> {
   bool _isExpanded = true;
 
   final List<Map<String, dynamic>> _documents = [
