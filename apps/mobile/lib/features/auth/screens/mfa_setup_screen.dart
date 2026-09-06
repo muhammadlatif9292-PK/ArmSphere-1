@@ -4,42 +4,53 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class MfaSetupScreen extends ConsumerWidget {
+class MfaSetupScreen extends ConsumerStatefulWidget {
   const MfaSetupScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final _codeController = TextEditingController();
-    bool _isLoading = false;
+  ConsumerState<MfaSetupScreen> createState() => _MfaSetupScreenState();
+}
 
-    Future<void> _verify() async {
-      if (_codeController.text.trim().length != 6) return;
+class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
+  final _codeController = TextEditingController();
+  bool _isLoading = false;
 
-      setState(() {
-        _isLoading = true;
-      });
+  Future<void> _verify() async {
+    if (_codeController.text.trim().length != 6) return;
 
-      try {
-        final code = _codeController.text.trim();
-        final authRepository = ref.read(authRepositoryProvider);
-        final authState = ref.read(authProvider);
-        final currentUser = authState.userProfile?['user'] as Map<String, dynamic>? ?? authState.userProfile ?? {};
-        final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
-        await authRepository.verifyMfa(code, userId: userId);
-        
-        if (context.mounted) {
-          context.pushReplacement('/recovery-codes');
-        }
-      } catch (_) {
-      } finally {
-        if (context.mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final code = _codeController.text.trim();
+      final authRepository = ref.read(authRepositoryProvider);
+      final authState = ref.read(authProvider);
+      final currentUser = authState.userProfile?['user'] as Map<String, dynamic>? ?? authState.userProfile ?? {};
+      final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
+      await authRepository.verifyMfa(code, userId: userId);
+      
+      if (context.mounted) {
+        context.pushReplacement('/recovery-codes');
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
+  }
 
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Setup MFA'),

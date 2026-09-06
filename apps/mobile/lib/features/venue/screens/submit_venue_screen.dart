@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/api/repositories.dart';
 
-class SubmitVenueScreen extends StatefulWidget {
+class SubmitVenueScreen extends ConsumerStatefulWidget {
   const SubmitVenueScreen({super.key});
 
   @override
-  State<SubmitVenueScreen> createState() => _SubmitVenueScreenState();
+  ConsumerState<SubmitVenueScreen> createState() => _SubmitVenueScreenState();
 }
 
-class _SubmitVenueScreenState extends State<SubmitVenueScreen> {
+class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
