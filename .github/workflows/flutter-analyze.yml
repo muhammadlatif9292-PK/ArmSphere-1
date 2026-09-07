@@ -33,7 +33,14 @@ jobs:
       working-directory: apps/mobile
 
     - name: Run Flutter Analyze
-      run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings --machine > "$RUNNER_TEMP/flutter-analyze.json"
+          status=$?
+          jq -r 'select(.severity == "error") | "::error file=\(.file),line=\(.startLine),col=\(.startColumn)::\(.message)"' "$RUNNER_TEMP/flutter-analyze.json"
+          jq -r 'select(.severity == "error") | "- `\(.file):\(.startLine):\(.startColumn)` \(.message)"' "$RUNNER_TEMP/flutter-analyze.json" >> "$GITHUB_STEP_SUMMARY"
+          exit $status
       working-directory: apps/mobile
 
   build-android-release:
@@ -94,7 +101,18 @@ jobs:
         working-directory: apps/mobile/android
 
       - name: Build release APK (production build verification)
-        run: flutter build apk --release
+        shell: bash
+        run: |
+          set +e
+          flutter build apk --release 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
+          status=${PIPESTATUS[0]}
+          {
+            echo '## Android release build output'
+            echo '```text'
+            tail -n 120 "$RUNNER_TEMP/flutter-build.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
         working-directory: apps/mobile
 
       - name: Cleanup temporary signing files
