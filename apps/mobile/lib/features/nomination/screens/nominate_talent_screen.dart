@@ -8,7 +8,7 @@ class NominateTalentScreen extends ConsumerStatefulWidget {
   const NominateTalentScreen({super.key});
 
   @override
-  State<NominateTalentScreen> createState() => _NominateTalentScreenState();
+  ConsumerState<NominateTalentScreen> createState() => _NominateTalentScreenState();
 }
 
 class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {

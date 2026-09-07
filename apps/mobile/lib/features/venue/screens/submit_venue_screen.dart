@@ -8,7 +8,7 @@ class SubmitVenueScreen extends ConsumerStatefulWidget {
   const SubmitVenueScreen({super.key});
 
   @override
-  State<SubmitVenueScreen> createState() => _SubmitVenueScreenState();
+  ConsumerState<SubmitVenueScreen> createState() => _SubmitVenueScreenState();
 }
 
 class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
@@ -35,7 +35,12 @@ class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
       final name = _nameController.text.trim();
       final address = _addressController.text.trim();
       final venueRepository = ref.read(venueRepositoryProvider);
-      await venueRepository.submitVenue(name, address);
+      await venueRepository.submitVenue(
+        name: name,
+        city: address,
+        province: 'UNKNOWN',
+        address: address,
+      );
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

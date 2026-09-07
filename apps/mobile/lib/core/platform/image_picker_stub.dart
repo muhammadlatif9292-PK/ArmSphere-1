@@ -3,16 +3,13 @@
 /// Native file/camera picker is web-incompatible. On web, throw
 /// NotImplementedError to prevent runtime crashes.
 
-import 'dart:io' if (dart.library.html) 'dart:ui' as ui;
+import 'dart:typed_data';
 
-class _ImagePickerStub {
-  static throwNotImplementedError() {
-    throw NotImplementedError(
-      'Image picker is not supported in web build. '
-      'Consider using file input dialog or URL-based image upload for web. '
-      'See: https://docs.flutter.dev/cookbook/plugins/picking-images',
-    );
-  }
+Never throwNotImplementedError() {
+  throw UnsupportedError(
+    'Image picker is not supported in web build. '
+    'Use a web file input or URL-based image upload instead.',
+  );
 }
 
 class ImagePicker {
@@ -21,9 +18,9 @@ class ImagePicker {
   // Always throw on web
   Future<XFile?> pickImage({
     ImageSource? source,
-    double maxWidth,
-    double maxHeight,
-    int imageQuality,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
   }) async {
     throwNotImplementedError();
   }
@@ -31,19 +28,19 @@ class ImagePicker {
   // Always throw on web
   Future<XFile?> pickVideo({
     ImageSource? source,
-    int maxWidth,
-    int maxHeight,
-    int imageQuality,
-    Duration maxDuration,
+    int? maxWidth,
+    int? maxHeight,
+    int? imageQuality,
+    Duration? maxDuration,
   }) async {
     throwNotImplementedError();
   }
 
   // Always throw on web
   Future<XFile?> pickMultiImage({
-    double maxWidth,
-    double maxHeight,
-    int imageQuality,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
   }) async {
     throwNotImplementedError();
   }
@@ -52,9 +49,9 @@ class ImagePicker {
   Future<XFile?> pickFiles({
     ImageSource? source,
     FilePickerFileType type = FilePickerFileType.image,
-    int maxWidth,
-    int maxHeight,
-    int imageQuality,
+    int? maxWidth,
+    int? maxHeight,
+    int? imageQuality,
   }) async {
     throwNotImplementedError();
   }
@@ -64,7 +61,13 @@ enum ImageSource { camera, gallery }
 
 // Stub XFile for return type compatibility
 class XFile {
-  XFile(this.path);
+  XFile(this.path, {String? name, String? mimeType})
+      : _name = name ?? path.split('/').last,
+        _mimeType = mimeType ?? 'application/octet-stream';
+
+  final String path;
+  final String _name;
+  final String _mimeType;
 
   factory XFile.fromBytes(
     Uint8List bytes, {
@@ -74,10 +77,9 @@ class XFile {
     throwNotImplementedError();
   }
 
-  String get path;
-  int get lengthInBytes;
-  String get name;
-  String get mimeType;
+  int get lengthInBytes => throwNotImplementedError();
+  String get name => _name;
+  String get mimeType => _mimeType;
 }
 
 enum FilePickerFileType { image, video, media, custom }

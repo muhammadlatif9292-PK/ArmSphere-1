@@ -139,6 +139,22 @@ class AuthRepository extends BaseRepository {
     }
   }
 
+  Future<void> requestPasswordReset(String email, {CancelToken? cancelToken}) async {
+    await dioClient.dio.post(
+      '/auth/password-reset/request',
+      data: {'email': email},
+      cancelToken: cancelToken,
+    );
+  }
+
+  Future<void> resetPassword(String token, String password, {CancelToken? cancelToken}) async {
+    await dioClient.dio.post(
+      '/auth/password-reset/reset',
+      data: {'token': token, 'password': password},
+      cancelToken: cancelToken,
+    );
+  }
+
   Future<void> logout({CancelToken? cancelToken}) async {
     try {
       await dioClient.dio.post('/auth/logout', cancelToken: cancelToken);
@@ -358,6 +374,21 @@ class MatchRepository extends BaseRepository {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> certifyMatchResult(
+    String matchId,
+    String refereeId,
+    String winner,
+    int score, {
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'certify_match_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/matches/$matchId/verify', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data is Map && data['data'] is Map ? data['data'] : data),
+    );
+  }
 }
 
 class TournamentRepository extends BaseRepository {
@@ -381,6 +412,22 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId', cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> downloadDocument(
+    String tournamentId,
+    String documentId, {
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'tournament_document_${tournamentId}_$documentId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/tournaments/events/$tournamentId/documents/$documentId',
+        cancelToken: token,
+      ),
+      parse: (data) => Map<String, dynamic>.from(data is Map && data['data'] is Map ? data['data'] : data),
     );
   }
 
@@ -1753,6 +1800,16 @@ class NominationRepository extends BaseRepository {
         final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
         return Map<String, dynamic>.from(payload);
       },
+    );
+  }
+
+  Future<Map<String, dynamic>> nominateTalent(String nomineeName, String notes, {CancelToken? cancelToken}) {
+    return submitNomination(
+      nomineeName: nomineeName,
+      city: 'UNKNOWN',
+      province: 'UNKNOWN',
+      notes: notes,
+      cancelToken: cancelToken,
     );
   }
 }

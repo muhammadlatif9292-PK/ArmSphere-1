@@ -54,33 +54,21 @@ enum JavaScriptMode { unrestricted, disabled }
 
 // Stub NavigationDelegate
 class NavigationDelegate {
-  NavigationDelegate._();
-
-  factory NavigationDelegate({
-    required void Function(NavigationAction action) onNavigationRequest,
-    required void Function(int progress) onProgress,
-    required void Function(WebResourceError error) onWebResourceError,
-    required void Function(String url) onPageStarted,
-    required void Function(String url) onPageFinished,
-  }) = _NavigationDelegateImpl;
-
-  static const empty = NavigationDelegate._();
-}
-
-class _NavigationDelegateImpl extends NavigationDelegate {
-  final void Function(NavigationAction action) onNavigationRequest;
-  final void Function(int progress) onProgress;
-  final void Function(WebResourceError error) onWebResourceError;
-  final void Function(String url) onPageStarted;
-  final void Function(String url) onPageFinished;
-
-  _NavigationDelegateImpl({
-    required this.onNavigationRequest,
-    required this.onProgress,
-    required this.onWebResourceError,
-    required this.onPageStarted,
-    required this.onPageFinished,
+  const NavigationDelegate({
+    this.onNavigationRequest,
+    this.onProgress,
+    this.onWebResourceError,
+    this.onPageStarted,
+    this.onPageFinished,
   });
+
+  final void Function(NavigationAction action)? onNavigationRequest;
+  final void Function(int progress)? onProgress;
+  final void Function(WebResourceError error)? onWebResourceError;
+  final void Function(String url)? onPageStarted;
+  final void Function(String url)? onPageFinished;
+
+  static const empty = NavigationDelegate();
 }
 
 // Stub NavigationAction

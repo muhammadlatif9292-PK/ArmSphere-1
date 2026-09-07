@@ -8,7 +8,7 @@ class MfaSetupScreen extends ConsumerStatefulWidget {
   const MfaSetupScreen({super.key});
 
   @override
-  State<MfaSetupScreen> createState() => _MfaSetupScreenState();
+  ConsumerState<MfaSetupScreen> createState() => _MfaSetupScreenState();
 }
 
 class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
