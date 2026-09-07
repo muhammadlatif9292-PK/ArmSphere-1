@@ -34,6 +34,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
       final authState = ref.read(authProvider);
       final currentUser = authState.userProfile?['user'] as Map<String, dynamic>? ?? authState.userProfile ?? {};
       final userId = currentUser['id']?.toString() ?? currentUser['userId']?.toString();
+      if (userId == null || userId.isEmpty) return;
       await authRepository.verifyMfa(code, userId: userId);
       
       if (mounted) {
