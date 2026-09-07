@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Java
-      uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
       with:
         distribution: 'zulu'
         java-version: '17'
@@ -25,7 +25,7 @@ jobs:
     - name: Set up Flutter SDK
       uses: subosito/flutter-action@v2
       with:
-        channel: 'stable'
+          flutter-version: '3.47.2'
         cache: true
 
     - name: Install Dependencies
@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v3
+          uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -59,7 +59,7 @@ jobs:
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+            flutter-version: '3.47.2'
           cache: true
 
       - name: Install Dependencies
@@ -74,13 +74,6 @@ jobs:
 
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
-
-      - name: Bootstrap Gradle wrapper
-        run: |
-          curl -L -o /tmp/gradle-8.14-bin.zip https://services.gradle.org/distributions/gradle-8.14-bin.zip
-          unzip -q /tmp/gradle-8.14-bin.zip -d /tmp
-          /tmp/gradle-8.14/bin/gradle wrapper --gradle-version 8.14 --distribution-type bin
-        working-directory: apps/mobile/android
 
       - name: Generate placeholder launcher icons
         run: |
