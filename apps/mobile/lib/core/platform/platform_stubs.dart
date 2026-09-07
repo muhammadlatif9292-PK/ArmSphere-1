@@ -3,26 +3,16 @@
 /// These stubs provide no-op or fallback implementations for native-only
 /// packages when compiling to web.
 
-import 'dart:html' as html;
-
 class FlutterSecureStorage {
   const FlutterSecureStorage();
 
-  Future<void> write({required String key, required String value}) async {
-    html.window.localStorage[key] = value;
-  }
+  Future<void> write({required String key, required String value}) async {}
 
-  Future<String?> read({required String key}) async {
-    return html.window.localStorage[key];
-  }
+  Future<String?> read({required String key}) async => null;
 
-  Future<void> delete({required String key}) async {
-    html.window.localStorage.remove(key);
-  }
+  Future<void> delete({required String key}) async {}
 
-  Future<void> deleteAll() async {
-    html.window.localStorage.clear();
-  }
+  Future<void> deleteAll() async {}
 }
 
 const secureStorageStub = FlutterSecureStorage();

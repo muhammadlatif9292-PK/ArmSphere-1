@@ -77,9 +77,9 @@ jobs:
 
       - name: Bootstrap Gradle wrapper
         run: |
-          curl -L -o /tmp/gradle-8.13-bin.zip https://services.gradle.org/distributions/gradle-8.13-bin.zip
-          unzip -q /tmp/gradle-8.13-bin.zip -d /tmp
-          /tmp/gradle-8.13/bin/gradle wrapper --gradle-version 8.13 --distribution-type bin
+          curl -L -o /tmp/gradle-8.14-bin.zip https://services.gradle.org/distributions/gradle-8.14-bin.zip
+          unzip -q /tmp/gradle-8.14-bin.zip -d /tmp
+          /tmp/gradle-8.14/bin/gradle wrapper --gradle-version 8.14 --distribution-type bin
         working-directory: apps/mobile/android
 
       - name: Generate placeholder launcher icons
