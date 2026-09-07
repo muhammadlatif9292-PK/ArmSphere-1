@@ -5,12 +5,14 @@
 
 import 'package:flutter/foundation.dart';
 
-class _LocalAuthStub {
+class _LocalAuthStub extends LocalAuth {
+  _LocalAuthStub();
+
   static bool get isSupported => false;
 }
 
-const LocalAuth _localAuthStub = _LocalAuthStub();
-const LocalAuth localAuthStub = _LocalAuthStub();
+final LocalAuth _localAuthStub = _LocalAuthStub();
+final LocalAuth localAuthStub = _LocalAuthStub();
 
 class LocalAuth {
   const LocalAuth();

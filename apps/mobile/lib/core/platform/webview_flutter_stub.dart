@@ -2,24 +2,15 @@
 ///
 /// WebView is native-only. On web, throw an error to prevent runtime crashes.
 
-class _WebViewStub {
-  static throwUnsupportedError() {
-    throw UnsupportedError(
-      'WebView is not supported in web build. '
-      'This feature is mobile-only. Consider using iframe or external URLs for web.',
-    );
-  }
+import 'package:flutter/material.dart';
+
+Never throwUnsupportedError() {
+  throw UnsupportedError(
+    'WebView is not supported in web build. '
+    'This feature is mobile-only. Consider using iframe or external URLs for web.',
+  );
 }
 
-// Re-export as webview_flutter to maintain original API surface
-// (but throw on all usage)
-export 'dart:ui' show BoxFit, Color, EdgeInsets, SizedBox;
-export 'dart:ui' show BoxFit, AlignmentGeometry, Alignment;
-
-// Export standard widget exports
-export 'package:flutter/material.dart' show WebViewWidget;
-
-// Stub the WebViewController class
 class WebViewController {
   WebViewController._();
 
@@ -37,12 +28,25 @@ class WebViewController {
   Future<void> clearCache() => throwUnsupportedError();
   Future<void> clearHistory() => throwUnsupportedError();
 
-  Future<NavigationHistory?> getNavigationHistory() => throwUnsupportedError();
+  Future<NavigationHistory> getNavigationHistory() => throwUnsupportedError();
 
   // Standard setters
-  setJavaScriptMode(JavaScriptMode mode) => throwUnsupportedError();
-  setBackgroundColor(Color color) => throwUnsupportedError();
-  setNavigationDelegate(NavigationDelegate delegate) => throwUnsupportedError();
+  Future<void> setJavaScriptMode(JavaScriptMode mode) => throwUnsupportedError();
+  Future<void> setBackgroundColor(Color color) => throwUnsupportedError();
+  Future<void> setNavigationDelegate(NavigationDelegate delegate) => throwUnsupportedError();
+}
+
+class WebViewWidget extends StatelessWidget {
+  const WebViewWidget({super.key, required this.controller});
+
+  final WebViewController controller;
+
+  @override
+  Widget build(BuildContext context) => throwUnsupportedError();
+}
+
+class NavigationHistory {
+  const NavigationHistory();
 }
 
 // Stub JavaScriptMode enum

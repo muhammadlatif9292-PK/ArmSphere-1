@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/api/repositories.dart';
+import '../../../core/providers/state_providers.dart';
 class OfficialDocumentsWidget extends ConsumerStatefulWidget {
   final Map<String, dynamic> tournament;
 

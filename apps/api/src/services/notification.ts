@@ -62,7 +62,7 @@ export class NotificationService {
     const channelsToDispatch: string[] = ["in_app"];
 
     // Push, Email, SMS check with Quiet Hours override (CRITICAL bypasses quiet hours)
-    const bypassQuiet = params.priority === "CRITICAL" || params.priority === "HIGH";
+    const bypassQuiet = params.priority === "CRITICAL";
 
     if (prefs.pushEnabled && (!isQuiet || bypassQuiet)) {
       channelsToDispatch.push("push");

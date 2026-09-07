@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class MfaSetupScreen extends StatefulWidget {
+class MfaSetupScreen extends ConsumerStatefulWidget {
   const MfaSetupScreen({super.key});
 
   @override
   State<MfaSetupScreen> createState() => _MfaSetupScreenState();
 }
 
-class _MfaSetupScreenState extends State<MfaSetupScreen> {
+class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
   final _codeController = TextEditingController();
   bool _isLoading = false;
 
