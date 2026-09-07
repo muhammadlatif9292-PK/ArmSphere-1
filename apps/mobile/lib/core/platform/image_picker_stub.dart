@@ -1,83 +1,70 @@
-/// Stub for image_picker package.
+/// Web-safe stub for image_picker used when building Flutter Web.
 ///
-/// Native file/camera picker is web-incompatible. On web, throw
-/// NotImplementedError to prevent runtime crashes.
+/// Provides minimal types and APIs to satisfy analyzer and prevent web
+/// compilation failures. At runtime these methods throw UnsupportedError to
+/// avoid accidental use in unsupported platforms.
 
-import 'dart:io' if (dart.library.html) 'dart:ui' as ui;
+class UnsupportedPlatformError extends UnsupportedError {
+  UnsupportedPlatformError([String message = 'This API is not supported on this platform.']) : super(message);
+}
 
-class _ImagePickerStub {
-  static throwNotImplementedError() {
-    throw NotImplementedError(
-      'Image picker is not supported in web build. '
-      'Consider using file input dialog or URL-based image upload for web. '
-      'See: https://docs.flutter.dev/cookbook/plugins/picking-images',
-    );
+enum ImageSource { camera, gallery }
+
+enum FilePickerFileType { image, video, media, custom }
+
+class XFile {
+  final String path;
+  XFile(this.path);
+
+  /// Not supported on web stub
+  factory XFile.fromBytes(List<int> bytes, {required String name, required String mimeType}) {
+    throw UnsupportedPlatformError();
   }
+
+  int get lengthInBytes => throw UnsupportedPlatformError();
+  String get name => throw UnsupportedPlatformError();
+  String get mimeType => throw UnsupportedPlatformError();
 }
 
 class ImagePicker {
   ImagePicker._();
 
-  // Always throw on web
+  static final ImagePicker instance = ImagePicker._();
+
   Future<XFile?> pickImage({
     ImageSource? source,
-    double maxWidth,
-    double maxHeight,
-    int imageQuality,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
   }) async {
-    throwNotImplementedError();
+    throw UnsupportedPlatformError();
   }
 
-  // Always throw on web
   Future<XFile?> pickVideo({
     ImageSource? source,
-    int maxWidth,
-    int maxHeight,
-    int imageQuality,
-    Duration maxDuration,
+    int? maxWidth,
+    int? maxHeight,
+    int? imageQuality,
+    Duration? maxDuration,
   }) async {
-    throwNotImplementedError();
+    throw UnsupportedPlatformError();
   }
 
-  // Always throw on web
-  Future<XFile?> pickMultiImage({
-    double maxWidth,
-    double maxHeight,
-    int imageQuality,
+  Future<List<XFile>?> pickMultiImage({
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
   }) async {
-    throwNotImplementedError();
+    throw UnsupportedPlatformError();
   }
 
-  // Always throw on web
-  Future<XFile?> pickFiles({
+  Future<List<XFile>?> pickFiles({
     ImageSource? source,
     FilePickerFileType type = FilePickerFileType.image,
-    int maxWidth,
-    int maxHeight,
-    int imageQuality,
+    int? maxWidth,
+    int? maxHeight,
+    int? imageQuality,
   }) async {
-    throwNotImplementedError();
+    throw UnsupportedPlatformError();
   }
 }
-
-enum ImageSource { camera, gallery }
-
-// Stub XFile for return type compatibility
-class XFile {
-  XFile(this.path);
-
-  factory XFile.fromBytes(
-    Uint8List bytes, {
-    required String name,
-    required String mimeType,
-  }) {
-    throwNotImplementedError();
-  }
-
-  String get path;
-  int get lengthInBytes;
-  String get name;
-  String get mimeType;
-}
-
-enum FilePickerFileType { image, video, media, custom }
