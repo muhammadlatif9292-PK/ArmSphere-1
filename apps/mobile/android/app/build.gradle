@@ -30,26 +30,23 @@ android {
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        release {
-            def keystoreProps = new Properties()
-            def keystorePropsFile = file('keystore.properties')
-            if (keystorePropsFile.exists()) {
-                keystoreProps.load(new FileInputStream(keystorePropsFile))
-                storeFile file(keystoreProps['storeFile'] ?: 'upload-keystore.jks')
-                storePassword keystoreProps['storePassword']
-                keyAlias keystoreProps['keyAlias']
-                keyPassword keystoreProps['keyPassword']
-            } else {
-                // CI artifact verification may run without production signing secrets.
-                signingConfig signingConfigs.debug
-            }
+    def releaseSigningConfig = signingConfigs.debug
+    def keystoreProps = new Properties()
+    def keystorePropsFile = file('keystore.properties')
+    if (keystorePropsFile.exists()) {
+        keystoreProps.load(new FileInputStream(keystorePropsFile))
+        signingConfigs.create('productionRelease') {
+            storeFile file(keystoreProps['storeFile'] ?: 'upload-keystore.jks')
+            storePassword keystoreProps['storePassword']
+            keyAlias keystoreProps['keyAlias']
+            keyPassword keystoreProps['keyPassword']
         }
+        releaseSigningConfig = signingConfigs.productionRelease
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            signingConfig releaseSigningConfig
             minifyEnabled false
             shrinkResources false
         }
