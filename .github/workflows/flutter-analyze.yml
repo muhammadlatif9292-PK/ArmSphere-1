@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Java
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'zulu'
         java-version: '17'
@@ -75,7 +75,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -121,7 +121,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          flutter build apk --release 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
+          flutter build apk --release --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
           status=${PIPESTATUS[0]}
           {
             echo '## Android release build output'
@@ -129,7 +129,7 @@ jobs:
             tail -n 120 "$RUNNER_TEMP/flutter-build.log"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          grep -E '(^|\b)(ERROR|FAILURE|What went wrong|Could not)' "$RUNNER_TEMP/flutter-build.log" | head -n 20 | while IFS= read -r line; do
+          grep -E '(^|\b)(ERROR|FAILURE|What went wrong|Where|Could not|Execution failed|A problem occurred|Caused by:|^> )' "$RUNNER_TEMP/flutter-build.log" | head -n 80 | while IFS= read -r line; do
             echo "::error title=Android release build::$line"
           done
           exit $status
