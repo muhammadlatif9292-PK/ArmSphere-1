@@ -81,7 +81,7 @@ class NavigationAction {
 
 // Stub NavigationDestination
 class NavigationDestination {
-  NavigationDestination._();
+  const NavigationDestination._();
   static const unknown = NavigationDestination._();
 }
 
