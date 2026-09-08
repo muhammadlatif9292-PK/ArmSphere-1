@@ -38,8 +38,12 @@ jobs:
         set +e
         flutter analyze --no-fatal-infos --no-fatal-warnings --machine > "$RUNNER_TEMP/flutter-analyze.json"
         status=$?
-        jq -r 'select(.severity == "error") | "::error file=\(.file),line=\(.startLine),col=\(.startColumn)::\(.message)"' "$RUNNER_TEMP/flutter-analyze.json"
-        jq -r 'select(.severity == "error") | "- `\(.file):\(.startLine):\(.startColumn)` \(.message)"' "$RUNNER_TEMP/flutter-analyze.json" >> "$GITHUB_STEP_SUMMARY"
+        jq -c 'if type == "array" then .[] else . end' "$RUNNER_TEMP/flutter-analyze.json" 2>/dev/null |
+          jq -r 'select(.severity == "error") | "::error file=\(.file),line=\(.startLine),col=\(.startColumn)::\(.message)"'
+        {
+          echo '## Flutter analyzer errors'
+          jq -r 'if type == "array" then .[] else . end | select(.severity == "error") | "- `\(.file):\(.startLine):\(.startColumn)` \(.message)"' "$RUNNER_TEMP/flutter-analyze.json"
+        } >> "$GITHUB_STEP_SUMMARY"
         exit $status
       working-directory: apps/mobile
 
