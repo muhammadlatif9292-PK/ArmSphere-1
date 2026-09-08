@@ -1,0 +1,62 @@
+name: ArmSphere Flutter Web Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Flutter Web Preview
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter Dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Build Flutter Web Release
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          repository_name="${GITHUB_REPOSITORY#*/}"
+          flutter build web --release --base-href "/${repository_name}/"
+
+      - name: Verify Web Build Output
+        shell: bash
+        run: |
+          test -d apps/mobile/build/web
+          test -n "$(find apps/mobile/build/web -type f -print -quit)"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Flutter Web Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/mobile/build/web
+
+      - name: Deploy Flutter Web Preview
+        id: deployment
+        uses: actions/deploy-pages@v4
