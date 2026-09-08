@@ -41,7 +41,19 @@ jobs:
         shell: bash
         run: |
           repository_name="${GITHUB_REPOSITORY#*/}"
-          flutter build web --release --base-href "/${repository_name}/"
+          set +e
+          flutter build web --release --base-href "/${repository_name}/" 2>&1 | tee "$RUNNER_TEMP/flutter-web-build.log"
+          status=${PIPESTATUS[0]}
+          {
+            echo '## Flutter Web release build output'
+            echo '```text'
+            tail -n 200 "$RUNNER_TEMP/flutter-web-build.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          grep -E '(^|\b)(ERROR|Error|FAILURE|What went wrong|Could not|Exception|Target dart2js failed)' "$RUNNER_TEMP/flutter-web-build.log" | head -n 80 | while IFS= read -r line; do
+            echo "::error title=Flutter Web release build::$line"
+          done
+          exit $status
 
       - name: Verify Web Build Output
         shell: bash
