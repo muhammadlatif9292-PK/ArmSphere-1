@@ -38,6 +38,19 @@ jobs:
         set +e
         flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$RUNNER_TEMP/flutter-analyze.log"
         status=${PIPESTATUS[0]}
+        while IFS= read -r line; do
+          trimmed=$(printf '%s' "$line" | sed 's/^[[:space:]]*//')
+          if [[ "$trimmed" == error*' • '* ]]; then
+            message=$(printf '%s' "$trimmed" | awk -F ' • ' '{print $2}')
+            location=$(printf '%s' "$trimmed" | awk -F ' • ' '{print $3}')
+            file=${location%:*}
+            column=${location##*:}
+            location_without_column=${file}
+            line_number=${location_without_column##*:}
+            file=${location_without_column%:*}
+            echo "::error file=$file,line=$line_number,col=$column::$message"
+          fi
+        done < "$RUNNER_TEMP/flutter-analyze.log"
         {
           echo '## Flutter analyzer output'
           echo '```text'
@@ -116,6 +129,9 @@ jobs:
             tail -n 120 "$RUNNER_TEMP/flutter-build.log"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          grep -E '(^|\b)(ERROR|FAILURE|What went wrong|Could not)' "$RUNNER_TEMP/flutter-build.log" | head -n 20 | while IFS= read -r line; do
+            echo "::error title=Android release build::$line"
+          done
           exit $status
         working-directory: apps/mobile
 
