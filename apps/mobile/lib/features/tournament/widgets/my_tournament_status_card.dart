@@ -7,9 +7,9 @@ class MyTournamentStatusCard extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const MyTournamentStatusCard({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<MyTournamentStatusCard> createState() => _MyTournamentStatusCardState();
@@ -332,11 +332,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
               ],
             ),
             const Divider(color: Colors.white12),
-            Expanded(
+            const Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
                     SizedBox(height: 12),
                     Text(
@@ -423,8 +423,8 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
         return AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.live_tv, color: Color(0xFFFF2A6D)),
               SizedBox(width: 8),
               Text('Live Broadcast', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -472,27 +472,27 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
         return Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Color(0xFF0F172A),
+            color: const Color(0xFF0F172A),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: accentColor.withOpacity(0.35 + (0.25 * pulseVal)),
+              color: accentColor.withValues(alpha: 0.35 + (0.25 * pulseVal)),
               width: 1.4,
             ),
             boxShadow: [
               BoxShadow(
-                color: accentColor.withOpacity(0.12 * pulseVal + 0.05),
+                color: accentColor.withValues(alpha: 0.12 * pulseVal + 0.05),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.all(18.0),
+            padding: const EdgeInsets.all(18.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -503,11 +503,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: accentColor.withOpacity(0.18),
+                            color: accentColor.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
-                            border: Border.all(color: accentColor.withOpacity(0.5)),
+                            border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                           ),
                           child: Icon(
                             iconData,
@@ -516,9 +516,9 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'SMART ATHLETE STATUS',
                               style: TextStyle(
@@ -546,11 +546,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                     // Dropdown Status Selector (Allows previewing all 10 states easily)
                     Container(
                       height: 28,
-                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: accentColor.withOpacity(0.5)),
+                        border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<int>(
@@ -590,11 +590,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                 // Large Status Hero Glass Header Box
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Color(0xFF0B111E),
+                    color: const Color(0xFF0B111E),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: accentColor.withOpacity(0.25)),
+                    border: Border.all(color: accentColor.withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     children: [
@@ -604,11 +604,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                         height: 52,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: accentColor.withOpacity(0.18),
-                          border: Border.all(color: accentColor.withOpacity(0.5), width: 1.5),
+                          color: accentColor.withValues(alpha: 0.18),
+                          border: Border.all(color: accentColor.withValues(alpha: 0.5), width: 1.5),
                           boxShadow: [
                             BoxShadow(
-                              color: accentColor.withOpacity(0.3 * pulseVal + 0.1),
+                              color: accentColor.withValues(alpha: 0.3 * pulseVal + 0.1),
                               blurRadius: 14,
                               spreadRadius: 1,
                             ),
@@ -659,7 +659,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                             const SizedBox(height: 4),
                             Text(
                               explanation,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 11,
                                 color: Colors.white,
@@ -678,15 +678,15 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                 // Recommended Next Action Highlight Box
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Color(0xFF162032).withOpacity(0.8),
+                    color: const Color(0xFF162032).withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white12),
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.tips_and_updates_outlined,
                         size: 16,
                         color: AppTheme.goldPrimary,
@@ -709,7 +709,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                             const SizedBox(height: 2),
                             Text(
                               nextAction,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 10.5,
                                 color: Colors.white70,
@@ -730,13 +730,13 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                   onTap: () => onCtaTap(context),
                   child: Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       gradient: LinearGradient(colors: gradient),
                       boxShadow: [
                         BoxShadow(
-                          color: gradient.first.withOpacity(0.4),
+                          color: gradient.first.withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),

@@ -87,7 +87,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                           letterSpacing: 1.0,
                           fontWeight: FontWeight.bold,
                           color:
-                              theme.colorScheme.onSurface.withOpacity(0.5),
+                              theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -121,7 +121,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      weight != null ? '${weight} kg' : '-',
+                                      weight != null ? '$weight kg' : '-',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w800,
                                         color: theme.colorScheme.primary,
@@ -133,7 +133,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: theme.colorScheme.onSurface
-                                              .withOpacity(0.4),
+                                              .withValues(alpha: 0.4),
                                         ),
                                       ),
                                   ],
@@ -154,7 +154,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                 style: theme.textTheme.labelMedium?.copyWith(
                   letterSpacing: 1.0,
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 12),
@@ -184,7 +184,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                       final weight = log['weightKg'] as num?;
                       final reps = log['reps'] as num?;
                       final details = [
-                        if (weight != null) '${weight} kg',
+                        if (weight != null) '$weight kg',
                         if (reps != null) '$reps reps',
                       ].join(' x ');
                       final time =
@@ -194,7 +194,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color:
-                                theme.colorScheme.primary.withOpacity(0.08),
+                                theme.colorScheme.primary.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.fitness_center,
@@ -218,7 +218,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: theme.colorScheme.onSurface
-                                .withOpacity(0.4),
+                                .withValues(alpha: 0.4),
                           ),
                         ),
                       );

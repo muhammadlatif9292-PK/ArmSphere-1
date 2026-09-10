@@ -82,19 +82,19 @@ CREATE TABLE IF NOT EXISTS "venue_partners" (
 );
 --> statement-breakpoint
 DROP INDEX IF EXISTS "idx_community_posts_created_at";--> statement-breakpoint
-ALTER TABLE "athlete_profiles" ADD COLUMN "profile_visibility" varchar(20) DEFAULT 'PUBLIC' NOT NULL;--> statement-breakpoint
-ALTER TABLE "athlete_profiles" ADD COLUMN "is_searchable" boolean DEFAULT true NOT NULL;--> statement-breakpoint
-ALTER TABLE "athlete_profiles" ADD COLUMN "stripe_customer_id" varchar(255);--> statement-breakpoint
-ALTER TABLE "community_posts" ADD COLUMN "external_url" varchar(1024) NOT NULL;--> statement-breakpoint
-ALTER TABLE "community_posts" ADD COLUMN "platform" varchar(50) NOT NULL;--> statement-breakpoint
-ALTER TABLE "community_posts" ADD COLUMN "category" varchar(50);--> statement-breakpoint
-ALTER TABLE "community_posts" ADD COLUMN "moderation_status" varchar(50) DEFAULT 'PENDING' NOT NULL;--> statement-breakpoint
-ALTER TABLE "community_posts" ADD COLUMN "moderated_by" uuid;--> statement-breakpoint
-ALTER TABLE "community_posts" ADD COLUMN "moderated_at" timestamp;--> statement-breakpoint
-ALTER TABLE "event_registrations" ADD COLUMN "payment_confirmed_by_organizer" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "event_registrations" ADD COLUMN "payment_confirmed_at" timestamp;--> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "registration_fee_cents" integer;--> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "payment_qr_image_url" varchar(1024);--> statement-breakpoint
+ALTER TABLE "athlete_profiles" ADD COLUMN IF NOT EXISTS "profile_visibility" varchar(20) DEFAULT 'PUBLIC' NOT NULL;--> statement-breakpoint
+ALTER TABLE "athlete_profiles" ADD COLUMN IF NOT EXISTS "is_searchable" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "athlete_profiles" ADD COLUMN IF NOT EXISTS "stripe_customer_id" varchar(255);--> statement-breakpoint
+ALTER TABLE "community_posts" ADD COLUMN IF NOT EXISTS "external_url" varchar(1024) NOT NULL;--> statement-breakpoint
+ALTER TABLE "community_posts" ADD COLUMN IF NOT EXISTS "platform" varchar(50) NOT NULL;--> statement-breakpoint
+ALTER TABLE "community_posts" ADD COLUMN IF NOT EXISTS "category" varchar(50);--> statement-breakpoint
+ALTER TABLE "community_posts" ADD COLUMN IF NOT EXISTS "moderation_status" varchar(50) DEFAULT 'PENDING' NOT NULL;--> statement-breakpoint
+ALTER TABLE "community_posts" ADD COLUMN IF NOT EXISTS "moderated_by" uuid;--> statement-breakpoint
+ALTER TABLE "community_posts" ADD COLUMN IF NOT EXISTS "moderated_at" timestamp;--> statement-breakpoint
+ALTER TABLE "event_registrations" ADD COLUMN IF NOT EXISTS "payment_confirmed_by_organizer" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "event_registrations" ADD COLUMN IF NOT EXISTS "payment_confirmed_at" timestamp;--> statement-breakpoint
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "registration_fee_cents" integer;--> statement-breakpoint
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "payment_qr_image_url" varchar(1024);--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_blocked_users_blocker_blocked" ON "blocked_users" ("blocker_id","blocked_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_blocked_users_blocker" ON "blocked_users" ("blocker_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_blocked_users_blocked" ON "blocked_users" ("blocked_id");--> statement-breakpoint

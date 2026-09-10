@@ -72,10 +72,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             const SizedBox(height: 20),
             Expanded(
               child: !hasQuery
-                  ? Center(
+                  ? const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.travel_explore, size: 48, color: Colors.grey),
                           SizedBox(height: 12),
                           Text('Type a name to find athletes',
@@ -89,7 +89,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, size: 44, color: AppTheme.error),
+                            const Icon(Icons.error_outline, size: 44, color: AppTheme.error),
                             const SizedBox(height: 12),
                             Text('Search failed', style: Theme.of(context).textTheme.titleSmall),
                             const SizedBox(height: 4),
@@ -106,10 +106,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       ),
                       data: (rows) {
                         if (rows.isEmpty) {
-                          return Center(
+                          return const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Icon(Icons.search_off, size: 48, color: Colors.grey),
                                 SizedBox(height: 12),
                                 Text('No athletes match your search',

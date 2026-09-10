@@ -9,9 +9,9 @@ class CompactBracketPreviewWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const CompactBracketPreviewWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<CompactBracketPreviewWidget> createState() => _CompactBracketPreviewWidgetState();
@@ -51,20 +51,20 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Color(0xFF0D1527).withOpacity(0.92),
+            color: const Color(0xFF0D1527).withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Color(0xFF00E5FF).withOpacity(0.4),
+              color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Color(0xFF00E5FF).withOpacity(0.12),
+                color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
                 blurRadius: 18,
                 spreadRadius: -2,
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -73,7 +73,7 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: EdgeInsets.all(18.0),
+              padding: const EdgeInsets.all(18.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -84,24 +84,24 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(7),
+                            padding: const EdgeInsets.all(7),
                             decoration: BoxDecoration(
-                              color: Color(0xFF00E5FF).withOpacity(0.18),
+                              color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Color(0xFF00E5FF).withOpacity(0.5),
+                                color: const Color(0xFF00E5FF).withValues(alpha: 0.5),
                               ),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.account_tree_rounded,
                               color: Color(0xFF00E5FF),
                               size: 18,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'BRACKET PREVIEW',
                                 style: TextStyle(
@@ -126,17 +126,17 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                         ],
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withOpacity(0.18),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withOpacity(0.6),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(Icons.stars_rounded, size: 12, color: AppTheme.goldPrimary),
                             SizedBox(width: 4),
                             Text(
@@ -160,17 +160,17 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                   // User Highlighted Next Match Alert Banner
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.goldPrimary.withOpacity(0.25),
-                          Color(0xFF00E5FF).withOpacity(0.15),
+                          AppTheme.goldPrimary.withValues(alpha: 0.25),
+                          const Color(0xFF00E5FF).withValues(alpha: 0.15),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.goldPrimary.withOpacity(0.6),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                       ),
                     ),
                     child: Row(
@@ -188,10 +188,10 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'YOUR POSITION HIGHLIGHTED',
                                 style: TextStyle(
@@ -355,17 +355,17 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 11, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E293B),
+                        color: const Color(0xFF1E293B),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Color(0xFF00E5FF).withOpacity(0.5),
+                          color: const Color(0xFF00E5FF).withValues(alpha: 0.5),
                         ),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.zoom_in_rounded, size: 16, color: Color(0xFF00E5FF)),
                           SizedBox(width: 8),
                           Text(
@@ -442,14 +442,14 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
       borderColor = AppTheme.goldPrimary;
       borderWidth = 1.5;
     } else if (match.isUserMatch) {
-      borderColor = Color(0xFF00E5FF).withOpacity(0.8);
+      borderColor = const Color(0xFF00E5FF).withValues(alpha: 0.8);
     } else if (match.isOpponentMatch) {
-      borderColor = Color(0xFFFF2A6D).withOpacity(0.8);
+      borderColor = const Color(0xFFFF2A6D).withValues(alpha: 0.8);
     }
 
     return Container(
       width: 155,
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(10),
@@ -457,7 +457,7 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
         boxShadow: match.isLiveNext
             ? [
                 BoxShadow(
-                  color: AppTheme.goldPrimary.withOpacity(0.2),
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.2),
                   blurRadius: 8,
                 ),
               ]
@@ -564,11 +564,11 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppTheme.goldPrimary.withOpacity(0.18),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
           ),
           child: const Text(
             'CHAMPION',
@@ -584,20 +584,20 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
         const SizedBox(height: 10),
         Container(
           width: 120,
-          padding: EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           decoration: BoxDecoration(
-            color: Color(0xFF1A1A2E),
+            color: const Color(0xFF1A1A2E),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.goldPrimary.withOpacity(0.3),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                 blurRadius: 10,
               ),
             ],
           ),
-          child: Column(
-            children: const [
+          child: const Column(
+            children: [
               Icon(Icons.emoji_events_rounded, size: 28, color: AppTheme.goldPrimary),
               SizedBox(height: 6),
               Text(

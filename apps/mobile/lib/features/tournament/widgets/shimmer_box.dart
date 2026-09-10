@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class ShimmerBox extends StatelessWidget {
@@ -9,12 +8,12 @@ class ShimmerBox extends StatelessWidget {
   final double percent;
 
   const ShimmerBox({
-    Key? key,
+    super.key,
     required this.width,
     required this.height,
     required this.borderRadius,
     required this.percent,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

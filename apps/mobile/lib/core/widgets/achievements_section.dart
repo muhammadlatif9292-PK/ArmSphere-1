@@ -75,7 +75,7 @@ class _OlympicMedalPainter extends CustomPainter {
     if (pulseValue > 0) {
       final pulseRadius = radius + (pulseValue * 8.0);
       final pulsePaint = Paint()
-        ..color = AppTheme.goldPrimary.withOpacity(0.35 * (1.0 - pulseValue))
+        ..color = AppTheme.goldPrimary.withValues(alpha: 0.35 * (1.0 - pulseValue))
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
       canvas.drawCircle(center, pulseRadius, pulsePaint);
@@ -144,8 +144,8 @@ class _OlympicMedalPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0
       ..color = isUnlocked
-          ? AppTheme.goldPrimary.withOpacity(0.6)
-          : Colors.white.withOpacity(0.1);
+          ? AppTheme.goldPrimary.withValues(alpha: 0.6)
+          : Colors.white.withValues(alpha: 0.1);
 
     canvas.drawCircle(center, radius - 4.5, innerRingPaint);
   }
@@ -164,10 +164,10 @@ class OlympicMedalBadge extends StatefulWidget {
   final VoidCallback onTap;
 
   const OlympicMedalBadge({
-    Key? key,
+    super.key,
     required this.item,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   State<OlympicMedalBadge> createState() => _OlympicMedalBadgeState();
@@ -214,19 +214,19 @@ class _OlympicMedalBadgeState extends State<OlympicMedalBadge>
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: item.isRecent
-                ? AppTheme.goldPrimary.withOpacity(0.5)
-                : AppTheme.goldPrimary.withOpacity(0.15),
+                ? AppTheme.goldPrimary.withValues(alpha: 0.5)
+                : AppTheme.goldPrimary.withValues(alpha: 0.15),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
             if (item.isRecent)
               BoxShadow(
-                color: AppTheme.goldPrimary.withOpacity(0.15),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
                 blurRadius: 14,
                 spreadRadius: -2,
               ),
@@ -296,7 +296,7 @@ class _OlympicMedalBadgeState extends State<OlympicMedalBadge>
                 fontWeight: FontWeight.w700,
                 color: item.isUnlocked
                     ? AppTheme.goldPrimary
-                    : AppTheme.textMuted.withOpacity(0.7),
+                    : AppTheme.textMuted.withValues(alpha: 0.7),
                 letterSpacing: 0.8,
               ),
             ),
@@ -312,9 +312,9 @@ class AchievementsSection extends StatefulWidget {
   final Map<String, dynamic>? athleteData;
 
   const AchievementsSection({
-    Key? key,
+    super.key,
     this.athleteData,
-  }) : super(key: key);
+  });
 
   @override
   State<AchievementsSection> createState() => _AchievementsSectionState();
@@ -401,7 +401,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
               color: const Color(0xFF121622),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               border: Border.all(
-                color: AppTheme.goldPrimary.withOpacity(0.3),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                 width: 1.0,
               ),
             ),
@@ -413,7 +413,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -481,7 +481,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
                     color: const Color(0xFF1B202D),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.06),
+                      color: Colors.white.withValues(alpha: 0.06),
                     ),
                   ),
                   child: Text(

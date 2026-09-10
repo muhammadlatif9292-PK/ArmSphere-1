@@ -6,9 +6,9 @@ class RulebookAccordionWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const RulebookAccordionWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<RulebookAccordionWidget> createState() => _RulebookAccordionWidgetState();
@@ -115,22 +115,22 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -141,22 +141,22 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withOpacity(0.18),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.menu_book_rounded,
                         color: AppTheme.goldPrimary,
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'OFFICIAL RULEBOOK & GOVERNANCE',
                           style: TextStyle(
@@ -181,11 +181,11 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                   ],
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withOpacity(0.15),
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                    border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                   ),
                   child: const Text(
                     'IFA 2026',
@@ -215,7 +215,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: Color(0xFF1E2B47).withOpacity(0.6),
+                    color: const Color(0xFF1E2B47).withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isExpanded ? accent : Colors.white12,
@@ -234,7 +234,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                         },
                         borderRadius: BorderRadius.circular(14),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           child: Row(
                             children: [
                               Icon(section['icon'] as IconData, size: 18, color: accent),
@@ -242,7 +242,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                               Expanded(
                                 child: Text(
                                   section['title'] as String,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontFamily: AppTheme.fontDisplay,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -251,11 +251,11 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                                 ),
                               ),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: accent.withOpacity(0.15),
+                                  color: accent.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: accent.withOpacity(0.4)),
+                                  border: Border.all(color: accent.withValues(alpha: 0.4)),
                                 ),
                                 child: Text(
                                   section['badge'] as String,
@@ -326,23 +326,23 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
               },
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 13),
+                padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppTheme.goldPrimary, Color(0xFFFFC107)],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.goldPrimary.withOpacity(0.35),
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.file_download_rounded, size: 18, color: Colors.black),
                     SizedBox(width: 8),
                     Text(

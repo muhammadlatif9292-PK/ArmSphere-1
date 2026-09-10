@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/providers/auth_provider.dart';
 import 'dependency_providers.dart';
 
 class SessionNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {

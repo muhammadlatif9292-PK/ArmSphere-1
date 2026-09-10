@@ -64,8 +64,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
+          const SnackBar(
+            content: Text(
                 'Link submitted for moderation. It will appear once approved.'),
             backgroundColor: Colors.green,
           ),
@@ -128,7 +128,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _category,
+                  initialValue: _category,
                   decoration:
                       const InputDecoration(labelText: 'Category (optional)'),
                   items: _categories

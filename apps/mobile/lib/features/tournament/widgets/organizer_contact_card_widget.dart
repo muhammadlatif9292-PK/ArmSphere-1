@@ -6,9 +6,9 @@ class OrganizerContactCardWidget extends StatelessWidget {
   final Map<String, dynamic> tournament;
 
   const OrganizerContactCardWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,20 +22,20 @@ class OrganizerContactCardWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.12),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.12),
             blurRadius: 18,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -44,7 +44,7 @@ class OrganizerContactCardWidget extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -55,24 +55,24 @@ class OrganizerContactCardWidget extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withOpacity(0.18),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withOpacity(0.5),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                           ),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.verified_user_rounded,
                           color: AppTheme.goldPrimary,
                           size: 18,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'ORGANIZER CONTACT',
                             style: TextStyle(
@@ -99,17 +99,17 @@ class OrganizerContactCardWidget extends StatelessWidget {
 
                   // Verified Badge
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Color(0xFF00E5FF).withOpacity(0.18),
+                      color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Color(0xFF00E5FF).withOpacity(0.6),
+                        color: const Color(0xFF00E5FF).withValues(alpha: 0.6),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.verified_rounded,
                           size: 12,
@@ -137,23 +137,23 @@ class OrganizerContactCardWidget extends StatelessWidget {
               // Organizer & Club Compact Hero Box
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(14),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Color(0xFF141E2F).withOpacity(0.85),
+                  color: const Color(0xFF141E2F).withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: AppTheme.goldPrimary.withOpacity(0.25),
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.25),
                   ),
                 ),
                 child: Row(
                   children: [
                     // Avatar / Shield Icon Container
                     Container(
-                      padding: EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.goldPrimary.withOpacity(0.3),
+                            AppTheme.goldPrimary.withValues(alpha: 0.3),
                             const Color(0xFF1E293B),
                           ],
                           begin: Alignment.topLeft,
@@ -314,20 +314,20 @@ class OrganizerContactCardWidget extends StatelessWidget {
     return TactilePressWrapper(
       onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Color(0xFF141E2F).withOpacity(0.85),
+          color: const Color(0xFF141E2F).withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: accentColor.withOpacity(0.3),
+            color: accentColor.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(6),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.15),
+                color: accentColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -343,7 +343,7 @@ class OrganizerContactCardWidget extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 8.5,
                       fontWeight: FontWeight.w700,
@@ -356,7 +356,7 @@ class OrganizerContactCardWidget extends StatelessWidget {
                     value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
@@ -367,11 +367,11 @@ class OrganizerContactCardWidget extends StatelessWidget {
               ),
             ),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.18),
+                color: accentColor.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: accentColor.withOpacity(0.4)),
+                border: Border.all(color: accentColor.withValues(alpha: 0.4)),
               ),
               child: Text(
                 actionText,

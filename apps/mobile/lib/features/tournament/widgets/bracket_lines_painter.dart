@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 class BracketLinesPainter extends CustomPainter {
   final double pulseValue;
 
@@ -8,7 +7,7 @@ class BracketLinesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Color(0xFF00E5FF).withOpacity(0.35 * pulseValue + 0.15)
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.35 * pulseValue + 0.15)
       ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke;
 

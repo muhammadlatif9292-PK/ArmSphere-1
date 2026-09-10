@@ -94,7 +94,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                       'Enter the 6-digit verification code from your authenticator application to login.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ],

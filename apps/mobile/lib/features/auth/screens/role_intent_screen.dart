@@ -238,7 +238,7 @@ class _IntentCard extends StatelessWidget {
                           ),
                         ),
                         if (option.requiresVerification)
-                          Tooltip(
+                          const Tooltip(
                             message: 'Requires federation verification',
                             triggerMode: TooltipTriggerMode.tap,
                             child: Icon(Icons.workspace_premium_outlined,

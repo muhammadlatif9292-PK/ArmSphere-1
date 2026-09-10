@@ -10,7 +10,7 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/app_empty_state.dart';
 
 class DiscoverScreen extends ConsumerWidget {
-  const DiscoverScreen({Key? key}) : super(key: key);
+  const DiscoverScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -197,7 +197,7 @@ class DiscoverScreen extends ConsumerWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
       ],
     );
   }
@@ -248,10 +248,10 @@ class DiscoverScreen extends ConsumerWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       color: index == 0
-                          ? AppTheme.secondaryAccent.withOpacity(0.2)
+                          ? AppTheme.secondaryAccent.withValues(alpha: 0.2)
                           : (index == 1
-                              ? AppTheme.textSecondary.withOpacity(0.2)
-                              : (index == 2 ? AppTheme.textSecondary.withOpacity(0.2) : AppTheme.elevatedSurface)),
+                              ? AppTheme.textSecondary.withValues(alpha: 0.2)
+                              : (index == 2 ? AppTheme.textSecondary.withValues(alpha: 0.2) : AppTheme.elevatedSurface)),
                       shape: BoxShape.circle,
                       border: index == 0
                           ? Border.all(color: AppTheme.secondaryAccent, width: 1.5)
@@ -291,7 +291,7 @@ class DiscoverScreen extends ConsumerWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
       ],
     );
   }
@@ -362,7 +362,7 @@ class DiscoverScreen extends ConsumerWidget {
                                     fontWeight: challengerWin ? FontWeight.bold : FontWeight.normal,
                                     fontSize: 14,
                                     decoration: TextDecoration.underline,
-                                    decorationColor: AppTheme.textMuted.withOpacity(0.5),
+                                    decorationColor: AppTheme.textMuted.withValues(alpha: 0.5),
                                   ),
                                 ),
                                 if (challengerWin)
@@ -425,7 +425,7 @@ class DiscoverScreen extends ConsumerWidget {
                                     fontWeight: opponentWin ? FontWeight.bold : FontWeight.normal,
                                     fontSize: 14,
                                     decoration: TextDecoration.underline,
-                                    decorationColor: AppTheme.textMuted.withOpacity(0.5),
+                                    decorationColor: AppTheme.textMuted.withValues(alpha: 0.5),
                                   ),
                                 ),
                                 if (opponentWin)
@@ -474,7 +474,7 @@ class DiscoverScreen extends ConsumerWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
       ],
     );
   }
@@ -604,7 +604,7 @@ class DiscoverScreen extends ConsumerWidget {
                         width: isLive ? 1.5 : 1.0,
                       ),
                     ),
-                    shadowColor: isLive ? AppTheme.primaryAccent.withOpacity(0.2) : AppTheme.background,
+                    shadowColor: isLive ? AppTheme.primaryAccent.withValues(alpha: 0.2) : AppTheme.background,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space8),
                       leading: isLive 
@@ -617,7 +617,7 @@ class DiscoverScreen extends ConsumerWidget {
                               ),
                             )
                           : CircleAvatar(
-                              backgroundColor: AppTheme.info.withOpacity(0.15),
+                              backgroundColor: AppTheme.info.withValues(alpha: 0.15),
                               child: const Icon(
                                 Icons.calendar_month,
                                 color: AppTheme.info,
@@ -646,7 +646,7 @@ class DiscoverScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryAccent.withOpacity(0.15),
+                              color: AppTheme.primaryAccent.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             ),
                             child: Text(

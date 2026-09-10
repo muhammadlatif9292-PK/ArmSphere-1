@@ -2,6 +2,7 @@
 ///
 /// Biometrics (fingerprint/face) are native-only. On web, this stub
 /// provides no-op methods that always return false/false.
+library;
 
 import 'package:flutter/foundation.dart';
 

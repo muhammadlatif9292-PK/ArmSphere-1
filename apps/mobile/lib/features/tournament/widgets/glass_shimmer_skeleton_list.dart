@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class GlassShimmerSkeletonList extends StatefulWidget {
-  const GlassShimmerSkeletonList({Key? key}) : super(key: key);
+  const GlassShimmerSkeletonList({super.key});
 
   @override
   State<GlassShimmerSkeletonList> createState() => _GlassShimmerSkeletonListState();
@@ -38,13 +37,13 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
         return Column(
           children: List.generate(2, (index) {
             return Container(
-              margin: EdgeInsets.only(bottom: 12),
-              padding: EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: AppTheme.elevatedSurface.withOpacity(0.9),
+                color: AppTheme.elevatedSurface.withValues(alpha: 0.9),
                 border: Border.all(
-                  color: AppTheme.info.withOpacity(0.15),
+                  color: AppTheme.info.withValues(alpha: 0.15),
                 ),
               ),
               child: Stack(
@@ -57,7 +56,7 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
                         height: 18,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -66,7 +65,7 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
                         height: 20,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -75,7 +74,7 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
                         height: 14,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -86,7 +85,7 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
                             height: 24,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              color: Colors.white.withOpacity(0.06),
+                              color: Colors.white.withValues(alpha: 0.06),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -95,7 +94,7 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
                             height: 24,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              color: Colors.white.withOpacity(0.06),
+                              color: Colors.white.withValues(alpha: 0.06),
                             ),
                           ),
                         ],
@@ -111,13 +110,13 @@ class _GlassShimmerSkeletonListState extends State<GlassShimmerSkeletonList>
                           end: Alignment(-1.0 + (shimmerValue * 4.0), 1.0),
                           colors: [
                             Colors.transparent,
-                            Colors.white.withOpacity(0.12),
+                            Colors.white.withValues(alpha: 0.12),
                             Colors.transparent,
                           ],
                           stops: const [0.0, 0.5, 1.0],
                         ).createShader(bounds);
                       },
-                      child: Container(color: Colors.white.withOpacity(0.05)),
+                      child: Container(color: Colors.white.withValues(alpha: 0.05)),
                     ),
                   ),
                 ],

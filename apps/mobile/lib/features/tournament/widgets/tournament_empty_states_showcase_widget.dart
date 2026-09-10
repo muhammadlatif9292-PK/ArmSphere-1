@@ -7,9 +7,9 @@ class TournamentEmptyStatesShowcaseWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const TournamentEmptyStatesShowcaseWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<TournamentEmptyStatesShowcaseWidget> createState() =>
@@ -108,20 +108,20 @@ class _TournamentEmptyStatesShowcaseWidgetState
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.95),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.1),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.1),
             blurRadius: 18,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -130,7 +130,7 @@ class _TournamentEmptyStatesShowcaseWidgetState
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -141,12 +141,12 @@ class _TournamentEmptyStatesShowcaseWidgetState
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withOpacity(0.18),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withOpacity(0.5),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                           ),
                         ),
                         child: const Icon(
@@ -156,9 +156,9 @@ class _TournamentEmptyStatesShowcaseWidgetState
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'EMPTY STATE ILLUSTRATIONS',
                             style: TextStyle(
@@ -226,23 +226,23 @@ class _TournamentEmptyStatesShowcaseWidgetState
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 7),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? tabColor.withOpacity(0.22)
-                                : Color(0xFF141E2F).withOpacity(0.8),
+                                ? tabColor.withValues(alpha: 0.22)
+                                : const Color(0xFF141E2F).withValues(alpha: 0.8),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isSelected
                                   ? tabColor
-                                  : Colors.white.withOpacity(0.12),
+                                  : Colors.white.withValues(alpha: 0.12),
                               width: isSelected ? 1.4 : 1.0,
                             ),
                             boxShadow: [
                               if (isSelected)
                                 BoxShadow(
-                                  color: tabColor.withOpacity(0.3),
+                                  color: tabColor.withValues(alpha: 0.3),
                                   blurRadius: 10,
                                   spreadRadius: -1,
                                 ),
@@ -285,17 +285,17 @@ class _TournamentEmptyStatesShowcaseWidgetState
                 child: Container(
                   key: ValueKey(_selectedType),
                   width: double.infinity,
-                  padding: EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: Color(0xFF141E2F).withOpacity(0.85),
+                    color: const Color(0xFF141E2F).withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: primaryColor.withOpacity(0.4),
+                      color: primaryColor.withValues(alpha: 0.4),
                       width: 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.15),
+                        color: primaryColor.withValues(alpha: 0.15),
                         blurRadius: 16,
                         spreadRadius: -2,
                       ),
@@ -363,14 +363,14 @@ class _TournamentEmptyStatesShowcaseWidgetState
                           );
                         },
                         child: Container(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
                             color: primaryColor,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: primaryColor.withOpacity(0.4),
+                                color: primaryColor.withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -432,7 +432,7 @@ class _TournamentEmptyStatesShowcaseWidgetState
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    primaryColor.withOpacity(0.35),
+                    primaryColor.withValues(alpha: 0.35),
                     Colors.transparent,
                   ],
                 ),
@@ -444,15 +444,15 @@ class _TournamentEmptyStatesShowcaseWidgetState
               width: 86,
               height: 86,
               decoration: BoxDecoration(
-                color: Color(0xFF0F172A).withOpacity(0.8),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.8),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: primaryColor.withOpacity(0.6),
+                  color: primaryColor.withValues(alpha: 0.6),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(0.25),
+                    color: primaryColor.withValues(alpha: 0.25),
                     blurRadius: 14,
                   ),
                 ],
@@ -467,8 +467,8 @@ class _TournamentEmptyStatesShowcaseWidgetState
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    primaryColor.withOpacity(0.3),
-                    secondaryColor.withOpacity(0.15),
+                    primaryColor.withValues(alpha: 0.3),
+                    secondaryColor.withValues(alpha: 0.15),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -489,13 +489,13 @@ class _TournamentEmptyStatesShowcaseWidgetState
             Positioned(
               bottom: 0,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: primaryColor,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryColor.withOpacity(0.5),
+                      color: primaryColor.withValues(alpha: 0.5),
                       blurRadius: 8,
                     ),
                   ],

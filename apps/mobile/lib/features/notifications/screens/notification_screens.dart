@@ -139,7 +139,7 @@ class _NotificationsListScreenState
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: priority.withOpacity(0.12),
+                          color: priority.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(_categoryIcon(n['category']?.toString()),

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 class PerformanceRadarChartPainter extends CustomPainter {
   final Map<String, double> attributes;
@@ -24,12 +23,12 @@ class PerformanceRadarChartPainter extends CustomPainter {
 
     // Web Grid Lines (5 concentric polygons: 20%, 40%, 60%, 80%, 100%)
     final Paint webPaint = Paint()
-      ..color = Colors.white.withOpacity(0.08)
+      ..color = Colors.white.withValues(alpha: 0.08)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
     final Paint axisPaint = Paint()
-      ..color = Colors.white.withOpacity(0.12)
+      ..color = Colors.white.withValues(alpha: 0.12)
       ..strokeWidth = 1.0;
 
     for (int step = 1; step <= 5; step++) {
@@ -100,8 +99,8 @@ class PerformanceRadarChartPainter extends CustomPainter {
       final Paint fillPaint = Paint()
         ..shader = RadialGradient(
           colors: [
-            AppTheme.goldPrimary.withOpacity(0.45 * progress),
-            AppTheme.primaryAccent.withOpacity(0.15 * progress),
+            AppTheme.goldPrimary.withValues(alpha: 0.45 * progress),
+            AppTheme.primaryAccent.withValues(alpha: 0.15 * progress),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.fill;
@@ -119,7 +118,7 @@ class PerformanceRadarChartPainter extends CustomPainter {
 
       // Glowing Vertices
       for (final pt in points) {
-        canvas.drawCircle(pt, 4.5, Paint()..color = AppTheme.goldPrimary.withOpacity(0.35));
+        canvas.drawCircle(pt, 4.5, Paint()..color = AppTheme.goldPrimary.withValues(alpha: 0.35));
         canvas.drawCircle(pt, 2.5, Paint()..color = AppTheme.goldPrimary);
         canvas.drawCircle(pt, 1.2, Paint()..color = Colors.black);
       }

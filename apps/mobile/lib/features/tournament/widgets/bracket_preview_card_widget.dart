@@ -7,9 +7,9 @@ class BracketPreviewCardWidget extends StatelessWidget {
   final Map<String, dynamic> tournament;
 
   const BracketPreviewCardWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,27 +22,27 @@ class BracketPreviewCardWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: Color(0xFF00E5FF).withOpacity(0.4),
+          color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Color(0xFF00E5FF).withOpacity(0.08),
+            color: const Color(0xFF00E5FF).withValues(alpha: 0.08),
             blurRadius: 22,
             spreadRadius: -4,
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -53,22 +53,22 @@ class BracketPreviewCardWidget extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Color(0xFF00E5FF).withOpacity(0.18),
+                        color: const Color(0xFF00E5FF).withValues(alpha: 0.18),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Color(0xFF00E5FF).withOpacity(0.5)),
+                        border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.5)),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.account_tree_rounded,
                         color: Color(0xFF00E5FF),
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'LIVE BRACKET PREVIEW',
                           style: TextStyle(
@@ -93,15 +93,15 @@ class BracketPreviewCardWidget extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Color(0xFF00E676).withOpacity(0.15),
+                    color: const Color(0xFF00E676).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(0xFF00E676).withOpacity(0.5)),
+                    border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.5)),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       PulseIndicator(size: 5.0, color: Color(0xFF00E676)),
                       SizedBox(width: 4),
                       Text(
@@ -186,23 +186,23 @@ class BracketPreviewCardWidget extends StatelessWidget {
               },
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 13),
+                padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Color(0xFF00E5FF), Color(0xFF00B0FF)],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF00E5FF).withOpacity(0.35),
+                      color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.account_tree_rounded, size: 18, color: Colors.black),
                     SizedBox(width: 8),
                     Text(
@@ -232,11 +232,11 @@ class BracketPreviewCardWidget extends StatelessWidget {
     required Color accentColor,
   }) {
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Color(0xFF1E293B).withOpacity(0.6),
+        color: const Color(0xFF1E293B).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,16 +284,16 @@ class BracketPreviewCardWidget extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white)),
-                  Text(s1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.goldPrimary)),
+                  Text(p1, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(s1, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.goldPrimary)),
                 ],
               ),
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p2, style: TextStyle(fontSize: 10.5, color: Colors.white70)),
-                  Text(s2, style: TextStyle(fontSize: 10.5, color: Colors.white70)),
+                  Text(p2, style: const TextStyle(fontSize: 10.5, color: Colors.white70)),
+                  Text(s2, style: const TextStyle(fontSize: 10.5, color: Colors.white70)),
                 ],
               ),
             ],
@@ -302,9 +302,9 @@ class BracketPreviewCardWidget extends StatelessWidget {
         if (isLive) ...[
           const SizedBox(width: 12),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: Color(0xFFFF2A6D).withOpacity(0.2),
+              color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: const Color(0xFFFF2A6D)),
             ),
@@ -331,8 +331,8 @@ class BracketPreviewCardWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(Icons.account_tree_rounded, color: Color(0xFF00E5FF)),
                     SizedBox(width: 8),
                     Text(

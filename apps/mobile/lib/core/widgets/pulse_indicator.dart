@@ -8,12 +8,12 @@ class PulseIndicator extends StatefulWidget {
   final Duration duration;
 
   const PulseIndicator({
-    Key? key,
+    super.key,
     this.color = AppTheme.primaryAccent, // Crimson accent default
     this.size = 8.0,
     this.semanticLabel,
     this.duration = const Duration(milliseconds: 1200),
-  }) : super(key: key);
+  });
 
   @override
   State<PulseIndicator> createState() => _PulseIndicatorState();
@@ -60,7 +60,7 @@ class _PulseIndicatorState extends State<PulseIndicator> with SingleTickerProvid
                 height: widget.size * 2.2,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: widget.color.withOpacity((1.0 - _pulseAnimation.value) * 0.4),
+                  color: widget.color.withValues(alpha: (1.0 - _pulseAnimation.value) * 0.4),
                 ),
               );
             },

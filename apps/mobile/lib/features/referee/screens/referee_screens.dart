@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
-import '../../../core/api/repositories.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
@@ -90,7 +89,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
         builder: (ctx, setDialogState) => AlertDialog(
           title: const Text('Call to Table'),
           content: DropdownButtonFormField<String>(
-            value: tableId,
+            initialValue: tableId,
             isExpanded: true,
             decoration: const InputDecoration(labelText: 'Table'),
             items: [
@@ -150,7 +149,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: scoreLine,
+                initialValue: scoreLine,
                 decoration: const InputDecoration(labelText: 'Score line (wins-pulls format)'),
                 items: [
                   for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s)),
@@ -285,7 +284,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     DropdownButtonFormField<String>(
-                      value: _selectedEventId,
+                      initialValue: _selectedEventId,
                       isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Event'),
                       items: [
@@ -418,7 +417,7 @@ class _AssignmentCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _matchStatusColor(status).withOpacity(0.12),
+                  color: _matchStatusColor(status).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -585,7 +584,7 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: _statusColor(status).withOpacity(0.12),
+                        color: _statusColor(status).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -719,7 +718,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _score,
+                initialValue: _score,
                 decoration: const InputDecoration(labelText: 'Outcome Score'),
                 items: [
                   for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s)),

@@ -6,9 +6,8 @@ class _TournamentTimelineWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const _TournamentTimelineWidget({
-    Key? key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<_TournamentTimelineWidget> createState() => _TournamentTimelineWidgetState();
@@ -130,22 +129,22 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -156,22 +155,22 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withOpacity(0.18),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.timeline_rounded,
                         color: AppTheme.goldPrimary,
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'TOURNAMENT TIMELINE',
                           style: TextStyle(
@@ -198,11 +197,11 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
 
                 // Active Stage Counter
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Color(0xFFFF2A6D).withOpacity(0.15),
+                    color: const Color(0xFFFF2A6D).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(0xFFFF2A6D).withOpacity(0.5)),
+                    border: Border.all(color: const Color(0xFFFF2A6D).withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -306,17 +305,17 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                                     shape: BoxShape.circle,
                                     color: isCurrent
                                         ? AppTheme.goldPrimary
-                                        : (isPast ? Color(0xFF00E676).withOpacity(0.2) : Color(0xFF1E293B)),
+                                        : (isPast ? const Color(0xFF00E676).withValues(alpha: 0.2) : const Color(0xFF1E293B)),
                                     border: Border.all(
                                       color: isCurrent
                                           ? Colors.white
-                                          : (isPast ? Color(0xFF00E676) : Colors.white24),
+                                          : (isPast ? const Color(0xFF00E676) : Colors.white24),
                                       width: isCurrent ? 2 : 1,
                                     ),
                                     boxShadow: isCurrent
                                         ? [
                                             BoxShadow(
-                                              color: AppTheme.goldPrimary.withOpacity(0.4 + 0.3 * _pulseController.value),
+                                              color: AppTheme.goldPrimary.withValues(alpha: 0.4 + 0.3 * _pulseController.value),
                                               blurRadius: 10 + 6 * _pulseController.value,
                                               spreadRadius: 2,
                                             ),
@@ -346,17 +345,17 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                               Expanded(
                                 child: Container(
                                   width: 2,
-                                  margin: EdgeInsets.symmetric(vertical: 4),
+                                  margin: const EdgeInsets.symmetric(vertical: 4),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
                                         isPast
-                                            ? Color(0xFF00E676).withOpacity(0.6)
+                                            ? const Color(0xFF00E676).withValues(alpha: 0.6)
                                             : (isCurrent ? AppTheme.goldPrimary : Colors.white12),
                                         (index + 1 < _currentEventIndex)
-                                            ? Color(0xFF00E676).withOpacity(0.6)
+                                            ? const Color(0xFF00E676).withValues(alpha: 0.6)
                                             : ((index + 1 == _currentEventIndex)
                                                 ? AppTheme.goldPrimary
                                                 : Colors.white12),
@@ -377,23 +376,23 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                           duration: const Duration(milliseconds: 300),
                           opacity: isPast ? 0.55 : (isCurrent ? 1.0 : 0.75),
                           child: Container(
-                            margin: EdgeInsets.only(bottom: 14),
-                            padding: EdgeInsets.all(14),
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: isCurrent
-                                  ? Color(0xFF1E2B47)
-                                  : (isPast ? Color(0xFF0D1424) : Color(0xFF131D33)),
+                                  ? const Color(0xFF1E2B47)
+                                  : (isPast ? const Color(0xFF0D1424) : const Color(0xFF131D33)),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isCurrent
                                     ? AppTheme.goldPrimary
-                                    : (isPast ? Color(0xFF00E676).withOpacity(0.2) : Colors.white12),
+                                    : (isPast ? const Color(0xFF00E676).withValues(alpha: 0.2) : Colors.white12),
                                 width: isCurrent ? 1.5 : 1.0,
                               ),
                               boxShadow: isCurrent
                                   ? [
                                       BoxShadow(
-                                        color: AppTheme.goldPrimary.withOpacity(0.18),
+                                        color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -415,7 +414,7 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                                             size: 16,
                                             color: isCurrent
                                                 ? AppTheme.goldPrimary
-                                                : (isPast ? Color(0xFF00E676) : Colors.white60),
+                                                : (isPast ? const Color(0xFF00E676) : Colors.white60),
                                           ),
                                           const SizedBox(width: 8),
                                           Expanded(
@@ -433,12 +432,12 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                                       ),
                                     ),
                                     Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: isPast
-                                            ? Color(0xFF00E676).withOpacity(0.15)
+                                            ? const Color(0xFF00E676).withValues(alpha: 0.15)
                                             : (isCurrent
-                                                ? AppTheme.goldPrimary.withOpacity(0.2)
+                                                ? AppTheme.goldPrimary.withValues(alpha: 0.2)
                                                 : Colors.white10),
                                         borderRadius: BorderRadius.circular(4),
                                       ),

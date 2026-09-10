@@ -110,9 +110,9 @@ class VenueDetailScreen extends ConsumerWidget {
                       ),
                       title: const Text('Verification pending',
                           style: TextStyle(fontSize: 14)),
-                      subtitle: Text(
+                      subtitle: const Text(
                         'Federation admins are reviewing this venue.',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
                   ),

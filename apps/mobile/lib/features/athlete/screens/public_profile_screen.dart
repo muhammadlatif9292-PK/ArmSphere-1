@@ -80,7 +80,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
                         backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
                         onBackgroundImageError: photo.isNotEmpty
                             ? (exception, stackTrace) {}
@@ -104,7 +104,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         Text(
                           location,
                           style: TextStyle(
-                              color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                         ),
                       ],
                       if (clubName != null && clubName.isNotEmpty) ...[

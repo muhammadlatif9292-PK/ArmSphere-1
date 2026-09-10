@@ -6,9 +6,9 @@ class LiveTournamentStatusCard extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const LiveTournamentStatusCard({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<LiveTournamentStatusCard> createState() => _LiveTournamentStatusCardState();
@@ -17,7 +17,7 @@ class LiveTournamentStatusCard extends StatefulWidget {
 class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  bool _forceShowForTesting = true; // Set default true so users can see the card immediately in preview
+  final bool _forceShowForTesting = true; // Set default true so users can see the card immediately in preview
 
   @override
   void initState() {
@@ -59,20 +59,20 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A).withOpacity(0.90),
+        color: const Color(0xFF0F172A).withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Color(0xFFFF2A6D).withOpacity(0.5),
+          color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFFF2A6D).withOpacity(0.18),
+            color: const Color(0xFFFF2A6D).withValues(alpha: 0.18),
             blurRadius: 20,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -81,7 +81,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -92,22 +92,22 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: Color(0xFFFF2A6D).withOpacity(0.18),
+                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.18),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Color(0xFFFF2A6D).withOpacity(0.5)),
+                          border: Border.all(color: const Color(0xFFFF2A6D).withValues(alpha: 0.5)),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.sensors_rounded,
                           color: Color(0xFFFF2A6D),
                           size: 18,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'LIVE TOURNAMENT STATUS',
                             style: TextStyle(
@@ -137,17 +137,17 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                     animation: _pulseAnimation,
                     builder: (context, child) {
                       return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: Color(0xFFFF2A6D).withOpacity(0.18),
+                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Color(0xFFFF2A6D).withOpacity(_pulseAnimation.value),
+                            color: const Color(0xFFFF2A6D).withValues(alpha: _pulseAnimation.value),
                             width: 1.2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFFFF2A6D).withOpacity(0.4 * _pulseAnimation.value),
+                              color: const Color(0xFFFF2A6D).withValues(alpha: 0.4 * _pulseAnimation.value),
                               blurRadius: 8,
                             ),
                           ],
@@ -159,7 +159,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                               width: 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color: Color(0xFFFF2A6D).withOpacity(_pulseAnimation.value),
+                                color: const Color(0xFFFF2A6D).withValues(alpha: _pulseAnimation.value),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -187,22 +187,22 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
               // Current Match Spotlight Banner
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(14),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF1E1B4B).withOpacity(0.8),
-                      Color(0xFF0F172A).withOpacity(0.9),
+                      const Color(0xFF1E1B4B).withValues(alpha: 0.8),
+                      const Color(0xFF0F172A).withValues(alpha: 0.9),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Color(0xFF00E5FF).withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.sports_mma_rounded, size: 16, color: Color(0xFF00E5FF)),
                         SizedBox(width: 8),
                         Text(
@@ -220,7 +220,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                     const SizedBox(height: 6),
                     Text(
                       currentMatch,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w900,
@@ -241,8 +241,8 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.account_tree_rounded, size: 14, color: AppTheme.goldPrimary),
                           SizedBox(width: 6),
                           Text(
@@ -259,7 +259,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                       ),
                       Text(
                         '${(progressValue * 100).toInt()}% COMPLETE',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
@@ -271,7 +271,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                   const SizedBox(height: 6),
                   Text(
                     liveProgress,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -288,7 +288,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                         Container(
                           height: 8,
                           width: double.infinity,
-                          color: Color(0xFF1E293B),
+                          color: const Color(0xFF1E293B),
                         ),
                         AnimatedBuilder(
                           animation: _pulseAnimation,
@@ -299,12 +299,12 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                                 height: 8,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
-                                  gradient: LinearGradient(
+                                  gradient: const LinearGradient(
                                     colors: [Color(0xFFFFB300), Color(0xFFFF2A6D)],
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Color(0xFFFF2A6D).withOpacity(0.5 * _pulseAnimation.value),
+                                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.5 * _pulseAnimation.value),
                                       blurRadius: 6,
                                     ),
                                   ],
@@ -329,7 +329,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                       icon: Icons.groups_outlined,
                       label: 'Athletes Remaining',
                       value: athletesRemaining,
-                      accentColor: Color(0xFF00E5FF),
+                      accentColor: const Color(0xFF00E5FF),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -338,7 +338,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                       icon: Icons.check_circle_outline_rounded,
                       label: 'Matches Finished',
                       value: matchesFinished,
-                      accentColor: Color(0xFF00E676),
+                      accentColor: const Color(0xFF00E676),
                     ),
                   ),
                 ],
@@ -360,7 +360,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                       icon: Icons.hourglass_top_rounded,
                       label: 'Estimated Finish',
                       value: estimatedFinish,
-                      accentColor: Color(0xFFFF2A6D),
+                      accentColor: const Color(0xFFFF2A6D),
                     ),
                   ),
                 ],
@@ -371,9 +371,9 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
               // Live Audience Counter Card
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Color(0xFF162032).withOpacity(0.7),
+                  color: const Color(0xFF162032).withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.white12),
                 ),
@@ -382,9 +382,9 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                   children: [
                     const Icon(Icons.remove_red_eye_rounded, size: 15, color: Color(0xFF00E5FF)),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'LIVE AUDIENCE: ',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -414,23 +414,23 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [Color(0xFFFF0000), Color(0xFFFF2A6D)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFFFF0000).withOpacity(0.4),
+                        color: const Color(0xFFFF0000).withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.play_circle_fill_rounded, size: 20, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
@@ -463,11 +463,11 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
     required Color accentColor,
   }) {
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F).withOpacity(0.8),
+        color: const Color(0xFF141E2F).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accentColor.withOpacity(0.25)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,7 +481,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                   label.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 8.5,
                     fontWeight: FontWeight.w800,
@@ -516,8 +516,8 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
         return AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.play_circle_fill_rounded, color: Color(0xFFFF0000), size: 24),
               SizedBox(width: 8),
               Text(
@@ -526,10 +526,10 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
               ),
             ],
           ),
-          content: Column(
+          content: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Redirecting to the Official PAFF YouTube Live Stream...',
                 style: TextStyle(color: AppTheme.textMuted, fontSize: 12.5),

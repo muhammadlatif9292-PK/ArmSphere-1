@@ -44,7 +44,7 @@ class WelcomeScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: AppTheme.glassSurface,
                           border: Border.all(color: AppTheme.glassBorder),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
                               color: AppTheme.goldGlow,
                               blurRadius: 32,
@@ -94,22 +94,22 @@ class WelcomeScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          _BenefitRow(
+                          const _BenefitRow(
                             icon: Icons.emoji_events_outlined,
                             title: 'Compete in tournaments',
                             subtitle: 'Register for events, brackets and matches near you.',
                           ),
-                          _BenefitRow(
+                          const _BenefitRow(
                             icon: Icons.leaderboard_outlined,
                             title: 'National rankings',
                             subtitle: 'Earn points every match and climb your weight class.',
                           ),
-                          _BenefitRow(
+                          const _BenefitRow(
                             icon: Icons.travel_explore_outlined,
                             title: 'Discover athletes',
                             subtitle: 'Follow rivals and training partners across Pakistan.',
                           ),
-                          _BenefitRow(
+                          const _BenefitRow(
                             icon: Icons.groups_3_outlined,
                             title: 'Community & clubs',
                             subtitle: 'Share PRs, join teams and follow live results.',

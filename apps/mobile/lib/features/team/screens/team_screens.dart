@@ -743,7 +743,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                         color: Theme.of(context).colorScheme.error),
                   ),
                   data: (clubs) => DropdownButtonFormField<String>(
-                    value: _clubId,
+                    initialValue: _clubId,
                     decoration: const InputDecoration(
                         labelText: 'Affiliated Club (optional)'),
                     items: clubs

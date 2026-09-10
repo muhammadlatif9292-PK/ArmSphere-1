@@ -6,9 +6,9 @@ class ImportantDatesTimelineWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const ImportantDatesTimelineWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<ImportantDatesTimelineWidget> createState() => _ImportantDatesTimelineWidgetState();
@@ -107,20 +107,20 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.12),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.12),
             blurRadius: 18,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -129,7 +129,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -140,12 +140,12 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withOpacity(0.18),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withOpacity(0.5),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                           ),
                         ),
                         child: const Icon(
@@ -155,9 +155,9 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'IMPORTANT DATES',
                             style: TextStyle(
@@ -252,16 +252,16 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                         color: isCompleted
                             ? accentColor
                             : (isInProgress
-                                ? accentColor.withOpacity(0.25)
-                                : Color(0xFF1E293B)),
+                                ? accentColor.withValues(alpha: 0.25)
+                                : const Color(0xFF1E293B)),
                         border: Border.all(
-                          color: accentColor.withOpacity(isCompleted ? 1.0 : 0.8),
+                          color: accentColor.withValues(alpha: isCompleted ? 1.0 : 0.8),
                           width: isCompleted ? 2.0 : 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: accentColor.withOpacity(
-                              isCompleted ? 0.6 : (isInProgress ? 0.4 * pulseValue : 0.15),
+                            color: accentColor.withValues(
+                              alpha: isCompleted ? 0.6 : (isInProgress ? 0.4 * pulseValue : 0.15),
                             ),
                             blurRadius: isCompleted ? 10 : (isInProgress ? 12 * pulseValue : 6),
                             spreadRadius: isCompleted ? 2 : (isInProgress ? 2 * pulseValue : 0),
@@ -288,14 +288,14 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                   Expanded(
                     child: Container(
                       width: 2,
-                      margin: EdgeInsets.symmetric(vertical: 4),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            accentColor.withOpacity(isCompleted ? 0.8 : 0.4),
-                            (_timelineEvents[index + 1]['accentColor'] as Color).withOpacity(0.3),
+                            accentColor.withValues(alpha: isCompleted ? 0.8 : 0.4),
+                            (_timelineEvents[index + 1]['accentColor'] as Color).withValues(alpha: 0.3),
                           ],
                         ),
                       ),
@@ -323,25 +323,25 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                   );
                 },
                 child: Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Color(0xFF141E2F).withOpacity(0.85),
+                    color: const Color(0xFF141E2F).withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isInProgress
                           ? accentColor
-                          : accentColor.withOpacity(isCompleted ? 0.35 : 0.2),
+                          : accentColor.withValues(alpha: isCompleted ? 0.35 : 0.2),
                       width: isInProgress ? 1.4 : 1.0,
                     ),
                     boxShadow: [
                       if (isInProgress)
                         BoxShadow(
-                          color: accentColor.withOpacity(0.2),
+                          color: accentColor.withValues(alpha: 0.2),
                           blurRadius: 12,
                           spreadRadius: -1,
                         ),
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
                       ),
@@ -398,7 +398,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                             style: TextStyle(color: Colors.white24, fontSize: 10),
                           ),
                           const SizedBox(width: 8),
-                          Icon(
+                          const Icon(
                             Icons.access_time_rounded,
                             size: 11,
                             color: AppTheme.textMuted,
@@ -441,15 +441,15 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
   Widget _buildStatusBadge(String status, Color accentColor) {
     if (status == 'COMPLETED') {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Color(0xFF00E676).withOpacity(0.2),
+          color: const Color(0xFF00E676).withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Color(0xFF00E676).withOpacity(0.5)),
+          border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.5)),
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(Icons.check_circle_rounded, size: 10, color: Color(0xFF00E676)),
             SizedBox(width: 3),
             Text(
@@ -469,17 +469,17 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
         animation: _pulseAnimation,
         builder: (context, child) {
           return Container(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: AppTheme.goldPrimary.withOpacity(0.25),
+              color: AppTheme.goldPrimary.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: AppTheme.goldPrimary.withOpacity(0.6 + (_pulseAnimation.value * 0.4)),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.6 + (_pulseAnimation.value * 0.4)),
               ),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Icon(Icons.bolt_rounded, size: 10, color: AppTheme.goldPrimary),
                 SizedBox(width: 3),
                 Text(
@@ -498,9 +498,9 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
       );
     } else {
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Color(0xFF1E293B),
+          color: const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: Colors.white12),
         ),
@@ -510,7 +510,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
             fontFamily: AppTheme.fontDisplay,
             fontSize: 8,
             fontWeight: FontWeight.w800,
-            color: accentColor.withOpacity(0.9),
+            color: accentColor.withValues(alpha: 0.9),
           ),
         ),
       );

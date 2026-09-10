@@ -8,11 +8,11 @@ class VideoPlayerModal extends StatefulWidget {
   final String? caption;
 
   const VideoPlayerModal({
-    Key? key,
+    super.key,
     required this.embedUrl,
     required this.platform,
     this.caption,
-  }) : super(key: key);
+  });
 
   /// Shows the modal in a clean, dark bottom-sheet overlay.
   static void show(BuildContext context, {
@@ -171,7 +171,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                   const SizedBox(width: 8),
                   Text(
                     '${widget.platform.toUpperCase()} VIDEO PLAYER',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -181,7 +181,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                 ],
               ),
               IconButton(
-                icon: Icon(Icons.close, color: AppTheme.textPrimary.withOpacity(0.7)),
+                icon: Icon(Icons.close, color: AppTheme.textPrimary.withValues(alpha: 0.7)),
                 tooltip: 'Close video',
                 onPressed: () => Navigator.pop(context),
               ),
@@ -209,11 +209,11 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircularProgressIndicator(color: AppTheme.primaryAccent),
-                              SizedBox(height: 12),
+                              const CircularProgressIndicator(color: AppTheme.primaryAccent),
+                              const SizedBox(height: 12),
                               Text(
                                 'Loading video player...',
-                                style: TextStyle(color: AppTheme.textPrimary.withOpacity(0.6), fontSize: 13),
+                                style: TextStyle(color: AppTheme.textPrimary.withValues(alpha: 0.6), fontSize: 13),
                               ),
                             ],
                           ),
@@ -229,7 +229,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.error_outline_rounded, color: AppTheme.error, size: 42),
+                              const Icon(Icons.error_outline_rounded, color: AppTheme.error, size: 42),
                               const SizedBox(height: 12),
                               const Text(
                                 'Failed to Load Video',
@@ -241,7 +241,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                                     ? _errorMessage
                                     : 'The video might have been deleted, made private, or is restricted from embedding.',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton.icon(
@@ -251,7 +251,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                                   foregroundColor: AppTheme.textPrimary,
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 ),
-                                icon: Icon(Icons.refresh, size: 16),
+                                icon: const Icon(Icons.refresh, size: 16),
                                 label: const Text('Retry'),
                               ),
                             ],
@@ -280,7 +280,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
             Text(
               widget.caption!,
               style: TextStyle(
-                color: AppTheme.textPrimary.withOpacity(0.7),
+                color: AppTheme.textPrimary.withValues(alpha: 0.7),
                 fontSize: 13,
                 height: 1.4,
               ),

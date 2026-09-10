@@ -155,7 +155,7 @@ class _CreateInformalEventScreenState
                             ? Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.4)
+                                .withValues(alpha: 0.4)
                             : null,
                       ),
                     ),

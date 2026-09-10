@@ -35,11 +35,11 @@ class AppCustomPageTransition extends StatelessWidget {
   final Widget child;
 
   const AppCustomPageTransition({
-    Key? key,
+    super.key,
     required this.primaryAnimation,
     required this.secondaryAnimation,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -107,19 +107,14 @@ class AppCustomPageTransition extends StatelessWidget {
 /// reverseTransitionDuration to 250ms (reverse pop) with [AppCustomPageTransition].
 class AppTransitionPage extends CustomTransitionPage<void> {
   AppTransitionPage({
-    required Widget child,
-    LocalKey? key,
-    String? name,
-    Object? arguments,
-    String? restorationId,
+    required super.child,
+    super.key,
+    super.name,
+    super.arguments,
+    super.restorationId,
   }) : super(
-          key: key,
-          name: name,
-          arguments: arguments,
-          restorationId: restorationId,
           transitionDuration: const Duration(milliseconds: 300),
           reverseTransitionDuration: const Duration(milliseconds: 250),
-          child: child,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return AppCustomPageTransition(
               primaryAnimation: animation,

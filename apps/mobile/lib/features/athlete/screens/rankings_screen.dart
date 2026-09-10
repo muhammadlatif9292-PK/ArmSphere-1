@@ -192,7 +192,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: rankColor.withOpacity(0.15),
+                                  color: rankColor.withValues(alpha: 0.15),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Center(
@@ -209,7 +209,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                               const SizedBox(width: 12),
                               CircleAvatar(
                                 radius: 22,
-                                backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
                                 child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'A'),
                               ),
                               const SizedBox(width: 12),
@@ -263,7 +263,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                     Center(
                       child: Column(
                         children: [
-                          Icon(Icons.error_outline, size: 44, color: AppTheme.error),
+                          const Icon(Icons.error_outline, size: 44, color: AppTheme.error),
                           const SizedBox(height: 12),
                           Text('Error loading rankings: $err',
                               textAlign: TextAlign.center,

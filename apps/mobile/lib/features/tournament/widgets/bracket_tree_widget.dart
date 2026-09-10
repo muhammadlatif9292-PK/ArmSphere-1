@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'bracket_connector_line.dart';
 import 'bracket_connectors_painter.dart';
@@ -10,10 +9,10 @@ class BracketTreeWidget extends StatelessWidget {
   final String titlePrefix;
 
   const BracketTreeWidget({
-    Key? key,
+    super.key,
     required this.matches,
     required this.titlePrefix,
-  }) : super(key: key);
+  });
 
   static const double cardWidth = 200.0;
   static const double cardHeight = 94.0;
@@ -204,16 +203,16 @@ class BracketTreeWidget extends StatelessWidget {
                 width: cardWidth,
                 child: Center(
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: titlePrefix == 'LOSERS'
-                          ? AppTheme.accentOrange.withOpacity(0.12)
-                          : AppTheme.primaryAccent.withOpacity(0.12),
+                          ? AppTheme.accentOrange.withValues(alpha: 0.12)
+                          : AppTheme.primaryAccent.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: titlePrefix == 'LOSERS'
-                            ? AppTheme.accentOrange.withOpacity(0.3)
-                            : AppTheme.primaryAccent.withOpacity(0.3),
+                            ? AppTheme.accentOrange.withValues(alpha: 0.3)
+                            : AppTheme.primaryAccent.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(

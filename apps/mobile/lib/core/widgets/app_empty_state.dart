@@ -10,13 +10,13 @@ class AppEmptyState extends StatefulWidget {
   final VoidCallback? onCtaTap;
 
   const AppEmptyState({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
     this.ctaLabel,
     this.onCtaTap,
-  }) : super(key: key);
+  });
 
   @override
   State<AppEmptyState> createState() => _AppEmptyStateState();

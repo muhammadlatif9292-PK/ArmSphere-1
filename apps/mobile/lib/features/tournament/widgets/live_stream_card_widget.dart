@@ -7,9 +7,9 @@ class LiveStreamCardWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const LiveStreamCardWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<LiveStreamCardWidget> createState() => _LiveStreamCardWidgetState();
@@ -45,27 +45,27 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: Color(0xFFFF2A6D).withOpacity(0.5),
+          color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Color(0xFFFF2A6D).withOpacity(0.12),
+            color: const Color(0xFFFF2A6D).withValues(alpha: 0.12),
             blurRadius: 24,
             spreadRadius: -4,
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -76,22 +76,22 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Color(0xFFFF2A6D).withOpacity(0.18),
+                        color: const Color(0xFFFF2A6D).withValues(alpha: 0.18),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Color(0xFFFF2A6D).withOpacity(0.6)),
+                        border: Border.all(color: const Color(0xFFFF2A6D).withValues(alpha: 0.6)),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.live_tv_rounded,
                         color: Color(0xFFFF2A6D),
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'OFFICIAL LIVE BROADCAST',
                           style: TextStyle(
@@ -121,23 +121,23 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                   animation: _pulseController,
                   builder: (context, child) {
                     return Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Color(0xFFFF2A6D).withOpacity(0.2),
+                        color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Color(0xFFFF2A6D).withOpacity(0.6 + 0.4 * _pulseController.value),
+                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.6 + 0.4 * _pulseController.value),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFFFF2A6D).withOpacity(0.3 * _pulseController.value),
+                            color: const Color(0xFFFF2A6D).withValues(alpha: 0.3 * _pulseController.value),
                             blurRadius: 10,
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           PulseIndicator(size: 6.0, color: Color(0xFFFF2A6D)),
                           SizedBox(width: 6),
                           Text(
@@ -178,19 +178,19 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                 children: [
                   // Center Play Overlay Icon
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Color(0xFFFF2A6D).withOpacity(0.9),
+                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0xFFFF2A6D).withOpacity(0.5),
+                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
                           blurRadius: 16,
                           spreadRadius: 2,
                         ),
                       ],
                     ),
-                    child: Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
+                    child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
                   ),
 
                   // Bottom Info Overlay Bar
@@ -199,16 +199,16 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                     left: 12,
                     right: 12,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.75),
+                        color: Colors.black.withValues(alpha: 0.75),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
-                            children: const [
+                            children: [
                               Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 14),
                               SizedBox(width: 6),
                               Text(
@@ -218,7 +218,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                             ],
                           ),
                           Row(
-                            children: const [
+                            children: [
                               Icon(Icons.remove_red_eye_rounded, color: Color(0xFF00E5FF), size: 14),
                               SizedBox(width: 4),
                               Text(
@@ -238,9 +238,9 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
             const SizedBox(height: 16),
 
             // Stream Status Subtitle
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 Text(
                   '1080p 60FPS • PAFF Official Broadcast',
                   style: TextStyle(
@@ -268,23 +268,23 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
               onTap: () => _openYouTubeLiveStream(context),
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Color(0xFFFF2A6D), Color(0xFFFF0055)],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFFFF2A6D).withOpacity(0.4),
+                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.4),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.play_circle_fill_rounded, size: 20, color: Colors.white),
                     SizedBox(width: 8),
                     Text(
@@ -315,17 +315,17 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
         return AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.live_tv_rounded, color: Color(0xFFFF2A6D)),
               SizedBox(width: 8),
               Text('YouTube Live Stream', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
-          content: Column(
+          content: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Opening the official PAFF Championship live broadcast on YouTube.',
                 style: TextStyle(color: AppTheme.textMuted, fontSize: 12),

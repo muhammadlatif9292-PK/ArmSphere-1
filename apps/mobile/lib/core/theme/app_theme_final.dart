@@ -68,7 +68,7 @@ class AppTheme {
   // Active / Live card glow
   static BoxShadow liveGlow() {
     return BoxShadow(
-      color: primaryAccent.withOpacity(0.3),
+      color: primaryAccent.withValues(alpha: 0.3),
       blurRadius: 8.0,
       spreadRadius: 1.0,
     );
@@ -81,12 +81,10 @@ class AppTheme {
       scaffoldBackgroundColor: background,
       primaryColor: primaryAccent,
       colorScheme: const ColorScheme.dark(
-        background: background,
         surface: surface,
         primary: primaryAccent,
         secondary: secondaryAccent,
         error: error,
-        onBackground: textPrimary,
         onSurface: textPrimary,
       ),
       dividerColor: border,
@@ -169,7 +167,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: surface,
-        shadowColor: Colors.black.withOpacity(0.5),
+        shadowColor: Colors.black.withValues(alpha: 0.5),
         elevation: 4.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
@@ -187,14 +185,14 @@ class AppTheme {
           color: textPrimary,
         ),
       ),
-      pageTransitionsTheme: PageTransitionsTheme(
+      pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: const AppPageTransitionsBuilder(),
-          TargetPlatform.iOS: const AppPageTransitionsBuilder(),
-          TargetPlatform.linux: const AppPageTransitionsBuilder(),
-          TargetPlatform.windows: const AppPageTransitionsBuilder(),
-          TargetPlatform.macOS: const AppPageTransitionsBuilder(),
-          TargetPlatform.fuchsia: const AppPageTransitionsBuilder(),
+          TargetPlatform.android: AppPageTransitionsBuilder(),
+          TargetPlatform.iOS: AppPageTransitionsBuilder(),
+          TargetPlatform.linux: AppPageTransitionsBuilder(),
+          TargetPlatform.windows: AppPageTransitionsBuilder(),
+          TargetPlatform.macOS: AppPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: AppPageTransitionsBuilder(),
         },
       ),
     );

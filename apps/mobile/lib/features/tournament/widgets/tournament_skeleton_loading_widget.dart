@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'shimmer_box.dart';
 class TournamentSkeletonLoadingWidget extends StatefulWidget {
-  const TournamentSkeletonLoadingWidget({Key? key}) : super(key: key);
+  const TournamentSkeletonLoadingWidget({super.key});
 
   @override
   State<TournamentSkeletonLoadingWidget> createState() =>
@@ -39,19 +38,19 @@ class _TournamentSkeletonLoadingWidgetState
 
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Skeleton Status Badge
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Color(0xFF0D1527).withOpacity(0.92),
+                  color: const Color(0xFF0D1527).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: AppTheme.goldPrimary.withOpacity(0.35),
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.35),
                   ),
                 ),
                 child: Row(
@@ -67,7 +66,7 @@ class _TournamentSkeletonLoadingWidgetState
                             color: AppTheme.goldPrimary,
                             boxShadow: [
                               BoxShadow(
-                                color: AppTheme.goldPrimary.withOpacity(0.6),
+                                color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                                 blurRadius: 8,
                                 spreadRadius: 1,
                               ),
@@ -88,9 +87,9 @@ class _TournamentSkeletonLoadingWidgetState
                       ],
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E293B),
+                        color: const Color(0xFF1E293B),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: Colors.white12),
                       ),
@@ -224,22 +223,22 @@ class _TournamentSkeletonLoadingWidgetState
 
                         // Connector Line Skeleton
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: Container(
                             width: 16,
                             height: 60,
                             decoration: BoxDecoration(
                               border: Border(
                                 top: BorderSide(
-                                  color: AppTheme.goldPrimary.withOpacity(0.3),
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                                   width: 1.5,
                                 ),
                                 right: BorderSide(
-                                  color: AppTheme.goldPrimary.withOpacity(0.3),
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                                   width: 1.5,
                                 ),
                                 bottom: BorderSide(
-                                  color: AppTheme.goldPrimary.withOpacity(0.3),
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                                   width: 1.5,
                                 ),
                               ),
@@ -349,22 +348,22 @@ class _TournamentSkeletonLoadingWidgetState
   Widget _buildGlassCard({required Widget child}) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.08),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.08),
             blurRadius: 16,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -376,13 +375,13 @@ class _TournamentSkeletonLoadingWidgetState
 
   Widget _buildMatchSlotSkeleton(double percent, {bool isFinal = false}) {
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F).withOpacity(0.85),
+        color: const Color(0xFF141E2F).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isFinal
-              ? AppTheme.goldPrimary.withOpacity(0.6)
+              ? AppTheme.goldPrimary.withValues(alpha: 0.6)
               : Colors.white12,
         ),
       ),
@@ -451,8 +450,8 @@ class _TournamentSkeletonLoadingWidgetState
                   Expanded(
                     child: Container(
                       width: 2,
-                      margin: EdgeInsets.symmetric(vertical: 4),
-                      color: AppTheme.goldPrimary.withOpacity(0.25),
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.25),
                     ),
                   ),
               ],
@@ -461,11 +460,11 @@ class _TournamentSkeletonLoadingWidgetState
           const SizedBox(width: 10),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: 12.0),
+              padding: const EdgeInsets.only(bottom: 12.0),
               child: Container(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Color(0xFF141E2F).withOpacity(0.85),
+                  color: const Color(0xFF141E2F).withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white12),
                 ),

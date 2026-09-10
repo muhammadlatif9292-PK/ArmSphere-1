@@ -6,9 +6,9 @@ class ParticipantsCarouselWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const ParticipantsCarouselWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<ParticipantsCarouselWidget> createState() => _ParticipantsCarouselWidgetState();
@@ -25,7 +25,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       'club': 'Lahore Iron Grip Club',
       'elo': 2145,
       'leagueBadge': 'PRO LEAGUE',
-      'leagueColor': Color(0xFFFF2A6D),
+      'leagueColor': const Color(0xFFFF2A6D),
       'isVerified': true,
       'photoUrl': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
       'category': '-80kg',
@@ -57,7 +57,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       'club': 'Capital Power Gym',
       'elo': 1890,
       'leagueBadge': 'RISING STAR',
-      'leagueColor': Color(0xFF00E5FF),
+      'leagueColor': const Color(0xFF00E5FF),
       'isVerified': true,
       'photoUrl': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
       'category': '-80kg',
@@ -73,7 +73,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       'club': 'Rawalpindi Steel Arm Academy',
       'elo': 1820,
       'leagueBadge': 'PRO LEAGUE',
-      'leagueColor': Color(0xFFFF2A6D),
+      'leagueColor': const Color(0xFFFF2A6D),
       'isVerified': true,
       'photoUrl': 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=300',
       'category': '-80kg',
@@ -89,7 +89,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       'club': 'Karachi Iron Warriors',
       'elo': 2050,
       'leagueBadge': 'ELITE MASTER',
-      'leagueColor': Color(0xFFA855F7),
+      'leagueColor': const Color(0xFFA855F7),
       'isVerified': true,
       'photoUrl': 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=300',
       'category': '+100kg',
@@ -105,7 +105,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       'club': 'Quetta Apex Pullers',
       'elo': 1760,
       'leagueBadge': 'RISING STAR',
-      'leagueColor': Color(0xFF00E5FF),
+      'leagueColor': const Color(0xFF00E5FF),
       'isVerified': true,
       'photoUrl': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300',
       'category': '-90kg',
@@ -128,20 +128,20 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.12),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.12),
             blurRadius: 18,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -150,25 +150,25 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 18.0),
+          padding: const EdgeInsets.symmetric(vertical: 18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Row
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18.0),
+                padding: const EdgeInsets.symmetric(horizontal: 18.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(7),
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: AppTheme.goldPrimary.withOpacity(0.18),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppTheme.goldPrimary.withOpacity(0.5),
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                             ),
                           ),
                           child: const Icon(
@@ -178,9 +178,9 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'PARTICIPANTS & ATHLETES',
                               style: TextStyle(
@@ -211,9 +211,9 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.white12),
                       ),
-                      child: Text(
+                      child: const Text(
                         '128 ATHLETES',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
@@ -318,15 +318,15 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
             child: Container(
               width: 165,
               decoration: BoxDecoration(
-                color: Color(0xFF141E2F),
+                color: const Color(0xFF141E2F),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: (athlete['leagueColor'] as Color).withOpacity(0.4),
+                  color: (athlete['leagueColor'] as Color).withValues(alpha: 0.4),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (athlete['leagueColor'] as Color).withOpacity(0.12),
+                    color: (athlete['leagueColor'] as Color).withValues(alpha: 0.12),
                     blurRadius: 10,
                     spreadRadius: -1,
                   ),
@@ -348,7 +348,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => Container(
                             height: 110,
-                            color: Color(0xFF1E293B),
+                            color: const Color(0xFF1E293B),
                             child: const Center(
                               child: Icon(Icons.person_rounded, size: 40, color: Colors.white38),
                             ),
@@ -363,9 +363,9 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  Colors.black.withOpacity(0.4),
+                                  Colors.black.withValues(alpha: 0.4),
                                   Colors.transparent,
-                                  Colors.black.withOpacity(0.7),
+                                  Colors.black.withValues(alpha: 0.7),
                                 ],
                               ),
                             ),
@@ -378,18 +378,18 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                             top: 8,
                             right: 8,
                             child: Container(
-                              padding: EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Color(0xFF00E5FF),
+                                color: const Color(0xFF00E5FF),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0xFF00E5FF).withOpacity(0.5),
+                                    color: const Color(0xFF00E5FF).withValues(alpha: 0.5),
                                     blurRadius: 6,
                                   ),
                                 ],
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.check_rounded,
                                 size: 10,
                                 color: Colors.black,
@@ -402,14 +402,14 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                           bottom: 6,
                           left: 8,
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: (athlete['leagueColor'] as Color),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               athlete['leagueBadge'],
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 7.5,
                                 fontWeight: FontWeight.w900,
@@ -425,7 +425,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                     // Card Body Details
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.all(10.0),
+                        padding: const EdgeInsets.all(10.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -438,7 +438,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                   athlete['name'],
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontFamily: AppTheme.fontDisplay,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w900,
@@ -448,7 +448,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                 const SizedBox(height: 2),
                                 Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.location_on_rounded,
                                       size: 10,
                                       color: AppTheme.goldPrimary,
@@ -459,7 +459,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                         '${athlete['province']} • ${athlete['club']}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
                                           fontSize: 9,
                                           color: AppTheme.textMuted,
@@ -476,12 +476,12 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.goldPrimary.withOpacity(0.18),
+                                    color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: AppTheme.goldPrimary.withOpacity(0.4),
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.4),
                                     ),
                                   ),
                                   child: Row(
@@ -533,14 +533,14 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
           child: Hero(
             tag: heroTag,
             child: Material(
               color: Colors.transparent,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Color(0xFF0F172A),
+                  color: const Color(0xFF0F172A),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: (athlete['leagueColor'] as Color),
@@ -548,7 +548,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (athlete['leagueColor'] as Color).withOpacity(0.35),
+                      color: (athlete['leagueColor'] as Color).withValues(alpha: 0.35),
                       blurRadius: 24,
                       spreadRadius: -2,
                     ),
@@ -577,9 +577,9 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: [
-                                      Colors.black.withOpacity(0.3),
+                                      Colors.black.withValues(alpha: 0.3),
                                       Colors.transparent,
-                                      Color(0xFF0F172A),
+                                      const Color(0xFF0F172A),
                                     ],
                                   ),
                                 ),
@@ -593,12 +593,12 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                               child: GestureDetector(
                                 onTap: () => Navigator.pop(context),
                                 child: Container(
-                                  padding: EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
                                     color: Colors.black54,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.close_rounded,
                                     color: Colors.white,
                                     size: 18,
@@ -618,14 +618,14 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                   Row(
                                     children: [
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
                                           color: (athlete['leagueColor'] as Color),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
                                           athlete['leagueBadge'],
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontFamily: AppTheme.fontDisplay,
                                             fontSize: 9,
                                             fontWeight: FontWeight.w900,
@@ -636,15 +636,15 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                       const SizedBox(width: 8),
                                       if (athlete['isVerified'] == true)
                                         Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: Color(0xFF00E5FF).withOpacity(0.2),
+                                            color: const Color(0xFF00E5FF).withValues(alpha: 0.2),
                                             borderRadius: BorderRadius.circular(6),
                                             border: Border.all(color: const Color(0xFF00E5FF)),
                                           ),
-                                          child: Row(
+                                          child: const Row(
                                             mainAxisSize: MainAxisSize.min,
-                                            children: const [
+                                            children: [
                                               Icon(Icons.verified_rounded, size: 12, color: Color(0xFF00E5FF)),
                                               SizedBox(width: 4),
                                               Text(
@@ -801,11 +801,11 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
 
   Widget _buildProfileMetricTile(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F),
+        color: const Color(0xFF141E2F),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [

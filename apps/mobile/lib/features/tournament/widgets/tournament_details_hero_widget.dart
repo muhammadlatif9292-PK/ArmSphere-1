@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import 'floating_particles_painter.dart';
@@ -8,9 +7,9 @@ class TournamentDetailsHeroWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const TournamentDetailsHeroWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<TournamentDetailsHeroWidget> createState() => _TournamentDetailsHeroWidgetState();
@@ -62,13 +61,13 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.goldPrimary.withOpacity(0.18 * animVal + 0.12),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.18 * animVal + 0.12),
                 blurRadius: 24,
                 spreadRadius: -4,
                 offset: const Offset(0, 8),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -92,13 +91,13 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                           1.0 - math.sin(gradientAngle) * 0.4,
                         ),
                         colors: [
-                          Color(0xFF0D1424),
+                          const Color(0xFF0D1424),
                           Color.lerp(
-                            Color(0xFF131D33),
-                            Color(0xFF1E2B47),
+                            const Color(0xFF131D33),
+                            const Color(0xFF1E2B47),
                             animVal,
                           )!,
-                          Color(0xFF090D18),
+                          const Color(0xFF090D18),
                         ],
                       ),
                     ),
@@ -116,8 +115,8 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          AppTheme.goldPrimary.withOpacity(0.25 + (0.1 * animVal)),
-                          AppTheme.goldPrimary.withOpacity(0.08),
+                          AppTheme.goldPrimary.withValues(alpha: 0.25 + (0.1 * animVal)),
+                          AppTheme.goldPrimary.withValues(alpha: 0.08),
                           Colors.transparent,
                         ],
                         stops: const [0.0, 0.5, 1.0],
@@ -136,7 +135,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          Color(0xFF00E5FF).withOpacity(0.18),
+                          const Color(0xFF00E5FF).withValues(alpha: 0.18),
                           Colors.transparent,
                         ],
                       ),
@@ -164,8 +163,8 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                         gradient: LinearGradient(
                           colors: [
                             Colors.transparent,
-                            Colors.white.withOpacity(0.04),
-                            Colors.white.withOpacity(0.08),
+                            Colors.white.withValues(alpha: 0.04),
+                            Colors.white.withValues(alpha: 0.08),
                             Colors.transparent,
                           ],
                         ),
@@ -181,8 +180,8 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: Color.lerp(
-                          AppTheme.goldPrimary.withOpacity(0.4),
-                          Color(0xFF00E5FF).withOpacity(0.4),
+                          AppTheme.goldPrimary.withValues(alpha: 0.4),
+                          const Color(0xFF00E5FF).withValues(alpha: 0.4),
                           animVal,
                         )!,
                         width: 1.2,
@@ -193,7 +192,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
 
                 // 6. Foreground Layout Content
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                   child: Row(
                     children: [
                       // Left Content Column
@@ -206,21 +205,21 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                             Row(
                               children: [
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(6),
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppTheme.goldPrimary.withOpacity(0.25),
-                                        Color(0xFFFFB300).withOpacity(0.15),
+                                        AppTheme.goldPrimary.withValues(alpha: 0.25),
+                                        const Color(0xFFFFB300).withValues(alpha: 0.15),
                                       ],
                                     ),
                                     border: Border.all(
-                                      color: AppTheme.goldPrimary.withOpacity(0.6),
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                                       width: 0.8,
                                     ),
                                   ),
-                                  child: Row(
+                                  child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
@@ -228,8 +227,8 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                         size: 11,
                                         color: AppTheme.goldPrimary,
                                       ),
-                                      const SizedBox(width: 4),
-                                      const Text(
+                                      SizedBox(width: 4),
+                                      Text(
                                         'PAFF OFFICIAL',
                                         style: TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
@@ -246,16 +245,16 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                 const SizedBox(width: 6),
 
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(6),
                                     color: status == 'LIVE'
-                                        ? Color(0xFFFF2A6D).withOpacity(0.2)
-                                        : Color(0xFF00E5FF).withOpacity(0.18),
+                                        ? const Color(0xFFFF2A6D).withValues(alpha: 0.2)
+                                        : const Color(0xFF00E5FF).withValues(alpha: 0.18),
                                     border: Border.all(
                                       color: status == 'LIVE'
-                                          ? Color(0xFFFF2A6D).withOpacity(0.6)
-                                          : Color(0xFF00E5FF).withOpacity(0.5),
+                                          ? const Color(0xFFFF2A6D).withValues(alpha: 0.6)
+                                          : const Color(0xFF00E5FF).withValues(alpha: 0.5),
                                     ),
                                   ),
                                   child: Row(
@@ -265,7 +264,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                         const PulseIndicator(size: 5.0, color: Color(0xFFFF2A6D)),
                                         const SizedBox(width: 4),
                                       ] else ...[
-                                        Icon(
+                                        const Icon(
                                           Icons.circle,
                                           size: 5,
                                           color: Color(0xFF00E5FF),
@@ -279,8 +278,8 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                           fontSize: 8.5,
                                           fontWeight: FontWeight.w900,
                                           color: status == 'LIVE'
-                                              ? Color(0xFFFF2A6D)
-                                              : Color(0xFF00E5FF),
+                                              ? const Color(0xFFFF2A6D)
+                                              : const Color(0xFF00E5FF),
                                           letterSpacing: 0.5,
                                         ),
                                       ),
@@ -295,7 +294,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                               name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
@@ -308,7 +307,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                             // Organizer, Province, Venue
                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.location_on_outlined,
                                   size: 12,
                                   color: Color(0xFF00E5FF),
@@ -319,7 +318,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                     '$organizer • $province • $venue',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontFamily: AppTheme.fontDisplay,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
@@ -335,22 +334,22 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                               children: [
                                 Expanded(
                                   child: Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(6),
-                                      color: Colors.black.withOpacity(0.35),
+                                      color: Colors.black.withValues(alpha: 0.35),
                                       border: Border.all(color: Colors.white12),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.fitness_center_rounded, size: 10, color: Colors.white70),
+                                        const Icon(Icons.fitness_center_rounded, size: 10, color: Colors.white70),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             categories,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontFamily: AppTheme.fontDisplay,
                                               fontSize: 9,
                                               fontWeight: FontWeight.w600,
@@ -366,16 +365,16 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                 const SizedBox(width: 6),
 
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(6),
-                                    color: AppTheme.goldPrimary.withOpacity(0.2),
-                                    border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.6)),
+                                    color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                                    border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.emoji_events_rounded,
                                         size: 11,
                                         color: AppTheme.goldPrimary,
@@ -383,7 +382,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                       const SizedBox(width: 3),
                                       Text(
                                         prizePool,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
                                           fontSize: 9,
                                           fontWeight: FontWeight.w900,
@@ -403,7 +402,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                               children: [
                                 Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.how_to_reg_rounded,
                                       size: 12,
                                       color: Color(0xFF00E676),
@@ -411,7 +410,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                     const SizedBox(width: 4),
                                     Text(
                                       regStatus,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontFamily: AppTheme.fontDisplay,
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w800,
@@ -422,16 +421,16 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                 ),
 
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5),
-                                    color: Color(0xFFFFB300).withOpacity(0.15),
-                                    border: Border.all(color: Color(0xFFFFB300).withOpacity(0.4)),
+                                    color: const Color(0xFFFFB300).withValues(alpha: 0.15),
+                                    border: Border.all(color: const Color(0xFFFFB300).withValues(alpha: 0.4)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.timer_outlined,
                                         size: 10,
                                         color: Color(0xFFFFB300),
@@ -439,7 +438,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                       const SizedBox(width: 3),
                                       Text(
                                         countdown,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
                                           fontSize: 8.5,
                                           fontWeight: FontWeight.w900,
@@ -470,10 +469,10 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                               height: 72,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppTheme.goldPrimary.withOpacity(0.2),
+                                color: AppTheme.goldPrimary.withValues(alpha: 0.2),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.goldPrimary.withOpacity(0.4 * animVal + 0.2),
+                                    color: AppTheme.goldPrimary.withValues(alpha: 0.4 * animVal + 0.2),
                                     blurRadius: 20,
                                     spreadRadius: 2,
                                   ),
@@ -486,7 +485,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                 Transform.translate(
                                   offset: Offset(0, math.sin(gradientAngle) * 3),
                                   child: ShaderMask(
-                                    shaderCallback: (bounds) => LinearGradient(
+                                    shaderCallback: (bounds) => const LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
@@ -495,7 +494,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                         Color(0xFFE65100),
                                       ],
                                     ).createShader(bounds),
-                                    child: Icon(
+                                    child: const Icon(
                                       Icons.emoji_events_rounded,
                                       size: 56,
                                       color: Colors.white,
@@ -504,11 +503,11 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                 ),
                                 const SizedBox(height: 4),
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    color: Colors.black.withOpacity(0.6),
-                                    border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                                   ),
                                   child: const Text(
                                     'GOLD TITLE',

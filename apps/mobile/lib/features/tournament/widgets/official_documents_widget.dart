@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
-import '../../../core/api/repositories.dart';
 import '../../../core/providers/state_providers.dart';
 class OfficialDocumentsWidget extends ConsumerStatefulWidget {
   final Map<String, dynamic> tournament;
@@ -128,20 +127,20 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.12),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.12),
             blurRadius: 18,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -161,19 +160,19 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
               },
               borderRadius: BorderRadius.circular(20),
               child: Padding(
-                padding: EdgeInsets.all(18.0),
+                padding: const EdgeInsets.all(18.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(7),
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: AppTheme.goldPrimary.withOpacity(0.18),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppTheme.goldPrimary.withOpacity(0.5),
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                             ),
                           ),
                           child: const Icon(
@@ -183,9 +182,9 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'OFFICIAL DOCUMENTS',
                               style: TextStyle(
@@ -278,17 +277,17 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
     return TactilePressWrapper(
       onTap: () => _triggerDownload(index),
       child: Container(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Color(0xFF141E2F).withOpacity(0.85),
+          color: const Color(0xFF141E2F).withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: accentColor.withOpacity(0.35),
+            color: accentColor.withValues(alpha: 0.35),
             width: 1.1,
           ),
           boxShadow: [
             BoxShadow(
-              color: accentColor.withOpacity(0.08),
+              color: accentColor.withValues(alpha: 0.08),
               blurRadius: 10,
               spreadRadius: -2,
             ),
@@ -298,12 +297,12 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
           children: [
             // File Icon with Accent Glow
             Container(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.15),
+                color: accentColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: accentColor.withOpacity(0.4),
+                  color: accentColor.withValues(alpha: 0.4),
                 ),
               ),
               child: Icon(
@@ -327,7 +326,7 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
                           doc['title'],
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w900,
@@ -337,9 +336,9 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: Color(0xFF1E293B),
+                          color: const Color(0xFF1E293B),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: Colors.white12),
                         ),
@@ -360,7 +359,7 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
                     children: [
                       Text(
                         doc['size'],
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
@@ -382,7 +381,7 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 8.5,
                           fontWeight: FontWeight.w700,
-                          color: accentColor.withOpacity(0.8),
+                          color: accentColor.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -404,13 +403,13 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
   Widget _buildDownloadButton(String state, Color accentColor, VoidCallback onTap) {
     if (state == 'downloading') {
       return Container(
-        padding: EdgeInsets.all(8),
+        padding: const EdgeInsets.all(8),
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: accentColor.withOpacity(0.18),
+          color: accentColor.withValues(alpha: 0.18),
           shape: BoxShape.circle,
-          border: Border.all(color: accentColor.withOpacity(0.4)),
+          border: Border.all(color: accentColor.withValues(alpha: 0.4)),
         ),
         child: SizedBox(
           width: 18,
@@ -424,15 +423,15 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
     } else if (state == 'completed') {
       return AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Color(0xFF00E676).withOpacity(0.2),
+          color: const Color(0xFF00E676).withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFF00E676)),
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(
               Icons.check_circle_rounded,
               size: 14,
@@ -454,12 +453,12 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
     } else {
       // Idle download button
       return Container(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: accentColor.withOpacity(0.15),
+          color: accentColor.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: accentColor.withOpacity(0.4),
+            color: accentColor.withValues(alpha: 0.4),
           ),
         ),
         child: Row(

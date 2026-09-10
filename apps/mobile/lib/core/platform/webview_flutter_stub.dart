@@ -1,6 +1,7 @@
 /// Stub for webview_flutter package.
 ///
 /// WebView is native-only. On web, throw an error to prevent runtime crashes.
+library;
 
 import 'package:flutter/material.dart';
 

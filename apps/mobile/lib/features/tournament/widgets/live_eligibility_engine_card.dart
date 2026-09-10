@@ -4,9 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import 'eval_status.dart';
 class _LiveEligibilityEngineCard extends StatefulWidget {
-  const _LiveEligibilityEngineCard({
-    Key? key,
-  }) : super(key: key);
+  const _LiveEligibilityEngineCard();
 
   @override
   State<_LiveEligibilityEngineCard> createState() => _LiveEligibilityEngineCardState();
@@ -46,20 +44,20 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: (presetData['accentColor'] as Color).withOpacity(0.55),
+          color: (presetData['accentColor'] as Color).withValues(alpha: 0.55),
           width: 1.4,
         ),
         boxShadow: [
           BoxShadow(
-            color: (presetData['accentColor'] as Color).withOpacity(0.18),
+            color: (presetData['accentColor'] as Color).withValues(alpha: 0.18),
             blurRadius: 22,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -68,7 +66,7 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -79,12 +77,12 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: (presetData['accentColor'] as Color).withOpacity(0.2),
+                          color: (presetData['accentColor'] as Color).withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: (presetData['accentColor'] as Color).withOpacity(0.6),
+                            color: (presetData['accentColor'] as Color).withValues(alpha: 0.6),
                           ),
                         ),
                         child: Icon(
@@ -94,9 +92,9 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'LIVE ELIGIBILITY ENGINE',
                             style: TextStyle(
@@ -126,12 +124,12 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
                     animation: _glowPulse,
                     builder: (context, child) {
                       return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (presetData['accentColor'] as Color).withOpacity(0.18),
+                          color: (presetData['accentColor'] as Color).withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: (presetData['accentColor'] as Color).withOpacity(_glowPulse.value),
+                            color: (presetData['accentColor'] as Color).withValues(alpha: _glowPulse.value),
                             width: 1.2,
                           ),
                         ),
@@ -170,9 +168,9 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
               // Interactive Preset Switcher Bar for Live Evaluation Demo
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(6),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Color(0xFF141E30),
+                  color: const Color(0xFF141E30),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white12),
                 ),
@@ -182,18 +180,18 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
                     children: [
                       _buildPresetChip(0, 'Eligible', AppTheme.goldPrimary),
                       const SizedBox(width: 6),
-                      _buildPresetChip(1, 'Missing Medical', Color(0xFFFFB300)),
+                      _buildPresetChip(1, 'Missing Medical', const Color(0xFFFFB300)),
                       const SizedBox(width: 6),
-                      _buildPresetChip(2, 'License Expired', Color(0xFFFF2A6D)),
+                      _buildPresetChip(2, 'License Expired', const Color(0xFFFF2A6D)),
                       const SizedBox(width: 6),
-                      _buildPresetChip(3, 'Weight Limit Exceeded', Color(0xFFFF2A6D)),
+                      _buildPresetChip(3, 'Weight Limit Exceeded', const Color(0xFFFF2A6D)),
                     ],
                   ),
                 ),
               ),
 
               const SizedBox(height: 16),
-              Divider(color: Colors.white12, height: 1),
+              const Divider(color: Colors.white12, height: 1),
               const SizedBox(height: 16),
 
               // 7 Core Automatic Evaluation Requirements Grid
@@ -248,12 +246,12 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
               // Bottom Large Explanation Banner
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(14),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: (presetData['accentColor'] as Color).withOpacity(0.12),
+                  color: (presetData['accentColor'] as Color).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: (presetData['accentColor'] as Color).withOpacity(0.5),
+                    color: (presetData['accentColor'] as Color).withValues(alpha: 0.5),
                     width: 1.2,
                   ),
                 ),
@@ -378,24 +376,24 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
       case EvalStatus.greenCheck:
         icon = Icons.check_circle_rounded;
         iconColor = const Color(0xFF00E676);
-        bgCircle = Color(0xFF00E676).withOpacity(0.15);
+        bgCircle = const Color(0xFF00E676).withValues(alpha: 0.15);
         break;
       case EvalStatus.amberWarning:
         icon = Icons.warning_amber_rounded;
         iconColor = const Color(0xFFFFB300);
-        bgCircle = Color(0xFFFFB300).withOpacity(0.15);
+        bgCircle = const Color(0xFFFFB300).withValues(alpha: 0.15);
         break;
       case EvalStatus.redError:
         icon = Icons.cancel_rounded;
         iconColor = const Color(0xFFFF2A6D);
-        bgCircle = Color(0xFFFF2A6D).withOpacity(0.15);
+        bgCircle = const Color(0xFFFF2A6D).withValues(alpha: 0.15);
         break;
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F).withOpacity(0.8),
+        color: const Color(0xFF141E2F).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white12),
       ),

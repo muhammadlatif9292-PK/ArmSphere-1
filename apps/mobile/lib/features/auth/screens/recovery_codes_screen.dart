@@ -50,7 +50,7 @@ class RecoveryCodesScreen extends StatelessWidget {
               'These codes can be used to access your account if you lose your MFA device. Save them in a secure place.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 24),
@@ -70,10 +70,10 @@ class RecoveryCodesScreen extends StatelessWidget {
                     return Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface.withOpacity(0.5),
+                        color: theme.colorScheme.surface.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: theme.dividerColor.withOpacity(0.05),
+                          color: theme.dividerColor.withValues(alpha: 0.05),
                         ),
                       ),
                       child: Text(

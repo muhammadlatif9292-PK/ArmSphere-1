@@ -3,6 +3,7 @@
 /// Stripe native plugin is mobile-only. On web, throw NotImplementedError
 /// to prevent runtime crashes. Note: Stripe.js can work via URL handlers
 /// (e.g., stripe://) or external payment flows.
+library;
 
 Never throwNotImplementedError() {
   throw UnsupportedError(

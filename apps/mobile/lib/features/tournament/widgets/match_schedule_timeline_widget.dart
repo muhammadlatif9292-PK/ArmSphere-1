@@ -6,9 +6,9 @@ class MatchScheduleTimelineWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const MatchScheduleTimelineWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<MatchScheduleTimelineWidget> createState() => _MatchScheduleTimelineWidgetState();
@@ -32,7 +32,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '11:15 AM PST',
       'status': 'COMPLETED',
       'result': 'WON (2 - 0)',
-      'resultColor': Color(0xFF00E676),
+      'resultColor': const Color(0xFF00E676),
       'score': '2 - 0',
       'isUser': true,
     },
@@ -46,7 +46,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '01:45 PM PST',
       'status': 'COMPLETED',
       'result': 'WON (2 - 1)',
-      'resultColor': Color(0xFF00E676),
+      'resultColor': const Color(0xFF00E676),
       'score': '2 - 1',
       'isUser': true,
     },
@@ -60,7 +60,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '03:30 PM PST (Live Now)',
       'status': 'LIVE',
       'result': 'IN PROGRESS',
-      'resultColor': Color(0xFFFF2A6D),
+      'resultColor': const Color(0xFFFF2A6D),
       'score': '0 - 0',
       'isUser': true,
     },
@@ -91,7 +91,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '02:45 PM PST',
       'status': 'COMPLETED',
       'result': 'FINISHED (2-1)',
-      'resultColor': Color(0xFF00E676),
+      'resultColor': const Color(0xFF00E676),
       'score': '2 - 1',
       'isUser': false,
     },
@@ -105,7 +105,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '03:15 PM PST',
       'status': 'COMPLETED',
       'result': 'FINISHED (2-0)',
-      'resultColor': Color(0xFF00E676),
+      'resultColor': const Color(0xFF00E676),
       'score': '2 - 0',
       'isUser': false,
     },
@@ -119,7 +119,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '03:30 PM PST (Live Now)',
       'status': 'LIVE',
       'result': 'IN PROGRESS',
-      'resultColor': Color(0xFFFF2A6D),
+      'resultColor': const Color(0xFFFF2A6D),
       'score': '0 - 0',
       'isUser': true,
     },
@@ -133,7 +133,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       'estimatedTime': '04:00 PM PST',
       'status': 'UPCOMING',
       'result': 'NEXT MATCH',
-      'resultColor': Color(0xFF00E5FF),
+      'resultColor': const Color(0xFF00E5FF),
       'score': '- - -',
       'isUser': false,
     },
@@ -187,20 +187,20 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.92),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.12),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.12),
             blurRadius: 18,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -209,7 +209,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -220,12 +220,12 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withOpacity(0.18),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withOpacity(0.5),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                           ),
                         ),
                         child: const Icon(
@@ -235,9 +235,9 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'MATCH SCHEDULE TIMELINE',
                             style: TextStyle(
@@ -326,9 +326,9 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.goldPrimary : Color(0xFF141E2F),
+            color: isSelected ? AppTheme.goldPrimary : const Color(0xFF141E2F),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected ? AppTheme.goldPrimary : Colors.white12,
@@ -336,7 +336,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppTheme.goldPrimary.withOpacity(0.3),
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                       blurRadius: 8,
                     ),
                   ]
@@ -383,9 +383,9 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                     child: Container(
                       width: 2,
                       color: isCompleted
-                          ? Color(0xFF00E676).withOpacity(0.3)
+                          ? const Color(0xFF00E676).withValues(alpha: 0.3)
                           : isLive
-                              ? Color(0xFFFF2A6D).withOpacity(0.5)
+                              ? const Color(0xFFFF2A6D).withValues(alpha: 0.5)
                               : Colors.white12,
                     ),
                   ),
@@ -398,30 +398,30 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
           // Right Side: Match Detail Card
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: 16.0),
+              padding: const EdgeInsets.only(bottom: 16.0),
               child: AnimatedBuilder(
                 animation: _glowAnimation,
                 builder: (context, child) {
                   return Container(
                     decoration: BoxDecoration(
                       color: isCompleted
-                          ? Color(0xFF0F172A).withOpacity(0.65) // Faded opacity for completed
+                          ? const Color(0xFF0F172A).withValues(alpha: 0.65) // Faded opacity for completed
                           : isLive
-                              ? Color(0xFF1E1B4B) // Dark glowing background for live
-                              : Color(0xFF141E2F), // Neutral dark for upcoming
+                              ? const Color(0xFF1E1B4B) // Dark glowing background for live
+                              : const Color(0xFF141E2F), // Neutral dark for upcoming
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isCompleted
-                            ? Color(0xFF00E676).withOpacity(0.3)
+                            ? const Color(0xFF00E676).withValues(alpha: 0.3)
                             : isLive
-                                ? Color(0xFFFF2A6D).withOpacity(_glowAnimation.value)
+                                ? const Color(0xFFFF2A6D).withValues(alpha: _glowAnimation.value)
                                 : Colors.white12,
                         width: isLive ? 1.6 : 1.0,
                       ),
                       boxShadow: isLive
                           ? [
                               BoxShadow(
-                                color: Color(0xFFFF2A6D).withOpacity(0.35 * _glowAnimation.value),
+                                color: const Color(0xFFFF2A6D).withValues(alpha: 0.35 * _glowAnimation.value),
                                 blurRadius: 14,
                                 spreadRadius: -1,
                               ),
@@ -532,7 +532,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                                 Expanded(
                                   child: Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.tab_unselected_rounded,
                                         size: 12,
                                         color: AppTheme.textMuted,
@@ -608,9 +608,9 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                                           color: const Color(0xFFFF2A6D),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: Row(
+                                        child: const Row(
                                           mainAxisSize: MainAxisSize.min,
-                                          children: const [
+                                          children: [
                                             Icon(Icons.play_arrow_rounded, size: 12, color: Colors.white),
                                             SizedBox(width: 2),
                                             Text(
@@ -649,10 +649,10 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                                         );
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: isReminderSet
-                                              ? AppTheme.goldPrimary.withOpacity(0.2)
+                                              ? AppTheme.goldPrimary.withValues(alpha: 0.2)
                                               : const Color(0xFF1E293B),
                                           borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
@@ -704,7 +704,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
         width: 24,
         height: 24,
         decoration: BoxDecoration(
-          color: Color(0xFF00E676).withOpacity(0.18),
+          color: const Color(0xFF00E676).withValues(alpha: 0.18),
           shape: BoxShape.circle,
           border: Border.all(color: const Color(0xFF00E676)),
         ),
@@ -724,11 +724,11 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
             width: 26,
             height: 26,
             decoration: BoxDecoration(
-              color: Color(0xFFFF2A6D),
+              color: const Color(0xFFFF2A6D),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFFFF2A6D).withOpacity(0.6 * _glowAnimation.value),
+                  color: const Color(0xFFFF2A6D).withValues(alpha: 0.6 * _glowAnimation.value),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -749,9 +749,9 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
       width: 22,
       height: 22,
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F),
+        color: const Color(0xFF141E2F),
         shape: BoxShape.circle,
-        border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.6), width: 1.5),
+        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6), width: 1.5),
       ),
       child: Center(
         child: Container(
@@ -772,12 +772,12 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
         animation: _glowAnimation,
         builder: (context, child) {
           return Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: Color(0xFFFF2A6D).withOpacity(0.2),
+              color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: Color(0xFFFF2A6D).withOpacity(_glowAnimation.value),
+                color: const Color(0xFFFF2A6D).withValues(alpha: _glowAnimation.value),
               ),
             ),
             child: Row(
@@ -787,7 +787,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                   width: 5,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: Color(0xFFFF2A6D).withOpacity(_glowAnimation.value),
+                    color: const Color(0xFFFF2A6D).withValues(alpha: _glowAnimation.value),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -810,11 +810,11 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.15),
+        color: badgeColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: badgeColor.withOpacity(0.4)),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.4)),
       ),
       child: Text(
         resultText,

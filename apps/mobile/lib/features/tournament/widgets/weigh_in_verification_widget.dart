@@ -6,9 +6,9 @@ class WeighInVerificationWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const WeighInVerificationWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<WeighInVerificationWidget> createState() => _WeighInVerificationWidgetState();
@@ -65,23 +65,23 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0B132B).withOpacity(0.92),
+        color: const Color(0xFF0B132B).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: _isApprovedAndLocked
-              ? Color(0xFF00E676).withOpacity(0.45)
-              : AppTheme.goldPrimary.withOpacity(0.4),
+              ? const Color(0xFF00E676).withValues(alpha: 0.45)
+              : AppTheme.goldPrimary.withValues(alpha: 0.4),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: (_isApprovedAndLocked ? Color(0xFF00E676) : AppTheme.goldPrimary)
-                .withOpacity(0.14),
+            color: (_isApprovedAndLocked ? const Color(0xFF00E676) : AppTheme.goldPrimary)
+                .withValues(alpha: 0.14),
             blurRadius: 20,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.55),
+            color: Colors.black.withValues(alpha: 0.55),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -90,7 +90,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: EdgeInsets.all(18.0),
+          padding: const EdgeInsets.all(18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -101,18 +101,18 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(7),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
                           color: (_isApprovedAndLocked
-                                  ? Color(0xFF00E676)
+                                  ? const Color(0xFF00E676)
                                   : AppTheme.goldPrimary)
-                              .withOpacity(0.18),
+                              .withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: (_isApprovedAndLocked
-                                    ? Color(0xFF00E676)
+                                    ? const Color(0xFF00E676)
                                     : AppTheme.goldPrimary)
-                                .withOpacity(0.5),
+                                .withValues(alpha: 0.5),
                           ),
                         ),
                         child: Icon(
@@ -120,15 +120,15 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                               ? Icons.verified_user_rounded
                               : Icons.health_and_safety_rounded,
                           color: _isApprovedAndLocked
-                              ? Color(0xFF00E676)
+                              ? const Color(0xFF00E676)
                               : AppTheme.goldPrimary,
                           size: 18,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'WEIGH-IN & VERIFICATION',
                             style: TextStyle(
@@ -157,25 +157,25 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                   ScaleTransition(
                     scale: _checkScaleAnimation,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: (_isApprovedAndLocked
-                                ? Color(0xFF00E676)
+                                ? const Color(0xFF00E676)
                                 : AppTheme.goldPrimary)
-                            .withOpacity(0.18),
+                            .withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: _isApprovedAndLocked
-                              ? Color(0xFF00E676)
+                              ? const Color(0xFF00E676)
                               : AppTheme.goldPrimary,
                           width: 1.2,
                         ),
                         boxShadow: [
                           BoxShadow(
                             color: (_isApprovedAndLocked
-                                    ? Color(0xFF00E676)
+                                    ? const Color(0xFF00E676)
                                     : AppTheme.goldPrimary)
-                                .withOpacity(0.35),
+                                .withValues(alpha: 0.35),
                             blurRadius: 8,
                           ),
                         ],
@@ -189,7 +189,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                                 : Icons.pending_rounded,
                             size: 13,
                             color: _isApprovedAndLocked
-                                ? Color(0xFF00E676)
+                                ? const Color(0xFF00E676)
                                 : AppTheme.goldPrimary,
                           ),
                           const SizedBox(width: 5),
@@ -200,7 +200,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                               fontSize: 9.5,
                               fontWeight: FontWeight.w900,
                               color: _isApprovedAndLocked
-                                  ? Color(0xFF00E676)
+                                  ? const Color(0xFF00E676)
                                   : AppTheme.goldPrimary,
                               letterSpacing: 0.6,
                             ),
@@ -217,28 +217,28 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
               // Lock Status Banner (No manual editing once approved)
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFF064E3B).withOpacity(0.6),
-                      Color(0xFF022C22).withOpacity(0.8),
+                      const Color(0xFF064E3B).withValues(alpha: 0.6),
+                      const Color(0xFF022C22).withValues(alpha: 0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Color(0xFF00E676).withOpacity(0.5),
+                    color: const Color(0xFF00E676).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(6),
-                      decoration: BoxDecoration(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
                         color: Color(0xFF00E676),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.lock_rounded,
                         size: 13,
                         color: Colors.black,
@@ -264,7 +264,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                               ),
                               Text(
                                 _verificationData['timestamp'],
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontSize: 8.5,
                                   color: AppTheme.textMuted,
@@ -301,7 +301,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                       label: 'WEIGHT SUBMITTED',
                       value: _verificationData['submittedWeight'],
                       subtitle: 'Self-Reported Entry',
-                      accentColor: Color(0xFF00E5FF),
+                      accentColor: const Color(0xFF00E5FF),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -311,7 +311,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                       label: 'OFFICIAL WEIGHT',
                       value: _verificationData['officialWeight'],
                       subtitle: _verificationData['scaleId'],
-                      accentColor: Color(0xFF00E676),
+                      accentColor: const Color(0xFF00E676),
                       isHighlighted: true,
                     ),
                   ),
@@ -338,7 +338,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                 label: 'MEDICAL CLEARANCE',
                 title: _verificationData['medicalClearance'],
                 details: '${_verificationData['medicalDetails']}\nPhysician: ${_verificationData['medicalOfficer']}',
-                accentColor: Color(0xFF00E676),
+                accentColor: const Color(0xFF00E676),
                 badgeText: 'PASSED & SEALED',
               ),
 
@@ -353,7 +353,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                       label: 'LICENSE STATUS',
                       value: _verificationData['licenseStatus'],
                       subtitle: _verificationData['licenseNumber'],
-                      accentColor: Color(0xFF00E5FF),
+                      accentColor: const Color(0xFF00E5FF),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -363,7 +363,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                       label: 'CATEGORY FIT',
                       value: 'PASS (-80kg)',
                       subtitle: _verificationData['weightCategory'],
-                      accentColor: Color(0xFF00E676),
+                      accentColor: const Color(0xFF00E676),
                     ),
                   ),
                 ],
@@ -374,11 +374,11 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
               // 6. Digital Signature Section
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Color(0xFF141E2F).withOpacity(0.85),
+                  color: const Color(0xFF141E2F).withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.35)),
+                  border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.35)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,8 +386,8 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(Icons.fingerprint_rounded, size: 16, color: AppTheme.goldPrimary),
                             SizedBox(width: 6),
                             Text(
@@ -403,9 +403,9 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                           ],
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppTheme.goldPrimary.withOpacity(0.2),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -423,7 +423,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     const SizedBox(height: 6),
                     SelectableText(
                       _verificationData['digitalSignatureHash'],
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 10,
                         color: Colors.white70,
@@ -433,7 +433,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     const SizedBox(height: 4),
                     Text(
                       '• ${_verificationData['signatureAuthority']}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 9.5,
                         color: AppTheme.textMuted,
@@ -453,15 +453,15 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     child: Tooltip(
                       message: 'Edits are locked after official approval',
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: Color(0xFF1E293B).withOpacity(0.6),
+                          color: const Color(0xFF1E293B).withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.white12),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.lock_outline_rounded, size: 15, color: AppTheme.textMuted),
                             SizedBox(width: 6),
                             Text(
@@ -490,23 +490,23 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                         _openVerificationCertificateModal(context);
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
+                          gradient: const LinearGradient(
                             colors: [Color(0xFF00E676), Color(0xFF00B0FF)],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Color(0xFF00E676).withOpacity(0.35),
+                              color: const Color(0xFF00E676).withValues(alpha: 0.35),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.workspace_premium_rounded, size: 16, color: Colors.black),
                             SizedBox(width: 6),
                             Text(
@@ -542,16 +542,16 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
     bool isHighlighted = false,
   }) {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isHighlighted
-            ? Color(0xFF064E3B).withOpacity(0.4)
-            : Color(0xFF141E2F).withOpacity(0.85),
+            ? const Color(0xFF064E3B).withValues(alpha: 0.4)
+            : const Color(0xFF141E2F).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isHighlighted
-              ? Color(0xFF00E676).withOpacity(0.6)
-              : accentColor.withOpacity(0.25),
+              ? const Color(0xFF00E676).withValues(alpha: 0.6)
+              : accentColor.withValues(alpha: 0.25),
         ),
       ),
       child: Column(
@@ -615,11 +615,11 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
   }) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F).withOpacity(0.85),
+        color: const Color(0xFF141E2F).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,11 +644,11 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                 ],
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.18),
+                  color: accentColor.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: accentColor.withOpacity(0.4)),
+                  border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   badgeText,
@@ -692,13 +692,13 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Color(0xFF0F172A),
+          backgroundColor: const Color(0xFF0F172A),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: Color(0xFF00E676), width: 1.5),
+            side: const BorderSide(color: Color(0xFF00E676), width: 1.5),
           ),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.workspace_premium_rounded, color: Color(0xFF00E676), size: 26),
               SizedBox(width: 10),
               Expanded(
@@ -719,14 +719,14 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Color(0xFF064E3B).withOpacity(0.4),
+                    color: const Color(0xFF064E3B).withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFF00E676)),
                   ),
-                  child: Row(
-                    children: const [
+                  child: const Row(
+                    children: [
                       Icon(Icons.verified_rounded, color: Color(0xFF00E676), size: 20),
                       SizedBox(width: 8),
                       Expanded(

@@ -55,7 +55,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                   Text(
                     'Welcome back,',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   Text(
@@ -121,7 +121,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -185,7 +185,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.0,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -220,7 +220,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                 icon: Icons.fitness_center,
                 label: 'Training Log',
                 color: Colors.teal,
-                onTap: () => context.push('/athlete/${myProfileId}/training-log'),
+                onTap: () => context.push('/athlete/$myProfileId/training-log'),
               ),
               _ShortcutButton(
                 icon: Icons.group,
@@ -244,7 +244,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.0,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -315,7 +315,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                               return Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.15),
+                                  color: color.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
@@ -350,7 +350,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                     style: theme.textTheme.labelMedium?.copyWith(
                       letterSpacing: 1.0,
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -427,7 +427,7 @@ class _ShortcutButton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),
@@ -473,7 +473,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
                 backgroundImage: (profile['profilePhoto'] != null && profile['profilePhoto'].toString().isNotEmpty)
                     ? NetworkImage(profile['profilePhoto'].toString())
                     : null,
@@ -498,7 +498,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     Text(
                       email,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -514,7 +514,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.0,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -538,7 +538,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.0,
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 12),

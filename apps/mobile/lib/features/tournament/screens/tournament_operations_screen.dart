@@ -130,14 +130,14 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: division,
+                initialValue: division,
                 items: [for (final d in _kDivisions) DropdownMenuItem(value: d, child: Text(d))],
                 onChanged: (v) => setDialogState(() => division = v ?? division),
                 decoration: const InputDecoration(labelText: 'Division'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: weightClass,
+                initialValue: weightClass,
                 items: [for (final w in _kWeightClasses) DropdownMenuItem(value: w, child: Text(w))],
                 onChanged: (v) => setDialogState(() => weightClass = v ?? weightClass),
                 decoration: const InputDecoration(labelText: 'Weight class'),
@@ -187,7 +187,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: combo,
+                initialValue: combo,
                 isExpanded: true,
                 items: [
                   for (final c in available)
@@ -289,7 +289,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
         builder: (ctx, setDialogState) => AlertDialog(
           title: Text('Assign Referee — R${match['round']} M${match['matchIndex']}'),
           content: DropdownButtonFormField<String>(
-            value: refereeId,
+            initialValue: refereeId,
             isExpanded: true,
             items: [
               for (final r in referees)
@@ -343,7 +343,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
         builder: (ctx, setDialogState) => AlertDialog(
           title: Text('Call to Table — R${match['round']} M${match['matchIndex']}'),
           content: DropdownButtonFormField<String>(
-            value: tableId,
+            initialValue: tableId,
             isExpanded: true,
             items: [
               for (final t in idle)
@@ -392,7 +392,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: winnerId,
+                initialValue: winnerId,
                 isExpanded: true,
                 items: [
                   DropdownMenuItem(value: athleteAId, child: Text(nameA, overflow: TextOverflow.ellipsis)),
@@ -403,7 +403,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: scoreLine,
+                initialValue: scoreLine,
                 items: [for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s))],
                 onChanged: (v) => setDialogState(() => scoreLine = v ?? scoreLine),
                 decoration: const InputDecoration(labelText: 'Score (winner perspective)'),
@@ -481,7 +481,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                     Chip(
                       label: Text(event['status']?.toString() ?? 'UNKNOWN',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      backgroundColor: _statusColor(event['status']?.toString() ?? '').withOpacity(0.15),
+                      backgroundColor: _statusColor(event['status']?.toString() ?? '').withValues(alpha: 0.15),
                     ),
                   ],
                 ),
@@ -649,7 +649,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 Chip(
                   label: Text(status.isEmpty ? 'UNKNOWN' : status,
                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  backgroundColor: _statusColor(status).withOpacity(0.15),
+                  backgroundColor: _statusColor(status).withValues(alpha: 0.15),
                 ),
               ],
             ),
@@ -726,7 +726,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 ),
                 Chip(
                   label: Text(status, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  backgroundColor: _statusColor(status).withOpacity(0.15),
+                  backgroundColor: _statusColor(status).withValues(alpha: 0.15),
                 ),
               ],
             ),
@@ -810,7 +810,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             label: Text(status,
                 style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
             backgroundColor:
-                (busy ? Colors.orange : Colors.green).withOpacity(0.15),
+                (busy ? Colors.orange : Colors.green).withValues(alpha: 0.15),
           ),
         ),
       ),
@@ -852,7 +852,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 Chip(
                   label: Text(status.isEmpty ? 'UNKNOWN' : status,
                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  backgroundColor: _matchStatusColor(status).withOpacity(0.15),
+                  backgroundColor: _matchStatusColor(status).withValues(alpha: 0.15),
                 ),
               ],
             ),

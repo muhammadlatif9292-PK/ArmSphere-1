@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 class StaggeredAnimatedMatchCard extends StatefulWidget {
   final int index;
   final Widget child;
 
   const StaggeredAnimatedMatchCard({
-    Key? key,
+    super.key,
     required this.index,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   State<StaggeredAnimatedMatchCard> createState() => _StaggeredAnimatedMatchCardState();

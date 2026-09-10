@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -57,14 +56,14 @@ class TournamentsListScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
               const SizedBox(height: 12),
               Text('Could not load competitions', style: theme.textTheme.titleSmall),
               const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text('$error', textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textMuted)),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -120,7 +119,7 @@ class TournamentsListScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: color.withOpacity(0.12),
+                                color: color.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -198,7 +197,7 @@ class TournamentDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
               const SizedBox(height: 12),
               Text('Could not load tournament', style: theme.textTheme.titleSmall),
               const SizedBox(height: 16),
@@ -226,10 +225,10 @@ class TournamentDetailScreen extends ConsumerWidget {
             event['city']?.toString(),
             event['province']?.toString(),
           ].where((part) => part != null && part.isNotEmpty).join(', ');
-          final dates = [
+          final dates = {
             formatEventDate(event['startDate']),
             formatEventDate(event['endDate']),
-          ].toSet().join(' → ');
+          }.join(' → ');
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -246,7 +245,7 @@ class TournamentDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: eventStatusColor(status).withOpacity(0.12),
+                              color: eventStatusColor(status).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -355,7 +354,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
           padding: const EdgeInsets.all(20),
           children: [
             const SizedBox(height: 80),
-            Center(child: Icon(Icons.error_outline, size: 44, color: AppTheme.error)),
+            const Center(child: Icon(Icons.error_outline, size: 44, color: AppTheme.error)),
             const SizedBox(height: 12),
             Center(child: Text('Could not load brackets', style: Theme.of(context).textTheme.titleSmall)),
             const SizedBox(height: 12),
@@ -535,7 +534,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
                 child: Text(aName,
                     style: TextStyle(fontWeight: aWins ? FontWeight.bold : FontWeight.normal)),
               ),
-              Text('vs', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text('vs', style: TextStyle(fontSize: 11, color: Colors.grey)),
               Expanded(
                 child: Text(bName,
                     textAlign: TextAlign.end,

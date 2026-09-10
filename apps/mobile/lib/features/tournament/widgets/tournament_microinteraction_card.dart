@@ -5,9 +5,8 @@ class _TournamentMicrointeractionCard extends StatefulWidget {
   final Widget child;
 
   const _TournamentMicrointeractionCard({
-    Key? key,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   State<_TournamentMicrointeractionCard> createState() => _TournamentMicrointeractionCardState();
@@ -31,13 +30,13 @@ class _TournamentMicrointeractionCardState extends State<_TournamentMicrointerac
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_isHoveredOrPressed ? 0.7 : 0.4),
+              color: Colors.black.withValues(alpha: _isHoveredOrPressed ? 0.7 : 0.4),
               blurRadius: _isHoveredOrPressed ? 20 : 8.0,
               offset: Offset(0, _isHoveredOrPressed ? 10 : 4),
             ),
             if (_isHoveredOrPressed)
               BoxShadow(
-                color: AppTheme.goldPrimary.withOpacity(0.18),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                 blurRadius: 16,
                 spreadRadius: 1,
               ),

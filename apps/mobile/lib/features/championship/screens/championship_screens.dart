@@ -175,12 +175,12 @@ class ChampionshipDetailScreen extends ConsumerWidget {
               ),
               data: (lineage) {
                 if (lineage.isEmpty) {
-                  return GlassCard(
-                    padding: const EdgeInsets.all(16),
+                  return const GlassCard(
+                    padding: EdgeInsets.all(16),
                     child: ListTile(
-                      leading: const Icon(Icons.hourglass_empty),
-                      title: const Text('No reigns recorded yet'),
-                      subtitle: const Text(
+                      leading: Icon(Icons.hourglass_empty),
+                      title: Text('No reigns recorded yet'),
+                      subtitle: Text(
                           'The lineage appears once a champion is crowned.'),
                     ),
                   );

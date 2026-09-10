@@ -4,9 +4,9 @@ class LosersBracketTreeWidget extends StatelessWidget {
   final List<Map<String, dynamic>> losersMatches;
 
   const LosersBracketTreeWidget({
-    Key? key,
+    super.key,
     required this.losersMatches,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -79,7 +79,7 @@ class _AthleteRows extends ConsumerWidget {
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                     backgroundImage:
                         photo.isNotEmpty ? NetworkImage(photo) : null,
                     onBackgroundImageError:

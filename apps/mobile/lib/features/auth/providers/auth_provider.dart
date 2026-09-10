@@ -273,11 +273,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final updatedUser = Map<String, dynamic>.from(state.userProfile ?? {});
       updatedUser['isOnboarded'] = true;
-      if (profile is Map) {
-        updatedUser['profile'] = Map<String, dynamic>.from(profile);
-      } else {
-        updatedUser['profile'] = profile;
-      }
+      updatedUser['profile'] = Map<String, dynamic>.from(profile);
 
       // Persist the completed onboarding state so cold starts restore it.
       await _persistSession(updatedUser, null, null);

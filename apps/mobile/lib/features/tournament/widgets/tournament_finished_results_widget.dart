@@ -6,9 +6,9 @@ class TournamentFinishedResultsWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const TournamentFinishedResultsWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<TournamentFinishedResultsWidget> createState() =>
@@ -67,17 +67,17 @@ class _TournamentFinishedResultsWidgetState
     if (!isFinished) {
       return Container(
         width: double.infinity,
-        padding: EdgeInsets.all(14),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Color(0xFF0D1527).withOpacity(0.6),
+          color: const Color(0xFF0D1527).withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Icon(Icons.emoji_events_outlined, color: AppTheme.textMuted, size: 18),
                 SizedBox(width: 8),
                 Text(
@@ -114,20 +114,20 @@ class _TournamentFinishedResultsWidgetState
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.95),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.5),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.2),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.2),
             blurRadius: 24,
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -150,7 +150,7 @@ class _TournamentFinishedResultsWidgetState
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppTheme.goldPrimary.withOpacity(0.35),
+                        AppTheme.goldPrimary.withValues(alpha: 0.35),
                         Colors.transparent,
                       ],
                     ),
@@ -160,7 +160,7 @@ class _TournamentFinishedResultsWidgetState
             ),
 
             Padding(
-              padding: EdgeInsets.all(18.0),
+              padding: const EdgeInsets.all(18.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -171,9 +171,9 @@ class _TournamentFinishedResultsWidgetState
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
+                              gradient: const LinearGradient(
                                 colors: [
                                   AppTheme.goldPrimary,
                                   Color(0xFFFFB703),
@@ -182,21 +182,21 @@ class _TournamentFinishedResultsWidgetState
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.goldPrimary.withOpacity(0.5),
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                                   blurRadius: 10,
                                 ),
                               ],
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.emoji_events_rounded,
                               color: Colors.black,
                               size: 18,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'OFFICIAL FINAL RESULTS',
                                 style: TextStyle(
@@ -223,18 +223,18 @@ class _TournamentFinishedResultsWidgetState
 
                       // Status Badge
                       Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withOpacity(0.18),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withOpacity(0.6),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.workspace_premium_rounded,
                               size: 12,
@@ -299,12 +299,12 @@ class _TournamentFinishedResultsWidgetState
 
                   // Post-Tournament Stats Row (Top ELO Gain, Total Matches, Avg Duration)
                   Container(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Color(0xFF141E2F).withOpacity(0.85),
+                      color: const Color(0xFF141E2F).withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.goldPrimary.withOpacity(0.3),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -360,9 +360,9 @@ class _TournamentFinishedResultsWidgetState
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 13),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [
                             AppTheme.goldPrimary,
                             Color(0xFFFFB703),
@@ -371,15 +371,15 @@ class _TournamentFinishedResultsWidgetState
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.goldPrimary.withOpacity(0.35),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.35),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(
                             Icons.leaderboard_rounded,
                             color: Colors.black,
@@ -434,17 +434,17 @@ class _TournamentFinishedResultsWidgetState
             );
           },
           child: Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Color(0xFF141E2F).withOpacity(0.9),
+              color: const Color(0xFF141E2F).withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: color.withOpacity(isChampion ? 0.9 : 0.4),
+                color: color.withValues(alpha: isChampion ? 0.9 : 0.4),
                 width: isChampion ? 1.8 : 1.1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(isChampion ? 0.3 : 0.1),
+                  color: color.withValues(alpha: isChampion ? 0.3 : 0.1),
                   blurRadius: isChampion ? 14 : 8,
                   spreadRadius: -2,
                 ),
@@ -454,11 +454,11 @@ class _TournamentFinishedResultsWidgetState
               children: [
                 // Trophy Icon with Glow
                 Container(
-                  padding: EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(color: color.withOpacity(0.6)),
+                    border: Border.all(color: color.withValues(alpha: 0.6)),
                   ),
                   child: Icon(
                     trophyIcon,
@@ -480,12 +480,12 @@ class _TournamentFinishedResultsWidgetState
                       bottom: 0,
                       right: 0,
                       child: Container(
-                        padding: EdgeInsets.all(2),
+                        padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
                           color: color,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.star_rounded,
                           size: 10,
                           color: Colors.black,
@@ -527,7 +527,7 @@ class _TournamentFinishedResultsWidgetState
                   data['club'],
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 8.5,
                     color: AppTheme.textMuted,
@@ -539,11 +539,11 @@ class _TournamentFinishedResultsWidgetState
                 // ELO Gain Tag
                 Container(
                   padding:
-                      EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.18),
+                    color: color.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: color.withOpacity(0.4)),
+                    border: Border.all(color: color.withValues(alpha: 0.4)),
                   ),
                   child: Text(
                     data['eloGain'],
@@ -599,10 +599,10 @@ class _TournamentFinishedResultsWidgetState
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding:
-              EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
           child: Container(
             decoration: BoxDecoration(
-              color: Color(0xFF0F172A),
+              color: const Color(0xFF0F172A),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: AppTheme.goldPrimary,
@@ -610,7 +610,7 @@ class _TournamentFinishedResultsWidgetState
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.goldPrimary.withOpacity(0.35),
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.35),
                   blurRadius: 24,
                   spreadRadius: -2,
                 ),
@@ -633,8 +633,8 @@ class _TournamentFinishedResultsWidgetState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: const [
+                        const Row(
+                          children: [
                             Icon(
                               Icons.emoji_events_rounded,
                               color: AppTheme.goldPrimary,
@@ -766,19 +766,19 @@ class _TournamentFinishedResultsWidgetState
     required String medal,
   }) {
     return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Color(0xFF141E2F),
+        color: const Color(0xFF141E2F),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(

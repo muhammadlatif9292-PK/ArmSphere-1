@@ -130,7 +130,7 @@ class GovernanceDashboardScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.12),
+                            color: color.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -270,7 +270,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                         ?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: fileType,
+                  initialValue: fileType,
                   decoration: const InputDecoration(labelText: 'File type'),
                   items: const ['VIDEO', 'IMAGE', 'DOCUMENT']
                       .map((t) =>

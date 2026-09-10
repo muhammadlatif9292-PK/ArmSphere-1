@@ -14,7 +14,7 @@ class CelebrationOverlay extends StatefulWidget {
   final VoidCallback? onDismiss;
 
   const CelebrationOverlay({
-    Key? key,
+    super.key,
     required this.title,
     required this.subtitle,
     required this.score,
@@ -22,7 +22,7 @@ class CelebrationOverlay extends StatefulWidget {
     this.scoreSuffix,
     this.decimalPlaces = 0,
     this.onDismiss,
-  }) : super(key: key);
+  });
 
   static void show(
     BuildContext context, {
@@ -38,7 +38,7 @@ class CelebrationOverlay extends StatefulWidget {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss Celebration',
-      barrierColor: AppTheme.background.withOpacity(0.85),
+      barrierColor: AppTheme.background.withValues(alpha: 0.85),
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, anim1, anim2) {
         return CelebrationOverlay(
@@ -115,10 +115,10 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
                           shape: BoxShape.circle,
                           gradient: SweepGradient(
                             colors: [
-                              AppTheme.primaryAccent.withOpacity(0.0),
-                              AppTheme.primaryAccent.withOpacity(0.4),
-                              AppTheme.secondaryAccent.withOpacity(0.4),
-                              AppTheme.primaryAccent.withOpacity(0.0),
+                              AppTheme.primaryAccent.withValues(alpha: 0.0),
+                              AppTheme.primaryAccent.withValues(alpha: 0.4),
+                              AppTheme.secondaryAccent.withValues(alpha: 0.4),
+                              AppTheme.primaryAccent.withValues(alpha: 0.0),
                             ],
                             stops: const [0.0, 0.35, 0.65, 1.0],
                           ),
@@ -135,10 +135,10 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                    border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.5), width: 1.5),
+                    border: Border.all(color: AppTheme.primaryAccent.withValues(alpha: 0.5), width: 1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryAccent.withOpacity(0.2),
+                        color: AppTheme.primaryAccent.withValues(alpha: 0.2),
                         blurRadius: 20,
                         spreadRadius: 2,
                       )
@@ -151,7 +151,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> with SingleTick
                       Container(
                         padding: const EdgeInsets.all(AppTheme.space12),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryAccent.withOpacity(0.15),
+                          color: AppTheme.primaryAccent.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(

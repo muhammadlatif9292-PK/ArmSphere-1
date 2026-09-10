@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 class _CompetitionCategoriesGrid extends StatefulWidget {
-  const _CompetitionCategoriesGrid({
-    Key? key,
-  }) : super(key: key);
+  const _CompetitionCategoriesGrid();
 
   @override
   State<_CompetitionCategoriesGrid> createState() => _CompetitionCategoriesGridState();
@@ -22,12 +20,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Right Arm',
       'armCode': 'R',
       'tag': 'Senior',
-      'tagColor': Color(0xFF00E5FF),
+      'tagColor': const Color(0xFF00E5FF),
       'registered': 14,
       'capacity': 16,
       'slotsRemaining': 2,
       'status': 'Almost Full',
-      'statusColor': Color(0xFFFFB300),
+      'statusColor': const Color(0xFFFFB300),
       'weighInWindow': '08:00 AM - 10:00 AM',
       'tableAssignment': 'Table #1 • Arena Stage A',
     },
@@ -38,12 +36,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Right Arm',
       'armCode': 'R',
       'tag': 'Senior',
-      'tagColor': Color(0xFF00E5FF),
+      'tagColor': const Color(0xFF00E5FF),
       'registered': 16,
       'capacity': 16,
       'slotsRemaining': 0,
       'status': 'Full',
-      'statusColor': Color(0xFFFF2A6D),
+      'statusColor': const Color(0xFFFF2A6D),
       'weighInWindow': '09:00 AM - 11:00 AM',
       'tableAssignment': 'Table #2 • Arena Stage B',
     },
@@ -54,12 +52,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Left Arm',
       'armCode': 'L',
       'tag': 'Senior',
-      'tagColor': Color(0xFF00E5FF),
+      'tagColor': const Color(0xFF00E5FF),
       'registered': 10,
       'capacity': 16,
       'slotsRemaining': 6,
       'status': 'Open',
-      'statusColor': Color(0xFF00E676),
+      'statusColor': const Color(0xFF00E676),
       'weighInWindow': '09:00 AM - 11:00 AM',
       'tableAssignment': 'Table #2 • Arena Stage B',
     },
@@ -70,12 +68,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Right Arm',
       'armCode': 'R',
       'tag': 'Senior',
-      'tagColor': Color(0xFF00E5FF),
+      'tagColor': const Color(0xFF00E5FF),
       'registered': 12,
       'capacity': 16,
       'slotsRemaining': 4,
       'status': 'Open',
-      'statusColor': Color(0xFF00E676),
+      'statusColor': const Color(0xFF00E676),
       'weighInWindow': '10:00 AM - 12:00 PM',
       'tableAssignment': 'Table #1 • Arena Stage A',
     },
@@ -86,12 +84,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Right Arm',
       'armCode': 'R',
       'tag': 'Junior',
-      'tagColor': Color(0xFFFFB300),
+      'tagColor': const Color(0xFFFFB300),
       'registered': 8,
       'capacity': 16,
       'slotsRemaining': 8,
       'status': 'Open',
-      'statusColor': Color(0xFF00E676),
+      'statusColor': const Color(0xFF00E676),
       'weighInWindow': '08:00 AM - 09:30 AM',
       'tableAssignment': 'Table #3 • Stage C',
     },
@@ -102,12 +100,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Right Arm',
       'armCode': 'R',
       'tag': 'Masters',
-      'tagColor': Color(0xFFE040FB),
+      'tagColor': const Color(0xFFE040FB),
       'registered': 15,
       'capacity': 16,
       'slotsRemaining': 1,
       'status': 'Almost Full',
-      'statusColor': Color(0xFFFFB300),
+      'statusColor': const Color(0xFFFFB300),
       'weighInWindow': '11:00 AM - 12:30 PM',
       'tableAssignment': 'Table #3 • Stage C',
     },
@@ -118,12 +116,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Right Arm',
       'armCode': 'R',
       'tag': 'Senior',
-      'tagColor': Color(0xFF00E5FF),
+      'tagColor': const Color(0xFF00E5FF),
       'registered': 6,
       'capacity': 16,
       'slotsRemaining': 10,
       'status': 'Open',
-      'statusColor': Color(0xFF00E676),
+      'statusColor': const Color(0xFF00E676),
       'weighInWindow': '12:00 PM - 01:30 PM',
       'tableAssignment': 'Main Arena Stage A',
     },
@@ -134,12 +132,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
       'arm': 'Left Arm',
       'armCode': 'L',
       'tag': 'Senior',
-      'tagColor': Color(0xFF00E5FF),
+      'tagColor': const Color(0xFF00E5FF),
       'registered': 4,
       'capacity': 16,
       'slotsRemaining': 12,
       'status': 'Open',
-      'statusColor': Color(0xFF00E676),
+      'statusColor': const Color(0xFF00E676),
       'weighInWindow': '12:00 PM - 01:30 PM',
       'tableAssignment': 'Main Arena Stage A',
     },
@@ -159,11 +157,11 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(7),
+                  padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withOpacity(0.18),
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                    border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                   ),
                   child: const Icon(
                     Icons.grid_view_rounded,
@@ -172,9 +170,9 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
                   ),
                 ),
                 const SizedBox(width: 10),
-                Column(
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'COMPETITION CATEGORIES',
                       style: TextStyle(
@@ -332,22 +330,22 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
         _showCategoryDetailModal(context, cat);
       },
       child: Container(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Color(0xFF0E1626).withOpacity(0.92),
+          color: const Color(0xFF0E1626).withValues(alpha: 0.92),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: statusColor.withOpacity(0.35),
+            color: statusColor.withValues(alpha: 0.35),
             width: 1.1,
           ),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               blurRadius: 10,
               spreadRadius: -2,
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -362,11 +360,11 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: tagColor.withOpacity(0.15),
+                    color: tagColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: tagColor.withOpacity(0.5), width: 0.8),
+                    border: Border.all(color: tagColor.withValues(alpha: 0.5), width: 0.8),
                   ),
                   child: Text(
                     (cat['tag'] as String).toUpperCase(),
@@ -381,15 +379,15 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
 
                 // Arm Indicator Badge
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Color(0xFF1E293B),
+                    color: const Color(0xFF1E293B),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.white24),
                   ),
                   child: Text(
                     cat['arm'] as String,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 8,
                       fontWeight: FontWeight.w800,
@@ -410,7 +408,7 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
                   cat['division'] as String,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
@@ -420,7 +418,7 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
                 const SizedBox(height: 2),
                 Text(
                   cat['weightClass'] as String,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -442,7 +440,7 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
                   children: [
                     Text(
                       '${cat['registered']}/${cat['capacity']} Athletes',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 9,
                         color: AppTheme.textMuted,
@@ -455,7 +453,7 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
                         fontSize: 8.5,
                         fontWeight: FontWeight.w800,
                         color: cat['slotsRemaining'] == 0
-                            ? Color(0xFFFF2A6D)
+                            ? const Color(0xFFFF2A6D)
                             : AppTheme.goldPrimary,
                       ),
                     ),
@@ -480,11 +478,11 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
             // Bottom Status Badge (Open / Almost Full / Full)
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.18),
+                color: statusColor.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: statusColor.withOpacity(0.5)),
+                border: Border.all(color: statusColor.withValues(alpha: 0.5)),
               ),
               child: Center(
                 child: Text(
@@ -508,12 +506,12 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
   void _showCategoryDetailModal(BuildContext context, Map<String, dynamic> cat) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0F172A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.all(22.0),
+        padding: const EdgeInsets.all(22.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,9 +522,9 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withOpacity(0.18),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 22),

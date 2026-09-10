@@ -11,7 +11,7 @@ class CountUpText extends StatefulWidget {
   final String Function(num)? formatter;
 
   const CountUpText({
-    Key? key,
+    super.key,
     required this.value,
     this.style,
     this.prefix,
@@ -20,7 +20,7 @@ class CountUpText extends StatefulWidget {
     this.duration = const Duration(milliseconds: 350),
     this.semanticLabel,
     this.formatter,
-  }) : super(key: key);
+  });
 
   @override
   State<CountUpText> createState() => _CountUpTextState();

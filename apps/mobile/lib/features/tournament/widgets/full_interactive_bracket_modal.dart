@@ -5,9 +5,9 @@ class FullInteractiveBracketModal extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const FullInteractiveBracketModal({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<FullInteractiveBracketModal> createState() => _FullInteractiveBracketModalState();
@@ -27,13 +27,13 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Icon(Icons.account_tree_rounded, color: Color(0xFF00E5FF), size: 22),
-                  const SizedBox(width: 10),
+                  Icon(Icons.account_tree_rounded, color: Color(0xFF00E5FF), size: 22),
+                  SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'FULL TOURNAMENT BRACKET',
                         style: TextStyle(
@@ -193,8 +193,8 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
       ),
-      child: Column(
-        children: const [
+      child: const Column(
+        children: [
           Icon(Icons.emoji_events_rounded, size: 48, color: AppTheme.goldPrimary),
           SizedBox(height: 12),
           Text(
@@ -249,7 +249,7 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
                     const SizedBox(height: 4),
                     Text(i == 0 ? 'Tariq Z. (YOU)' : 'Competitor A', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
-                    Text('Competitor B', style: const TextStyle(fontSize: 10, color: Colors.white70)),
+                    const Text('Competitor B', style: TextStyle(fontSize: 10, color: Colors.white70)),
                   ],
                 ),
               ),

@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -65,8 +64,8 @@ class _AmbientParticlePainter extends CustomPainter {
     final beamPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          AppTheme.goldPrimary.withOpacity(0.08),
-          AppTheme.goldPrimary.withOpacity(0.02),
+          AppTheme.goldPrimary.withValues(alpha: 0.08),
+          AppTheme.goldPrimary.withValues(alpha: 0.02),
           Colors.transparent,
         ],
         stops: const [0.0, 0.5, 1.0],
@@ -80,7 +79,7 @@ class _AmbientParticlePainter extends CustomPainter {
     final beamPaint2 = Paint()
       ..shader = RadialGradient(
         colors: [
-          Color(0xFFEF4444).withOpacity(0.06), // Subtle Crimson accent beam
+          const Color(0xFFEF4444).withValues(alpha: 0.06), // Subtle Crimson accent beam
           Colors.transparent,
         ],
       ).createShader(Rect.fromCircle(center: Offset(beamX2, beamY2), radius: 260));
@@ -99,7 +98,7 @@ class _AmbientParticlePainter extends CustomPainter {
       final currentAlpha = (p.alpha * (0.6 + 0.4 * math.sin((animationValue + p.pulse) * 2 * math.pi))).clamp(0.0, 1.0);
 
       final color = particleColor ?? AppTheme.goldLight;
-      particlePaint.color = color.withOpacity(currentAlpha * 0.45);
+      particlePaint.color = color.withValues(alpha: currentAlpha * 0.45);
       canvas.drawCircle(Offset(px, py), p.size, particlePaint);
     }
   }
@@ -116,10 +115,10 @@ class AmbientParticleBackground extends StatefulWidget {
   final Color? particleColor;
 
   const AmbientParticleBackground({
-    Key? key,
+    super.key,
     this.child,
     this.particleColor,
-  }) : super(key: key);
+  });
 
   @override
   State<AmbientParticleBackground> createState() => _AmbientParticleBackgroundState();

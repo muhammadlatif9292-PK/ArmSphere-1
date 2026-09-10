@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -15,7 +14,7 @@ class LiveMatchCardWidget extends StatelessWidget {
   final VoidCallback? onTap;
 
   const LiveMatchCardWidget({
-    Key? key,
+    super.key,
     required this.match,
     required this.tableNo,
     required this.division,
@@ -25,12 +24,12 @@ class LiveMatchCardWidget extends StatelessWidget {
     required this.isLive,
     required this.status,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final cardContent = Padding(
-      padding: EdgeInsets.all(14.0),
+      padding: const EdgeInsets.all(14.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -40,14 +39,14 @@ class LiveMatchCardWidget extends StatelessWidget {
               Container(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppTheme.elevatedSurface,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   tableNo,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -59,9 +58,9 @@ class LiveMatchCardWidget extends StatelessWidget {
                   liveRegion: true,
                   label: 'Match is now live',
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryAccent.withOpacity(0.2),
+                      color: AppTheme.primaryAccent.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Row(
@@ -83,9 +82,9 @@ class LiveMatchCardWidget extends StatelessWidget {
                 )
               else
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.info.withOpacity(0.2),
+                    color: AppTheme.info.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -155,20 +154,20 @@ class LiveMatchCardWidget extends StatelessWidget {
 
     if (isLive) {
       return Container(
-        margin: EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
             colors: [
               AppTheme.primaryAccent,
-              AppTheme.primaryAccent.withOpacity(0.4),
+              AppTheme.primaryAccent.withValues(alpha: 0.4),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryAccent.withOpacity(0.15),
+              color: AppTheme.primaryAccent.withValues(alpha: 0.15),
               blurRadius: 12,
               spreadRadius: 1,
             ),

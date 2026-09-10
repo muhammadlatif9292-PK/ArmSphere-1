@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 class EloChartPainter extends CustomPainter {
   final List<double> eloPoints;
@@ -11,8 +10,8 @@ class EloChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (eloPoints.isEmpty) return;
 
-    final double minElo = 1400;
-    final double maxElo = 2300;
+    const double minElo = 1400;
+    const double maxElo = 2300;
 
     final Paint linePaint = Paint()
       ..color = AppTheme.goldPrimary
@@ -25,8 +24,8 @@ class EloChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppTheme.goldPrimary.withOpacity(0.35),
-          AppTheme.goldPrimary.withOpacity(0.0),
+          AppTheme.goldPrimary.withValues(alpha: 0.35),
+          AppTheme.goldPrimary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 

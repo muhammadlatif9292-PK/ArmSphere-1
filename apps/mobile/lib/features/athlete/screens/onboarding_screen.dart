@@ -126,7 +126,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final titles = const [
+    const titles = [
       ('Who are you on the table?', 'This is how athletes, referees and fans will see you.'),
       ('Where do you compete?', 'We use your region to suggest local events and provincial rankings.'),
       ('Your competition specs', 'Divisions and weight classes are matched from these numbers.'),
@@ -276,7 +276,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _gender,
+          initialValue: _gender,
           decoration: const InputDecoration(
             labelText: 'Gender',
             prefixIcon: Icon(Icons.people_outline),
@@ -299,7 +299,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DropdownButtonFormField<String>(
-          value: _province,
+          initialValue: _province,
           decoration: const InputDecoration(
             labelText: 'Province / Region',
             prefixIcon: Icon(Icons.map_outlined),
@@ -365,7 +365,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _armDominance,
+          initialValue: _armDominance,
           decoration: const InputDecoration(
             labelText: 'Dominant / Pulling Arm',
             prefixIcon: Icon(Icons.sports_kabaddi),

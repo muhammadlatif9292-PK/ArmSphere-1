@@ -2,6 +2,7 @@
 ///
 /// Native file/camera picker is web-incompatible. On web, throw
 /// NotImplementedError to prevent runtime crashes.
+library;
 
 import 'dart:typed_data';
 

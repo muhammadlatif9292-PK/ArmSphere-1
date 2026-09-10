@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import 'tournament_screens.dart';
@@ -205,7 +204,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedDivision,
+                  initialValue: _selectedDivision,
                   items: const [
                     DropdownMenuItem(value: 'SENIOR', child: Text('Senior')),
                     DropdownMenuItem(value: 'JUNIOR', child: Text('Junior')),
@@ -224,7 +223,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedWeightClass,
+                  initialValue: _selectedWeightClass,
                   items: const [
                     DropdownMenuItem(value: '-70kg', child: Text('Lightweight (-70kg)')),
                     DropdownMenuItem(value: '-85kg', child: Text('Middleweight (-85kg)')),
@@ -244,7 +243,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _armChoice,
+                  initialValue: _armChoice,
                   items: const [
                     DropdownMenuItem(value: 'RIGHT', child: Text('Right Arm Only')),
                     DropdownMenuItem(value: 'LEFT', child: Text('Left Arm Only')),

@@ -13,11 +13,11 @@ class PremiumFloatingNavBar extends StatelessWidget {
   final VoidCallback? onCenterActionTap;
 
   const PremiumFloatingNavBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTapTab,
     this.onCenterActionTap,
-  }) : super(key: key);
+  });
 
   static const List<IconData> _icons = [
     Icons.explore_outlined,
@@ -48,12 +48,12 @@ class PremiumFloatingNavBar extends StatelessWidget {
               color: AppTheme.glassSurface,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: AppTheme.goldPrimary.withOpacity(0.25),
+                color: AppTheme.goldPrimary.withValues(alpha: 0.25),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withValues(alpha: 0.45),
                   blurRadius: 22,
                   offset: const Offset(0, 10),
                 ),
@@ -83,9 +83,9 @@ class PremiumFloatingNavBar extends StatelessWidget {
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppTheme.goldPrimary.withOpacity(0.15),
+                                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
                                 border: Border.all(
-                                  color: AppTheme.goldPrimary.withOpacity(0.55),
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.55),
                                   width: 1.2,
                                 ),
                               ),
@@ -98,7 +98,7 @@ class PremiumFloatingNavBar extends StatelessWidget {
                             const SizedBox(height: 3),
                             Text(
                               _labels[index],
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
                                 color: AppTheme.goldPrimary,

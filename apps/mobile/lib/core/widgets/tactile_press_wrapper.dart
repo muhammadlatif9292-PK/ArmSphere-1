@@ -12,13 +12,13 @@ class TactilePressWrapper extends StatefulWidget {
   final double liftDistance;
 
   const TactilePressWrapper({
-    Key? key,
+    super.key,
     required this.child,
     required this.onTap,
     this.semanticLabel,
     this.enableLift = false,
     this.liftDistance = -4.0,
-  }) : super(key: key);
+  });
 
   @override
   State<TactilePressWrapper> createState() => _TactilePressWrapperState();

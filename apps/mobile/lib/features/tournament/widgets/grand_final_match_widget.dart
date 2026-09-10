@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'bracket_connector_line.dart';
 import 'bracket_connectors_painter.dart';
@@ -10,11 +9,11 @@ class GrandFinalMatchWidget extends StatelessWidget {
   final Map<String, dynamic>? lastLoserMatch;
 
   const GrandFinalMatchWidget({
-    Key? key,
+    super.key,
     required this.grandFinalMatch,
     this.lastWinnerMatch,
     this.lastLoserMatch,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +49,11 @@ class GrandFinalMatchWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: EdgeInsets.all(6),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryAccent.withOpacity(0.15),
+                  color: AppTheme.primaryAccent.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.primaryAccent.withOpacity(0.4)),
+                  border: Border.all(color: AppTheme.primaryAccent.withValues(alpha: 0.4)),
                 ),
                 child: const Icon(Icons.emoji_events, color: AppTheme.primaryAccent, size: 22),
               ),

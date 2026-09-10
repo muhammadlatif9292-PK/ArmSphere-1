@@ -19,7 +19,7 @@ class GlassCard extends StatefulWidget {
   final Color? glowColor;
 
   const GlassCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16.0),
     this.margin,
@@ -30,7 +30,7 @@ class GlassCard extends StatefulWidget {
     this.onTap,
     this.enableGlow = false,
     this.glowColor,
-  }) : super(key: key);
+  });
 
   @override
   State<GlassCard> createState() => _GlassCardState();

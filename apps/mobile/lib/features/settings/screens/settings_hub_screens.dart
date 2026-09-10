@@ -150,7 +150,7 @@ class SettingsHubScreen extends ConsumerWidget {
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               letterSpacing: 1.0,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
       ),
     );

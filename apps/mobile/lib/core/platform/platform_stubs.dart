@@ -2,6 +2,7 @@
 ///
 /// These stubs provide no-op or fallback implementations for native-only
 /// packages when compiling to web.
+library;
 
 class FlutterSecureStorage {
   const FlutterSecureStorage();

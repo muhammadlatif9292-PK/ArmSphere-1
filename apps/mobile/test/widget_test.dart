@@ -8,7 +8,6 @@ import 'package:mobile/core/providers/dependency_providers.dart';
 import 'package:mobile/core/providers/tournament_provider.dart';
 import 'package:mobile/core/api/repositories.dart';
 import 'package:mobile/core/storage/hive_storage.dart';
-import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/settings/screens/settings_screens.dart';
 import 'package:mobile/features/venue/screens/submit_venue_screen.dart';
 

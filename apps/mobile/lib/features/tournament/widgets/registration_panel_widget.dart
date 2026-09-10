@@ -6,9 +6,8 @@ class _RegistrationPanelWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const _RegistrationPanelWidget({
-    Key? key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<_RegistrationPanelWidget> createState() => _RegistrationPanelWidgetState();
@@ -28,31 +27,31 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: _isRegistered
-              ? Color(0xFF00E676).withOpacity(0.5)
-              : AppTheme.goldPrimary.withOpacity(0.4),
+              ? const Color(0xFF00E676).withValues(alpha: 0.5)
+              : AppTheme.goldPrimary.withValues(alpha: 0.4),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
             color: _isRegistered
-                ? Color(0xFF00E676).withOpacity(0.08)
-                : AppTheme.goldPrimary.withOpacity(0.08),
+                ? const Color(0xFF00E676).withValues(alpha: 0.08)
+                : AppTheme.goldPrimary.withValues(alpha: 0.08),
             blurRadius: 24,
             spreadRadius: -4,
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -63,16 +62,16 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: _isRegistered
-                            ? Color(0xFF00E676).withOpacity(0.18)
-                            : AppTheme.goldPrimary.withOpacity(0.18),
+                            ? const Color(0xFF00E676).withValues(alpha: 0.18)
+                            : AppTheme.goldPrimary.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: _isRegistered
-                              ? Color(0xFF00E676).withOpacity(0.6)
-                              : AppTheme.goldPrimary.withOpacity(0.6),
+                              ? const Color(0xFF00E676).withValues(alpha: 0.6)
+                              : AppTheme.goldPrimary.withValues(alpha: 0.6),
                         ),
                       ),
                       child: Icon(
@@ -118,16 +117,16 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                     });
                   },
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: _isRegistered
-                          ? Color(0xFF00E676).withOpacity(0.15)
-                          : Color(0xFF00E5FF).withOpacity(0.15),
+                          ? const Color(0xFF00E676).withValues(alpha: 0.15)
+                          : const Color(0xFF00E5FF).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: _isRegistered
-                            ? Color(0xFF00E676).withOpacity(0.5)
-                            : Color(0xFF00E5FF).withOpacity(0.5),
+                            ? const Color(0xFF00E676).withValues(alpha: 0.5)
+                            : const Color(0xFF00E5FF).withValues(alpha: 0.5),
                       ),
                     ),
                     child: Row(
@@ -136,7 +135,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                         Icon(
                           Icons.swap_horiz_rounded,
                           size: 14,
-                          color: _isRegistered ? Color(0xFF00E676) : Color(0xFF00E5FF),
+                          color: _isRegistered ? const Color(0xFF00E676) : const Color(0xFF00E5FF),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -145,7 +144,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 8.5,
                             fontWeight: FontWeight.w900,
-                            color: _isRegistered ? Color(0xFF00E676) : Color(0xFF00E5FF),
+                            color: _isRegistered ? const Color(0xFF00E676) : const Color(0xFF00E5FF),
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -157,7 +156,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
             ),
 
             const SizedBox(height: 18),
-            Divider(color: Colors.white10, height: 1),
+            const Divider(color: Colors.white10, height: 1),
             const SizedBox(height: 18),
 
             // ADAPTIVE BODY CONTENT:
@@ -169,11 +168,11 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
               // Category & Entry Fee Info Card
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(14),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Color(0xFF1E293B).withOpacity(0.6),
+                  color: const Color(0xFF1E293B).withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,11 +191,11 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppTheme.goldPrimary.withOpacity(0.2),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                           ),
                           child: const Text(
                             'PKR 2,500 (\$1\$50 USD)',
@@ -342,23 +341,23 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [AppTheme.goldPrimary, Color(0xFFFF8F00)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.goldPrimary.withOpacity(0.4),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.4),
                         blurRadius: 14,
                         offset: const Offset(0, 5),
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.how_to_reg_rounded, size: 20, color: Colors.black),
                       SizedBox(width: 8),
                       Text(
@@ -391,7 +390,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                           title: 'REGISTRATION STATUS',
                           status: 'CONFIRMED',
                           sub: 'Ref #REG-2026-9912',
-                          accentColor: Color(0xFF00E676),
+                          accentColor: const Color(0xFF00E676),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -401,7 +400,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                           title: 'VERIFICATION',
                           status: 'VERIFIED',
                           sub: 'CNIC & Biometric Passed',
-                          accentColor: Color(0xFF00E5FF),
+                          accentColor: const Color(0xFF00E5FF),
                         ),
                       ),
                     ],
@@ -415,7 +414,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                           title: 'MEDICAL CLEARANCE',
                           status: 'APPROVED',
                           sub: 'Signed Dr. Kamran Akram',
-                          accentColor: Color(0xFF00E676),
+                          accentColor: const Color(0xFF00E676),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -439,7 +438,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                           title: 'CHECK-IN',
                           status: 'CHECKED IN',
                           sub: 'Stage A Holding Zone',
-                          accentColor: Color(0xFF00E676),
+                          accentColor: const Color(0xFF00E676),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -449,7 +448,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                           title: 'QR PASS',
                           status: 'ACTIVE PASS',
                           sub: 'Tap to Expand Pass',
-                          accentColor: Color(0xFFFF2A6D),
+                          accentColor: const Color(0xFFFF2A6D),
                           onTap: () => _showDigitalPassModal(context),
                         ),
                       ),
@@ -465,16 +464,16 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                 onTap: () => _showDigitalPassModal(context),
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [Color(0xFF1E2B47), Color(0xFF0D1527)],
                     ),
-                    border: Border.all(color: Color(0xFFFF2A6D).withOpacity(0.5)),
+                    border: Border.all(color: const Color(0xFFFF2A6D).withValues(alpha: 0.5)),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFFFF2A6D).withOpacity(0.15),
+                        color: const Color(0xFFFF2A6D).withValues(alpha: 0.15),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -486,17 +485,17 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                       Row(
                         children: [
                           Container(
-                            padding: EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Color(0xFFFF2A6D).withOpacity(0.2),
+                              color: const Color(0xFFFF2A6D).withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(Icons.qr_code_rounded, color: Color(0xFFFF2A6D), size: 20),
                           ),
                           const SizedBox(width: 12),
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
                                 'DIGITAL TOURNAMENT PASS',
                                 style: TextStyle(
@@ -539,11 +538,11 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
     required ValueChanged<bool?> onChanged,
   }) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Color(0xFF1E293B).withOpacity(0.4),
+        color: const Color(0xFF1E293B).withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isChecked ? Color(0xFF00E676).withOpacity(0.4) : Colors.white12),
+        border: Border.all(color: isChecked ? const Color(0xFF00E676).withValues(alpha: 0.4) : Colors.white12),
       ),
       child: Row(
         children: [
@@ -603,11 +602,11 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Color(0xFF1E293B).withOpacity(0.6),
+          color: const Color(0xFF1E293B).withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: accentColor.withOpacity(0.35)),
+          border: Border.all(color: accentColor.withValues(alpha: 0.35)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -664,12 +663,12 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF0F172A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -681,12 +680,12 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
             const SizedBox(height: 20),
 
             // Official Header Badge
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.verified_rounded, color: AppTheme.goldPrimary, size: 18),
-                const SizedBox(width: 8),
-                const Text(
+                SizedBox(width: 8),
+                Text(
                   'PAFF DIGITAL TOURNAMENT PASS',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
@@ -703,16 +702,16 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
             // Card Pass Preview
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [Color(0xFF1E2B47), Color(0xFF0D1424)],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.6), width: 1.5),
+                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.goldPrimary.withOpacity(0.2),
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.2),
                     blurRadius: 18,
                     spreadRadius: -2,
                   ),
@@ -723,9 +722,9 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
+                      const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'ARMWRESTLING ATHLETE',
                             style: TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
@@ -741,9 +740,9 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                         ],
                       ),
                       Container(
-                        padding: EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                           border: Border.all(color: AppTheme.goldPrimary),
                         ),
@@ -764,11 +763,11 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
+                    child: const Column(
                       children: [
-                        const Icon(Icons.qr_code_2_rounded, size: 90, color: Colors.black),
-                        const SizedBox(height: 4),
-                        const Text(
+                        Icon(Icons.qr_code_2_rounded, size: 90, color: Colors.black),
+                        SizedBox(height: 4),
+                        Text(
                           'PAFF-2026-9912-X88',
                           style: TextStyle(
                             fontFamily: 'JetBrains Mono',

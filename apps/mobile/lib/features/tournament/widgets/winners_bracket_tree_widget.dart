@@ -4,9 +4,9 @@ class WinnersBracketTreeWidget extends StatelessWidget {
   final List<Map<String, dynamic>> winnersMatches;
 
   const WinnersBracketTreeWidget({
-    Key? key,
+    super.key,
     required this.winnersMatches,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 class EloLineGraphPainter extends CustomPainter {
   final List<Map<String, dynamic>> data;
   final Color lineColor;
@@ -30,10 +29,10 @@ class EloLineGraphPainter extends CustomPainter {
 
     // Grid lines
     final Paint gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = Colors.white.withValues(alpha: 0.06)
       ..strokeWidth = 1.0;
 
-    canvas.drawLine(Offset(0, 0), Offset(width, 0), gridPaint);
+    canvas.drawLine(const Offset(0, 0), Offset(width, 0), gridPaint);
     canvas.drawLine(Offset(0, height / 2), Offset(width, height / 2), gridPaint);
     canvas.drawLine(Offset(0, height), Offset(width, height), gridPaint);
 
@@ -57,8 +56,8 @@ class EloLineGraphPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          lineColor.withOpacity(0.35),
-          lineColor.withOpacity(0.0),
+          lineColor.withValues(alpha: 0.35),
+          lineColor.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, width, height));
 
@@ -89,7 +88,7 @@ class EloLineGraphPainter extends CustomPainter {
       final pt = points[i];
 
       // Glow circle
-      canvas.drawCircle(pt, 5, Paint()..color = lineColor.withOpacity(0.3));
+      canvas.drawCircle(pt, 5, Paint()..color = lineColor.withValues(alpha: 0.3));
       // Outer border
       canvas.drawCircle(pt, 3.5, Paint()..color = lineColor);
       // Inner core

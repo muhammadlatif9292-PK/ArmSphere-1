@@ -11,13 +11,13 @@ class TournamentEmptyStateWidget extends StatelessWidget {
   final String? customActionLabel;
 
   const TournamentEmptyStateWidget({
-    Key? key,
+    super.key,
     required this.type,
     this.onAction,
     this.title,
     this.description,
     this.customActionLabel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -78,22 +78,22 @@ class TournamentEmptyStateWidget extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A).withOpacity(0.9),
+        color: const Color(0xFF0F172A).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: accentColor.withOpacity(0.35),
+          color: accentColor.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: accentColor.withOpacity(0.08),
+            color: accentColor.withValues(alpha: 0.08),
             blurRadius: 24,
             spreadRadius: -2,
           ),
@@ -104,14 +104,14 @@ class TournamentEmptyStateWidget extends StatelessWidget {
         children: [
           // Animated Glowing Icon Frame
           Container(
-            padding: EdgeInsets.all(18),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.12),
+              color: accentColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
-              border: Border.all(color: accentColor.withOpacity(0.5), width: 1.5),
+              border: Border.all(color: accentColor.withValues(alpha: 0.5), width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: accentColor.withOpacity(0.25),
+                  color: accentColor.withValues(alpha: 0.25),
                   blurRadius: 18,
                   spreadRadius: 2,
                 ),
@@ -166,18 +166,18 @@ class TournamentEmptyStateWidget extends StatelessWidget {
               }
             },
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 gradient: LinearGradient(
                   colors: [
                     accentColor,
-                    accentColor.withOpacity(0.85),
+                    accentColor.withValues(alpha: 0.85),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: accentColor.withOpacity(0.35),
+                    color: accentColor.withValues(alpha: 0.35),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 class CompactBracketMatchCard extends StatelessWidget {
   final Map<String, dynamic> match;
 
   const CompactBracketMatchCard({
-    Key? key,
+    super.key,
     required this.match,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,14 +47,14 @@ class CompactBracketMatchCard extends StatelessWidget {
         boxShadow: isLive
             ? [
                 BoxShadow(
-                  color: AppTheme.primaryAccent.withOpacity(0.15),
+                  color: AppTheme.primaryAccent.withValues(alpha: 0.15),
                   blurRadius: 6,
                   spreadRadius: 1,
                 )
               ]
             : null,
       ),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -67,14 +66,14 @@ class CompactBracketMatchCard extends StatelessWidget {
                   Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppTheme.elevatedSurface,
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       tableNo,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppTheme.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 9,
@@ -84,7 +83,7 @@ class CompactBracketMatchCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     'T$tableNo',
-                    style: TextStyle(color: AppTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: AppTheme.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -93,9 +92,9 @@ class CompactBracketMatchCard extends StatelessWidget {
                   liveRegion: true,
                   label: 'Match is now live',
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryAccent.withOpacity(0.2),
+                      color: AppTheme.primaryAccent.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Row(
@@ -117,9 +116,9 @@ class CompactBracketMatchCard extends StatelessWidget {
                 )
               else if (isCompleted)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppTheme.success.withOpacity(0.15),
+                    color: AppTheme.success.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(

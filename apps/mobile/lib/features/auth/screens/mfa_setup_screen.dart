@@ -77,7 +77,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
             Text(
               'Scan the QR code with an authenticator app (Google Authenticator, Authy, etc.) and enter the 6-digit code below.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 32),
@@ -91,7 +91,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                     ),
                   ],

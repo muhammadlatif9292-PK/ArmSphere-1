@@ -6,9 +6,9 @@ class TournamentInformationGlassCard extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const TournamentInformationGlassCard({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<TournamentInformationGlassCard> createState() => _TournamentInformationGlassCardState();
@@ -37,20 +37,20 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0D1527).withOpacity(0.85),
+        color: const Color(0xFF0D1527).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.35),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
           BoxShadow(
-            color: AppTheme.goldPrimary.withOpacity(0.05),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.05),
             blurRadius: 20,
             spreadRadius: -2,
           ),
@@ -78,22 +78,22 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.goldPrimary.withOpacity(0.18),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.info_outline_rounded,
                             color: AppTheme.goldPrimary,
                             size: 18,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
+                        const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'TOURNAMENT INFORMATION',
                               style: TextStyle(
@@ -119,15 +119,15 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
                     ),
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: _isExpanded
-                            ? AppTheme.goldPrimary.withOpacity(0.2)
-                            : Color(0xFF1E293B),
+                            ? AppTheme.goldPrimary.withValues(alpha: 0.2)
+                            : const Color(0xFF1E293B),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: _isExpanded
-                              ? AppTheme.goldPrimary.withOpacity(0.6)
+                              ? AppTheme.goldPrimary.withValues(alpha: 0.6)
                               : Colors.white12,
                         ),
                       ),
@@ -160,9 +160,9 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
               if (!_isExpanded) ...[
                 const SizedBox(height: 14),
                 Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Color(0xFF162032).withOpacity(0.6),
+                    color: const Color(0xFF162032).withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -257,15 +257,15 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
                             },
                             child: Container(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                               decoration: BoxDecoration(
-                                color: Color(0xFF00E5FF).withOpacity(0.12),
+                                color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Color(0xFF00E5FF).withOpacity(0.5)),
+                                border: Border.all(color: const Color(0xFF00E5FF).withValues(alpha: 0.5)),
                               ),
-                              child: Row(
+                              child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
+                                children: [
                                   Icon(Icons.directions_outlined, size: 16, color: Color(0xFF00E5FF)),
                                   SizedBox(width: 8),
                                   Text(
@@ -342,11 +342,11 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
                             },
                             child: Container(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                               decoration: BoxDecoration(
-                                color: Color(0xFFFF2A6D).withOpacity(0.12),
+                                color: const Color(0xFFFF2A6D).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Color(0xFFFF2A6D).withOpacity(0.5)),
+                                border: Border.all(color: const Color(0xFFFF2A6D).withValues(alpha: 0.5)),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -396,7 +396,7 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
             const SizedBox(width: 8),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: AppTheme.fontDisplay,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w900,
@@ -409,11 +409,11 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
         const SizedBox(height: 10),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(14),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Color(0xFF141E2F).withOpacity(0.7),
+            color: const Color(0xFF141E2F).withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -7,9 +7,9 @@ class TournamentFloatingActionBarWidget extends StatelessWidget {
   final Map<String, dynamic> tournament;
 
   const TournamentFloatingActionBarWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,18 +51,18 @@ class TournamentFloatingActionBarWidget extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A).withOpacity(0.92),
+        color: const Color(0xFF0F172A).withValues(alpha: 0.92),
         border: Border(
           top: BorderSide(
-            color: AppTheme.goldPrimary.withOpacity(0.3),
+            color: AppTheme.goldPrimary.withValues(alpha: 0.3),
             width: 1.2,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.8),
+            color: Colors.black.withValues(alpha: 0.8),
             blurRadius: 20,
             offset: const Offset(0, -6),
           ),
@@ -103,7 +103,7 @@ class TournamentFloatingActionBarWidget extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: gradientStart.withOpacity(0.4),
+                  color: gradientStart.withValues(alpha: 0.4),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),

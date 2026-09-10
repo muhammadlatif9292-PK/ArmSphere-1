@@ -7,9 +7,9 @@ class TournamentContextActionsWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
   const TournamentContextActionsWidget({
-    Key? key,
+    super.key,
     required this.tournament,
-  }) : super(key: key);
+  });
 
   @override
   State<TournamentContextActionsWidget> createState() => _TournamentContextActionsWidgetState();
@@ -23,22 +23,22 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.goldPrimary.withOpacity(0.3),
+          color: AppTheme.goldPrimary.withValues(alpha: 0.3),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(18.0),
+        padding: const EdgeInsets.all(18.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -48,22 +48,22 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(7),
+                      padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withOpacity(0.18),
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.goldPrimary.withOpacity(0.5)),
+                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.bolt_rounded,
                         color: AppTheme.goldPrimary,
                         size: 18,
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Column(
+                    const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'CONTEXT-AWARE ACTIONS',
                           style: TextStyle(
@@ -88,9 +88,9 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
                   ],
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -154,9 +154,9 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.share_rounded, size: 15, color: Colors.white),
                     SizedBox(width: 6),
                     Text(
@@ -364,13 +364,13 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(colors: gradientColors),
           boxShadow: [
             BoxShadow(
-              color: gradientColors.first.withOpacity(0.35),
+              color: gradientColors.first.withValues(alpha: 0.35),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -405,18 +405,18 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
   }) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Color(0xFF1E293B).withOpacity(0.6),
+        color: const Color(0xFF1E293B).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.15),
+              color: accentColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 18, color: accentColor),
@@ -597,11 +597,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
               ],
             ),
             const Divider(color: Colors.white12),
-            Expanded(
+            const Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
                     SizedBox(height: 12),
                     Text(
@@ -687,8 +687,8 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
         return AlertDialog(
           backgroundColor: const Color(0xFF0F172A),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.live_tv, color: Color(0xFFFF2A6D)),
               SizedBox(width: 8),
               Text('Live Broadcast', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),

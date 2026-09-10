@@ -9,13 +9,13 @@ class SkeletonPlaceholder extends StatefulWidget {
   final BoxShape shape;
 
   const SkeletonPlaceholder({
-    Key? key,
+    super.key,
     this.width,
     this.height,
     this.borderRadius = 8.0,
     this.semanticLabel,
     this.shape = BoxShape.rectangle,
-  }) : super(key: key);
+  });
 
   @override
   State<SkeletonPlaceholder> createState() => _SkeletonPlaceholderState();

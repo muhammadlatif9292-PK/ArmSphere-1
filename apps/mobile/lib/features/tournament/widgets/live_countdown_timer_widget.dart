@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 class LiveCountdownTimerWidget extends StatefulWidget {
   final Duration initialDuration;
 
   const LiveCountdownTimerWidget({
-    Key? key,
+    super.key,
     this.initialDuration = const Duration(days: 4, hours: 12, minutes: 38, seconds: 45),
-  }) : super(key: key);
+  });
 
   @override
   State<LiveCountdownTimerWidget> createState() => _LiveCountdownTimerWidgetState();
@@ -47,14 +46,14 @@ class _LiveCountdownTimerWidgetState extends State<LiveCountdownTimerWidget> {
     final seconds = (_remaining.inSeconds % 60).toString().padLeft(2, '0');
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Color(0xFFFFB300).withOpacity(0.18),
-        border: Border.all(color: Color(0xFFFFB300).withOpacity(0.6)),
+        color: const Color(0xFFFFB300).withValues(alpha: 0.18),
+        border: Border.all(color: const Color(0xFFFFB300).withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFFFB300).withOpacity(0.25),
+            color: const Color(0xFFFFB300).withValues(alpha: 0.25),
             blurRadius: 8,
           ),
         ],

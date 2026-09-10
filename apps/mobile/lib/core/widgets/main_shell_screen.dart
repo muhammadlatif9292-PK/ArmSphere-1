@@ -35,16 +35,16 @@ class MainShellScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withOpacity(0.90),
+          color: theme.colorScheme.surface.withValues(alpha: 0.90),
           border: Border(
             top: BorderSide(
-              color: theme.dividerColor.withOpacity(0.08),
+              color: theme.dividerColor.withValues(alpha: 0.08),
               width: 1.0,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -57,7 +57,7 @@ class MainShellScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           type: BottomNavigationBarType.fixed,
           selectedItemColor: theme.colorScheme.primary,
-          unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.40),
+          unselectedItemColor: theme.colorScheme.onSurface.withValues(alpha: 0.40),
           selectedLabelStyle: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
