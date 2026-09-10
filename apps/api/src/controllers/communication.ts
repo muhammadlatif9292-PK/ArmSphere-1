@@ -213,7 +213,17 @@ export class CommunicationController {
     try {
       const senderId = (req as any).user.id;
       const { id } = req.params;
-      const { content, attachments } = req.body;
+      const parsed = z.object({
+        content: z.string().min(1, "Message content must not be empty.").max(5000, "Message content is too long."),
+        attachments: z.array(z.object({
+          url: z.string().url(),
+          filename: z.string().min(1),
+          size: z.number().int().positive(),
+          mimeType: z.string().min(1),
+        })).optional(),
+      }).safeParse(req.body);
+      if (!parsed.success) throw parsed.error;
+      const { content, attachments } = parsed.data;
       const result = await MessagingService.sendMessage({
         conversationId: id,
         senderId,

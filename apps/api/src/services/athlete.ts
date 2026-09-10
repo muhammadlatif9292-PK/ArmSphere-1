@@ -271,8 +271,18 @@ export class AthleteService {
     ipAddress?: string,
     userAgent?: string
   ) {
+    // :id may be an auth user id (legacy/self flows) or an athlete profile id
+    // (search / leaderboard / social rows carry profile ids). Resolve to the
+    // owner's auth user id first so owner edits via profileId succeed.
+    const [byProfileId] = await db
+      .select({ userId: athleteProfiles.userId })
+      .from(athleteProfiles)
+      .where(and(eq(athleteProfiles.id, targetUserId), eq(athleteProfiles.isDeleted, false)))
+      .limit(1);
+    const resolvedUserId = byProfileId?.userId ?? targetUserId;
+
     // 1. Ownership & Role check: Only profile owner or an Admin/Director can update it
-    if (userId !== targetUserId && !["system_admin", "national_director", "provincial_director"].includes(role.toLowerCase())) {
+    if (userId !== resolvedUserId && !["system_admin", "national_director", "provincial_director"].includes(role.toLowerCase())) {
       throw new ForbiddenError("You are not authorized to update this profile");
     }
 
@@ -280,7 +290,7 @@ export class AthleteService {
     const [existingProfile] = await db
       .select()
       .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.userId, targetUserId), eq(athleteProfiles.isDeleted, false)))
+      .where(and(eq(athleteProfiles.userId, resolvedUserId), eq(athleteProfiles.isDeleted, false)))
       .limit(1);
 
     if (!existingProfile) {
@@ -312,7 +322,7 @@ export class AthleteService {
     const [updatedProfile] = await db
       .update(athleteProfiles)
       .set(updatePayload)
-      .where(eq(athleteProfiles.userId, targetUserId))
+      .where(eq(athleteProfiles.userId, resolvedUserId))
       .returning();
 
     // Update measurements as well if profile physicals are modified
@@ -320,7 +330,7 @@ export class AthleteService {
       const [existingMeasurement] = await db
         .select()
         .from(athleteMeasurements)
-        .where(eq(athleteMeasurements.athleteId, targetUserId))
+        .where(eq(athleteMeasurements.athleteId, resolvedUserId))
         .limit(1);
 
       if (existingMeasurement) {
@@ -332,13 +342,13 @@ export class AthleteService {
             reach: input.reach !== undefined ? input.reach : existingMeasurement.reach,
             updatedAt: new Date(),
           })
-          .where(eq(athleteMeasurements.athleteId, targetUserId));
+          .where(eq(athleteMeasurements.athleteId, resolvedUserId));
       }
     }
 
     // 5. Track History
     await db.insert(athleteProfileHistory).values({
-      athleteId: targetUserId,
+      athleteId: resolvedUserId,
       changedBy: userId,
       oldData: existingProfile,
       newData: updatedProfile,
