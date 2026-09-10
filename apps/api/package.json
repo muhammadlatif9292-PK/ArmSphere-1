@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
-    "db:migrate": "tsx src/scripts/migrate.ts",
+    "db:migrate": "node dist/scripts/migrate.js",
     "db:check": "drizzle-kit check:pg",
     "generate-sdks": "tsx src/scripts/generateSdks.ts",
     "build": "npm run generate-sdks && tsc && esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.js --external:express --external:cors --external:dotenv --external:drizzle-orm --external:pg --external:jsonwebtoken --external:speakeasy --external:stripe --external:zod --external:@aws-sdk/* --external:firebase-admin --external:swagger-jsdoc --external:swagger-ui-express --external:qrcode --external:serverless-http",

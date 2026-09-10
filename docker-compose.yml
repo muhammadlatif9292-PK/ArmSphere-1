@@ -29,11 +29,13 @@ services:
     container_name: armsphere-api
     environment:
       NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-4000}
       DATABASE_URL: postgresql://armsphere:${DB_PASSWORD:-dev-password-change-in-production}@postgres:5432/armsphere
-      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-in-production}
-      CRON_SECRET: ${CRON_SECRET:-change-this-in-production}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET must be set}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET must be set}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:?STRIPE_WEBHOOK_SECRET must be set}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:?STRIPE_SECRET_KEY must be set}
       AWS_REGION: ${AWS_REGION:-us-east-1}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
@@ -42,9 +44,9 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "3001:3001"
+      - "4000:4000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', r => { if (r.statusCode !== 200) process.exit(1); }).on('error', () => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3

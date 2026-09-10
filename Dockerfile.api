@@ -27,6 +27,7 @@ COPY package.json package-lock.json ./
 
 # Copy built artifacts from builder
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/migrations ./apps/api/migrations
 COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/node_modules ./node_modules
 
@@ -37,7 +38,7 @@ USER nodejs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD node -e "require('http').get('http://localhost:4000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
@@ -45,7 +46,7 @@ ENTRYPOINT ["dumb-init", "--"]
 # Start the API server
 CMD ["node", "apps/api/dist/server.js"]
 
-EXPOSE 3001
+EXPOSE 4000
 
 # Labels for container metadata
 LABEL org.opencontainers.image.title="ArmSphere API" \
