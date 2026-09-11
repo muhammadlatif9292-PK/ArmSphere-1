@@ -231,7 +231,7 @@ export class TournamentService {
     weightClass: string;
     arm: string;
     notes?: string;
-  }) {
+  }, caller: { userId: string; role: string }) {
     logger.info({ eventId, athleteId }, "Registering athlete to event");
 
     return await db.transaction(async (tx) => {
@@ -250,6 +250,16 @@ export class TournamentService {
       const [athlete] = await tx.select().from(athleteProfiles).where(eq(athleteProfiles.id, athleteId)).limit(1);
       if (!athlete || athlete.isDeleted) {
         throw new BadRequestError("Athlete must have an active profile to register.");
+      }
+
+      // Caller authorization: only the profile's owner, the event's organizer,
+      // or a director/admin may put an athlete profile into the registration list.
+      const privilegedRoles: UserRole[] = [UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR, UserRole.PROVINCIAL_DIRECTOR];
+      const isProfileOwner = athlete.userId === caller.userId;
+      const isEventOrganizer = event.organizerId !== null && event.organizerId === caller.userId;
+      const isPrivilegedRole = privilegedRoles.includes(caller.role as UserRole);
+      if (!isProfileOwner && !isEventOrganizer && !isPrivilegedRole) {
+        throw new ForbiddenError("You can only register your own athlete profile for this event.");
       }
 
       // Gender profile check alignment

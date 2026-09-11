@@ -240,7 +240,7 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
           weightClass: "70KG",
           arm: "RIGHT"
         })
-        .set("Authorization", authHeader());
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
 
       expect(response.status).toBe(201);
       expect(response.body.status).toBe("PENDING");
@@ -257,7 +257,7 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
           weightClass: "OPEN",
           arm: "BOTH"
         })
-        .set("Authorization", authHeader());
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
 
       expect(response.status).toBe(400);
       expect(response.body.detail).toContain("gender");
@@ -279,10 +279,100 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
           weightClass: "70KG",
           arm: "LEFT"
         })
-        .set("Authorization", authHeader());
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-c"));
 
       expect(response.status).toBe(201);
       expect(response.body.status).toBe("WAITLISTED");
+    });
+
+    describe("Registration caller authorization (ownership enforcement)", () => {
+      const UUID_EVENT_ORGANIZER = "11111111-1111-1111-1111-444444444444";
+
+      beforeEach(() => {
+        testDbStore.events.push({
+          id: UUID_EVENT_ORGANIZER,
+          name: "Organizer Tourney",
+          registrationStart: new Date(Date.now() - 1000 * 60 * 60),
+          registrationEnd: new Date(Date.now() + 1000 * 60 * 60),
+          startDate: new Date(Date.now() + 1000 * 60 * 60 * 24),
+          endDate: new Date(Date.now() + 1000 * 60 * 60 * 48),
+          province: "Ontario",
+          city: "Toronto",
+          venue: "Stadium",
+          capacity: 10,
+          status: "PUBLISHED",
+          organizerId: "user-a"
+        });
+      });
+
+      it("should reject an ordinary athlete registering another athlete's profile (403, no row created)", async () => {
+        const response = await request(app)
+          .post("/tournaments/registrations")
+          .send({
+            eventId: UUID_EVENT_ACTIVE,
+            athleteId: UUID_ATHLETE_A,
+            division: "SENIOR",
+            weightClass: "70KG",
+            arm: "RIGHT"
+          })
+          .set("Authorization", authHeader(UserRole.ATHLETE, "user-b"));
+
+        expect(response.status).toBe(403);
+        expect(response.body.detail).toContain("own athlete profile");
+        expect(
+          testDbStore.eventRegistrations.find(
+            r => r.eventId === UUID_EVENT_ACTIVE && r.athleteId === UUID_ATHLETE_A
+          )
+        ).toBeUndefined();
+      });
+
+      it("should allow the athlete to register their own profile", async () => {
+        const response = await request(app)
+          .post("/tournaments/registrations")
+          .send({
+            eventId: UUID_EVENT_ACTIVE,
+            athleteId: UUID_ATHLETE_A,
+            division: "SENIOR",
+            weightClass: "70KG",
+            arm: "RIGHT"
+          })
+          .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+
+        expect(response.status).toBe(201);
+        expect(response.body.status).toBe("PENDING");
+      });
+
+      it("should allow a director to register an athlete into an event", async () => {
+        const response = await request(app)
+          .post("/tournaments/registrations")
+          .send({
+            eventId: UUID_EVENT_ACTIVE,
+            athleteId: UUID_ATHLETE_B,
+            division: "SENIOR",
+            weightClass: "70KG",
+            arm: "LEFT"
+          })
+          .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+
+        expect(response.status).toBe(201);
+        expect(response.body.athleteId).toBe(UUID_ATHLETE_B);
+      });
+
+      it("should allow the event organizer to register an athlete into their own event", async () => {
+        const response = await request(app)
+          .post("/tournaments/registrations")
+          .send({
+            eventId: UUID_EVENT_ORGANIZER,
+            athleteId: UUID_ATHLETE_B,
+            division: "SENIOR",
+            weightClass: "70KG",
+            arm: "LEFT"
+          })
+          .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+
+        expect(response.status).toBe(201);
+        expect(response.body.athleteId).toBe(UUID_ATHLETE_B);
+      });
     });
   });
 

@@ -308,6 +308,67 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
 
       expect(res.status).toBe(403);
     });
+
+    it("should allow the profile owner to update their own profile using the athlete profile id", async () => {
+      // The client navigates with the profileId returned by /athletes/me,
+      // not the auth user id.
+      const profileId = "22222222-2222-2222-2222-222222222222";
+      testDbStore.athleteProfiles[0].id = profileId;
+
+      const res = await request(app)
+        .patch(`/athletes/${profileId}`)
+        .set("Authorization", athleteToken)
+        .send({
+          weightClass: "90kg",
+          city: "Karachi",
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.id).toBe(profileId);
+      expect(res.body.data.city).toBe("Karachi");
+      expect(res.body.data.weightClass).toBe("90kg");
+
+      // Verify the real store row changed
+      const stored = testDbStore.athleteProfiles.find((p) => p.id === profileId);
+      expect(stored?.city).toBe("Karachi");
+      expect(stored?.weightClass).toBe("90kg");
+    });
+
+    it("should refuse an another athlete updating someone else's profile by profile id", async () => {
+      const profileId = "22222222-2222-2222-2222-222222222222";
+      testDbStore.athleteProfiles[0].id = profileId;
+      testDbStore.athleteProfiles[0].displayName = "Original Owner";
+
+      const otherAthleteId = "33333333-3333-3333-3333-333333333333";
+      testDbStore.users.push({
+        id: otherAthleteId,
+        email: "other-athlete@armsphere.com",
+        username: "other_athlete",
+        role: UserRole.ATHLETE,
+        fullName: "Other Athlete",
+        isActive: true,
+      });
+      const otherToken = `Bearer ${generateAccessToken(
+        otherAthleteId,
+        "other-athlete@armsphere.com",
+        UserRole.ATHLETE,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      const res = await request(app)
+        .patch(`/athletes/${profileId}`)
+        .set("Authorization", otherToken)
+        .send({
+          displayName: "HACKED BY OTHER ATHLETE",
+        });
+
+      expect(res.status).toBe(403);
+
+      // Store must be unchanged
+      const stored = testDbStore.athleteProfiles.find((p) => p.id === profileId);
+      expect(stored?.displayName).toBe("Original Owner");
+    });
   });
 
   describe("GET /athletes/search - Search & Filters", () => {

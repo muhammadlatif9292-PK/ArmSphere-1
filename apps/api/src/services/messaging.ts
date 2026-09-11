@@ -128,6 +128,12 @@ export class MessagingService {
   }) {
     logger.info(params, "Posting message to conversation");
 
+    // Guard empty/whitespace-only content so no empty row can ever be
+    // inserted, regardless of which caller path reaches the service.
+    if (!params.content || params.content.trim().length === 0) {
+      throw new BadRequestError("Message content must not be empty.");
+    }
+
     const [conv] = await db
       .select()
       .from(conversations)

@@ -174,7 +174,8 @@ export class TournamentController {
           weightClass: validated.weightClass,
           arm: validated.arm,
           notes: validated.notes
-        }
+        },
+        { userId: req.user!.id, role: req.user!.role }
       );
       res.status(201).json(registration);
     } catch (error) {

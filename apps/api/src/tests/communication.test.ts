@@ -275,6 +275,59 @@ describe("Sprint 7 - Notifications, Messaging & Communication Infrastructure Tes
       expect(unreadResp.body.data.totalUnread).toBe(1);
     });
 
+    it("should reject empty and whitespace-only message content with 400 and persist nothing", async () => {
+      const convResp = await request(app)
+        .post("/communication/conversations")
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({
+          participantId: refereeId,
+          type: "DIRECT",
+        });
+      expect(convResp.status).toBe(200);
+      const conversationId = convResp.body.data.conversation.id;
+
+      const before = testDbStore.messages.length;
+
+      // Empty string content
+      const emptyResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "" });
+      expect(emptyResp.status).toBe(400);
+      expect(testDbStore.messages.length).toBe(before);
+
+      // Whitespace-only content
+      const wsResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "   \t  " });
+      expect(wsResp.status).toBe(400);
+      expect(testDbStore.messages.length).toBe(before);
+
+      // Non-empty message must still succeed and persist a row
+      const okResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "Phase13 valid message" });
+      expect(okResp.status).toBe(201);
+      expect(testDbStore.messages.length).toBe(before + 1);
+    });
+
+    it("should reject empty content at the service layer even on direct calls", async () => {
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const before = testDbStore.messages.length;
+
+      await expect(
+        MessagingService.sendMessage({
+          conversationId: conv.conversation.id,
+          senderId: athleteId,
+          content: "   ",
+        })
+      ).rejects.toThrow(/must not be empty/);
+
+      expect(testDbStore.messages.length).toBe(before);
+    });
+
     it("should list conversations with correct ordering, user isolation, and unread counts", async () => {
       // 1. Setup Conversation A between Athlete and Referee
       const convA = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;

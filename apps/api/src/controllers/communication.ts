@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import { NotificationService, notificationMetrics } from "../services/notification.js";
 import { MessagingService } from "../services/messaging.js";
 import { AnnouncementService } from "../services/announcement.js";
@@ -214,13 +215,10 @@ export class CommunicationController {
       const senderId = (req as any).user.id;
       const { id } = req.params;
       const parsed = z.object({
-        content: z.string().min(1, "Message content must not be empty.").max(5000, "Message content is too long."),
-        attachments: z.array(z.object({
-          url: z.string().url(),
-          filename: z.string().min(1),
-          size: z.number().int().positive(),
-          mimeType: z.string().min(1),
-        })).optional(),
+        content: z.string()
+          .max(5000, "Message content is too long.")
+          .refine((s) => s.trim().length > 0, { message: "Message content must not be empty." }),
+        attachments: z.array(z.any()).optional(),
       }).safeParse(req.body);
       if (!parsed.success) throw parsed.error;
       const { content, attachments } = parsed.data;
