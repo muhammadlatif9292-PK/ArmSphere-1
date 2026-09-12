@@ -96,6 +96,7 @@ export class TournamentService {
     city: string;
     venue: string;
     capacity: number;
+    registrationFeeCents?: number;
     organizerId?: string;
     paymentMethod?: string;
     paymentQrImageUrl?: string;
@@ -125,6 +126,7 @@ export class TournamentService {
         city: data.city,
         venue: data.venue,
         capacity: data.capacity,
+        registrationFeeCents: data.registrationFeeCents ?? null,
         status: "DRAFT",
         organizerId: data.organizerId || null,
         paymentMethod: data.paymentMethod || "STRIPE",

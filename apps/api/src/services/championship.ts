@@ -446,11 +446,15 @@ export class ChampionshipService {
    * Retrieves all non-vacated (active) championship titles with their current holder joined
    */
   static async getActiveTitles() {
-    return db.query.championshipTitles.findMany({
-      where: not(isNull(championshipTitles.activeChampionId)),
-      with: {
-        activeChampion: true,
-      },
+    const titles = await db
+      .select()
+      .from(championshipTitles)
+      .where(not(isNull(championshipTitles.activeChampionId)));
+    const champions = await db.select().from(athleteProfiles);
+    const byId = new Map((champions as any[]).map((p: any) => [p.id, p]));
+    return (titles as any[]).map((title: any) => {
+      const activeChampion = byId.get(title.activeChampionId) || null;
+      return { ...title, activeChampion, activeChampionName: activeChampion?.displayName ?? null };
     });
   }
 
@@ -458,17 +462,31 @@ export class ChampionshipService {
    * Retrieves title challenges, optionally filtered by status
    */
   static async getChallenges(filters?: { status?: string }) {
-    const whereClause = filters?.status
-      ? eq(championshipChallenges.status, filters.status)
-      : undefined;
-
-    return db.query.championshipChallenges.findMany({
-      where: whereClause,
-      with: {
-        title: true,
-        challenger: true,
-      },
-      orderBy: [desc(championshipChallenges.createdAt)],
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(championshipChallenges.status, filters.status));
+    }
+    const rows = (await db
+      .select()
+      .from(championshipChallenges)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(championshipChallenges.createdAt))) as any[];
+    const [allTitles, allProfiles] = await Promise.all([
+      db.select().from(championshipTitles),
+      db.select().from(athleteProfiles),
+    ]);
+    const titleById = new Map((allTitles as any[]).map((t: any) => [t.id, t]));
+    const profileById = new Map((allProfiles as any[]).map((p: any) => [p.id, p]));
+    return rows.map((c: any) => {
+      const title = titleById.get(c.titleId) || null;
+      const challenger = profileById.get(c.challengerId) || null;
+      return {
+        ...c,
+        title,
+        titleName: title?.name ?? null,
+        challenger,
+        challengerName: challenger?.displayName ?? null,
+      };
     });
   }
 }

@@ -208,6 +208,205 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
       expect(cancelResponse.status).toBe(200);
       expect(cancelResponse.body.status).toBe("CANCELLED");
     });
+
+    it("should persist registrationFeeCents when creating a paid event through the API", async () => {
+      const payload = {
+        name: "Paid API Cup",
+        registrationStart: "2026-07-01T00:00:00Z",
+        registrationEnd: "2026-07-15T23:59:59Z",
+        startDate: "2026-08-01T08:00:00Z",
+        endDate: "2026-08-03T18:00:00Z",
+        province: "Ontario",
+        city: "Toronto",
+        venue: "Metro Toronto Convention Centre",
+        capacity: 100,
+        registrationFeeCents: 5000,
+        paymentMethod: "MANUAL_QR"
+      };
+
+      const response = await request(app)
+        .post("/tournaments/events")
+        .send(payload)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+
+      expect(response.status).toBe(201);
+      expect(response.body.registrationFeeCents).toBe(5000);
+      expect(response.body.paymentMethod).toBe("MANUAL_QR");
+
+      // Direct store ("DB") verification: the persisted row keeps the fee
+      const created = testDbStore.events.find((e) => e.name === "Paid API Cup");
+      expect(created.registrationFeeCents).toBe(5000);
+    });
+
+    it("should persist a nullable registration fee for free events", async () => {
+      const payload = {
+        name: "Free Community Cup",
+        registrationStart: "2026-07-01T00:00:00Z",
+        registrationEnd: "2026-07-15T23:59:59Z",
+        startDate: "2026-08-01T08:00:00Z",
+        endDate: "2026-08-02T18:00:00Z",
+        province: "Ontario",
+        city: "Ottawa",
+        venue: "Community Hall",
+        capacity: 50
+      };
+
+      const response = await request(app)
+        .post("/tournaments/events")
+        .send(payload)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+
+      expect(response.status).toBe(201);
+      expect(response.body.registrationFeeCents).toBeNull();
+
+      const created = testDbStore.events.find((e) => e.name === "Free Community Cup");
+      expect(created.registrationFeeCents).toBeNull();
+    });
+
+    it("should persist registrationFeeCents through editEvent", async () => {
+      testDbStore.events.push({
+        id: UUID_EVENT_DRAFT,
+        name: "Fee Editable Event",
+        registrationStart: new Date("2026-07-01"),
+        registrationEnd: new Date("2026-07-15"),
+        startDate: new Date("2026-08-01"),
+        endDate: new Date("2026-08-02"),
+        province: "Ontario",
+        city: "Toronto",
+        venue: "Old Gym",
+        capacity: 50,
+        registrationFeeCents: 1000,
+        status: "DRAFT"
+      });
+
+      const response = await request(app)
+        .put(`/tournaments/events/${UUID_EVENT_DRAFT}`)
+        .send({ registrationFeeCents: 5000 })
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+
+      expect(response.status).toBe(200);
+      expect(response.body.registrationFeeCents).toBe(5000);
+
+      const stored = testDbStore.events.find((e) => e.id === UUID_EVENT_DRAFT);
+      expect(stored.registrationFeeCents).toBe(5000);
+    });
+  });
+
+  // ==========================================
+  // 1b. MANUAL_QR paid registration through normal API event creation
+  // ==========================================
+  describe("MANUAL_QR paid registration (event created through API)", () => {
+    let manualQrEventId: string;
+
+    beforeEach(async () => {
+      testDbStore.payments = [];
+      testDbStore.auditEvents = [];
+
+      const create = await request(app)
+        .post("/tournaments/events")
+        .send({
+          name: "API Manual QR Paid Cup",
+          registrationStart: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          registrationEnd: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),
+          startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 40).toISOString(),
+          endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 42).toISOString(),
+          province: "Ontario",
+          city: "Ottawa",
+          venue: "Community Hall",
+          capacity: 50,
+          registrationFeeCents: 5000,
+          paymentMethod: "MANUAL_QR",
+          paymentQrImageUrl: "https://cdn.example.com/qr/api-manual.png"
+        })
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+
+      expect(create.status).toBe(201);
+      expect(create.body.registrationFeeCents).toBe(5000);
+      manualQrEventId = create.body.id;
+
+      const publish = await request(app)
+        .post(`/tournaments/events/${manualQrEventId}/publish`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR));
+      expect(publish.status).toBe(200);
+      expect(publish.body.status).toBe("PUBLISHED");
+    });
+
+    it("produces PENDING_PAYMENT without any Stripe clientSecret or payment row", async () => {
+      const response = await request(app)
+        .post("/tournaments/registrations")
+        .send({
+          eventId: manualQrEventId,
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "70KG",
+          arm: "RIGHT"
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+
+      expect(response.status).toBe(201);
+      expect(response.body.status).toBe("PENDING_PAYMENT");
+      expect(response.body.clientSecret).toBeUndefined();
+
+      // Stripe must not have been invoked: no payments row was created
+      expect(testDbStore.payments.length).toBe(0);
+
+      const storedReg = testDbStore.eventRegistrations.find((r) => r.eventId === manualQrEventId);
+      expect(storedReg.status).toBe("PENDING_PAYMENT");
+    });
+
+    it("rejects a duplicate registration for the same athlete", async () => {
+      await request(app)
+        .post("/tournaments/registrations")
+        .send({
+          eventId: manualQrEventId,
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "70KG",
+          arm: "RIGHT"
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+
+      const dup = await request(app)
+        .post("/tournaments/registrations")
+        .send({
+          eventId: manualQrEventId,
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "70KG",
+          arm: "RIGHT"
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+
+      expect(dup.status).toBe(400);
+
+      const rows = testDbStore.eventRegistrations.filter((r) => r.eventId === manualQrEventId);
+      expect(rows.length).toBe(1);
+    });
+
+    it("does not let the athlete confirm payment or approve their own registration", async () => {
+      const reg = await request(app)
+        .post("/tournaments/registrations")
+        .send({
+          eventId: manualQrEventId,
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "70KG",
+          arm: "RIGHT"
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+
+      const regId = reg.body.id;
+
+      const confirm = await request(app)
+        .post(`/tournaments/registrations/${regId}/confirm-manual-payment`)
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+      expect(confirm.status).toBe(403);
+
+      const approve = await request(app)
+        .post(`/tournaments/registrations/${regId}/approve`)
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+      expect(approve.status).toBe(403);
+    });
   });
 
   // ==========================================
