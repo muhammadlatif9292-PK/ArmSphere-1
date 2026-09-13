@@ -360,11 +360,41 @@ export class TournamentService {
       throw new NotFoundError("Registration record not found.");
     }
 
+    // F1 guard: a paid registration in PENDING_PAYMENT must complete payment
+    // confirmation first (MANUAL_QR confirm-manual-payment or Stripe webhook
+    // PENDING_PAYMENT -> PENDING). Approving unpaid registrations would let
+    // them reach APPROVED and enter seeding/bracket eligibility.
+    if (reg.status === "PENDING_PAYMENT") {
+      throw new BadRequestError("Payment must be confirmed before approving this registration.");
+    }
+
+    const wasAlreadyApproved = reg.status === "APPROVED";
+
     const [approvedReg] = await db
       .update(eventRegistrations)
       .set({ status: "APPROVED", approvedBy, updatedAt: new Date() })
       .where(eq(eventRegistrations.id, registrationId))
       .returning();
+
+    // Immutable governance audit trail for the privileged approval transition,
+    // consistent with MANUAL_PAYMENT_CONFIRMATION on the same entity.
+    // Skipped on idempotent re-approval so duplicate calls do not emit
+    // duplicate audit events.
+    if (!wasAlreadyApproved) {
+      await auditLedgerService.logEvent({
+        actorId: approvedBy,
+        entityType: "event_registrations",
+        entityId: registrationId,
+        action: "REGISTRATION_APPROVAL",
+        payload: {
+          approvedBy,
+          approvedAt: new Date().toISOString(),
+          eventId: reg.eventId,
+          athleteId: reg.athleteId,
+          previousStatus: reg.status,
+        },
+      });
+    }
 
     return approvedReg;
   }
