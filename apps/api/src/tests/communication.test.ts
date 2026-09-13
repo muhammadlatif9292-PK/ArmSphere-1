@@ -313,6 +313,70 @@ describe("Sprint 7 - Notifications, Messaging & Communication Infrastructure Tes
       expect(testDbStore.messages.length).toBe(before + 1);
     });
 
+    it("F4: should return 403 (not 400) when a non-participant sends a message, and persist nothing", async () => {
+      // Conversation is athlete <-> referee; admin is NOT a participant (and is SYSTEM_ADMIN,
+      // proving no role bypass). Previously this returned 400 BadRequest.
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const conversationId = conv.conversation.id;
+      const before = testDbStore.messages.length;
+
+      const resp = await request(app)
+        .post(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ content: "I must not be able to post this" });
+
+      expect(resp.status).toBe(403);
+      expect(testDbStore.messages.length).toBe(before);
+    });
+
+    it("F4: should return 403 (not 400) when a non-participant reads conversation messages", async () => {
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const conversationId = conv.conversation.id;
+
+      const resp = await request(app)
+        .get(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${adminToken}`);
+
+      expect(resp.status).toBe(403);
+    });
+
+    it("F4: participants can still send and read messages (success path unchanged)", async () => {
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const conversationId = conv.conversation.id;
+
+      const sendResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "Phase14 participant message" });
+      expect(sendResp.status).toBe(201);
+
+      const readResp = await request(app)
+        .get(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(readResp.status).toBe(200);
+      expect(Array.isArray(readResp.body.data)).toBe(true);
+      expect(readResp.body.data.some((m: any) => m.content === "Phase14 participant message")).toBe(true);
+    });
+
+    it("F4: genuine bad requests remain 400 and unknown conversations remain 404", async () => {
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const conversationId = conv.conversation.id;
+
+      // Participant but invalid content => still 400 (validation), not 403.
+      const emptyResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/messages`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "   " });
+      expect(emptyResp.status).toBe(400);
+
+      // Non-existent conversation => existing 404 behavior preserved.
+      const missingResp = await request(app)
+        .post(`/communication/conversations/does-not-exist/messages`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "hello there" });
+      expect(missingResp.status).toBe(404);
+    });
+
     it("should reject empty content at the service layer even on direct calls", async () => {
       const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
       const before = testDbStore.messages.length;

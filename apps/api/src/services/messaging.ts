@@ -153,7 +153,7 @@ export class MessagingService {
       ));
 
     if (!part) {
-      throw new BadRequestError("User is not a participant of this conversation");
+      throw new ForbiddenError("User is not a participant of this conversation");
     }
 
     // Check if there are any blocks between the sender and other participants in this conversation
@@ -465,7 +465,7 @@ export class MessagingService {
       ));
 
     if (!part) {
-      throw new BadRequestError("User is not authorized to read these conversation logs");
+      throw new ForbiddenError("User is not authorized to read these conversation logs");
     }
 
     const list = await db
