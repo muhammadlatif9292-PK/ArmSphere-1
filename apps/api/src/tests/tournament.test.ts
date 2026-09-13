@@ -4,6 +4,7 @@ import { testDbStore } from "./setup.js";
 import { app } from "../app.js";
 import { generateAccessToken } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
+import { TournamentService } from "../services/tournament.js";
 import { processedJobsTracker, resetJobTrackers } from "../services/scheduledJobs.js";
 import env from "../config/env.js";
 
@@ -23,6 +24,7 @@ function authHeader(role: UserRole = UserRole.ATHLETE, userId?: string) {
 const UUID_EVENT_DRAFT = "11111111-1111-1111-1111-111111111111";
 const UUID_EVENT_ACTIVE = "11111111-1111-1111-1111-222222222222";
 const UUID_EVENT_METRICS = "11111111-1111-1111-1111-333333333333";
+const UUID_EVENT_LIST = "11111111-1111-1111-1111-444444444444";
 
 const UUID_REG_ACTIVE = "22222222-2222-2222-2222-111111111111";
 const UUID_REG_MEMBER2 = "22222222-2222-2222-2222-222222222222";
@@ -952,7 +954,9 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
   describe("Event Queries", () => {
     beforeEach(() => {
       testDbStore.events.push({
-        id: "e-999",
+        // Must be a real UUID: GET /events/:id validates the route id and a real
+        // Postgres uuid column rejects non-UUID strings (the mock DB would not).
+        id: UUID_EVENT_LIST,
         name: "Mock Tournament List Event",
         startDate: new Date("2026-08-01"),
         endDate: new Date("2026-08-05"),
@@ -973,16 +977,37 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.some((e: any) => e.id === "e-999")).toBe(true);
+      expect(response.body.some((e: any) => e.id === UUID_EVENT_LIST)).toBe(true);
     });
 
     it("should retrieve single event details", async () => {
       const response = await request(app)
-        .get("/tournaments/events/e-999")
+        .get(`/tournaments/events/${UUID_EVENT_LIST}`)
         .set("Authorization", authHeader());
 
       expect(response.status).toBe(200);
       expect(response.body.name).toBe("Mock Tournament List Event");
+    });
+
+    it("F3: should return 400 (not 500) for a malformed event ID without querying the database", async () => {
+      const spy = vi.spyOn(TournamentService, "getEvent");
+
+      const response = await request(app)
+        .get("/tournaments/events/zzz")
+        .set("Authorization", authHeader());
+
+      expect(response.status).toBe(400);
+      expect(JSON.stringify(response.body)).not.toContain("invalid input syntax for type uuid");
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    it("F3: should preserve the existing 404 for a valid but nonexistent event UUID", async () => {
+      const response = await request(app)
+        .get("/tournaments/events/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")
+        .set("Authorization", authHeader());
+
+      expect(response.status).toBe(404);
     });
   });
 

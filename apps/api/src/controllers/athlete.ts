@@ -90,6 +90,10 @@ const getAthleteMatchesQuerySchema = z.object({
   offset: z.preprocess((val) => (val ? parseInt(val as string, 10) : 0), z.number().min(0)).default(0),
 });
 
+// Route IDs are PostgreSQL uuid columns; validate the shape before any query so a
+// malformed identifier returns a clean 400 instead of a database 500.
+const athleteIdParamSchema = z.string().uuid("Invalid athlete ID");
+
 export class AthleteController {
   /**
    * Create standard athlete profile
@@ -146,7 +150,8 @@ export class AthleteController {
    */
   static async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = req.params.id;
+      // Validate before any database access (including the block check below).
+      const id = athleteIdParamSchema.parse(req.params.id);
       const callerUserId = req.user!.id;
 
       if (callerUserId !== id) {

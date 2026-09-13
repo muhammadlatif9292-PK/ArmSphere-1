@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import request from "supertest";
 import { testDbStore } from "./setup.js";
 import { app } from "../app.js";
 import { UserRole } from "@armsphere/types";
 import { generateAccessToken } from "@armsphere/cryptography";
 import env from "../config/env.js";
+import { AthleteService } from "../services/athlete.js";
 
 describe("Athlete Profiles, Verification & Storage API Suite", () => {
   let athleteUser: any;
@@ -234,6 +235,36 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
         .set("Authorization", athleteToken);
 
       expect(res.status).toBe(404);
+    });
+
+    it("F3: should return 400 (not 500) for a malformed athlete ID without querying the database", async () => {
+      const spy = vi.spyOn(AthleteService, "getProfileByUserId");
+
+      const res = await request(app)
+        .get("/athletes/not-a-uuid")
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(400);
+      expect(JSON.stringify(res.body)).not.toContain("invalid input syntax for type uuid");
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+
+    it("F3: should return 400 for an empty/whitespace identifier", async () => {
+      const res = await request(app)
+        .get("/athletes/%20") // single space — malformed, not a UUID
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(400);
+      expect(JSON.stringify(res.body)).not.toContain("invalid input syntax for type uuid");
+    });
+
+    it("F3: should return 400 for a non-UUID numeric identifier", async () => {
+      const res = await request(app)
+        .get("/athletes/12345")
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(400);
     });
 
     it("should also convert profilePhoto to a presigned download URL when viewing another user's profile", async () => {

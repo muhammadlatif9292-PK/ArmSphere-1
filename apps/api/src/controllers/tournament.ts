@@ -91,6 +91,10 @@ const submitResultSchema = z.object({
   scoreLine: z.string().min(3)
 });
 
+// Route IDs are PostgreSQL uuid columns; validate the shape before any query so a
+// malformed identifier returns a clean 400 instead of a database 500.
+const eventIdParamSchema = z.string().uuid("Invalid event ID");
+
 export class TournamentController {
   // Event Management
   static async listEvents(req: Request, res: Response, next: NextFunction) {
@@ -109,7 +113,7 @@ export class TournamentController {
 
   static async getEvent(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = eventIdParamSchema.parse(req.params.id);
       const event = await TournamentService.getEvent(id);
       res.json(event);
     } catch (error) {
