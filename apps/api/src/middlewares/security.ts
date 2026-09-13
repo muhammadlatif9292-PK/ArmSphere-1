@@ -97,8 +97,15 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  // Exempt payments webhook from CSRF checks
-  if (req.path === "/payments/webhook") {
+  // Exempt the specific Stripe webhook endpoint from CSRF checks. The webhook
+  // is mounted at both /payments/webhook and /api/v1/payments/webhook, and
+  // Express strips router mount prefixes from req.path once a request enters
+  // that router (e.g. under /api/v1 the effective req.path inside the router
+  // is "/webhook"). Reconstruct the full request path from baseUrl + path and
+  // normalize the global /api/v1 prefix the same way the auth exemptions below
+  // do, so the stripped-signature webhook reaches its own HMAC verification.
+  const webhookPath = (req.baseUrl + req.path).replace(/^\/api\/v1/, "");
+  if (webhookPath === "/payments/webhook") {
     return next();
   }
 

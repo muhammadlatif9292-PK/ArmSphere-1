@@ -136,6 +136,68 @@ describe("ArmSphere Production Security Penetration Test Suite", () => {
         process.env.NODE_ENV = originalNodeEnv;
       }
     });
+
+    it("should exempt ONLY the Stripe webhook endpoint regardless of /api/v1 mount prefix", () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "production";
+      try {
+        // Every mounted form of the single webhook endpoint must reach its own
+        // signature verification instead of being blocked by CSRF.
+        const webhookRequests = [
+          { baseUrl: "/payments", path: "/webhook" }, // as seen inside the mounted router
+          { baseUrl: "/api/v1/payments", path: "/webhook" }, // inside the /api/v1-mounted router
+          { baseUrl: "", path: "/payments/webhook" }, // app-level, non-prefixed
+          { baseUrl: "", path: "/api/v1/payments/webhook" }, // app-level, prefixed
+        ];
+        for (const reqShape of webhookRequests) {
+          mockRequest.method = "POST";
+          mockRequest.baseUrl = reqShape.baseUrl as any;
+          mockRequest.path = reqShape.path;
+          mockRequest.cookies = {};
+          mockRequest.headers!["x-test-force-csrf"] = "true";
+
+          nextFunction = vi.fn() as any;
+          csrfProtection(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          expect(nextFunction).toHaveBeenCalled();
+          expect(mockResponse.status).not.toHaveBeenCalledWith(403);
+        }
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
+
+    it("should NOT widen the webhook exemption to other payment POST endpoints", () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "production";
+      try {
+        const protectedPaths = [
+          { baseUrl: "/payments", path: "/methods" },
+          { baseUrl: "/api/v1/payments", path: "/setup-intent" },
+          { baseUrl: "", path: "/payments" },
+        ];
+        for (const reqShape of protectedPaths) {
+          mockRequest.method = "POST";
+          mockRequest.baseUrl = reqShape.baseUrl as any;
+          mockRequest.path = reqShape.path;
+          mockRequest.cookies = {};
+          mockRequest.headers!["x-test-force-csrf"] = "true";
+
+          nextFunction = vi.fn() as any;
+          mockResponse.status = vi.fn().mockReturnThis();
+          mockResponse.json = vi.fn().mockReturnThis();
+          csrfProtection(mockRequest as Request, mockResponse as Response, nextFunction);
+
+          expect(nextFunction).not.toHaveBeenCalled();
+          expect(mockResponse.status).toHaveBeenCalledWith(403);
+          expect(mockResponse.json).toHaveBeenCalledWith(
+            expect.objectContaining({ error: "CSRF Validation Failed" })
+          );
+        }
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
   });
 
   describe("4. JWT Signature & Key Rotation Attacks", () => {

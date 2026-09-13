@@ -399,6 +399,103 @@ describe("Stripe Payment & Event Registration Test Suite", () => {
     expect(afterSecondWebhook.status).toBe("MUTATED_TEST_STATUS");
   });
 
+  describe("F2 Stripe Webhook CSRF WIRING (exemption reaches the handler)", () => {
+    // Force CSRF validation ON so these tests genuinely exercise the exemption
+    // path instead of the test-env shortcut inside csrfProtection.
+    const csrf = { "x-test-force-csrf": "true" };
+
+    it("A. /api/v1/payments/webhook with NO signature reaches the handler (400, NOT CSRF 403)", async () => {
+      const res = await request(app)
+        .post("/api/v1/payments/webhook")
+        .set(csrf)
+        .send({ type: "payment_intent.succeeded" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("Missing stripe-signature header");
+      expect(res.body.error).not.toBe("CSRF Validation Failed");
+    });
+
+    it("A2. non-prefixed /payments/webhook with NO signature also reaches the handler", async () => {
+      const res = await request(app)
+        .post("/payments/webhook")
+        .set(csrf)
+        .send({ type: "payment_intent.succeeded" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe("Missing stripe-signature header");
+    });
+
+    it("B. invalid Stripe signature reaches handler signature validation (400, NOT CSRF 403)", async () => {
+      const res = await request(app)
+        .post("/api/v1/payments/webhook")
+        .set({ ...csrf, "stripe-signature": "definitely-invalid-signature" })
+        .send({ type: "payment_intent.succeeded" });
+
+      expect(res.status).toBe(400);
+      expect(res.text).toContain("Webhook Error");
+      expect(res.text).toContain("Invalid signature");
+      expect(res.body.error || res.text).not.toBe("CSRF Validation Failed");
+    });
+
+    it("C. missing STRIPE_WEBHOOK_SECRET reaches the safe 503 configuration check", async () => {
+      const originalSecret = env.STRIPE_WEBHOOK_SECRET;
+      try {
+        (env as any).STRIPE_WEBHOOK_SECRET = "";
+        const res = await request(app)
+          .post("/api/v1/payments/webhook")
+          .set({ ...csrf, "stripe-signature": "mock-signature-here" })
+          .send({ type: "payment_intent.succeeded" });
+
+        expect(res.status).toBe(503);
+        expect(res.body.error).toBe("Webhook processing unavailable");
+        expect(res.body.error).not.toBe("CSRF Validation Failed");
+      } finally {
+        (env as any).STRIPE_WEBHOOK_SECRET = originalSecret;
+      }
+    });
+
+    it("D. valid signed webhook is processed with idempotency preserved", async () => {
+      const webhookPayload = {
+        eventId: "evt_f2_csrf_wiring_001",
+        type: "payment_intent.succeeded",
+        amount: 5000,
+        currency: "cad",
+        metadata: {},
+      };
+
+      const first = await request(app)
+        .post("/api/v1/payments/webhook")
+        .set({ ...csrf, "stripe-signature": "mock-signature-here" })
+        .send(webhookPayload);
+
+      expect(first.status).toBe(200);
+      expect(first.body.received).toBe(true);
+      expect(first.body.duplicate).toBeUndefined();
+
+      const second = await request(app)
+        .post("/api/v1/payments/webhook")
+        .set({ ...csrf, "stripe-signature": "mock-signature-here" })
+        .send(webhookPayload);
+
+      expect(second.status).toBe(200);
+      expect(second.body.duplicate).toBe(true);
+
+      const processed = testDbStore.processedStripeEvents.filter(e => e.id === "evt_f2_csrf_wiring_001");
+      expect(processed.length).toBe(1);
+    });
+
+    it("E. normal CSRF-protected POST endpoints remain protected (exemption is narrow)", async () => {
+      const res = await request(app)
+        .post("/api/v1/payments/setup-intent")
+        .set(csrf)
+        .send({});
+
+      // Without CSRF tokens (and no Bearer), CSRF rejects before the handler.
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe("CSRF Validation Failed");
+    });
+  });
+
   describe("Stripe Saved Payment Methods Endpoints", () => {
     it("should list payment methods, creating a Stripe customer if not exists", async () => {
       // 1. Initially athleteProfile has no stripeCustomerId
