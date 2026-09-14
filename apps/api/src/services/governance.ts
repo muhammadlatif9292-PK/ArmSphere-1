@@ -16,6 +16,7 @@ import {
   NotFoundError, 
   BadRequestError, 
   ForbiddenError, 
+  ConflictError,
   logger 
 } from "@armsphere/core";
 import { scheduleJob, SCHEDULED_JOB_TYPES, processedJobsTracker } from "./scheduledJobs.js";
@@ -289,12 +290,24 @@ export class GovernanceService {
     }
 
     // Only the dispute creator, the assigned reviewer, or federation staff may
-    // attach evidence to a dispute.
+    // attach evidence to a dispute. Canonical identity: the users-table row
+    // decides — the optional actorRole caller hint (JWT claim) is accepted
+    // for backward compatibility but is NEVER trusted for authorization.
+    // Fail-closed when the submitter row does not exist. No province/
+    // jurisdiction dimension applies here (unlike resolveDispute): evidence
+    // is participant-scoped, and no repository source — route (authenticate
+    // only, routes/governance.ts:28-32), schema, or history — evidences a
+    // province gate for evidence submission.
+    const [dbSubmitter] = await db.select().from(users).where(eq(users.id, submitterId)).limit(1);
+    if (!dbSubmitter) {
+      throw new NotFoundError("Evidence submitter not found");
+    }
+    const canonicalRole = (dbSubmitter as any).role as string;
     const isStaff =
       submitterId === dispute.creatorId ||
       submitterId === dispute.assignedReviewerId ||
       ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR", "COMPLIANCE_OFFICER", "REFEREE"].includes(
-        actorRole || ""
+        canonicalRole
       );
     if (!isStaff) {
       throw new ForbiddenError("Only the dispute creator, assigned reviewer, or federation staff can submit evidence.");
@@ -359,12 +372,25 @@ export class GovernanceService {
     }
 
     // Comments are limited to the dispute creator, the assigned reviewer, and
-    // federation staff — not arbitrary authenticated users.
+    // federation staff — not arbitrary authenticated users. Canonical
+    // identity: the users-table row decides — the optional actorRole caller
+    // hint (JWT claim) is accepted for backward compatibility but is NEVER
+    // trusted for authorization. Fail-closed when the author row does not
+    // exist. No province/jurisdiction dimension applies here (same as
+    // submitEvidence): comment authority is participant-scoped, and no
+    // repository source — route (authenticate only,
+    // routes/governance.ts:34-38), schema, or history — evidences a
+    // province gate for dispute comments.
+    const [dbAuthor] = await db.select().from(users).where(eq(users.id, authorId)).limit(1);
+    if (!dbAuthor) {
+      throw new NotFoundError("Comment author not found");
+    }
+    const canonicalRole = (dbAuthor as any).role as string;
     const isParticipant =
       authorId === dispute.creatorId ||
       authorId === dispute.assignedReviewerId ||
       ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR", "COMPLIANCE_OFFICER", "REFEREE"].includes(
-        actorRole || ""
+        canonicalRole
       );
     if (!isParticipant) {
       throw new ForbiddenError("Only dispute participants or federation staff can comment.");
@@ -388,8 +414,10 @@ export class GovernanceService {
     disputeId: string,
     resolutionDetails: string,
     decision: "RESOLVED" | "REJECTED",
-    actor: { id: string; role: string; province?: string }
+    actor: { id: string; role: string; province?: string } | string
   ): Promise<any> {
+    // Backward compatible: legacy callers pass a bare user-id string.
+    const actorId = typeof actor === "string" ? actor : actor.id;
     const [dispute] = await db
       .select()
       .from(disputes)
@@ -400,14 +428,80 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
-    // --- Provincial Jurisdiction Enforcement ---
-    // PROVINCIAL_DIRECTOR can only resolve disputes within their province
-    if (actor.role === "PROVINCIAL_DIRECTOR" && actor.province && dispute.province) {
-      if (dispute.province !== actor.province) {
-        throw new ForbiddenError(
-          `Provincial Director can only resolve disputes in their assigned province (${actor.province})`
-        );
+    // P0: terminal-state guard - re-resolution must not silently overwrite.
+    if (dispute.status === "RESOLVED" || dispute.status === "CLOSED") {
+      throw new ConflictError("Dispute has already been resolved");
+    }
+
+    // --- Resource-Aware Resolver Authorization (P0 IDOR fix) ---
+    // Canonical identity source: the users table row, never a caller-supplied
+    // role/province. Object-form actor.role / actor.province hints describe
+    // the request context only and are intentionally NOT trusted here.
+    const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (!dbActor) {
+      throw new NotFoundError("Resolver user not found");
+    }
+    const canonicalRole = (dbActor as any).role as string;
+    // Jurisdiction columns: staging schema carries BOTH users.province and
+    // users.regional_coverage (canonical per AdministrationService.inspectMatch,
+    // which enforces PROVINCIAL_DIRECTOR scope via regionalCoverage).
+    const actorJurisdiction =
+      (((dbActor as any).province as string | null | undefined) ??
+        ((dbActor as any).regionalCoverage as string | null | undefined) ??
+        null);
+
+    // Base role gate mirrors the route-level requireRole(...):
+    // REFEREE, PROVINCIAL_DIRECTOR, NATIONAL_DIRECTOR, SYSTEM_ADMIN.
+    // Evidence: routes/governance.ts resolve endpoint; service evidence /
+    // comment helpers treat creator + assignedReviewerId + these federation
+    // roles as dispute authority; admin-web GovernancePage canResolve gates on
+    // SYSTEM_ADMIN / NATIONAL_DIRECTOR / COMPLIANCE_OFFICER, but the live
+    // route gate (not COMPLIANCE_OFFICER) is the enforced boundary here, so
+    // the service must not invent a broader rule than the route allows.
+    const ALLOWED_RESOLVER_ROLES = [
+      "SYSTEM_ADMIN",
+      "NATIONAL_DIRECTOR",
+      "PROVINCIAL_DIRECTOR",
+      "REFEREE",
+    ];
+    if (!ALLOWED_RESOLVER_ROLES.includes(canonicalRole)) {
+      throw new ForbiddenError(
+        "Only SYSTEM_ADMIN, NATIONAL_DIRECTOR, PROVINCIAL_DIRECTOR, or assigned REFEREE reviewers may resolve disputes"
+      );
+    }
+
+    const isAssignedReviewer =
+      !!dispute.assignedReviewerId && dispute.assignedReviewerId === actorId;
+
+    if (canonicalRole === "SYSTEM_ADMIN" || canonicalRole === "NATIONAL_DIRECTOR") {
+      // Universal federation authority - no per-dispute scope required.
+    } else if (isAssignedReviewer) {
+      // Explicit per-dispute delegation via assignReviewer overrides
+      // provincial jurisdiction (same participant-authority model as
+      // submitEvidence/addComment, which treat assignedReviewerId as authority).
+    } else if (canonicalRole === "PROVINCIAL_DIRECTOR") {
+      // Same-province rule: a scoped dispute (province set) outside the
+      // director jurisdiction is forbidden. Fail-closed when the director
+      // has no jurisdiction assignment AND the dispute is scoped. Legacy
+      // unscoped disputes (province NULL) carry no scope to enforce and
+      // remain resolvable (backward compatible with existing fixtures).
+      if (dispute.province) {
+        if (!actorJurisdiction) {
+          throw new ForbiddenError(
+            "PROVINCIAL_DIRECTOR must have an assigned province to resolve disputes"
+          );
+        }
+        if (dispute.province !== actorJurisdiction) {
+          throw new ForbiddenError(
+            `Provincial Director can only resolve disputes in their assigned province (${actorJurisdiction})`
+          );
+        }
       }
+    } else {
+      // REFEREE who is not the assigned reviewer for THIS dispute.
+      throw new ForbiddenError(
+        "Only the assigned reviewer for this dispute may resolve it"
+      );
     }
 
     const [updated] = await db
@@ -420,7 +514,7 @@ export class GovernanceService {
       .where(eq(disputes.id, disputeId))
       .returning();
 
-    await this.logAuditEvent(actor.id, "DISPUTE", disputeId, `DISPUTE_${decision}`, { resolutionDetails });
+    await this.logAuditEvent(actorId, "DISPUTE", disputeId, `DISPUTE_${decision}`, { resolutionDetails });
 
     return updated;
   }
@@ -440,18 +534,36 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
-    // --- Provincial Jurisdiction Enforcement ---
-    // PROVINCIAL_DIRECTOR and REFEREE can only escalate disputes within their province
-    if (
-      (actor.role === "PROVINCIAL_DIRECTOR" || actor.role === "REFEREE") && 
-      actor.province && 
-      dispute.province
-    ) {
-      if (dispute.province !== actor.province) {
-        throw new ForbiddenError(
-          `${actor.role} can only handle disputes in their assigned province (${actor.province})`
-        );
-      }
+    // --- Escalation Authorization: creator-only (canonical identity) ---
+    // Source evidence: Phase-10 hardening commit message
+    // ("restrict escalation and appeal to the dispute creator",
+    // _p10_msg.txt:5); appealResolution() enforces creator-only
+    // (governance.ts:560-562); escalate route has NO requireRole gate
+    // (routes/governance.ts:47-51) because ANY authenticated creator
+    // (including ATHLETE) must reach this service; the existing
+    // governance test escalates with the creator competitorToken
+    // (tests/governance.test.ts:259-268). The pre-fix
+    // caller-supplied role/province jurisdiction stub trusted JWT
+    // hints and is removed: canonical users-row identity decides.
+    // Fail-closed on missing actor row (no userId/profileId confusion:
+    // actorId is the users.id that created the dispute).
+    const actorId = actor.id;
+    const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (!dbActor) {
+      throw new NotFoundError("Escalation actor not found");
+    }
+    if (actorId !== dispute.creatorId) {
+      throw new ForbiddenError("Only the dispute creator can escalate this dispute.");
+    }
+
+    // --- Escalation State-Machine Protection (preserve legacy behavior) ---
+    // Terminal states cannot be escalated; an already-ESCALATED dispute is
+    // a conflict (no silent overwrite, no duplicate audit event).
+    if (dispute.status === "RESOLVED" || dispute.status === "CLOSED" || dispute.status === "REJECTED") {
+      throw new ConflictError("A resolved dispute cannot be escalated");
+    }
+    if (dispute.status === "ESCALATED") {
+      throw new ConflictError("Dispute has already been escalated");
     }
 
     const [updated] = await db
@@ -464,7 +576,7 @@ export class GovernanceService {
       .where(eq(disputes.id, disputeId))
       .returning();
 
-    await this.logAuditEvent(actor.id, "DISPUTE", disputeId, "DISPUTE_ESCALATED", { escalationReason });
+    await this.logAuditEvent(actorId, "DISPUTE", disputeId, "DISPUTE_ESCALATED", { escalationReason });
 
     return updated;
   }
