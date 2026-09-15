@@ -600,8 +600,17 @@ export class GovernanceService {
       throw new BadRequestError("Only resolved or rejected disputes can be appealed");
     }
 
+    // Canonical identity source: verify actor exists in the users table.
+    // Caller-supplied role/province hints describe the request context only and
+    // are intentionally NOT trusted. Fail-closed when the actor does not exist.
+    const actorId = actor.id;
+    const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (!dbActor) {
+      throw new NotFoundError("Appeal actor not found");
+    }
+
     // Only the original filer may appeal a decision on their dispute.
-    if (actor.id !== dispute.creatorId) {
+    if (actorId !== dispute.creatorId) {
       throw new ForbiddenError("Only the dispute creator can appeal this resolution.");
     }
 
@@ -619,7 +628,7 @@ export class GovernanceService {
       .where(eq(disputes.id, disputeId))
       .returning();
 
-    await this.logAuditEvent(actor.id, "DISPUTE", disputeId, "DISPUTE_APPEALED", { appealReason });
+    await this.logAuditEvent(actorId, "DISPUTE", disputeId, "DISPUTE_APPEALED", { appealReason });
 
     return updated;
   }
