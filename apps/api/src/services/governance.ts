@@ -244,16 +244,63 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
-    // --- Provincial Jurisdiction Enforcement ---
-    // REFEREE and PROVINCIAL_DIRECTOR can only assign/review disputes
-    // within their assigned province.
-    const requesterRole = dispute.assignedReviewerId 
-      ? "PROVINCIAL_DIRECTOR" // simplified - real implementation would check actor's province
-      : "SYSTEM_ADMIN"; // placeholder
+    // Terminal-state guard: once resolved or closed, disputes cannot be assigned to a reviewer
+    if (dispute.status === "RESOLVED" || dispute.status === "CLOSED") {
+      throw new ConflictError("Dispute has already been resolved");
+    }
 
-    // For now, validate at route layer; this is a guard against cross-province assignment
-    if (dispute.province && requesterRole === "PROVINCIAL_DIRECTOR") {
-      // The actual province check will be enforced at the route middleware level
+    // --- Canonical Actor Identity & Authorization ---
+    // Canonical identity source: the users table row, never caller-supplied
+    // role/province claims. Fail-closed when the actor row does not exist.
+    const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (!dbActor) {
+      throw new NotFoundError("Assigning actor not found");
+    }
+    const canonicalRole = (dbActor as any).role as string;
+    const actorJurisdiction =
+      (((dbActor as any).province as string | null | undefined) ??
+        ((dbActor as any).regionalCoverage as string | null | undefined) ??
+        null);
+
+    // Route-level and service-level authorized roles for reviewer assignment:
+    // SYSTEM_ADMIN, NATIONAL_DIRECTOR, PROVINCIAL_DIRECTOR.
+    const ALLOWED_ASSIGNER_ROLES = [
+      "SYSTEM_ADMIN",
+      "NATIONAL_DIRECTOR",
+      "PROVINCIAL_DIRECTOR",
+    ];
+    if (!ALLOWED_ASSIGNER_ROLES.includes(canonicalRole)) {
+      throw new ForbiddenError(
+        "Only SYSTEM_ADMIN, NATIONAL_DIRECTOR, or PROVINCIAL_DIRECTOR may assign dispute reviewers"
+      );
+    }
+
+    // --- Provincial Jurisdiction Enforcement ---
+    if (canonicalRole === "PROVINCIAL_DIRECTOR") {
+      // Same-province rule: a scoped dispute (province set) outside the
+      // director's assigned province/coverage is forbidden. Fail-closed when
+      // the director has no jurisdiction assignment AND the dispute is scoped.
+      if (dispute.province) {
+        if (!actorJurisdiction) {
+          throw new ForbiddenError(
+            "PROVINCIAL_DIRECTOR must have an assigned province to assign reviewers"
+          );
+        }
+        if (dispute.province !== actorJurisdiction) {
+          throw new ForbiddenError(
+            `Provincial Director can only assign reviewers for disputes in their assigned province (${actorJurisdiction})`
+          );
+        }
+      }
+    }
+
+    // --- Reviewer Verification ---
+    const [dbReviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (!dbReviewer) {
+      throw new NotFoundError("Reviewer not found");
+    }
+    if ((dbReviewer as any).isActive === false) {
+      throw new BadRequestError("Target reviewer is inactive");
     }
 
     const [updated] = await db
