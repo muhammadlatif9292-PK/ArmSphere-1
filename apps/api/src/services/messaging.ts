@@ -216,6 +216,10 @@ export class MessagingService {
    * Edit a message
    */
   static async editMessage(userId: string, messageId: string, newContent: string) {
+    if (!newContent || typeof newContent !== "string" || !newContent.trim()) {
+      throw new BadRequestError("Message content cannot be empty");
+    }
+
     const [msg] = await db
       .select()
       .from(messages)
@@ -226,7 +230,7 @@ export class MessagingService {
     }
 
     if (msg.senderId !== userId) {
-      throw new BadRequestError("Only the original sender can edit this message");
+      throw new ForbiddenError("Only the original sender can edit this message");
     }
 
     if (msg.isDeleted) {
@@ -236,7 +240,7 @@ export class MessagingService {
     const [updated] = await db
       .update(messages)
       .set({
-        content: newContent,
+        content: newContent.trim(),
         isEdited: true,
         updatedAt: new Date(),
       })
@@ -260,7 +264,11 @@ export class MessagingService {
     }
 
     if (msg.senderId !== userId) {
-      throw new BadRequestError("Only the original sender can delete this message");
+      throw new ForbiddenError("Only the original sender can delete this message");
+    }
+
+    if (msg.isDeleted) {
+      throw new BadRequestError("Cannot delete an already deleted message");
     }
 
     const [updated] = await db
@@ -281,6 +289,16 @@ export class MessagingService {
    * Broadcast typing state
    */
   static async setTypingIndicator(userId: string, conversationId: string, isTyping: boolean) {
+    const [conv] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.id, conversationId))
+      .limit(1);
+
+    if (!conv) {
+      throw new NotFoundError("Conversation not found");
+    }
+
     // Verify participation
     const [part] = await db
       .select()
@@ -291,35 +309,52 @@ export class MessagingService {
       ));
 
     if (!part) {
-      throw new BadRequestError("User not a participant");
+      throw new ForbiddenError("User is not a participant of this conversation");
     }
 
-    return { userId, conversationId, isTyping };
+    return { userId, conversationId, isTyping: Boolean(isTyping) };
   }
 
   /**
    * Broadcast presence status
    */
   static async setPresence(userId: string, isOnline: boolean) {
-    return { userId, isOnline };
+    return { userId, isOnline: Boolean(isOnline) };
   }
 
   /**
    * Read mark receipt update
    */
   static async markConversationAsRead(userId: string, conversationId: string) {
-    const [updated] = await db
+    const [conv] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.id, conversationId))
+      .limit(1);
+
+    if (!conv) {
+      throw new NotFoundError("Conversation not found");
+    }
+
+    const [part] = await db
+      .select()
+      .from(conversationParticipants)
+      .where(and(
+        eq(conversationParticipants.conversationId, conversationId),
+        eq(conversationParticipants.userId, userId)
+      ));
+
+    if (!part) {
+      throw new ForbiddenError("User is not a participant of this conversation");
+    }
+
+    await db
       .update(conversationParticipants)
       .set({ lastReadAt: new Date() })
       .where(and(
         eq(conversationParticipants.conversationId, conversationId),
         eq(conversationParticipants.userId, userId)
-      ))
-      .returning();
-
-    if (!updated) {
-      throw new NotFoundError("Participant registration not found");
-    }
+      ));
 
     return { success: true };
   }

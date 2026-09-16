@@ -501,6 +501,115 @@ describe("Sprint 7 - Notifications, Messaging & Communication Infrastructure Tes
       expect(presenceResp.status).toBe(200);
       expect(presenceResp.body.data.isOnline).toBe(true);
     });
+
+    it("should enforce authorization: non-sender cannot edit or delete messages (403)", async () => {
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const msg = await MessagingService.sendMessage({
+        conversationId: conv.conversation.id,
+        senderId: athleteId,
+        content: "Original Athlete Content",
+      });
+
+      // 1. Referee (other participant) attempts to edit -> 403 Forbidden
+      const refEditResp = await request(app)
+        .put(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({ content: "Hacked by Referee" });
+      expect(refEditResp.status).toBe(403);
+      expect(testDbStore.messages.find((m: any) => m.id === msg.id).content).toBe("Original Athlete Content");
+
+      // 2. Admin (non-participant, privileged role) attempts to edit -> 403 Forbidden
+      const adminEditResp = await request(app)
+        .put(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ content: "Hacked by Admin" });
+      expect(adminEditResp.status).toBe(403);
+      expect(testDbStore.messages.find((m: any) => m.id === msg.id).content).toBe("Original Athlete Content");
+
+      // 3. Referee attempts to delete -> 403 Forbidden
+      const refDeleteResp = await request(app)
+        .delete(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(refDeleteResp.status).toBe(403);
+      expect(testDbStore.messages.find((m: any) => m.id === msg.id).isDeleted).toBe(false);
+
+      // 4. Nonexistent message edit/delete -> 404
+      const missingEdit = await request(app)
+        .put("/communication/messages/non-existent-msg-id")
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "Updated" });
+      expect(missingEdit.status).toBe(404);
+
+      const missingDelete = await request(app)
+        .delete("/communication/messages/non-existent-msg-id")
+        .set("Authorization", `Bearer ${athleteToken}`);
+      expect(missingDelete.status).toBe(404);
+
+      // 5. Empty content on edit -> 400
+      const emptyEdit = await request(app)
+        .put(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "   " });
+      expect(emptyEdit.status).toBe(400);
+
+      // 6. Legitimate owner edit and delete still succeed (200)
+      const validEdit = await request(app)
+        .put(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "Legitimately Edited" });
+      expect(validEdit.status).toBe(200);
+      expect(validEdit.body.data.content).toBe("Legitimately Edited");
+
+      const validDelete = await request(app)
+        .delete(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${athleteToken}`);
+      expect(validDelete.status).toBe(200);
+      expect(validDelete.body.data.isDeleted).toBe(true);
+
+      // 7. Attempting to edit an already deleted message -> 400
+      const editAfterDelete = await request(app)
+        .put(`/communication/messages/${msg.id}`)
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ content: "Re-edit" });
+      expect(editAfterDelete.status).toBe(400);
+    });
+
+    it("should enforce authorization: non-participant cannot set typing or mark read (403)", async () => {
+      const conv = await MessagingService.getOrCreateConversation(athleteId, refereeId) as any;
+      const conversationId = conv.conversation.id;
+
+      // 1. Non-participant (admin) setting typing indicator -> 403 Forbidden
+      const typingResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/typing`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ isTyping: true });
+      expect(typingResp.status).toBe(403);
+
+      // 2. Non-participant (admin) marking conversation as read -> 403 Forbidden
+      const readResp = await request(app)
+        .post(`/communication/conversations/${conversationId}/read`)
+        .set("Authorization", `Bearer ${adminToken}`);
+      expect(readResp.status).toBe(403);
+
+      // 3. Nonexistent conversation -> 404 Not Found
+      const missingTyping = await request(app)
+        .post("/communication/conversations/non-existent-conv/typing")
+        .set("Authorization", `Bearer ${athleteToken}`)
+        .send({ isTyping: true });
+      expect(missingTyping.status).toBe(404);
+
+      const missingRead = await request(app)
+        .post("/communication/conversations/non-existent-conv/read")
+        .set("Authorization", `Bearer ${athleteToken}`);
+      expect(missingRead.status).toBe(404);
+
+      // 4. Valid participant marking as read -> 200 OK
+      const validRead = await request(app)
+        .post(`/communication/conversations/${conversationId}/read`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(validRead.status).toBe(200);
+      expect(validRead.body.success).toBe(true);
+    });
   });
 
   // =========================================================================
