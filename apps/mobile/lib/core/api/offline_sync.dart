@@ -47,6 +47,13 @@ class OfflineSyncManager {
     for (final item in queue) {
       final itemId = item['id']?.toString() ?? '';
       final retryCount = (item['retryCount'] as num?)?.toInt() ?? 0;
+
+      // Poison pill eviction: if an item repeatedly fails 10 times, discard it
+      // to avoid permanent queue blocking and resource exhaustion.
+      if (retryCount >= 10) {
+        await hiveStorage.removeQueueItem(itemId);
+        continue;
+      }
       
       // Implement Exponential Backoff: delay retry if item failed previously
       if (retryCount > 0) {
@@ -110,12 +117,16 @@ class OfflineSyncManager {
       }
       return false;
     } on DioException catch (e) {
+      int? statusCode = e.response?.statusCode;
       if (e.error is ApiException) {
-        final apiEx = e.error as ApiException;
-        // In case of validation or semantic rejection, drop item to avoid deadlock block
-        if (apiEx.status == 400 || apiEx.status == 422 || apiEx.status == 409) {
-          return true; // Resolved (discard bad offline input state safely)
-        }
+        statusCode = (e.error as ApiException).status;
+      }
+      // In case of client validation failure (400), deleted entity (404),
+      // unprocessable payload (422), or processed duplicate (409),
+      // drop the item from the queue so unrecoverable mutations don't choke sync.
+      if (statusCode != null &&
+          (statusCode == 400 || statusCode == 404 || statusCode == 422 || statusCode == 409)) {
+        return true; // Resolved (discard unrecoverable/bad offline mutation safely)
       }
       return false;
     } catch (_) {

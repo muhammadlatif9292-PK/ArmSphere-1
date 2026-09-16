@@ -63,7 +63,7 @@ class DioClient {
   final Connectivity connectivity;
   final _uuid = const Uuid();
   bool _isRefreshing = false;
-  final List<void Function(String token)> _refreshQueue = [];
+  final List<Completer<String>> _refreshQueue = [];
 
   DioClient({
     required this.secureStorage,
@@ -228,7 +228,27 @@ class DioClient {
                 final replayedResponse = await dio.fetch(requestOptions);
                 return handler.resolve(replayedResponse);
               } catch (refreshErr) {
-                // Token refresh failed - invalidate session and reject
+                // Distinguish transient network failure from genuine auth expiry
+                bool isNetworkError = false;
+                if (refreshErr is DioException) {
+                  isNetworkError = refreshErr.type == DioExceptionType.connectionError ||
+                      refreshErr.type == DioExceptionType.connectionTimeout ||
+                      refreshErr.type == DioExceptionType.sendTimeout ||
+                      refreshErr.type == DioExceptionType.receiveTimeout;
+                } else if (refreshErr is OfflineException) {
+                  isNetworkError = true;
+                }
+
+                if (isNetworkError) {
+                  // Transient network error: PRESERVE session. Return connection error.
+                  return handler.reject(DioException(
+                    requestOptions: requestOptions,
+                    error: OfflineException('Connection lost during token refresh. Session preserved.'),
+                    type: DioExceptionType.connectionError,
+                  ));
+                }
+
+                // Definitive token refresh failure - invalidate session and reject
                 await secureStorage.clearSession();
                 return handler.reject(DioException(
                   requestOptions: requestOptions,
@@ -264,9 +284,7 @@ class DioClient {
     if (_isRefreshing) {
       // Queue up and wait for the refresh call currently in progress
       final completer = Completer<String>();
-      _refreshQueue.add((token) {
-        completer.complete(token);
-      });
+      _refreshQueue.add(completer);
       return completer.future;
     }
 
@@ -275,12 +293,20 @@ class DioClient {
     try {
       final refreshToken = await secureStorage.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
-        throw Exception('No refresh token available');
+        throw ApiException(
+          type: 'auth:missing-refresh-token',
+          title: 'Missing Refresh Token',
+          status: 401,
+          detail: 'No refresh token available.',
+        );
       }
 
       // Create a clean standalone Dio instance to make the refresh request
       final refreshDio = Dio(BaseOptions(
         baseUrl: dio.options.baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        sendTimeout: const Duration(seconds: 10),
         contentType: 'application/json',
       ));
       
@@ -289,11 +315,17 @@ class DioClient {
       });
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data is Map<String, dynamic>
+        final payload = response.data is Map<String, dynamic>
             ? response.data as Map<String, dynamic>
             : Map<String, dynamic>.from(response.data as Map);
-        final newAccessToken = data['accessToken']?.toString() ?? '';
-        final newRefreshToken = data['refreshToken']?.toString() ?? '';
+
+        // Handle both nested data object and flattened token response
+        final tokenMap = payload['data'] is Map
+            ? Map<String, dynamic>.from(payload['data'] as Map)
+            : payload;
+
+        final newAccessToken = tokenMap['accessToken']?.toString() ?? '';
+        final newRefreshToken = tokenMap['refreshToken']?.toString() ?? '';
 
         if (newAccessToken.isNotEmpty) {
           await secureStorage.setAccessToken(newAccessToken);
@@ -302,16 +334,29 @@ class DioClient {
           }
 
           // Complete queued requests
-          for (final callback in _refreshQueue) {
-            callback(newAccessToken);
+          for (final completer in _refreshQueue) {
+            if (!completer.isCompleted) {
+              completer.complete(newAccessToken);
+            }
           }
           _refreshQueue.clear();
           return newAccessToken;
         }
       }
       
-      throw Exception('Invalid token response from server');
+      throw ApiException(
+        type: 'auth:invalid-token-response',
+        title: 'Invalid Token Response',
+        status: 401,
+        detail: 'Invalid token response from server.',
+      );
     } catch (err) {
+      // Broadcast error to all queued callers so none hang indefinitely
+      for (final completer in _refreshQueue) {
+        if (!completer.isCompleted) {
+          completer.completeError(err);
+        }
+      }
       _refreshQueue.clear();
       rethrow;
     } finally {
