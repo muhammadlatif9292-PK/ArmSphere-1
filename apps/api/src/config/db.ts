@@ -4,10 +4,12 @@ import * as schema from "@armsphere/db-schema";
 import env from "./env.js";
 
 // Database Pool configuration using pg client
+// Neon free tier / PgBouncer pooler recommendation: bound max connections to 10
+// to prevent exhausting free-tier pool limits across serverless and app instances.
 const maxConnections = env.IS_SERVERLESS
   ? 1
   : env.NODE_ENV === "production"
-  ? 20
+  ? 10
   : 5;
 
 export const pool = new pg.Pool({
@@ -25,7 +27,7 @@ export const pool = new pg.Pool({
       : false,
   max: maxConnections,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 15000,
 });
 
 pool.on("error", (err) => {

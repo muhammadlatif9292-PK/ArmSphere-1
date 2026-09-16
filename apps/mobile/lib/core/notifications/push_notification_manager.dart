@@ -10,11 +10,13 @@ import 'package:uuid/uuid.dart';
 import '../providers/state_providers.dart';
 import '../routing/app_router.dart';
 
-// Top-level background message handler
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // If you're going to use other Firebase services here, make sure to initialize Firebase first.
-  await Firebase.initializeApp();
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (_) {}
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
@@ -49,15 +51,22 @@ class PushNotificationManager {
       return;
     }
 
+    // Always initialize local notifications for foreground and in-app display
+    await _initializeLocalNotifications();
+
     try {
-      // Initialize Firebase App
-      await Firebase.initializeApp();
-      
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
+    } catch (e) {
+      debugPrint("PushNotificationManager: Firebase unavailable or unconfigured ($e). In-app notifications active.");
+      _initialized = true;
+      return;
+    }
+
+    try {
       // Set the background messaging handler early on, as a top-level function
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-      // Initialize local notifications for foreground display
-      await _initializeLocalNotifications();
 
       // Request permissions
       await requestPermissions();
@@ -98,8 +107,8 @@ class PushNotificationManager {
       _initialized = true;
       debugPrint("PushNotificationManager initialized successfully.");
     } catch (e) {
-      debugPrint("PushNotificationManager initialization failed: $e");
-      debugPrint("Ensure you have placed google-services.json (Android) and GoogleService-Info.plist (iOS) in respective platform folders.");
+      debugPrint("PushNotificationManager listeners registration warning: $e");
+      _initialized = true;
     }
   }
 
@@ -138,6 +147,10 @@ class PushNotificationManager {
 
   Future<void> requestPermissions() async {
     try {
+      if (Firebase.apps.isEmpty) {
+        debugPrint("PushNotificationManager: requestPermissions skipped (Firebase not initialized)");
+        return;
+      }
       final messaging = FirebaseMessaging.instance;
       
       // FCM request permissions
@@ -165,6 +178,10 @@ class PushNotificationManager {
   }
 
   Future<void> registerCurrentDevice() async {
+    if (Firebase.apps.isEmpty) {
+      debugPrint("PushNotificationManager: registerCurrentDevice skipped (Firebase not initialized)");
+      return;
+    }
     if (_cachedToken != null) {
       await _registerDeviceWithServer(_cachedToken!);
     } else {
@@ -181,6 +198,10 @@ class PushNotificationManager {
   }
 
   Future<void> deregisterCurrentDevice() async {
+    if (Firebase.apps.isEmpty) {
+      debugPrint("PushNotificationManager: deregisterCurrentDevice skipped (Firebase not initialized)");
+      return;
+    }
     try {
       final deviceId = await _getUniqueDeviceId();
       if (_widgetRef != null) {

@@ -3,6 +3,11 @@ import { z } from "zod";
 
 // Load environment variables from .env if present
 dotenv.config();
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: "../../.env" });
+  dotenv.config({ path: ".env.neon" });
+  dotenv.config({ path: "../../.env.neon" });
+}
 
 const isProduction = process.env.NODE_ENV === "production";
 const isTest = !!(process.env.VITEST || process.env.NODE_ENV === "test");
