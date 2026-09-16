@@ -29,7 +29,7 @@ curl http://localhost:3001/api/ready
 
 ### Database Configuration
 - **Provider:** Neon PostgreSQL (Managed)
-- **Host:** `ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech`
+- **Host:** `ep-example-123456.region.aws.neon.tech`
 - **Database:** `neondb`
 - **Connection:** SSL/TLS enabled, `sslmode=require`
 - **Status:** ⚠️ Requires one-time setup
@@ -68,10 +68,10 @@ The application expects a database user `armsphere_user` but you provided `neond
    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO armsphere_user;
    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO armsphere_user;
    ```
-5. Set password (suggested: `armsphere_prod_secret_32char_+` format)
+5. Set password (suggested: strong 32+ character format)
 6. Update connection string:
    ```
-   postgresql://armsphere_user:PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+   postgresql://armsphere_user:PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require
    ```
 7. Update `start-api.ps1` with new connection string
 8. Restart server: `& E:\Armsphere\remix-armsphere-1.0\start-api.ps1`
@@ -95,7 +95,7 @@ Modify [apps/api/src/config/env.ts](apps/api/src/config/env.ts) to accept the ow
 ```powershell
 $env:NODE_ENV = "production"
 $env:PORT = "3001"
-$env:DATABASE_URL = "postgresql://armsphere_user:YOUR_PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+$env:DATABASE_URL = "postgresql://armsphere_user:YOUR_PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require"
 $env:JWT_ACCESS_SECRET = "<generate with crypto.randomBytes(32)>"
 $env:JWT_REFRESH_SECRET = "<generate with crypto.randomBytes(32)>"
 $env:CRON_SECRET = "<generate with crypto.randomBytes(32)>"
@@ -111,7 +111,7 @@ node dist/server.js
 ```env
 NODE_ENV=production
 PORT=3001
-DATABASE_URL=postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require
 JWT_ACCESS_SECRET=<generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
 JWT_REFRESH_SECRET=<generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
 CRON_SECRET=<generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

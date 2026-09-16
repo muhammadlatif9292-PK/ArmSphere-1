@@ -21,15 +21,32 @@ import { hashPassword } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
 import crypto from "crypto";
 
+function resolveSeedPassword(envVarName: string, defaultDevPassword: string, roleLabel: string): string {
+  const isProduction = process.env.NODE_ENV === "production";
+  if (process.env[envVarName]) {
+    return process.env[envVarName]!;
+  }
+  if (isProduction) {
+    const generated = crypto.randomBytes(18).toString("base64url") + "!A1";
+    console.log(`  [SECURITY NOTICE] NODE_ENV=production: generated secure random password for ${roleLabel} (${envVarName} not set): ${generated}`);
+    return generated;
+  }
+  return defaultDevPassword;
+}
+
 export async function seedReviewer() {
   console.log("================================================================================");
   console.log("      ARMSPHERE STORE REVIEWER & AUDIT TEST FIXTURE PROVISIONING");
   console.log("================================================================================");
+  console.log("  SECURITY POSTURE:");
+  console.log("  - Review fixtures are assigned low-privilege roles (ATHLETE, REFEREE) only.");
+  console.log("  - No system-admin, compliance, or financial-payout privileges are granted.");
+  console.log("  - In production, set REVIEWER_PASSWORD / REFEREE_PASSWORD or secure randoms apply.");
 
   try {
     // 1. Reviewer Athlete Account
     const reviewerEmail = "reviewer@armsphere.com";
-    const reviewerPassword = "ReviewerPass123!";
+    const reviewerPassword = resolveSeedPassword("REVIEWER_PASSWORD", "ReviewerPass123!", "Reviewer Athlete");
     const reviewerUsername = "reviewer";
     const reviewerFullName = "App Store Reviewer";
 
@@ -153,7 +170,7 @@ export async function seedReviewer() {
 
     // 2. Official Referee Test Account
     const refereeEmail = "referee.test@armsphere.com";
-    const refereePassword = "RefereePass123!";
+    const refereePassword = resolveSeedPassword("REFEREE_PASSWORD", "RefereePass123!", "Official Referee");
     const refereeUsername = "referee_test";
     const refereeFullName = "Official Test Referee";
 
@@ -196,7 +213,7 @@ export async function seedReviewer() {
 
     // 3. Sparring Partner Account (Opponent for match history)
     const opponentEmail = "sparring.partner@armsphere.com";
-    const opponentPassword = "SparringPass123!";
+    const opponentPassword = resolveSeedPassword("OPPONENT_PASSWORD", "SparringPass123!", "Sparring Partner");
     const opponentUsername = "sparring_partner";
     const opponentFullName = "Tariq Sparring Partner";
 

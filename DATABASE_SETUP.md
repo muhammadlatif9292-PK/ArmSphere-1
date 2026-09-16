@@ -18,7 +18,7 @@ password authentication failed for user 'armsphere_user'
 Run this SQL command:
 ```sql
 -- Create the armsphere_user role
-CREATE ROLE armsphere_user WITH LOGIN PASSWORD 'armsphere_prod_secret_12345_xyz';
+CREATE ROLE armsphere_user WITH LOGIN PASSWORD '<SECURE_PASSWORD>';
 
 -- Grant database connection
 GRANT CONNECT ON DATABASE neondb TO armsphere_user;
@@ -36,13 +36,13 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO arms
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO armsphere_user;
 ```
 
-**Note:** Replace `armsphere_prod_secret_12345_xyz` with a secure password (32+ chars recommended)
+**Note:** Replace `<SECURE_PASSWORD>` with a secure password (32+ chars recommended)
 
 ### Step 3: Get Your Connection String
 
 From Neon Console, copy the connection string for `armsphere_user`:
 ```
-postgresql://armsphere_user:PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+postgresql://armsphere_user:PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require
 ```
 
 ### Step 4: Update Startup Script
@@ -51,12 +51,12 @@ Edit `E:\Armsphere\remix-armsphere-1.0\start-api.ps1`:
 
 Find this line:
 ```powershell
-$env:DATABASE_URL = "postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+$env:DATABASE_URL = "postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require"
 ```
 
 Replace with:
 ```powershell
-$env:DATABASE_URL = "postgresql://armsphere_user:YOUR_PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+$env:DATABASE_URL = "postgresql://armsphere_user:YOUR_PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require"
 ```
 
 ### Step 5: Kill and Restart Server
@@ -98,7 +98,7 @@ If you want to test quickly without creating a new role, use the owner credentia
 
 ```powershell
 # In start-api.ps1, use:
-$env:DATABASE_URL = "postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-purple-wind-az32pzo8.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+$env:DATABASE_URL = "postgresql://neondb_owner:YOUR_NEON_PASSWORD@ep-example-123456.region.aws.neon.tech/neondb?sslmode=require"
 ```
 
 Then modify [apps/api/src/config/db.ts](apps/api/src/config/db.ts) to accept any user, or search the codebase for hardcoded `armsphere_user` references and replace them.
