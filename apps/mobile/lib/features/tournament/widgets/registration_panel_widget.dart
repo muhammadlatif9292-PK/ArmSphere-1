@@ -801,16 +801,17 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
               ),
               onPressed: () {
                 Navigator.pop(ctx);
+                Clipboard.setData(ClipboardData(text: passCode));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✓ Digital Pass saved to Apple / Google Wallet & Photos!'),
+                  SnackBar(
+                    content: Text('✓ Digital Pass code copied ($passCode). Present this at weigh-in.'),
                     backgroundColor: AppTheme.goldPrimary,
                   ),
                 );
               },
-              icon: const Icon(Icons.download_rounded, size: 18),
+              icon: const Icon(Icons.copy_rounded, size: 18),
               label: const Text(
-                'DOWNLOAD PASS TO WALLET',
+                'COPY PASS CODE FOR WEIGH-IN',
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w900,

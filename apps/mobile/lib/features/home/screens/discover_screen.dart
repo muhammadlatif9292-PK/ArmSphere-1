@@ -219,7 +219,7 @@ class DiscoverScreen extends ConsumerWidget {
         if (rankings.isEmpty)
           const AppEmptyState(
             icon: Icons.leaderboard_outlined,
-            title: 'Rankings coming soon',
+            title: 'No Rankings Recorded Yet',
             subtitle: 'Official leaderboard standings will populate as tournament brackets and supermatches conclude.',
           )
         else
