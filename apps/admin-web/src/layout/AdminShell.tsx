@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   BadgeCheck,
-  ScrollText
+  ScrollText,
+  Award
 } from 'lucide-react';
 
 interface SidebarLinkProps {
@@ -103,6 +104,7 @@ export default function AdminShell({ children }: AdminShellProps) {
               </p>
               <nav className="mt-1 space-y-0.5">
                 <SidebarLink to="/athletes" icon={<Users className="w-4 h-4 text-blue-400" />} label="Athletes" />
+                <SidebarLink to="/referees" icon={<Award className="w-4 h-4 text-emerald-400" />} label="Referees" />
                 <SidebarLink to="/championships" icon={<Trophy className="w-4 h-4 text-amber-400" />} label="Championship Titles" />
                 <SidebarLink to="/nominations" icon={<BadgeCheck className="w-4 h-4 text-emerald-400" />} label="Nominations" />
                 <SidebarLink to="/analytics" icon={<BarChart3 className="w-4 h-4 text-purple-400" />} label="Analytics" />
@@ -184,6 +186,7 @@ export default function AdminShell({ children }: AdminShellProps) {
                   <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 mb-1">Competition</p>
                   <div className="space-y-0.5">
                     <SidebarLink to="/athletes" icon={<Users className="w-4 h-4 text-blue-400" />} label="Athletes" onClick={() => setMobileMenuOpen(false)} />
+                    <SidebarLink to="/referees" icon={<Award className="w-4 h-4 text-emerald-400" />} label="Referees" onClick={() => setMobileMenuOpen(false)} />
                     <SidebarLink to="/championships" icon={<Trophy className="w-4 h-4 text-amber-400" />} label="Championship Titles" onClick={() => setMobileMenuOpen(false)} />
                     <SidebarLink to="/nominations" icon={<BadgeCheck className="w-4 h-4 text-emerald-400" />} label="Nominations" onClick={() => setMobileMenuOpen(false)} />
                     <SidebarLink to="/analytics" icon={<BarChart3 className="w-4 h-4 text-purple-400" />} label="Analytics" onClick={() => setMobileMenuOpen(false)} />

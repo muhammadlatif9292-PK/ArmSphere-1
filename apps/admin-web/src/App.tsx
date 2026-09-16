@@ -9,6 +9,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import ChampionshipsPage from './pages/ChampionshipsPage';
 import GovernancePage from './pages/GovernancePage';
 import AthletesPage from './pages/AthletesPage';
+import RefereesPage from './pages/RefereesPage';
 import ModerationQueuePage from './pages/ModerationQueuePage';
 import VenuesPage from './pages/VenuesPage';
 import NominationsPage from './pages/NominationsPage';
@@ -157,6 +158,16 @@ export default function App() {
                   <ProtectedRoute>
                     <AdminShell>
                       <AthletesPage />
+                    </AdminShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/referees"
+                element={
+                  <ProtectedRoute>
+                    <AdminShell>
+                      <RefereesPage />
                     </AdminShell>
                   </ProtectedRoute>
                 }

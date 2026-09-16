@@ -251,7 +251,31 @@ export interface IssueCertificationPayload {
   issuingBody: string;
 }
 
+export interface RefereeAdminView {
+  id: string;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  licenseClass: string | null;
+  certificationStatus: string | null;
+  region: string | null;
+  performance: {
+    totalMatches: number;
+    accuracyRate: number | null;
+    disputeRate: number | null;
+  };
+}
 
+export interface UpdateRefereeLicensePayload {
+  certification: string;
+  status: "ACTIVE" | "EXPIRED" | "REVOKED";
+}
 
+export interface SuspendRefereePayload {
+  reason: string;
+}
 
-
+export interface AssignRefereeRegionPayload {
+  region: string;
+}
