@@ -10,7 +10,10 @@
     "db:migrate": "node dist/scripts/migrate.js",
     "db:check": "drizzle-kit check:pg",
     "generate-sdks": "tsx src/scripts/generateSdks.ts",
+    "db:seed": "tsx src/scripts/seedProduction.ts",
+    "db:seed:production": "tsx src/scripts/seedProduction.ts",
     "db:seed:reviewer": "tsx src/scripts/seedReviewer.ts",
+    "db:seed:clean-reviewer": "tsx src/scripts/cleanReviewer.ts",
     "build": "npm run generate-sdks && tsc && esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.js --external:express --external:cors --external:dotenv --external:drizzle-orm --external:pg --external:jsonwebtoken --external:speakeasy --external:stripe --external:zod --external:@aws-sdk/* --external:firebase-admin --external:swagger-jsdoc --external:swagger-ui-express --external:qrcode --external:serverless-http",
     "test": "vitest run --coverage --pool=forks --poolOptions.forks.singleFork=true --no-file-parallelism",
     "lint": "tsc"

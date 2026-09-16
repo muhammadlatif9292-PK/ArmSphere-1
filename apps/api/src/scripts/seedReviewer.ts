@@ -44,6 +44,13 @@ export async function seedReviewer() {
   console.log("  - In production, set REVIEWER_PASSWORD / REFEREE_PASSWORD or secure randoms apply.");
 
   try {
+    if (process.env.NODE_ENV === "production" && process.env.ALLOW_STORE_REVIEW_SEED_IN_PRODUCTION !== "true") {
+      const errorMsg =
+        "SAFETY ABORT: seedReviewer is a store-review test fixture script and cannot run in production without ALLOW_STORE_REVIEW_SEED_IN_PRODUCTION=true.";
+      console.error(`\n❌ ${errorMsg}\n`);
+      throw new Error(errorMsg);
+    }
+
     // 1. Reviewer Athlete Account
     const reviewerEmail = "reviewer@armsphere.com";
     const reviewerPassword = resolveSeedPassword("REVIEWER_PASSWORD", "ReviewerPass123!", "Reviewer Athlete");
