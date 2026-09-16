@@ -251,8 +251,9 @@ export class CommunityController {
     try {
       const { id: athleteId } = req.params;
       const exerciseType = req.query.exerciseType as string | undefined;
+      const actorUserId = req.user?.id;
 
-      const log = await CommunityService.getTrainingLog(athleteId, exerciseType);
+      const log = await CommunityService.getTrainingLog(athleteId, exerciseType, actorUserId);
 
       res.status(200).json({
         success: true,
@@ -269,8 +270,9 @@ export class CommunityController {
   static async getTrainingLogPRs(req: Request, res: Response, next: NextFunction) {
     try {
       const { id: athleteId } = req.params;
+      const actorUserId = req.user?.id;
 
-      const prs = await CommunityService.getTrainingLogPRs(athleteId);
+      const prs = await CommunityService.getTrainingLogPRs(athleteId, actorUserId);
 
       res.status(200).json({
         success: true,

@@ -15,6 +15,7 @@ import {
   ConflictError, 
   ForbiddenError 
 } from "@armsphere/core";
+import { UserRole } from "@armsphere/types";
 
 export interface SubmitLinkPayload {
   externalUrl: string;
@@ -516,9 +517,80 @@ export class CommunityService {
   }
 
   /**
+   * Enforces private training-log access authorization.
+   * 1. The owning athlete: actor user ID === athleteProfiles.userId -> ALLOW
+   * 2. SYSTEM_ADMIN -> ALLOW
+   * 3. NATIONAL_DIRECTOR -> ALLOW
+   * 4. PROVINCIAL_DIRECTOR -> ALLOW ONLY when actor's canonical province matches athlete's province
+   * 5. All other roles -> FORBID cross-athlete access with 403
+   *
+   * Security: Canonical database identity (users table) is enforced for all cross-athlete
+   * access checks to prevent JWT role/province claim spoofing.
+   */
+  private static async authorizeTrainingLogAccess(
+    profile: typeof athleteProfiles.$inferSelect,
+    actorUserId?: string
+  ): Promise<void> {
+    if (!actorUserId) {
+      throw new ForbiddenError("Authentication required to access training data.");
+    }
+
+    // Verify canonical database identity: actor must exist in canonical users table and be active
+    const [dbActor] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, actorUserId))
+      .limit(1);
+
+    if (!dbActor || !dbActor.isActive) {
+      throw new ForbiddenError("You do not have permission to access this athlete's training data.");
+    }
+
+    // 1. The owning athlete: canonical user id === athleteProfiles.userId -> ALLOW
+    if (profile.userId === dbActor.id) {
+      return;
+    }
+
+    const canonicalRole = (dbActor as any).role as string;
+
+    // 2. SYSTEM_ADMIN -> ALLOW
+    // 3. NATIONAL_DIRECTOR -> ALLOW
+    if (canonicalRole === UserRole.SYSTEM_ADMIN || canonicalRole === UserRole.NATIONAL_DIRECTOR) {
+      return;
+    }
+
+    // 4. PROVINCIAL_DIRECTOR -> ALLOW ONLY when actor's canonical province matches athlete's province
+    if (canonicalRole === UserRole.PROVINCIAL_DIRECTOR) {
+      const actorJurisdiction =
+        (((dbActor as any).province as string | null | undefined) ??
+          ((dbActor as any).regionalCoverage as string | null | undefined) ??
+          null);
+
+      const targetProvince = profile.province ?? null;
+
+      if (!actorJurisdiction || !targetProvince) {
+        throw new ForbiddenError(
+          "Provincial director jurisdiction or athlete province is missing."
+        );
+      }
+
+      if (actorJurisdiction.trim().toLowerCase() !== targetProvince.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial directors can only access training data for athletes within their assigned province (${actorJurisdiction}).`
+        );
+      }
+
+      return;
+    }
+
+    // 5. All other roles -> FORBID cross-athlete access with 403
+    throw new ForbiddenError("You do not have permission to access this athlete's training data.");
+  }
+
+  /**
    * Fetch an athlete's GYM category posts (training log) filterable by exerciseType
    */
-  static async getTrainingLog(athleteId: string, exerciseType?: string) {
+  static async getTrainingLog(athleteId: string, exerciseType?: string, actorUserId?: string) {
     // 1. Verify athlete profile exists and is active
     const [profile] = await db
       .select()
@@ -529,6 +601,9 @@ export class CommunityService {
     if (!profile) {
       throw new NotFoundError("Athlete profile not found");
     }
+
+    // 2. Enforce private training-log access authorization
+    await this.authorizeTrainingLogAccess(profile, actorUserId);
 
     const conditions = [
       eq(communityPosts.athleteId, athleteId),
@@ -565,7 +640,7 @@ export class CommunityService {
   /**
    * Fetch an athlete's personal records (PRs) computed from post history
    */
-  static async getTrainingLogPRs(athleteId: string) {
+  static async getTrainingLogPRs(athleteId: string, actorUserId?: string) {
     // 1. Verify athlete profile exists and is active
     const [profile] = await db
       .select()
@@ -576,6 +651,9 @@ export class CommunityService {
     if (!profile) {
       throw new NotFoundError("Athlete profile not found");
     }
+
+    // 2. Enforce private training-log access authorization
+    await this.authorizeTrainingLogAccess(profile, actorUserId);
 
     const posts = await db
       .select({
