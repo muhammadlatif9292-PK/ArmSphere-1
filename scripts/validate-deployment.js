@@ -75,19 +75,19 @@ if (fileExists(apiBundle)) {
   checks.failed++;
 }
 
-const adminWeb = 'dist/index.html';
-if (fileExists(adminWeb)) {
-  log.pass(`Admin web: ${getFileSize(adminWeb)}`);
+const adminWeb = fileExists('dist/index.html') ? 'dist/index.html' : (fileExists('apps/admin-web/dist/index.html') ? 'apps/admin-web/dist/index.html' : null);
+if (adminWeb) {
+  log.pass(`Admin web: ${getFileSize(adminWeb)} (${adminWeb})`);
   checks.passed++;
 } else {
   log.fail('Admin web index missing');
   checks.failed++;
 }
 
-const adminWebAssets = 'dist/assets';
-if (dirExists(adminWebAssets)) {
+const adminWebAssets = dirExists('dist/assets') ? 'dist/assets' : (dirExists('apps/admin-web/dist/assets') ? 'apps/admin-web/dist/assets' : null);
+if (adminWebAssets) {
   const assetCount = fs.readdirSync(adminWebAssets).length;
-  log.pass(`Admin web assets: ${assetCount} files`);
+  log.pass(`Admin web assets: ${assetCount} files (${adminWebAssets})`);
   checks.passed++;
 } else {
   log.fail('Admin web assets missing');
