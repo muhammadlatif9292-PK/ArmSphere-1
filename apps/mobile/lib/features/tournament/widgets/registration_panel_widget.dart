@@ -660,6 +660,12 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
 
   void _showDigitalPassModal(BuildContext context) {
     HapticFeedback.selectionClick();
+    final tournamentName = widget.tournament['name']?.toString() ?? widget.tournament['title']?.toString() ?? 'PAFF Tournament';
+    final tournamentId = widget.tournament['id']?.toString() ?? '';
+    final passCode = tournamentId.isNotEmpty
+        ? 'PAFF-${tournamentId.length > 8 ? tournamentId.substring(0, 8).toUpperCase() : tournamentId.toUpperCase()}'
+        : 'PAFF-DIGITAL-PASS';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -722,20 +728,20 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'ARMWRESTLING ATHLETE',
                             style: TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            'Usman "Iron" Khan',
-                            style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w900),
+                            tournamentName,
+                            style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.w900),
                           ),
                           Text(
-                            'Senior Men -80kg Right Arm',
-                            style: TextStyle(fontSize: 11, color: AppTheme.goldPrimary, fontWeight: FontWeight.bold),
+                            _selectedCategory,
+                            style: const TextStyle(fontSize: 11, color: AppTheme.goldPrimary, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -755,7 +761,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                   const Divider(color: Colors.white12, height: 1),
                   const SizedBox(height: 16),
 
-                  // Mock Barcode / QR Code Box
+                  // Digital Barcode / QR Code Box
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -763,13 +769,13 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Column(
+                    child: Column(
                       children: [
-                        Icon(Icons.qr_code_2_rounded, size: 90, color: Colors.black),
-                        SizedBox(height: 4),
+                        const Icon(Icons.qr_code_2_rounded, size: 90, color: Colors.black),
+                        const SizedBox(height: 4),
                         Text(
-                          'PAFF-2026-9912-X88',
-                          style: TextStyle(
+                          passCode,
+                          style: const TextStyle(
                             fontFamily: 'JetBrains Mono',
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

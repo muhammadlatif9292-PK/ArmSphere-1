@@ -228,13 +228,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> register(String email, String password, String name) async {
+  Future<void> register(String email, String password, String name, {String? username}) async {
     try {
       state = state.copyWith(errorMessage: null);
       final repo = ref.read(authRepositoryProvider);
 
       // 1. Create the account.
-      await repo.register(email, password, name);
+      await repo.register(email, password, name, username: username);
 
       // 2. Establish the real authenticated session immediately so that the
       //    protected onboarding APIs receive a valid bearer token. Without

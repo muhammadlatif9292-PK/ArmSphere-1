@@ -100,12 +100,24 @@ class AuthRepository extends BaseRepository {
   /// Credential flows never go through [BaseRepository.executeRequest]:
   /// that helper caches successful payloads into plaintext Hive, which must
   /// never hold bearer tokens. Session persistence is owned by AuthNotifier.
-  Future<Map<String, dynamic>> register(String email, String password, String fullName, {CancelToken? cancelToken}) async {
-    final username = email.split('@').first.trim();
+  Future<Map<String, dynamic>> register(
+    String email,
+    String password,
+    String fullName, {
+    String? username,
+    CancelToken? cancelToken,
+  }) async {
+    final sanitizedUsername = (username != null && username.trim().isNotEmpty)
+        ? username.trim()
+        : () {
+            final raw = email.split('@').first.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+            return raw.length >= 3 ? raw : '${raw}arm'.padRight(3, '0');
+          }();
+
     try {
       final response = await dioClient.dio.post('/auth/register', data: {
         'email': email,
-        'username': username,
+        'username': sanitizedUsername,
         'password': password,
         'fullName': fullName,
       }, cancelToken: cancelToken);

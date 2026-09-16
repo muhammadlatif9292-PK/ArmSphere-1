@@ -129,26 +129,28 @@ final routerProvider = Provider<GoRouter>((ref) {
               location == '/' || entryRoutes.contains(location) || location.startsWith('/mfa/verify');
           
           if (atEntry) {
-            // Get verified server-side role from profile for routing decision
+            // Get verified server-side role from profile for initial routing decision
             final userRole = authState.userProfile?['role']?.toString().toUpperCase();
             
             if (_isRefereeLikeRole(userRole)) {
               return '/referee/dashboard';
             }
+            if (_isGovernanceRole(userRole)) {
+              return '/governance';
+            }
             // For athletes or pending roles, go to home
             return '/home';
           }
           
-          // After authentication — redirect away from entry routes to the
-          // correct dashboard. Route is based solely on the verified server-
-          // side role; the client roleIntent is never used for authorization.
+          // Enforce server-side role-based boundary protection for non-entry routes:
           final userRole = authState.userProfile?['role']?.toString().toUpperCase();
-          if (_isRefereeLikeRole(userRole)) {
-            return '/referee/dashboard';
-          } else if (_isGovernanceRole(userRole)) {
-            return '/governance';
+          if (location.startsWith('/referee') && !_isRefereeLikeRole(userRole)) {
+            return '/home';
           }
-          return null; // Already at a non-entry route — allow navigation
+          if (location.startsWith('/governance') && !_isGovernanceRole(userRole)) {
+            return '/home';
+          }
+          return null; // Already at an authorized non-entry route — allow navigation
 
         case AuthStatus.unknown:
           return location == '/' ? null : '/';
