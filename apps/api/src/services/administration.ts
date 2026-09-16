@@ -352,12 +352,34 @@ export class AdministrationService {
     const allMatches = await db.select().from(matches);
     const allTMatches = await db.select().from(tournamentMatches);
     const allCertifications = await db.select().from(refereeCertifications);
+    const allDisputes = await db.select().from(disputes);
 
     return refereeUsers.map(user => {
       // Calculate performance metrics
       const standardCount = allMatches.filter(m => m.refereeId === user.id).length;
       const tournamentCount = allTMatches.filter(m => m.refereeId === user.id).length;
       const totalMatchesRefereed = standardCount + tournamentCount;
+
+      // Map all match IDs officiated by this referee
+      const userMatchIds = new Set([
+        ...allMatches.filter(m => m.refereeId === user.id).map(m => m.id),
+        ...allTMatches.filter(m => m.refereeId === user.id).map(m => m.id),
+      ]);
+
+      // Attributed disputes filed against matches officiated by this referee
+      const refereeDisputes = allDisputes.filter(d => d.matchId && userMatchIds.has(d.matchId));
+      const disputeCount = refereeDisputes.length;
+      const overturnedDisputes = refereeDisputes.filter(d => d.status === "RESOLVED").length;
+
+      // Honest attribution: when totalMatchesRefereed is 0, rates are null (uncalculated);
+      // when matches were officiated, calculate real dispute and accuracy percentages.
+      const disputeRate = totalMatchesRefereed > 0
+        ? Number(((disputeCount / totalMatchesRefereed) * 100).toFixed(1))
+        : null;
+
+      const accuracyRate = totalMatchesRefereed > 0
+        ? Number((Math.max(0, (totalMatchesRefereed - overturnedDisputes) / totalMatchesRefereed) * 100).toFixed(1))
+        : null;
 
       // Prefer this referee's most recently issued ACTIVE certification, if any;
       // otherwise fall back to their most recent certification of any status.
@@ -373,18 +395,13 @@ export class AdministrationService {
         email: user.email,
         isActive: user.isActive,
         createdAt: user.createdAt,
-        // Real data where it exists; null (not a confident-looking fake value)
-        // where it doesn't yet — see ArmSphere_Feature_Audit.md item 3.
         licenseClass: bestCertification?.certificationLevel ?? null,
         certificationStatus: bestCertification?.status ?? null,
         region: user.regionalCoverage ?? null,
         performance: {
           totalMatches: totalMatchesRefereed,
-          // accuracyRate/disputeRate require dispute-to-referee attribution
-          // logic that doesn't exist yet — reporting null rather than a
-          // fabricated number until that's built for real.
-          accuracyRate: null,
-          disputeRate: null,
+          accuracyRate,
+          disputeRate,
         }
       };
     });

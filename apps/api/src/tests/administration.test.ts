@@ -259,6 +259,45 @@ describe("Sprint 9 - Administration & Operations Center Integration Suite", () =
       expect(referee.performance.accuracyRate).toBeNull();
       expect(referee.performance.disputeRate).toBeNull();
     });
+
+    it("should compute real disputeRate and accuracyRate when referee has matches and attributed disputes", async () => {
+      const matchId = "77777777-7777-7777-7777-777777777771";
+      testDbStore.matches.push({
+        id: matchId,
+        challengerId: athleteProfileId1,
+        opponentId: athleteProfileId2,
+        arm: "RIGHT",
+        refereeId,
+        winnerId: athleteProfileId1,
+        scoreLine: "3-0",
+        status: "VERIFIED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      testDbStore.disputes.push({
+        id: "88888888-8888-8888-8888-888888888881",
+        matchId: matchId,
+        creatorId: athleteProfileId2,
+        title: "False start foul missed",
+        description: "Referee missed early start call",
+        status: "RESOLVED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get("/admin/referees")
+        .set("Authorization", adminToken);
+
+      expect(res.status).toBe(200);
+      const referee = res.body.data.find((r: any) => r.id === refereeId);
+      expect(referee.performance.totalMatches).toBeGreaterThanOrEqual(1);
+      expect(referee.performance.disputeRate).not.toBeNull();
+      expect(referee.performance.accuracyRate).not.toBeNull();
+      expect(typeof referee.performance.disputeRate).toBe("number");
+      expect(typeof referee.performance.accuracyRate).toBe("number");
+    });
   });
 
   describe("4. Match Administration API", () => {
