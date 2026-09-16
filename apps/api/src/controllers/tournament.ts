@@ -139,7 +139,7 @@ export class TournamentController {
     try {
       const { id } = req.params;
       const validated = editEventSchema.parse(req.body);
-      const event = await TournamentService.editEvent(id, validated);
+      const event = await TournamentService.editEvent(id, validated, req.user!.id);
       res.json(event);
     } catch (error) {
       next(error);
@@ -149,7 +149,7 @@ export class TournamentController {
   static async cancelEvent(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const event = await TournamentService.cancelEvent(id);
+      const event = await TournamentService.cancelEvent(id, req.user!.id);
       res.json(event);
     } catch (error) {
       next(error);
@@ -159,7 +159,7 @@ export class TournamentController {
   static async publishEvent(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const event = await TournamentService.publishEvent(id);
+      const event = await TournamentService.publishEvent(id, req.user!.id);
       res.json(event);
     } catch (error) {
       next(error);
@@ -420,7 +420,7 @@ export class TournamentController {
       }
 
       const validated = editEventSchema.partial().parse(req.body);
-      const updatedEvent = await TournamentService.editEvent(id, validated as any);
+      const updatedEvent = await TournamentService.editEvent(id, validated as any, req.user!.id);
       res.json(updatedEvent);
     } catch (error) {
       next(error);

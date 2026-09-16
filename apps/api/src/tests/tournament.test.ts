@@ -53,7 +53,7 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
       { id: "user-a", role: UserRole.ATHLETE },
       { id: "user-b", role: UserRole.ATHLETE },
       { id: "user-c", role: UserRole.ATHLETE },
-      { id: UUID_DIRECTOR, role: UserRole.PROVINCIAL_DIRECTOR },
+      { id: UUID_DIRECTOR, role: UserRole.PROVINCIAL_DIRECTOR, province: "Ontario", regionalCoverage: "Ontario" },
       { id: UUID_REFEREE, role: UserRole.REFEREE },
       { id: "00000000-0000-0000-0000-000000000099", role: UserRole.ATHLETE }
     ];
@@ -1025,6 +1025,10 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
         { id: randomOrganizerId, role: UserRole.PROVINCIAL_DIRECTOR },
         { id: athleteUserId, role: UserRole.ATHLETE }
       );
+      const defaultAdmin = testDbStore.users.find(u => u.id === "00000000-0000-0000-0000-000000000099");
+      if (defaultAdmin) {
+        defaultAdmin.role = UserRole.SYSTEM_ADMIN;
+      }
 
       // Seed mock manual payment event
       testDbStore.events.push({

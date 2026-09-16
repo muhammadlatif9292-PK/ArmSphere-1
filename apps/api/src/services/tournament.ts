@@ -137,6 +137,79 @@ export class TournamentService {
     return newEvent;
   }
 
+  /**
+   * Authorizes modification/lifecycle actions on a tournament event (edit, cancel, publish).
+   *
+   * Authorization rules:
+   * 1. The event organizer: dbActor.id === event.organizerId -> ALLOW
+   * 2. SYSTEM_ADMIN or NATIONAL_DIRECTOR -> ALLOW
+   * 3. PROVINCIAL_DIRECTOR -> ALLOW ONLY when the director's canonical jurisdiction
+   *    (province / regionalCoverage) matches event.province (case-insensitive trim).
+   * 4. All other callers or cross-province directors -> FORBID with 403.
+   *
+   * Canonical database identity (users table) is enforced to prevent JWT role/province spoofing.
+   */
+  static async authorizeEventModification(
+    event: typeof events.$inferSelect,
+    actorId?: string,
+    action: "modify" | "cancel" | "publish" = "modify"
+  ): Promise<void> {
+    if (!actorId) {
+      throw new ForbiddenError(`Authentication required to ${action} this event.`);
+    }
+
+    const [dbActor] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, actorId))
+      .limit(1);
+
+    if (!dbActor || (dbActor as any).isActive === false) {
+      throw new ForbiddenError(`You do not have permission to ${action} this event.`);
+    }
+
+    // 1. Event organizer
+    if (event.organizerId && event.organizerId === dbActor.id) {
+      return;
+    }
+
+    const canonicalRole = (dbActor as any).role as string;
+
+    // 2. Universal federation administrators
+    if (canonicalRole === UserRole.SYSTEM_ADMIN || canonicalRole === UserRole.NATIONAL_DIRECTOR) {
+      return;
+    }
+
+    // 3. Provincial director with matching jurisdiction
+    if (canonicalRole === UserRole.PROVINCIAL_DIRECTOR) {
+      const actorJurisdiction =
+        (((dbActor as any).province as string | null | undefined) ??
+          ((dbActor as any).regionalCoverage as string | null | undefined) ??
+          null);
+
+      const targetProvince = event.province ?? null;
+
+      if (!actorJurisdiction || !targetProvince) {
+        throw new ForbiddenError(
+          "Provincial director jurisdiction or event province is missing."
+        );
+      }
+
+      if (actorJurisdiction.trim().toLowerCase() !== targetProvince.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial directors can only ${action} events within their assigned province (${actorJurisdiction}).`
+        );
+      }
+
+      return;
+    }
+
+    // 4. Any other caller is forbidden
+    throw new ForbiddenError(
+      `Only the event's organizer, a provincial director of the event's province, or a federation admin can ${action} this event.`
+    );
+  }
+
   static async editEvent(id: string, data: Partial<{
     name: string;
     startDate: Date;
@@ -150,12 +223,16 @@ export class TournamentService {
     organizerId: string;
     paymentMethod: string;
     paymentQrImageUrl: string | null;
-  }>) {
-    logger.info({ id }, "Editing tournament event");
+  }>, actorId?: string) {
+    logger.info({ id, actorId }, "Editing tournament event");
 
     const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
     if (!event) {
       throw new NotFoundError("Tournament event not found.");
+    }
+
+    if (actorId) {
+      await this.authorizeEventModification(event, actorId, "modify");
     }
 
     if (event.status === "CANCELLED") {
@@ -190,12 +267,16 @@ export class TournamentService {
     return updatedEvent;
   }
 
-  static async cancelEvent(id: string) {
-    logger.info({ id }, "Cancelling tournament event");
+  static async cancelEvent(id: string, actorId?: string) {
+    logger.info({ id, actorId }, "Cancelling tournament event");
 
     const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
     if (!event) {
       throw new NotFoundError("Tournament event not found.");
+    }
+
+    if (actorId) {
+      await this.authorizeEventModification(event, actorId, "cancel");
     }
 
     const [cancelledEvent] = await db
@@ -207,12 +288,16 @@ export class TournamentService {
     return cancelledEvent;
   }
 
-  static async publishEvent(id: string) {
-    logger.info({ id }, "Publishing tournament event");
+  static async publishEvent(id: string, actorId?: string) {
+    logger.info({ id, actorId }, "Publishing tournament event");
 
     const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
     if (!event) {
       throw new NotFoundError("Tournament event not found.");
+    }
+
+    if (actorId) {
+      await this.authorizeEventModification(event, actorId, "publish");
     }
 
     const [publishedEvent] = await db
