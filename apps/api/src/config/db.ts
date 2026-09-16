@@ -13,10 +13,14 @@ const maxConnections = env.IS_SERVERLESS
 export const pool = new pg.Pool({
   connectionString: env.DATABASE_URL,
   ssl:
-    env.NODE_ENV === "production" &&
-    env.DATABASE_URL &&
-    !env.DATABASE_URL.includes("localhost") &&
-    !env.DATABASE_URL.includes("127.0.0.1")
+    (env.NODE_ENV === "production" &&
+      env.DATABASE_URL &&
+      !env.DATABASE_URL.includes("localhost") &&
+      !env.DATABASE_URL.includes("127.0.0.1")) ||
+    (env.DATABASE_URL &&
+      (env.DATABASE_URL.includes("sslmode=require") ||
+        env.DATABASE_URL.includes("neon.tech") ||
+        env.DATABASE_URL.includes("supabase.")))
       ? { rejectUnauthorized: false }
       : false,
   max: maxConnections,
