@@ -618,6 +618,18 @@ export class MatchService {
    */
   static async getAthleteMatches(athleteId: string, options: { limit: number; offset: number }) {
     const { limit, offset } = options;
+
+    const [profile] = await db
+      .select({ id: athleteProfiles.id })
+      .from(athleteProfiles)
+      .where(and(or(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.userId, athleteId)), eq(athleteProfiles.isDeleted, false)))
+      .limit(1);
+
+    if (!profile) {
+      throw new NotFoundError("Athlete profile not found");
+    }
+
+    const targetProfileId = profile.id;
     const challenger = alias(athleteProfiles, "challenger");
     const opponent = alias(athleteProfiles, "opponent");
 
@@ -644,8 +656,8 @@ export class MatchService {
         and(
           eq(matches.status, "VERIFIED"),
           or(
-            eq(matches.challengerId, athleteId),
-            eq(matches.opponentId, athleteId)
+            eq(matches.challengerId, targetProfileId),
+            eq(matches.opponentId, targetProfileId)
           )
         )
       )

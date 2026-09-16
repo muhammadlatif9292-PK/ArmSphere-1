@@ -913,4 +913,170 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(resSearchOwner.body.data.some((a: any) => a.displayName === "HiddenJohn")).toBe(true);
     });
   });
+
+  describe("Security: IDOR & Private Field Sanitization", () => {
+    const athlete2UserId = "22222222-2222-2222-2222-222222222222";
+    const athlete1ProfileId = "33333333-3333-3333-3333-333333333333";
+    const athlete2ProfileId = "44444444-4444-4444-4444-444444444444";
+    let athlete2Token: string;
+
+    beforeEach(() => {
+      const athlete2User = {
+        id: athlete2UserId,
+        email: "athlete2@armsphere.com",
+        username: "athlete2",
+        role: UserRole.ATHLETE,
+        fullName: "Jane Second",
+        isActive: true,
+      };
+      testDbStore.users.push(athlete2User);
+      athlete2Token = `Bearer ${generateAccessToken(
+        athlete2User.id,
+        athlete2User.email,
+        athlete2User.role,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      testDbStore.athleteProfiles = [
+        {
+          id: athlete1ProfileId,
+          userId: athleteUserId,
+          displayName: "Athlete One",
+          province: "Punjab",
+          city: "Lahore",
+          handedness: "RIGHT",
+          dominantArm: "RIGHT",
+          dateOfBirth: new Date("1995-01-01"),
+          gender: "MALE",
+          weightClass: "80kg",
+          profileVisibility: "PUBLIC",
+          isSearchable: true,
+          isDeleted: false,
+          stripeCustomerId: "cus_secret_12345",
+        },
+        {
+          id: athlete2ProfileId,
+          userId: athlete2UserId,
+          displayName: "Athlete Two",
+          province: "Punjab",
+          city: "Lahore",
+          handedness: "LEFT",
+          dominantArm: "LEFT",
+          dateOfBirth: new Date("1996-01-01"),
+          gender: "FEMALE",
+          weightClass: "65kg",
+          profileVisibility: "PUBLIC",
+          isSearchable: true,
+          isDeleted: false,
+          stripeCustomerId: "cus_secret_67890",
+        },
+      ];
+
+      testDbStore.athleteVerifications = [
+        {
+          id: "verif-1",
+          athleteId: athleteUserId,
+          status: "REJECTED",
+          rejectionReason: "ID image too blurry",
+        },
+      ];
+      testDbStore.blockedUsers = [];
+      testDbStore.matches = [];
+    });
+
+    it("should never leak stripeCustomerId or internal rejectionReason to a third-party athlete", async () => {
+      const res = await request(app)
+        .get(`/athletes/${athlete1ProfileId}`)
+        .set("Authorization", athlete2Token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.displayName).toBe("Athlete One");
+      expect(res.body.data.stripeCustomerId).toBeUndefined();
+      expect(res.body.data.rejectionReason).toBeNull();
+    });
+
+    it("should preserve stripeCustomerId and rejectionReason for profile owner on self-fetch", async () => {
+      const res = await request(app)
+        .get(`/athletes/${athlete1ProfileId}`)
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.stripeCustomerId).toBe("cus_secret_12345");
+      expect(res.body.data.rejectionReason).toBe("ID image too blurry");
+    });
+
+    it("should allow administrators to inspect verification rejectionReason but not expose stripeCustomerId", async () => {
+      const res = await request(app)
+        .get(`/athletes/${athlete1ProfileId}`)
+        .set("Authorization", adminToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.rejectionReason).toBe("ID image too blurry");
+      expect(res.body.data.stripeCustomerId).toBeUndefined();
+    });
+
+    it("GET /athletes/:id/matches: rejects malformed UUIDs with 400 Bad Request", async () => {
+      const res = await request(app)
+        .get("/athletes/not-a-valid-uuid/matches")
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(400);
+    });
+
+    it("GET /athletes/:id/matches: returns 404 for a non-existent athlete profile", async () => {
+      const res = await request(app)
+        .get("/athletes/00000000-0000-0000-0000-000000000000/matches")
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(404);
+    });
+
+    it("GET /athletes/:id/matches: enforces blocking between users with 403 Forbidden", async () => {
+      testDbStore.blockedUsers.push({
+        id: "block-1",
+        blockerId: athlete1ProfileId,
+        blockedId: athlete2ProfileId,
+      });
+
+      const res = await request(app)
+        .get(`/athletes/${athlete1ProfileId}/matches`)
+        .set("Authorization", athlete2Token);
+
+      expect(res.status).toBe(403);
+    });
+
+    it("GET /athletes/:id/matches: returns matches for valid unblocked athlete", async () => {
+      testDbStore.matches.push({
+        id: "match-1",
+        challengerId: athlete1ProfileId,
+        opponentId: athlete2ProfileId,
+        arm: "RIGHT",
+        winnerId: athlete1ProfileId,
+        scoreLine: "3-1",
+        status: "VERIFIED",
+        verifiedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get(`/athletes/${athlete1ProfileId}/matches`)
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBe(1);
+    });
+
+    it("PATCH /athletes/:id: rejects malformed UUIDs with 400 Bad Request", async () => {
+      const res = await request(app)
+        .patch("/athletes/malformed-id")
+        .set("Authorization", athleteToken)
+        .send({ displayName: "New Name" });
+
+      expect(res.status).toBe(400);
+    });
+  });
 });

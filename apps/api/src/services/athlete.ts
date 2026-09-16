@@ -172,7 +172,7 @@ export class AthleteService {
    * (search / leaderboard / social list rows carry profile ids) so that
    * profile navigation works from every surface.
    */
-  static async getProfileByUserId(userIdOrProfileId: string, viewerUserId?: string) {
+  static async getProfileByUserId(userIdOrProfileId: string, viewerUserId?: string, viewerRole?: string) {
     let [profile] = await db
       .select()
       .from(athleteProfiles)
@@ -249,11 +249,19 @@ export class AthleteService {
       .where(eq(athleteSocialLinks.athleteId, ownerUserId))
       .limit(1);
 
+    const isOwner = viewerUserId === ownerUserId;
+    const isPrivileged = !!(viewerRole && ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"].includes(viewerRole.toUpperCase()));
+
+    const safeProfile = { ...profile };
+    if (!isOwner) {
+      delete (safeProfile as any).stripeCustomerId;
+    }
+
     return {
-      ...profile,
+      ...safeProfile,
       club,
       verificationStatus: verification?.status || "UNVERIFIED",
-      rejectionReason: verification?.rejectionReason || null,
+      rejectionReason: (isOwner || isPrivileged) ? (verification?.rejectionReason || null) : null,
       biometrics: biometrics || null,
       measurements: measurements || null,
       socialLinks: socials || null,

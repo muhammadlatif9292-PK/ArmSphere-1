@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, not, isNull, sql } from "drizzle-orm";
+import { eq, and, desc, asc, not, isNull, sql, or } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { 
   conversations, 
@@ -16,13 +16,13 @@ export class MessagingService {
     const [profileA] = await db
       .select({ id: athleteProfiles.id })
       .from(athleteProfiles)
-      .where(eq(athleteProfiles.userId, userAId))
+      .where(or(eq(athleteProfiles.userId, userAId), eq(athleteProfiles.id, userAId)))
       .limit(1);
 
     const [profileB] = await db
       .select({ id: athleteProfiles.id })
       .from(athleteProfiles)
-      .where(eq(athleteProfiles.userId, userBId))
+      .where(or(eq(athleteProfiles.userId, userBId), eq(athleteProfiles.id, userBId)))
       .limit(1);
 
     if (profileA && profileB) {

@@ -127,7 +127,7 @@ export class AthleteController {
   static async getMe(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const profile = await AthleteService.getProfileByUserId(userId);
+      const profile = await AthleteService.getProfileByUserId(userId, userId, req.user?.role);
 
       if (profile && profile.profilePhoto) {
         profile.profilePhoto = await StorageService.generatePresignedDownloadUrl(
@@ -161,7 +161,7 @@ export class AthleteController {
         }
       }
 
-      const profile = await AthleteService.getProfileByUserId(id, callerUserId);
+      const profile = await AthleteService.getProfileByUserId(id, callerUserId, req.user?.role);
 
       if (profile && profile.profilePhoto) {
         profile.profilePhoto = await StorageService.generatePresignedDownloadUrl(
@@ -185,7 +185,7 @@ export class AthleteController {
   static async updateProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = updateProfileSchema.parse(req.body);
-      const targetUserId = req.params.id;
+      const targetUserId = athleteIdParamSchema.parse(req.params.id);
       const actorUserId = req.user!.id;
       const actorRole = req.user!.role;
 
@@ -434,7 +434,16 @@ export class AthleteController {
    */
   static async getAthleteMatches(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = athleteIdParamSchema.parse(req.params.id);
+      const callerUserId = req.user!.id;
+
+      if (callerUserId !== id) {
+        const isBlocked = await MessagingService.checkBlockByUsers(callerUserId, id);
+        if (isBlocked) {
+          throw new ForbiddenError("You cannot view matches for this athlete because this user is blocked or has blocked you.");
+        }
+      }
+
       const { limit, offset } = getAthleteMatchesQuerySchema.parse(req.query);
       const matchesList = await MatchService.getAthleteMatches(id, { limit, offset });
 
