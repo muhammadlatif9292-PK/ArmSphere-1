@@ -26,6 +26,7 @@ const getRecentMatchesQuerySchema = z.object({
   offset: z.preprocess((val) => (val ? parseInt(val as string, 10) : 0), z.number().min(0)).default(0),
 });
 
+const matchIdParamSchema = z.string().uuid("Invalid match ID");
 
 export class MatchController {
   /**
@@ -55,7 +56,7 @@ export class MatchController {
    */
   static async getMatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const matchId = req.params.id;
+      const matchId = matchIdParamSchema.parse(req.params.id);
       const match = await MatchService.getMatchById(matchId);
 
       res.status(200).json({
@@ -72,7 +73,7 @@ export class MatchController {
    */
   static async verifyMatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const matchId = req.params.id;
+      const matchId = matchIdParamSchema.parse(req.params.id);
       const reviewerId = req.user!.id;
 
       const result = await MatchService.verifyMatch(matchId, reviewerId);
@@ -91,7 +92,7 @@ export class MatchController {
    */
   static async disputeMatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const matchId = req.params.id;
+      const matchId = matchIdParamSchema.parse(req.params.id);
       const validated = disputeMatchSchema.parse(req.body);
       const actorId = req.user!.id;
 
@@ -111,7 +112,7 @@ export class MatchController {
    */
   static async voidMatch(req: Request, res: Response, next: NextFunction) {
     try {
-      const matchId = req.params.id;
+      const matchId = matchIdParamSchema.parse(req.params.id);
       const validated = voidMatchSchema.parse(req.body);
       const actorId = req.user!.id;
 

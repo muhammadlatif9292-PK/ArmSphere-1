@@ -12,8 +12,8 @@ function authHeader(role: UserRole = UserRole.ATHLETE, userId = "user-123") {
 }
 
 describe("Community & Training Log System Tests", () => {
-  const athleteUserId = "athlete-user-id";
-  const athleteId = "athlete-profile-id";
+  const athleteUserId = "11111111-1111-1111-1111-111111111111";
+  const athleteId = "22222222-2222-2222-2222-222222222222";
 
   beforeEach(() => {
     // Clear relevant stores

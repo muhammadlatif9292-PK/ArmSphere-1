@@ -32,6 +32,8 @@ const createCommentSchema = z.object({
   body: z.string().min(1, "Comment body must not be empty"),
 });
 
+const uuidParamSchema = z.string().uuid("Invalid identifier");
+
 export class CommunityController {
   /**
    * Helper to resolve the active athlete profile ID for a given user ID
@@ -82,7 +84,7 @@ export class CommunityController {
    */
   static async moderateLinkSubmission(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id: postId } = req.params;
+      const postId = uuidParamSchema.parse(req.params.id);
       const validated = moderateLinkSchema.parse(req.body);
       const moderatorId = req.user!.id;
 
@@ -150,8 +152,8 @@ export class CommunityController {
    */
   static async deletePost(req: Request, res: Response, next: NextFunction) {
     try {
+      const postId = uuidParamSchema.parse(req.params.id);
       const athleteId = await CommunityController.getAthleteProfileIdForUser(req.user!.id);
-      const { id: postId } = req.params;
 
       const post = await CommunityService.deletePost(athleteId, postId);
 
@@ -170,8 +172,8 @@ export class CommunityController {
    */
   static async likePost(req: Request, res: Response, next: NextFunction) {
     try {
+      const postId = uuidParamSchema.parse(req.params.id);
       const athleteId = await CommunityController.getAthleteProfileIdForUser(req.user!.id);
-      const { id: postId } = req.params;
 
       const like = await CommunityService.likePost(athleteId, postId);
 
@@ -190,8 +192,8 @@ export class CommunityController {
    */
   static async unlikePost(req: Request, res: Response, next: NextFunction) {
     try {
+      const postId = uuidParamSchema.parse(req.params.id);
       const athleteId = await CommunityController.getAthleteProfileIdForUser(req.user!.id);
-      const { id: postId } = req.params;
 
       const like = await CommunityService.unlikePost(athleteId, postId);
 
@@ -210,8 +212,8 @@ export class CommunityController {
    */
   static async addComment(req: Request, res: Response, next: NextFunction) {
     try {
+      const postId = uuidParamSchema.parse(req.params.id);
       const athleteId = await CommunityController.getAthleteProfileIdForUser(req.user!.id);
-      const { id: postId } = req.params;
       const validated = createCommentSchema.parse(req.body);
 
       const comment = await CommunityService.addComment(athleteId, postId, validated.body);
@@ -231,7 +233,7 @@ export class CommunityController {
    */
   static async getComments(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id: postId } = req.params;
+      const postId = uuidParamSchema.parse(req.params.id);
 
       const comments = await CommunityService.getComments(postId);
 
@@ -249,7 +251,7 @@ export class CommunityController {
    */
   static async getTrainingLog(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id: athleteId } = req.params;
+      const athleteId = uuidParamSchema.parse(req.params.id);
       const exerciseType = req.query.exerciseType as string | undefined;
       const actorUserId = req.user?.id;
 
@@ -269,7 +271,7 @@ export class CommunityController {
    */
   static async getTrainingLogPRs(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id: athleteId } = req.params;
+      const athleteId = uuidParamSchema.parse(req.params.id);
       const actorUserId = req.user?.id;
 
       const prs = await CommunityService.getTrainingLogPRs(athleteId, actorUserId);

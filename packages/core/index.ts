@@ -92,9 +92,32 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
     });
   }
 
+  // Handle Postgres / database malformed UUID errors as 400 Bad Request
+  const isMalformedUuid =
+    err?.code === "22P02" ||
+    (typeof err?.message === "string" && err.message.toLowerCase().includes("invalid input syntax for type uuid"));
+
+  if (isMalformedUuid) {
+    const status = 400;
+    logger.error(`${req.method} ${req.path} failed: Malformed UUID Identifier`, err);
+    return res.status(status).json({
+      success: false,
+      title: "Bad Request",
+      detail: "Invalid UUID format in request identifier.",
+      status,
+      requestId: (req as any).id,
+    });
+  }
+
   const status = err.status || 500;
-  const message = err.message || "Internal Server Error";
+  let message = err.message || "Internal Server Error";
   const title = HTTP_STATUS_TITLES[status] || "Internal Server Error";
+
+  // In production or staging, sanitize 5xx messages and never expose raw stack or query traces
+  const isProdOrStaging = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
+  if (status >= 500 && isProdOrStaging) {
+    message = "An internal server error occurred.";
+  }
 
   logger.error(`${req.method} ${req.path} failed: ${message}`, err);
 

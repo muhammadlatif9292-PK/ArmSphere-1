@@ -52,6 +52,8 @@ const triggerReplaySchema = z.object({
   startingTimestamp: z.string().datetime({ message: "Starting timestamp must be a valid ISO datetime string" }),
 });
 
+const uuidParamSchema = z.string().uuid("Invalid identifier");
+
 export class GovernanceController {
   /**
    * List all disputes
@@ -99,7 +101,7 @@ export class GovernanceController {
    */
   static async assignReviewer(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = assignReviewerSchema.parse(req.body);
       const actorId = req.user!.id;
 
@@ -123,7 +125,7 @@ export class GovernanceController {
    */
   static async submitEvidence(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = submitEvidenceSchema.parse(req.body);
       const submitterId = req.user!.id;
 
@@ -151,7 +153,7 @@ export class GovernanceController {
    */
   static async addComment(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = addCommentSchema.parse(req.body);
       const authorId = req.user!.id;
 
@@ -172,7 +174,7 @@ export class GovernanceController {
    */
   static async resolveDispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = resolveDisputeSchema.parse(req.body);
       const actorId = req.user!.id;
 
@@ -202,7 +204,7 @@ export class GovernanceController {
    */
   static async escalateDispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = escalateDisputeSchema.parse(req.body);
       const actorId = req.user!.id;
 
@@ -230,7 +232,7 @@ export class GovernanceController {
    */
   static async appealResolution(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = appealResolutionSchema.parse(req.body);
       const actorId = req.user!.id;
 
@@ -319,7 +321,7 @@ export class GovernanceController {
    */
   static async correctMatchResult(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = uuidParamSchema.parse(req.params.id);
       const validated = correctMatchResultSchema.parse(req.body);
       const reviewerId = req.user!.id;
 
