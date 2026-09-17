@@ -1,5 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:mobile/core/storage/secure_storage.dart';
 import 'package:mobile/core/api/dio_client.dart';
+
+class MockSecureStorage extends Mock implements SecureStorage {}
+class MockConnectivity extends Mock implements Connectivity {}
 
 void main() {
   group('DioClient - Production Endpoint Fail-Safe', () {
@@ -53,6 +59,19 @@ void main() {
       );
     });
 
+    test('Release Mode: throws StateError when API_BASE_URL is non-HTTPS', () {
+      expect(
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://api.armsphere.com'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Production API must use HTTPS'),
+          ),
+        ),
+      );
+    });
+
     test('Release Mode: throws StateError when API_BASE_URL is malformed', () {
       expect(
         () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'not-a-valid-url'),
@@ -70,6 +89,42 @@ void main() {
       const prodUrl = 'https://api.armsphere.com';
       final resolved = DioClient.resolveBaseUrl(isRelease: true, rawUrl: prodUrl);
       expect(resolved, equals(prodUrl));
+    });
+
+    test('Release Mode: DioClient constructor throws StateError when explicit baseUrl bypass is attempted with staging URL', () {
+      expect(
+        () => DioClient(
+          secureStorage: MockSecureStorage(),
+          connectivity: MockConnectivity(),
+          baseUrl: 'https://armsphere2.netlify.app',
+          isRelease: true,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Release build cannot connect to non-production endpoint'),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: DioClient constructor throws StateError when explicit baseUrl bypass is attempted with localhost', () {
+      expect(
+        () => DioClient(
+          secureStorage: MockSecureStorage(),
+          connectivity: MockConnectivity(),
+          baseUrl: 'http://localhost:3000',
+          isRelease: true,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Release build cannot connect to non-production endpoint'),
+          ),
+        ),
+      );
     });
   });
 }

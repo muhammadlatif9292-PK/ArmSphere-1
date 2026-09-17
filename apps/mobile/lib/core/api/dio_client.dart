@@ -110,6 +110,12 @@ class DioClient {
         );
       }
 
+      if (uri.scheme.toLowerCase() != 'https') {
+        throw StateError(
+          'FATAL [PRODUCTION FAIL-SAFE]: Production API must use HTTPS ("$envUrl").',
+        );
+      }
+
       return envUrl;
     }
 
@@ -120,8 +126,9 @@ class DioClient {
     required this.secureStorage,
     required this.connectivity,
     String? baseUrl,
+    bool? isRelease,
   }) : dio = Dio(BaseOptions(
-          baseUrl: baseUrl ?? resolveBaseUrl(),
+          baseUrl: resolveBaseUrl(isRelease: isRelease, rawUrl: baseUrl),
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 15),
           sendTimeout: const Duration(seconds: 15),
