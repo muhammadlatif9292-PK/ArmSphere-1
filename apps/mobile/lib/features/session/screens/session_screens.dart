@@ -5,6 +5,7 @@ import '../../../core/providers/session_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../settings/widgets/biometric_settings_tile.dart';
 
 /// Active login sessions (account security — spec section 33).
 class ActiveSessionsListScreen extends ConsumerWidget {
@@ -27,90 +28,129 @@ class ActiveSessionsListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Active Sessions'),
+        title: const Text('Active Sessions & Security'),
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(sessionProvider),
-        child: sessionsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              const SizedBox(height: 80),
-              const Icon(Icons.error_outline, size: 48),
-              const SizedBox(height: 12),
-              Text('Could not load sessions', textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => ref.invalidate(sessionProvider),
-                  child: const Text('Retry'),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Text(
+              'DEVICE SECURITY',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+            ),
+            const SizedBox(height: 8),
+            const GlassCard(
+              padding: EdgeInsets.zero,
+              child: BiometricSettingsTile(),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'SIGNED-IN DEVICES',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+            ),
+            const SizedBox(height: 8),
+            sessionsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.only(top: 40),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, size: 48),
+                    const SizedBox(height: 12),
+                    Text('Could not load sessions',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(sessionProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          data: (sessions) {
-            if (sessions.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  AppEmptyState(
-                    icon: Icons.devices_outlined,
-                    title: 'No active sessions',
-                    subtitle:
-                        'Devices you are signed in with will appear here.',
-                  ),
-                ],
-              );
-            }
-            return ListView.separated(
-              padding: const EdgeInsets.all(20),
-              itemCount: sessions.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final s = sessions[index];
-                final id = s['id']?.toString() ?? '';
-                final device = _deviceLabel(s);
-                final ip = s['ipAddress']?.toString() ?? '';
-                final created = s['createdAt']?.toString() ?? '';
-                return GestureDetector(
-                  onTap:
-                      id.isEmpty ? null : () => context.push('/athlete/session/$id'),
-                  child: GlassCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(device,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold, fontSize: 14)),
-                              const SizedBox(height: 4),
-                              Text(
-                                [
-                                  if (ip.isNotEmpty) 'IP $ip',
-                                  if (created.length >= 10)
-                                    'Since ${created.substring(0, 10)}',
-                                ].join(' • '),
-                                style: const TextStyle(
-                                    fontSize: 12, color: AppTheme.textMuted),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right,
-                            size: 20, color: AppTheme.textMuted),
-                      ],
+              data: (sessions) {
+                if (sessions.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: AppEmptyState(
+                      icon: Icons.devices_outlined,
+                      title: 'No active sessions',
+                      subtitle:
+                          'Devices you are signed in with will appear here.',
                     ),
-                  ),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final s in sessions) ...[
+                      Builder(
+                        builder: (context) {
+                          final id = s['id']?.toString() ?? '';
+                          final device = _deviceLabel(s);
+                          final ip = s['ipAddress']?.toString() ?? '';
+                          final created = s['createdAt']?.toString() ?? '';
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: GestureDetector(
+                              onTap: id.isEmpty
+                                  ? null
+                                  : () => context.push('/athlete/session/$id'),
+                              child: GlassCard(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(device,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14)),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            [
+                                              if (ip.isNotEmpty) 'IP $ip',
+                                              if (created.length >= 10)
+                                                'Since ${created.substring(0, 10)}',
+                                            ].join(' • '),
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textMuted),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(Icons.chevron_right,
+                                        size: 20, color: AppTheme.textMuted),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ],
                 );
               },
-            );
-          },
+            ),
+          ],
         ),
       ),
     );

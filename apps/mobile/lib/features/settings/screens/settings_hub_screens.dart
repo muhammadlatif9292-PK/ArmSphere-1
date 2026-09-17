@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../widgets/biometric_settings_tile.dart';
 
 /// Account & Settings hub (spec §36). Every section maps to a real surface.
 class SettingsHubScreen extends ConsumerWidget {
@@ -27,6 +28,8 @@ class SettingsHubScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/athlete/profile'),
                 ),
+                const Divider(height: 1),
+                const BiometricSettingsTile(),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.shield_outlined),

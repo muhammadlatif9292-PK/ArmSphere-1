@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../../../core/providers/dependency_providers.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -18,6 +20,95 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _canUseBiometrics = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    try {
+      final bioService = ref.read(biometricServiceProvider);
+      final isAvailable = await bioService.isBiometricUnlockAvailable();
+      final secureStorage = ref.read(secureStorageProvider);
+      final token = await secureStorage.getRefreshToken();
+      if (mounted) {
+        setState(() {
+          _canUseBiometrics = isAvailable && token != null && token.isNotEmpty;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _canUseBiometrics = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _unlockWithBiometrics() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final bioService = ref.read(biometricServiceProvider);
+      final result = await bioService.authenticate(
+        localizedReason: 'Sign in to your ArmSphere account',
+        allowDeviceCredentials: true,
+      );
+
+      if (!mounted) return;
+
+      if (result.isSuccess) {
+        await ref.read(authProvider.notifier).checkInitialSession();
+        final currentStatus = ref.read(authProvider).status;
+        if (currentStatus == AuthStatus.authenticated ||
+            currentStatus == AuthStatus.onboardingRequired) {
+          return;
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Stored session expired. Please sign in with your email and password.',
+              ),
+            ),
+          );
+        }
+      } else if (result.status == BiometricAuthStatus.canceled) {
+        // Voluntary cancel by user; remain on standard login form without error
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message ??
+                  'Biometric authentication failed. Please enter your password.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Biometrics unavailable: ${e.toString().replaceAll('Exception: ', '')}. Please enter your password.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -25,6 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _passwordController.dispose();
     super.dispose();
   }
+
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -179,6 +271,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               )
                             : const Text('Sign In'),
                       ),
+
+                      if (_canUseBiometrics) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _isLoading ? null : _unlockWithBiometrics,
+                          icon: const Icon(Icons.fingerprint, size: 20),
+                          label: const Text('Sign in with Biometrics'),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

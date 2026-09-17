@@ -5,6 +5,8 @@ import '../storage/secure_storage.dart';
 import '../api/dio_client.dart';
 import '../api/differential_sync.dart';
 import '../api/offline_sync.dart';
+import '../services/biometric_service.dart';
+
 
 final secureStorageProvider = Provider<SecureStorage>((ref) {
   return SecureStorage();
@@ -35,3 +37,9 @@ final offlineSyncManagerProvider = Provider<OfflineSyncManager>((ref) {
   final hiveStorage = ref.watch(hiveStorageProvider);
   return OfflineSyncManager(dioClient: dioClient, hiveStorage: hiveStorage);
 });
+
+final biometricServiceProvider = Provider<BiometricService>((ref) {
+  final secureStorage = ref.watch(secureStorageProvider);
+  return BiometricService(secureStorage: secureStorage);
+});
+
