@@ -120,3 +120,9 @@ When ready to execute the production rollout:
 
 **VERDICT**: **READY FOR RELEASE (RC-1)**  
 All technical debt, mock dependencies, architecture gaps, security boundaries, and performance indexes have been resolved. The platform satisfies all requirements of the ArmSphere Master Specification with 100% test coverage and zero regressions.
+
+**Perfection Hardening Additions (Commit `471ad00`)**:
+- Mobile Deep Linking: Configured custom scheme (`armsphere://`) and Android App Links (`https://app.armsphere.com`) in `AndroidManifest.xml` for frictionless push notification and invite routing.
+- API Static Bypass: Hardened Express static middleware to ensure all API prefixes and JSON requests bypass static file handlers, guaranteeing RFC-7807 JSON 404s.
+- Complete Production Template: Documented `CRON_SECRET`, `PORT`, `CORS_ORIGIN`, and third-party production integration variables in `.env.production.example`.
+
