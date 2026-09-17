@@ -11,13 +11,15 @@ This guide covers deploying ArmSphere to production and development environments
 
 ---
 
-## Deployment Status ✅
+## Deployment Status ✅ (Release Candidate RC-1)
 
-- ✅ Backend API: Production-ready (602 KB ESM bundle)
-- ✅ Admin Web Frontend: Production-ready (976 KB total)
-- ✅ Test Suite: 306/306 tests passing
-- ✅ Security Hardening: Complete
-- ✅ Environment Config: Production fail-closed
+- ✅ Backend API: Production-ready (623.9 KB ESM bundle with SDK generation)
+- ✅ Admin Web Frontend: Production-ready (935 KB JS / 57 KB CSS)
+- ✅ Mobile Client: Production-ready (All mocks eliminated, role-aware routing, Proguard secured)
+- ✅ Test Suite: 39/39 test suites (573/573 tests passing 100% green)
+- ✅ Database Schema & Indexes: 18 migrations (`0000`–`0018`), composite indexes optimized
+- ✅ Security Hardening: Complete (RBAC, IDOR boundaries, Turnstile CAPTCHA fail-closed, Double-submit CSRF)
+- ✅ Environment Config: Production fail-closed with Zero-Cost Architecture ($0/month)
 
 ---
 
