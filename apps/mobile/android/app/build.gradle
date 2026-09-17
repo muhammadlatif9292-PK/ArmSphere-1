@@ -33,14 +33,30 @@ android {
 
     def releaseSigningConfig = signingConfigs.debug
     def keystoreProps = new Properties()
-    def keystorePropsFile = file('keystore.properties')
-    if (keystorePropsFile.exists()) {
-        keystoreProps.load(new FileInputStream(keystorePropsFile))
+    def keyPropsFile = rootProject.file('key.properties')
+    def keystorePropsFile = rootProject.file('keystore.properties')
+    def propsFile = keyPropsFile.exists() ? keyPropsFile : (keystorePropsFile.exists() ? keystorePropsFile : file('key.properties').exists() ? file('key.properties') : file('keystore.properties'))
+
+    if (propsFile.exists()) {
+        keystoreProps.load(new FileInputStream(propsFile))
         signingConfigs.create('productionRelease') {
-            storeFile file(keystoreProps['storeFile'] ?: 'upload-keystore.jks')
+            def keystorePath = keystoreProps['storeFile'] ?: 'upload-keystore.jks'
+            def keystoreFile = file(keystorePath)
+            if (!keystoreFile.isAbsolute()) {
+                keystoreFile = new File(propsFile.parentFile, keystorePath)
+            }
+            storeFile keystoreFile
             storePassword keystoreProps['storePassword']
             keyAlias keystoreProps['keyAlias']
             keyPassword keystoreProps['keyPassword']
+        }
+        releaseSigningConfig = signingConfigs.productionRelease
+    } else if (System.getenv('KEYSTORE_PATH') && System.getenv('KEYSTORE_PASSWORD')) {
+        signingConfigs.create('productionRelease') {
+            storeFile file(System.getenv('KEYSTORE_PATH'))
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias System.getenv('KEY_ALIAS') ?: 'upload'
+            keyPassword System.getenv('KEY_PASSWORD') ?: System.getenv('KEYSTORE_PASSWORD')
         }
         releaseSigningConfig = signingConfigs.productionRelease
     }
@@ -50,6 +66,7 @@ android {
             signingConfig releaseSigningConfig
             minifyEnabled false
             shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 

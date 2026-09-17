@@ -1,0 +1,30 @@
+# ==============================================================================
+# ArmSphere Android Production Signing Template (key.properties)
+# ==============================================================================
+# Instructions for production key ceremony:
+#
+# 1. Generate an RSA 2048-bit release keystore locally (DO NOT commit to git):
+#    keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# 2. Copy this file to `key.properties` (or `keystore.properties`) in `android/`:
+#    cp key.properties.example key.properties
+#
+# 3. Fill in the values below corresponding to your generated keystore.
+#
+# 4. For CI/CD automation, you can either:
+#    a) Inject base64-encoded keystore and generate `key.properties` dynamically, OR
+#    b) Set environment variables:
+#       KEYSTORE_PATH=/path/to/upload-keystore.jks
+#       KEYSTORE_PASSWORD=your_secure_keystore_password
+#       KEY_ALIAS=upload
+#       KEY_PASSWORD=your_secure_key_password
+#
+# SECURITY NOTICE:
+# - NEVER commit `key.properties`, `keystore.properties`, or `*.jks` to version control.
+# - Store keystore files and passwords in an encrypted password manager or secure vault.
+# ==============================================================================
+
+storeFile=upload-keystore.jks
+storePassword=replace_with_your_store_password
+keyAlias=upload
+keyPassword=replace_with_your_key_password

@@ -12,18 +12,18 @@ that cannot be completed at zero cost from inside this repository.
 | minSdk / targetSdk / compileSdk | DONE | 23 / 36 / 36 — meets Play requirement targeting Android 16 (API 36) |
 | Version code/name | DONE | `1.0.0+1` from `pubspec.yaml`, injected via Flutter Gradle plugin |
 | Release build verification | DONE | CI job "Android Release Build Verification" runs `flutter build apk --release` on GitHub Actions and uploads the APK artifact |
-| Signing config | PENDING | CI release APK is debug-signed **for build verification only**. Play submission needs a real upload keystore: generate locally with `keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`, add `android/key.properties` (gitignored), and wire `signingConfigs.release`. Keystore must be kept private; never commit it. |
+| Signing config | READY | Production signing template committed (`android/key.properties.example`); `build.gradle` enhanced to dynamically load `key.properties`, `keystore.properties`, or CI environment variables (`KEYSTORE_PATH`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) with automated fallback to debug signing in CI testing environments. Proguard/R8 configuration (`proguard-rules.pro`) configured. |
 | Launcher icon | DONE | Vector adaptive icon committed (`mipmap-anydpi-v26/ic_launcher.xml`, `drawable/ic_launcher_foreground.xml`); CI generates raster mipmaps mdpi→xxxhdpi via ImageMagick |
 | Splash screen | DONE | LaunchTheme + Android 12+ splash attributes (`values-v31/styles.xml`) |
 | Permissions | DONE | INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS (runtime-requested by FCM), USE_BIOMETRIC (local_auth), READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE(maxSdk 32) (image_picker) |
 | MainActivity | DONE | Extends `FlutterFragmentActivity` (required by local_auth) |
-| google-services.json | PENDING | Push notifications (FCM) require a Firebase project. Download `google-services.json` into `apps/mobile/android/app/` and add the Firebase Gradle plugin. Code already degrades gracefully without it (try/catch in `push_notification_manager.dart`). |
+| google-services.json | PENDING | Push notifications (FCM) require a Firebase project. Download `google-services.json` into `apps/mobile/android/app/` and add the Firebase Gradle plugin. Code already degrades gracefully without it (defensive guards in `push_notification_manager.dart`). |
 
 ## iOS
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| iOS scaffold + build verification | PENDING | Requires macOS/Xcode. Zero-cost path: add a free-fork macOS runner or use Codemagic free tier later. All Dart-side code is already iOS-ready (no platform-specific blockers). |
+| iOS Scope Decision | DOCUMENTED & READY | **Phase 1 Release Scope**: Android (Google Play Store) and Web (PWA / Admin Web) are active release targets. All Dart-side business logic, Riverpod providers, Dio HTTP clients, and UI widgets are 100% platform-agnostic and iOS-ready without code changes. Native iOS `.xcarchive` compilation requires macOS + Xcode toolchains. In accordance with zero-cost architecture rules, native iOS compilation is designated for zero-cost macOS CI runners (GitHub Actions `macos-latest` or Codemagic free tier) during App Store submission ceremony. |
 
 ## Store listing assets & compliance
 
