@@ -18,59 +18,55 @@ class OfficialDocumentsWidget extends ConsumerStatefulWidget {
 
 class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidget> {
   bool _isExpanded = true;
+  List<Map<String, dynamic>> _documents = [];
 
-  final List<Map<String, dynamic>> _documents = [
-    {
-      'id': 'doc_1',
-      'title': 'Tournament Rulebook',
-      'type': 'PDF',
-      'size': '2.4 MB',
-      'tag': 'PAFF 2026 OFFICIAL',
-      'icon': Icons.menu_book_rounded,
-      'accentColor': AppTheme.goldPrimary,
-      'downloadState': 'idle', // 'idle', 'downloading', 'completed'
-    },
-    {
-      'id': 'doc_2',
-      'title': 'Medical Guidelines',
-      'type': 'PDF',
-      'size': '1.1 MB',
-      'tag': 'SAFETY & WEIGH-IN',
-      'icon': Icons.health_and_safety_rounded,
-      'accentColor': const Color(0xFF00E676),
-      'downloadState': 'idle',
-    },
-    {
-      'id': 'doc_3',
-      'title': 'Venue Map',
-      'type': 'PNG',
-      'size': '3.8 MB',
-      'tag': 'ARENA & STAGE LAYOUT',
-      'icon': Icons.map_rounded,
-      'accentColor': const Color(0xFF00E5FF),
-      'downloadState': 'idle',
-    },
-    {
-      'id': 'doc_4',
-      'title': 'Schedule PDF',
-      'type': 'PDF',
-      'size': '850 KB',
-      'tag': 'TIMELINE & BOUTS',
-      'icon': Icons.picture_as_pdf_rounded,
-      'accentColor': const Color(0xFFFF2A6D),
-      'downloadState': 'idle',
-    },
-    {
-      'id': 'doc_5',
-      'title': 'Certificate Template',
-      'type': 'PDF',
-      'size': '4.2 MB',
-      'tag': 'AWARDS & DIPLOMA',
-      'icon': Icons.card_membership_rounded,
-      'accentColor': const Color(0xFFA855F7),
-      'downloadState': 'idle',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _initDocuments();
+  }
+
+  void _initDocuments() {
+    final raw = widget.tournament['documents'];
+    if (raw is List && raw.isNotEmpty) {
+      _documents = raw.map<Map<String, dynamic>>((doc) {
+        if (doc is! Map<String, dynamic>) return <String, dynamic>{};
+        final title = doc['title'] ?? doc['name'] ?? 'Tournament Document';
+        final type = (doc['type'] ?? doc['mimeType'] ?? 'PDF').toString().toUpperCase();
+        return {
+          'id': doc['id']?.toString() ?? 'doc_${DateTime.now().millisecondsSinceEpoch}',
+          'title': title.toString(),
+          'type': type.contains('PNG') || type.contains('JPG') || type.contains('JPEG') ? 'IMAGE' : 'PDF',
+          'size': doc['size']?.toString() ?? 'Official File',
+          'tag': doc['tag']?.toString() ?? 'PAFF OFFICIAL',
+          'icon': _resolveDocIcon(title.toString()),
+          'accentColor': _resolveDocColor(title.toString()),
+          'downloadState': 'idle',
+          'url': doc['url']?.toString(),
+        };
+      }).where((d) => d.isNotEmpty).toList();
+    } else {
+      _documents = [];
+    }
+  }
+
+  static IconData _resolveDocIcon(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('rule')) return Icons.menu_book_rounded;
+    if (lower.contains('medic') || lower.contains('health')) return Icons.health_and_safety_rounded;
+    if (lower.contains('map') || lower.contains('venue')) return Icons.map_rounded;
+    if (lower.contains('cert')) return Icons.card_membership_rounded;
+    return Icons.picture_as_pdf_rounded;
+  }
+
+  static Color _resolveDocColor(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('rule')) return AppTheme.goldPrimary;
+    if (lower.contains('medic')) return const Color(0xFF00E676);
+    if (lower.contains('map')) return const Color(0xFF00E5FF);
+    if (lower.contains('cert')) return const Color(0xFFA855F7);
+    return const Color(0xFFFF2A6D);
+  }
 
   void _triggerDownload(int index) {
     if (_documents[index]['downloadState'] == 'downloading') return;
@@ -250,15 +246,34 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
               firstChild: const SizedBox(width: double.infinity),
               secondChild: Padding(
                 padding: const EdgeInsets.only(left: 18.0, right: 18.0, bottom: 18.0),
-                child: Column(
-                  children: List.generate(_documents.length, (index) {
-                    final doc = _documents[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: _buildGlassDocumentRow(doc, index),
-                    );
-                  }),
-                ),
+                child: _documents.isEmpty
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        alignment: Alignment.center,
+                        child: const Column(
+                          children: [
+                            Icon(Icons.folder_open_rounded, color: AppTheme.textMuted, size: 28),
+                            SizedBox(height: 8),
+                            Text(
+                              'No official documents published for this event yet.',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: List.generate(_documents.length, (index) {
+                          final doc = _documents[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: _buildGlassDocumentRow(doc, index),
+                          );
+                        }),
+                      ),
               ),
               crossFadeState:
                   _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,

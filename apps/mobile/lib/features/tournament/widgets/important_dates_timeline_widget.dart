@@ -19,68 +19,144 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  final List<Map<String, dynamic>> _timelineEvents = [
-    {
-      'id': 'evt_1',
-      'title': 'Registration Close',
-      'date': 'Aug 10, 2026',
-      'time': '11:59 PM PKT',
-      'status': 'COMPLETED',
-      'icon': Icons.how_to_reg_rounded,
-      'accentColor': const Color(0xFF00E676),
-      'description': 'Final online athlete registration & weight class locking.',
-    },
-    {
-      'id': 'evt_2',
-      'title': 'Medical Submission',
-      'date': 'Aug 12, 2026',
-      'time': '05:00 PM PKT',
-      'status': 'COMPLETED',
-      'icon': Icons.health_and_safety_rounded,
-      'accentColor': const Color(0xFF00E676),
-      'description': 'PAFF physical clearance certificate & anti-doping forms.',
-    },
-    {
-      'id': 'evt_3',
-      'title': 'Weigh-In Verification',
-      'date': 'Aug 14, 2026',
-      'time': '09:00 AM - 06:00 PM',
-      'status': 'IN_PROGRESS',
-      'icon': Icons.scale_rounded,
-      'accentColor': AppTheme.goldPrimary,
-      'description': 'Official digital scale check & referee ID badge issuance.',
-    },
-    {
-      'id': 'evt_4',
-      'title': 'Athlete Check-In',
-      'date': 'Aug 15, 2026',
-      'time': '08:00 AM PKT',
-      'status': 'UPCOMING',
-      'icon': Icons.fact_check_rounded,
-      'accentColor': const Color(0xFF00E5FF),
-      'description': 'Stage 1 arena staging, warm-up table allocation.',
-    },
-    {
-      'id': 'evt_5',
-      'title': 'Competition Start',
-      'date': 'Aug 15, 2026',
-      'time': '10:00 AM PKT',
-      'status': 'UPCOMING',
-      'icon': Icons.sports_mma_rounded,
-      'accentColor': const Color(0xFFFF2A6D),
-      'description': 'Main bracket pull rounds across 4 official tables.',
-    },
-    {
-      'id': 'evt_6',
-      'title': 'Awards Ceremony',
-      'date': 'Aug 16, 2026',
-      'time': '06:00 PM PKT',
-      'status': 'UPCOMING',
-      'icon': Icons.workspace_premium_rounded,
-      'accentColor': AppTheme.goldPrimary,
-      'description': 'Podium medal presentation, ELO points distribution.',
-    },
-  ];
+  List<Map<String, dynamic>> _resolveTimelineEvents() {
+    final raw = widget.tournament['importantDates'] ?? widget.tournament['dates'];
+    if (raw is List && raw.isNotEmpty) {
+      return raw.map<Map<String, dynamic>>((e) {
+        if (e is! Map<String, dynamic>) return <String, dynamic>{};
+        final dt = e['date'] != null ? DateTime.tryParse(e['date'].toString()) : null;
+        final status = e['status'] ?? (dt != null ? _calcStatus(dt, DateTime.now()) : 'UPCOMING');
+        return {
+          'id': e['id']?.toString() ?? 'evt_${DateTime.now().millisecondsSinceEpoch}',
+          'title': e['title'] ?? 'Tournament Event',
+          'date': dt != null ? _formatDate(dt) : (e['date']?.toString() ?? 'TBD'),
+          'time': e['time']?.toString() ?? 'Schedule TBD',
+          'status': status,
+          'icon': _resolveEventIcon(e['title']?.toString() ?? ''),
+          'accentColor': _calcColor(status.toString()),
+          'description': e['description']?.toString() ?? 'Official schedule milestone.',
+        };
+      }).where((e) => e.isNotEmpty).toList();
+    }
+
+    final now = DateTime.now();
+    final events = <Map<String, dynamic>>[];
+
+    final regStart = widget.tournament['registrationStart'] != null
+        ? DateTime.tryParse(widget.tournament['registrationStart'].toString())
+        : null;
+    final regEnd = widget.tournament['registrationEnd'] != null
+        ? DateTime.tryParse(widget.tournament['registrationEnd'].toString())
+        : null;
+    final startDate = widget.tournament['startDate'] != null
+        ? DateTime.tryParse(widget.tournament['startDate'].toString())
+        : null;
+    final endDate = widget.tournament['endDate'] != null
+        ? DateTime.tryParse(widget.tournament['endDate'].toString())
+        : null;
+
+    if (regStart != null) {
+      final status = _calcStatus(regStart, now);
+      events.add({
+        'id': 'evt_reg_start',
+        'title': 'Registration Opens',
+        'date': _formatDate(regStart),
+        'time': '09:00 AM PKT',
+        'status': status,
+        'icon': Icons.app_registration_rounded,
+        'accentColor': _calcColor(status),
+        'description': 'Online registration opens for verified competitors.',
+      });
+    }
+
+    if (regEnd != null) {
+      final status = _calcStatus(regEnd, now);
+      events.add({
+        'id': 'evt_reg_end',
+        'title': 'Registration Closes',
+        'date': _formatDate(regEnd),
+        'time': '11:59 PM PKT',
+        'status': status,
+        'icon': Icons.how_to_reg_rounded,
+        'accentColor': _calcColor(status),
+        'description': 'Final online athlete registration and weight locking.',
+      });
+    }
+
+    if (startDate != null) {
+      final weighInDate = startDate.subtract(const Duration(hours: 4));
+      final weighInStatus = _calcStatus(weighInDate, now);
+      events.add({
+        'id': 'evt_weigh_in',
+        'title': 'Weigh-In Verification',
+        'date': _formatDate(weighInDate),
+        'time': '08:00 AM - 10:00 AM PKT',
+        'status': weighInStatus,
+        'icon': Icons.scale_rounded,
+        'accentColor': _calcColor(weighInStatus),
+        'description': 'Official scale check and referee ID badge issuance.',
+      });
+
+      final startStatus = _calcStatus(startDate, now);
+      events.add({
+        'id': 'evt_comp_start',
+        'title': 'Competition Start',
+        'date': _formatDate(startDate),
+        'time': '10:30 AM PKT',
+        'status': startStatus,
+        'icon': Icons.sports_mma_rounded,
+        'accentColor': _calcColor(startStatus),
+        'description': 'Main bracket pull rounds across competition tables.',
+      });
+    }
+
+    if (endDate != null) {
+      final endStatus = _calcStatus(endDate, now);
+      events.add({
+        'id': 'evt_awards',
+        'title': 'Finals & Awards Ceremony',
+        'date': _formatDate(endDate),
+        'time': '06:00 PM PKT',
+        'status': endStatus,
+        'icon': Icons.workspace_premium_rounded,
+        'accentColor': _calcColor(endStatus),
+        'description': 'Championship title bouts, podium medals, and ranking points.',
+      });
+    }
+
+    return events;
+  }
+
+  static String _formatDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+  static String _calcStatus(DateTime dt, DateTime now) {
+    if (now.isAfter(dt.add(const Duration(days: 1)))) return 'COMPLETED';
+    if (now.year == dt.year && now.month == dt.month && now.day == dt.day) return 'IN_PROGRESS';
+    return 'UPCOMING';
+  }
+
+  static Color _calcColor(String status) {
+    switch (status) {
+      case 'COMPLETED':
+        return const Color(0xFF00E676);
+      case 'IN_PROGRESS':
+        return AppTheme.goldPrimary;
+      default:
+        return const Color(0xFF00E5FF);
+    }
+  }
+
+  static IconData _resolveEventIcon(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('reg')) return Icons.how_to_reg_rounded;
+    if (lower.contains('weigh') || lower.contains('scale')) return Icons.scale_rounded;
+    if (lower.contains('award') || lower.contains('podium')) return Icons.workspace_premium_rounded;
+    if (lower.contains('medical')) return Icons.health_and_safety_rounded;
+    return Icons.sports_mma_rounded;
+  }
 
   @override
   void initState() {
@@ -104,6 +180,8 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
 
   @override
   Widget build(BuildContext context) {
+    final timelineEvents = _resolveTimelineEvents();
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -159,7 +237,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'IMPORTANT DATES',
+                            'IMPORTANT DATES & DEADLINES',
                             style: TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontSize: 13,
@@ -188,9 +266,9 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.white12),
                     ),
-                    child: const Text(
-                      '6 MILESTONES',
-                      style: TextStyle(
+                    child: Text(
+                      '${timelineEvents.length} MILESTONES',
+                      style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
@@ -203,17 +281,39 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
 
               const SizedBox(height: 18),
 
-              // Vertical Timeline List
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _timelineEvents.length,
-                itemBuilder: (context, index) {
-                  final event = _timelineEvents[index];
-                  final bool isLast = index == _timelineEvents.length - 1;
-                  return _buildTimelineNode(event, index, isLast);
-                },
-              ),
+              // Vertical Timeline List or Empty State
+              if (timelineEvents.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  alignment: Alignment.center,
+                  child: const Column(
+                    children: [
+                      Icon(Icons.event_note_rounded, size: 32, color: AppTheme.textMuted),
+                      SizedBox(height: 8),
+                      Text(
+                        'Important dates and schedule milestones have not been posted yet.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: timelineEvents.length,
+                  itemBuilder: (context, index) {
+                    final event = timelineEvents[index];
+                    final bool isLast = index == timelineEvents.length - 1;
+                    return _buildTimelineNode(timelineEvents, event, index, isLast);
+                  },
+                ),
             ],
           ),
         ),
@@ -221,7 +321,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
     );
   }
 
-  Widget _buildTimelineNode(Map<String, dynamic> event, int index, bool isLast) {
+  Widget _buildTimelineNode(List<Map<String, dynamic>> allEvents, Map<String, dynamic> event, int index, bool isLast) {
     final String status = event['status'] as String;
     final Color accentColor = event['accentColor'] as Color;
     final bool isCompleted = status == 'COMPLETED';
@@ -233,50 +333,42 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
         children: [
           // Left Node Indicator & Connecting Vertical Line
           SizedBox(
-            width: 38,
+            width: 32,
             child: Column(
               children: [
-                // Glowing Node Circle
+                // Glowing/Pulsing Dot or Check Icon
                 AnimatedBuilder(
                   animation: _pulseAnimation,
                   builder: (context, child) {
-                    final double pulseValue = isInProgress || !isCompleted
-                        ? 0.7 + (_pulseAnimation.value * 0.3)
-                        : 1.0;
-
-                    return Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isCompleted
-                            ? accentColor
-                            : (isInProgress
-                                ? accentColor.withValues(alpha: 0.25)
-                                : const Color(0xFF1E293B)),
-                        border: Border.all(
-                          color: accentColor.withValues(alpha: isCompleted ? 1.0 : 0.8),
-                          width: isCompleted ? 2.0 : 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accentColor.withValues(
-                              alpha: isCompleted ? 0.6 : (isInProgress ? 0.4 * pulseValue : 0.15),
-                            ),
-                            blurRadius: isCompleted ? 10 : (isInProgress ? 12 * pulseValue : 6),
-                            spreadRadius: isCompleted ? 2 : (isInProgress ? 2 * pulseValue : 0),
+                    final pulseScale = isInProgress ? 1.0 + (0.15 * _pulseAnimation.value) : 1.0;
+                    return Transform.scale(
+                      scale: pulseScale,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF141E2F),
+                          border: Border.all(
+                            color: accentColor,
+                            width: isInProgress ? 2.0 : 1.5,
                           ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          isCompleted
-                              ? Icons.check_rounded
-                              : (isInProgress ? Icons.bolt_rounded : event['icon'] as IconData),
-                          size: 14,
-                          color: isCompleted
-                              ? Colors.black
-                              : (isInProgress ? accentColor : Colors.white70),
+                          boxShadow: isInProgress
+                              ? [
+                                  BoxShadow(
+                                    color: accentColor.withValues(alpha: 0.45 * _pulseAnimation.value),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            isCompleted ? Icons.check_rounded : event['icon'] as IconData,
+                            size: 13,
+                            color: accentColor,
+                          ),
                         ),
                       ),
                     );
@@ -295,7 +387,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                           end: Alignment.bottomCenter,
                           colors: [
                             accentColor.withValues(alpha: isCompleted ? 0.8 : 0.4),
-                            (_timelineEvents[index + 1]['accentColor'] as Color).withValues(alpha: 0.3),
+                            (allEvents[index + 1]['accentColor'] as Color).withValues(alpha: 0.3),
                           ],
                         ),
                       ),

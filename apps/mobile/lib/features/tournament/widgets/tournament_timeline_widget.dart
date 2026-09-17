@@ -2,112 +2,123 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
-class _TournamentTimelineWidget extends StatefulWidget {
+class TournamentTimelineWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
-  const _TournamentTimelineWidget({
+  const TournamentTimelineWidget({
+    super.key,
     required this.tournament,
   });
 
   @override
-  State<_TournamentTimelineWidget> createState() => _TournamentTimelineWidgetState();
+  State<TournamentTimelineWidget> createState() => _TournamentTimelineWidgetState();
 }
 
-class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
+class _TournamentTimelineWidgetState extends State<TournamentTimelineWidget>
     with SingleTickerProviderStateMixin {
-  int _currentEventIndex = 8; // Default current active event: Semi Finals
+  int _currentEventIndex = 0;
   late AnimationController _pulseController;
 
-  final List<Map<String, dynamic>> _timelineEvents = [
-    {
-      'title': 'Registration Opens',
-      'date': 'June 1, 2026',
-      'time': '09:00 AM PST',
-      'location': 'Online Portal & PAFF Office',
-      'details': 'Early bird competitor registration opened for all provincial qualifiers.',
-      'icon': Icons.app_registration_rounded,
-    },
-    {
-      'title': 'Registration Closes',
-      'date': 'August 10, 2026',
-      'time': '11:59 PM PST',
-      'location': 'Digital Systems Lockdown',
-      'details': 'Final slot confirmation and category capacity enforcement.',
-      'icon': Icons.timer_off_rounded,
-    },
-    {
-      'title': 'Medical Verification',
-      'date': 'August 14, 2026',
-      'time': '08:00 AM - 10:00 AM',
-      'location': 'Nishtar Sports Complex Medical Wing',
-      'details': 'Doctor clearance, skin check, blood pressure & joint mobility check.',
-      'icon': Icons.health_and_safety_rounded,
-    },
-    {
-      'title': 'Weigh-in',
-      'date': 'August 14, 2026',
-      'time': '10:00 AM - 01:00 PM',
-      'location': 'Main Calibrated Scale Station A',
-      'details': 'Official weight lock & weight class eligibility certification.',
-      'icon': Icons.scale_rounded,
-    },
-    {
-      'title': 'Check-in',
-      'date': 'August 15, 2026',
-      'time': '08:00 AM - 09:00 AM',
-      'location': 'Athlete Holding Zone & Arena Gate 2',
-      'details': 'Digital QR pass scanning, wristband distribution & warmup entry.',
-      'icon': Icons.how_to_reg_rounded,
-    },
-    {
-      'title': 'Opening Ceremony',
-      'date': 'August 15, 2026',
-      'time': '09:30 AM - 10:15 AM',
-      'location': 'Center Arena Stage',
-      'details': 'PAFF Executive Council address, referee oath & national anthem.',
-      'icon': Icons.stars_rounded,
-    },
-    {
-      'title': 'Qualification',
-      'date': 'August 15, 2026',
-      'time': '10:30 AM - 01:30 PM',
-      'location': 'Arena Tables 1, 2 & 3',
-      'details': 'Double elimination preliminary rounds across all men division classes.',
-      'icon': Icons.sports_kabaddi_rounded,
-    },
-    {
-      'title': 'Quarter Finals',
-      'date': 'August 15, 2026',
-      'time': '02:00 PM - 03:30 PM',
-      'location': 'Main Broadcast Tables A & B',
-      'details': 'Top 8 athletes per weight class battle for semifinal spots.',
-      'icon': Icons.workspace_premium_rounded,
-    },
-    {
-      'title': 'Semi Finals',
-      'date': 'August 15, 2026',
-      'time': '04:00 PM - 05:30 PM',
-      'location': 'Main Broadcast Table A',
-      'details': 'High stakes clashes for championship final qualification.',
-      'icon': Icons.bolt_rounded,
-    },
-    {
-      'title': 'Finals',
-      'date': 'August 15, 2026',
-      'time': '06:00 PM - 07:15 PM',
-      'location': 'Center Arena Elevated Stage Table',
-      'details': 'Gold & Silver title matches live on national television.',
-      'icon': Icons.emoji_events_rounded,
-    },
-    {
-      'title': 'Award Ceremony',
-      'date': 'August 15, 2026',
-      'time': '07:30 PM - 08:30 PM',
-      'location': 'Main Podium Stage',
-      'details': 'Medal presentation, trophy awards & PKR 500,000 cash prizes.',
-      'icon': Icons.military_tech_rounded,
-    },
-  ];
+  List<Map<String, dynamic>> _resolveTimelineEvents() {
+    final raw = widget.tournament['timeline'] ?? widget.tournament['stages'];
+    if (raw is List && raw.isNotEmpty) {
+      return raw.map<Map<String, dynamic>>((e) {
+        if (e is! Map<String, dynamic>) return <String, dynamic>{};
+        final title = e['title'] ?? e['name'] ?? 'Tournament Stage';
+        return {
+          'title': title.toString(),
+          'date': e['date']?.toString() ?? 'TBD',
+          'time': e['time']?.toString() ?? 'TBD',
+          'location': e['location']?.toString() ?? widget.tournament['venue']?.toString() ?? 'Main Arena',
+          'details': e['details']?.toString() ?? e['description']?.toString() ?? 'Official tournament stage.',
+          'icon': _resolveTimelineIcon(title.toString()),
+        };
+      }).where((e) => e.isNotEmpty).toList();
+    }
+
+    final venue = widget.tournament['venue']?.toString() ?? 'Main Arena';
+    final regStart = widget.tournament['registrationStart'] != null ? DateTime.tryParse(widget.tournament['registrationStart'].toString()) : null;
+    final regEnd = widget.tournament['registrationEnd'] != null ? DateTime.tryParse(widget.tournament['registrationEnd'].toString()) : null;
+    final startDate = widget.tournament['startDate'] != null ? DateTime.tryParse(widget.tournament['startDate'].toString()) : null;
+    final endDate = widget.tournament['endDate'] != null ? DateTime.tryParse(widget.tournament['endDate'].toString()) : null;
+
+    final events = <Map<String, dynamic>>[];
+    if (regStart != null) {
+      events.add({
+        'title': 'Registration Opens',
+        'date': '${regStart.month}/${regStart.day}/${regStart.year}',
+        'time': '09:00 AM PKT',
+        'location': 'ArmSphere Digital Portal',
+        'details': 'Online competitor registration opened.',
+        'icon': Icons.app_registration_rounded,
+      });
+    }
+    if (regEnd != null) {
+      events.add({
+        'title': 'Registration Closes',
+        'date': '${regEnd.month}/${regEnd.day}/${regEnd.year}',
+        'time': '11:59 PM PKT',
+        'location': 'Digital Systems Lockdown',
+        'details': 'Final slot confirmation and category capacity enforcement.',
+        'icon': Icons.timer_off_rounded,
+      });
+    }
+    if (startDate != null) {
+      events.add({
+        'title': 'Weigh-in & Verification',
+        'date': '${startDate.month}/${startDate.day}/${startDate.year}',
+        'time': '08:00 AM - 10:00 AM PKT',
+        'location': '$venue • Weigh-in Desk',
+        'details': 'Official weight lock & weight class eligibility certification.',
+        'icon': Icons.scale_rounded,
+      });
+      events.add({
+        'title': 'Opening Ceremony',
+        'date': '${startDate.month}/${startDate.day}/${startDate.year}',
+        'time': '10:00 AM - 10:30 AM PKT',
+        'location': '$venue • Center Arena',
+        'details': 'Referee oath, athlete assembly & rules briefing.',
+        'icon': Icons.stars_rounded,
+      });
+      events.add({
+        'title': 'Competition Bouts',
+        'date': '${startDate.month}/${startDate.day}/${startDate.year}',
+        'time': '10:30 AM - 05:00 PM PKT',
+        'location': '$venue • Official Tables',
+        'details': 'Double elimination tournament brackets across active tables.',
+        'icon': Icons.sports_mma_rounded,
+      });
+    }
+    if (endDate != null) {
+      events.add({
+        'title': 'Championship Finals',
+        'date': '${endDate.month}/${endDate.day}/${endDate.year}',
+        'time': '05:30 PM - 07:00 PM PKT',
+        'location': '$venue • Elevated Main Table',
+        'details': 'Title bouts for gold, silver, and bronze podium positions.',
+        'icon': Icons.emoji_events_rounded,
+      });
+      events.add({
+        'title': 'Awards Ceremony',
+        'date': '${endDate.month}/${endDate.day}/${endDate.year}',
+        'time': '07:30 PM PKT',
+        'location': '$venue • Main Podium',
+        'details': 'Medal presentation and official ELO ranking points distribution.',
+        'icon': Icons.military_tech_rounded,
+      });
+    }
+
+    return events;
+  }
+
+  static IconData _resolveTimelineIcon(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('reg')) return Icons.app_registration_rounded;
+    if (lower.contains('weigh') || lower.contains('scale')) return Icons.scale_rounded;
+    if (lower.contains('final') || lower.contains('award') || lower.contains('ceremony')) return Icons.emoji_events_rounded;
+    if (lower.contains('ceremony') || lower.contains('opening')) return Icons.stars_rounded;
+    return Icons.sports_mma_rounded;
+  }
 
   @override
   void initState() {
@@ -116,6 +127,16 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+
+    final events = _resolveTimelineEvents();
+    final status = (widget.tournament['status'] ?? '').toString().toUpperCase();
+    if (status == 'COMPLETED' || status == 'FINISHED') {
+      _currentEventIndex = (events.length - 1).clamp(0, events.length > 0 ? events.length - 1 : 0);
+    } else if (status == 'LIVE' || status == 'IN_PROGRESS') {
+      _currentEventIndex = (events.length ~/ 2).clamp(0, events.length > 0 ? events.length - 1 : 0);
+    } else {
+      _currentEventIndex = 0;
+    }
   }
 
   @override
@@ -126,6 +147,53 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
 
   @override
   Widget build(BuildContext context) {
+    final timelineEvents = _resolveTimelineEvents();
+
+    if (timelineEvents.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Colors.white12,
+            width: 1.2,
+          ),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.timeline_rounded, color: Colors.white38, size: 36),
+              SizedBox(height: 10),
+              Text(
+                'No Timeline Stages Published',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Official timeline stages will appear once scheduled.',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final totalStages = timelineEvents.length;
+    final currentStage = (_currentEventIndex + 1).clamp(1, totalStages);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -168,10 +236,10 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'TOURNAMENT TIMELINE',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
@@ -181,10 +249,10 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                             letterSpacing: 0.8,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          '11 Official Championship Stages',
-                          style: TextStyle(
+                          '$totalStages Official Championship Stages',
+                          style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 10,
                             color: AppTheme.textMuted,
@@ -209,7 +277,7 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                       const PulseIndicator(size: 5.0, color: Color(0xFFFF2A6D)),
                       const SizedBox(width: 5),
                       Text(
-                        'STAGE ${_currentEventIndex + 1} OF 11',
+                        'STAGE $currentStage OF $totalStages',
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 8.5,
@@ -257,7 +325,7 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    onPressed: _currentEventIndex < _timelineEvents.length - 1
+                    onPressed: _currentEventIndex < totalStages - 1
                         ? () {
                             HapticFeedback.selectionClick();
                             setState(() => _currentEventIndex++);
@@ -278,12 +346,12 @@ class _TournamentTimelineWidgetState extends State<_TournamentTimelineWidget>
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _timelineEvents.length,
+              itemCount: timelineEvents.length,
               itemBuilder: (context, index) {
-                final item = _timelineEvents[index];
+                final item = timelineEvents[index];
                 final isPast = index < _currentEventIndex;
                 final isCurrent = index == _currentEventIndex;
-                final isLast = index == _timelineEvents.length - 1;
+                final isLast = index == totalStages - 1;
 
                 return IntrinsicHeight(
                   child: Row(

@@ -17,52 +17,71 @@ class TournamentFinishedResultsWidget extends StatefulWidget {
 
 class _TournamentFinishedResultsWidgetState
     extends State<TournamentFinishedResultsWidget> {
-  // Toggle for testing/previewing finished status
-  bool _forceFinishedView = true;
 
-  final Map<String, dynamic> _podiumData = {
-    'champion': {
-      'place': '1st Place',
-      'title': 'CHAMPION',
-      'name': 'Tariq Zafar',
-      'club': 'Lahore Iron Grip',
-      'province': 'Punjab',
-      'eloGain': '+85 ELO',
-      'photoUrl':
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-      'color': AppTheme.goldPrimary,
-      'badge': 'GOLD MEDAL',
-    },
-    'runnerUp': {
-      'place': '2nd Place',
-      'title': 'RUNNER UP',
-      'name': 'Bilal Khan',
-      'club': 'Peshawar Titans',
-      'province': 'KPK',
-      'eloGain': '+52 ELO',
-      'photoUrl':
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
-      'color': const Color(0xFFE2E8F0),
-      'badge': 'SILVER MEDAL',
-    },
-    'thirdPlace': {
-      'place': '3rd Place',
-      'title': 'THIRD PLACE',
-      'name': 'Usman Raza',
-      'club': 'Capital Power',
-      'province': 'Islamabad',
-      'eloGain': '+34 ELO',
-      'photoUrl':
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
-      'color': const Color(0xFFCD7F32),
-      'badge': 'BRONZE MEDAL',
-    },
-  };
+  Map<String, Map<String, dynamic>> _resolvePodium() {
+    final rawResults = widget.tournament['results'] ?? widget.tournament['podium'];
+    if (rawResults is Map<String, dynamic> && rawResults.containsKey('champion')) {
+      return {
+        'champion': _normalizePodiumEntry(rawResults['champion'], '1st Place', 'CHAMPION', AppTheme.goldPrimary, 'GOLD MEDAL'),
+        'runnerUp': _normalizePodiumEntry(rawResults['runnerUp'], '2nd Place', 'RUNNER UP', const Color(0xFFE2E8F0), 'SILVER MEDAL'),
+        'thirdPlace': _normalizePodiumEntry(rawResults['thirdPlace'], '3rd Place', 'THIRD PLACE', const Color(0xFFCD7F32), 'BRONZE MEDAL'),
+      };
+    }
+    if (rawResults is List && rawResults.isNotEmpty) {
+      return {
+        'champion': _normalizePodiumEntry(rawResults.isNotEmpty ? rawResults[0] : null, '1st Place', 'CHAMPION', AppTheme.goldPrimary, 'GOLD MEDAL'),
+        'runnerUp': _normalizePodiumEntry(rawResults.length > 1 ? rawResults[1] : null, '2nd Place', 'RUNNER UP', const Color(0xFFE2E8F0), 'SILVER MEDAL'),
+        'thirdPlace': _normalizePodiumEntry(rawResults.length > 2 ? rawResults[2] : null, '3rd Place', 'THIRD PLACE', const Color(0xFFCD7F32), 'BRONZE MEDAL'),
+      };
+    }
+    return {};
+  }
+
+  Map<String, dynamic> _normalizePodiumEntry(
+    dynamic raw,
+    String place,
+    String title,
+    Color color,
+    String badge,
+  ) {
+    if (raw is Map<String, dynamic>) {
+      final athlete = raw['athlete'] is Map<String, dynamic> ? raw['athlete'] : raw;
+      final name = athlete['fullName'] ?? athlete['name'] ?? raw['name'] ?? 'TBD';
+      final club = athlete['club'] ?? athlete['clubName'] ?? raw['club'] ?? 'Independent';
+      final province = athlete['province'] ?? raw['province'] ?? 'PAFF';
+      final eloGain = raw['eloGain'] != null
+          ? '+${raw['eloGain']} ELO'
+          : (raw['points'] != null ? '+${raw['points']} Pts' : 'Ranked');
+      final photoUrl = athlete['avatarUrl'] ?? athlete['photoUrl'] ?? raw['photoUrl'] ?? '';
+      return {
+        'place': place,
+        'title': title,
+        'name': name.toString(),
+        'club': club.toString(),
+        'province': province.toString(),
+        'eloGain': eloGain.toString(),
+        'photoUrl': photoUrl.toString(),
+        'color': color,
+        'badge': badge,
+      };
+    }
+    return {
+      'place': place,
+      'title': title,
+      'name': 'TBD',
+      'club': '—',
+      'province': '—',
+      'eloGain': '—',
+      'photoUrl': '',
+      'color': color,
+      'badge': badge,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String actualStatus = widget.tournament['status'] ?? 'COMPLETED';
-    final bool isFinished = actualStatus == 'COMPLETED' || _forceFinishedView;
+    final String actualStatus = (widget.tournament['status'] ?? '').toString().toUpperCase();
+    final bool isFinished = actualStatus == 'COMPLETED' || actualStatus == 'FINISHED';
 
     if (!isFinished) {
       return Container(
@@ -73,38 +92,53 @@ class _TournamentFinishedResultsWidgetState
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white12),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: const Row(
           children: [
-            const Row(
-              children: [
-                Icon(Icons.emoji_events_outlined, color: AppTheme.textMuted, size: 18),
-                SizedBox(width: 8),
-                Text(
-                  'Final results locked until tournament finishes',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11,
-                    color: AppTheme.textMuted,
-                  ),
-                ),
-              ],
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _forceFinishedView = true;
-                });
-              },
-              child: const Text(
-                'PREVIEW',
+            Icon(Icons.emoji_events_outlined, color: AppTheme.textMuted, size: 18),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Final results locked until tournament finishes',
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.goldPrimary,
+                  fontSize: 11,
+                  color: AppTheme.textMuted,
                 ),
               ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final podiumData = _resolvePodium();
+    if (podiumData.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D1527).withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.3)),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.military_tech_outlined, color: AppTheme.goldPrimary, size: 32),
+            SizedBox(height: 8),
+            Text(
+              'Tournament Completed',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Official verified results are being compiled by PAFF council.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
         ),
@@ -266,7 +300,7 @@ class _TournamentFinishedResultsWidgetState
                       // 2nd Place (Runner Up) - Left
                       Expanded(
                         child: _buildPodiumColumn(
-                          data: _podiumData['runnerUp']!,
+                          data: podiumData['runnerUp']!,
                           trophyIcon: Icons.military_tech_rounded,
                           heightPadding: 0,
                         ),
@@ -276,7 +310,7 @@ class _TournamentFinishedResultsWidgetState
                       // 1st Place (Champion) - Center (Elevated with Gold Light)
                       Expanded(
                         child: _buildPodiumColumn(
-                          data: _podiumData['champion']!,
+                          data: podiumData['champion']!,
                           trophyIcon: Icons.emoji_events_rounded,
                           heightPadding: 16,
                           isChampion: true,
@@ -287,7 +321,7 @@ class _TournamentFinishedResultsWidgetState
                       // 3rd Place - Right
                       Expanded(
                         child: _buildPodiumColumn(
-                          data: _podiumData['thirdPlace']!,
+                          data: podiumData['thirdPlace']!,
                           trophyIcon: Icons.workspace_premium_rounded,
                           heightPadding: 0,
                         ),
@@ -297,7 +331,7 @@ class _TournamentFinishedResultsWidgetState
 
                   const SizedBox(height: 20),
 
-                  // Post-Tournament Stats Row (Top ELO Gain, Total Matches, Avg Duration)
+                  // Post-Tournament Stats Row (Top Performer, Total Matches, Status)
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -311,9 +345,9 @@ class _TournamentFinishedResultsWidgetState
                       children: [
                         Expanded(
                           child: _buildResultsStatTile(
-                            'TOP ELO GAIN',
-                            '+85 ELO',
-                            'Tariq Zafar',
+                            'CHAMPION',
+                            podiumData['champion']?['name'] ?? 'TBD',
+                            podiumData['champion']?['club'] ?? 'Winner',
                             Icons.bolt_rounded,
                             AppTheme.goldPrimary,
                           ),
@@ -326,8 +360,8 @@ class _TournamentFinishedResultsWidgetState
                         Expanded(
                           child: _buildResultsStatTile(
                             'TOTAL MATCHES',
-                            '64 Bouts',
-                            '32 Bracket Ties',
+                            '${widget.tournament['matchCount'] ?? widget.tournament['matches']?.length ?? '—'} Bouts',
+                            'Official Results',
                             Icons.sports_mma_rounded,
                             const Color(0xFF00E5FF),
                           ),
@@ -339,10 +373,10 @@ class _TournamentFinishedResultsWidgetState
                         ),
                         Expanded(
                           child: _buildResultsStatTile(
-                            'AVG DURATION',
-                            '18.4s',
-                            'per match',
-                            Icons.timer_rounded,
+                            'FEDERATION',
+                            'PAFF CERTIFIED',
+                            'Verified Record',
+                            Icons.verified_rounded,
                             const Color(0xFF00E676),
                           ),
                         ),
@@ -474,7 +508,22 @@ class _TournamentFinishedResultsWidgetState
                   children: [
                     CircleAvatar(
                       radius: isChampion ? 24 : 20,
-                      backgroundImage: NetworkImage(data['photoUrl']),
+                      backgroundColor: color.withValues(alpha: 0.2),
+                      backgroundImage: (data['photoUrl'] as String).isNotEmpty
+                          ? NetworkImage(data['photoUrl'] as String)
+                          : null,
+                      child: (data['photoUrl'] as String).isEmpty
+                          ? Text(
+                              (data['name'] as String).isNotEmpty
+                                  ? (data['name'] as String)[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isChampion ? 16 : 13,
+                              ),
+                            )
+                          : null,
                     ),
                     Positioned(
                       bottom: 0,
@@ -670,9 +719,9 @@ class _TournamentFinishedResultsWidgetState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'SENIOR -80KG DIVISION STANDINGS',
-                          style: TextStyle(
+                        Text(
+                          '${(widget.tournament['name'] ?? 'TOURNAMENT').toString().toUpperCase()} STANDINGS',
+                          style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
@@ -682,38 +731,7 @@ class _TournamentFinishedResultsWidgetState
                         ),
                         const SizedBox(height: 10),
 
-                        _buildModalStandingRow(
-                          rank: '1ST',
-                          name: 'Tariq Zafar',
-                          club: 'Lahore Iron Grip',
-                          score: '5-0 Bouts',
-                          color: AppTheme.goldPrimary,
-                          medal: '🥇 GOLD',
-                        ),
-                        _buildModalStandingRow(
-                          rank: '2ND',
-                          name: 'Bilal Khan',
-                          club: 'Peshawar Titans',
-                          score: '4-1 Bouts',
-                          color: const Color(0xFFE2E8F0),
-                          medal: '🥈 SILVER',
-                        ),
-                        _buildModalStandingRow(
-                          rank: '3RD',
-                          name: 'Usman Raza',
-                          club: 'Capital Power Gym',
-                          score: '4-2 Bouts',
-                          color: const Color(0xFFCD7F32),
-                          medal: '🥉 BRONZE',
-                        ),
-                        _buildModalStandingRow(
-                          rank: '4TH',
-                          name: 'Zain Ul-Abedin',
-                          club: 'Steel Arm Academy',
-                          score: '3-2 Bouts',
-                          color: Colors.white54,
-                          medal: 'SEMI FINAL',
-                        ),
+                        ..._buildDynamicModalStandings(),
 
                         const SizedBox(height: 18),
 
@@ -841,6 +859,54 @@ class _TournamentFinishedResultsWidgetState
         ],
       ),
     );
+  }
+
+  List<Widget> _buildDynamicModalStandings() {
+    final raw = widget.tournament['standings'] ?? widget.tournament['results'];
+    if (raw is List && raw.isNotEmpty) {
+      return raw.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final item = entry.value is Map<String, dynamic>
+            ? entry.value as Map<String, dynamic>
+            : <String, dynamic>{};
+        final rank = item['rank']?.toString() ??
+            '${idx + 1}${idx == 0 ? "ST" : (idx == 1 ? "ND" : (idx == 2 ? "RD" : "TH"))}';
+        final name = item['name'] ?? item['athleteName'] ?? item['fullName'] ?? 'Athlete';
+        final club = item['club'] ?? item['clubName'] ?? 'PAFF Affiliate';
+        final score = item['score'] ?? item['record'] ?? '${item['wins'] ?? 0}-${item['losses'] ?? 0} Bouts';
+        final color = idx == 0
+            ? AppTheme.goldPrimary
+            : (idx == 1
+                ? const Color(0xFFE2E8F0)
+                : (idx == 2 ? const Color(0xFFCD7F32) : Colors.white54));
+        final medal = idx == 0
+            ? '🥇 GOLD'
+            : (idx == 1 ? '🥈 SILVER' : (idx == 2 ? '🥉 BRONZE' : 'FINALIST'));
+
+        return _buildModalStandingRow(
+          rank: rank,
+          name: name.toString(),
+          club: club.toString(),
+          score: score.toString(),
+          color: color,
+          medal: medal,
+        );
+      }).toList();
+    }
+    return [
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        alignment: Alignment.center,
+        child: const Text(
+          'Official bracket standings are currently being certified.',
+          style: TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontSize: 11,
+            color: AppTheme.textMuted,
+          ),
+        ),
+      ),
+    ];
   }
 }
 

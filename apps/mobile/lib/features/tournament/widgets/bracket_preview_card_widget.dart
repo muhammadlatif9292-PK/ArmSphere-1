@@ -13,11 +13,22 @@ class BracketPreviewCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasBrackets = tournament['hasBrackets'] ?? true;
+    final hasBrackets = tournament['bracket'] != null ||
+        tournament['matches'] != null ||
+        (tournament['hasBrackets'] == true);
 
-    if (!hasBrackets) {
+    if (!hasBrackets && (tournament['status'] ?? '').toString().toUpperCase() != 'LIVE') {
       return const SizedBox();
     }
+
+    final division = tournament['category'] ?? tournament['division'] ?? 'Official Championship Division';
+    final currentRound = tournament['currentRound']?.toString() ?? 'Tournament Draw';
+    final remaining = tournament['remainingMatches']?.toString() ??
+        (tournament['totalMatches'] != null ? '${tournament['totalMatches']} Matches' : 'Bouts In Progress');
+    final position = tournament['userMatchPosition']?.toString() ??
+        (tournament['userRegistration']?['athleteNumber'] != null ? 'Athlete #${tournament['userRegistration']['athleteNumber']}' : 'Official Draw');
+
+    final miniMatches = _resolveMiniMatches();
 
     return Container(
       width: double.infinity,
@@ -66,10 +77,10 @@ class BracketPreviewCardWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'LIVE BRACKET PREVIEW',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
@@ -79,10 +90,10 @@ class BracketPreviewCardWidget extends StatelessWidget {
                             letterSpacing: 0.8,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Senior Men -80kg Right Arm Division',
-                          style: TextStyle(
+                          division,
+                          style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 10,
                             color: AppTheme.textMuted,
@@ -99,14 +110,14 @@ class BracketPreviewCardWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.5)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      PulseIndicator(size: 5.0, color: Color(0xFF00E676)),
-                      SizedBox(width: 4),
+                      const PulseIndicator(size: 5.0, color: Color(0xFF00E676)),
+                      const SizedBox(width: 4),
                       Text(
-                        'SEEDED',
-                        style: TextStyle(
+                        miniMatches.isNotEmpty ? 'ACTIVE' : 'SEEDED',
+                        style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 8.5,
                           fontWeight: FontWeight.w900,
@@ -127,7 +138,7 @@ class BracketPreviewCardWidget extends StatelessWidget {
                 Expanded(
                   child: _buildSummaryBox(
                     label: 'CURRENT ROUND',
-                    value: 'Semi Finals',
+                    value: currentRound,
                     icon: Icons.sports_mma_rounded,
                     accentColor: AppTheme.goldPrimary,
                   ),
@@ -135,8 +146,8 @@ class BracketPreviewCardWidget extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildSummaryBox(
-                    label: 'REMAINING MATCHES',
-                    value: '3 Matches',
+                    label: 'MATCH STATUS',
+                    value: remaining,
                     icon: Icons.timer_outlined,
                     accentColor: const Color(0xFFFF2A6D),
                   ),
@@ -145,7 +156,7 @@ class BracketPreviewCardWidget extends StatelessWidget {
                 Expanded(
                   child: _buildSummaryBox(
                     label: 'YOUR POSITION',
-                    value: 'Match #42',
+                    value: position,
                     icon: Icons.person_pin_circle_rounded,
                     accentColor: const Color(0xFF00E676),
                   ),
@@ -166,13 +177,37 @@ class BracketPreviewCardWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.white12),
                 ),
-                child: Column(
-                  children: [
-                    _buildMiniMatchRow('1. Usman Khan (Seed #1)', '2', 'Zain Ul-Abidin (Seed #2)', '1', isLive: true),
-                    const Divider(color: Colors.white12, height: 16),
-                    _buildMiniMatchRow('3. Bilal Butt (Seed #3)', '2', 'Hamza Tariq (Seed #4)', '0', isLive: false),
-                  ],
-                ),
+                child: miniMatches.isNotEmpty
+                    ? Column(
+                        children: [
+                          for (int i = 0; i < miniMatches.length; i++) ...[
+                            if (i > 0) const Divider(color: Colors.white12, height: 16),
+                            _buildMiniMatchRow(
+                              miniMatches[i]['p1'] as String,
+                              miniMatches[i]['s1'] as String,
+                              miniMatches[i]['p2'] as String,
+                              miniMatches[i]['s2'] as String,
+                              isLive: miniMatches[i]['isLive'] as bool,
+                            ),
+                          ],
+                        ],
+                      )
+                    : const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.account_tree_outlined, color: Colors.white24, size: 28),
+                              SizedBox(height: 6),
+                              Text(
+                                'Official bracket pairings will populate after weigh-in lock.',
+                                style: TextStyle(color: AppTheme.textMuted, fontSize: 10.5),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
               ),
             ),
 
@@ -223,6 +258,29 @@ class BracketPreviewCardWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Map<String, dynamic>> _resolveMiniMatches() {
+    final matches = tournament['matches'] ?? tournament['featuredMatches'];
+    if (matches is List && matches.isNotEmpty) {
+      return matches.take(3).map<Map<String, dynamic>>((m) {
+        if (m is! Map) return <String, dynamic>{};
+        final p1 = m['participant1Name'] ?? m['athlete1'] ?? m['p1Name'] ?? 'Contender 1';
+        final p2 = m['participant2Name'] ?? m['athlete2'] ?? m['p2Name'] ?? 'Contender 2';
+        final s1 = (m['score1'] ?? m['scoreP1'] ?? '-').toString();
+        final s2 = (m['score2'] ?? m['scoreP2'] ?? '-').toString();
+        final isLive = (m['status'] ?? '').toString().toUpperCase() == 'LIVE' ||
+            (m['status'] ?? '').toString().toUpperCase() == 'IN_PROGRESS';
+        return {
+          'p1': p1.toString(),
+          's1': s1,
+          'p2': p2.toString(),
+          's2': s2,
+          'isLive': isLive,
+        };
+      }).where((m) => m.isNotEmpty).toList();
+    }
+    return [];
   }
 
   Widget _buildSummaryBox({
@@ -315,7 +373,45 @@ class BracketPreviewCardWidget extends StatelessWidget {
     );
   }
 
+  Map<String, List<String>> _resolveBracketColumns() {
+    final bracket = tournament['bracket'];
+    if (bracket is Map) {
+      final result = <String, List<String>>{};
+      bracket.forEach((key, val) {
+        if (val is List) {
+          result[key.toString().toUpperCase()] = val.map((m) {
+            if (m is Map) {
+              final p1 = m['participant1Name'] ?? m['athlete1'] ?? m['p1'] ?? 'TBD';
+              final p2 = m['participant2Name'] ?? m['athlete2'] ?? m['p2'] ?? 'TBD';
+              return '$p1 vs $p2';
+            }
+            return m.toString();
+          }).toList();
+        }
+      });
+      if (result.isNotEmpty) return result;
+    }
+
+    final matches = tournament['matches'];
+    if (matches is List && matches.isNotEmpty) {
+      final rounds = <String, List<String>>{};
+      for (final m in matches) {
+        if (m is! Map) continue;
+        final roundName = (m['round'] ?? m['stage'] ?? 'ROUND 1').toString().toUpperCase();
+        final p1 = m['participant1Name'] ?? m['athlete1'] ?? 'TBD';
+        final p2 = m['participant2Name'] ?? m['athlete2'] ?? 'TBD';
+        rounds.putIfAbsent(roundName, () => []).add('$p1 vs $p2');
+      }
+      if (rounds.isNotEmpty) return rounds;
+    }
+
+    return {};
+  }
+
   void _showFullLiveBracketModal(BuildContext context) {
+    final bracketColumns = _resolveBracketColumns();
+    final divisionTitle = (tournament['category'] ?? tournament['division'] ?? 'CHAMPIONSHIP BRACKET').toString().toUpperCase();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0F172A),
@@ -336,7 +432,7 @@ class BracketPreviewCardWidget extends StatelessWidget {
                     Icon(Icons.account_tree_rounded, color: Color(0xFF00E5FF)),
                     SizedBox(width: 8),
                     Text(
-                      'SCREEN 6 — LIVE TOURNAMENT BRACKET',
+                      'LIVE TOURNAMENT BRACKET',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
                   ],
@@ -349,35 +445,57 @@ class BracketPreviewCardWidget extends StatelessWidget {
             ),
             const Divider(color: Colors.white12),
             Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+              child: bracketColumns.isEmpty
+                  ? const Center(
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            'DOUBLE ELIMINATION BRACKET (SENIOR MEN -80KG)',
-                            style: TextStyle(color: AppTheme.goldPrimary, fontWeight: FontWeight.bold, fontSize: 12),
+                          Icon(Icons.account_tree_outlined, size: 48, color: Colors.white24),
+                          SizedBox(height: 12),
+                          Text(
+                            'Interactive Bracket Pending Official Seeding',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              _buildBracketColumn('QUARTER FINALS', ['Usman Khan vs Saad Ahmed', 'Zain Ul-Abidin vs Tariq Mahmud', 'Bilal Butt vs Raza Ali', 'Hamza Tariq vs Imran Shah']),
-                              const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 30),
-                              _buildBracketColumn('SEMI FINALS', ['Usman Khan vs Zain Ul-Abidin', 'Bilal Butt vs Hamza Tariq']),
-                              const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 30),
-                              _buildBracketColumn('GOLD FINAL', ['Usman Khan vs TBD']),
-                            ],
+                          SizedBox(height: 6),
+                          Text(
+                            'Matchups will appear here as soon as bracket draws are published.',
+                            style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
                           ),
                         ],
                       ),
+                    )
+                  : Center(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                Text(
+                                  divisionTitle,
+                                  style: const TextStyle(color: AppTheme.goldPrimary, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    for (int i = 0; i < bracketColumns.entries.length; i++) ...[
+                                      if (i > 0)
+                                        const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 30),
+                                      _buildBracketColumn(
+                                        bracketColumns.entries.elementAt(i).key,
+                                        bracketColumns.entries.elementAt(i).value,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),

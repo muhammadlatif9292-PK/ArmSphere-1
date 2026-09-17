@@ -2,146 +2,70 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
-class _CompetitionCategoriesGrid extends StatefulWidget {
-  const _CompetitionCategoriesGrid();
+class CompetitionCategoriesGrid extends StatefulWidget {
+  final Map<String, dynamic>? tournament;
+
+  const CompetitionCategoriesGrid({
+    super.key,
+    this.tournament,
+  });
 
   @override
-  State<_CompetitionCategoriesGrid> createState() => _CompetitionCategoriesGridState();
+  State<CompetitionCategoriesGrid> createState() => _CompetitionCategoriesGridState();
 }
 
-class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> {
+class _CompetitionCategoriesGridState extends State<CompetitionCategoriesGrid> {
   int _activeFilterIndex = 0; // 0: All, 1: Senior, 2: Junior, 3: Masters, 4: Right Arm, 5: Left Arm
 
-  final List<Map<String, dynamic>> _categories = [
-    {
-      'id': 'cat_s_r_70',
-      'division': 'Senior Men',
-      'weightClass': '-70 kg',
-      'arm': 'Right Arm',
-      'armCode': 'R',
-      'tag': 'Senior',
-      'tagColor': const Color(0xFF00E5FF),
-      'registered': 14,
-      'capacity': 16,
-      'slotsRemaining': 2,
-      'status': 'Almost Full',
-      'statusColor': const Color(0xFFFFB300),
-      'weighInWindow': '08:00 AM - 10:00 AM',
-      'tableAssignment': 'Table #1 • Arena Stage A',
-    },
-    {
-      'id': 'cat_s_r_80',
-      'division': 'Senior Men',
-      'weightClass': '-80 kg',
-      'arm': 'Right Arm',
-      'armCode': 'R',
-      'tag': 'Senior',
-      'tagColor': const Color(0xFF00E5FF),
-      'registered': 16,
-      'capacity': 16,
-      'slotsRemaining': 0,
-      'status': 'Full',
-      'statusColor': const Color(0xFFFF2A6D),
-      'weighInWindow': '09:00 AM - 11:00 AM',
-      'tableAssignment': 'Table #2 • Arena Stage B',
-    },
-    {
-      'id': 'cat_s_l_80',
-      'division': 'Senior Men',
-      'weightClass': '-80 kg',
-      'arm': 'Left Arm',
-      'armCode': 'L',
-      'tag': 'Senior',
-      'tagColor': const Color(0xFF00E5FF),
-      'registered': 10,
-      'capacity': 16,
-      'slotsRemaining': 6,
-      'status': 'Open',
-      'statusColor': const Color(0xFF00E676),
-      'weighInWindow': '09:00 AM - 11:00 AM',
-      'tableAssignment': 'Table #2 • Arena Stage B',
-    },
-    {
-      'id': 'cat_s_r_90',
-      'division': 'Senior Men',
-      'weightClass': '-90 kg',
-      'arm': 'Right Arm',
-      'armCode': 'R',
-      'tag': 'Senior',
-      'tagColor': const Color(0xFF00E5FF),
-      'registered': 12,
-      'capacity': 16,
-      'slotsRemaining': 4,
-      'status': 'Open',
-      'statusColor': const Color(0xFF00E676),
-      'weighInWindow': '10:00 AM - 12:00 PM',
-      'tableAssignment': 'Table #1 • Arena Stage A',
-    },
-    {
-      'id': 'cat_j_r_75',
-      'division': 'Junior Male U21',
-      'weightClass': '-75 kg',
-      'arm': 'Right Arm',
-      'armCode': 'R',
-      'tag': 'Junior',
-      'tagColor': const Color(0xFFFFB300),
-      'registered': 8,
-      'capacity': 16,
-      'slotsRemaining': 8,
-      'status': 'Open',
-      'statusColor': const Color(0xFF00E676),
-      'weighInWindow': '08:00 AM - 09:30 AM',
-      'tableAssignment': 'Table #3 • Stage C',
-    },
-    {
-      'id': 'cat_m_r_85',
-      'division': 'Masters Male 40+',
-      'weightClass': '-85 kg',
-      'arm': 'Right Arm',
-      'armCode': 'R',
-      'tag': 'Masters',
-      'tagColor': const Color(0xFFE040FB),
-      'registered': 15,
-      'capacity': 16,
-      'slotsRemaining': 1,
-      'status': 'Almost Full',
-      'statusColor': const Color(0xFFFFB300),
-      'weighInWindow': '11:00 AM - 12:30 PM',
-      'tableAssignment': 'Table #3 • Stage C',
-    },
-    {
-      'id': 'cat_s_r_100',
-      'division': 'Senior Men Heavyweight',
-      'weightClass': '+100 kg',
-      'arm': 'Right Arm',
-      'armCode': 'R',
-      'tag': 'Senior',
-      'tagColor': const Color(0xFF00E5FF),
-      'registered': 6,
-      'capacity': 16,
-      'slotsRemaining': 10,
-      'status': 'Open',
-      'statusColor': const Color(0xFF00E676),
-      'weighInWindow': '12:00 PM - 01:30 PM',
-      'tableAssignment': 'Main Arena Stage A',
-    },
-    {
-      'id': 'cat_s_l_100',
-      'division': 'Senior Men Heavyweight',
-      'weightClass': '+100 kg',
-      'arm': 'Left Arm',
-      'armCode': 'L',
-      'tag': 'Senior',
-      'tagColor': const Color(0xFF00E5FF),
-      'registered': 4,
-      'capacity': 16,
-      'slotsRemaining': 12,
-      'status': 'Open',
-      'statusColor': const Color(0xFF00E676),
-      'weighInWindow': '12:00 PM - 01:30 PM',
-      'tableAssignment': 'Main Arena Stage A',
-    },
-  ];
+  List<Map<String, dynamic>> _resolveCategories() {
+    final raw = widget.tournament?['categories'] ?? widget.tournament?['divisions'];
+    if (raw is List && raw.isNotEmpty) {
+      return raw.map<Map<String, dynamic>>((c) {
+        if (c is! Map<String, dynamic>) return <String, dynamic>{};
+        final division = c['division'] ?? c['name'] ?? 'Open';
+        final weightClass = c['weightClass'] ?? 'Open';
+        final arm = c['arm'] ?? 'Right Arm';
+        final armCode = (c['arm'] ?? 'R').toString().toUpperCase().startsWith('L') ? 'L' : 'R';
+        final tag = c['tag'] ?? division;
+        final registered = (c['registered'] is num)
+            ? (c['registered'] as num).toInt()
+            : ((c['participantCount'] is num) ? (c['participantCount'] as num).toInt() : 0);
+        final capacity = (c['capacity'] is num)
+            ? (c['capacity'] as num).toInt()
+            : ((c['maxParticipants'] is num) ? (c['maxParticipants'] as num).toInt() : 16);
+        final slotsRemaining = capacity - registered;
+        final status = slotsRemaining <= 0 ? 'Full' : (slotsRemaining <= 2 ? 'Almost Full' : 'Open');
+        final statusColor = slotsRemaining <= 0
+            ? const Color(0xFFFF2A6D)
+            : (slotsRemaining <= 2 ? const Color(0xFFFFB300) : const Color(0xFF00E676));
+
+        return {
+          'id': c['id']?.toString() ?? 'cat_${division}_${weightClass}_$armCode',
+          'division': division.toString(),
+          'weightClass': weightClass.toString(),
+          'arm': arm.toString(),
+          'armCode': armCode,
+          'tag': tag.toString(),
+          'tagColor': _resolveTagColor(tag.toString()),
+          'registered': registered,
+          'capacity': capacity,
+          'slotsRemaining': slotsRemaining > 0 ? slotsRemaining : 0,
+          'status': status,
+          'statusColor': statusColor,
+          'weighInWindow': c['weighInWindow'] ?? 'Check schedule',
+          'tableAssignment': c['tableAssignment'] ?? 'Main Arena Stage',
+        };
+      }).where((element) => element.isNotEmpty).toList();
+    }
+    return [];
+  }
+
+  Color _resolveTagColor(String tag) {
+    final lower = tag.toLowerCase();
+    if (lower.contains('junior')) return const Color(0xFFFFB300);
+    if (lower.contains('master')) return const Color(0xFFE040FB);
+    return const Color(0xFF00E5FF);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +169,33 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
         // Grid of Categories (Responsive 2-column layout)
         LayoutBuilder(
           builder: (context, constraints) {
+            if (filteredCategories.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1527).withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.category_outlined, size: 36, color: AppTheme.textMuted),
+                    SizedBox(height: 8),
+                    Text(
+                      'No competition categories available for this selection.',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             final isWide = constraints.maxWidth > 550;
             final crossAxisCount = isWide ? 3 : 2;
 
@@ -303,20 +254,21 @@ class _CompetitionCategoriesGridState extends State<_CompetitionCategoriesGrid> 
   }
 
   List<Map<String, dynamic>> _getFilteredCategories() {
+    final categories = _resolveCategories();
     switch (_activeFilterIndex) {
       case 1:
-        return _categories.where((c) => (c['tag'] as String) == 'Senior').toList();
+        return categories.where((c) => (c['tag'] as String).toLowerCase().contains('senior')).toList();
       case 2:
-        return _categories.where((c) => (c['tag'] as String) == 'Junior').toList();
+        return categories.where((c) => (c['tag'] as String).toLowerCase().contains('junior')).toList();
       case 3:
-        return _categories.where((c) => (c['tag'] as String) == 'Masters').toList();
+        return categories.where((c) => (c['tag'] as String).toLowerCase().contains('master')).toList();
       case 4:
-        return _categories.where((c) => (c['armCode'] as String) == 'R').toList();
+        return categories.where((c) => (c['armCode'] as String) == 'R').toList();
       case 5:
-        return _categories.where((c) => (c['armCode'] as String) == 'L').toList();
+        return categories.where((c) => (c['armCode'] as String) == 'L').toList();
       case 0:
       default:
-        return _categories;
+        return categories;
     }
   }
 

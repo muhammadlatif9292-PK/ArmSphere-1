@@ -55,70 +55,28 @@ class _OfficialScorepadScreenState
   // Score & Round tracking
   // round index -> winner ('A', 'B', or null if undecided)
   final Map<int, String?> _roundWinners = {
-    1: 'A',
-    2: 'B',
-    3: 'A',
+    1: null,
+    2: null,
+    3: null,
     4: null,
     5: null,
   };
 
   // Fouls list
-  final List<Map<String, dynamic>> _fouls = [
-    {
-      'id': 'F-101',
-      'athlete': 'Athlete A',
-      'athleteName': 'Muhammad Ahmed',
-      'type': 'Elbow Foul',
-      'round': 2,
-      'time': '09:42:48',
-      'referee': 'Ahmed Ali',
-    },
-    {
-      'id': 'F-102',
-      'athlete': 'Athlete B',
-      'athleteName': 'Tariq Khan',
-      'type': 'False Start',
-      'round': 3,
-      'time': '09:44:12',
-      'referee': 'Ahmed Ali',
-    },
-  ];
+  final List<Map<String, dynamic>> _fouls = [];
 
   // Restarts list
-  final List<Map<String, dynamic>> _restarts = [
-    {
-      'id': 'R-201',
-      'reason': 'Slip in Straps',
-      'round': 2,
-      'time': '09:43:02',
-      'athlete': 'Both',
-    },
-  ];
+  final List<Map<String, dynamic>> _restarts = [];
 
   // Match Timeline
-  final List<Map<String, dynamic>> _timelineEvents = [
-    {'time': '09:40:00', 'event': 'Bout Assigned & Table 04 Prepped'},
-    {'time': '09:41:15', 'event': 'Athletes Identity & Weight Verified'},
-    {'time': '09:42:00', 'event': 'Round 1 Started — Athlete A Pinfall Win'},
-    {'time': '09:42:48', 'event': 'Round 2 Elbow Foul — Athlete A'},
-    {'time': '09:43:02', 'event': 'Ref Strap Applied (Restart)'},
-    {'time': '09:43:30', 'event': 'Round 2 Won — Athlete B'},
-    {'time': '09:44:12', 'event': 'Round 3 False Start — Athlete B'},
-    {'time': '09:45:00', 'event': 'Round 3 Won — Athlete A'},
-  ];
+  final List<Map<String, dynamic>> _timelineEvents = [];
 
   // Evidence attachments
-  final List<Map<String, dynamic>> _evidenceFiles = [
-    {
-      'title': 'High-Speed Camera Angle Table 04',
-      'type': 'Video Recording',
-      'time': '09:43:02',
-      'status': 'Verified HD',
-    },
-  ];
+  final List<Map<String, dynamic>> _evidenceFiles = [];
 
   // Amendment request state
-  bool _amendmentRequested = false;
+  bool _hasPendingAmendment = false;
+  String _amendmentReason = '';
 
   @override
   void initState() {
@@ -137,6 +95,27 @@ class _OfficialScorepadScreenState
         _maxRounds = 5;
         _targetWins = 3;
       }
+
+      if (m['roundWinners'] is Map) {
+        final rw = m['roundWinners'] as Map;
+        rw.forEach((key, val) {
+          final roundNum = int.tryParse(key.toString());
+          if (roundNum != null && roundNum >= 1 && roundNum <= 5) {
+            _roundWinners[roundNum] = val?.toString();
+          }
+        });
+      }
+      if (m['fouls'] is List) {
+        _fouls.addAll((m['fouls'] as List).map((f) => Map<String, dynamic>.from(f as Map)));
+      }
+      if (m['restarts'] is List) {
+        _restarts.addAll((m['restarts'] as List).map((r) => Map<String, dynamic>.from(r as Map)));
+      }
+    }
+    if (_timelineEvents.isEmpty) {
+      final nowStr = DateTime.now().toIso8601String();
+      final timeStr = nowStr.length >= 19 ? nowStr.substring(11, 19) : '00:00:00';
+      _timelineEvents.add({'time': timeStr, 'event': 'Bout Initialized on Table'});
     }
   }
 
@@ -180,10 +159,12 @@ class _OfficialScorepadScreenState
     final user = ref.watch(authProvider).userProfile ?? {};
     final match = widget.match ?? {};
 
-    final athleteAName =
-        match['athleteAName'] ?? match['athleteA'] ?? 'Muhammad Ahmed';
-    final athleteBName =
-        match['athleteBName'] ?? match['athleteB'] ?? 'Tariq Khan';
+    final athleteAName = match['athleteAName'] ??
+        (match['athleteA'] is Map ? match['athleteA']['name'] : match['athleteA']?.toString()) ??
+        'Athlete A';
+    final athleteBName = match['athleteBName'] ??
+        (match['athleteB'] is Map ? match['athleteB']['name'] : match['athleteB']?.toString()) ??
+        'Athlete B';
 
     return WillPopScope(
       onWillPop: _handleWillPop,
@@ -1425,7 +1406,7 @@ class _OfficialScorepadScreenState
                             'type': foulType,
                             'round': roundNum,
                             'time': 'Just now',
-                            'referee': 'Ahmed Ali',
+                            'referee': ref.read(authProvider).userProfile?['fullName'] ?? ref.read(authProvider).userProfile?['name'] ?? 'Official Referee',
                           });
                         });
                         Navigator.pop(context);
@@ -2001,7 +1982,7 @@ class _OfficialScorepadScreenState
   // PART 13: REFEREE CONFIRMATION IDENTITY
   // ==========================================
   Widget _buildRefereeIdentityCard(Map<String, dynamic> user) {
-    final refName = user['fullName'] ?? user['name'] ?? 'Ahmed Ali';
+    final refName = user['fullName'] ?? user['name'] ?? 'Official Referee';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

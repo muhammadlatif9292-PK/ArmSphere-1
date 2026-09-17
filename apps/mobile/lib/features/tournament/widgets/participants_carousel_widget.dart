@@ -17,104 +17,35 @@ class ParticipantsCarouselWidget extends StatefulWidget {
 class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget> {
   String _selectedCategoryFilter = 'ALL';
 
-  final List<Map<String, dynamic>> _athletes = [
-    {
-      'id': 'ath_1',
-      'name': 'Tariq Zafar',
-      'province': 'Punjab',
-      'club': 'Lahore Iron Grip Club',
-      'elo': 2145,
-      'leagueBadge': 'PRO LEAGUE',
-      'leagueColor': const Color(0xFFFF2A6D),
-      'isVerified': true,
-      'photoUrl': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-      'category': '-80kg',
-      'rank': '#1 National',
-      'winLoss': '38W - 4L',
-      'armPreference': 'Right Arm Primary',
-      'bio': '2x National Heavy-Middleweight Champion. Specializes in High-Hook & Toproll.',
-    },
-    {
-      'id': 'ath_2',
-      'name': 'Bilal Khan',
-      'province': 'KPK',
-      'club': 'Peshawar Titan Pullers',
-      'elo': 1980,
-      'leagueBadge': 'NATIONAL CHAMP',
-      'leagueColor': AppTheme.goldPrimary,
-      'isVerified': true,
-      'photoUrl': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
-      'category': '-80kg',
-      'rank': '#3 National',
-      'winLoss': '29W - 7L',
-      'armPreference': 'Both Arms Pro',
-      'bio': 'Explosive Press Specialist. Unbeaten in Northern Regional Qualifiers 2025.',
-    },
-    {
-      'id': 'ath_3',
-      'name': 'Usman Raza',
-      'province': 'Islamabad',
-      'club': 'Capital Power Gym',
-      'elo': 1890,
-      'leagueBadge': 'RISING STAR',
-      'leagueColor': const Color(0xFF00E5FF),
-      'isVerified': true,
-      'photoUrl': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
-      'category': '-80kg',
-      'rank': '#5 National',
-      'winLoss': '22W - 5L',
-      'armPreference': 'Left Arm Dominant',
-      'bio': 'Fast riser in the -80kg Division. Known for lightning-fast shoulder press.',
-    },
-    {
-      'id': 'ath_4',
-      'name': 'Zain Ul-Abedin',
-      'province': 'Punjab',
-      'club': 'Rawalpindi Steel Arm Academy',
-      'elo': 1820,
-      'leagueBadge': 'PRO LEAGUE',
-      'leagueColor': const Color(0xFFFF2A6D),
-      'isVerified': true,
-      'photoUrl': 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=300',
-      'category': '-80kg',
-      'rank': '#7 National',
-      'winLoss': '19W - 8L',
-      'armPreference': 'Right Arm Toproll',
-      'bio': 'Technical Toproller with exceptional hand & wrist endurance.',
-    },
-    {
-      'id': 'ath_5',
-      'name': 'Hamza Shah',
-      'province': 'Sindh',
-      'club': 'Karachi Iron Warriors',
-      'elo': 2050,
-      'leagueBadge': 'ELITE MASTER',
-      'leagueColor': const Color(0xFFA855F7),
-      'isVerified': true,
-      'photoUrl': 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=300',
-      'category': '+100kg',
-      'rank': '#2 Super Heavy',
-      'winLoss': '34W - 6L',
-      'armPreference': 'Right Arm Super Heavy',
-      'bio': 'Sindh Super Heavyweight Title Holder. Massive side pressure power.',
-    },
-    {
-      'id': 'ath_6',
-      'name': 'Faisal Mahmood',
-      'province': 'Balochistan',
-      'club': 'Quetta Apex Pullers',
-      'elo': 1760,
-      'leagueBadge': 'RISING STAR',
-      'leagueColor': const Color(0xFF00E5FF),
-      'isVerified': true,
-      'photoUrl': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300',
-      'category': '-90kg',
-      'rank': '#9 National',
-      'winLoss': '16W - 4L',
-      'armPreference': 'Right Arm Hook',
-      'bio': 'Quetta Regional Gold Medalist 2026. Feared for deep hook endurance.',
-    },
-  ];
+  List<Map<String, dynamic>> get _athletes {
+    final raw = widget.tournament['participants'] ?? widget.tournament['registrations'];
+    if (raw is List) {
+      return raw.map((item) {
+        if (item is Map) {
+          final user = (item['user'] is Map) ? item['user'] as Map : item;
+          final athlete = (item['athlete'] is Map) ? item['athlete'] as Map : {};
+          return {
+            'id': item['id']?.toString() ?? user['id']?.toString() ?? '',
+            'name': user['displayName'] ?? user['name'] ?? 'Athlete',
+            'province': user['province'] ?? athlete['province'] ?? 'Pakistan',
+            'club': athlete['club'] ?? user['club'] ?? 'Independent',
+            'elo': athlete['currentElo'] ?? user['elo'] ?? 1500,
+            'leagueBadge': athlete['rankTitle'] ?? 'COMPETITOR',
+            'leagueColor': AppTheme.goldPrimary,
+            'isVerified': user['isVerified'] ?? true,
+            'photoUrl': user['avatarUrl'] ?? '',
+            'category': item['weightClass'] ?? item['category'] ?? '-80kg',
+            'rank': athlete['rank'] != null ? '#${athlete['rank']}' : 'Unranked',
+            'winLoss': '${athlete['wins'] ?? 0}W - ${athlete['losses'] ?? 0}L',
+            'armPreference': athlete['preferredArm'] ?? 'Right Arm',
+            'bio': user['bio'] ?? '',
+          };
+        }
+        return <String, dynamic>{};
+      }).where((m) => m.isNotEmpty).toList();
+    }
+    return [];
+  }
 
   List<Map<String, dynamic>> get _filteredAthletes {
     if (_selectedCategoryFilter == 'ALL') return _athletes;

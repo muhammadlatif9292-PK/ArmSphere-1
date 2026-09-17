@@ -34,7 +34,7 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'FULL TOURNAMENT BRACKET',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
@@ -43,10 +43,10 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Senior Men Right -80kg Class',
-                        style: TextStyle(
+                        (widget.tournament['category'] ?? widget.tournament['division'] ?? 'Official Championship Draw').toString(),
+                        style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 10.5,
                           color: AppTheme.textMuted,
@@ -247,9 +247,9 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
                   children: [
                     Text('Match #${i + 1}', style: const TextStyle(fontSize: 8.5, color: AppTheme.textMuted)),
                     const SizedBox(height: 4),
-                    Text(i == 0 ? 'Tariq Z. (YOU)' : 'Competitor A', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text('Seed #${(i * 2) + 1}', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
-                    const Text('Competitor B', style: TextStyle(fontSize: 10, color: Colors.white70)),
+                    Text('Seed #${(i * 2) + 2}', style: const TextStyle(fontSize: 10, color: Colors.white70)),
                   ],
                 ),
               ),

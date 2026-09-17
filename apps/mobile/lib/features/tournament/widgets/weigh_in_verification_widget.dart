@@ -19,24 +19,47 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
   late AnimationController _checkAnimController;
   late Animation<double> _checkScaleAnimation;
 
-  final bool _isApprovedAndLocked = true; // Default approved & locked as per requirements
+  Map<String, dynamic> _resolveVerificationData() {
+    final raw = widget.tournament['weighInVerification'] ?? widget.tournament['weighIn'];
+    if (raw is Map<String, dynamic>) {
+      return raw;
+    }
 
-  final Map<String, dynamic> _verificationData = {
-    'submittedWeight': '79.2 kg (174.6 lbs)',
-    'officialWeight': '78.8 kg (173.7 lbs)',
-    'weightCategory': 'Senior Men Right -80kg (Pass • 1.2kg under limit)',
-    'verificationOfficer': 'Chief Referee Master Tariq Mahmood (Cert #PAFF-882)',
-    'officerTitle': 'PAFF Head Technical Delegate & Scale Supervisor',
-    'medicalClearance': 'APPROVED • Fit for High-Impact Competition',
-    'medicalDetails': 'BP 120/80, HR 68 bpm, Skin Check Passed, Grip & Joint Clearance OK',
-    'medicalOfficer': 'Dr. Kamran Akram (PAFF Sports Medicine Board)',
-    'licenseStatus': 'ACTIVE & VALID',
-    'licenseNumber': 'PK-2026-0891 (National Professional Athlete License)',
-    'timestamp': 'July 29, 2026 at 08:45 AM PST',
-    'scaleId': 'Calibrated Digital Scale #PAFF-SCALE-04',
-    'digitalSignatureHash': '0x9F8B2C41D80E31A7B5F092E41288C9A321F09A8B',
-    'signatureAuthority': 'Signed by Chief Weigh-Master & Technical Director',
-  };
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final catName = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Division';
+    final weight = reg?['weighedWeight']?.toString() ?? reg?['weight']?.toString() ?? '78.5';
+    final submitted = reg?['submittedWeight']?.toString() ?? reg?['initialWeight']?.toString() ?? weight;
+    final officer = widget.tournament['chiefReferee']?.toString() ?? widget.tournament['weighMaster']?.toString() ?? 'Head Referee Desk';
+    final scale = widget.tournament['scaleId']?.toString() ?? 'Calibrated Arena Digital Scale';
+    final license = reg?['licenseNumber']?.toString() ?? reg?['license']?.toString() ?? 'National Athlete License';
+    final hash = reg?['signatureHash']?.toString() ?? 'PAFF-${widget.tournament['id'] ?? 'VERIFIED'}-SCALE';
+
+    return {
+      'submittedWeight': '$submitted kg',
+      'officialWeight': '$weight kg',
+      'weightCategory': '$catName (Passed Under Class Limit)',
+      'verificationOfficer': officer,
+      'officerTitle': 'Head Technical Delegate & Scale Supervisor',
+      'medicalClearance': 'APPROVED • Fit for Competition',
+      'medicalDetails': 'Vitals, Skin Check & Joint Clearance Certified',
+      'medicalOfficer': 'Sports Medicine Board Delegate',
+      'licenseStatus': 'ACTIVE & VALID',
+      'licenseNumber': license,
+      'timestamp': widget.tournament['startDate']?.toString() ?? 'Official Championship Session',
+      'scaleId': scale,
+      'digitalSignatureHash': hash,
+      'signatureAuthority': 'Signed by Chief Weigh-Master & Technical Director',
+    };
+  }
+
+  bool _isApproved() {
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    if (reg != null) {
+      final status = (reg['weighInStatus'] ?? '').toString().toUpperCase();
+      if (status == 'PENDING' || status == 'REQUIRED') return false;
+    }
+    return true;
+  }
 
   @override
   void initState() {
@@ -62,20 +85,23 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
 
   @override
   Widget build(BuildContext context) {
+    final isApprovedAndLocked = _isApproved();
+    final verificationData = _resolveVerificationData();
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF0B132B).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _isApprovedAndLocked
+          color: isApprovedAndLocked
               ? const Color(0xFF00E676).withValues(alpha: 0.45)
               : AppTheme.goldPrimary.withValues(alpha: 0.4),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: (_isApprovedAndLocked ? const Color(0xFF00E676) : AppTheme.goldPrimary)
+            color: (isApprovedAndLocked ? const Color(0xFF00E676) : AppTheme.goldPrimary)
                 .withValues(alpha: 0.14),
             blurRadius: 20,
             spreadRadius: -2,
@@ -103,23 +129,23 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                       Container(
                         padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: (_isApprovedAndLocked
+                          color: (isApprovedAndLocked
                                   ? const Color(0xFF00E676)
                                   : AppTheme.goldPrimary)
                               .withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: (_isApprovedAndLocked
+                            color: (isApprovedAndLocked
                                     ? const Color(0xFF00E676)
                                     : AppTheme.goldPrimary)
                                 .withValues(alpha: 0.5),
                           ),
                         ),
                         child: Icon(
-                          _isApprovedAndLocked
+                          isApprovedAndLocked
                               ? Icons.verified_user_rounded
                               : Icons.health_and_safety_rounded,
-                          color: _isApprovedAndLocked
+                          color: isApprovedAndLocked
                               ? const Color(0xFF00E676)
                               : AppTheme.goldPrimary,
                           size: 18,
@@ -159,20 +185,20 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: (_isApprovedAndLocked
+                        color: (isApprovedAndLocked
                                 ? const Color(0xFF00E676)
                                 : AppTheme.goldPrimary)
                             .withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _isApprovedAndLocked
+                          color: isApprovedAndLocked
                               ? const Color(0xFF00E676)
                               : AppTheme.goldPrimary,
                           width: 1.2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: (_isApprovedAndLocked
+                            color: (isApprovedAndLocked
                                     ? const Color(0xFF00E676)
                                     : AppTheme.goldPrimary)
                                 .withValues(alpha: 0.35),
@@ -184,22 +210,22 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _isApprovedAndLocked
+                            isApprovedAndLocked
                                 ? Icons.check_circle_rounded
                                 : Icons.pending_rounded,
                             size: 13,
-                            color: _isApprovedAndLocked
+                            color: isApprovedAndLocked
                                 ? const Color(0xFF00E676)
                                 : AppTheme.goldPrimary,
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            _isApprovedAndLocked ? 'VERIFIED' : 'PENDING',
+                            isApprovedAndLocked ? 'VERIFIED' : 'PENDING',
                             style: TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w900,
-                              color: _isApprovedAndLocked
+                              color: isApprovedAndLocked
                                   ? const Color(0xFF00E676)
                                   : AppTheme.goldPrimary,
                               letterSpacing: 0.6,
@@ -263,7 +289,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                                 ),
                               ),
                               Text(
-                                _verificationData['timestamp'],
+                                verificationData['timestamp'],
                                 style: const TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontSize: 8.5,
@@ -299,7 +325,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     child: _buildVerificationParamTile(
                       icon: Icons.monitor_weight_outlined,
                       label: 'WEIGHT SUBMITTED',
-                      value: _verificationData['submittedWeight'],
+                      value: verificationData['submittedWeight'],
                       subtitle: 'Self-Reported Entry',
                       accentColor: const Color(0xFF00E5FF),
                     ),
@@ -309,8 +335,8 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     child: _buildVerificationParamTile(
                       icon: Icons.scale_rounded,
                       label: 'OFFICIAL WEIGHT',
-                      value: _verificationData['officialWeight'],
-                      subtitle: _verificationData['scaleId'],
+                      value: verificationData['officialWeight'],
+                      subtitle: verificationData['scaleId'],
                       accentColor: const Color(0xFF00E676),
                       isHighlighted: true,
                     ),
@@ -324,8 +350,8 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
               _buildFullWidthParamTile(
                 icon: Icons.badge_outlined,
                 label: 'VERIFICATION OFFICER',
-                title: _verificationData['verificationOfficer'],
-                details: _verificationData['officerTitle'],
+                title: verificationData['verificationOfficer'],
+                details: verificationData['officerTitle'],
                 accentColor: AppTheme.goldPrimary,
                 badgeText: 'CERTIFIED OFFICIAL',
               ),
@@ -336,8 +362,8 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
               _buildFullWidthParamTile(
                 icon: Icons.health_and_safety_rounded,
                 label: 'MEDICAL CLEARANCE',
-                title: _verificationData['medicalClearance'],
-                details: '${_verificationData['medicalDetails']}\nPhysician: ${_verificationData['medicalOfficer']}',
+                title: verificationData['medicalClearance'],
+                details: '${verificationData['medicalDetails']}\nPhysician: ${verificationData['medicalOfficer']}',
                 accentColor: const Color(0xFF00E676),
                 badgeText: 'PASSED & SEALED',
               ),
@@ -351,8 +377,8 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     child: _buildVerificationParamTile(
                       icon: Icons.card_membership_rounded,
                       label: 'LICENSE STATUS',
-                      value: _verificationData['licenseStatus'],
-                      subtitle: _verificationData['licenseNumber'],
+                      value: verificationData['licenseStatus'],
+                      subtitle: verificationData['licenseNumber'],
                       accentColor: const Color(0xFF00E5FF),
                     ),
                   ),
@@ -361,8 +387,8 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     child: _buildVerificationParamTile(
                       icon: Icons.category_rounded,
                       label: 'CATEGORY FIT',
-                      value: 'PASS (-80kg)',
-                      subtitle: _verificationData['weightCategory'],
+                      value: 'QUALIFIED',
+                      subtitle: verificationData['weightCategory'],
                       accentColor: const Color(0xFF00E676),
                     ),
                   ),
@@ -422,7 +448,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     ),
                     const SizedBox(height: 6),
                     SelectableText(
-                      _verificationData['digitalSignatureHash'],
+                      verificationData['digitalSignatureHash'],
                       style: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 10,
@@ -432,7 +458,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '• ${_verificationData['signatureAuthority']}',
+                      '• ${verificationData['signatureAuthority']}',
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 9.5,
@@ -688,6 +714,13 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
   }
 
   void _openVerificationCertificateModal(BuildContext context) {
+    final verificationData = _resolveVerificationData();
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final athleteName = reg?['athleteName']?.toString() ?? reg?['userName']?.toString() ?? widget.tournament['athleteName']?.toString() ?? 'Registered Athlete';
+    final regId = reg?['id']?.toString() ?? reg?['registrationNumber']?.toString() ?? widget.tournament['registrationId']?.toString() ?? 'PAFF-REG';
+    final tournamentTitle = widget.tournament['name']?.toString() ?? widget.tournament['title']?.toString() ?? 'Official Championship';
+    final division = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Division';
+
     showDialog(
       context: context,
       builder: (context) {
@@ -743,23 +776,23 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                   ),
                 ),
                 const SizedBox(height: 14),
-                _buildModalLine('Athlete Name:', 'Tariq Z. (National Reg #8821)'),
-                _buildModalLine('Tournament:', 'Pakistan National Armwrestling Championship 2026'),
-                _buildModalLine('Division / Class:', 'Senior Men Right Arm -80kg'),
-                _buildModalLine('Submitted Weight:', _verificationData['submittedWeight']),
-                _buildModalLine('Certified Scale Weight:', _verificationData['officialWeight']),
-                _buildModalLine('Scale Calibration:', _verificationData['scaleId']),
-                _buildModalLine('Verification Officer:', _verificationData['verificationOfficer']),
-                _buildModalLine('Medical Clearance:', _verificationData['medicalClearance']),
-                _buildModalLine('Physician:', _verificationData['medicalOfficer']),
-                _buildModalLine('Athlete License:', _verificationData['licenseNumber']),
-                _buildModalLine('Certified Timestamp:', _verificationData['timestamp']),
+                _buildModalLine('Athlete Name:', '$athleteName ($regId)'),
+                _buildModalLine('Tournament:', tournamentTitle),
+                _buildModalLine('Division / Class:', division),
+                _buildModalLine('Submitted Weight:', verificationData['submittedWeight']),
+                _buildModalLine('Certified Scale Weight:', verificationData['officialWeight']),
+                _buildModalLine('Scale Calibration:', verificationData['scaleId']),
+                _buildModalLine('Verification Officer:', verificationData['verificationOfficer']),
+                _buildModalLine('Medical Clearance:', verificationData['medicalClearance']),
+                _buildModalLine('Physician:', verificationData['medicalOfficer']),
+                _buildModalLine('Athlete License:', verificationData['licenseNumber']),
+                _buildModalLine('Certified Timestamp:', verificationData['timestamp']),
                 const SizedBox(height: 10),
                 const Divider(color: Colors.white12),
                 const SizedBox(height: 6),
                 const Text('SHA-256 Digital Hash:', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
                 SelectableText(
-                  _verificationData['digitalSignatureHash'],
+                  verificationData['digitalSignatureHash'],
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: AppTheme.goldPrimary),
                 ),
               ],

@@ -114,8 +114,8 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'Senior Men Right -80kg • Double Elimination',
-                                style: TextStyle(
+                                (widget.tournament['category'] ?? widget.tournament['division'] ?? 'Official Elimination Bracket').toString(),
+                                style: const TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontSize: 10.5,
                                   color: AppTheme.textMuted,
@@ -134,14 +134,14 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                             color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.stars_rounded, size: 12, color: AppTheme.goldPrimary),
-                            SizedBox(width: 4),
+                            const Icon(Icons.stars_rounded, size: 12, color: AppTheme.goldPrimary),
+                            const SizedBox(width: 4),
                             Text(
-                              'MATCH #42 NEXT',
-                              style: TextStyle(
+                              (widget.tournament['currentRound'] ?? 'BRACKET ACTIVE').toString().toUpperCase(),
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w900,
@@ -157,68 +157,81 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
 
                   const SizedBox(height: 14),
 
-                  // User Highlighted Next Match Alert Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.goldPrimary.withValues(alpha: 0.25),
-                          const Color(0xFF00E5FF).withValues(alpha: 0.15),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: const BoxDecoration(
-                            color: AppTheme.goldPrimary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person_pin_circle_rounded,
-                            size: 14,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'YOUR POSITION HIGHLIGHTED',
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppTheme.goldPrimary,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Tariq Z. (YOU) vs. Zain U. (OPPONENT) • Semi-Finals',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
+                  // Highlighted Match Alert Banner
+                  Builder(
+                    builder: (context) {
+                      final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+                      final userMatch = reg?['activeMatch']?.toString() ?? reg?['nextMatch']?.toString();
+                      final featuredMatch = widget.tournament['currentMatch']?.toString() ??
+                          widget.tournament['activeMatch']?.toString() ??
+                          '${widget.tournament['name'] ?? 'Championship'} • Official Bracket Draw';
+
+                      final bannerTitle = userMatch != null ? 'YOUR POSITION HIGHLIGHTED' : 'FEATURED MATCH';
+                      final bannerSubtitle = userMatch ?? featuredMatch;
+
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.goldPrimary.withValues(alpha: 0.25),
+                              const Color(0xFF00E5FF).withValues(alpha: 0.15),
                             ],
                           ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                          ),
                         ),
-                      ],
-                    ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                color: AppTheme.goldPrimary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.person_pin_circle_rounded,
+                                size: 14,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    bannerTitle,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.goldPrimary,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    bannerSubtitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
@@ -232,6 +245,31 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                     child: AnimatedBuilder(
                       animation: _linePulse,
                       builder: (context, child) {
+                        final stageColumns = _resolveBracketStageColumns();
+
+                        if (stageColumns.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                            alignment: Alignment.center,
+                            child: const Column(
+                              children: [
+                                Icon(Icons.account_tree_outlined, size: 36, color: Colors.white24),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Official Bracket Seeding Pending',
+                                  style: TextStyle(fontFamily: AppTheme.fontDisplay, fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Matchups will appear after official weigh-ins are locked.',
+                                  style: TextStyle(fontFamily: AppTheme.fontDisplay, fontSize: 10, color: AppTheme.textMuted),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
                         return SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
@@ -243,100 +281,7 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  // Quarter Finals Stage Column
-                                  _buildStageColumn(
-                                    stageTitle: 'QUARTER FINALS',
-                                    matches: [
-                                      BracketMatchData(
-                                        p1: 'Tariq Z. (YOU)',
-                                        s1: '2',
-                                        p2: 'Bilal K.',
-                                        s2: '0',
-                                        isUserMatch: true,
-                                        isOpponentMatch: false,
-                                        isFinished: true,
-                                      ),
-                                      BracketMatchData(
-                                        p1: 'Zain U.',
-                                        s1: '2',
-                                        p2: 'Hamza S.',
-                                        s2: '1',
-                                        isUserMatch: false,
-                                        isOpponentMatch: true,
-                                        isFinished: true,
-                                      ),
-                                      BracketMatchData(
-                                        p1: 'Usman R.',
-                                        s1: '2',
-                                        p2: 'Faisal M.',
-                                        s2: '0',
-                                        isUserMatch: false,
-                                        isOpponentMatch: false,
-                                        isFinished: true,
-                                      ),
-                                      BracketMatchData(
-                                        p1: 'Ali N.',
-                                        s1: '2',
-                                        p2: 'Danish A.',
-                                        s2: '1',
-                                        isUserMatch: false,
-                                        isOpponentMatch: false,
-                                        isFinished: true,
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(width: 32),
-
-                                  // Semi Finals Stage Column
-                                  _buildStageColumn(
-                                    stageTitle: 'SEMI FINALS',
-                                    matches: [
-                                      BracketMatchData(
-                                        p1: 'Tariq Z. (YOU)',
-                                        s1: '-',
-                                        p2: 'Zain U. (OPPONENT)',
-                                        s2: '-',
-                                        isUserMatch: true,
-                                        isOpponentMatch: true,
-                                        isLiveNext: true,
-                                      ),
-                                      BracketMatchData(
-                                        p1: 'Usman R.',
-                                        s1: '-',
-                                        p2: 'Ali N.',
-                                        s2: '-',
-                                        isUserMatch: false,
-                                        isOpponentMatch: false,
-                                        isUpcoming: true,
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(width: 32),
-
-                                  // Final Stage Column
-                                  _buildStageColumn(
-                                    stageTitle: 'FINAL',
-                                    matches: [
-                                      BracketMatchData(
-                                        p1: 'TBD (Semi 1 Winner)',
-                                        s1: '-',
-                                        p2: 'TBD (Semi 2 Winner)',
-                                        s2: '-',
-                                        isUserMatch: false,
-                                        isOpponentMatch: false,
-                                        isTbd: true,
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(width: 32),
-
-                                  // Champion Slot Column
-                                  _buildChampionSlotColumn(),
-                                ],
+                                children: stageColumns,
                               ),
                             ),
                           ),
@@ -391,6 +336,75 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
         ),
       ),
     );
+  }
+
+  List<Widget> _resolveBracketStageColumns() {
+    final rawStages = widget.tournament['bracketStages'] ?? widget.tournament['stages'];
+    if (rawStages is List && rawStages.isNotEmpty) {
+      final columns = <Widget>[];
+      for (int i = 0; i < rawStages.length; i++) {
+        final stage = rawStages[i];
+        if (stage is! Map) continue;
+        final title = stage['name'] ?? stage['title'] ?? 'STAGE ${i + 1}';
+        final rawMatches = stage['matches'];
+        final matches = <BracketMatchData>[];
+        if (rawMatches is List) {
+          for (final m in rawMatches) {
+            if (m is! Map) continue;
+            matches.add(BracketMatchData(
+              p1: (m['p1'] ?? m['athlete1'] ?? 'Competitor 1').toString(),
+              s1: (m['s1'] ?? m['score1'] ?? '-').toString(),
+              p2: (m['p2'] ?? m['athlete2'] ?? 'Competitor 2').toString(),
+              s2: (m['s2'] ?? m['score2'] ?? '-').toString(),
+              isUserMatch: m['isUserMatch'] == true,
+              isOpponentMatch: m['isOpponentMatch'] == true,
+              isFinished: m['isFinished'] == true,
+              isLiveNext: m['isLive'] == true,
+              isUpcoming: m['isUpcoming'] == true,
+              isTbd: m['isTbd'] == true,
+            ));
+          }
+        }
+        if (matches.isNotEmpty) {
+          if (columns.isNotEmpty) columns.add(const SizedBox(width: 32));
+          columns.add(_buildStageColumn(stageTitle: title.toString().toUpperCase(), matches: matches));
+        }
+      }
+      if (columns.isNotEmpty) {
+        columns.add(const SizedBox(width: 32));
+        columns.add(_buildChampionSlotColumn());
+        return columns;
+      }
+    }
+
+    final matchesList = widget.tournament['matches'];
+    if (matchesList is List && matchesList.isNotEmpty) {
+      final grouped = <String, List<BracketMatchData>>{};
+      for (final m in matchesList) {
+        if (m is! Map) continue;
+        final round = (m['round'] ?? m['stage'] ?? 'ROUND 1').toString().toUpperCase();
+        grouped.putIfAbsent(round, () => []).add(BracketMatchData(
+          p1: (m['participant1Name'] ?? m['athlete1'] ?? 'Competitor 1').toString(),
+          s1: (m['score1'] ?? '-').toString(),
+          p2: (m['participant2Name'] ?? m['athlete2'] ?? 'Competitor 2').toString(),
+          s2: (m['score2'] ?? '-').toString(),
+          isFinished: (m['status'] ?? '').toString().toUpperCase() == 'COMPLETED',
+          isLiveNext: (m['status'] ?? '').toString().toUpperCase() == 'LIVE',
+        ));
+      }
+      final columns = <Widget>[];
+      for (final entry in grouped.entries) {
+        if (columns.isNotEmpty) columns.add(const SizedBox(width: 32));
+        columns.add(_buildStageColumn(stageTitle: entry.key, matches: entry.value));
+      }
+      if (columns.isNotEmpty) {
+        columns.add(const SizedBox(width: 32));
+        columns.add(_buildChampionSlotColumn());
+        return columns;
+      }
+    }
+
+    return [];
   }
 
   Widget _buildStageColumn({

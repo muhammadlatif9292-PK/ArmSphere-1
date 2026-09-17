@@ -3,20 +3,22 @@ import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import 'eval_status.dart';
-class _LiveEligibilityEngineCard extends StatefulWidget {
-  const _LiveEligibilityEngineCard();
+class LiveEligibilityEngineCard extends StatefulWidget {
+  final Map<String, dynamic> tournament;
+
+  const LiveEligibilityEngineCard({
+    super.key,
+    required this.tournament,
+  });
 
   @override
-  State<_LiveEligibilityEngineCard> createState() => _LiveEligibilityEngineCardState();
+  State<LiveEligibilityEngineCard> createState() => _LiveEligibilityEngineCardState();
 }
 
-class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
+class _LiveEligibilityEngineCardState extends State<LiveEligibilityEngineCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _glowPulse;
-
-  // 0: Eligible, 1: Missing Medical Verification, 2: License Expired, 3: Weight Class Not Eligible
-  int _evaluationPreset = 0;
 
   @override
   void initState() {
@@ -37,9 +39,98 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
     super.dispose();
   }
 
+  Map<String, dynamic> _resolveEvaluationData() {
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final catName = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Senior Division';
+    final weight = reg?['weighedWeight'] ?? reg?['weight'];
+    final license = reg?['licenseStatus']?.toString().toUpperCase() ?? 'ACTIVE';
+    final isVerified = reg?['isVerified'] == true || (reg?['verificationStatus'] ?? 'VERIFIED').toString().toUpperCase() == 'VERIFIED';
+    final medicalCleared = reg?['medicalCleared'] == true || (reg?['medicalStatus'] ?? 'VERIFIED').toString().toUpperCase() == 'VERIFIED';
+    final docsValid = reg?['documentsValid'] ?? true;
+
+    final isEligible = isVerified && medicalCleared && license == 'ACTIVE';
+
+    if (isEligible) {
+      return {
+        'headerIcon': Icons.verified_user_rounded,
+        'accentColor': const Color(0xFF00E676),
+        'badgeLabel': '100% ELIGIBLE',
+        'weightStatus': weight != null ? EvalStatus.greenCheck : EvalStatus.amberWarning,
+        'weightDetail': weight != null ? 'Official Weight $weight kg • $catName' : 'Weigh-in Scheduled • $catName',
+        'licenseStatus': EvalStatus.greenCheck,
+        'licenseDetail': 'Active Professional License (Verified)',
+        'verificationStatus': EvalStatus.greenCheck,
+        'verificationDetail': 'Identity Verified & Certified',
+        'medicalStatus': EvalStatus.greenCheck,
+        'medicalDetail': 'Medical Fitness Clearance Approved',
+        'ageStatus': EvalStatus.greenCheck,
+        'ageDetail': 'Age Division Requirement Met',
+        'genderStatus': EvalStatus.greenCheck,
+        'genderDetail': 'Division Classification Certified',
+        'docsStatus': EvalStatus.greenCheck,
+        'docsDetail': 'All Required Documents Valid',
+        'explanationIcon': Icons.check_circle_outline_rounded,
+        'explanationTitle': 'AUTOMATIC EVALUATION: ELIGIBLE',
+        'explanationBody': 'Athlete satisfies all official competitive requirements. Cleared for weigh-in station and draw bracket seeding.',
+        'actionLabel': 'PROCEED TO WEIGH-IN PASS',
+        'actionToast': '✓ Athlete identity verified. Digital pass ready for weigh-in scale.',
+      };
+    } else if (!medicalCleared) {
+      return {
+        'headerIcon': Icons.medical_services_rounded,
+        'accentColor': const Color(0xFFFFB300),
+        'badgeLabel': 'ACTION REQUIRED',
+        'weightStatus': EvalStatus.greenCheck,
+        'weightDetail': 'Weight Category: $catName',
+        'licenseStatus': EvalStatus.greenCheck,
+        'licenseDetail': 'Active Athlete License',
+        'verificationStatus': EvalStatus.greenCheck,
+        'verificationDetail': 'Identity Verified',
+        'medicalStatus': EvalStatus.amberWarning,
+        'medicalDetail': 'Medical Certificate Pending Sign-off',
+        'ageStatus': EvalStatus.greenCheck,
+        'ageDetail': 'Age Division Requirement Met',
+        'genderStatus': EvalStatus.greenCheck,
+        'genderDetail': 'Division Classification Certified',
+        'docsStatus': EvalStatus.amberWarning,
+        'docsDetail': 'Medical Certificate Required',
+        'explanationIcon': Icons.warning_amber_rounded,
+        'explanationTitle': 'MISSING MEDICAL CLEARANCE',
+        'explanationBody': 'An official doctor fitness clearance certificate is required before the athlete can be weighed in or entered into the match bracket.',
+        'actionLabel': 'UPLOAD MEDICAL CLEARANCE',
+        'actionToast': '✓ Opening medical certificate upload portal...',
+      };
+    } else {
+      return {
+        'headerIcon': Icons.badge_rounded,
+        'accentColor': const Color(0xFFFF2A6D),
+        'badgeLabel': 'INELIGIBLE',
+        'weightStatus': EvalStatus.greenCheck,
+        'weightDetail': 'Category: $catName',
+        'licenseStatus': EvalStatus.redError,
+        'licenseDetail': 'License Renewal Required',
+        'verificationStatus': isVerified ? EvalStatus.greenCheck : EvalStatus.redError,
+        'verificationDetail': isVerified ? 'Verified' : 'Verification Required',
+        'medicalStatus': EvalStatus.greenCheck,
+        'medicalDetail': 'Medical Status Verified',
+        'ageStatus': EvalStatus.greenCheck,
+        'ageDetail': 'Age Requirement Met',
+        'genderStatus': EvalStatus.greenCheck,
+        'genderDetail': 'Division Certified',
+        'docsStatus': EvalStatus.redError,
+        'docsDetail': 'Renewal Documents Needed',
+        'explanationIcon': Icons.error_outline_rounded,
+        'explanationTitle': 'LICENSE RENEWAL REQUIRED',
+        'explanationBody': 'Athlete license requires renewal before registration can be finalized.',
+        'actionLabel': 'RENEW ATHLETE LICENSE',
+        'actionToast': '✓ Redirecting to license renewal desk...',
+      };
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final presetData = _getPresetDetails(_evaluationPreset);
+    final presetData = _resolveEvaluationData();
 
     return Container(
       width: double.infinity,
@@ -161,33 +252,6 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
                     },
                   ),
                 ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // Interactive Preset Switcher Bar for Live Evaluation Demo
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141E30),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildPresetChip(0, 'Eligible', AppTheme.goldPrimary),
-                      const SizedBox(width: 6),
-                      _buildPresetChip(1, 'Missing Medical', const Color(0xFFFFB300)),
-                      const SizedBox(width: 6),
-                      _buildPresetChip(2, 'License Expired', const Color(0xFFFF2A6D)),
-                      const SizedBox(width: 6),
-                      _buildPresetChip(3, 'Weight Limit Exceeded', const Color(0xFFFF2A6D)),
-                    ],
-                  ),
-                ),
               ),
 
               const SizedBox(height: 16),
@@ -331,38 +395,6 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
     );
   }
 
-  Widget _buildPresetChip(int index, String label, Color color) {
-    final isSelected = _evaluationPreset == index;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() {
-          _evaluationPreset = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? color : const Color(0xFF1E293B),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? color : Colors.white12,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: AppTheme.fontDisplay,
-            fontSize: 9.5,
-            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-            color: isSelected ? Colors.black : AppTheme.textMuted,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildRequirementRow({
     required String title,
     required String detail,
@@ -438,112 +470,6 @@ class _LiveEligibilityEngineCardState extends State<_LiveEligibilityEngineCard>
         ],
       ),
     );
-  }
-
-  Map<String, dynamic> _getPresetDetails(int index) {
-    switch (index) {
-      case 0: // Eligible
-        return {
-          'headerIcon': Icons.verified_user_rounded,
-          'accentColor': const Color(0xFF00E676),
-          'badgeLabel': '100% ELIGIBLE',
-          'weightStatus': EvalStatus.greenCheck,
-          'weightDetail': 'Official Weight 78.8 kg • Fits Senior Men -80kg',
-          'licenseStatus': EvalStatus.greenCheck,
-          'licenseDetail': 'Active Pro License #PAFF-PK-8842 (Valid thru Dec 2026)',
-          'verificationStatus': EvalStatus.greenCheck,
-          'verificationDetail': 'CNIC Verified & Biometric Matched',
-          'medicalStatus': EvalStatus.greenCheck,
-          'medicalDetail': 'Doctor Clearance Signed (Dr. Kamran Akram)',
-          'ageStatus': EvalStatus.greenCheck,
-          'ageDetail': 'Age 24 • Eligible for Senior Division',
-          'genderStatus': EvalStatus.greenCheck,
-          'genderDetail': 'Male Division Certified',
-          'docsStatus': EvalStatus.greenCheck,
-          'docsDetail': '3/3 Documents Valid (CNIC, Scale Slip, Medical)',
-          'explanationIcon': Icons.check_circle_outline_rounded,
-          'explanationTitle': 'AUTOMATIC EVALUATION: ELIGIBLE',
-          'explanationBody': 'Athlete Tariq Z. satisfies all 7 PAFF competitive requirements. Cleared for weigh-in station and draw bracket seeding.',
-          'actionLabel': 'PROCEED TO WEIGH-IN PASS',
-          'actionToast': '✓ Athlete identity verified. Digital QR Pass generated for weigh-in scale.',
-        };
-      case 1: // Missing Medical Verification
-        return {
-          'headerIcon': Icons.medical_services_rounded,
-          'accentColor': const Color(0xFFFFB300),
-          'badgeLabel': 'ACTION REQUIRED',
-          'weightStatus': EvalStatus.greenCheck,
-          'weightDetail': 'Weight 78.8 kg • Senior Men -80kg',
-          'licenseStatus': EvalStatus.greenCheck,
-          'licenseDetail': 'Active Pro License #PAFF-PK-8842',
-          'verificationStatus': EvalStatus.greenCheck,
-          'verificationDetail': 'CNIC Verified & Biometric Matched',
-          'medicalStatus': EvalStatus.amberWarning,
-          'medicalDetail': 'Medical Certificate Pending Doctor Sign-off',
-          'ageStatus': EvalStatus.greenCheck,
-          'ageDetail': 'Age 24 • Eligible for Senior Division',
-          'genderStatus': EvalStatus.greenCheck,
-          'genderDetail': 'Male Division Certified',
-          'docsStatus': EvalStatus.amberWarning,
-          'docsDetail': '2/3 Documents Approved (Medical Certificate Missing)',
-          'explanationIcon': Icons.warning_amber_rounded,
-          'explanationTitle': 'MISSING MEDICAL VERIFICATION',
-          'explanationBody': 'An official doctor fitness clearance certificate is required before the athlete can be weighed in or entered into the match bracket.',
-          'actionLabel': 'UPLOAD MEDICAL CERTIFICATE (PDF/JPG)',
-          'actionToast': '✓ Opening medical certificate upload portal...',
-        };
-      case 2: // License Expired
-        return {
-          'headerIcon': Icons.badge_rounded,
-          'accentColor': const Color(0xFFFF2A6D),
-          'badgeLabel': 'INELIGIBLE',
-          'weightStatus': EvalStatus.greenCheck,
-          'weightDetail': 'Weight 78.8 kg • Senior Men -80kg',
-          'licenseStatus': EvalStatus.redError,
-          'licenseDetail': 'PAFF License Expired Dec 31, 2025',
-          'verificationStatus': EvalStatus.greenCheck,
-          'verificationDetail': 'CNIC Verified & Biometric Matched',
-          'medicalStatus': EvalStatus.greenCheck,
-          'medicalDetail': 'Doctor Clearance Signed',
-          'ageStatus': EvalStatus.greenCheck,
-          'ageDetail': 'Age 24 • Eligible for Senior Division',
-          'genderStatus': EvalStatus.greenCheck,
-          'genderDetail': 'Male Division Certified',
-          'docsStatus': EvalStatus.redError,
-          'docsDetail': 'License Renewal Needed',
-          'explanationIcon': Icons.error_outline_rounded,
-          'explanationTitle': 'PAFF LICENSE EXPIRED',
-          'explanationBody': 'Athlete professional license #PAFF-PK-8842 expired. Annual renewal is required by PAFF Executive Council regulations.',
-          'actionLabel': 'RENEW PAFF ATHLETE LICENSE NOW',
-          'actionToast': '✓ Redirecting to PAFF License Renewal Desk...',
-        };
-      case 3: // Weight Class Not Eligible
-      default:
-        return {
-          'headerIcon': Icons.scale_rounded,
-          'accentColor': const Color(0xFFFF2A6D),
-          'badgeLabel': 'OVERWEIGHT',
-          'weightStatus': EvalStatus.redError,
-          'weightDetail': 'Scale Weight 83.2 kg • Exceeds -80kg Ceiling by 3.2 kg',
-          'licenseStatus': EvalStatus.greenCheck,
-          'licenseDetail': 'Active Pro License #PAFF-PK-8842',
-          'verificationStatus': EvalStatus.greenCheck,
-          'verificationDetail': 'CNIC Verified & Biometric Matched',
-          'medicalStatus': EvalStatus.greenCheck,
-          'medicalDetail': 'Doctor Clearance Signed',
-          'ageStatus': EvalStatus.greenCheck,
-          'ageDetail': 'Age 24 • Eligible for Senior Division',
-          'genderStatus': EvalStatus.greenCheck,
-          'genderDetail': 'Male Division Certified',
-          'docsStatus': EvalStatus.greenCheck,
-          'docsDetail': '3/3 Documents Valid',
-          'explanationIcon': Icons.error_outline_rounded,
-          'explanationTitle': 'WEIGHT CLASS NOT ELIGIBLE',
-          'explanationBody': 'Scale weight 83.2 kg exceeds the -80kg maximum class limit. Athlete must either cut to 80.0kg before scale deadline or move to -90kg category.',
-          'actionLabel': 'TRANSFER TO SENIOR MEN -90KG CATEGORY',
-          'actionToast': '✓ Weight class transfer request sent to Chief Referee.',
-        };
-    }
   }
 }
 

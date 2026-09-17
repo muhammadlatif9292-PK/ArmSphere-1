@@ -12,12 +12,12 @@ void main() async {
 
   // Initialize Stripe using environment configuration
   try {
-    Stripe.publishableKey = const String.fromEnvironment(
-      'STRIPE_PUBLISHABLE_KEY',
-      defaultValue: 'pk_test_mock_publishable_key',
-    );
+    const publishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY');
+    if (publishableKey.isNotEmpty) {
+      Stripe.publishableKey = publishableKey;
+    }
   } catch (_) {
-    // Safe guard against duplicate initialization errors
+    // Safeguard against initialization errors
   }
 
   // Initialize Hive local cache storage
@@ -27,7 +27,7 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [
-        // Allow overriding values for mocks/testing if needed
+        // Inject production Hive local storage instance
         hiveStorageProvider.overrideWithValue(hiveStorage),
       ],
       child: const ArmSphereApp(),

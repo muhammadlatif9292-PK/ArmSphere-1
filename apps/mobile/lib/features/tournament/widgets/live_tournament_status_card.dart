@@ -17,7 +17,6 @@ class LiveTournamentStatusCard extends StatefulWidget {
 class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
-  final bool _forceShowForTesting = true; // Set default true so users can see the card immediately in preview
 
   @override
   void initState() {
@@ -39,22 +38,27 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
 
   @override
   Widget build(BuildContext context) {
-    final status = (widget.tournament['status'] ?? 'LIVE').toString().toUpperCase();
-    final bool hasStarted = status == 'LIVE' || status == 'IN_PROGRESS' || status == 'STARTED' || _forceShowForTesting;
+    final status = (widget.tournament['status'] ?? '').toString().toUpperCase();
+    final bool hasStarted = status == 'LIVE' || status == 'IN_PROGRESS' || status == 'STARTED';
 
-    // Visible ONLY if tournament has started (or forced in preview)
     if (!hasStarted) {
       return const SizedBox.shrink();
     }
 
-    final currentMatch = widget.tournament['currentMatch'] ?? 'Match #42: Tariq Z. vs. Zain U. (Senior -80kg R)';
-    final liveProgress = widget.tournament['liveProgress'] ?? 'Quarter-Finals (Round 3 of 5)';
-    final progressValue = (widget.tournament['progressPct'] as num?)?.toDouble() ?? 0.68;
-    final athletesRemaining = widget.tournament['athletesRemaining'] ?? '12 / 64 Athletes';
-    final matchesFinished = widget.tournament['matchesFinished'] ?? '38 / 56 Matches';
-    final currentTable = widget.tournament['currentTable'] ?? 'Table #2 • Main Arena Stage A';
-    final estimatedFinish = widget.tournament['estimatedFinish'] ?? '05:30 PM PST (~2h 15m remaining)';
-    final liveAudience = widget.tournament['liveAudience'] ?? '1,420 Viewers Online';
+    final currentMatch = widget.tournament['currentMatch']?.toString() ??
+        widget.tournament['activeMatch']?.toString() ??
+        'Table in Session • Championship Bouts';
+    final liveProgress = widget.tournament['liveProgress']?.toString() ??
+        widget.tournament['currentRound']?.toString() ??
+        'Championship Bouts in Progress';
+    final progressValue = (widget.tournament['progressPct'] as num?)?.toDouble() ?? 0.5;
+    final athletesRemaining = widget.tournament['athletesRemaining']?.toString() ??
+        (widget.tournament['participantCount'] != null ? '${widget.tournament['participantCount']} Athletes' : 'Active Contenders');
+    final matchesFinished = widget.tournament['matchesFinished']?.toString() ?? 'In Progress';
+    final currentTable = widget.tournament['currentTable']?.toString() ?? 'Main Arena Table';
+    final estimatedFinish = widget.tournament['estimatedFinish']?.toString() ?? 'Official Championship Schedule';
+    final liveAudience = widget.tournament['liveAudience']?.toString() ??
+        (widget.tournament['viewers'] != null ? '${widget.tournament['viewers']} Viewers Online' : 'Broadcasting Live');
 
     return Container(
       width: double.infinity,
@@ -518,26 +522,26 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
-              Icon(Icons.play_circle_fill_rounded, color: Color(0xFFFF0000), size: 24),
-              SizedBox(width: 8),
-              Text(
-                'PAFF Official Broadcast',
+              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFFFF0000), size: 24),
+              const SizedBox(width: 8),
+              const Text(
+                'Official Live Broadcast',
                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          content: const Column(
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Redirecting to the Official PAFF YouTube Live Stream...',
+              const Text(
+                'Redirecting to the official championship live stream...',
                 style: TextStyle(color: AppTheme.textMuted, fontSize: 12.5),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
-                '• Channel: Pakistan Armwrestling Federation Official\n• Quality: 1080p60 Live Commentary\n• Table #1 & Table #2 Dual Feed Available',
-                style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                '• Event: ${widget.tournament['name'] ?? 'ArmSphere Championship'}\n• Feed: 1080p60 Live Arena Tables',
+                style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
               ),
             ],
           ),
@@ -555,7 +559,7 @@ class _LiveTournamentStatusCardState extends State<LiveTournamentStatusCard> wit
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('✓ Opening official YouTube stream: https://youtube.com/live/PAFF_Official_2026'),
+                    content: Text('✓ Opening official championship live stream...'),
                     backgroundColor: Color(0xFFFF0000),
                   ),
                 );

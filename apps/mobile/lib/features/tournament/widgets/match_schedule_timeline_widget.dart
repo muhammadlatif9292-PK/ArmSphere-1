@@ -21,137 +21,49 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
   int _activeFilter = 0; // 0: My Matches, 1: All Stage Matches, 2: Live & Next
   final Set<int> _reminderMatchIds = {};
 
-  final List<Map<String, dynamic>> _mySchedule = [
-    {
-      'id': 101,
-      'matchNumber': 'Match #12',
-      'round': 'Round 1 (32-Draw)',
-      'table': 'Table #1 • Stage A',
-      'opponent': 'Bilal K. (Lahore)',
-      'weightClass': 'Senior Men Right -80kg',
-      'estimatedTime': '11:15 AM PST',
-      'status': 'COMPLETED',
-      'result': 'WON (2 - 0)',
-      'resultColor': const Color(0xFF00E676),
-      'score': '2 - 0',
-      'isUser': true,
-    },
-    {
-      'id': 102,
-      'matchNumber': 'Match #28',
-      'round': 'Quarter-Finals',
-      'table': 'Table #1 • Stage A',
-      'opponent': 'Usman R. (Peshawar)',
-      'weightClass': 'Senior Men Right -80kg',
-      'estimatedTime': '01:45 PM PST',
-      'status': 'COMPLETED',
-      'result': 'WON (2 - 1)',
-      'resultColor': const Color(0xFF00E676),
-      'score': '2 - 1',
-      'isUser': true,
-    },
-    {
-      'id': 103,
-      'matchNumber': 'Match #42',
-      'round': 'Semi-Finals',
-      'table': 'Table #2 • Stage B',
-      'opponent': 'Zain U. (Islamabad)',
-      'weightClass': 'Senior Men Right -80kg',
-      'estimatedTime': '03:30 PM PST (Live Now)',
-      'status': 'LIVE',
-      'result': 'IN PROGRESS',
-      'resultColor': const Color(0xFFFF2A6D),
-      'score': '0 - 0',
-      'isUser': true,
-    },
-    {
-      'id': 104,
-      'matchNumber': 'Match #54',
-      'round': 'Grand Finals',
-      'table': 'Main Arena Center Stage',
-      'opponent': 'TBD (Semi 2 Winner)',
-      'weightClass': 'Senior Men Right -80kg',
-      'estimatedTime': '05:15 PM PST (Estimated)',
-      'status': 'UPCOMING',
-      'result': 'SCHEDULED',
-      'resultColor': AppTheme.goldPrimary,
-      'score': '- - -',
-      'isUser': true,
-    },
-  ];
+  List<Map<String, dynamic>> _resolveSchedule() {
+    final raw = widget.tournament['matches'] ?? widget.tournament['schedule'];
+    if (raw is List && raw.isNotEmpty) {
+      return raw.map<Map<String, dynamic>>((m) {
+        if (m is! Map<String, dynamic>) return <String, dynamic>{};
+        final athlete1 = m['athlete1'] is Map ? m['athlete1'] : null;
+        final athlete2 = m['athlete2'] is Map ? m['athlete2'] : null;
+        final athlete1Name = athlete1?['fullName'] ?? athlete1?['name'] ?? m['athlete1Name'] ?? 'TBD';
+        final athlete2Name = athlete2?['fullName'] ?? athlete2?['name'] ?? m['athlete2Name'] ?? 'TBD';
+        final isUser = m['isUser'] == true || m['userMatch'] == true;
+        final status = (m['status'] ?? 'UPCOMING').toString().toUpperCase();
+        final result = m['result'] ??
+            (status == 'LIVE'
+                ? 'IN PROGRESS'
+                : (status == 'COMPLETED' ? 'FINISHED' : 'SCHEDULED'));
+        final resultColor = status == 'LIVE'
+            ? const Color(0xFFFF2A6D)
+            : (status == 'COMPLETED' ? const Color(0xFF00E676) : AppTheme.goldPrimary);
 
-  final List<Map<String, dynamic>> _allSchedule = [
-    {
-      'id': 201,
-      'matchNumber': 'Match #38',
-      'round': 'Quarter-Finals',
-      'table': 'Table #1 • Stage A',
-      'opponent': 'Faisal M. vs. Ali N.',
-      'weightClass': 'Senior Men Left -80kg',
-      'estimatedTime': '02:45 PM PST',
-      'status': 'COMPLETED',
-      'result': 'FINISHED (2-1)',
-      'resultColor': const Color(0xFF00E676),
-      'score': '2 - 1',
-      'isUser': false,
-    },
-    {
-      'id': 202,
-      'matchNumber': 'Match #41',
-      'round': 'Semi-Finals',
-      'table': 'Table #1 • Stage A',
-      'opponent': 'Hamza S. vs. Danish A.',
-      'weightClass': 'Masters Men Right +100kg',
-      'estimatedTime': '03:15 PM PST',
-      'status': 'COMPLETED',
-      'result': 'FINISHED (2-0)',
-      'resultColor': const Color(0xFF00E676),
-      'score': '2 - 0',
-      'isUser': false,
-    },
-    {
-      'id': 103,
-      'matchNumber': 'Match #42',
-      'round': 'Semi-Finals',
-      'table': 'Table #2 • Stage B',
-      'opponent': 'Tariq Z. (YOU) vs. Zain U.',
-      'weightClass': 'Senior Men Right -80kg',
-      'estimatedTime': '03:30 PM PST (Live Now)',
-      'status': 'LIVE',
-      'result': 'IN PROGRESS',
-      'resultColor': const Color(0xFFFF2A6D),
-      'score': '0 - 0',
-      'isUser': true,
-    },
-    {
-      'id': 204,
-      'matchNumber': 'Match #43',
-      'round': 'Semi-Finals',
-      'table': 'Table #1 • Stage A',
-      'opponent': 'Ahmad Y. vs. Asad K.',
-      'weightClass': 'Senior Men Right -90kg',
-      'estimatedTime': '04:00 PM PST',
-      'status': 'UPCOMING',
-      'result': 'NEXT MATCH',
-      'resultColor': const Color(0xFF00E5FF),
-      'score': '- - -',
-      'isUser': false,
-    },
-    {
-      'id': 104,
-      'matchNumber': 'Match #54',
-      'round': 'Grand Finals',
-      'table': 'Main Arena Center Stage',
-      'opponent': 'TBD vs. TBD',
-      'weightClass': 'Senior Men Right -80kg',
-      'estimatedTime': '05:15 PM PST',
-      'status': 'UPCOMING',
-      'result': 'SCHEDULED',
-      'resultColor': AppTheme.goldPrimary,
-      'score': '- - -',
-      'isUser': true,
-    },
-  ];
+        final idVal = (m['id'] is num)
+            ? (m['id'] as num).toInt()
+            : (int.tryParse(m['id']?.toString() ?? '') ?? 0);
+
+        return {
+          'id': idVal,
+          'matchNumber': m['matchNumber'] != null ? 'Match #${m['matchNumber']}' : 'Bout',
+          'round': m['round'] ?? 'Bracket Round',
+          'table': m['table'] ?? m['tableName'] ?? 'Main Arena Table',
+          'opponent': '$athlete1Name vs. $athlete2Name',
+          'weightClass': m['division'] != null && m['weightClass'] != null
+              ? '${m['division']} ${m['weightClass']}'
+              : (m['category'] ?? 'Open Category'),
+          'estimatedTime': m['estimatedTime'] ?? m['time'] ?? 'TBD',
+          'status': status,
+          'result': result,
+          'resultColor': resultColor,
+          'score': m['score'] ?? (status == 'COMPLETED' ? 'Completed' : '- - -'),
+          'isUser': isUser,
+        };
+      }).where((m) => m.isNotEmpty).toList();
+    }
+    return [];
+  }
 
   @override
   void initState() {
@@ -172,11 +84,19 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
   }
 
   List<Map<String, dynamic>> get _filteredMatches {
-    if (_activeFilter == 0) return _mySchedule;
-    if (_activeFilter == 1) return _allSchedule;
+    final allSchedule = _resolveSchedule();
+    if (_activeFilter == 0) {
+      return allSchedule.where((m) => m['isUser'] == true).toList();
+    }
+    if (_activeFilter == 1) {
+      return allSchedule;
+    }
     // Live & Next
-    return _allSchedule
-        .where((m) => m['status'] == 'LIVE' || m['result'] == 'NEXT MATCH')
+    return allSchedule
+        .where((m) =>
+            m['status'] == 'LIVE' ||
+            m['result'] == 'NEXT MATCH' ||
+            m['status'] == 'IN_PROGRESS')
         .toList();
   }
 
@@ -296,17 +216,43 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
 
               const SizedBox(height: 18),
 
-              // Vertical Timeline Builder
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: matches.length,
-                itemBuilder: (context, index) {
-                  final match = matches[index];
-                  final isLast = index == matches.length - 1;
-                  return _buildTimelineItem(match, isLast);
-                },
-              ),
+              // Vertical Timeline Builder or Empty State
+              if (matches.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: [
+                      const Icon(Icons.event_busy_rounded, color: AppTheme.textMuted, size: 28),
+                      const SizedBox(height: 8),
+                      Text(
+                        _activeFilter == 0
+                            ? 'No scheduled matches found for your registration.'
+                            : (_activeFilter == 2
+                                ? 'No matches are currently live or next on deck.'
+                                : 'No matches scheduled yet for this event.'),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: matches.length,
+                  itemBuilder: (context, index) {
+                    final match = matches[index];
+                    final isLast = index == matches.length - 1;
+                    return _buildTimelineItem(match, isLast);
+                  },
+                ),
             ],
           ),
         ),

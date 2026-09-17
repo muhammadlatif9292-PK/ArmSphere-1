@@ -16,7 +16,22 @@ class TournamentContextActionsWidget extends StatefulWidget {
 }
 
 class _TournamentContextActionsWidgetState extends State<TournamentContextActionsWidget> {
-  int _activePhaseIndex = 0;
+  late int _activePhaseIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _activePhaseIndex = _resolveInitialPhase();
+  }
+
+  int _resolveInitialPhase() {
+    final status = (widget.tournament['status'] ?? '').toString().toUpperCase();
+    if (status == 'COMPLETED' || status == 'FINISHED') return 3;
+    if (status == 'LIVE' || status == 'IN_PROGRESS') return 2;
+    final reg = widget.tournament['userRegistration'] ?? widget.tournament['myRegistration'];
+    if (reg != null) return 1;
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -251,12 +266,17 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
   }
 
   Widget _buildPreMatchPhaseContent(BuildContext context) {
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final cat = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Division';
+    final slot = reg?['athleteNumber']?.toString() ?? reg?['id']?.toString();
+    final desc = 'Class: $cat${slot != null ? ' • Athlete #$slot' : ' • Registration Active'}';
+
     return Column(
       children: [
         _buildInformativeStatusCard(
           icon: Icons.check_circle_rounded,
           title: 'Registered Competitor',
-          description: 'Class: Senior Right -80kg • Slot #42 Confirmed',
+          description: desc,
           accentColor: const Color(0xFF00E676),
         ),
         const SizedBox(height: 10),
@@ -277,7 +297,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
         ),
         const SizedBox(height: 10),
         _buildPrimaryActionButton(
-          label: 'CHECK IN TO STAGE A',
+          label: 'CHECK IN TO HOLDING AREA',
           icon: Icons.how_to_reg_rounded,
           gradientColors: const [Color(0xFF00E676), Color(0xFF00C853)],
           textColor: Colors.black,
@@ -285,7 +305,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
             HapticFeedback.mediumImpact();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('✓ Digital Check-In Complete! Assigned to Holding Zone A.'),
+                content: Text('✓ Digital Check-In Complete! Assigned to holding area.'),
                 backgroundColor: Color(0xFF00E676),
               ),
             );
@@ -296,6 +316,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
   }
 
   Widget _buildLiveCompetitionPhaseContent(BuildContext context) {
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final weight = reg?['weighedWeight'] ?? reg?['weight'];
+    final match = widget.tournament['currentMatch']?.toString() ?? widget.tournament['activeMatch']?.toString() ?? 'Live Bouts in Session';
+    final desc = weight != null ? 'Weight: $weight kg • $match' : match;
+
     return Column(
       children: [
         _buildPrimaryActionButton(
@@ -317,7 +342,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
         _buildInformativeStatusCard(
           icon: Icons.verified_rounded,
           title: 'Weigh-In & Check-In Verified',
-          description: 'Official Weight: 78.4 kg • Standing by for Match #42 on Table 2',
+          description: desc,
           accentColor: const Color(0xFF00E676),
         ),
       ],
@@ -325,12 +350,16 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
   }
 
   Widget _buildPostTournamentPhaseContent(BuildContext context) {
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final standing = reg?['finalStanding']?.toString() ?? 'Official Participant';
+    final cat = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Division';
+
     return Column(
       children: [
         _buildInformativeStatusCard(
           icon: Icons.emoji_events_rounded,
           title: 'Tournament Completed',
-          description: 'Final Standing: 2nd Place (Silver Medalist) -80kg Right Arm',
+          description: 'Standing: $standing • $cat',
           accentColor: AppTheme.goldPrimary,
         ),
         const SizedBox(height: 10),
@@ -602,16 +631,16 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
-                    SizedBox(height: 12),
+                    const Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
+                    const SizedBox(height: 12),
                     Text(
-                      'Double Elimination Bracket - Senior Right -80kg',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      'Double Elimination Bracket • ${widget.tournament['category'] ?? 'Championship Division'}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
-                      '16 Athletes • Winners Quarter-Finals Table #2',
-                      style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                      widget.tournament['bracketStage']?.toString() ?? widget.tournament['name']?.toString() ?? 'Official Championship Draw',
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -625,6 +654,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
 
   void _showCertificateModal(BuildContext context) {
     HapticFeedback.lightImpact();
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final standing = reg?['finalStanding']?.toString() ?? 'Official Participant';
+    final cat = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Class';
+    final certId = reg?['certificateId']?.toString() ?? reg?['athleteNumber']?.toString() ?? widget.tournament['id']?.toString() ?? 'CERT';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0F172A),
@@ -639,7 +673,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
             const Icon(Icons.workspace_premium_rounded, size: 44, color: AppTheme.goldPrimary),
             const SizedBox(height: 12),
             const Text(
-              'OFFICIAL PAFF CERTIFICATE',
+              'OFFICIAL DIGITAL CERTIFICATE',
               style: TextStyle(
                 fontFamily: AppTheme.fontDisplay,
                 fontSize: 14,
@@ -648,10 +682,10 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Silver Medalist • Senior Right -80kg Class\nVerified Digital Certificate #PAFF-2026-8821',
+            Text(
+              '$standing • $cat\nVerified Digital Certificate #$certId',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(

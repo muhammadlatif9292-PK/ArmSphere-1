@@ -161,78 +161,109 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
             const SizedBox(height: 16),
 
             // Video Preview Frame Backdrop Card
-            Container(
-              width: double.infinity,
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                image: const DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1517649763962-0c623266010b'),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
-                ),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Center Play Overlay Icon
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF2A6D).withValues(alpha: 0.9),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
-                  ),
+            Builder(
+              builder: (context) {
+                final String? streamThumbnail = (widget.tournament['streamThumbnailUrl'] ?? widget.tournament['bannerUrl']) as String?;
+                final currentMatch = widget.tournament['currentFeaturedMatch']?.toString() ??
+                    widget.tournament['activeMatch']?.toString() ??
+                    '${widget.tournament['name'] ?? 'Tournament'} • Main Table';
+                final viewers = widget.tournament['liveViewerCount']?.toString() ??
+                    (widget.tournament['viewers'] != null ? widget.tournament['viewers'].toString() : null);
 
-                  // Bottom Info Overlay Bar
-                  Positioned(
-                    bottom: 12,
-                    left: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 14),
-                              SizedBox(width: 6),
-                              Text(
-                                'Table 1: Usman Khan vs Zain Ul-Abidin',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
+                return Container(
+                  width: double.infinity,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF131D33),
+                    image: (streamThumbnail != null && streamThumbnail.isNotEmpty)
+                        ? DecorationImage(
+                            image: NetworkImage(streamThumbnail),
+                            fit: BoxFit.cover,
+                            colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.darken),
+                          )
+                        : null,
+                    gradient: (streamThumbnail == null || streamThumbnail.isEmpty)
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF1E293B),
+                              const Color(0xFF0F172A),
+                              const Color(0xFFFF2A6D).withValues(alpha: 0.15),
                             ],
-                          ),
-                          Row(
-                            children: [
-                              Icon(Icons.remove_red_eye_rounded, color: Color(0xFF00E5FF), size: 14),
-                              SizedBox(width: 4),
-                              Text(
-                                '14,820',
-                                style: TextStyle(color: Color(0xFF00E5FF), fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                          )
+                        : null,
+                    border: Border.all(color: Colors.white12),
                   ),
-                ],
-              ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Center Play Overlay Icon
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
+                              blurRadius: 16,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
+                      ),
+
+                      // Bottom Info Overlay Bar
+                      Positioned(
+                        bottom: 12,
+                        left: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 14),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        currentMatch,
+                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (viewers != null)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.remove_red_eye_rounded, color: Color(0xFF00E5FF), size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      viewers,
+                                      style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 16),
@@ -322,18 +353,18 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
               Text('YouTube Live Stream', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
-          content: const Column(
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Opening the official PAFF Championship live broadcast on YouTube.',
+              const Text(
+                'Opening official tournament live broadcast on YouTube.',
                 style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
-                '• Stream: Pakistan National Armwrestling Finals 2026\n• Resolution: 1080p60\n• Commentary: English & Urdu',
-                style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                '• Stream: ${widget.tournament['name'] ?? 'ArmSphere Championship'}\n• Resolution: 1080p60\n• Official ArmSphere Broadcast',
+                style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
               ),
             ],
           ),

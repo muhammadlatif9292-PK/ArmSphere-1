@@ -19,69 +19,100 @@ class _TournamentStatisticsWidgetState extends State<TournamentStatisticsWidget>
   late AnimationController _numAnimController;
   late Animation<double> _animation;
 
-  final List<Map<String, dynamic>> _statsData = [
-    {
-      'id': 'registered_athletes',
-      'label': 'Registered Athletes',
-      'targetValue': 128,
-      'prefix': '',
-      'suffix': '',
-      'icon': Icons.people_alt_rounded,
-      'accentColor': const Color(0xFF00E5FF),
-      'subtitle': 'Max Capacity: 128',
-    },
-    {
-      'id': 'verified_athletes',
-      'label': 'Verified Athletes',
-      'targetValue': 114,
-      'prefix': '',
-      'suffix': '',
-      'icon': Icons.verified_user_rounded,
-      'accentColor': const Color(0xFF00E676),
-      'subtitle': '89% Weight Cleared',
-    },
-    {
-      'id': 'matches',
-      'label': 'Matches',
-      'targetValue': 64,
-      'prefix': '',
-      'suffix': ' Pulls',
-      'icon': Icons.sports_mma_rounded,
-      'accentColor': const Color(0xFFFF2A6D),
-      'subtitle': '32 Elimination Bouts',
-    },
-    {
-      'id': 'tables',
-      'label': 'Tables',
-      'targetValue': 4,
-      'prefix': 'Stage ',
-      'suffix': ' Arenas',
-      'icon': Icons.tab_unselected_rounded,
-      'accentColor': AppTheme.goldPrimary,
-      'subtitle': 'Active Stage Queues',
-    },
-    {
-      'id': 'referees',
-      'label': 'Referees',
-      'targetValue': 12,
-      'prefix': '',
-      'suffix': ' Officials',
-      'icon': Icons.gavel_rounded,
-      'accentColor': const Color(0xFFA855F7),
-      'subtitle': 'Certified PAFF Masters',
-    },
-    {
-      'id': 'prize_pool',
-      'label': 'Prize Pool',
-      'targetValue': 500000,
-      'prefix': 'Rs. ',
-      'suffix': '',
-      'isCurrency': true,
-      'icon': Icons.workspace_premium_rounded,
-      'accentColor': const Color(0xFFFFB703),
-      'subtitle': 'Cash & Medals Pool',
-    },
-  ];
+  List<Map<String, dynamic>> _resolveStatsData() {
+    final t = widget.tournament;
+    final capacity = (t['capacity'] is num) ? (t['capacity'] as num).toInt() : 0;
+    final registered = (t['registeredAthletesCount'] is num)
+        ? (t['registeredAthletesCount'] as num).toInt()
+        : ((t['registeredCount'] is num)
+            ? (t['registeredCount'] as num).toInt()
+            : ((t['participants'] is List) ? (t['participants'] as List).length : 0));
+    final verified = (t['verifiedAthletesCount'] is num)
+        ? (t['verifiedAthletesCount'] as num).toInt()
+        : ((t['verifiedCount'] is num) ? (t['verifiedCount'] as num).toInt() : 0);
+    final matches = (t['matchCount'] is num)
+        ? (t['matchCount'] as num).toInt()
+        : ((t['matches'] is List) ? (t['matches'] as List).length : 0);
+    final tables = (t['tablesCount'] is num)
+        ? (t['tablesCount'] as num).toInt()
+        : ((t['tables'] is List) ? (t['tables'] as List).length : 1);
+    final referees = (t['refereesCount'] is num)
+        ? (t['refereesCount'] as num).toInt()
+        : ((t['referees'] is List) ? (t['referees'] as List).length : 0);
+    final prizePool = (t['prizePool'] is num)
+        ? (t['prizePool'] as num).toInt()
+        : ((t['prizePoolPkr'] is num)
+            ? (t['prizePoolPkr'] as num).toInt()
+            : ((t['registrationFeeCents'] is num)
+                ? ((t['registrationFeeCents'] as num).toInt() * registered ~/ 100)
+                : 0));
+
+    return [
+      {
+        'id': 'registered_athletes',
+        'label': 'Registered Athletes',
+        'targetValue': registered,
+        'prefix': '',
+        'suffix': '',
+        'icon': Icons.people_alt_rounded,
+        'accentColor': const Color(0xFF00E5FF),
+        'subtitle': capacity > 0 ? 'Max Capacity: $capacity' : 'Total Registered',
+      },
+      {
+        'id': 'verified_athletes',
+        'label': 'Verified Athletes',
+        'targetValue': verified,
+        'prefix': '',
+        'suffix': '',
+        'icon': Icons.verified_user_rounded,
+        'accentColor': const Color(0xFF00E676),
+        'subtitle': registered > 0
+            ? '${((verified / registered) * 100).toInt()}% Weigh-Ins Cleared'
+            : 'Official Weigh-Ins',
+      },
+      {
+        'id': 'matches',
+        'label': 'Matches',
+        'targetValue': matches,
+        'prefix': '',
+        'suffix': ' Pulls',
+        'icon': Icons.sports_mma_rounded,
+        'accentColor': const Color(0xFFFF2A6D),
+        'subtitle': matches > 0 ? 'Bracket Bouts' : 'Pending Draw',
+      },
+      {
+        'id': 'tables',
+        'label': 'Tables',
+        'targetValue': tables,
+        'prefix': 'Stage ',
+        'suffix': ' Arenas',
+        'icon': Icons.tab_unselected_rounded,
+        'accentColor': AppTheme.goldPrimary,
+        'subtitle': 'Active Stage Tables',
+      },
+      {
+        'id': 'referees',
+        'label': 'Referees',
+        'targetValue': referees,
+        'prefix': '',
+        'suffix': ' Officials',
+        'icon': Icons.gavel_rounded,
+        'accentColor': const Color(0xFFA855F7),
+        'subtitle': 'Certified PAFF Officials',
+      },
+      {
+        'id': 'prize_pool',
+        'label': 'Prize Pool',
+        'targetValue': prizePool,
+        'prefix': 'Rs. ',
+        'suffix': '',
+        'isCurrency': true,
+        'icon': Icons.workspace_premium_rounded,
+        'accentColor': const Color(0xFFFFB703),
+        'subtitle': prizePool > 0 ? 'Cash & Awards Pool' : 'Official Certificates',
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -113,6 +144,8 @@ class _TournamentStatisticsWidgetState extends State<TournamentStatisticsWidget>
 
   @override
   Widget build(BuildContext context) {
+    final statsData = _resolveStatsData();
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -232,7 +265,7 @@ class _TournamentStatisticsWidgetState extends State<TournamentStatisticsWidget>
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _statsData.length,
+                itemCount: statsData.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 10,
@@ -240,7 +273,7 @@ class _TournamentStatisticsWidgetState extends State<TournamentStatisticsWidget>
                   childAspectRatio: 1.5,
                 ),
                 itemBuilder: (context, index) {
-                  final stat = _statsData[index];
+                  final stat = statsData[index];
                   return _buildGlassStatCard(stat);
                 },
               ),

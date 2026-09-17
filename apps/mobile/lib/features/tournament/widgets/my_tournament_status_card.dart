@@ -17,32 +17,46 @@ class MyTournamentStatusCard extends StatefulWidget {
 
 class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
-  
-  // 0: Not Registered, 1: Eligible to Register, 2: Registration Pending, 3: Registered,
-  // 4: Medical Pending, 5: Verification Pending, 6: Check-in Required, 7: Waiting for Bracket,
-  // 8: Competing, 9: Completed
-  int _selectedStatusIndex = 6; // Check-in Required default
-
-  final List<String> _statusOptions = [
-    'Not Registered',
-    'Eligible to Register',
-    'Registration Pending',
-    'Registered',
-    'Medical Pending',
-    'Verification Pending',
-    'Check-in Required',
-    'Waiting for Bracket',
-    'Competing',
-    'Completed',
-  ];
+  late int _statusIndex;
 
   @override
   void initState() {
     super.initState();
+    _statusIndex = _resolveInitialStatusIndex();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
+  }
+
+  int _resolveInitialStatusIndex() {
+    final reg = widget.tournament['userRegistration'] ?? widget.tournament['myRegistration'];
+    if (reg is Map<String, dynamic>) {
+      final status = (reg['status'] ?? '').toString().toUpperCase();
+      final weighInStatus = (reg['weighInStatus'] ?? '').toString().toUpperCase();
+      final checkInStatus = (reg['checkInStatus'] ?? '').toString().toUpperCase();
+
+      if (status == 'COMPLETED' || status == 'FINISHED') return 9;
+      if (status == 'COMPETING' || status == 'IN_BRACKET' || status == 'CALLED') return 8;
+      if (checkInStatus == 'CHECKED_IN' || status == 'CHECKED_IN') return 7;
+      if (weighInStatus == 'VERIFIED' || weighInStatus == 'PASSED') return 6;
+      if (weighInStatus == 'PENDING') return 5;
+      if (status == 'MEDICAL_PENDING') return 4;
+      if (status == 'APPROVED' || status == 'CONFIRMED' || status == 'REGISTERED') return 3;
+      if (status == 'PENDING') return 2;
+    }
+
+    final status = (widget.tournament['registrationStatus'] ?? widget.tournament['myStatus'] ?? '').toString().toUpperCase();
+    if (status == 'COMPLETED') return 9;
+    if (status == 'COMPETING') return 8;
+    if (status == 'WAITING_BRACKET') return 7;
+    if (status == 'CHECK_IN_REQUIRED') return 6;
+    if (status == 'VERIFICATION_PENDING') return 5;
+    if (status == 'MEDICAL_PENDING') return 4;
+    if (status == 'REGISTERED') return 3;
+    if (status == 'PENDING') return 2;
+    if (status == 'ELIGIBLE') return 1;
+    return 0; // Not registered
   }
 
   @override
@@ -52,13 +66,18 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
   }
 
   Map<String, dynamic> _getStatusDetails(int index) {
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final category = reg?['categoryName']?.toString() ?? reg?['category']?.toString() ?? 'Open Class';
+    final athleteNum = reg?['athleteNumber']?.toString() ?? reg?['id']?.toString();
+    final paymentRef = reg?['paymentReference']?.toString() ?? 'Submitted';
+
     switch (index) {
       case 0:
         return {
           'statusLabel': 'NOT REGISTERED',
           'accentColor': const Color(0xFFFF5252),
           'icon': Icons.app_registration_rounded,
-          'explanation': 'You are currently not registered for this championship. Registration closes August 10, 2026.',
+          'explanation': 'You are currently not registered for this championship.',
           'nextAction': 'Select your weight category and submit athlete registration form.',
           'ctaText': 'REGISTER FOR TOURNAMENT',
           'ctaIcon': Icons.how_to_reg_rounded,
@@ -71,7 +90,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
           'statusLabel': 'ELIGIBLE TO REGISTER',
           'accentColor': const Color(0xFF00E5FF),
           'icon': Icons.verified_rounded,
-          'explanation': 'Your PAFF Pro License #PK-8842 is verified & active. You are eligible for Senior Men (-80kg).',
+          'explanation': 'Your athlete license is verified and active. You are eligible to register.',
           'nextAction': 'Proceed to official category registration and confirm payment method.',
           'ctaText': 'PROCEED TO REGISTRATION',
           'ctaIcon': Icons.arrow_forward_rounded,
@@ -85,20 +104,20 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
           'accentColor': const Color(0xFFFFB300),
           'icon': Icons.hourglass_top_rounded,
           'explanation': 'Registration submitted! Payment proof uploaded and awaiting organizer sign-off.',
-          'nextAction': 'Verification in progress by PAFF Council. Usually confirmed within 2-4 hours.',
+          'nextAction': 'Verification in progress. Usually confirmed within 2-4 hours.',
           'ctaText': 'VIEW REGISTRATION RECEIPT',
           'ctaIcon': Icons.receipt_long_rounded,
           'textColor': Colors.black,
           'gradient': const [Color(0xFFFFB300), Color(0xFFFF8F00)],
-          'onCtaTap': (BuildContext ctx) => _showModal(ctx, 'REGISTRATION PENDING RECEIPT', 'Payment Reference #PAY-99824 under review by PAFF Finance Team.'),
+          'onCtaTap': (BuildContext ctx) => _showModal(ctx, 'REGISTRATION PENDING RECEIPT', 'Payment Reference $paymentRef under review by tournament organizers.'),
         };
       case 3:
         return {
           'statusLabel': 'REGISTERED',
           'accentColor': const Color(0xFF00E676),
           'icon': Icons.check_circle_rounded,
-          'explanation': 'Registration confirmed! Senior Right -80kg Category • Athlete ID #ATH-9921.',
-          'nextAction': 'Complete your annual medical fitness clearance certificate prior to weigh-in.',
+          'explanation': 'Registration confirmed! Category: $category${athleteNum != null ? ' • Athlete ID #$athleteNum' : ''}.',
+          'nextAction': 'Complete your medical fitness clearance certificate prior to weigh-in.',
           'ctaText': 'COMPLETE MEDICAL VERIFICATION',
           'ctaIcon': Icons.medical_services_rounded,
           'textColor': Colors.black,
@@ -129,16 +148,17 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
           'ctaIcon': Icons.badge_rounded,
           'textColor': Colors.black,
           'gradient': const [Color(0xFFFFAB40), Color(0xFFFF9100)],
-          'onCtaTap': (BuildContext ctx) => _showModal(ctx, 'ATHLETE VERIFICATION', 'Present your CNIC/Passport & PAFF Digital License ID to Referee Desk Station #1.'),
+          'onCtaTap': (BuildContext ctx) => _showModal(ctx, 'ATHLETE VERIFICATION', 'Present your CNIC/Passport & digital license to Referee Desk Station #1.'),
         };
       case 6:
+        final weight = reg?['weighedWeight']?.toString() ?? reg?['weight']?.toString();
         return {
           'statusLabel': 'CHECK-IN REQUIRED',
           'accentColor': const Color(0xFF64FFDA),
           'icon': Icons.how_to_reg_rounded,
-          'explanation': 'Weigh-in complete (78.4 kg). Digital check-in required at Stage A holding area.',
-          'nextAction': 'Check in to Stage A to receive table call push notifications.',
-          'ctaText': 'CHECK IN TO STAGE A',
+          'explanation': 'Weigh-in complete${weight != null ? ' ($weight kg)' : ''}. Digital check-in required at holding area.',
+          'nextAction': 'Check in to holding area to receive table call push notifications.',
+          'ctaText': 'CHECK IN TO HOLDING AREA',
           'ctaIcon': Icons.location_on_rounded,
           'textColor': Colors.black,
           'gradient': const [Color(0xFF64FFDA), Color(0xFF00BFA5)],
@@ -146,7 +166,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
             HapticFeedback.mediumImpact();
             ScaffoldMessenger.of(ctx).showSnackBar(
               const SnackBar(
-                content: Text('✓ Checked In to Stage A Holding Area! Notification active.'),
+                content: Text('✓ Checked In to Holding Area! Table call notifications active.'),
                 backgroundColor: Color(0xFF00BFA5),
               ),
             );
@@ -166,12 +186,13 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
           'onCtaTap': (BuildContext ctx) => _showBracketModal(ctx),
         };
       case 8:
+        final activeMatch = widget.tournament['activeMatch']?.toString() ?? 'Match Called! Report to table.';
         return {
           'statusLabel': 'COMPETING (LIVE)',
           'accentColor': const Color(0xFFFF2A6D),
           'icon': Icons.sports_mma_rounded,
-          'explanation': 'MATCH #42 CALLED! Table #2 (Stage A). Opponent: Zain Ul-Abidin (Senior Right -80kg).',
-          'nextAction': 'Report immediately to Table #2. Referees preparing grip call.',
+          'explanation': activeMatch,
+          'nextAction': 'Report immediately to assigned table. Referees preparing grip call.',
           'ctaText': 'WATCH LIVE STREAM',
           'ctaIcon': Icons.live_tv_rounded,
           'textColor': Colors.white,
@@ -180,12 +201,13 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
         };
       case 9:
       default:
+        final standing = reg?['finalStanding']?.toString() ?? 'Completed';
         return {
           'statusLabel': 'COMPLETED',
           'accentColor': const Color(0xFFFFD700),
           'icon': Icons.emoji_events_rounded,
-          'explanation': 'Championship Finished! Final Standing: 2nd Place Silver Medalist (-80kg Right Arm).',
-          'nextAction': 'Download verified digital medal certificate & view full standings.',
+          'explanation': 'Championship Finished! Standing: $standing.',
+          'nextAction': 'Download verified digital certificate & view full standings.',
           'ctaText': 'VIEW RESULTS & CERTIFICATE',
           'ctaIcon': Icons.card_membership_rounded,
           'textColor': Colors.black,
@@ -339,14 +361,27 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                   children: [
                     Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
                     SizedBox(height: 12),
-                    Text(
-                      'Double Elimination Bracket • Senior Right -80kg',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      '16 Athletes • Winners Quarter-Finals Table #2',
-                      style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                    Builder(
+                      builder: (context) {
+                        final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+                        final catName = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Bracket';
+                        final details = widget.tournament['bracketStage']?.toString() ?? widget.tournament['name']?.toString() ?? 'Official Elimination Bracket';
+                        return Column(
+                          children: [
+                            Text(
+                              'Tournament Bracket • $catName',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              details,
+                              style: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -367,28 +402,34 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFFFD700)),
-            const SizedBox(height: 12),
-            const Text(
-              'OFFICIAL PAFF DIGITAL CERTIFICATE',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
+      builder: (ctx) {
+        final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+        final catName = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship';
+        final standing = reg?['finalStanding']?.toString() ?? 'Official Participant';
+        final certId = reg?['certificateId']?.toString() ?? reg?['athleteNumber']?.toString() ?? widget.tournament['id']?.toString() ?? 'CERT';
+
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFFFD700)),
+              const SizedBox(height: 12),
+              const Text(
+                'OFFICIAL DIGITAL CERTIFICATE',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Silver Medalist • Senior Right -80kg Class\nVerified Digital Certificate #PAFF-2026-8821',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                '$standing • $catName\nVerified Digital Certificate #$certId',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+              ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
@@ -452,7 +493,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
 
   @override
   Widget build(BuildContext context) {
-    final statusData = _getStatusDetails(_selectedStatusIndex);
+    final statusData = _getStatusDetails(_statusIndex);
     final Color accentColor = statusData['accentColor'] as Color;
     final IconData iconData = statusData['icon'] as IconData;
     final String statusLabel = statusData['statusLabel'] as String;
@@ -463,6 +504,13 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
     final Color textColor = statusData['textColor'] as Color;
     final List<Color> gradient = statusData['gradient'] as List<Color>;
     final Function(BuildContext) onCtaTap = statusData['onCtaTap'] as Function(BuildContext);
+
+    final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
+    final athleteNum = reg?['athleteNumber']?.toString() ?? reg?['id']?.toString();
+    final category = reg?['categoryName']?.toString() ?? reg?['category']?.toString();
+    final subtitle = athleteNum != null
+        ? 'Athlete ID: #$athleteNum${category != null ? ' • $category' : ''}'
+        : (category != null ? 'Category: $category' : 'Official Athlete Status');
 
     return AnimatedBuilder(
       animation: _pulseController,
@@ -496,7 +544,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Row: Title, Subtitle & Interactive Status Switcher Menu
+                // Top Row: Title, Subtitle & Live Status Badge
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -516,10 +564,10 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'SMART ATHLETE STATUS',
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
@@ -529,10 +577,10 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                                 letterSpacing: 0.8,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'Athlete ID: #ATH-9921 • Category: -80kg R',
-                              style: TextStyle(
+                              subtitle,
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 10.5,
                                 color: AppTheme.textMuted,
@@ -543,42 +591,21 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                       ],
                     ),
 
-                    // Dropdown Status Selector (Allows previewing all 10 states easily)
+                    // Live Dynamic Status Badge
                     Container(
-                      height: 28,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(14),
+                        color: accentColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: _selectedStatusIndex,
-                          dropdownColor: const Color(0xFF0F172A),
-                          icon: Icon(Icons.arrow_drop_down, color: accentColor, size: 18),
-                          items: List.generate(_statusOptions.length, (idx) {
-                            return DropdownMenuItem<int>(
-                              value: idx,
-                              child: Text(
-                                _statusOptions[idx].toUpperCase(),
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  color: idx == _selectedStatusIndex ? accentColor : Colors.white70,
-                                ),
-                              ),
-                            );
-                          }),
-                          onChanged: (newIdx) {
-                            if (newIdx != null) {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _selectedStatusIndex = newIdx;
-                              });
-                            }
-                          },
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          color: accentColor,
                         ),
                       ),
                     ),
