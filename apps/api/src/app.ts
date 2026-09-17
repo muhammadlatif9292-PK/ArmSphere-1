@@ -162,9 +162,37 @@ const distPath = candidateDistPaths.find((p) => fs.existsSync(path.join(p, "inde
 
 app.use(express.static(distPath));
 
+const apiPrefixes = [
+  "/api",
+  "/auth",
+  "/sync",
+  "/athletes",
+  "/social",
+  "/community",
+  "/matches",
+  "/rankings",
+  "/analytics",
+  "/championships",
+  "/tournaments",
+  "/governance",
+  "/communication",
+  "/payments",
+  "/venues",
+  "/nominations",
+  "/referees",
+  "/informal-events",
+  "/admin",
+  "/internal",
+  "/tickets",
+  "/events",
+  "/health",
+];
+
 app.get("*", (req: Request, res: Response, next: NextFunction) => {
-  // If requesting api routes, bypass static fallback
-  if (req.path.startsWith("/api") || req.path.startsWith("/auth") || req.path.startsWith("/sync")) {
+  // If requesting api routes or requesting JSON, bypass static fallback
+  const isApiRoute = apiPrefixes.some((prefix) => req.path.startsWith(prefix));
+  const prefersJson = req.headers.accept?.includes("application/json");
+  if (isApiRoute || prefersJson) {
     return next();
   }
   const indexPath = path.join(distPath, "index.html");
