@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-if (!process.env.DATABASE_URL) {
+if (!process.env.DATABASE_URL && process.env.NODE_ENV !== "production") {
   dotenv.config({ path: ".env.neon" });
   dotenv.config({ path: "../../.env.neon" });
 }
