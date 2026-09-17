@@ -251,7 +251,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
           textColor: Colors.black,
           onTap: () {
             HapticFeedback.mediumImpact();
-            context.push('/events/${widget.tournament['id']}/register', extra: widget.tournament);
+            context.push('/tournament/${widget.tournament['id']}/register', extra: widget.tournament);
           },
         ),
         const SizedBox(height: 10),

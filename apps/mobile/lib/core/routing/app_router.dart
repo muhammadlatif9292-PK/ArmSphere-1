@@ -251,6 +251,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const OnboardingScreen(),
         ),
       ),
+/// Role-aware personalized home dispatcher widget.
+/// Renders the appropriate role-specific dashboard inside the persistent main shell.
+class RoleAwareHomeScreen extends ConsumerWidget {
+  const RoleAwareHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userRole = authState.userProfile?['role']?.toString().toUpperCase();
+
+    if (_isRefereeLikeRole(userRole)) {
+      return const RefereeDashboardScreen();
+    }
+    if (_isGovernanceRole(userRole)) {
+      return const GovernanceDashboardScreen();
+    }
+    return const AthleteDashboardScreen();
+  }
+}
+
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShellScreen(navigationShell: navigationShell);
@@ -261,7 +281,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/home',
                 name: 'home',
-                builder: (context, state) => const AthleteDashboardScreen(),
+                builder: (context, state) => const RoleAwareHomeScreen(),
               ),
               GoRoute(
                 path: '/athlete/dashboard',
@@ -408,14 +428,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/referee/dashboard',
-        name: 'referee_dashboard',
-        pageBuilder: (context, state) => AppTransitionPage(
-          key: state.pageKey,
-          child: const RefereeDashboardScreen(),
-        ),
-      ),
-      GoRoute(
         path: '/tournament/:tournamentId',
         name: 'tournament_detail',
         pageBuilder: (context, state) {
@@ -524,14 +536,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: ChampionshipDetailScreen(championshipId: championshipId),
           );
         },
-      ),
-      GoRoute(
-        path: '/governance',
-        name: 'governance',
-        pageBuilder: (context, state) => AppTransitionPage(
-          key: state.pageKey,
-          child: const GovernanceDashboardScreen(),
-        ),
       ),
       GoRoute(
         path: '/governance/federation',

@@ -53,8 +53,8 @@ class DiscoverScreen extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.dashboard_customize, color: AppTheme.primaryAccent),
-            tooltip: 'Go to Athlete Dashboard',
-            onPressed: () => context.go('/athlete/dashboard'),
+            tooltip: 'Go to Home Dashboard',
+            onPressed: () => context.go('/home'),
           ),
           const SizedBox(width: 8),
         ],
@@ -574,7 +574,7 @@ class DiscoverScreen extends ConsumerWidget {
                 title: 'No tournaments scheduled',
                 subtitle: 'Check back soon for upcoming sanctioned events or visit the tournament hub.',
                 ctaLabel: 'Explore Tournaments',
-                onCtaTap: () => context.push('/tournament/dashboard'),
+                onCtaTap: () => context.push('/tournaments'),
               );
             }
             return Column(
@@ -591,9 +591,9 @@ class DiscoverScreen extends ConsumerWidget {
 
                 return TactilePressWrapper(
                   onTap: () {
-                    context.push('/events/$id/register', extra: t);
+                    context.push('/tournament/$id', extra: t);
                   },
-                  semanticLabel: 'Register for tournament: $name',
+                  semanticLabel: 'View tournament: $name',
                   child: Card(
                     color: AppTheme.surface,
                     margin: const EdgeInsets.only(bottom: 10),

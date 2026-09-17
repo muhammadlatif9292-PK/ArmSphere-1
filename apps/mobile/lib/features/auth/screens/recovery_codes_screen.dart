@@ -103,7 +103,7 @@ class RecoveryCodesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: () => context.go('/discover'),
+              onPressed: () => context.go('/home'),
               child: const Text('Continue to Dashboard'),
             ),
           ],

@@ -90,7 +90,7 @@ class TournamentFloatingActionBarWidget extends StatelessWidget {
                 const SnackBar(content: Text('✓ Opening Digital Weigh-In Pass & QR Code...'), backgroundColor: Color(0xFF00E676)),
               );
             } else {
-              context.push('/events/${tournament['id']}/register', extra: tournament);
+              context.push('/tournament/${tournament['id']}/register', extra: tournament);
             }
           },
           child: Container(
