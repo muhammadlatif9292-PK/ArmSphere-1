@@ -11,15 +11,17 @@ This guide covers deploying ArmSphere to production and development environments
 
 ---
 
-## Deployment Status ✅ (Release Candidate RC-1)
+## Deployment Status ✅ (Release Candidate RC-1 Code-Ready)
 
-- ✅ Backend API: Production-ready (623.9 KB ESM bundle with SDK generation)
-- ✅ Admin Web Frontend: Production-ready (935 KB JS / 57 KB CSS)
-- ✅ Mobile Client: Production-ready (All mocks eliminated, role-aware routing, Proguard secured)
-- ✅ Test Suite: 39/39 test suites (573/573 tests passing 100% green)
-- ✅ Database Schema & Indexes: 18 migrations (`0000`–`0018`), composite indexes optimized
+- ✅ Backend API: Code & build verified (623.9 KB ESM bundle with SDK generation)
+- ✅ Admin Web Frontend: Code & build verified (935 KB JS / 57 KB CSS)
+- ✅ Mobile Client: Code verified (All mocks eliminated, role-aware routing, Proguard secured)
+- ✅ Test Suite: 39/39 test suites (573/573 tests passing 100% green; including master product-flow API integration suite)
+- ✅ Database Schema & Indexes: 19 migration files (`0000` through `0018`) with 19 matching journal entries; high-frequency query paths were indexed for improved planner options and lookup performance
 - ✅ Security Hardening: Complete (RBAC, IDOR boundaries, Turnstile CAPTCHA fail-closed, Double-submit CSRF)
-- ✅ Environment Config: Production fail-closed with Zero-Cost Architecture ($0/month)
+- ✅ Environment Config: Production fail-closed (Designed to operate within stated free-tier allocations; actual provider cost depends on usage and provider policy)
+
+> **Note on Deployment Scope**: The codebase, test suites, and build artifacts have achieved verified RC-1 readiness. External operational go-live requirements (provisioning production Neon PostgreSQL, deploying backend and frontend to hosting providers, DNS configuration, and Google Play Console publishing) are performed by the operator during rollout.
 
 ---
 
@@ -448,7 +450,7 @@ CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 ## Deployment Checklist
 
 Before going live:
-- ✅ All tests passing (306/306)
+- ✅ All tests passing (39/39 test suites, 573/573 tests passing 100% green; code readiness verified)
 - ✅ Environment variables configured
 - ✅ Database backups configured
 - ✅ SSL/TLS certificates installed

@@ -4,17 +4,17 @@
 **Status**: APPROVED FOR PRODUCTION RELEASE (RC-1)  
 **Test Suite**: 39 / 39 Suites Passing (573 / 573 Tests Passing — 100% Green)  
 **Deployment Validation**: 21 / 21 Checks Passed  
-**Architecture Cost Profile**: $0.00 / month (Zero-Cost Free-Tier Architecture)  
+**Architecture Cost Profile**: Designed to operate within stated free-tier allocations; actual provider cost depends on usage and provider policy.
 
 ---
 
 ## 1. Executive Summary
 
-ArmSphere has successfully concluded its exhaustive multi-phase hardening and audit roadmap (Tasks 01 through 26). The platform is production-ready across all three core tiers:
+ArmSphere has successfully concluded its exhaustive multi-phase hardening and audit roadmap (Tasks 01 through 26). The codebase and build artifacts have achieved verified Release Candidate (RC-1) readiness across all three core tiers:
 
 1. **Backend Core API (`@armsphere/api`)**:
    - High-performance, production-hardened Node.js/Express service bundled via esbuild into a single 623.9 KB ESM runtime.
-   - 18 Drizzle migrations (`0000` through `0018_performance_indexes.sql`) providing composite indexes across all high-frequency query paths (matches, brackets, events, registrations, rankings, disputes).
+   - 19 migration files (`0000` through `0018_performance_indexes.sql`) with 19 matching journal entries; high-frequency query paths were indexed for improved planner options and lookup performance (matches, brackets, events, registrations, rankings, disputes).
    - Strict zero-leak error handling, cryptographic password hashing (bcrypt), dual-secret JWT authentication with session invalidation, Speakeasy MFA, and Cloudflare Turnstile CAPTCHA (fail-closed in production).
 
 2. **Admin Web Platform (`@armsphere/admin-web`)**:
@@ -25,6 +25,20 @@ ArmSphere has successfully concluded its exhaustive multi-phase hardening and au
    - 100% real API integration: All mocks, hardcoded test athlete data, placeholder IDs, and external mock image URLs have been completely eliminated across all 159 Dart source files.
    - Dynamic `RoleAwareHomeScreen` routing: Automatically routes athletes to `AthleteDashboardScreen`, referees to `RefereeDashboardScreen`, and directors/administrators to `GovernanceDashboardScreen` within the bottom navigation shell.
    - Android release hardening: `proguard-rules.pro` protecting biometrics, Flutter, and Stripe SDKs; secure signing configuration with fallback debug isolation; Apple iOS code preparation ready for macOS CI artifact signing.
+
+### Code Readiness vs. External Operational Prerequisites
+
+- **Verified RC-1 Code Readiness**:
+  - 39 / 39 test suites passing (573 / 573 automated tests green).
+  - Clean production builds: API ESM bundle (623.9 KB) and Admin Web static bundle (935 KB JS / 57 KB CSS).
+  - 21 / 21 automated deployment checks verified (`scripts/validate-deployment.js`).
+  - Zero active secrets across tracked repository files.
+- **External Operational Go-Live Requirements (Operator Actions Required)**:
+  - Database provisioning: Creating production Neon PostgreSQL database and executing migrations (`npm run db:migrate`).
+  - Cloud infrastructure deployment: Deploying backend container/service to Render/Netlify and Admin Web to CDN.
+  - DNS & Domain setup: Routing production domain names and configuring SSL/TLS.
+  - Mobile signing & distribution: Generating production Android keystore, signing the AAB/APK, and submitting to Google Play Console (and iOS App Store).
+  *(Note: The application code and builds are verified release-ready; the system is not yet live or hosted until these external operational steps are performed).*
 
 ---
 
@@ -53,28 +67,30 @@ ArmSphere has successfully concluded its exhaustive multi-phase hardening and au
 | **19** | Mobile API Mock Elimination | ✅ COMPLETE | Elimination of all mock athlete data across 158 Dart files (Commit `3ea904c`). |
 | **20** | Mobile Discovery & Home Architecture Audit | ✅ COMPLETE | `RoleAwareHomeScreen`, 78 GoRoutes with 0 duplicate paths (Commit `2b5cecb`). |
 | **21** | Store Release Build Readiness | ✅ COMPLETE | Android ProGuard rules, `key.properties.example`, iOS scope documentation (Commit `1998ecc`). |
-| **22** | Database Performance & Index Audit | ✅ COMPLETE | Migration `0018_performance_indexes.sql` with 17 composite indexes (Commit `62eefe6`). |
-| **23** | Full Product Flow E2E Audit | ✅ COMPLETE | Comprehensive 9-journey test suite `fullProductFlowE2E.test.ts` (Commit `1df9242`). |
+| **22** | Database Performance & Index Audit | ✅ COMPLETE | Migration `0018_performance_indexes.sql` (19 migration files total, 0000–0018 with 19 matching journal entries) with 17 composite indexes; high-frequency query paths were indexed for improved planner options and lookup performance (Commit `62eefe6`). |
+| **23** | Full Product Flow Integration Audit | ✅ COMPLETE | Comprehensive 9-journey API integration / master product-flow integration suite `fullProductFlowE2E.test.ts` exercising Express controllers, services, Drizzle ORM, and domain journeys inside the test runner (not a live physical device / network-deployed E2E test) (Commit `1df9242`). |
 | **24** | Final Security Regression Sweep | ✅ COMPLETE | 8 dedicated security suites (117 tests passing); 0 static secrets across 189 client files. |
 | **25** | Final Release Candidate Audit | ✅ COMPLETE | Clean compilation: API bundle 623.9 KB, Admin Web build 935 KB, deployment validation 21/21 passed. |
 | **26** | Release Decision & Production Rollout | ✅ APPROVED | Release candidate approved for production deployment. |
 
 ---
 
-## 3. Zero-Cost Infrastructure Architecture Validation
+## 3. Free-Tier Infrastructure Architecture Validation
 
-ArmSphere is engineered to operate on free tiers indefinitely without incurring monthly cloud infrastructure costs:
+ArmSphere is designed to operate within stated free-tier allocations; actual provider cost depends on usage and provider policy:
 
-| Infrastructure Tier | Production Provider | Free Tier Allocation | ArmSphere Consumption | Cost |
+| Infrastructure Tier | Production Provider | Free Tier Allocation | ArmSphere Consumption | Cost Profile |
 | :--- | :--- | :--- | :--- | :--- |
-| **Compute / API** | Render / Netlify Functions | 750 free hours / 125k requests | Single 623.9 KB bundled ESM worker | **$0.00** |
-| **Admin Web Hosting** | Netlify / Vercel / Cloudflare Pages | 100 GB bandwidth / month | Static Vite bundle (~1 MB) | **$0.00** |
-| **Relational Database** | Neon PostgreSQL | 0.5 GB storage, 1 compute unit | ~15 MB initial schema + indexes | **$0.00** |
-| **Blob / Asset Storage** | Backblaze B2 | 10 GB free storage, 1GB/day egress | Presigned URLs for avatars & compliance docs | **$0.00** |
-| **Bot Mitigation** | Cloudflare Turnstile | Free unlimited managed challenges | Integrated on auth & registration endpoints | **$0.00** |
-| **Push Notifications** | Firebase Cloud Messaging (FCM) | Free unlimited mobile push dispatches | Dual-mode: real FCM with simulated fallback | **$0.00** |
-| **Error Monitoring** | Sentry Developer Tier | 5,000 free events / month | Production error capturing & alerting | **$0.00** |
-| **Total Monthly Cost** | | | | **$0.00 / mo** |
+| **Compute / API** | Render / Netlify Functions | 750 free hours / 125k requests | Single 623.9 KB bundled ESM worker | Stated Free Tier |
+| **Admin Web Hosting** | Netlify / Vercel / Cloudflare Pages | 100 GB bandwidth / month | Static Vite bundle (~1 MB) | Stated Free Tier |
+| **Relational Database** | Neon PostgreSQL | 0.5 GB storage, 1 compute unit | ~15 MB initial schema + indexes | Stated Free Tier |
+| **Blob / Asset Storage** | Backblaze B2 | 10 GB free storage, 1GB/day egress | Presigned URLs for avatars & compliance docs | Stated Free Tier |
+| **Bot Mitigation** | Cloudflare Turnstile | Free unlimited managed challenges | Integrated on auth & registration endpoints | Stated Free Tier |
+| **Push Notifications** | Firebase Cloud Messaging (FCM) | Free unlimited mobile push dispatches | Dual-mode: real FCM with simulated fallback | Stated Free Tier |
+| **Error Monitoring** | Sentry Developer Tier | 5,000 free events / month | Production error capturing & alerting | Stated Free Tier |
+| **Total Estimated Cost** | | | | **$0.00 / mo (within free-tier allocations)** |
+
+*Designed to operate within stated free-tier allocations; actual provider cost depends on usage and provider policy.*
 
 ---
 
@@ -118,8 +134,8 @@ When ready to execute the production rollout:
 
 ## 5. Final Release Determination
 
-**VERDICT**: **READY FOR RELEASE (RC-1)**  
-All technical debt, mock dependencies, architecture gaps, security boundaries, and performance indexes have been resolved. The platform satisfies all requirements of the ArmSphere Master Specification with 100% test coverage and zero regressions.
+**VERDICT**: **READY FOR RELEASE (RC-1 CODE & ARTIFACTS VERIFIED)**
+All technical debt, mock dependencies, architecture gaps, security boundaries, and high-frequency query path indexes have been resolved. The codebase and build artifacts satisfy all requirements of the ArmSphere Master Specification with 100% test coverage and zero regressions. Deployment to production hosting, DNS configuration, and mobile store distribution remain external operational go-live tasks.
 
 **Perfection Hardening Additions (Commit `471ad00`)**:
 - Mobile Deep Linking: Configured custom scheme (`armsphere://`) and Android App Links (`https://app.armsphere.com`) in `AndroidManifest.xml` for frictionless push notification and invite routing.
