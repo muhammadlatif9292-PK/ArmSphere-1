@@ -8,7 +8,7 @@ class MockSecureStorage extends Mock implements SecureStorage {}
 class MockConnectivity extends Mock implements Connectivity {}
 
 void main() {
-  group('DioClient - Production Endpoint Fail-Safe', () {
+  group('DioClient - Production Endpoint Fail-Safe & Host Allowlist', () {
     test('Debug/Development Mode: falls back to default staging URL when no URL supplied', () {
       final url = DioClient.resolveBaseUrl(isRelease: false, rawUrl: '');
       expect(url, equals(DioClient.defaultStagingUrl));
@@ -33,45 +33,6 @@ void main() {
       );
     });
 
-    test('Release Mode: throws StateError when API_BASE_URL points to Netlify staging', () {
-      expect(
-        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'https://armsphere2.netlify.app'),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('Release build cannot connect to non-production endpoint'),
-          ),
-        ),
-      );
-    });
-
-    test('Release Mode: throws StateError when API_BASE_URL points to localhost', () {
-      expect(
-        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://localhost:3000'),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('Release build cannot connect to non-production endpoint'),
-          ),
-        ),
-      );
-    });
-
-    test('Release Mode: throws StateError when API_BASE_URL is non-HTTPS', () {
-      expect(
-        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://api.armsphere.com'),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('Production API must use HTTPS'),
-          ),
-        ),
-      );
-    });
-
     test('Release Mode: throws StateError when API_BASE_URL is malformed', () {
       expect(
         () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'not-a-valid-url'),
@@ -85,13 +46,104 @@ void main() {
       );
     });
 
-    test('Release Mode: successfully resolves when valid production URL is explicitly provided', () {
+    test('Release Mode: successfully resolves valid production host (exact)', () {
       const prodUrl = 'https://api.armsphere.com';
       final resolved = DioClient.resolveBaseUrl(isRelease: true, rawUrl: prodUrl);
       expect(resolved, equals(prodUrl));
     });
 
-    test('Release Mode: DioClient constructor throws StateError when explicit baseUrl bypass is attempted with staging URL', () {
+    test('Release Mode: successfully resolves and normalizes valid production host with trailing slash', () {
+      final resolved = DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'https://api.armsphere.com/');
+      expect(resolved, equals('https://api.armsphere.com'));
+    });
+
+    test('Release Mode: throws StateError when wrong HTTPS host is provided', () {
+      expect(
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'https://evil-example.com'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('Release build cannot connect to non-production endpoint'),
+              contains('Production API host must be exactly "api.armsphere.com"'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: throws StateError when HTTP production-looking host is provided', () {
+      expect(
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://api.armsphere.com'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Production API must use HTTPS'),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: throws StateError when staging host is provided', () {
+      expect(
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'https://armsphere2.netlify.app'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Release build cannot connect to non-production endpoint'),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: throws StateError when localhost is provided', () {
+      expect(
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://localhost:3000'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Release build cannot connect to non-production endpoint'),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: throws StateError when emulator/local host is provided', () {
+      expect(
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://10.0.2.2:3000'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Release build cannot connect to non-production endpoint'),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: DioClient constructor throws StateError when explicit wrong-host bypass is attempted', () {
+      expect(
+        () => DioClient(
+          secureStorage: MockSecureStorage(),
+          connectivity: MockConnectivity(),
+          baseUrl: 'https://evil-example.com',
+          isRelease: true,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('Production API host must be exactly "api.armsphere.com"'),
+          ),
+        ),
+      );
+    });
+
+    test('Release Mode: DioClient constructor throws StateError when explicit staging bypass is attempted', () {
       expect(
         () => DioClient(
           secureStorage: MockSecureStorage(),
@@ -109,7 +161,7 @@ void main() {
       );
     });
 
-    test('Release Mode: DioClient constructor throws StateError when explicit baseUrl bypass is attempted with localhost', () {
+    test('Release Mode: DioClient constructor throws StateError when explicit localhost bypass is attempted', () {
       expect(
         () => DioClient(
           secureStorage: MockSecureStorage(),

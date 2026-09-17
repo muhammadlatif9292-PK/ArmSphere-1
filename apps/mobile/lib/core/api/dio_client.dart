@@ -67,17 +67,19 @@ class DioClient {
   final List<Completer<String>> _refreshQueue = [];
 
   static const String defaultStagingUrl = 'https://armsphere2.netlify.app';
+  static const String productionApiHost = 'api.armsphere.com';
+  static const String productionBaseUrl = 'https://api.armsphere.com';
 
-  /// Resolves the API base URL with a production fail-safe.
+  /// Resolves the API base URL with a production fail-safe and strict host allowlist.
   ///
   /// In release mode ([kReleaseMode] is true):
-  /// - A valid, non-empty, non-staging production URL must be explicitly supplied
-  ///   (e.g., via `--dart-define=API_BASE_URL=https://api.armsphere.com`).
-  /// - If [API_BASE_URL] is missing, empty, or points to a staging/local hostname,
-  ///   a [StateError] is thrown to fail fast on startup and eliminate silent staging fallback.
+  /// - The production API URL must be explicitly supplied and must match the verified
+  ///   ArmSphere production host [productionApiHost] (https://api.armsphere.com).
+  /// - Any unauthorized host, insecure scheme, local address, staging domain, or missing
+  ///   configuration throws a [StateError] to fail fast immediately on startup.
   ///
   /// In debug/development mode ([kReleaseMode] is false):
-  /// - Returns the supplied [API_BASE_URL] or falls back to [defaultStagingUrl].
+  /// - Returns the supplied [rawUrl] or [API_BASE_URL], or falls back to [defaultStagingUrl].
   static String resolveBaseUrl({bool? isRelease, String? rawUrl}) {
     final releaseMode = isRelease ?? kReleaseMode;
     final envUrl = rawUrl ?? const String.fromEnvironment('API_BASE_URL');
@@ -86,27 +88,29 @@ class DioClient {
       if (envUrl.isEmpty) {
         throw StateError(
           'FATAL [PRODUCTION FAIL-SAFE]: API_BASE_URL is not configured for this release build. '
-          'You must build with: --dart-define=API_BASE_URL=https://api.armsphere.com. '
+          'You must build with: --dart-define=API_BASE_URL=$productionBaseUrl. '
           'Silent fallback to staging is strictly forbidden in release mode.',
         );
       }
 
-      final uri = Uri.tryParse(envUrl);
+      String normalizedUrl = envUrl.trim();
+      while (normalizedUrl.endsWith('/')) {
+        normalizedUrl = normalizedUrl.substring(0, normalizedUrl.length - 1);
+      }
+
+      final uri = Uri.tryParse(normalizedUrl);
       if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
         throw StateError(
           'FATAL [PRODUCTION FAIL-SAFE]: Provided API_BASE_URL "$envUrl" is invalid. '
-          'Expected a valid HTTPS URL (e.g., https://api.armsphere.com).',
+          'Expected a valid HTTPS URL (e.g., $productionBaseUrl).',
         );
       }
 
       final host = uri.host.toLowerCase();
-      if (host.contains('netlify.app') ||
-          host.contains('localhost') ||
-          host.contains('127.0.0.1') ||
-          host.contains('10.0.2.2')) {
+      if (host != productionApiHost) {
         throw StateError(
           'FATAL [PRODUCTION FAIL-SAFE]: Release build cannot connect to non-production endpoint "$envUrl". '
-          'Specify the verified production API endpoint: https://api.armsphere.com.',
+          'Production API host must be exactly "$productionApiHost".',
         );
       }
 
@@ -116,7 +120,20 @@ class DioClient {
         );
       }
 
-      return envUrl;
+      if (uri.hasPort && uri.port != 443) {
+        throw StateError(
+          'FATAL [PRODUCTION FAIL-SAFE]: Production API must use default HTTPS port 443 ("$envUrl").',
+        );
+      }
+
+      if (uri.path.isNotEmpty && uri.path != '/') {
+        throw StateError(
+          'FATAL [PRODUCTION FAIL-SAFE]: Production API base URL must not contain path segments ("$envUrl"). '
+          'Specify root base URL: $productionBaseUrl.',
+        );
+      }
+
+      return normalizedUrl;
     }
 
     return envUrl.isNotEmpty ? envUrl : defaultStagingUrl;
