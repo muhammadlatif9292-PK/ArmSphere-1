@@ -626,7 +626,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
               ],
             ),
             const Divider(color: Colors.white12),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

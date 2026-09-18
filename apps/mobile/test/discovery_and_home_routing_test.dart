@@ -10,7 +10,7 @@ import 'package:mobile/features/home/screens/discover_screen.dart';
 import 'package:mobile/core/providers/athlete_provider.dart';
 import 'package:mobile/core/providers/live_matches_provider.dart';
 import 'package:mobile/core/providers/tournament_provider.dart';
-import 'package:mobile/core/providers/governance_provider.dart';
+import 'package:mobile/core/providers/dispute_provider.dart';
 import 'package:mobile/core/providers/referee_provider.dart';
 
 class TestAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
@@ -18,6 +18,24 @@ class TestAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier 
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class FakeAthleteProfileNotifier extends AthleteProfileNotifier {
+  final Map<String, dynamic> _profile;
+  FakeAthleteProfileNotifier(this._profile);
+
+  @override
+  Future<Map<String, dynamic>> build() async => _profile;
+}
+
+class FakeLiveMatchesNotifier extends LiveMatchesNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
+class FakeDisputeNotifier extends DisputeNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
 }
 
 void main() {
@@ -32,13 +50,13 @@ void main() {
                     userProfile: {'id': 'user_1', 'displayName': 'Ali Khan', 'role': 'ATHLETE'},
                   ),
                 )),
-            athleteProfileProvider.overrideWith((ref) async => {
+            athleteProfileProvider.overrideWith(() => FakeAthleteProfileNotifier({
                   'id': 'profile_1',
                   'rightArmElo': 1500,
                   'leftArmElo': 1480,
                   'weightClass': '78kg',
-                }),
-            liveMatchesProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
+                })),
+            liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
@@ -86,7 +104,7 @@ void main() {
                     userProfile: {'id': 'user_3', 'displayName': 'Director Usman', 'role': 'TOURNAMENT_OPERATOR'},
                   ),
                 )),
-            governanceProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
+            disputeProvider.overrideWith(() => FakeDisputeNotifier()),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
@@ -110,12 +128,12 @@ void main() {
                     userProfile: {'id': 'user_4', 'displayName': 'Guest User'},
                   ),
                 )),
-            athleteProfileProvider.overrideWith((ref) async => {
+            athleteProfileProvider.overrideWith(() => FakeAthleteProfileNotifier({
                   'id': 'profile_4',
                   'rightArmElo': 1200,
                   'leftArmElo': 1200,
-                }),
-            liveMatchesProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
+                })),
+            liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
