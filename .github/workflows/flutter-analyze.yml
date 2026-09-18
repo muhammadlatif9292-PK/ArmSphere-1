@@ -70,6 +70,26 @@ jobs:
       run: flutter test test/dio_client_endpoint_test.dart --reporter=expanded
       working-directory: apps/mobile
 
+    - name: Run Biometric Service Tests
+      run: flutter test test/biometric_service_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Repositories Tests
+      run: flutter test test/repositories_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Sprint 17 Caching & Storage Tests
+      run: flutter test test/sprint17_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Widget & UI Tests
+      run: flutter test test/widget_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Discovery & Routing Tests
+      run: flutter test test/discovery_and_home_routing_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
     - name: Run Complete Mobile Flutter Test Suite
       run: flutter test --reporter=expanded
       working-directory: apps/mobile

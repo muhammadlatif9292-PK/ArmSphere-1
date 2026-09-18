@@ -44,8 +44,8 @@ void main() {
         ),
       );
 
-      expect(find.text('ARM SPHERE'), findsOneWidget);
-      expect(find.text('Competitive Armwrestling Network'), findsOneWidget);
+      expect(find.text('ArmSphere'), findsOneWidget);
+      expect(find.text('THE COMPETITIVE ARMWRESTLING ECOSYSTEM'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
