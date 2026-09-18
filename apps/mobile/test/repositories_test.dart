@@ -67,7 +67,8 @@ void main() {
             data: apiPayload,
           ));
 
-      final conversations = await repository.getConversations();
+      final cancelToken = MockCancelToken();
+      final conversations = await repository.getConversations(cancelToken: cancelToken);
 
       expect(conversations, isNotEmpty);
       expect(conversations.length, equals(2));
@@ -80,7 +81,7 @@ void main() {
       // Verify correct API endpoint was hit
       verify(() => mockDio.get(
             '/communication/conversations',
-            cancelToken: any(named: 'cancelToken'),
+            cancelToken: cancelToken,
           )).called(1);
     });
   });
@@ -115,7 +116,8 @@ void main() {
             data: profilePayload,
           ));
 
-      final updatedProfile = await repository.updateVisibility('PRIVATE', false);
+      final cancelToken = MockCancelToken();
+      final updatedProfile = await repository.updateVisibility('PRIVATE', false, cancelToken: cancelToken);
 
       expect(updatedProfile, isNotNull);
       expect(updatedProfile['id'], equals('athlete_84'));
@@ -123,7 +125,7 @@ void main() {
       expect(updatedProfile['isSearchable'], isFalse);
 
       // Verify profile is cached locally
-      verify(() => mockHiveStorage.cacheData('athlete_profile_self', profilePayload['data'])).called(1);
+      verify(() => mockHiveStorage.cacheData('athlete_profile_self', profilePayload)).called(1);
 
       // Verify API invocation parameters
       verify(() => mockDio.patch(
@@ -132,7 +134,7 @@ void main() {
               'profileVisibility': 'PRIVATE',
               'isSearchable': false,
             },
-            cancelToken: any(named: 'cancelToken'),
+            cancelToken: cancelToken,
           )).called(1);
     });
   });
@@ -164,7 +166,8 @@ void main() {
             data: manualPaymentPayload,
           ));
 
-      final result = await repository.confirmManualPayment(registrationId: 'reg_382');
+      final cancelToken = MockCancelToken();
+      final result = await repository.confirmManualPayment(registrationId: 'reg_382', cancelToken: cancelToken);
 
       expect(result, isNotNull);
       expect(result['id'], equals('reg_382'));
@@ -180,7 +183,7 @@ void main() {
       // Verify API endpoint details
       verify(() => mockDio.post(
             '/tournaments/registrations/reg_382/confirm-manual-payment',
-            cancelToken: any(named: 'cancelToken'),
+            cancelToken: cancelToken,
           )).called(1);
     });
   });

@@ -32,6 +32,12 @@ jobs:
       run: flutter pub get
       working-directory: apps/mobile
 
+    - name: Display Flutter & Dart Environment
+      run: |
+        flutter --version
+        dart --version
+      working-directory: apps/mobile
+
     - name: Run Flutter Analyze
       shell: bash
       run: |
@@ -58,6 +64,34 @@ jobs:
           echo '```'
         } >> "$GITHUB_STEP_SUMMARY"
         exit $status
+      working-directory: apps/mobile
+
+    - name: Run DioClient Endpoint Fail-Safe Unit Tests
+      run: flutter test test/dio_client_endpoint_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Biometric Service Tests
+      run: flutter test test/biometric_service_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Repositories Tests
+      run: flutter test test/repositories_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Sprint 17 Caching & Storage Tests
+      run: flutter test test/sprint17_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Widget & UI Tests
+      run: flutter test test/widget_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Discovery & Routing Tests
+      run: flutter test test/discovery_and_home_routing_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
+    - name: Run Complete Mobile Flutter Test Suite
+      run: flutter test --reporter=expanded
       working-directory: apps/mobile
 
   build-android-release:
@@ -117,11 +151,17 @@ jobs:
           done
         working-directory: apps/mobile/android
 
+      - name: Display Flutter & Dart Environment
+        run: |
+          flutter --version
+          dart --version
+        working-directory: apps/mobile
+
       - name: Build release APK (production build verification)
         shell: bash
         run: |
           set +e
-          flutter build apk --release --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
+          flutter build apk --release --dart-define=API_BASE_URL=https://api.armsphere.com --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
           status=${PIPESTATUS[0]}
           {
             echo '## Android release build output'
@@ -135,6 +175,24 @@ jobs:
           exit $status
         working-directory: apps/mobile
 
+      - name: Build release AppBundle AAB (production store package verification)
+        shell: bash
+        run: |
+          set +e
+          flutter build appbundle --release --dart-define=API_BASE_URL=https://api.armsphere.com --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-aab-build.log"
+          status=${PIPESTATUS[0]}
+          {
+            echo '## Android release AppBundle output'
+            echo '```text'
+            tail -n 120 "$RUNNER_TEMP/flutter-aab-build.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          grep -E '(^|\b)(ERROR|FAILURE|What went wrong|Where|Could not|Execution failed|A problem occurred|Caused by:|^> )' "$RUNNER_TEMP/flutter-aab-build.log" | head -n 80 | while IFS= read -r line; do
+            echo "::error title=Android release AppBundle build::$line"
+          done
+          exit $status
+        working-directory: apps/mobile
+
       - name: Cleanup temporary signing files
         if: always()
         run: |
@@ -143,8 +201,17 @@ jobs:
           echo "Temporary signing files removed."
 
       - name: Upload release APK artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: armsphere-release-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: Upload release AppBundle artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: armsphere-release-aab
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
           retention-days: 14

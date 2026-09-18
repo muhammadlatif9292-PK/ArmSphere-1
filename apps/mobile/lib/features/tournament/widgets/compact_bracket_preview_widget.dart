@@ -99,10 +99,10 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'BRACKET PREVIEW',
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
@@ -112,7 +112,7 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
                                   letterSpacing: 0.8,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
                                 (widget.tournament['category'] ?? widget.tournament['division'] ?? 'Official Elimination Bracket').toString(),
                                 style: const TextStyle(

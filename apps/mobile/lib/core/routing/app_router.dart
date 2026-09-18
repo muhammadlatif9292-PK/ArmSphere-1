@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -70,6 +71,26 @@ bool _isGovernanceRole(String? role) {
     'ORGANIZATION_LEADER',
   };
   return role != null && govRoles.contains(role);
+}
+
+/// Role-aware personalized home dispatcher widget.
+/// Renders the appropriate role-specific dashboard inside the persistent main shell.
+class RoleAwareHomeScreen extends ConsumerWidget {
+  const RoleAwareHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final userRole = authState.userProfile?['role']?.toString().toUpperCase();
+
+    if (_isRefereeLikeRole(userRole)) {
+      return const RefereeDashboardScreen();
+    }
+    if (_isGovernanceRole(userRole)) {
+      return const GovernanceDashboardScreen();
+    }
+    return const AthleteDashboardScreen();
+  }
 }
 
 /// Cold-start journey enforced by [redirect]:
@@ -251,26 +272,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const OnboardingScreen(),
         ),
       ),
-/// Role-aware personalized home dispatcher widget.
-/// Renders the appropriate role-specific dashboard inside the persistent main shell.
-class RoleAwareHomeScreen extends ConsumerWidget {
-  const RoleAwareHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final userRole = authState.userProfile?['role']?.toString().toUpperCase();
-
-    if (_isRefereeLikeRole(userRole)) {
-      return const RefereeDashboardScreen();
-    }
-    if (_isGovernanceRole(userRole)) {
-      return const GovernanceDashboardScreen();
-    }
-    return const AthleteDashboardScreen();
-  }
-}
-
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShellScreen(navigationShell: navigationShell);

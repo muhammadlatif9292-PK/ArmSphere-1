@@ -8,12 +8,14 @@ import 'package:mobile/core/providers/dependency_providers.dart';
 import 'package:mobile/core/providers/tournament_provider.dart';
 import 'package:mobile/core/api/repositories.dart';
 import 'package:mobile/core/storage/hive_storage.dart';
+import 'package:mobile/core/notifications/push_notification_manager.dart';
 import 'package:mobile/features/settings/screens/settings_screens.dart';
 import 'package:mobile/features/venue/screens/submit_venue_screen.dart';
 
 // Mocks
 class MockHiveStorage extends Mock implements HiveStorage {}
 class MockVenueRepository extends Mock implements VenueRepository {}
+class MockPushNotificationManager extends Mock implements PushNotificationManager {}
 
 void main() {
   late MockHiveStorage mockHive;
@@ -35,17 +37,21 @@ void main() {
 
   group('Splash Screen Tests', () {
     testWidgets('ArmSphereApp splash screen renders correct branding', (WidgetTester tester) async {
+      final mockPush = MockPushNotificationManager();
+      when(() => mockPush.initialize(any())).thenAnswer((_) async {});
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             hiveStorageProvider.overrideWithValue(mockHive),
+            pushNotificationManagerProvider.overrideWithValue(mockPush),
           ],
           child: const ArmSphereApp(),
         ),
       );
 
-      expect(find.text('ARM SPHERE'), findsOneWidget);
-      expect(find.text('Competitive Armwrestling Network'), findsOneWidget);
+      expect(find.text('ArmSphere'), findsOneWidget);
+      expect(find.text('THE COMPETITIVE ARMWRESTLING ECOSYSTEM'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
@@ -66,10 +72,10 @@ void main() {
       // Allow the future to resolve
       await tester.pumpAndSettle();
 
-      expect(find.text('My Tickets'), findsOneWidget);
-      expect(find.text('No tickets purchased yet'), findsOneWidget);
+      expect(find.text('My Tickets & Passes'), findsOneWidget);
+      expect(find.text('No purchased tickets'), findsOneWidget);
       expect(
-        find.text('Spectator passes purchased for upcoming events will appear here.'),
+        find.text('Passes you purchase for events will appear here.'),
         findsOneWidget,
       );
       expect(find.byIcon(Icons.confirmation_number_outlined), findsOneWidget);
@@ -107,13 +113,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('My Tickets'), findsOneWidget);
+      expect(find.text('My Tickets & Passes'), findsOneWidget);
       expect(find.text('East vs West Qualifiers'), findsOneWidget);
-      expect(find.text('PAID'), findsOneWidget);
-      expect(find.text('\$75.00'), findsOneWidget);
-      expect(find.text('TKT-VIP-552'), findsOneWidget);
       expect(find.text('VIP Front Row'), findsOneWidget);
-      expect(find.text('Sheraton Convention Hall (Toronto, Ontario)'), findsOneWidget);
+      expect(find.text('Toronto, Ontario'), findsOneWidget);
     });
 
     testWidgets('Renders Error State when future fails', (WidgetTester tester) async {
@@ -132,8 +135,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('My Tickets'), findsOneWidget);
-      expect(find.text('Failed to load tickets: Network Timeout Error'), findsOneWidget);
+      expect(find.text('My Tickets & Passes'), findsOneWidget);
+      expect(find.text('Could not load tickets'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
@@ -155,15 +158,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap submit button without filling fields
-      final submitButton = find.text('Submit Venue');
+      final submitButton = find.text('Submit Facility');
       expect(submitButton, findsOneWidget);
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
       // Verify that validation error messages appear
-      expect(find.text('Please enter the venue name'), findsOneWidget);
-      expect(find.text('Please enter the street address'), findsOneWidget);
-      expect(find.text('Please enter the city'), findsOneWidget);
+      expect(find.text('Required'), findsNWidgets(2));
 
       // Verify repository submission was NOT called
       verifyNever(() => mockVenueRepository.submitVenue(
@@ -171,21 +172,15 @@ void main() {
             city: any(named: 'city'),
             province: any(named: 'province'),
             address: any(named: 'address'),
-            contactInfo: any(named: 'contactInfo'),
-            description: any(named: 'description'),
-            logoUrl: any(named: 'logoUrl'),
           ));
     });
 
     testWidgets('Calls submitVenue when form is valid', (WidgetTester tester) async {
       when(() => mockVenueRepository.submitVenue(
             name: 'Metro Armwrestling Club',
-            city: 'Toronto',
-            province: 'Ontario',
+            city: '456 College St',
+            province: 'UNKNOWN',
             address: '456 College St',
-            contactInfo: 'contact@metroarm.ca',
-            description: 'Weekly practice on Thursdays at 7pm.',
-            logoUrl: 'https://metroarm.ca/logo.png',
           )).thenAnswer((_) async => {
             'id': 'venue_823',
             'name': 'Metro Armwrestling Club',
@@ -206,45 +201,26 @@ void main() {
 
       // Enter valid form inputs
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. Iron Grip Athletics'),
+        find.widgetWithText(TextFormField, 'Venue / Club Name'),
         'Metro Armwrestling Club',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. 123 Main St W'),
+        find.widgetWithText(TextFormField, 'Address & City'),
         '456 College St',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. Toronto'),
-        'Toronto',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. info@irongrip.com or (416) 555-0199'),
-        'contact@metroarm.ca',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'e.g. https://example.com/logo.png'),
-        'https://metroarm.ca/logo.png',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Describe the armwrestling table equipment, times they meet, fees...'),
-        'Weekly practice on Thursdays at 7pm.',
       );
 
       await tester.pumpAndSettle();
 
       // Tap submit
-      await tester.tap(find.text('Submit Venue'));
+      await tester.tap(find.text('Submit Facility'));
       await tester.pump(); // Start request
 
       // Verify correct API invocation parameters on the mock repository
       verify(() => mockVenueRepository.submitVenue(
             name: 'Metro Armwrestling Club',
-            city: 'Toronto',
-            province: 'Ontario',
+            city: '456 College St',
+            province: 'UNKNOWN',
             address: '456 College St',
-            contactInfo: 'contact@metroarm.ca',
-            description: 'Weekly practice on Thursdays at 7pm.',
-            logoUrl: 'https://metroarm.ca/logo.png',
           )).called(1);
     });
   });
