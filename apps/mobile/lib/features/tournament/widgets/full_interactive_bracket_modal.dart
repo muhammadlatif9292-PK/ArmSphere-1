@@ -27,10 +27,10 @@ class _FullInteractiveBracketModalState extends State<FullInteractiveBracketModa
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.account_tree_rounded, color: Color(0xFF00E5FF), size: 22),
-                  SizedBox(width: 10),
+                  const Icon(Icons.account_tree_rounded, color: Color(0xFF00E5FF), size: 22),
+                  const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

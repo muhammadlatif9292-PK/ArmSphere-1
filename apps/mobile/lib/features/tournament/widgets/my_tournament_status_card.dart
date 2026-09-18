@@ -354,13 +354,13 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
               ],
             ),
             const Divider(color: Colors.white12),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
-                    SizedBox(height: 12),
+                    const Icon(Icons.account_tree_rounded, size: 48, color: Color(0xFF00E5FF)),
+                    const SizedBox(height: 12),
                     Builder(
                       builder: (context) {
                         final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
@@ -452,9 +452,10 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
             ),
           ],
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   void _showLiveStreamDialog(BuildContext context) {
     HapticFeedback.selectionClick();

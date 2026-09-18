@@ -76,6 +76,7 @@ class _OfficialScorepadScreenState
 
   // Amendment request state
   bool _hasPendingAmendment = false;
+  bool _amendmentRequested = false;
   String _amendmentReason = '';
 
   @override
