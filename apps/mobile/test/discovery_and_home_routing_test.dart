@@ -57,6 +57,7 @@ void main() {
                   'weightClass': '78kg',
                 })),
             liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
+            trainingLogPRsProvider('profile_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
@@ -81,6 +82,7 @@ void main() {
                   ),
                 )),
             refereeCertificationsProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
+            tournamentProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
@@ -134,6 +136,7 @@ void main() {
                   'leftArmElo': 1200,
                 })),
             liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
+            trainingLogPRsProvider('profile_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
