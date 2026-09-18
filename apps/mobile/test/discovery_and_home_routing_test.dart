@@ -38,6 +38,11 @@ class FakeDisputeNotifier extends DisputeNotifier {
   Future<List<Map<String, dynamic>>> build() async => [];
 }
 
+class FakeTournamentNotifier extends TournamentNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
 void main() {
   group('RoleAwareHomeScreen Personalized Dashboard Routing Tests', () {
     testWidgets('Renders AthleteDashboardScreen for ATHLETE role', (WidgetTester tester) async {
@@ -82,7 +87,7 @@ void main() {
                   ),
                 )),
             refereeCertificationsProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
-            tournamentProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
+            tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
