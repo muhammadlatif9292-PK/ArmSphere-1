@@ -1,0 +1,13 @@
+{
+  "name": "armsphere-api-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-21",
+  "workers_dev": true,
+  "vpc_services": [
+    {
+      "binding": "ARMSPHERE_API_PRIVATE",
+      "service_id": "01a0c823-fb61-7213-ba7d-377e61a05864",
+      "remote": true
+    }
+  ]
+}
