@@ -14,7 +14,7 @@ export const rfc7807ErrorSchema = {
       type: "string",
       format: "uri",
       description: "A URI reference [RFC3986] that identifies the problem type.",
-      example: "https://api.armsphere.com/errors/unauthorized",
+      example: "https://armsphere-api-gateway.armsphere.workers.dev/errors/unauthorized",
     },
     title: {
       type: "string",

@@ -47,14 +47,14 @@ void main() {
     });
 
     test('Release Mode: successfully resolves valid production host (exact)', () {
-      const prodUrl = 'https://api.armsphere.com';
+      const prodUrl = 'https://armsphere-api-gateway.armsphere.workers.dev';
       final resolved = DioClient.resolveBaseUrl(isRelease: true, rawUrl: prodUrl);
       expect(resolved, equals(prodUrl));
     });
 
     test('Release Mode: successfully resolves and normalizes valid production host with trailing slash', () {
-      final resolved = DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'https://api.armsphere.com/');
-      expect(resolved, equals('https://api.armsphere.com'));
+      final resolved = DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'https://armsphere-api-gateway.armsphere.workers.dev/');
+      expect(resolved, equals('https://armsphere-api-gateway.armsphere.workers.dev'));
     });
 
     test('Release Mode: throws StateError when wrong HTTPS host is provided', () {
@@ -66,7 +66,7 @@ void main() {
             'message',
             allOf(
               contains('Release build cannot connect to non-production endpoint'),
-              contains('Production API host must be exactly "api.armsphere.com"'),
+              contains('Production API host must be exactly "armsphere-api-gateway.armsphere.workers.dev"'),
             ),
           ),
         ),
@@ -75,7 +75,7 @@ void main() {
 
     test('Release Mode: throws StateError when HTTP production-looking host is provided', () {
       expect(
-        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://api.armsphere.com'),
+        () => DioClient.resolveBaseUrl(isRelease: true, rawUrl: 'http://armsphere-api-gateway.armsphere.workers.dev'),
         throwsA(
           isA<StateError>().having(
             (e) => e.message,
@@ -137,7 +137,7 @@ void main() {
           isA<StateError>().having(
             (e) => e.message,
             'message',
-            contains('Production API host must be exactly "api.armsphere.com"'),
+            contains('Production API host must be exactly "armsphere-api-gateway.armsphere.workers.dev"'),
           ),
         ),
       );

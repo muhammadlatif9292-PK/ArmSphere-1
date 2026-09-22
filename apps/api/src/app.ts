@@ -59,7 +59,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // so browsers never need cross-origin credentials. Native clients are not
 // subject to CORS at all. Never reflect arbitrary origins with credentials.
 const allowedOrigins = [
-  "https://api.armsphere.com",
   "https://armsphere.com",
   "https://www.armsphere.com",
 ];

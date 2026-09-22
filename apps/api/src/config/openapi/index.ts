@@ -31,7 +31,7 @@ export const openapiDefinition = {
       description: "Local development server",
     },
     {
-      url: "https://api.armsphere.com",
+      url: "https://armsphere-api-gateway.armsphere.workers.dev",
       description: "Production gateway",
     },
   ],

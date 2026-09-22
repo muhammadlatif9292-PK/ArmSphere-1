@@ -67,14 +67,14 @@ class DioClient {
   final List<Completer<String>> _refreshQueue = [];
 
   static const String defaultStagingUrl = 'https://armsphere2.netlify.app';
-  static const String productionApiHost = 'api.armsphere.com';
-  static const String productionBaseUrl = 'https://api.armsphere.com';
+  static const String productionApiHost = 'armsphere-api-gateway.armsphere.workers.dev';
+  static const String productionBaseUrl = 'https://armsphere-api-gateway.armsphere.workers.dev';
 
   /// Resolves the API base URL with a production fail-safe and strict host allowlist.
   ///
   /// In release mode ([kReleaseMode] is true):
   /// - The production API URL must be explicitly supplied and must match the verified
-  ///   ArmSphere production host [productionApiHost] (https://api.armsphere.com).
+  ///   ArmSphere production host [productionApiHost] (https://armsphere-api-gateway.armsphere.workers.dev).
   /// - Any unauthorized host, insecure scheme, local address, staging domain, or missing
   ///   configuration throws a [StateError] to fail fast immediately on startup.
   ///

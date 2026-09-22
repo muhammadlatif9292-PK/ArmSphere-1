@@ -56,7 +56,7 @@ export function safeSecretCompare(a?: string, b?: string): boolean {
 //  - Admin SPA loads Google Fonts CSS + font binaries
 //  - Moderation preview embeds YouTube/TikTok/Facebook iframes (frame-src)
 //  - User-generated media URLs are rendered as <img> (any https host)
-//  - SPA talks to same-origin API (or https://api.armsphere.com per OpenAPI servers)
+//  - SPA talks to same-origin API (or https://armsphere-api-gateway.armsphere.workers.dev per OpenAPI servers)
 //  - No WebSockets, Workers, blob: resources, plugins, or third-party scripts exist
 const API_CSP = [
   "default-src 'self'",
@@ -64,7 +64,7 @@ const API_CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: https:",
-  "connect-src 'self' https://api.armsphere.com",
+  "connect-src 'self' https://armsphere-api-gateway.armsphere.workers.dev",
   "frame-src https://www.youtube.com https://www.tiktok.com https://www.facebook.com",
   "frame-ancestors 'none'",
   "object-src 'none'",

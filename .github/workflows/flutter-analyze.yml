@@ -161,7 +161,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          flutter build apk --release --dart-define=API_BASE_URL=https://api.armsphere.com --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
+          flutter build apk --release --dart-define=API_BASE_URL=https://armsphere-api-gateway.armsphere.workers.dev --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-build.log"
           status=${PIPESTATUS[0]}
           {
             echo '## Android release build output'
@@ -179,7 +179,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          flutter build appbundle --release --dart-define=API_BASE_URL=https://api.armsphere.com --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-aab-build.log"
+          flutter build appbundle --release --dart-define=API_BASE_URL=https://armsphere-api-gateway.armsphere.workers.dev --verbose 2>&1 | tee "$RUNNER_TEMP/flutter-aab-build.log"
           status=${PIPESTATUS[0]}
           {
             echo '## Android release AppBundle output'

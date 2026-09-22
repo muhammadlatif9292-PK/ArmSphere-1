@@ -8,7 +8,7 @@ const APP_CSP_DIRECTIVES = {
   "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
   "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
   "img-src": ["'self'", "data:", "https:"],
-  "connect-src": ["'self'", "https://api.armsphere.com"],
+  "connect-src": ["'self'", "https://armsphere-api-gateway.armsphere.workers.dev"],
   "frame-src": ["https://www.youtube.com", "https://www.tiktok.com", "https://www.facebook.com"],
   "frame-ancestors": ["'none'"],
   "object-src": ["'none'"],
