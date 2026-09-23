@@ -1,0 +1,61 @@
+name: Deploy Cloudflare API Gateway Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/armsphere-api-gateway/**'
+      - '.github/workflows/deploy-cloudflare-gateway.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-cloudflare-gateway
+  cancel-in-progress: false
+
+jobs:
+  validate-and-deploy:
+    name: Validate and Deploy Gateway
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: infra/armsphere-api-gateway
+
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: infra/armsphere-api-gateway/package-lock.json
+
+      - name: Install Pinned Dependencies
+        run: npm ci
+
+      - name: Record Git Provenance Metadata
+        run: |
+          echo "Commit: ${{ github.sha }}"
+          echo "Ref:    ${{ github.ref }}"
+          echo "Actor:  ${{ github.actor }}"
+
+      - name: Wrangler Dry-Run Configuration Validation
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --dry-run --outdir dist_val
+
+      - name: Deploy to Cloudflare Workers with Commit SHA Provenance
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deploy --message "ArmSphere Gateway deployed from Git SHA ${{ github.sha }} by ${{ github.actor }} on ${{ github.ref_name }}"
