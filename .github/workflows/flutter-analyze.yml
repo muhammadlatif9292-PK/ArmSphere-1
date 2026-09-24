@@ -161,8 +161,11 @@ jobs:
         run: |
           if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
             echo "Decoding production keystore from repository secrets..."
+            mkdir -p android/app/app
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-            printf "storeFile=app/upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" \
+            cp android/app/upload-keystore.jks android/upload-keystore.jks
+            cp android/app/upload-keystore.jks android/app/app/upload-keystore.jks
+            printf "storeFile=upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" \
               "$ANDROID_KEYSTORE_PASSWORD" \
               "${ANDROID_KEY_ALIAS:-upload}" \
               "${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" > android/key.properties
@@ -225,6 +228,8 @@ jobs:
         if: always()
         run: |
           rm -f apps/mobile/android/app/upload-keystore.jks
+          rm -f apps/mobile/android/upload-keystore.jks
+          rm -f apps/mobile/android/app/app/upload-keystore.jks
           rm -f apps/mobile/android/key.properties
           rm -f apps/mobile/android/app/key.properties
           rm -f apps/mobile/android/keystore.properties

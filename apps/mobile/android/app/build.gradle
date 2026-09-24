@@ -42,8 +42,17 @@ android {
         signingConfigs.create('productionRelease') {
             def keystorePath = keystoreProps['storeFile'] ?: 'upload-keystore.jks'
             def keystoreFile = file(keystorePath)
-            if (!keystoreFile.isAbsolute()) {
+            if (!keystoreFile.exists()) {
+                keystoreFile = rootProject.file(keystorePath)
+            }
+            if (!keystoreFile.exists()) {
                 keystoreFile = new File(propsFile.parentFile, keystorePath)
+            }
+            if (!keystoreFile.exists()) {
+                keystoreFile = file('upload-keystore.jks')
+            }
+            if (!keystoreFile.exists()) {
+                keystoreFile = rootProject.file('app/upload-keystore.jks')
             }
             storeFile keystoreFile
             storePassword keystoreProps['storePassword']
