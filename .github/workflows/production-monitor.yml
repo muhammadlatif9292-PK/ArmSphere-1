@@ -23,7 +23,7 @@ jobs:
       - name: Probe Cloudflare Worker Health
         run: |
           echo "Probing /health..."
-          STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" --max-time 10 https://armsphere-api-gateway.armsphere.workers.dev/health)
+          STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" --retry 3 --retry-delay 2 --retry-connrefused --max-time 15 https://armsphere-api-gateway.armsphere.workers.dev/health)
           echo "HTTP Status: $STATUS"
           cat /tmp/health.json
           echo ""
@@ -35,7 +35,7 @@ jobs:
       - name: Probe Backend Database Health
         run: |
           echo "Probing /api/health..."
-          STATUS=$(curl -s -o /tmp/api_health.json -w "%{http_code}" --max-time 10 https://armsphere-api-gateway.armsphere.workers.dev/api/health)
+          STATUS=$(curl -s -o /tmp/api_health.json -w "%{http_code}" --retry 3 --retry-delay 2 --retry-connrefused --max-time 15 https://armsphere-api-gateway.armsphere.workers.dev/api/health)
           echo "HTTP Status: $STATUS"
           cat /tmp/api_health.json
           echo ""
@@ -47,7 +47,7 @@ jobs:
       - name: Probe Backend System Readiness
         run: |
           echo "Probing /api/ready..."
-          STATUS=$(curl -s -o /tmp/api_ready.json -w "%{http_code}" --max-time 10 https://armsphere-api-gateway.armsphere.workers.dev/api/ready)
+          STATUS=$(curl -s -o /tmp/api_ready.json -w "%{http_code}" --retry 3 --retry-delay 2 --retry-connrefused --max-time 15 https://armsphere-api-gateway.armsphere.workers.dev/api/ready)
           echo "HTTP Status: $STATUS"
           cat /tmp/api_ready.json
           echo ""

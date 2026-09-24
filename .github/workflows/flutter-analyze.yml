@@ -162,12 +162,11 @@ jobs:
           if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
             echo "Decoding production keystore from repository secrets..."
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-            cat <<EOF > android/key.properties
-storeFile=app/upload-keystore.jks
-storePassword=$ANDROID_KEYSTORE_PASSWORD
-keyAlias=${ANDROID_KEY_ALIAS:-upload}
-keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}
-EOF
+            printf "storeFile=app/upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" \
+              "$ANDROID_KEYSTORE_PASSWORD" \
+              "${ANDROID_KEY_ALIAS:-upload}" \
+              "${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}" > android/key.properties
+            cp android/key.properties android/app/key.properties
             echo "Production release signing configured successfully."
           else
             echo "::warning title=Android Signing::Production signing secrets not present. Building with debug signing fallback."
