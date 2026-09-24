@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 
 class MfaVerificationScreen extends ConsumerStatefulWidget {
   final String? email;
@@ -43,7 +44,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(ErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -48,10 +49,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
     } catch (e) {
       if (mounted) {
+        final errorMsg = ErrorFormatter.format(e);
+        final isConflict = errorMsg.toLowerCase().contains('already exists') ||
+                           errorMsg.toLowerCase().contains('conflict');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(errorMsg),
             backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 5),
+            action: isConflict
+                ? SnackBarAction(
+                    label: 'Sign In',
+                    textColor: Colors.white,
+                    onPressed: () => context.pop(),
+                  )
+                : null,
           ),
         );
       }

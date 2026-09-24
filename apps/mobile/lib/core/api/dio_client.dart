@@ -146,9 +146,9 @@ class DioClient {
     bool? isRelease,
   }) : dio = Dio(BaseOptions(
           baseUrl: resolveBaseUrl(isRelease: isRelease, rawUrl: baseUrl),
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
-          sendTimeout: const Duration(seconds: 15),
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 30),
           contentType: 'application/json',
         )) {
     _initializeInterceptors();
@@ -350,6 +350,41 @@ class DioClient {
           ));
         }
 
+        // Handle network timeouts and connection errors with user-friendly ApiException
+        if (err.type == DioExceptionType.receiveTimeout ||
+            err.type == DioExceptionType.connectionTimeout ||
+            err.type == DioExceptionType.sendTimeout ||
+            err.type == DioExceptionType.connectionError) {
+          String message;
+          switch (err.type) {
+            case DioExceptionType.receiveTimeout:
+              message = 'Server took too long to respond. Please check your connection and try again.';
+              break;
+            case DioExceptionType.connectionTimeout:
+              message = 'Connection timed out. Please check your internet connection and try again.';
+              break;
+            case DioExceptionType.sendTimeout:
+              message = 'Request timed out while sending data. Please check your connection and try again.';
+              break;
+            case DioExceptionType.connectionError:
+            default:
+              message = 'Unable to connect to ArmSphere servers. Please verify your internet connection.';
+              break;
+          }
+          final networkException = ApiException(
+            type: 'network:timeout',
+            title: 'Connection Issue',
+            status: 408,
+            detail: message,
+          );
+          return handler.reject(DioException(
+            requestOptions: err.requestOptions,
+            response: err.response,
+            type: err.type,
+            error: networkException,
+          ));
+        }
+
         return handler.next(err);
       },
     ));
@@ -380,9 +415,9 @@ class DioClient {
       // Create a clean standalone Dio instance to make the refresh request
       final refreshDio = Dio(BaseOptions(
         baseUrl: dio.options.baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        sendTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 20),
         contentType: 'application/json',
       ));
       

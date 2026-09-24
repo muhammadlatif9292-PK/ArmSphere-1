@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'dio_client.dart';
 import '../storage/hive_storage.dart';
+import '../utils/error_formatter.dart';
 
 /// Base Repository with support for retries, cancellation, and offline fallback
 abstract class BaseRepository {
@@ -94,7 +95,13 @@ class AuthRepository extends BaseRepository {
     final inner = e.error;
     if (inner is ApiException) throw inner;
     if (inner is OfflineException) throw inner;
-    throw e;
+    final message = ErrorFormatter.format(e);
+    throw ApiException(
+      type: 'auth:network-error',
+      title: 'Authentication Error',
+      status: e.response?.statusCode ?? 400,
+      detail: message,
+    );
   }
 
   /// Credential flows never go through [BaseRepository.executeRequest]:

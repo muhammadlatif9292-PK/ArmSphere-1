@@ -70,6 +70,10 @@ jobs:
       run: flutter test test/dio_client_endpoint_test.dart --reporter=expanded
       working-directory: apps/mobile
 
+    - name: Run ErrorFormatter Unit Tests
+      run: flutter test test/error_formatter_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
     - name: Run Biometric Service Tests
       run: flutter test test/biometric_service_test.dart --reporter=expanded
       working-directory: apps/mobile

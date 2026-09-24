@@ -21,3 +21,4 @@ coverage/
 keystore.properties
 *.jks
 *.keystore
+release-builds/

@@ -6,6 +6,7 @@ import '../../../core/providers/dependency_providers.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -95,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Biometrics unavailable: ${e.toString().replaceAll('Exception: ', '')}. Please enter your password.',
+              'Biometrics unavailable: ${ErrorFormatter.format(e)}. Please enter your password.',
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
@@ -134,7 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(ErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
