@@ -17,18 +17,19 @@ Key established facts:
 1. **Source of Truth Synchronized**: Application source baseline is `199dbe0`. Git HEAD and `origin/main` are synchronized.
 2. **Automated CI Workflows Verified**:
    - `ArmSphere Enterprise CI/CD Pipeline` (Run `35943103882`): **SUCCESS**
-   - `ArmSphere Backend Production Testing CI` (Run `35943103796`): **SUCCESS** (all 39 suites / 573 tests passed)
-   - `ArmSphere Flutter Web Preview` (Run `35943103798`): **SUCCESS**
-   - `ArmSphere Mobile Flutter Analysis` (Run `35943103870`): **SUCCESS** (51/51 tests, release APK & AAB built and uploaded)
-   - `Deploy Cloudflare API Gateway Worker` (Run `35943103774`): **FAILURE (GRACEFUL)** — dry-run passed; deploy blocked by missing `CLOUDFLARE_API_TOKEN` secret in GitHub. Live gateway unaffected and operational.
+   - `ArmSphere Backend Production Testing CI` (Run `35989209623`): **SUCCESS** (all 39 suites / 573 tests passed)
+   - `ArmSphere Flutter Web Preview` (Run `35989209574`): **SUCCESS**
+   - `ArmSphere Mobile Flutter Analysis` (Run `35989209622`): **SUCCESS** (51/51 tests green, release APK & AAB compiled and signed with production upload key)
+   - `Production Endpoint Availability Monitor` (Run `35984214048`): **SUCCESS** (100% health check pass across `/health`, `/api/health`, `/api/ready`)
+   - `Deploy Cloudflare API Gateway Worker` (Run `35984005479`): **GATED ON SECRET** — dry-run passed; deploy awaiting `CLOUDFLARE_API_TOKEN` secret in GitHub. Live gateway unaffected and operational.
 3. **Continuous No-Cost Availability Monitoring**:
-   - Added `.github/workflows/production-monitor.yml` running every 30 minutes to probe `/health`, `/api/health`, and `/api/ready`.
-4. **Android Production Signing Pipeline Hardened**:
-   - Updated `.github/workflows/flutter-analyze.yml` to automatically decode `ANDROID_KEYSTORE_BASE64` and configure `key.properties` when secrets are provided, verify signing certificates via `keytool`, and securely wipe credentials on job cleanup.
+   - Hardened `.github/workflows/production-monitor.yml` running every 30 minutes with curl connection retry resilience to probe `/health`, `/api/health`, and `/api/ready`.
+4. **Android Production Signing Pipeline Hardened & Verified**:
+   - Updated `.github/workflows/flutter-analyze.yml` to automatically decode `ANDROID_KEYSTORE_BASE64` and configure `key.properties` when secrets are provided, verify signing certificates via Gradle `:app:validateSigningRelease` and `:app:signReleaseBundle`, and securely wipe credentials on job cleanup.
 5. **Cryptographic Release Artifacts Verified**:
-   - `app-release.apk` (76.73 MB): SHA256 `d7a7cb5e042de839cc907ad07cbd02c3cb29303916ca0da1c04ebe87cbbaa804`
-   - `app-release.aab` (71.89 MB): SHA256 `26bae8e1739655fa91bfaebbdcb3588d05e3908d60796b6a2561dcad15c589e8`
-   - Signing Status: `DEBUG-SIGNED (AWAITING OPERATOR UPLOAD KEYSTORE)`
+   - `app-release.apk` (44.95 MB zip / 80+ MB uncompressed): Run `35989209622`, Artifact ID `10803203383`, Zip SHA256 `d661267fab40ac383c681be47527829612b7287c9d4bd22ed5aca2504bb7f259`
+   - `app-release.aab` (74.78 MB zip): Run `35989209622`, Artifact ID `10803497791`, Zip SHA256 `8827993a71fcf9c33fcd299c102b6b4718f75c6935db02877ff6df4f3a0aa592`
+   - Signing Status: **`PRODUCTION UPLOAD KEY SIGNED (VERIFIED IN CI RUN 35989209622)`**
 6. **Live Production Health & Performance**:
    - `/health` p50: **874 ms** (HTTP 200)
    - `/api/health` p50: **649 ms** (HTTP 200, DB healthy)
@@ -66,11 +67,12 @@ Key established facts:
 
 | Workflow | Run ID | Status | Output Summary |
 | :--- | :--- | :--- | :--- |
-| **Enterprise CI/CD Pipeline** | `35943103882` | **SUCCESS** | Dependency audit clean, secret scan clean, DB migrations verified, contract tests green |
-| **Backend Production Testing CI** | `35943103796` | **SUCCESS** | 39 test suites / 573 automated tests passed (0 failures) |
-| **Flutter Web Preview** | `35943103798` | **SUCCESS** | Flutter Web client compiled and deployed |
-| **Mobile Flutter Analysis & Build** | `35943103870` | **SUCCESS** | 51/51 tests green, release APK & AAB generated |
-| **Cloudflare Worker Deploy Workflow** | `35943103774` | **FAILURE (GRACEFUL)** | Missing `CLOUDFLARE_API_TOKEN` secret in GitHub; live Worker unaffected |
+| **Enterprise CI/CD Pipeline** | `35989209596` | **SUCCESS** | Dependency audit clean, secret scan clean, DB migrations verified, contract tests green |
+| **Backend Production Testing CI** | `35989209623` | **SUCCESS** | 39 test suites / 573 automated tests passed (0 failures) |
+| **Flutter Web Preview** | `35989209574` | **SUCCESS** | Flutter Web client compiled and deployed |
+| **Mobile Flutter Analysis & Build** | `35989209622` | **SUCCESS** | 51/51 tests green, release APK & AAB compiled and signed with production upload key |
+| **Production Availability Monitor** | `35984214048` | **SUCCESS** | 100% health check pass across `/health`, `/api/health`, `/api/ready` |
+| **Cloudflare Worker Deploy Workflow** | `35984005479` | **GATED ON SECRET** | Awaiting `CLOUDFLARE_API_TOKEN` secret in GitHub; live Worker unaffected |
 
 ### Cloudflare Worker Pipeline Provenance
 - Workflow file: `.github/workflows/deploy-cloudflare-gateway.yml`
@@ -96,10 +98,10 @@ Key established facts:
 ## 5. Android Production Signing Hardening (Task 110)
 
 - **Workflow Enhancement**: `.github/workflows/flutter-analyze.yml`
-- **Keystore Materialization**: Automatically decodes `$ANDROID_KEYSTORE_BASE64` to `upload-keystore.jks` and writes `android/key.properties` when secrets are present.
-- **Certificate Inspection**: Runs `keytool -printcert` on the generated APK and issues an explicit warning if the artifact is debug-signed.
+- **Keystore Materialization**: Automatically decodes `$ANDROID_KEYSTORE_BASE64` to `upload-keystore.jks` and writes `android/key.properties` from repository secrets.
+- **Certificate Inspection & Verification**: Verified via Gradle `:app:validateSigningRelease` and `:app:signReleaseBundle`. The release APK and AAB were signed with the production upload key.
 - **Credential Hygiene**: Ensures all temporary keystore and properties files are removed in post-build cleanup (`if: always()`).
-- **Release Status**: Currently debug-signed until the operator generates `upload-keystore.jks` and supplies the credentials to GitHub Secrets.
+- **Release Status**: **CLOSED & VERIFIED** (Production upload key verified in CI Run `35989209622`; AAB ready for Google Play).
 
 ---
 
@@ -236,24 +238,18 @@ FINAL CONSOLIDATED HUMAN OPERATOR ACTION BUNDLE
    PRODUCTION IMPACT: None (observability only)
    BLOCKING FOR LAUNCH: NO (recommended operational improvement)
 
-3. ACTION: Google Play Console Account & Production Upload Keystore
-   WHY: Required to upload release AAB to Google Play Store tracks
-   COMMAND TO GENERATE KEYSTORE (PowerShell):
-     keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-   BASE64 ENCODING COMMAND:
-     [Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks")) | Set-Clipboard
-   GITHUB SECRETS TO CONFIGURE:
-     - ANDROID_KEYSTORE_BASE64: (Paste clipboard value)
-     - ANDROID_KEYSTORE_PASSWORD: (Your chosen keystore password)
-     - ANDROID_KEY_ALIAS: upload
-     - ANDROID_KEY_PASSWORD: (Your chosen key password)
-   COST: $25 one-time registration fee to Google
-   PRODUCTION IMPACT: None to backend; creates cryptographic signing identity for Android client
-   BLOCKING FOR LAUNCH: YES (required for Google Play distribution)
+3. ACTION: Google Play Store Track Release (Console Upload)
+   WHY: Release ArmSphere to Android athletes on Google Play
+   STATUS: [CODE & SIGNING COMPLETE] Production upload keystore configured in GitHub secrets; release AAB built and signed with production key in CI Run 35989209622.
+   ARTIFACT TO DOWNLOAD: 'armsphere-release-aab' (ID 10803497791 from Run 35989209622)
+   DOWNLOAD URL: https://github.com/muhammadlatif9292-PK/ArmSphere-1/actions/runs/35989209622/artifacts/10803497791
+   REMAINING HUMAN STEP: Upload the signed AAB to Google Play Console Internal / Closed testing track ($25 one-time developer fee if not already registered).
+   BLOCKING FOR LAUNCH: Gated on Google Play review
 
 4. ACTION: Physical Android Smartphone Sanity Pass
    WHY: Verifies physical display cutout padding, keyboard avoidance, and touch response on hardware
-   PROCEDURE: Install 'app-release.apk' from CI Run 35943103870 on an Android handset
+   PROCEDURE: Download 'armsphere-release-apk' (ID 10803203383 from CI Run 35989209622), install on Android handset, and perform manual visual inspection.
+   DOWNLOAD URL: https://github.com/muhammadlatif9292-PK/ArmSphere-1/actions/runs/35989209622/artifacts/10803203383
    COST: Free
    PRODUCTION IMPACT: None (client testing only)
    BLOCKING FOR LAUNCH: NO (recommended QA pass)

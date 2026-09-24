@@ -50,13 +50,13 @@
 
 ## 4. Release Artifact Cryptographic Manifest
 
-| Release Binary | File Size | SHA256 Checksum | Signature Classification |
+| Release Binary | File Size | Checksum / Artifact Digest | Signature Classification |
 | --- | --- | --- | --- |
-| **`app-release.apk`** | 80,453,948 B (~76.73 MB) | `d7a7cb5e042de839cc907ad07cbd02c3cb29303916ca0da1c04ebe87cbbaa804` | **DEBUG-SIGNED (Awaiting Operator Upload Key)** |
-| **`app-release.aab`** | 75,376,945 B (~71.89 MB) | `26bae8e1739655fa91bfaebbdcb3588d05e3908d60796b6a2561dcad15c589e8` | **DEBUG-SIGNED (Awaiting Operator Upload Key)** |
+| **`app-release.apk`** | 44,945,074 B (zip) | `d661267fab40ac383c681be47527829612b7287c9d4bd22ed5aca2504bb7f259` | **PRODUCTION UPLOAD-KEY SIGNED** (Run `35989209622`, Artifact ID `10803203383`) |
+| **`app-release.aab`** | 74,782,571 B (zip) | `8827993a71fcf9c33fcd299c102b6b4718f75c6935db02877ff6df4f3a0aa592` | **PRODUCTION UPLOAD-KEY SIGNED** (Run `35989209622`, Artifact ID `10803497791`) |
 
-> [!IMPORTANT]
-> The release artifacts are compiled with production optimizations, strict endpoint allowlists, and fail-closed security. However, in accordance with Android release engineering standards, the binaries are currently signed with the debug keystore because the production upload keystore has not yet been provided by the operator. Submitting to Google Play requires signing with the official operator upload key.
+> [!NOTE]
+> The release artifacts have been successfully compiled and cryptographically signed with the production upload keystore decoded from GitHub Actions repository secrets (`ANDROID_KEYSTORE_BASE64`). Gradle execution confirmed `:app:validateSigningRelease` and `:app:signReleaseBundle` completed with success. The AAB is ready for Google Play Store upload.
 
 ---
 
@@ -64,11 +64,12 @@
 
 | CI Workflow | Run ID | Status | Output Summary |
 | --- | --- | --- | --- |
-| **Enterprise CI/CD Pipeline** | `35943103882` | **SUCCESS** | Dependency audit clean, secret scan clean, DB migrations verified |
-| **Backend Production Testing CI** | `35943103796` | **SUCCESS** | 39 test suites / 573 automated tests passed |
-| **Flutter Web Preview** | `35943103798` | **SUCCESS** | Flutter Web client compiled and deployed |
-| **Mobile Flutter Analysis & Build** | `35943103870` | **SUCCESS** | 51/51 tests green, release APK & AAB generated |
-| **Cloudflare Worker Deploy Workflow** | `35943103774` | **FAILURE (GRACEFUL)** | Missing `CLOUDFLARE_API_TOKEN` in GitHub Secrets; live Worker unaffected |
+| **Enterprise CI/CD Pipeline** | `35989209596` | **SUCCESS** | Dependency audit clean, secret scan clean, DB migrations verified |
+| **Backend Production Testing CI** | `35989209623` | **SUCCESS** | 39 test suites / 573 automated tests passed (100% green) |
+| **Flutter Web Preview** | `35989209574` | **SUCCESS** | Flutter Web client compiled and deployed |
+| **Mobile Flutter Analysis & Build** | `35989209622` | **SUCCESS** | 51/51 tests green, release APK & AAB signed with production upload key |
+| **Production Availability Monitor** | `35984214048` | **SUCCESS** | 100% health check pass across `/health`, `/api/health`, `/api/ready` |
+| **Cloudflare Worker Deploy Workflow** | `35984005479` | **GATED ON SECRET** | Awaiting `CLOUDFLARE_API_TOKEN` in GitHub Secrets; live Worker operational |
 
 ---
 
@@ -93,5 +94,5 @@ Probed against `https://armsphere-api-gateway.armsphere.workers.dev` (10 samples
 | **Alert Delivery** | **PARTIAL** | Cloudflare Zero Trust free Tunnel Down alert documented for operator dashboard activation; external notification channels pending. |
 | **Disaster Recovery** | **LOGICAL RESTORATION PROVEN** | Cross-database logical restoration proven (39.42s RTO, 100% row parity); provider-native storage PITR not tested. |
 | **Physical Android Testing** | **EVIDENCE GAP** | No physical handset attached or ADB toolchain installed on host; manual hardware validation pending operator test. |
-| **Google Play Release** | **GATED ON OPERATOR** | Application ID `com.armsphere.app` and TargetSDK 36 configured; $25 Google Play account registration and upload key generation required from operator. |
+| **Google Play Release** | **GATED ON OPERATOR** | Production upload key configured & verified in CI; AAB artifact ready; manual Google Play Console upload / $25 account registration required from operator. |
 | **Worker Automated CD** | **GATED ON OPERATOR** | Pipeline committed; awaiting `CLOUDFLARE_API_TOKEN` secret in GitHub repository settings. |
