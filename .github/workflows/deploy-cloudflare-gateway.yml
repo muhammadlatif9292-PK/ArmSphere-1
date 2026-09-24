@@ -1,4 +1,5 @@
 name: Deploy Cloudflare API Gateway Worker
+# Trigger automated deployment verification with updated repository secrets
 
 on:
   push:
