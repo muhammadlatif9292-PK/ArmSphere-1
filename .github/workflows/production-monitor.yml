@@ -1,0 +1,61 @@
+name: Production Endpoint Availability Monitor
+
+on:
+  schedule:
+    # Run every 30 minutes to conserve free GitHub Actions runner minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-monitoring
+  cancel-in-progress: true
+
+jobs:
+  probe-production:
+    name: Probe Public Production Endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Probe Cloudflare Worker Health
+        run: |
+          echo "Probing /health..."
+          STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" --max-time 10 https://armsphere-api-gateway.armsphere.workers.dev/health)
+          echo "HTTP Status: $STATUS"
+          cat /tmp/health.json
+          echo ""
+          if [ "$STATUS" -ne 200 ]; then
+            echo "::error::Worker health check failed with HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Probe Backend Database Health
+        run: |
+          echo "Probing /api/health..."
+          STATUS=$(curl -s -o /tmp/api_health.json -w "%{http_code}" --max-time 10 https://armsphere-api-gateway.armsphere.workers.dev/api/health)
+          echo "HTTP Status: $STATUS"
+          cat /tmp/api_health.json
+          echo ""
+          if [ "$STATUS" -ne 200 ]; then
+            echo "::error::Backend /api/health check failed with HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Probe Backend System Readiness
+        run: |
+          echo "Probing /api/ready..."
+          STATUS=$(curl -s -o /tmp/api_ready.json -w "%{http_code}" --max-time 10 https://armsphere-api-gateway.armsphere.workers.dev/api/ready)
+          echo "HTTP Status: $STATUS"
+          cat /tmp/api_ready.json
+          echo ""
+          if [ "$STATUS" -ne 200 ]; then
+            echo "::error::Backend /api/ready check failed with HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Log Monitoring Result
+        run: |
+          echo "All production availability probes PASSED successfully at $(date -u '+%Y-%m-%d %H:%M:%SZ')."

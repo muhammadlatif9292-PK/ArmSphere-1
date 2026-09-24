@@ -157,6 +157,23 @@ jobs:
           dart --version
         working-directory: apps/mobile
 
+      - name: Configure Production Signing Keystore
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "Decoding production keystore from repository secrets..."
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+            cat <<EOF > android/key.properties
+storeFile=app/upload-keystore.jks
+storePassword=$ANDROID_KEYSTORE_PASSWORD
+keyAlias=${ANDROID_KEY_ALIAS:-upload}
+keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}
+EOF
+            echo "Production release signing configured successfully."
+          else
+            echo "::warning title=Android Signing::Production signing secrets not present. Building with debug signing fallback."
+          fi
+        working-directory: apps/mobile
+
       - name: Build release APK (production build verification)
         shell: bash
         run: |
@@ -193,10 +210,25 @@ jobs:
           exit $status
         working-directory: apps/mobile
 
+      - name: Verify Release Artifact Signing State
+        run: |
+          echo "Inspecting release APK signing certificate..."
+          keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk > "$RUNNER_TEMP/apk_cert.txt"
+          cat "$RUNNER_TEMP/apk_cert.txt"
+          if grep -q "CN=Android Debug" "$RUNNER_TEMP/apk_cert.txt"; then
+            echo "::warning title=Android Signing::Artifact is signed with DEBUG key. A production upload keystore is required before submitting to Google Play."
+          else
+            echo "✅ Confirmed: Artifact is signed with production release/upload key."
+          fi
+        working-directory: apps/mobile
+
       - name: Cleanup temporary signing files
         if: always()
         run: |
           rm -f apps/mobile/android/app/upload-keystore.jks
+          rm -f apps/mobile/android/key.properties
+          rm -f apps/mobile/android/app/key.properties
+          rm -f apps/mobile/android/keystore.properties
           rm -f apps/mobile/android/app/keystore.properties
           echo "Temporary signing files removed."
 
