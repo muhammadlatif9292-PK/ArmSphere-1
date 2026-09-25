@@ -2,27 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/referee_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../widgets/live_scorepad_controller.dart';
 
 const List<String> _kScoreOptions = ['3-0', '3-1', '3-2', '2-3', '1-3', '0-3'];
 
 Color _matchStatusColor(String status) {
   switch (status.toUpperCase()) {
     case 'COMPLETED':
-      return Colors.green;
+      return AppTheme.success;
     case 'CALLED':
-      return Colors.blue;
+      return AppTheme.info;
     case 'READY':
-      return Colors.orange;
+      return AppTheme.secondaryAccent;
     case 'BYE':
-      return Colors.grey;
+      return AppTheme.textMuted;
     default:
-      return Colors.grey;
+      return AppTheme.textMuted;
   }
 }
 
@@ -400,8 +404,8 @@ class _AssignmentCard extends StatelessWidget {
       match['arm']?.toString(),
     ].where((p) => p != null && p.isNotEmpty).join(' • ');
 
-    return GlassCard(
-      padding: const EdgeInsets.all(14),
+    return ElevatedActionCard(
+      padding: const EdgeInsets.all(AppTheme.space16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -409,45 +413,89 @@ class _AssignmentCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  category,
-                  style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
+                  category.toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondary,
+                    letterSpacing: 0.3,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _matchStatusColor(status).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _matchStatusColor(status)),
-                ),
+              StatusChip(
+                label: status,
+                type: status == 'COMPLETED'
+                    ? StatusType.success
+                    : (status == 'CALLED'
+                        ? StatusType.info
+                        : (status == 'READY' ? StatusType.warning : StatusType.neutral)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text('$aName  vs  $bName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: AppTheme.space10),
+          Text(
+            '$aName  vs  $bName',
+            style: const TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: AppTheme.textPrimary,
+            ),
+          ),
           if ((match['scoreLine']?.toString() ?? '').isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text('Score ${match['scoreLine']}', style: const TextStyle(fontSize: 12, color: Colors.green)),
-          ],
-          const SizedBox(height: 10),
-          if (status == 'CALLED')
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: busy ? null : () => onResult(match),
-                child: const Text('Submit Result'),
+            const SizedBox(height: AppTheme.space6),
+            Text(
+              'Final Score: ${match['scoreLine']}',
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: AppTheme.success,
               ),
+            ),
+          ],
+          const SizedBox(height: AppTheme.space12),
+          if (status == 'CALLED')
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () {
+                              context.push('/referee/submit-scorepad', extra: match);
+                            },
+                      icon: const Icon(Icons.touch_app, size: 18),
+                      label: const Text('OPEN SCOREPAD'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.space8),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: busy ? null : () => onResult(match),
+                      child: const Text('Quick Entry', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                ),
+              ],
             )
           else if (status == 'READY')
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              height: 48,
+              child: OutlinedButton.icon(
                 onPressed: busy ? null : () => onCall(match),
-                child: const Text('Call to Table'),
+                icon: const Icon(Icons.table_restaurant, size: 18),
+                label: const Text('CALL TO TABLE'),
               ),
             ),
         ],
@@ -603,8 +651,8 @@ class RefereeCertificationsScreen extends ConsumerWidget {
   }
 }
 
-/// Match Submission (Scorepad) Screen — posts the real ingestion contract:
-/// {challengerId, opponentId, arm, winnerId, scoreLine} to POST /matches.
+/// Match Submission (Scorepad) Screen — supports both live table-side scoring
+/// (with 64dp hit targets & 400ms pin hold) and direct manual result ingestion.
 class MatchSubmissionScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? match;
 
@@ -621,13 +669,47 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
   String _winnerSide = 'challenger';
   String _score = '3-0';
   bool _isLoading = false;
+  bool _isLiveScorepadMode = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.match != null) {
+      final m = widget.match!;
+      final aId = m['athleteAId']?.toString();
+      final aName = m['athleteAName']?.toString();
+      final bId = m['athleteBId']?.toString();
+      final bName = m['athleteBName']?.toString();
+
+      if (aId != null || aName != null) {
+        _challenger = {
+          'id': aId ?? '',
+          'displayName': aName ?? 'Challenger (Red)',
+        };
+      }
+      if (bId != null || bName != null) {
+        _opponent = {
+          'id': bId ?? '',
+          'displayName': bName ?? 'Opponent (White)',
+        };
+      }
+      if (m['arm'] != null && m['arm'].toString().isNotEmpty) {
+        _arm = m['arm'].toString().toUpperCase();
+      }
+    }
+  }
 
   Future<void> _pickAthlete(bool forChallenger) async {
     final selected = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _AthleteSearchSheet(excludeId:
-          (forChallenger ? _opponent : _challenger)?['id']?.toString()),
+      backgroundColor: AppTheme.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (ctx) => _AthleteSearchSheet(
+        excludeId: (forChallenger ? _opponent : _challenger)?['id']?.toString(),
+      ),
     );
     if (selected == null) return;
     setState(() {
@@ -644,7 +726,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentId = _opponent?['id']?.toString();
     if (challengerId == null || opponentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select both the challenger and the opponent.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Select both the challenger and the opponent.'), backgroundColor: AppTheme.error),
       );
       return;
     }
@@ -652,29 +734,37 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(liveMatchesProvider.notifier).submitMatchOptimistic({
-        'challengerId': challengerId,
-        'opponentId': opponentId,
-        'arm': _arm,
-        'winnerId': winnerId,
-        'scoreLine': _score,
-      });
+      if (widget.match != null && widget.match!['id'] != null) {
+        await ref.read(tournamentRepositoryProvider).submitTournamentResult(
+              matchId: widget.match!['id'].toString(),
+              winnerId: winnerId,
+              scoreLine: _score,
+            );
+      } else {
+        await ref.read(liveMatchesProvider.notifier).submitMatchOptimistic({
+          'challengerId': challengerId,
+          'opponentId': opponentId,
+          'arm': _arm,
+          'winnerId': winnerId,
+          'scoreLine': _score,
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Match submitted successfully!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Match submitted successfully!'), backgroundColor: AppTheme.success),
         );
         context.pop();
       }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: Colors.red),
+          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -682,58 +772,212 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     }
   }
 
+  void _handleLiveMatchFinished({
+    required int challengerScore,
+    required int opponentScore,
+    required String winnerSide,
+    required String scoreLine,
+  }) {
+    setState(() {
+      _winnerSide = winnerSide;
+      _score = scoreLine;
+    });
+
+    final winnerName = winnerSide == 'challenger'
+        ? (_challenger?['displayName'] ?? 'Corner Red')
+        : (_opponent?['displayName'] ?? 'Corner White');
+
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      backgroundColor: AppTheme.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(AppTheme.space24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.emoji_events, color: AppTheme.goldPrimary, size: 28),
+                const SizedBox(width: AppTheme.space8),
+                Text(
+                  'MATCH CONCLUDED',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.goldPrimary),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.space12),
+            Text(
+              '$winnerName wins the bout with score line $scoreLine.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: AppTheme.space20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _submit();
+              },
+              child: const Text('SUBMIT OFFICIAL RESULT'),
+            ),
+            const SizedBox(height: AppTheme.space8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('REVIEW / EDIT SCORE'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final challengerDisplayName = _challenger?['displayName']?.toString() ?? 'Corner Red (Select)';
+    final opponentDisplayName = _opponent?['displayName']?.toString() ?? 'Corner White (Select)';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Match Scorepad'),
+        title: const Text('Referee Table Scorepad'),
+        actions: [
+          IconButton(
+            tooltip: _isLiveScorepadMode ? 'Switch to Form View' : 'Switch to Table Scorepad',
+            icon: Icon(_isLiveScorepadMode ? Icons.edit_note : Icons.sports),
+            onPressed: () => setState(() => _isLiveScorepadMode = !_isLiveScorepadMode),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: GlassCard(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _athleteTile(label: 'Challenger (Winner A-side)', athlete: _challenger, onTap: () => _pickAthlete(true)),
-              const SizedBox(height: 12),
-              _athleteTile(label: 'Opponent', athlete: _opponent, onTap: () => _pickAthlete(false)),
-              const SizedBox(height: 20),
-              SegmentedButton<String>(
+        padding: const EdgeInsets.all(AppTheme.space16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Mode Toggle Bar
+            Container(
+              margin: const EdgeInsets.only(bottom: AppTheme.space16),
+              child: SegmentedButton<bool>(
                 segments: const [
-                  ButtonSegment(value: 'RIGHT', label: Text('Right Arm')),
-                  ButtonSegment(value: 'LEFT', label: Text('Left Arm')),
+                  ButtonSegment(
+                    value: true,
+                    label: Text('Table Scorepad'),
+                    icon: Icon(Icons.touch_app, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: false,
+                    label: Text('Quick Entry'),
+                    icon: Icon(Icons.list_alt, size: 16),
+                  ),
                 ],
-                selected: {_arm},
-                onSelectionChanged: (v) => setState(() => _arm = v.first),
+                selected: {_isLiveScorepadMode},
+                onSelectionChanged: (v) => setState(() => _isLiveScorepadMode = v.first),
               ),
-              const SizedBox(height: 16),
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(value: 'challenger', label: Text(_challenger?['displayName']?.toString() ?? 'Challenger wins')),
-                  ButtonSegment(value: 'opponent', label: Text(_opponent?['displayName']?.toString() ?? 'Opponent wins')),
-                ],
-                selected: {_winnerSide},
-                onSelectionChanged: (v) => setState(() => _winnerSide = v.first),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _score,
-                decoration: const InputDecoration(labelText: 'Outcome Score'),
-                items: [
-                  for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s)),
-                ],
-                onChanged: (val) {
-                  if (val != null) setState(() => _score = val);
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Submit Official Result'),
+            ),
+
+            if (_isLiveScorepadMode) ...[
+              // Live Scorepad View
+              if (_challenger == null || _opponent == null)
+                ElevatedActionCard(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.sports, size: 40, color: AppTheme.info),
+                      const SizedBox(height: AppTheme.space12),
+                      const Text(
+                        'Select Table Competitors',
+                        style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: AppTheme.space8),
+                      const Text(
+                        'Select athletes for Corner Red and Corner White to unlock the live scorepad.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                      ),
+                      const SizedBox(height: AppTheme.space16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _pickAthlete(true),
+                              child: Text(
+                                _challenger?['displayName']?.toString() ?? '+ Red Corner',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.space8),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _pickAthlete(false),
+                              child: Text(
+                                _opponent?['displayName']?.toString() ?? '+ White Corner',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              else
+                LiveScorepadController(
+                  challengerName: challengerDisplayName,
+                  opponentName: opponentDisplayName,
+                  arm: _arm,
+                  maxPoints: 3,
+                  onMatchFinished: _handleLiveMatchFinished,
+                ),
+            ] else ...[
+              // Standard Manual Result Form
+              ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _athleteTile(label: 'Challenger (Winner A-side)', athlete: _challenger, onTap: () => _pickAthlete(true)),
+                    const SizedBox(height: AppTheme.space12),
+                    _athleteTile(label: 'Opponent', athlete: _opponent, onTap: () => _pickAthlete(false)),
+                    const SizedBox(height: AppTheme.space20),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'RIGHT', label: Text('Right Arm')),
+                        ButtonSegment(value: 'LEFT', label: Text('Left Arm')),
+                      ],
+                      selected: {_arm},
+                      onSelectionChanged: (v) => setState(() => _arm = v.first),
+                    ),
+                    const SizedBox(height: AppTheme.space16),
+                    SegmentedButton<String>(
+                      segments: [
+                        ButtonSegment(value: 'challenger', label: Text(_challenger?['displayName']?.toString() ?? 'Challenger wins')),
+                        ButtonSegment(value: 'opponent', label: Text(_opponent?['displayName']?.toString() ?? 'Opponent wins')),
+                      ],
+                      selected: {_winnerSide},
+                      onSelectionChanged: (v) => setState(() => _winnerSide = v.first),
+                    ),
+                    const SizedBox(height: AppTheme.space16),
+                    DropdownButtonFormField<String>(
+                      initialValue: _score,
+                      decoration: const InputDecoration(labelText: 'Outcome Score'),
+                      items: [
+                        for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s)),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _score = val);
+                      },
+                    ),
+                    const SizedBox(height: AppTheme.space24),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _submit,
+                      child: _isLoading ? const CircularProgressIndicator() : const Text('SUBMIT OFFICIAL RESULT'),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -742,12 +986,12 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
   Widget _athleteTile({required String label, required Map<String, dynamic>? athlete, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       child: InputDecorator(
         decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         child: Text(
           athlete?['displayName']?.toString() ?? 'Tap to search athletes',
-          style: TextStyle(color: athlete == null ? Colors.grey : null),
+          style: TextStyle(color: athlete == null ? AppTheme.textMuted : null),
           overflow: TextOverflow.ellipsis,
         ),
       ),

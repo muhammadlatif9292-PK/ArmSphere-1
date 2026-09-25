@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'bracket_connector_line.dart';
 class BracketConnectorsPainter extends CustomPainter {
   final List<BracketConnectorLine> connectors;

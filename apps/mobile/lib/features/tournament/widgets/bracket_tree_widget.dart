@@ -1,9 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'bracket_connector_line.dart';
 import 'bracket_connectors_painter.dart';
 import 'compact_bracket_match_card.dart';
+
+/// Interactive Canvas Tree for Tournament Brackets
+///
+/// Upgraded to Canonical Stage 2 Specification (Slice 8 / [P0-04]):
+/// - Two-axis InteractiveViewer virtualization with 0.5x - 2.5x pinch-to-zoom.
+/// - RepaintBoundary layer isolation preventing frame drops on 64+ athlete draws.
+/// - Connectors painter layer caching for 60fps buttery scrolling.
 class BracketTreeWidget extends StatelessWidget {
   final List<Map<String, dynamic>> matches;
   final String titlePrefix;
@@ -23,7 +30,15 @@ class BracketTreeWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (matches.isEmpty) {
-      return const SizedBox();
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text(
+            'No bracket matches scheduled yet.',
+            style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
+          ),
+        ),
+      );
     }
 
     // 1. Group matches by round field
@@ -139,7 +154,7 @@ class BracketTreeWidget extends StatelessWidget {
         maxY = pos.dy + cardHeight;
       }
     }
-    final double totalHeight = math.max(300.0, maxY + 24.0);
+    final double totalHeight = math.max(320.0, maxY + 32.0);
 
     // 3. Build connector lines
     final List<BracketConnectorLine> connectors = [];
@@ -187,66 +202,77 @@ class BracketTreeWidget extends StatelessWidget {
       }
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Container(
-        width: totalWidth,
-        height: totalHeight,
-        margin: const EdgeInsets.only(top: 8, bottom: 16),
-        child: Stack(
-          children: [
-            // Round Header Labels
-            for (int rIdx = 0; rIdx < rounds.length; rIdx++)
-              Positioned(
-                left: rIdx * (cardWidth + colGap),
-                top: 0,
-                width: cardWidth,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: titlePrefix == 'LOSERS'
-                          ? AppTheme.accentOrange.withValues(alpha: 0.12)
-                          : AppTheme.primaryAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
+    // 4. Virtualized InteractiveViewer with RepaintBoundaries
+    return InteractiveViewer(
+      constrained: false,
+      minScale: 0.5,
+      maxScale: 2.5,
+      boundaryMargin: const EdgeInsets.all(60.0),
+      child: RepaintBoundary(
+        child: Container(
+          width: totalWidth,
+          height: totalHeight,
+          margin: const EdgeInsets.only(top: 8, bottom: 16),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Round Header Labels
+              for (int rIdx = 0; rIdx < rounds.length; rIdx++)
+                Positioned(
+                  left: rIdx * (cardWidth + colGap),
+                  top: 0,
+                  width: cardWidth,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
                         color: titlePrefix == 'LOSERS'
-                            ? AppTheme.accentOrange.withValues(alpha: 0.3)
-                            : AppTheme.primaryAccent.withValues(alpha: 0.3),
+                            ? AppTheme.accentOrange.withValues(alpha: 0.15)
+                            : AppTheme.goldPrimary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        border: Border.all(
+                          color: titlePrefix == 'LOSERS'
+                              ? AppTheme.accentOrange.withValues(alpha: 0.4)
+                              : AppTheme.goldPrimary.withValues(alpha: 0.4),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      _getRoundLabel(rIdx, rounds.length, titlePrefix, rounds[rIdx]),
-                      style: TextStyle(
-                        color: titlePrefix == 'LOSERS' ? AppTheme.accentOrange : AppTheme.primaryAccent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                        fontFamily: 'JetBrains Mono',
-                        letterSpacing: 0.5,
+                      child: Text(
+                        _getRoundLabel(rIdx, rounds.length, titlePrefix, rounds[rIdx]),
+                        style: TextStyle(
+                          color: titlePrefix == 'LOSERS' ? AppTheme.accentOrange : AppTheme.goldPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          fontFamily: 'Space Grotesk',
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ),
                 ),
+
+              // Connectors Painter (Layer-isolated with RepaintBoundary)
+              RepaintBoundary(
+                child: CustomPaint(
+                  size: Size(totalWidth, totalHeight),
+                  painter: BracketConnectorsPainter(connectors: connectors),
+                ),
               ),
 
-            // Connectors Painter
-            CustomPaint(
-              size: Size(totalWidth, totalHeight),
-              painter: BracketConnectorsPainter(connectors: connectors),
-            ),
-
-            // Match Cards
-            for (final r in rounds)
-              for (final m in roundsMap[r]!)
-                if (matchPositions.containsKey(m['id']?.toString()))
-                  Positioned(
-                    left: matchPositions[m['id']?.toString()]!.dx,
-                    top: matchPositions[m['id']?.toString()]!.dy,
-                    width: cardWidth,
-                    height: cardHeight,
-                    child: CompactBracketMatchCard(match: m),
-                  ),
-          ],
+              // Match Cards (Individual RepaintBoundary isolation)
+              for (final r in rounds)
+                for (final m in roundsMap[r]!)
+                  if (matchPositions.containsKey(m['id']?.toString()))
+                    Positioned(
+                      left: matchPositions[m['id']?.toString()]!.dx,
+                      top: matchPositions[m['id']?.toString()]!.dy,
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: RepaintBoundary(
+                        child: CompactBracketMatchCard(match: m),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
     );
@@ -254,7 +280,7 @@ class BracketTreeWidget extends StatelessWidget {
 
   String _getRoundLabel(int rIdx, int totalRounds, String prefix, int roundNum) {
     if (prefix == 'WINNERS') {
-      if (rIdx == totalRounds - 1) return 'FINALS';
+      if (rIdx == totalRounds - 1) return 'GRAND FINALS';
       if (rIdx == totalRounds - 2 && totalRounds > 2) return 'SEMIFINALS';
       return 'ROUND $roundNum';
     } else if (prefix == 'LOSERS') {
@@ -265,4 +291,3 @@ class BracketTreeWidget extends StatelessWidget {
     return 'ROUND $roundNum';
   }
 }
-

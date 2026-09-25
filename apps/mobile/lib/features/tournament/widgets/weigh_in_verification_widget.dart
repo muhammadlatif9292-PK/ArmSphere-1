@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+import '../../../core/widgets/signature_ceremonies.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 class WeighInVerificationWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
@@ -66,12 +67,12 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
     super.initState();
     _checkAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 320),
     );
 
     _checkScaleAnimation = CurvedAnimation(
       parent: _checkAnimController,
-      curve: Curves.elasticOut,
+      curve: Curves.easeOutCubic,
     );
 
     _checkAnimController.forward();
@@ -179,62 +180,54 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                     ],
                   ),
 
-                  // Animated Check & Verified Badge
-                  ScaleTransition(
-                    scale: _checkScaleAnimation,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: (isApprovedAndLocked
-                                ? const Color(0xFF00E676)
-                                : AppTheme.goldPrimary)
-                            .withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isApprovedAndLocked
-                              ? const Color(0xFF00E676)
-                              : AppTheme.goldPrimary,
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isApprovedAndLocked
-                                    ? const Color(0xFF00E676)
-                                    : AppTheme.goldPrimary)
-                                .withValues(alpha: 0.35),
-                            blurRadius: 8,
+                  // Animated Check & Verified Badge / Clearance Stamp
+                  if (isApprovedAndLocked)
+                    const WeighInClearanceStamp(
+                      isApproved: true,
+                      clearanceText: 'PAFF VERIFIED',
+                    )
+                  else
+                    ScaleTransition(
+                      scale: _checkScaleAnimation,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary,
+                            width: 1.2,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isApprovedAndLocked
-                                ? Icons.check_circle_rounded
-                                : Icons.pending_rounded,
-                            size: 13,
-                            color: isApprovedAndLocked
-                                ? const Color(0xFF00E676)
-                                : AppTheme.goldPrimary,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            isApprovedAndLocked ? 'VERIFIED' : 'PENDING',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w900,
-                              color: isApprovedAndLocked
-                                  ? const Color(0xFF00E676)
-                                  : AppTheme.goldPrimary,
-                              letterSpacing: 0.6,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                              blurRadius: 8,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.pending_rounded,
+                              size: 13,
+                              color: AppTheme.goldPrimary,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'PENDING',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.goldPrimary,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
 
@@ -773,6 +766,13 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                const Center(
+                  child: WeighInClearanceStamp(
+                    isApproved: true,
+                    clearanceText: 'OFFICIALLY CLEARED • PAFF',
                   ),
                 ),
                 const SizedBox(height: 14),

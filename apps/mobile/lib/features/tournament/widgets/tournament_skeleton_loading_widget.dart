@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'shimmer_box.dart';
 class TournamentSkeletonLoadingWidget extends StatefulWidget {
   const TournamentSkeletonLoadingWidget({super.key});

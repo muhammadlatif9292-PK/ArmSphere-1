@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 class EloChartPainter extends CustomPainter {
   final List<double> eloPoints;
   final int selectedIndex;
@@ -85,3 +85,4 @@ class EloChartPainter extends CustomPainter {
 }
   }
 // ELO SPARKLINE PAINTER (Custom GPU-friendly curve)
+)

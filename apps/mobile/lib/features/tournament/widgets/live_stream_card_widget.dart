@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 class LiveStreamCardWidget extends StatefulWidget {

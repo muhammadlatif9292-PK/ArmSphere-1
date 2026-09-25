@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/widgets/glass_card.dart';
-import '../../../../core/providers/rankings_provider.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/widgets/glass_card.dart';
+import 'package:mobile/core/providers/rankings_provider.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});

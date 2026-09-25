@@ -52,7 +52,7 @@ class CelebrationOverlay extends StatefulWidget {
         );
       },
       transitionBuilder: (context, anim1, anim2, child) {
-        final scaleValue = CurvedAnimation(parent: anim1, curve: Curves.elasticOut).value;
+        final scaleValue = CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic).value;
         return Transform.scale(
           scale: scaleValue.clamp(0.0, 1.0),
           child: Opacity(

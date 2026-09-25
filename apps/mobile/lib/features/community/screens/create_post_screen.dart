@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/providers/post_creation_provider.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/services/sensory_feedback_service.dart';
 
 /// Compose screen — submits a real video-link post via POST /community/links.
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
@@ -63,6 +64,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           );
 
       if (mounted) {
+        if (_isGym) {
+          SensoryFeedbackService.instance.playSensoryCeremony(
+            audioEvent: ArmSphereAudioEvent.prAchieved,
+            hapticType: HapticFeedbackType.heavy,
+          );
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(

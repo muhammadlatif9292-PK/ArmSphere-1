@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class GlassShimmerSkeletonList extends StatefulWidget {
   const GlassShimmerSkeletonList({super.key});

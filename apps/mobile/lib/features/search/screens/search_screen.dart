@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/athlete_provider.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Real global search over athletes via GET /athletes/search.
@@ -106,23 +107,18 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                       ),
                       data: (rows) {
                         if (rows.isEmpty) {
-                          return const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.search_off, size: 48, color: Colors.grey),
-                                SizedBox(height: 12),
-                                Text('No athletes match your search',
-                                    style: TextStyle(color: Colors.grey)),
-                              ],
-                            ),
+                          return const AppEmptyState(
+                            icon: Icons.search_off_outlined,
+                            title: 'No athletes match your search',
+                            subtitle: 'Try searching by a different name, spelling, or weight class.',
                           );
                         }
                         return ListView.separated(
                           itemCount: rows.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, __) => const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final row = rows[index];
+                            final id = row['id'] ?? row['athleteId'];
                             final name = _field(row, ['displayName', 'name']) ?? 'Unnamed athlete';
                             final avatar = _field(row, ['avatarUrl', 'avatar_url', 'photoUrl']);
                             final subtitle = [
@@ -130,21 +126,64 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                               _field(row, ['province']),
                             ].where((p) => p != null).join(' • ');
 
-                            return GestureDetector(
-                              onTap: () => context.push('/athlete/${row['id']}'),
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(12),
-                                child: ListTile(
-                                  leading: CircleAvatar(
+                            return ElevatedActionCard(
+                              onTap: () {
+                                if (id != null) context.push('/athlete/$id');
+                              },
+                              semanticLabel: 'View athlete profile of $name',
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
                                     backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                                    backgroundColor: AppTheme.elevatedSurface,
                                     child: avatar == null
-                                        ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?')
+                                        ? Text(
+                                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              color: AppTheme.primaryAccent,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
                                         : null,
                                   ),
-                                  title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: subtitle.isNotEmpty ? Text(subtitle, style: const TextStyle(fontSize: 12)) : null,
-                                  trailing: const Icon(Icons.chevron_right),
-                                ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontBody,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.textPrimary,
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (subtitle.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 2.0),
+                                            child: Text(
+                                              subtitle,
+                                              style: const TextStyle(
+                                                fontFamily: AppTheme.fontBody,
+                                                color: AppTheme.textSecondary,
+                                                fontSize: 12,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 18),
+                                ],
                               ),
                             );
                           },

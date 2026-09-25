@@ -1,82 +1,36 @@
-import 'package:audioplayers/audioplayers.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import '../services/sensory_feedback_service.dart';
 
+/// Legacy SoundService adapter delegating to canonical SensoryFeedbackService.
+/// Preserves backward compatibility across existing surfaces.
 class SoundService {
   static final SoundService _instance = SoundService._internal();
   static SoundService get instance => _instance;
 
-  final AudioPlayer _player = AudioPlayer();
-  static const String _soundSettingKey = 'sound_effects_enabled';
-  static const String _cacheBoxName = 'local_data_cache';
+  final SensoryFeedbackService _sensoryService = SensoryFeedbackService.instance;
 
-  SoundService._internal() {
-    // Enable low latency playback mode for quick UI clicks/sound effects
-    _player.setReleaseMode(ReleaseMode.release);
-  }
+  SoundService._internal();
 
-  /// Check if sound effects are enabled in persistent storage (defaults to true)
-  bool isSoundEnabled() {
-    try {
-      if (Hive.isBoxOpen(_cacheBoxName)) {
-        final box = Hive.box<dynamic>(_cacheBoxName);
-        return box.get(_soundSettingKey, defaultValue: true) as bool;
-      }
-    } catch (_) {
-      // Fallback if Hive is not initialized in some contexts (e.g., tests or cold start)
-    }
-    return true;
-  }
+  bool isSoundEnabled() => _sensoryService.isSoundEnabled;
 
-  /// Toggle and persist sound effects setting
-  Future<void> setSoundEnabled(bool enabled) async {
-    try {
-      if (Hive.isBoxOpen(_cacheBoxName)) {
-        final box = Hive.box<dynamic>(_cacheBoxName);
-        await box.put(_soundSettingKey, enabled);
-      }
-    } catch (_) {}
-  }
+  Future<void> setSoundEnabled(bool enabled) => _sensoryService.setSoundEnabled(enabled);
 
-  /// Play the "PR Achieved" sound (short synthetic laser chirp)
-  Future<void> playPrAchieved() async {
-    if (!isSoundEnabled()) return;
-    try {
-      await _player.stop();
-      await _player.play(AssetSource('sounds/pr_achieved.wav'));
-    } catch (e) {
-      debugPrint('Error playing pr_achieved sound: $e');
-    }
-  }
+  Future<void> playPrAchieved() =>
+      _sensoryService.playSensoryCeremony(
+        audioEvent: ArmSphereAudioEvent.prAchieved,
+        hapticType: HapticFeedbackType.heavy,
+      );
 
-  /// Play the "Match Won" sound (Nasa mission phrase / gong)
-  Future<void> playMatchWon() async {
-    if (!isSoundEnabled()) return;
-    try {
-      await _player.stop();
-      await _player.play(AssetSource('sounds/match_won.mp3'));
-    } catch (e) {
-      debugPrint('Error playing match_won sound: $e');
-    }
-  }
+  Future<void> playMatchWon() =>
+      _sensoryService.playSensoryCeremony(
+        audioEvent: ArmSphereAudioEvent.matchWon,
+        hapticType: HapticFeedbackType.ceremonialTriple,
+      );
 
-  /// Play the "Challenge Accepted" sound (short synthetic coin click)
-  Future<void> playChallengeAccepted() async {
-    if (!isSoundEnabled()) return;
-    try {
-      await _player.stop();
-      await _player.play(AssetSource('sounds/challenge_accepted.wav'));
-    } catch (e) {
-      debugPrint('Error playing challenge_accepted sound: $e');
-    }
-  }
+  Future<void> playChallengeAccepted() =>
+      _sensoryService.playSensoryCeremony(
+        audioEvent: ArmSphereAudioEvent.challengeAccepted,
+        hapticType: HapticFeedbackType.medium,
+      );
 
-  void dispose() {
-    _player.dispose();
-  }
-}
-
-// Global debug print helper
-void debugPrint(String message) {
-  // ignore: avoid_print
-  print('[SoundService] $message');
+  void dispose() => _sensoryService.dispose();
 }

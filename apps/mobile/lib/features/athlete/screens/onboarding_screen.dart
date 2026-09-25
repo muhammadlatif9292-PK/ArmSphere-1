@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/step_header.dart';
+import '../../../core/widgets/sticky_bottom_action_bar.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/utils/error_formatter.dart';
 
 /// Guided athlete profile setup shown to every newly registered account.
 ///
-/// Three focused steps replace the original single long form so each screen
-/// asks for one coherent group of details:
-///   1. Identity    — ring name, date of birth, gender
-///   2. Location    — province + city used for events and rankings scope
-///   3. Competition — weight / height / reach and pulling arm
+/// Upgraded to Canonical Stage 2 Specification (Slice 6 / [P1-02]):
+/// - Directional animated PageView wizard with 280ms Curves.easeInOutCubic slide.
+/// - StickyBottomActionBar with automatic keyboard avoidance & 640dp constraints.
+/// - Normalized 8dp radiusSmall badges and Space Grotesk numeric typography.
+/// - Tactile haptic feedback on step transitions and slider updates.
 ///
-/// Payload keys match the backend athlete contract exactly.
+/// Payload keys match the backend athlete contract exactly:
+///   1. Identity    — displayName, dateOfBirth, gender
+///   2. Location    — province, city
+///   3. Competition — weightKg, heightCm, reachCm, armDominance
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -32,37 +38,51 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     'Islamabad Capital Territory',
   ];
 
-  int _step = 0;
+  static const _titles = [
+    ('Who are you on the table?', 'This is how athletes, referees and fans will see you in rankings.'),
+    ('Where do you compete?', 'We use your region to suggest local events and provincial rankings.'),
+    ('Your competition specs', 'Divisions and weight classes are automatically matched from these numbers.'),
+  ];
+
+  late final PageController _pageController;
+  int _currentStep = 0;
   bool _isLoading = false;
 
   final _identityFormKey = GlobalKey<FormState>();
   final _locationFormKey = GlobalKey<FormState>();
   final _specsFormKey = GlobalKey<FormState>();
 
-  // Identity
+  // 1. Identity
   final _displayNameController = TextEditingController();
   DateTime _dob = DateTime(2000, 1, 1);
   String _gender = 'MALE';
 
-  // Location
+  // 2. Location
   final _cityController = TextEditingController();
   String _province = 'Punjab';
 
-  // Competition specs
+  // 3. Competition specs
   double _weightKg = 75.0;
   double _heightCm = 175.0;
   double _reachCm = 175.0;
   String _armDominance = 'RIGHT';
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
   void dispose() {
+    _pageController.dispose();
     _displayNameController.dispose();
     _cityController.dispose();
     super.dispose();
   }
 
   bool _validateCurrentStep() {
-    switch (_step) {
+    switch (_currentStep) {
       case 0:
         return _identityFormKey.currentState?.validate() ?? false;
       case 1:
@@ -74,20 +94,52 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _next() async {
     if (!_validateCurrentStep()) return;
-    if (_step < 2) {
-      setState(() => _step++);
+    if (_currentStep < 2) {
+      HapticFeedback.selectionClick();
+      _pageController.animateToPage(
+        _currentStep + 1,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+      );
+      setState(() => _currentStep++);
       return;
     }
     await _submit();
   }
 
+  void _prev() {
+    if (_currentStep > 0) {
+      HapticFeedback.selectionClick();
+      _pageController.animateToPage(
+        _currentStep - 1,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+      );
+      setState(() => _currentStep--);
+    }
+  }
+
   Future<void> _pickDateOfBirth() async {
+    HapticFeedback.selectionClick();
     final picked = await showDatePicker(
       context: context,
       initialDate: _dob,
       firstDate: DateTime(1940),
       lastDate: DateTime.now().subtract(const Duration(days: 365 * 10)),
       helpText: 'Select your date of birth',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.goldPrimary,
+              onPrimary: Colors.black,
+              surface: AppTheme.cardSurface,
+              onSurface: AppTheme.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => _dob = picked);
@@ -96,6 +148,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _submit() async {
     setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
     try {
       final payload = {
         'displayName': _displayNameController.text.trim(),
@@ -116,7 +169,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppErrorFormatter.format(e)),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppTheme.error,
           ),
         );
       }
@@ -127,121 +180,104 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const titles = [
-      ('Who are you on the table?', 'This is how athletes, referees and fans will see you.'),
-      ('Where do you compete?', 'We use your region to suggest local events and provincial rankings.'),
-      ('Your competition specs', 'Divisions and weight classes are matched from these numbers.'),
-    ];
-
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Build your athlete profile'),
+        title: const Text(
+          'Build Your Athlete Profile',
+          style: TextStyle(
+            fontFamily: 'Space Grotesk',
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          children: [
+            // Fixed top stepper bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 540),
+                child: StepHeader(
+                  step: _currentStep + 1,
+                  totalSteps: 3,
+                  title: _titles[_currentStep].$1,
+                  subtitle: _titles[_currentStep].$2,
+                ),
+              ),
+            ),
+
+            // Animated directional PageView
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                onPageChanged: (index) => setState(() => _currentStep = index),
                 children: [
-                  StepHeader(
-                    step: _step + 1,
-                    totalSteps: 3,
-                    title: titles[_step].$1,
-                    subtitle: titles[_step].$2,
+                  _buildPageWrapper(
+                    formKey: _identityFormKey,
+                    child: _buildIdentityStep(),
                   ),
-                  const SizedBox(height: 24),
-                  AnimatedSwitcher(
-                    duration: AppTheme.animationNormal,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    ),
-                    child: Form(
-                      key: _step == 0
-                          ? _identityFormKey
-                          : _step == 1
-                              ? _locationFormKey
-                              : _specsFormKey,
-                      child: _buildStep(_step),
-                    ),
+                  _buildPageWrapper(
+                    formKey: _locationFormKey,
+                    child: _buildLocationStep(),
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      if (_step > 0)
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : () => setState(() => _step--),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppTheme.textPrimary,
-                              side: const BorderSide(color: AppTheme.glassBorder, width: 1.2),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                              ),
-                            ),
-                            child: const Text('Back'),
-                          ),
-                        ),
-                      if (_step > 0) const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: _isLoading ? null : _next,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppTheme.goldPrimary,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            ),
-                            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                                )
-                              : Text(_step == 2 ? 'Finish setup' : 'Continue'),
-                        ),
-                      ),
-                    ],
+                  _buildPageWrapper(
+                    formKey: _specsFormKey,
+                    child: _buildSpecsStep(),
                   ),
-                  if (_step == 0) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'You can update all of this later from your profile.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppTheme.textMuted),
-                    ),
-                  ],
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: StickyBottomActionBar(
+        primaryActionLabel: _currentStep == 2 ? 'Complete Profile' : 'Continue',
+        primaryActionIcon: _currentStep == 2 ? Icons.check_circle_outline : Icons.arrow_forward,
+        isLoading: _isLoading,
+        onPrimaryAction: _isLoading ? null : _next,
+        secondaryAction: _currentStep > 0
+            ? OutlinedButton(
+                onPressed: _isLoading ? null : _prev,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.textPrimary,
+                  side: const BorderSide(color: AppTheme.borderSubtle),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                ),
+                child: const Text('Back'),
+              )
+            : null,
+        disclaimerText: _currentStep == 0
+            ? 'You can update your stats and details later from your profile.'
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildPageWrapper({required GlobalKey<FormState> formKey, required Widget child}) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 540),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Form(
+            key: formKey,
+            child: child,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStep(int step) {
-    switch (step) {
-      case 0:
-        return _identityStep();
-      case 1:
-        return _locationStep();
-      default:
-        return _specsStep();
-    }
-  }
-
   // ── Step 1: Identity ────────────────────────────────────────────────
-  Widget _identityStep() {
+  Widget _buildIdentityStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -251,7 +287,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           textInputAction: TextInputAction.done,
           decoration: const InputDecoration(
             labelText: 'Display / Ring Name',
-            prefixIcon: Icon(Icons.badge_outlined),
+            hintText: 'e.g. Iron Grip Tariq',
+            prefixIcon: Icon(Icons.badge_outlined, color: AppTheme.goldPrimary),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -266,24 +303,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         const SizedBox(height: 16),
         InkWell(
           onTap: _pickDateOfBirth,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           child: InputDecorator(
             decoration: const InputDecoration(
               labelText: 'Date of Birth',
-              prefixIcon: Icon(Icons.cake_outlined),
+              prefixIcon: Icon(Icons.calendar_today_outlined, color: AppTheme.goldPrimary),
+              suffixIcon: Icon(Icons.arrow_drop_down, color: AppTheme.textMuted),
             ),
             child: Text(
-              '${_dob.day.toStringAsFixed(0).padLeft(2, '0')} ${_monthName(_dob.month)} ${_dob.year}',
-              style: Theme.of(context).textTheme.bodyLarge,
+              '${_dob.day.toString().padLeft(2, '0')} ${_monthName(_dob.month)} ${_dob.year}',
+              style: const TextStyle(
+                fontFamily: 'Space Grotesk',
+                fontSize: 14,
+                color: AppTheme.textPrimary,
+              ),
             ),
           ),
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _gender,
+          dropdownColor: AppTheme.elevatedSurface,
           decoration: const InputDecoration(
-            labelText: 'Gender',
-            prefixIcon: Icon(Icons.people_outline),
+            labelText: 'Gender Division',
+            prefixIcon: Icon(Icons.people_outline, color: AppTheme.goldPrimary),
           ),
           items: const [
             DropdownMenuItem(value: 'MALE', child: Text('Male')),
@@ -298,15 +341,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   // ── Step 2: Location ────────────────────────────────────────────────
-  Widget _locationStep() {
+  Widget _buildLocationStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DropdownButtonFormField<String>(
           initialValue: _province,
+          dropdownColor: AppTheme.elevatedSurface,
           decoration: const InputDecoration(
-            labelText: 'Province / Region',
-            prefixIcon: Icon(Icons.map_outlined),
+            labelText: 'Province / Territory',
+            prefixIcon: Icon(Icons.map_outlined, color: AppTheme.goldPrimary),
           ),
           items: _provinces
               .map((p) => DropdownMenuItem(value: p, child: Text(p)))
@@ -320,8 +364,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           controller: _cityController,
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(
-            labelText: 'City',
-            prefixIcon: Icon(Icons.location_city_outlined),
+            labelText: 'City / Municipality',
+            hintText: 'e.g. Lahore, Karachi, Rawalpindi',
+            prefixIcon: Icon(Icons.location_city_outlined, color: AppTheme.goldPrimary),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -335,13 +380,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   // ── Step 3: Competition specs ───────────────────────────────────────
-  Widget _specsStep() {
-    final theme = Theme.of(context);
+  Widget _buildSpecsStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SpecSlider(
-          label: 'Weight',
+          label: 'Competition Weight',
           value: _weightKg,
           min: 40,
           max: 180,
@@ -349,8 +393,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           decimals: 0,
           onChanged: (v) => setState(() => _weightKg = v),
         ),
+        const SizedBox(height: 14),
         _SpecSlider(
-          label: 'Height',
+          label: 'Standing Height',
           value: _heightCm,
           min: 100,
           max: 230,
@@ -358,8 +403,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           decimals: 0,
           onChanged: (v) => setState(() => _heightCm = v),
         ),
+        const SizedBox(height: 14),
         _SpecSlider(
-          label: 'Arm reach',
+          label: 'Arm Reach (Wingspan)',
           value: _reachCm,
           min: 100,
           max: 230,
@@ -367,38 +413,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           decimals: 0,
           onChanged: (v) => setState(() => _reachCm = v),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _armDominance,
+          dropdownColor: AppTheme.elevatedSurface,
           decoration: const InputDecoration(
-            labelText: 'Dominant / Pulling Arm',
-            prefixIcon: Icon(Icons.sports_kabaddi),
+            labelText: 'Dominant Pulling Arm',
+            prefixIcon: Icon(Icons.sports_kabaddi, color: AppTheme.goldPrimary),
           ),
           items: const [
             DropdownMenuItem(value: 'RIGHT', child: Text('Right Arm')),
             DropdownMenuItem(value: 'LEFT', child: Text('Left Arm')),
-            DropdownMenuItem(value: 'AMBIDEXTROUS', child: Text('Ambidextrous')),
+            DropdownMenuItem(value: 'AMBIDEXTROUS', child: Text('Ambidextrous (Both Arms)')),
           ],
           onChanged: (val) {
             if (val != null) setState(() => _armDominance = val);
           },
         ),
-        const SizedBox(height: 16),
-        Container(
+        const SizedBox(height: 20),
+        ElevatedActionCard(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppTheme.elevatedSurface,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            border: Border.all(color: AppTheme.border),
-          ),
           child: Row(
             children: [
-              const Icon(Icons.info_outline, size: 18, color: AppTheme.textMuted),
+              const Icon(Icons.info_outline, size: 18, color: AppTheme.goldPrimary),
               const SizedBox(width: 10),
-              Expanded(
+              const Expanded(
                 child: Text(
-                  'Officials verify these at weigh-in. Estimates are fine for matching divisions.',
-                  style: theme.textTheme.bodySmall,
+                  'Officials verify weight and metrics at official tournament weigh-in. Estimates calibrate your initial division.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.4),
                 ),
               ),
             ],
@@ -438,38 +480,58 @@ class _SpecSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Space Grotesk',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppTheme.goldGlow,
-                borderRadius: BorderRadius.circular(AppTheme.radiusCircular),
-                border: Border.all(color: AppTheme.glassBorder),
+                color: AppTheme.elevatedSurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
               ),
               child: Text(
                 '${value.toStringAsFixed(decimals)} $suffix',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppTheme.goldLight,
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  color: AppTheme.goldPrimary,
                   fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
               ),
             ),
           ],
         ),
-        Slider(
-          value: value.clamp(min, max),
-          min: min,
-          max: max,
-          divisions: (max - min).round(),
-          activeColor: AppTheme.goldPrimary,
-          onChanged: onChanged,
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: AppTheme.goldPrimary,
+            inactiveTrackColor: AppTheme.borderSubtle,
+            thumbColor: AppTheme.goldPrimary,
+            overlayColor: AppTheme.goldPrimary.withValues(alpha: 0.15),
+            trackHeight: 4,
+          ),
+          child: Slider(
+            value: value.clamp(min, max),
+            min: min,
+            max: max,
+            divisions: (max - min).round(),
+            onChanged: (v) {
+              HapticFeedback.selectionClick();
+              onChanged(v);
+            },
+          ),
         ),
       ],
     );

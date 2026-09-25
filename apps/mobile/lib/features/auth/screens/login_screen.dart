@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/services/biometric_service.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 
@@ -154,9 +154,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -167,22 +169,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Icon(
                       Icons.sports_kabaddi,
                       size: 64,
-                      color: theme.colorScheme.primary,
+                      color: AppTheme.primaryAccent,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'ArmSphere',
                       style: theme.textTheme.headlineLarge?.copyWith(
+                        fontFamily: AppTheme.fontDisplay,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -1.0,
-                        color: theme.colorScheme.primary,
+                        color: AppTheme.primaryAccent,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Sign in to your competitive account',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        fontFamily: AppTheme.fontBody,
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -192,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               Form(
                 key: _formKey,
-                child: GlassCard(
+                child: ElevatedActionCard(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

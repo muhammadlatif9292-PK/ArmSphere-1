@@ -158,13 +158,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap submit button without filling fields
-      final submitButton = find.text('Submit Facility');
+      final submitButton = find.text('Submit Facility for Certification');
       expect(submitButton, findsOneWidget);
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
       // Verify that validation error messages appear
-      expect(find.text('Required'), findsNWidgets(2));
+      expect(find.text('Venue name is required'), findsOneWidget);
+      expect(find.text('Address is required'), findsOneWidget);
 
       // Verify repository submission was NOT called
       verifyNever(() => mockVenueRepository.submitVenue(
@@ -201,18 +202,18 @@ void main() {
 
       // Enter valid form inputs
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Venue / Club Name'),
+        find.byType(TextFormField).first,
         'Metro Armwrestling Club',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Address & City'),
+        find.byType(TextFormField).last,
         '456 College St',
       );
 
       await tester.pumpAndSettle();
 
       // Tap submit
-      await tester.tap(find.text('Submit Facility'));
+      await tester.tap(find.text('Submit Facility for Certification'));
       await tester.pump(); // Start request
 
       // Verify correct API invocation parameters on the mock repository

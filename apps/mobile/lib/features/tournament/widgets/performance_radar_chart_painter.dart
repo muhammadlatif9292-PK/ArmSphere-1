@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 class PerformanceRadarChartPainter extends CustomPainter {
   final Map<String, double> attributes;
   final double progress;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 
@@ -81,6 +81,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
@@ -89,6 +90,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -98,22 +100,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Icon(
                       Icons.sports_kabaddi_outlined,
                       size: 48,
-                      color: theme.colorScheme.primary,
+                      color: AppTheme.primaryAccent,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Join ArmSphere',
                       style: theme.textTheme.headlineLarge?.copyWith(
+                        fontFamily: AppTheme.fontDisplay,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -1.0,
-                        color: theme.colorScheme.primary,
+                        color: AppTheme.primaryAccent,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'The competitive platform for armwrestling',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        fontFamily: AppTheme.fontBody,
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -123,7 +127,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
               Form(
                 key: _formKey,
-                child: GlassCard(
+                child: ElevatedActionCard(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

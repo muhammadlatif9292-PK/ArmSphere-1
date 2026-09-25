@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'bracket_connector_line.dart';
 import 'bracket_connectors_painter.dart';
 import 'compact_bracket_match_card.dart';
