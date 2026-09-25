@@ -11,6 +11,9 @@ class AppErrorFormatter {
     if (error == null) return 'An unexpected error occurred. Please try again.';
 
     if (error is ApiException) {
+      if (error.invalidParams != null && error.invalidParams!.isNotEmpty) {
+        return error.invalidParams!.values.map((v) => v.toString()).join('\n');
+      }
       if (error.detail.isNotEmpty && error.detail != 'No detailed error message was provided.') {
         return error.detail;
       }

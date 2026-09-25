@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/step_header.dart';
+import '../../../core/utils/error_formatter.dart';
 
 /// Guided athlete profile setup shown to every newly registered account.
 ///
@@ -105,7 +106,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         'reachCm': _reachCm,
         'armDominance': _armDominance,
         'gender': _gender,
-        'dateOfBirth': _dob.toIso8601String(),
+        'dateOfBirth': _dob.toUtc().toIso8601String(),
       };
 
       await ref.read(authProvider.notifier).completeOnboarding(payload);
@@ -114,7 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(AppErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -255,6 +256,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter your athlete display name';
+            }
+            if (value.trim().length < 2) {
+              return 'Display name must be at least 2 characters';
             }
             return null;
           },

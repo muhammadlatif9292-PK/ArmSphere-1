@@ -15,8 +15,10 @@ const createProfileSchema = z.object({
   city: z.string().min(1, "City is required"),
   clubId: z.string().uuid().optional(),
   handedness: z.enum(["LEFT", "RIGHT", "AMBIDEXTROUS"]),
-  dominantArm: z.enum(["LEFT", "RIGHT"]),
-  dateOfBirth: z.string().datetime("Invalid date format for Date of Birth"),
+  dominantArm: z.enum(["LEFT", "RIGHT", "AMBIDEXTROUS"]).default("RIGHT"),
+  dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid date format for Date of Birth",
+  }),
   gender: z.string().min(1, "Gender is required"),
   weightClass: z.string().min(1, "Weight class is required"),
   height: z.number().positive().optional(),

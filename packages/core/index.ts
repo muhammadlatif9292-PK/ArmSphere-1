@@ -81,13 +81,16 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
       }
     }
     const status = 400;
-    logger.error(`${req.method} ${req.path} failed: Validation Failed`, err);
+    const errorList = Object.entries(errors).map(([field, msg]) => field === "_" ? msg : `${field}: ${msg}`);
+    const detail = errorList.length > 0 ? errorList.join("; ") : "The request payload failed validation.";
+    logger.error(`${req.method} ${req.path} failed: Validation Failed - ${detail}`, err);
     return res.status(status).json({
       success: false,
       title: "Validation Failed",
-      detail: "The request payload failed validation.",
+      detail,
       status,
       errors,
+      invalidParams: errors,
       requestId: (req as any).id,
     });
   }

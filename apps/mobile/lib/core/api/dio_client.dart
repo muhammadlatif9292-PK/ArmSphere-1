@@ -26,15 +26,18 @@ class ApiException implements Exception {
   factory ApiException.fromResponse(Response response) {
     final data = response.data;
     if (data is Map<String, dynamic>) {
+      final invalidParamsRaw = data['errors'] ?? data['invalidParams'];
+      Map<String, dynamic>? invalidParams;
+      if (invalidParamsRaw is Map) {
+        invalidParams = Map<String, dynamic>.from(invalidParamsRaw);
+      }
       return ApiException(
         type: data['type']?.toString() ?? 'about:blank',
         title: data['title']?.toString() ?? 'An error occurred',
         status: (data['status'] as num?)?.toInt() ?? response.statusCode ?? 500,
         detail: data['detail']?.toString() ?? 'No detailed error message was provided.',
         instance: data['instance']?.toString(),
-        invalidParams: data['invalidParams'] is Map<String, dynamic> 
-            ? data['invalidParams'] as Map<String, dynamic>
-            : null,
+        invalidParams: invalidParams,
       );
     }
     return ApiException(
@@ -46,7 +49,15 @@ class ApiException implements Exception {
   }
 
   @override
-  String toString() => '[$status] $title: $detail';
+  String toString() {
+    if (invalidParams != null && invalidParams!.isNotEmpty) {
+      final formattedParams = invalidParams!.entries
+          .map((e) => '${e.key}: ${e.value}')
+          .join(', ');
+      return '[$status] $title: $detail ($formattedParams)';
+    }
+    return '[$status] $title: $detail';
+  }
 }
 
 /// Offline Connection Exception

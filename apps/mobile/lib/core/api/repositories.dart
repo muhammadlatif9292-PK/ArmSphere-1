@@ -212,6 +212,16 @@ class AthleteRepository extends BaseRepository {
     final handedness = arm == 'AMBIDEXTROUS' ? 'AMBIDEXTROUS' : (arm == 'LEFT' ? 'LEFT' : 'RIGHT');
     final dominantArm = (arm == 'LEFT') ? 'LEFT' : 'RIGHT';
 
+    DateTime parsedDob;
+    if (data['dateOfBirth'] is DateTime) {
+      parsedDob = data['dateOfBirth'] as DateTime;
+    } else if (data['dateOfBirth'] is String && (data['dateOfBirth'] as String).isNotEmpty) {
+      parsedDob = DateTime.tryParse(data['dateOfBirth'] as String) ?? DateTime(2000, 1, 1);
+    } else {
+      parsedDob = DateTime(2000, 1, 1);
+    }
+    final dateOfBirthIso = parsedDob.toUtc().toIso8601String();
+
     final mappedPayload = {
       'displayName': data['displayName'] ?? 'Athlete',
       'biography': 'Professional Athlete',
@@ -219,7 +229,7 @@ class AthleteRepository extends BaseRepository {
       'city': data['city'] ?? 'Lahore',
       'handedness': handedness,
       'dominantArm': dominantArm,
-      'dateOfBirth': data['dateOfBirth'] ?? '2000-01-01T00:00:00.000Z',
+      'dateOfBirth': dateOfBirthIso,
       'gender': (data['gender']?.toString() ?? 'MALE').toUpperCase(),
       'weightClass': '${weight.toInt()}kg',
       'height': (data['heightCm'] as num?)?.toDouble() ?? 175.0,

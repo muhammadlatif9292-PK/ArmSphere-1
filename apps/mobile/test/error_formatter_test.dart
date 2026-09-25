@@ -25,6 +25,36 @@ void main() {
       );
     });
 
+    test('formats ApiException with invalidParams field errors correctly', () {
+      final apiEx = ApiException(
+        type: 'about:blank',
+        title: 'Validation Failed',
+        status: 400,
+        detail: 'The request payload failed validation.',
+        invalidParams: {'dateOfBirth': 'Invalid date format for Date of Birth'},
+      );
+      expect(
+        AppErrorFormatter.format(apiEx),
+        equals('Invalid date format for Date of Birth'),
+      );
+    });
+
+    test('ApiException.fromResponse extracts errors map into invalidParams', () {
+      final response = Response(
+        requestOptions: RequestOptions(path: '/athletes'),
+        statusCode: 400,
+        data: {
+          'title': 'Validation Failed',
+          'detail': 'The request payload failed validation.',
+          'errors': {'dateOfBirth': 'Invalid date format for Date of Birth'},
+        },
+      );
+      final apiEx = ApiException.fromResponse(response);
+      expect(apiEx.invalidParams, isNotNull);
+      expect(apiEx.invalidParams!['dateOfBirth'], equals('Invalid date format for Date of Birth'));
+      expect(AppErrorFormatter.format(apiEx), equals('Invalid date format for Date of Birth'));
+    });
+
     test('formats OfflineException correctly', () {
       final offlineEx = OfflineException('No internet connection active.');
       expect(
