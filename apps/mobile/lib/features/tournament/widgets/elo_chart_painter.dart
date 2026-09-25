@@ -82,7 +82,5 @@ class EloChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant EloChartPainter oldDelegate) {
     return oldDelegate.selectedIndex != selectedIndex || oldDelegate.eloPoints != eloPoints;
-}
   }
-// ELO SPARKLINE PAINTER (Custom GPU-friendly curve)
-)
+}

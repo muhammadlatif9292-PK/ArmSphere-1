@@ -7,6 +7,7 @@ enum StatusType {
   error,
   info,
   neutral,
+  live,
 }
 
 /// Standardized StatusChip
@@ -43,6 +44,9 @@ class StatusChip extends StatelessWidget {
   const StatusChip.neutral({super.key, required this.label, this.icon, this.onTap})
       : type = StatusType.neutral;
 
+  const StatusChip.live({super.key, required this.label, this.icon, this.onTap})
+      : type = StatusType.live;
+
   Color _getForegroundColor() {
     switch (type) {
       case StatusType.success:
@@ -55,6 +59,8 @@ class StatusChip extends StatelessWidget {
         return AppTheme.info;
       case StatusType.neutral:
         return AppTheme.textSecondary;
+      case StatusType.live:
+        return AppTheme.primaryAccent;
     }
   }
 

@@ -447,9 +447,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       // 2. Canonical 4-Stop Hero Scrim Gradient (AppTheme.heroScrim)
                       Positioned.fill(
                         child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.heroScrim(),
-                          ),
+                          decoration: AppTheme.heroScrim(),
                         ),
                       ),
 
