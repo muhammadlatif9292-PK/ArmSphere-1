@@ -95,7 +95,7 @@ class AuthRepository extends BaseRepository {
     final inner = e.error;
     if (inner is ApiException) throw inner;
     if (inner is OfflineException) throw inner;
-    final message = ErrorFormatter.format(e);
+    final message = AppErrorFormatter.format(e);
     throw ApiException(
       type: 'auth:network-error',
       title: 'Authentication Error',

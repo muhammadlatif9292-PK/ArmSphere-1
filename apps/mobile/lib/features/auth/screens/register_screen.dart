@@ -49,7 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
     } catch (e) {
       if (mounted) {
-        final errorMsg = ErrorFormatter.format(e);
+        final errorMsg = AppErrorFormatter.format(e);
         final isConflict = errorMsg.toLowerCase().contains('already exists') ||
                            errorMsg.toLowerCase().contains('conflict');
         ScaffoldMessenger.of(context).showSnackBar(

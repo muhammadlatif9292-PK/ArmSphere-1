@@ -49,7 +49,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ErrorFormatter.format(e)),
+            content: Text(AppErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

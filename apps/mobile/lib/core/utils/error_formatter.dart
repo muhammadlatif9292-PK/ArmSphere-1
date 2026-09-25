@@ -6,7 +6,7 @@ import '../api/dio_client.dart';
 /// Prevents internal SDK strings, stack traces, or raw Dio exceptions
 /// (such as "DioException [receive timeout]: The request took longer than 0:00:15...")
 /// from ever being presented to end users.
-class ErrorFormatter {
+class AppErrorFormatter {
   static String format(Object? error) {
     if (error == null) return 'An unexpected error occurred. Please try again.';
 

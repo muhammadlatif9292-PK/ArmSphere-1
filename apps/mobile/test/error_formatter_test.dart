@@ -4,10 +4,10 @@ import 'package:mobile/core/api/dio_client.dart';
 import 'package:mobile/core/utils/error_formatter.dart';
 
 void main() {
-  group('ErrorFormatter Unit Tests', () {
+  group('AppErrorFormatter Unit Tests', () {
     test('formats null as generic fallback message', () {
       expect(
-        ErrorFormatter.format(null),
+        AppErrorFormatter.format(null),
         equals('An unexpected error occurred. Please try again.'),
       );
     });
@@ -20,7 +20,7 @@ void main() {
         detail: 'A user with this username already exists.',
       );
       expect(
-        ErrorFormatter.format(apiEx),
+        AppErrorFormatter.format(apiEx),
         equals('A user with this username already exists.'),
       );
     });
@@ -28,7 +28,7 @@ void main() {
     test('formats OfflineException correctly', () {
       final offlineEx = OfflineException('No internet connection active.');
       expect(
-        ErrorFormatter.format(offlineEx),
+        AppErrorFormatter.format(offlineEx),
         equals('No internet connection active.'),
       );
     });
@@ -39,7 +39,7 @@ void main() {
         type: DioExceptionType.receiveTimeout,
       );
       expect(
-        ErrorFormatter.format(dioEx),
+        AppErrorFormatter.format(dioEx),
         equals('Server took too long to respond. Please check your connection and try again.'),
       );
     });
@@ -50,7 +50,7 @@ void main() {
         type: DioExceptionType.connectionTimeout,
       );
       expect(
-        ErrorFormatter.format(dioEx),
+        AppErrorFormatter.format(dioEx),
         equals('Connection timed out. Please check your internet connection and try again.'),
       );
     });
@@ -61,7 +61,7 @@ void main() {
         type: DioExceptionType.connectionError,
       );
       expect(
-        ErrorFormatter.format(dioEx),
+        AppErrorFormatter.format(dioEx),
         equals('Unable to connect to ArmSphere servers. Please check your internet connection.'),
       );
     });
@@ -77,7 +77,7 @@ void main() {
         ),
       );
       expect(
-        ErrorFormatter.format(dioEx),
+        AppErrorFormatter.format(dioEx),
         equals('A user with this email address already exists.'),
       );
     });
@@ -95,7 +95,7 @@ void main() {
         error: apiEx,
       );
       expect(
-        ErrorFormatter.format(dioEx),
+        AppErrorFormatter.format(dioEx),
         equals('Invalid email or password.'),
       );
     });
@@ -103,7 +103,7 @@ void main() {
     test('strips Exception: prefix from standard Dart exceptions', () {
       final ex = Exception('Custom operation failed');
       expect(
-        ErrorFormatter.format(ex),
+        AppErrorFormatter.format(ex),
         equals('Custom operation failed'),
       );
     });

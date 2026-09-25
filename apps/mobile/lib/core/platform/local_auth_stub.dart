@@ -8,11 +8,8 @@ import 'package:flutter/foundation.dart';
 
 class _LocalAuthStub extends LocalAuth {
   _LocalAuthStub();
-
-  static bool get isSupported => false;
 }
 
-final LocalAuth _localAuthStub = _LocalAuthStub();
 final LocalAuth localAuthStub = _LocalAuthStub();
 
 class LocalAuth {

@@ -96,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Biometrics unavailable: ${ErrorFormatter.format(e)}. Please enter your password.',
+              'Biometrics unavailable: ${AppErrorFormatter.format(e)}. Please enter your password.',
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
@@ -135,7 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ErrorFormatter.format(e)),
+            content: Text(AppErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -152,7 +152,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final authState = ref.watch(authProvider);
 
     return Scaffold(
       body: Center(
