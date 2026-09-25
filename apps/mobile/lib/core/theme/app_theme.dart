@@ -40,6 +40,9 @@ class AppTheme {
   /// Muted structural divider for subtle separators (#1E293B).
   static const Color borderMuted = Color(0xFF1E293B);
 
+  /// Subtle structural divider for secondary separators (#1E293B).
+  static const Color borderSubtle = Color(0xFF1E293B);
+
   /// Elevated bright divider for focused states (#475569).
   static const Color borderLight = Color(0xFF475569);
 

@@ -27,21 +27,21 @@ class StatusChip extends StatelessWidget {
     this.onTap,
   });
 
-  /// Factory constructors for common federation statuses
-  factory StatusChip.success({required String label, IconData? icon, VoidCallback? onTap}) =>
-      StatusChip(label: label, type: StatusType.success, icon: icon, onTap: onTap);
+  /// Const constructors for common federation statuses
+  const StatusChip.success({super.key, required this.label, this.icon, this.onTap})
+      : type = StatusType.success;
 
-  factory StatusChip.warning({required String label, IconData? icon, VoidCallback? onTap}) =>
-      StatusChip(label: label, type: StatusType.warning, icon: icon, onTap: onTap);
+  const StatusChip.warning({super.key, required this.label, this.icon, this.onTap})
+      : type = StatusType.warning;
 
-  factory StatusChip.error({required String label, IconData? icon, VoidCallback? onTap}) =>
-      StatusChip(label: label, type: StatusType.error, icon: icon, onTap: onTap);
+  const StatusChip.error({super.key, required this.label, this.icon, this.onTap})
+      : type = StatusType.error;
 
-  factory StatusChip.info({required String label, IconData? icon, VoidCallback? onTap}) =>
-      StatusChip(label: label, type: StatusType.info, icon: icon, onTap: onTap);
+  const StatusChip.info({super.key, required this.label, this.icon, this.onTap})
+      : type = StatusType.info;
 
-  factory StatusChip.neutral({required String label, IconData? icon, VoidCallback? onTap}) =>
-      StatusChip(label: label, type: StatusType.neutral, icon: icon, onTap: onTap);
+  const StatusChip.neutral({super.key, required this.label, this.icon, this.onTap})
+      : type = StatusType.neutral;
 
   Color _getForegroundColor() {
     switch (type) {
@@ -81,7 +81,7 @@ class StatusChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[
             Icon(icon, size: 12.0, color: fgColor),
