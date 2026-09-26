@@ -27,7 +27,7 @@ class RoleIntentScreen extends ConsumerStatefulWidget {
 }
 
 class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
-  String? _selected;
+  String? _selected = 'athlete';
   bool _isLoading = false;
 
   static const _intents = <_IntentOption>[
@@ -159,6 +159,35 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
           ),
         ),
         automaticallyImplyLeading: false,
+        actions: [
+          TextButton(
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              await ref.read(authProvider.notifier).skipOnboarding();
+            },
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Skip to Tour',
+                  style: TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    color: AppTheme.goldPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: AppTheme.goldPrimary,
+                ),
+                SizedBox(width: 8),
+              ],
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(

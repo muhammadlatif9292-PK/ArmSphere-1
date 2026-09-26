@@ -68,7 +68,9 @@ class StickyBottomActionBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Center(
+        child: Align(
+          alignment: Alignment.center,
+          heightFactor: 1.0,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Padding(
@@ -119,7 +121,7 @@ class StickyBottomActionBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: onPrimaryAction == null
                         ? AppTheme.elevatedSurface
-                        : AppTheme.primaryAccent,
+                        : AppTheme.goldPrimary,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                     border: onPrimaryAction == null
                         ? Border.all(color: AppTheme.border, width: 1.0)
@@ -127,7 +129,7 @@ class StickyBottomActionBar extends StatelessWidget {
                     boxShadow: onPrimaryAction != null
                         ? [
                             BoxShadow(
-                              color: AppTheme.primaryAccent.withValues(alpha: 0.3),
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -141,7 +143,7 @@ class StickyBottomActionBar extends StatelessWidget {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.2,
-                            color: AppTheme.textPrimary,
+                            color: Colors.black,
                           ),
                         )
                       : Row(
@@ -153,7 +155,7 @@ class StickyBottomActionBar extends StatelessWidget {
                                 primaryActionIcon,
                                 color: onPrimaryAction == null
                                     ? AppTheme.textMuted
-                                    : AppTheme.textPrimary,
+                                    : Colors.black,
                                 size: 18,
                               ),
                               const SizedBox(width: 8),
@@ -166,7 +168,7 @@ class StickyBottomActionBar extends StatelessWidget {
                                 fontSize: 14,
                                 color: onPrimaryAction == null
                                     ? AppTheme.textMuted
-                                    : AppTheme.textPrimary,
+                                    : Colors.black,
                                 letterSpacing: 0.4,
                               ),
                             ),

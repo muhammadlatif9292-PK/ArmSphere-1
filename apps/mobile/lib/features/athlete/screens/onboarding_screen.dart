@@ -191,6 +191,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ),
         automaticallyImplyLeading: false,
+        actions: [
+          TextButton(
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              await ref.read(authProvider.notifier).skipOnboarding();
+            },
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Skip to Tour',
+                  style: TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    color: AppTheme.goldPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: AppTheme.goldPrimary,
+                ),
+                SizedBox(width: 8),
+              ],
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
