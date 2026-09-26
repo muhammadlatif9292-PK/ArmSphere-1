@@ -154,7 +154,7 @@ Screens are categorized into 8 purpose-driven modes:
 ---
 
 ## 15. 66-Screen Mapping
-Every production screen in `docs/design/49_SCREEN_COMPOSITION_LANGUAGE.md` is mapped with:
+Every production screen in `docs/design/58_SCREEN_COMPOSITION_LANGUAGE.md` is mapped with:
 `Screen ID`, `Screen Name`, `Route`, `Experience Mode`, `Primary Story`, `Primary Focus`, `Secondary Content`, `Action Zone`, `Media Treatment`, `Surface Treatment`, `Motion Treatment`, and `Special State`.
 
 ---
@@ -168,9 +168,8 @@ Every production screen in `docs/design/49_SCREEN_COMPOSITION_LANGUAGE.md` is ma
 ---
 
 ## 17. Research Brief
-Canonical Deep Research Brief completed and mirrored at:
-- `docs/design/52_STAGE_4_DEEP_RESEARCH_BRIEF.md`
-- `docs/design/STAGE_4_DEEP_RESEARCH_BRIEF.md`
+Canonical Deep Research Brief completed at:
+- `docs/design/61_STAGE_4_DEEP_RESEARCH_BRIEF.md`
 
 ---
 

@@ -14,7 +14,7 @@
 
 ---
 
-## 1. Canonical Authority Directory (46 Documents)
+## 1. Canonical Authority Directory (64 Documents)
 
 | Range | Core Focus | Authoritative Specifications |
 | :--- | :--- | :--- |
@@ -24,7 +24,9 @@
 | **21–29** | **Specs, Quality & Handoff**| `21_USER_JOURNEY_MAP.md`, `22_SCREEN_BY_SCREEN_SPEC.md`, `23_COMPONENT_USAGE_RULES.md`, `24_ANTI_SLOP_RULES.md`, `25_DESIGN_DECISION_REGISTER.md`, `26_OPEN_QUESTIONS.md`, `27_UI_UX_IMPLEMENTATION_BACKLOG.md`, `28_DESIGN_QA_CHECKLIST.md`, `29_FINAL_DESIGN_HANDOFF.md` |
 | **30–35** | **Experience & Art Direction**| `30_PREMIUM_EXPERIENCE_PATTERN_LIBRARY.md`, `31_ACTION_CHOREOGRAPHY.md`, `32_HAPTIC_AND_AUDIO_UX.md`, `33_UX_COPY_SYSTEM.md`, `34_PERSONALIZATION_AND_CONTEXT.md`, `35_MEDIA_ART_DIRECTION.md` |
 | **36–44** | **Resilience, QA, Governance & Closure**| `36_ERROR_RECOVERY_UX.md`, `37_VISUAL_QA_PROTOCOL.md`, `38_PREMIUM_MOMENT_CATALOG.md`, `39_DESIGN_DEBT_MAP.md`, `40_ASSET_PRODUCTION_PIPELINE.md`, `41_DESIGN_RECONCILIATION.md`, `42_MASTER_EXPERIENCE_MAP.md`, `43_DESIGN_GOVERNANCE.md`, `44_DESIGN_CLOSURE_VERIFICATION.md` |
-| **45–53** | **Stage 4 Visual Architecture & North Star**| `45_VISUAL_REFERENCE_DECONSTRUCTION.md`, `46_ARMSPHERE_VISUAL_DNA.md`, `47_VISUAL_TOKEN_REFINEMENT.md`, `48_SURFACE_AND_DEPTH_ARCHITECTURE.md`, `49_SCREEN_COMPOSITION_LANGUAGE.md`, `50_PREMIUM_MOTION_LANGUAGE.md`, `51_PREMIUM_CANARY_SCREEN_PLAN.md`, `52_STAGE_4_DEEP_RESEARCH_BRIEF.md`, `53_STAGE_4_FINAL_VISUAL_HANDOFF.md` |
+| **45–53** | **Stage 3 Master Media & Motion Architecture**| `45_PREMIUM_LAYER_AUDIT.md`, `46_MASTER_MEDIA_ASSET_MAP.md`, `47_FLOW_IMAGE_PROMPT_PACK.md`, `48_FLOW_VIDEO_SHOTLIST.md`, `49_PREMIUM_MOTION_ENGAGEMENT_REFINEMENT.md`, `50_MEDIA_INTEGRATION_SPEC.md`, `51_PREMIUM_PRODUCTION_TIMELINE.md`, `52_PREMIUM_VISUAL_QA.md`, `53_PREMIUM_FINAL_HANDOFF.md` |
+| **54–62** | **Stage 4 Visual Architecture & North Star**| `54_VISUAL_REFERENCE_DECONSTRUCTION.md`, `55_ARMSPHERE_VISUAL_DNA.md`, `56_VISUAL_TOKEN_REFINEMENT.md`, `57_SURFACE_AND_DEPTH_ARCHITECTURE.md`, `58_SCREEN_COMPOSITION_LANGUAGE.md`, `59_PREMIUM_MOTION_LANGUAGE.md`, `60_PREMIUM_CANARY_SCREEN_PLAN.md`, `61_STAGE_4_DEEP_RESEARCH_BRIEF.md`, `62_STAGE_4_FINAL_VISUAL_HANDOFF.md` |
+| **63** | **Stage Consolidation & Reconciliation**| `63_DESIGN_DOCUMENTATION_RECONCILIATION.md` |
 
 ---
 
@@ -139,7 +141,7 @@ static const double radiusSmall = 8.0, radiusMedium = 12.0, radiusLarge = 16.0, 
 ---
 
 ## 7. Verification Proof & Handoff Seal
-This document synthesizes Stage 1, Stage 2, Stage 3, and Stage 4 architectural outputs into a single permanent, non-contradictory authority file. All 12 priority implementation slices across Phase 1, Phase 2, and Phase 3 are verified. 
+This document synthesizes Stage 1, Stage 2, Stage 3, and Stage 4 architectural outputs into a single permanent, non-contradictory authority file. All 12 priority implementation slices across Phase 1, Phase 2, and Phase 3 are verified in code. 
 
-**Stage 4 (Visual North Star Deconstruction & Premium Design Language Architecture)** is 100% complete, fully audited across all 66 production screens and 10 canary blueprints, grounded in documents `45` through `53`, and locked into the repository.
+**Stage 4 (Visual North Star Deconstruction & Premium Design Language Architecture)** is 100% complete and renumbered to canonical range `54` through `62`. **Governance Reconciliation (Doc `63`)** is approved, all numbering collisions are resolved, and the repository is sealed and cleared for **Phase 5: Gemini Deep Research**.
 
