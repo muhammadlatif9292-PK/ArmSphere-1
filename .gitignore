@@ -22,3 +22,5 @@ keystore.properties
 *.jks
 *.keystore
 release-builds/
+*.apk
+build-artifacts/
