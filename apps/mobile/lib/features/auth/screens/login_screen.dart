@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
@@ -166,38 +167,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Center(
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.sports_kabaddi,
-                      size: 64,
-                      color: AppTheme.primaryAccent,
+                    Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.cardSurface,
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                          width: 2,
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppTheme.goldGlow,
+                            blurRadius: 28,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.sports_kabaddi,
+                          size: 38,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    const Text(
                       'ArmSphere',
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        fontFamily: AppTheme.fontDisplay,
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
                         fontWeight: FontWeight.w800,
+                        fontSize: 30,
                         letterSpacing: -1.0,
-                        color: AppTheme.primaryAccent,
+                        color: AppTheme.goldPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    const Text(
                       'Sign in to your competitive account',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontFamily: AppTheme.fontBody,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13.5,
                         color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
 
               Form(
                 key: _formKey,
                 child: ElevatedActionCard(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(22.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -208,7 +232,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         textInputAction: TextInputAction.next,
                         decoration: const InputDecoration(
                           labelText: 'Email Address',
-                          prefixIcon: Icon(Icons.email_outlined),
+                          prefixIcon: Icon(Icons.email_outlined, color: AppTheme.goldPrimary),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -230,10 +254,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onFieldSubmitted: (_) => _submit(),
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
+                          prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.goldPrimary),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              color: AppTheme.textMuted,
                             ),
                             onPressed: () {
                               setState(() {
@@ -256,37 +281,72 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => context.push('/forgot-password'),
-                          child: const Text('Forgot password?'),
+                          child: const Text(
+                            'Forgot password?',
+                            style: TextStyle(
+                              color: AppTheme.goldPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
 
                       // Submit Button
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _submit,
+                      FilledButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                HapticFeedback.lightImpact();
+                                _submit();
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.goldPrimary,
+                          foregroundColor: Colors.black,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         child: _isLoading
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppTheme.textPrimary,
+                                  strokeWidth: 2.2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                                 ),
                               )
-                            : const Text('Sign In'),
+                            : const Text('Sign In to Account'),
                       ),
 
                       if (_canUseBiometrics) ...[
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
-                          onPressed: _isLoading ? null : _unlockWithBiometrics,
-                          icon: const Icon(Icons.fingerprint, size: 20),
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  HapticFeedback.lightImpact();
+                                  _unlockWithBiometrics();
+                                },
+                          icon: const Icon(Icons.fingerprint, size: 20, color: AppTheme.goldPrimary),
                           label: const Text('Sign in with Biometrics'),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                            foregroundColor: AppTheme.textPrimary,
+                            side: const BorderSide(color: AppTheme.border, width: 1.2),
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            textStyle: const TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

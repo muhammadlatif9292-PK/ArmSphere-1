@@ -116,7 +116,12 @@ static const double radiusSmall = 8.0, radiusMedium = 12.0, radiusLarge = 16.0, 
 5. **Slice 5 (P0)**: Tournament Detail hero scrim gradient, dynamic 1s countdown badge, StatusChip, rulebook/timeline widgets & sticky registration CTA (`features/tournament/screens/tournament_screens.dart`) — **[COMPLETED & VERIFIED]**
 
 ### Phase 2: Structural Consistency & Identity (P1) — [100% COMPLETED]
-6. **Slice 6 (P1)**: 3-Step Animated Onboarding Wizard Migration (`features/athlete/screens/onboarding_screen.dart`) — **[COMPLETED & VERIFIED]**
+6. **Slice 6 (P1)**: 3-Step Animated Onboarding Wizard & Complete Entry Journey Migration:
+   - `splash_screen.dart`: Screen Spec 01 compliant (void canvas #070A11, gold-embossed insignia badge, Space Grotesk wordmark, gold loader, Level 4 cinematic easing).
+   - `welcome_screen.dart`: Screen Spec 02 compliant (`ElevatedActionCard` pillars, zero nested glassmorphism, Space Grotesk headings, high-contrast gold primary CTA, zero 999dp pill buttons).
+   - `role_intent_screen.dart`: Canonical role picker (`StickyBottomActionBar`, `ElevatedActionCard` options, 48dp+ tap targets, Space Grotesk typography, gold-styled federation verification dialog).
+   - `onboarding_screen.dart`: 3-step directional `PageView` wizard (280ms cubic slide), `StepHeader`, `StickyBottomActionBar`, interactive gold sliders with haptic ticks, and Space Grotesk numeric readouts.
+   - `login_screen.dart` & `register_screen.dart`: Gold primary insignia, Space Grotesk brand typography, high-contrast gold primary submit buttons with tactile haptics, and gold prefix icons. — **[COMPLETED & VERIFIED]**
 7. **Slice 7 (P1)**: Dual-Role Persona Switcher in athlete profile header (`features/athlete/screens/athlete_screens.dart`) — **[COMPLETED & VERIFIED]**
 8. **Slice 8 (P1)**: Interactive Bracket Viewer canvas virtualization, RepaintBoundary isolation & active table glow (`features/tournament/widgets/bracket_tree_widget.dart`, `compact_bracket_match_card.dart`, `full_interactive_bracket_modal.dart`) — **[COMPLETED & VERIFIED]**
 9. **Slice 9 (P1)**: Standardized Shimmer Skeleton Loader & Empty States across all surfaces (`core/widgets/skeleton_placeholder.dart`, `core/widgets/app_empty_state.dart`) — **[COMPLETED & VERIFIED]**
@@ -133,4 +138,4 @@ static const double radiusSmall = 8.0, radiusMedium = 12.0, radiusLarge = 16.0, 
 ---
 
 ## 7. Verification Proof & Handoff Seal
-This document synthesizes both Stage 1 and Stage 2 architectural outputs into a single permanent, non-contradictory authority file. All 12 priority implementation slices across Phase 1, Phase 2, and Phase 3 are 100% completed, rigorously verified, and grounded in the 46 canonical design documents in `docs/design/`.
+This document synthesizes both Stage 1 and Stage 2 architectural outputs into a single permanent, non-contradictory authority file. All 12 priority implementation slices across Phase 1, Phase 2, and Phase 3—including the complete end-to-end Onboarding and Authentication entry journey—are 100% completed, rigorously verified, and grounded in the 46 canonical design documents in `docs/design/`.

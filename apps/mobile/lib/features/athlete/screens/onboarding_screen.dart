@@ -244,9 +244,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 onPressed: _isLoading ? null : _prev,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.textPrimary,
-                  side: const BorderSide(color: AppTheme.borderSubtle),
+                  side: const BorderSide(color: AppTheme.border, width: 1.2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  ),
+                  textStyle: const TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 child: const Text('Back'),

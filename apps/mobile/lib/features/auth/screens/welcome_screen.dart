@@ -1,35 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 
-/// First-open landing experience for unauthenticated visitors.
+/// Screen Spec 02: WelcomeScreen
 ///
-/// Introduces the ArmSphere platform and routes into authentication.
-/// The router sends every signed-out user here, so it must work as a
-/// standalone entry point (no back button expectations).
+/// First-open institutional landing experience for unauthenticated visitors.
+/// Grounded in:
+/// - docs/design/22_SCREEN_BY_SCREEN_SPEC.md (Screen Spec 02)
+/// - docs/design/24_ANTI_SLOP_RULES.md (No nested glassmorphism, no 999dp pill buttons)
+/// - docs/design/08_TYPOGRAPHY_SYSTEM.md (Space Grotesk + Inter)
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      body: DecoratedBox(
+      backgroundColor: AppTheme.voidBackground,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment(-0.8, -0.9),
             radius: 1.4,
             colors: [
-              Color(0x2ED4AF37),
-              AppTheme.background,
+              Color(0x22D4AF37), // Subtle 13% ambient gold halo
+              AppTheme.voidBackground,
             ],
           ),
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
@@ -39,11 +44,15 @@ class WelcomeScreen extends StatelessWidget {
                     // ── Brand identity ────────────────────────────────
                     Center(
                       child: Container(
-                        padding: const EdgeInsets.all(20),
+                        width: 88,
+                        height: 88,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppTheme.glassSurface,
-                          border: Border.all(color: AppTheme.glassBorder),
+                          color: AppTheme.cardSurface,
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                            width: 2,
+                          ),
                           boxShadow: const [
                             BoxShadow(
                               color: AppTheme.goldGlow,
@@ -52,67 +61,91 @@ class WelcomeScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.sports_kabaddi,
-                          size: 56,
-                          color: AppTheme.goldPrimary,
+                        child: const Center(
+                          child: Icon(
+                            Icons.sports_kabaddi,
+                            size: 46,
+                            color: AppTheme.goldPrimary,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Text(
+
+                    const Text(
                       'ArmSphere',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.displayLarge?.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -1.5,
+                        fontSize: 36,
+                        letterSpacing: -1.2,
                         color: AppTheme.goldPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
+
+                    const Text(
                       'Armwrestling, organized. Compete in sanctioned tournaments,\nclimb national rankings, and prove your strength.',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13.5,
                         color: AppTheme.textSecondary,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 32),
 
-                    // ── What you get ──────────────────────────────────
-                    GlassCard(
+                    // ── Platform Pillars Card (ElevatedActionCard) ─────
+                    ElevatedActionCard(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Inside ArmSphere',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: AppTheme.goldPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 4,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.goldPrimary,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'INSIDE ARMSPHERE',
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.0,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 18),
                           const _BenefitRow(
                             icon: Icons.emoji_events_outlined,
-                            title: 'Compete in tournaments',
-                            subtitle: 'Register for events, brackets and matches near you.',
+                            title: 'Compete in Tournaments',
+                            subtitle: 'Register for sanctioned brackets, weigh-ins, and official tables.',
                           ),
                           const _BenefitRow(
                             icon: Icons.leaderboard_outlined,
-                            title: 'National rankings',
-                            subtitle: 'Earn points every match and climb your weight class.',
+                            title: 'National Rankings',
+                            subtitle: 'Earn points every match and climb your provincial weight class.',
                           ),
                           const _BenefitRow(
                             icon: Icons.travel_explore_outlined,
-                            title: 'Discover athletes',
-                            subtitle: 'Follow rivals and training partners across Pakistan.',
+                            title: 'Discover Athletes',
+                            subtitle: 'Follow rivals, clubs, certified referees, and training partners.',
                           ),
                           const _BenefitRow(
                             icon: Icons.groups_3_outlined,
-                            title: 'Community & clubs',
-                            subtitle: 'Share PRs, join teams and follow live results.',
+                            title: 'Community & Feed',
+                            subtitle: 'Share PRs, join teams, and track live tournament results.',
                           ),
                         ],
                       ),
@@ -121,44 +154,58 @@ class WelcomeScreen extends StatelessWidget {
 
                     // ── Primary actions ───────────────────────────────
                     FilledButton(
-                      onPressed: () => context.go('/register'),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.go('/register');
+                      },
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.goldPrimary,
                         foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size(double.infinity, 52),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                         ),
                         textStyle: const TextStyle(
-                          fontSize: 16,
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
                         ),
                       ),
                       child: const Text('Create your account'),
                     ),
                     const SizedBox(height: 12),
+
                     OutlinedButton(
-                      onPressed: () => context.go('/login'),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.go('/login');
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.textPrimary,
-                        side: const BorderSide(color: AppTheme.glassBorder, width: 1.2),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: AppTheme.border, width: 1.2),
+                        minimumSize: const Size(double.infinity, 52),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                         ),
                         textStyle: const TextStyle(
-                          fontSize: 16,
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       child: const Text('I already have an account'),
                     ),
                     const SizedBox(height: 24),
-                    Text(
+
+                    const Text(
                       'By continuing you agree to the ArmSphere Terms of Use\nand Athlete Code of Conduct.',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
                         color: AppTheme.textMuted,
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -194,19 +241,35 @@ class _BenefitRow extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.goldGlow,
-              border: Border.all(color: AppTheme.glassBorder),
+              color: AppTheme.elevatedSurface,
+              border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.35)),
             ),
-            child: Icon(icon, size: 18, color: AppTheme.goldLight),
+            child: Icon(icon, size: 18, color: AppTheme.goldPrimary),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
               ],
             ),
           ),
