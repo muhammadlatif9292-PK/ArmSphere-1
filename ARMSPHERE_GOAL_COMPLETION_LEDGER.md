@@ -316,14 +316,15 @@ The following table details the integrity of the full backend processing chain:
 
 The forensic audit uncovered 5 critical technical and architectural defects that must be resolved before proceeding to visual refinement:
 
-### Defect 1: The Physical Media Void (INFRASTRUCTURE COMPLETE)
-- **Status**: **Phase 1A Infrastructure Complete**; **Phase 1B Asset Generation NOT STARTED**.
+### Defect 1: The Physical Media Void (PHASE 1A CI-VERIFIED)
+- **Status**: **Phase 1A Infrastructure CI-VERIFIED** (GitHub Actions Run `36325133020`, Commit `886a806`); **Phase 1B Asset Generation NOT STARTED**.
 - **Location**: `apps/mobile/assets/images/`
 - **Current State**:
-  - Directory structure (`brand/`, `heroes/`, `textures/`, `badges/`, `defaults/`) created and registered in `pubspec.yaml`.
+  - Directory structure (`brand/`, `heroes/`, `textures/`, `badges/`, `defaults/`) created, git-tracked with `.gitkeep`, and registered in `pubspec.yaml`.
   - Authoritative compile-safe registry created in `apps/mobile/lib/core/constants/asset_paths.dart`.
-  - 3-tier fallback component created in `apps/mobile/lib/core/widgets/armsphere_image.dart` with bounded decode caps and accessibility semantics.
-  - Comprehensive unit and widget tests added in `apps/mobile/test/core/`.
+  - 3-tier fallback component created in `apps/mobile/lib/core/widgets/armsphere_image.dart` with bounded decode caps, monochrome monogram support, and accessibility semantics.
+  - Comprehensive unit and widget tests added in `apps/mobile/test/core/` (100% pass across all 74 mobile tests in CI).
+  - Production release APK & AppBundle AAB compilation with R8, ProGuard keep rules, and release signing verified in CI.
   - Actual photographic WebP media files on disk: 0 files (awaits approved generation in Phase 1B).
 
 ### Defect 2: Android Launcher Icon CI Workaround (RESOLVED)
@@ -367,12 +368,12 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │ PHASE 1A: PHYSICAL ASSET & BRAND INFRASTRUCTURE        │
-│ [COMPLETED & VERIFIED]                                 │
+│ [CI-VERIFIED] (Run 36325133020, Commit 886a806)        │
 │ • Created apps/mobile/assets/images/{5 directories}    │
 │ • Registered image directories in pubspec.yaml         │
 │ • Authored apps/mobile/lib/core/constants/asset_paths  │
 │ • Authored apps/mobile/lib/core/widgets/armsphere_image│
-│ • Authored unit and widget test suites in test/core/   │
+│ • 100% CI pass: Analyzer, Unit Tests & Release Build   │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼
