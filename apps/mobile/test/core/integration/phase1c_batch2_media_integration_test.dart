@@ -9,7 +9,6 @@ import 'package:mobile/features/athlete/screens/rankings_screen.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/providers/athlete_provider.dart';
 import 'package:mobile/core/providers/rankings_provider.dart';
-import 'package:mobile/core/providers/social_provider.dart';
 
 class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   _FakeAuthNotifier(super.state);
@@ -32,14 +31,6 @@ class _FakeRankingsNotifier extends RankingsNotifier {
 
   @override
   Future<List<Map<String, dynamic>>> build() async => _rankings;
-}
-
-class _FakeFollowStatusNotifier extends FollowStatusNotifier {
-  final bool _following;
-  _FakeFollowStatusNotifier([this._following = false]);
-
-  @override
-  Future<bool> build(String arg) async => _following;
 }
 
 void main() {
@@ -113,7 +104,7 @@ void main() {
         ProviderScope(
           overrides: [
             athleteProfileProvider.overrideWith(() => _FakeAthleteProfileNotifier({
-                  'id': 'viewer_1',
+                  'id': athleteId,
                 })),
             publicAthleteProfileProvider(athleteId).overrideWith((ref) async => {
                   'id': athleteId,
@@ -128,7 +119,6 @@ void main() {
                   'club': {'name': 'Lahore Armwrestling Club'},
                   'biography': 'Top-ranked middleweight puller in Punjab.',
                 }),
-            followStatusProvider(athleteId).overrideWith(() => _FakeFollowStatusNotifier(false)),
           ],
           child: const MaterialApp(
             home: PublicAthleteProfileScreen(athleteId: athleteId),
