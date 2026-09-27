@@ -29,6 +29,7 @@ void main() {
             body: ArmSphereImage.avatar(
               initial: 'Tariq',
               size: 64,
+              fallbackAsset: null,
             ),
           ),
         ),
@@ -73,7 +74,13 @@ void main() {
         ),
       );
 
-      expect(find.byType(ExcludeSemantics), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ArmSphereImage),
+          matching: find.byType(ExcludeSemantics),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('applies borderRadius with ClipRRect', (tester) async {
