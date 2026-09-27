@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/armsphere_image.dart';
 
 /// Screen Spec 01: SplashScreen
 ///
@@ -105,11 +107,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                             ),
                           ],
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.sports_kabaddi,
-                            size: 48,
-                            color: AppTheme.goldPrimary,
+                        child: ClipOval(
+                          child: ArmSphereImage(
+                            assetPath: ArmSphereAssets.iconGold,
+                            width: 96,
+                            height: 96,
+                            fit: BoxFit.cover,
+                            semanticLabel: 'ArmSphere Official Federation Emblem',
+                            fallbackIcon: Icons.sports_kabaddi,
                           ),
                         ),
                       ),

@@ -364,7 +364,12 @@ The forensic audit uncovered 5 critical technical and architectural defects that
     - `badges/m4_ref_reg.webp` (6.42 KB / budget 28 KB) — GENERATED (gunmetal)
   - **Total bundle footprint**: 573 KB for all 18 images (< 0.6 MB of 45 MB total app target).
   - **CI Verification**: 100% PASS across Flutter analyze, unit/widget/routing/asset tests, web preview build, and Android release APK/AAB packaging.
-  - **Phase 1C (screen integration) awaiting explicit authorization.**
+  - **Phase 1C Batch 1 (Screen Media Integration)**: **IMPLEMENTED** (Awaiting CI verification).
+    - `SplashScreen` (`apps/mobile/lib/features/auth/screens/splash_screen.dart`): Official `ArmSphereAssets.iconGold` emblem integrated via `ArmSphereImage` replacing generic `Icons.sports_kabaddi`.
+    - `WelcomeScreen` (`apps/mobile/lib/features/auth/screens/welcome_screen.dart`): Environmental `ArmSphereAssets.heroGrip` anchor with downward void shader mask + `ArmSphereAssets.iconGold` official emblem.
+    - `AthleteDashboardScreen` (`apps/mobile/lib/features/athlete/screens/athlete_screens.dart`): Bounded `ArmSphereAssets.heroArena` Sanctioned Arena Environmental Anchor card + `ArmSphereImage.avatar` in Central Command Header.
+    - Focused test suite: `apps/mobile/test/core/integration/phase1c_media_integration_test.dart`.
+    - Quality & Review Status: **IMPLEMENTED | AWAITING CI VERIFICATION | NEEDS PHYSICAL VISUAL REVIEW**.
 
 
 ### Defect 2: Android Launcher Icon CI Workaround (RESOLVED)
@@ -427,6 +432,17 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
 │ • 8 division + referee badges (all within budget)      │
 │ • 18 total WebP files, 573 KB total bundle             │
 │ • 100% CI pass: Analyzer, Unit Tests & Release Build   │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 1C: CONTROLLED SCREEN MEDIA INTEGRATION (BATCH 1)│
+│ [IMPLEMENTED — Awaiting CI Verification]               │
+│ • Integrated Splash: ArmSphereAssets.iconGold          │
+│ • Integrated Welcome: heroGrip + iconGold emblem       │
+│ • Integrated Authenticated Home: heroArena + avatar    │
+│ • Added focused Phase 1C integration widget tests      │
+│ • Status: IMPLEMENTED | NEEDS PHYSICAL VISUAL REVIEW   │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼

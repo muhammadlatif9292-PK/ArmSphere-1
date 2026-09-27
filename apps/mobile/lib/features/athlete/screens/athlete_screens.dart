@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -68,7 +70,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Central Command Header with Live Sync Indicator
+              // 1. Central Command Header with Live Sync Indicator & Athlete Identity
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -121,9 +123,151 @@ class AthleteDashboardScreen extends ConsumerWidget {
                           context.push('/notifications');
                         },
                       ),
+                      const SizedBox(width: 4),
+                      ArmSphereImage.avatar(
+                        imageUrl: profile['avatarUrl']?.toString(),
+                        initial: displayName,
+                        size: 34,
+                        fallbackAsset: ArmSphereAssets.defaultAvatar,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          context.push('/athlete/profile');
+                        },
+                      ),
                     ],
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Sanctioned Arena Environmental Anchor (M1-HERO-ARENA)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                child: Container(
+                  height: 110,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(
+                      color: AppTheme.borderSubtle,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Arena Background
+                      Positioned.fill(
+                        child: ArmSphereImage(
+                          assetPath: ArmSphereAssets.heroArena,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 110,
+                          excludeFromSemantics: true,
+                        ),
+                      ),
+                      // Text-protection gradient scrim
+                      Positioned.fill(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Color(0xF2070A11), // 95% obsidian under text
+                                Color(0xAA070A11),
+                                Color(0x33070A11),
+                              ],
+                              stops: [0.0, 0.6, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Content overlay
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppTheme.goldPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Text(
+                                          'SANCTIONED ARENA RADAR',
+                                          style: TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            letterSpacing: 0.8,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 9.5,
+                                            color: AppTheme.goldPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Championship Arena Active',
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.textPrimary,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Official tournament brackets & table calls',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedActionCard(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  context.push('/tournaments');
+                                },
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Explore',
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                        color: AppTheme.goldPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(Icons.arrow_forward_ios, size: 10, color: AppTheme.goldPrimary),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
 

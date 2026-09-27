@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 
@@ -104,6 +106,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             ),
           ),
 
+          // Environmental Hero Visual Anchor (M1-HERO-GRIP) with Downward Void Scrim
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 280,
+            child: ShaderMask(
+              shaderCallback: (rect) {
+                return const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x8CFFFFFF), // ~55% opacity at top so void breathes
+                    Color(0x33FFFFFF),
+                    Colors.transparent, // Dissolves seamlessly into void canvas
+                  ],
+                  stops: [0.0, 0.55, 1.0],
+                ).createShader(rect);
+              },
+              blendMode: BlendMode.dstIn,
+              child: const ArmSphereImage(
+                assetPath: ArmSphereAssets.heroGrip,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 280,
+                excludeFromSemantics: true,
+              ),
+            ),
+          ),
+
           // Ambient Gold Horizon Scrim
           Positioned.fill(
             child: Container(
@@ -130,7 +162,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Hero Layer: M1-01 Master Still Emblem (0–300ms fade-in) ──
+                      // ── Hero Layer: M0 Icon Gold Master Emblem (0–300ms fade-in) ──
                       FadeTransition(
                         opacity: _heroFadeAnimation,
                         child: Column(
@@ -158,11 +190,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                   ),
                                 ],
                               ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.sports_kabaddi,
-                                  size: 52,
-                                  color: AppTheme.goldPrimary,
+                              child: ClipOval(
+                                child: ArmSphereImage(
+                                  assetPath: ArmSphereAssets.iconGold,
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.cover,
+                                  semanticLabel: 'ArmSphere Official Federation Emblem',
+                                  fallbackIcon: Icons.sports_kabaddi,
                                 ),
                               ),
                             ),
