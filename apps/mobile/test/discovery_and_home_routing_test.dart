@@ -74,6 +74,8 @@ void main() {
       expect(find.byType(AthleteDashboardScreen), findsOneWidget);
       expect(find.byType(RefereeDashboardScreen), findsNothing);
       expect(find.byType(GovernanceDashboardScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
     testWidgets('Renders RefereeDashboardScreen for REFEREE role', (WidgetTester tester) async {
@@ -99,6 +101,8 @@ void main() {
       expect(find.byType(RefereeDashboardScreen), findsOneWidget);
       expect(find.byType(AthleteDashboardScreen), findsNothing);
       expect(find.byType(GovernanceDashboardScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
     testWidgets('Renders GovernanceDashboardScreen for TOURNAMENT_OPERATOR role', (WidgetTester tester) async {
@@ -123,6 +127,8 @@ void main() {
       expect(find.byType(GovernanceDashboardScreen), findsOneWidget);
       expect(find.byType(AthleteDashboardScreen), findsNothing);
       expect(find.byType(RefereeDashboardScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
     testWidgets('Renders AthleteDashboardScreen by default when role is absent', (WidgetTester tester) async {
@@ -151,13 +157,15 @@ void main() {
 
       await tester.pump();
       expect(find.byType(AthleteDashboardScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 
   group('Discover Screen Architecture Verification', () {
-    test('DiscoverScreen is a valid ConsumerWidget', () {
+    test('DiscoverScreen is a valid ConsumerStatefulWidget', () {
       const screen = DiscoverScreen();
-      expect(screen, isA<ConsumerWidget>());
+      expect(screen, isA<ConsumerStatefulWidget>());
     });
   });
 }
