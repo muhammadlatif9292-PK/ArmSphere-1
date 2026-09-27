@@ -162,12 +162,31 @@ The following production screens present hardcoded data or simulated logic rathe
   - `M6_chalk_explosion_burst.webp` (Pin impact celebration)
   - `M7_community_sparring_poster.webp` (Club sparring banner)
 - **Actual Reality on Disk**:
-  - `apps/mobile/assets/images/` structure created: `brand/`, `heroes/`, `textures/`, `badges/`, `defaults/` (**INFRASTRUCTURE COMPLETE**).
-  - `apps/mobile/pubspec.yaml` updated: all 5 asset directories formally registered.
-  - `apps/mobile/lib/core/constants/asset_paths.dart` (**CREATED**): compile-safe `ArmSphereAssets` registry covering M0–M7.
-  - `apps/mobile/lib/core/widgets/armsphere_image.dart` (**CREATED**): 3-tier fallback ladder, bounded memory decoders, semantics, offline-safe.
-  - `apps/mobile/test/core/constants/asset_paths_test.dart` & `apps/mobile/test/core/widgets/armsphere_image_test.dart` (**CREATED**).
-  - Photographic WebP asset files on disk: **0 files** (**ACTUAL MEDIA ASSETS GENERATED: NOT STARTED — Phase 1B Scope**).
+  - `apps/mobile/assets/images/` structure: `brand/`, `heroes/`, `textures/`, `badges/`, `defaults/` (**INFRASTRUCTURE & ASSETS COMPLETE**).
+  - `apps/mobile/pubspec.yaml`: all 5 asset directories formally registered.
+  - `apps/mobile/lib/core/constants/asset_paths.dart`: compile-safe `ArmSphereAssets` registry covering M0–M7.
+  - `apps/mobile/lib/core/widgets/armsphere_image.dart`: 3-tier fallback ladder, bounded memory decoders, semantics, offline-safe.
+  - `apps/mobile/test/core/constants/asset_paths_test.dart` & `apps/mobile/test/core/widgets/armsphere_image_test.dart`: comprehensive unit and widget tests covering constants, fallback ladder, and physical asset existence on disk.
+  - Photographic WebP asset files on disk: **18 production master files** (**PHASE 1B ASSET GENERATION COMPLETE**):
+    - `brand/m0_logo_full.webp` (960x360, 27.50 KB, budget: 45 KB)
+    - `brand/m0_icon_gold.webp` (512x512, 30.85 KB, budget: 65 KB)
+    - `brand/m0_seal_fed.webp` (384x384, 38.42 KB, budget: 50 KB)
+    - `heroes/m1_hero_arena.webp` (1236x695, 49.37 KB, budget: 160 KB)
+    - `heroes/m1_hero_grip.webp` (1236x695, 127.84 KB, budget: 175 KB)
+    - `textures/m1_tex_knurl.webp` (512x512, 44.53 KB, budget: 45 KB)
+    - `textures/m1_tex_chalk.webp` (1080x1920, 90.07 KB, budget: 180 KB)
+    - `defaults/avatar_neutral_dark.webp` (256x256, 8.63 KB, budget: 35 KB)
+    - `defaults/tournament_poster.webp` (720x405, 36.50 KB, budget: 120 KB)
+    - `defaults/club_banner.webp` (720x405, 44.35 KB, budget: 120 KB)
+    - `badges/m4_bdg_heavy.webp` (256x256, 6.97 KB, budget: 28 KB)
+    - `badges/m4_bdg_middle.webp` (256x256, 7.80 KB, budget: 28 KB)
+    - `badges/m4_bdg_light.webp` (256x256, 7.62 KB, budget: 28 KB)
+    - `badges/m4_bdg_junior.webp` (256x256, 8.17 KB, budget: 28 KB)
+    - `badges/m4_bdg_masters.webp` (256x256, 8.94 KB, budget: 28 KB)
+    - `badges/m4_ref_master.webp` (256x256, 8.35 KB, budget: 32 KB)
+    - `badges/m4_ref_nat.webp` (256x256, 7.27 KB, budget: 30 KB)
+    - `badges/m4_ref_reg.webp` (256x256, 6.42 KB, budget: 28 KB)
+    - Total bundle footprint across all 18 images: **573 KB** (entire suite <0.6 MB, well under the 45 MB total app target).
   - `apps/mobile/assets/fonts/` contains `SpaceGrotesk-*.ttf` and `Inter-*.ttf` (Present and loaded).
   - `apps/mobile/assets/sounds/` contains `challenge_accepted.wav`, `match_won.mp3`, `pr_achieved.wav` (Present and declared in pubspec).
 
@@ -316,16 +335,37 @@ The following table details the integrity of the full backend processing chain:
 
 The forensic audit uncovered 5 critical technical and architectural defects that must be resolved before proceeding to visual refinement:
 
-### Defect 1: The Physical Media Void (PHASE 1A CI-VERIFIED)
-- **Status**: **Phase 1A Infrastructure CI-VERIFIED** (GitHub Actions Run `36325133020`, Commit `886a806`); **Phase 1B Asset Generation NOT STARTED**.
+### Defect 1: The Physical Media Void (PHASE 1B COMPLETE)
+- **Status**: **Phase 1A CI-VERIFIED** (Run `36325133020`, Commit `886a806`); **Phase 1B ASSET GENERATION COMPLETE** (18 production-master WebP files committed).
 - **Location**: `apps/mobile/assets/images/`
 - **Current State**:
-  - Directory structure (`brand/`, `heroes/`, `textures/`, `badges/`, `defaults/`) created, git-tracked with `.gitkeep`, and registered in `pubspec.yaml`.
-  - Authoritative compile-safe registry created in `apps/mobile/lib/core/constants/asset_paths.dart`.
-  - 3-tier fallback component created in `apps/mobile/lib/core/widgets/armsphere_image.dart` with bounded decode caps, monochrome monogram support, and accessibility semantics.
-  - Comprehensive unit and widget tests added in `apps/mobile/test/core/` (100% pass across all 74 mobile tests in CI).
-  - Production release APK & AppBundle AAB compilation with R8, ProGuard keep rules, and release signing verified in CI.
-  - Actual photographic WebP media files on disk: 0 files (awaits approved generation in Phase 1B).
+  - Directory structure (`brand/`, `heroes/`, `textures/`, `badges/`, `defaults/`) created, git-tracked, and registered in `pubspec.yaml`.
+  - Authoritative compile-safe registry: `apps/mobile/lib/core/constants/asset_paths.dart`.
+  - 3-tier fallback component: `apps/mobile/lib/core/widgets/armsphere_image.dart`.
+  - Physical asset existence test added to `apps/mobile/test/core/constants/asset_paths_test.dart`.
+  - **18 approved master WebP assets generated, optimized, and bundled** (all within byte budgets):
+    - `brand/m0_logo_full.webp` (27.50 KB / budget 45 KB) — SELECTED MASTER
+    - `brand/m0_icon_gold.webp` (30.85 KB / budget 65 KB) — SELECTED MASTER
+    - `brand/m0_seal_fed.webp` (38.42 KB / budget 50 KB) — SELECTED MASTER
+    - `heroes/m1_hero_arena.webp` (49.37 KB / budget 160 KB) — SELECTED MASTER
+    - `heroes/m1_hero_grip.webp` (127.84 KB / budget 175 KB) — SELECTED MASTER
+    - `textures/m1_tex_knurl.webp` (44.53 KB / budget 45 KB) — SELECTED MASTER
+    - `textures/m1_tex_chalk.webp` (90.07 KB / budget 180 KB) — SELECTED MASTER
+    - `defaults/avatar_neutral_dark.webp` (8.63 KB / budget 35 KB) — SELECTED MASTER
+    - `defaults/tournament_poster.webp` (36.50 KB / budget 120 KB) — SELECTED MASTER
+    - `defaults/club_banner.webp` (44.35 KB / budget 120 KB) — SELECTED MASTER
+    - `badges/m4_bdg_heavy.webp` (6.97 KB / budget 28 KB) — SELECTED MASTER
+    - `badges/m4_bdg_middle.webp` (7.80 KB / budget 28 KB) — GENERATED (steel-blue tint)
+    - `badges/m4_bdg_light.webp` (7.62 KB / budget 28 KB) — GENERATED (cyan-carbon tint)
+    - `badges/m4_bdg_junior.webp` (8.17 KB / budget 28 KB) — GENERATED (bronze tint)
+    - `badges/m4_bdg_masters.webp` (8.94 KB / budget 28 KB) — GENERATED (champagne-gold tint)
+    - `badges/m4_ref_master.webp` (8.35 KB / budget 32 KB) — GENERATED (gold+sapphire core)
+    - `badges/m4_ref_nat.webp` (7.27 KB / budget 30 KB) — GENERATED (sterling silver)
+    - `badges/m4_ref_reg.webp` (6.42 KB / budget 28 KB) — GENERATED (gunmetal)
+  - **Total bundle footprint**: 573 KB for all 18 images (< 0.6 MB of 45 MB total app target).
+  - **Pending CI verification**: CI must pass with real asset files replacing `.gitkeep` placeholders.
+  - **Phase 1C (screen integration) awaiting explicit authorization.**
+
 
 ### Defect 2: Android Launcher Icon CI Workaround (RESOLVED)
 - **Status**: **RESOLVED in Phase 0**
@@ -379,10 +419,13 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │ PHASE 1B: ASSET GENERATION & BRANDING ASSETS           │
-│ [NOT STARTED — Awaiting Authorization]                 │
-│ • Generate & compress M0-M7 WebP photographic assets   │
-│ • Place M0 brand, M1 hero, M4 badge & default assets   │
-│ • Verify asset decoding, byte budgets (<180KB), multi-x│
+│ [COMPLETE — Pending CI Verification]                   │
+│ • 3 M0 brand masters (logo, icon, seal)                │
+│ • 2 M1 hero masters (arena, grip)                      │
+│ • 2 M1 textures (knurl, chalk)                         │
+│ • 3 default fallback masters (avatar, tournament, club)│
+│ • 8 division + referee badges (all within budget)      │
+│ • 18 total WebP files, 573 KB total bundle             │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼

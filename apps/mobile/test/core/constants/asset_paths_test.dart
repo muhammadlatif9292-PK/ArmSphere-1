@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/constants/asset_paths.dart';
 
@@ -66,6 +68,37 @@ void main() {
 
       expect(ArmSphereAssets.soundPRAchieved, startsWith('assets/sounds/'));
       expect(ArmSphereAssets.soundPRAchieved, endsWith('.wav'));
+    });
+
+    test('All declared image assets physically exist on disk and are non-empty', () {
+      final allImages = [
+        ArmSphereAssets.logoFull,
+        ArmSphereAssets.iconGold,
+        ArmSphereAssets.sealFederation,
+        ArmSphereAssets.texKnurl,
+        ArmSphereAssets.texChalk,
+        ArmSphereAssets.heroArena,
+        ArmSphereAssets.heroGrip,
+        ArmSphereAssets.badgeHeavyweight,
+        ArmSphereAssets.badgeMiddleweight,
+        ArmSphereAssets.badgeLightweight,
+        ArmSphereAssets.badgeJunior,
+        ArmSphereAssets.badgeMasters,
+        ArmSphereAssets.refMaster,
+        ArmSphereAssets.refNational,
+        ArmSphereAssets.refRegional,
+        ArmSphereAssets.defaultAvatar,
+        ArmSphereAssets.defaultTournament,
+        ArmSphereAssets.defaultClub,
+      ];
+
+      for (final relativePath in allImages) {
+        final file = File(relativePath).existsSync()
+            ? File(relativePath)
+            : File('apps/mobile/$relativePath');
+        expect(file.existsSync(), isTrue, reason: 'Missing physical asset on disk: $relativePath');
+        expect(file.lengthSync(), greaterThan(0), reason: 'Asset file is empty: $relativePath');
+      }
     });
   });
 }
