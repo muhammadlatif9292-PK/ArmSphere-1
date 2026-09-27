@@ -335,14 +335,14 @@ The following table details the integrity of the full backend processing chain:
 
 The forensic audit uncovered 5 critical technical and architectural defects that must be resolved before proceeding to visual refinement:
 
-### Defect 1: The Physical Media Void (PHASE 1B COMPLETE)
-- **Status**: **Phase 1A CI-VERIFIED** (Run `36325133020`, Commit `886a806`); **Phase 1B ASSET GENERATION COMPLETE** (18 production-master WebP files committed).
+### Defect 1: The Physical Media Void (RESOLVED & CI-VERIFIED)
+- **Status**: **RESOLVED & CI-VERIFIED in Phase 1B** (GitHub Actions Runs `36333793035`, `36333792998`, `36333793070`, Commit `383a64c`).
 - **Location**: `apps/mobile/assets/images/`
 - **Current State**:
   - Directory structure (`brand/`, `heroes/`, `textures/`, `badges/`, `defaults/`) created, git-tracked, and registered in `pubspec.yaml`.
   - Authoritative compile-safe registry: `apps/mobile/lib/core/constants/asset_paths.dart`.
   - 3-tier fallback component: `apps/mobile/lib/core/widgets/armsphere_image.dart`.
-  - Physical asset existence test added to `apps/mobile/test/core/constants/asset_paths_test.dart`.
+  - Physical asset existence test in `apps/mobile/test/core/constants/asset_paths_test.dart` passes in CI.
   - **18 approved master WebP assets generated, optimized, and bundled** (all within byte budgets):
     - `brand/m0_logo_full.webp` (27.50 KB / budget 45 KB) — SELECTED MASTER
     - `brand/m0_icon_gold.webp` (30.85 KB / budget 65 KB) — SELECTED MASTER
@@ -363,7 +363,7 @@ The forensic audit uncovered 5 critical technical and architectural defects that
     - `badges/m4_ref_nat.webp` (7.27 KB / budget 30 KB) — GENERATED (sterling silver)
     - `badges/m4_ref_reg.webp` (6.42 KB / budget 28 KB) — GENERATED (gunmetal)
   - **Total bundle footprint**: 573 KB for all 18 images (< 0.6 MB of 45 MB total app target).
-  - **Pending CI verification**: CI must pass with real asset files replacing `.gitkeep` placeholders.
+  - **CI Verification**: 100% PASS across Flutter analyze, unit/widget/routing/asset tests, web preview build, and Android release APK/AAB packaging.
   - **Phase 1C (screen integration) awaiting explicit authorization.**
 
 
@@ -419,13 +419,14 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │ PHASE 1B: ASSET GENERATION & BRANDING ASSETS           │
-│ [COMPLETE — Pending CI Verification]                   │
+│ [CI-VERIFIED] (Runs 36333793035, 36333792998, 383a64c) │
 │ • 3 M0 brand masters (logo, icon, seal)                │
 │ • 2 M1 hero masters (arena, grip)                      │
 │ • 2 M1 textures (knurl, chalk)                         │
 │ • 3 default fallback masters (avatar, tournament, club)│
 │ • 8 division + referee badges (all within budget)      │
 │ • 18 total WebP files, 573 KB total bundle             │
+│ • 100% CI pass: Analyzer, Unit Tests & Release Build   │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼
