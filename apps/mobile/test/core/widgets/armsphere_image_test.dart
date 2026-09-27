@@ -74,13 +74,14 @@ void main() {
         ),
       );
 
-      expect(
+      final excludeWidgets = tester.widgetList<ExcludeSemantics>(
         find.descendant(
           of: find.byType(ArmSphereImage),
           matching: find.byType(ExcludeSemantics),
         ),
-        findsOneWidget,
       );
+      expect(excludeWidgets, isNotEmpty);
+      expect(excludeWidgets.any((w) => w.excluding), isTrue);
     });
 
     testWidgets('applies borderRadius with ClipRRect', (tester) async {
