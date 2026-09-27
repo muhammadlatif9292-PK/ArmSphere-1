@@ -415,15 +415,19 @@ class _ChampionshipGoldCardState extends State<ChampionshipGoldCard>
   }
 }
 
-// ── 3. Weigh-In Physical Rubber Clearance Stamp ────────────────────────
+// ── 3. Weigh-In Physical Rubber Clearance Stamp (SIG-5) ───────────────
 class WeighInClearanceStamp extends StatefulWidget {
   final bool isApproved;
   final String clearanceText;
+  final String? subText;
+  final double size;
 
   const WeighInClearanceStamp({
     super.key,
     required this.isApproved,
     this.clearanceText = 'OFFICIALLY CLEARED',
+    this.subText,
+    this.size = 1.0,
   });
 
   @override
@@ -431,26 +435,38 @@ class WeighInClearanceStamp extends StatefulWidget {
 }
 
 class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _stampController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
+  late AnimationController _shockwaveController;
+  late Animation<double> _shockwaveAnim;
 
   @override
   void initState() {
     super.initState();
-    // 140ms ink stamp landing animation with heavy impact haptic
+    // SIG-5 Stage 1: 150ms descent from Scale 2.50 to 1.00 at -12° rotation
     _stampController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 140),
+      duration: const Duration(milliseconds: 150),
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 2.5, end: 1.0).animate(
       CurvedAnimation(parent: _stampController, curve: Curves.easeInQuad),
     );
 
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _stampController, curve: Curves.easeInQuad),
+      CurvedAnimation(parent: _stampController, curve: const Interval(0.0, 0.4, curve: Curves.easeIn)),
+    );
+
+    // SIG-5 Stage 2: 120ms chalk dust particle shockwave
+    _shockwaveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+    );
+    _shockwaveAnim = CurvedAnimation(
+      parent: _shockwaveController,
+      curve: Curves.easeOut,
     );
 
     if (widget.isApproved) {
@@ -459,8 +475,10 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
   }
 
   void _triggerStamp() {
-    _stampController.forward().then((_) {
+    _stampController.forward(from: 0.0).then((_) {
+      // Impact at 150ms: Heavy haptic shockwave
       HapticFeedback.heavyImpact();
+      _shockwaveController.forward(from: 0.0);
     });
   }
 
@@ -475,6 +493,7 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
   @override
   void dispose() {
     _stampController.dispose();
+    _shockwaveController.dispose();
     super.dispose();
   }
 
@@ -482,40 +501,147 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
   Widget build(BuildContext context) {
     if (!widget.isApproved) return const SizedBox.shrink();
 
-    return AnimatedBuilder(
-      animation: _stampController,
-      builder: (context, child) {
-        return Transform.rotate(
-          angle: -8.0 * (math.pi / 180.0), // -8 degrees stamp tilt
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Opacity(
-              opacity: _opacityAnimation.value,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.success.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  border: Border.all(
-                    color: AppTheme.success,
-                    width: 2.5,
-                  ),
+    const stampAngle = -12.0 * (math.pi / 180.0); // Exactly -12 degrees
+
+    return RepaintBoundary(
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // 8-particle chalk shockwave expanding and fading
+          AnimatedBuilder(
+            animation: _shockwaveAnim,
+            builder: (context, _) {
+              if (_shockwaveAnim.value <= 0.0 || _shockwaveAnim.value >= 1.0) {
+                return const SizedBox.shrink();
+              }
+              return CustomPaint(
+                size: Size(180 * widget.size, 80 * widget.size),
+                painter: _ChalkShockwavePainter(
+                  progress: _shockwaveAnim.value,
+                  particleColor: const Color(0xFF10B981),
                 ),
-                child: Text(
-                  widget.clearanceText,
-                  style: const TextStyle(
-                    fontFamily: 'Space Grotesk',
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                    color: AppTheme.success,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-            ),
+              );
+            },
           ),
-        );
-      },
+
+          // Technical Rubber Stamp
+          AnimatedBuilder(
+            animation: _stampController,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: stampAngle,
+                child: Transform.scale(
+                  scale: _scaleAnimation.value * widget.size,
+                  child: Opacity(
+                    opacity: _opacityAnimation.value,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: const Color(0xFF10B981),
+                          width: 2.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                            blurRadius: 10,
+                            spreadRadius: -1,
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.65),
+                            width: 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.verified_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  widget.clearanceText.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontFamily: 'Space Grotesk',
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                    color: Color(0xFF10B981),
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (widget.subText != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                widget.subText!.toUpperCase(),
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 8.5,
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.85),
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
+  }
+}
+
+/// 8 micro-particles radiating outwards from stamp impact
+class _ChalkShockwavePainter extends CustomPainter {
+  final double progress;
+  final Color particleColor;
+
+  _ChalkShockwavePainter({required this.progress, required this.particleColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()
+      ..color = particleColor.withValues(alpha: (1.0 - progress) * 0.75)
+      ..style = PaintingStyle.fill;
+
+    const int particleCount = 8;
+    final double radius = 24.0 + (progress * 38.0);
+
+    for (int i = 0; i < particleCount; i++) {
+      final double angle = (i * (2 * math.pi / particleCount)) + 0.2;
+      final double x = center.dx + math.cos(angle) * radius * 1.5;
+      final double y = center.dy + math.sin(angle) * radius * 0.9;
+      final double dotSize = (3.0 * (1.0 - progress)).clamp(0.5, 3.0);
+      canvas.drawCircle(Offset(x, y), dotSize, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ChalkShockwavePainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }

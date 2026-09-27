@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/providers/post_creation_provider.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/services/sensory_feedback_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Compose screen — submits a real video-link post via POST /community/links.
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
@@ -44,6 +46,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_submitting) return;
 
+    HapticFeedback.mediumImpact();
     setState(() => _submitting = true);
     try {
       await ref.read(linkSubmissionProvider.notifier).submitLink(
@@ -69,12 +72,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             audioEvent: ArmSphereAudioEvent.prAchieved,
             hapticType: HapticFeedbackType.heavy,
           );
+        } else {
+          HapticFeedback.lightImpact();
         }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-                'Link submitted for moderation. It will appear once approved.'),
-            backgroundColor: Colors.green,
+            content: Text('Video link submitted for federation moderation.'),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         context.pop();
@@ -82,15 +87,21 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(e.detail),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Could not submit link: $e'),
-              backgroundColor: Colors.red),
+            content: Text('Could not submit link: $e'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -101,26 +112,66 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Share a Video')),
+      appBar: AppBar(title: const Text('Share a Video Clip')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Form(
           key: _formKey,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24.0),
+          child: ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.space10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryRed.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        border: Border.all(
+                          color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(Icons.video_library, size: 22, color: AppTheme.primaryRed),
+                    ),
+                    const SizedBox(width: AppTheme.space12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Combat Sports Feed Submission',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: AppTheme.space2),
+                          Text(
+                            'Supported platforms: YouTube, TikTok, Facebook Reel',
+                            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.space20),
                 TextFormField(
                   controller: _urlController,
                   keyboardType: TextInputType.url,
                   decoration: const InputDecoration(
                     labelText: 'Video URL',
-                    hintText: 'YouTube, TikTok or Facebook link',
+                    hintText: 'https://youtube.com/shorts/...',
+                    prefixIcon: Icon(Icons.link, color: AppTheme.textSecondary),
                   ),
                   validator: (value) {
                     final v = value?.trim() ?? '';
-                    if (v.isEmpty) return 'Required';
+                    if (v.isEmpty) return 'URL is required';
                     final lower = v.toLowerCase();
                     final supported = lower.contains('youtube.com') ||
                         lower.contains('youtu.be') ||
@@ -133,65 +184,65 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.space16),
                 DropdownButtonFormField<String>(
                   initialValue: _category,
-                  decoration:
-                      const InputDecoration(labelText: 'Category (optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Content Category',
+                    prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textSecondary),
+                  ),
+                  dropdownColor: AppTheme.cardSurface,
                   items: _categories
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
-                  onChanged: (value) => setState(() => _category = value),
+                  onChanged: (value) {
+                    HapticFeedback.lightImpact();
+                    setState(() => _category = value);
+                  },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.space16),
                 TextFormField(
                   controller: _captionController,
                   maxLines: 3,
-                  decoration:
-                      const InputDecoration(labelText: 'Caption (optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Caption (optional)',
+                    hintText: 'Describe technique, workout notes, or match contest...',
+                  ),
                 ),
                 if (_isGym) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppTheme.space16),
                   TextFormField(
                     controller: _exerciseTypeController,
                     decoration: const InputDecoration(
-                        labelText: 'Exercise Type',
-                        hintText: 'e.g. Rising lift, Strap pull'),
+                      labelText: 'Armwrestling Exercise Specifics',
+                      hintText: 'e.g. Cupping, Pronation, Rising, Strap Pull',
+                      prefixIcon: Icon(Icons.fitness_center, color: AppTheme.textSecondary),
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTheme.space12),
                   Row(
                     children: [
                       Expanded(
                         child: TextFormField(
                           controller: _weightController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                              labelText: 'Weight (kg)'),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(labelText: 'Weight (kg)'),
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            if (double.tryParse(value.trim()) == null) {
-                              return 'Invalid number';
-                            }
+                            if (value == null || value.trim().isEmpty) return null;
+                            if (double.tryParse(value.trim()) == null) return 'Invalid';
                             return null;
                           },
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppTheme.space12),
                       Expanded(
                         child: TextFormField(
                           controller: _repsController,
                           keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Reps'),
+                          decoration: const InputDecoration(labelText: 'Reps'),
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            if (int.tryParse(value.trim()) == null) {
-                              return 'Invalid number';
-                            }
+                            if (value == null || value.trim().isEmpty) return null;
+                            if (int.tryParse(value.trim()) == null) return 'Invalid';
                             return null;
                           },
                         ),
@@ -199,24 +250,22 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     ],
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: AppTheme.space24),
                 ElevatedButton(
                   onPressed: _submitting ? null : _submit,
                   child: _submitting
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Submit Link'),
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Submit Video Link'),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Submissions are reviewed by moderators before appearing in the feed.',
+                const SizedBox(height: AppTheme.space12),
+                const Text(
+                  'Community links are reviewed by federation moderators before appearing in public feeds.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.3),
                 ),
               ],
             ),

@@ -457,4 +457,24 @@ export class AthleteController {
       next(error);
     }
   }
+
+  static async compareAthletes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const athlete1Id = (req.query.athlete1Id || req.query.id1) as string;
+      const athlete2Id = (req.query.athlete2Id || req.query.id2) as string;
+
+      if (!athlete1Id || !athlete2Id) {
+        throw new BadRequestError("Both athlete1Id (or id1) and athlete2Id (or id2) query parameters are required");
+      }
+
+      const comparison = await AthleteService.compareAthletes(athlete1Id, athlete2Id);
+
+      res.status(200).json({
+        success: true,
+        data: comparison,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

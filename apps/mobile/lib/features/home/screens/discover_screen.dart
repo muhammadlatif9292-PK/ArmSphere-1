@@ -159,6 +159,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         backgroundColor: AppTheme.elevatedSurface,
         onRefresh: _handleRefresh,
         child: CustomScrollView(
+          key: const PageStorageKey<String>('discover_scroll_view'),
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPersistentHeader(

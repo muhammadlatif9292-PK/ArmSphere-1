@@ -1078,5 +1078,38 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
 
       expect(res.status).toBe(400);
     });
+
+    it("GET /athletes/compare: returns head-to-head comparison payload for two athletes", async () => {
+      const res = await request(app)
+        .get(`/athletes/compare?athlete1Id=${athlete1ProfileId}&athlete2Id=${athlete2ProfileId}`)
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty("athlete1");
+      expect(res.body.data).toHaveProperty("athlete2");
+      expect(res.body.data).toHaveProperty("headToHead");
+      expect(res.body.data).toHaveProperty("winProbability");
+      expect(res.body.data.athlete1.id).toBe(athlete1ProfileId);
+      expect(res.body.data.athlete2.id).toBe(athlete2ProfileId);
+    });
+
+    it("GET /athletes/compare: supports id1 and id2 query aliases", async () => {
+      const res = await request(app)
+        .get(`/athletes/compare?id1=${athlete1ProfileId}&id2=${athlete2ProfileId}`)
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.athlete1.id).toBe(athlete1ProfileId);
+    });
+
+    it("GET /athletes/compare: returns 400 if required query params are missing", async () => {
+      const res = await request(app)
+        .get("/athletes/compare")
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(400);
+    });
   });
 });

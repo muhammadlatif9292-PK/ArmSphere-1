@@ -1,9 +1,12 @@
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/providers/community_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Post comments — real GET/POST /community/posts/:id/comments.
 class PostCommentsScreen extends ConsumerStatefulWidget {
@@ -29,6 +32,7 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty || _sending) return;
 
+    HapticFeedback.lightImpact();
     setState(() => _sending = true);
     try {
       await ref
@@ -38,15 +42,21 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(e.detail),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Could not add comment: $e'),
-              backgroundColor: Colors.red),
+            content: Text('Could not add comment: $e'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -59,7 +69,7 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Comments')),
+      appBar: AppBar(title: const Text('Community Discussion')),
       body: Column(
         children: [
           Expanded(
@@ -78,71 +88,80 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
                   return const AppEmptyState(
                     icon: Icons.chat_bubble_outline,
                     title: 'No comments yet',
-                    subtitle: 'Start the conversation below.',
+                    subtitle: 'Start the conversation below with athletic feedback or analysis.',
                   );
                 }
                 return RefreshIndicator(
                   onRefresh: () async =>
                       ref.invalidate(postCommentsProvider(widget.postId)),
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(AppTheme.space16),
                     itemCount: comments.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
                     itemBuilder: (context, index) {
                       final c = comments[index];
                       final athlete =
                           c['athlete'] is Map ? c['athlete'] as Map : null;
                       final name =
                           athlete?['displayName']?.toString() ?? 'Athlete';
-                      return GlassCard(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundImage:
-                                  athlete?['profilePhoto'] != null &&
-                                          athlete!['profilePhoto']
-                                              .toString()
-                                              .isNotEmpty
-                                      ? NetworkImage(
-                                          athlete['profilePhoto'].toString())
-                                      : null,
-                              child: athlete?['profilePhoto'] == null ||
-                                      athlete!['profilePhoto']
-                                          .toString()
-                                          .isEmpty
-                                      ? Text(name[0].toUpperCase())
-                                      : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(name,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13)),
-                                  Text(
-                                    c['createdAt']
-                                            ?.toString()
-                                            .split('T')
-                                            .first ??
-                                        '',
-                                    style: TextStyle(
-                                        fontSize: 10,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(c['body']?.toString() ?? ''),
-                                ],
+                      final photo = athlete?['profilePhoto']?.toString() ?? '';
+                      final createdAt = c['createdAt']?.toString().split('T').first ?? '';
+
+                      return RepaintBoundary(
+                        child: ElevatedActionCard(
+                          padding: const EdgeInsets.all(AppTheme.space12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                                backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                                child: photo.isEmpty
+                                    ? Text(
+                                        name.isNotEmpty ? name[0].toUpperCase() : 'A',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                      )
+                                    : null,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: AppTheme.space12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        ),
+                                        if (createdAt.isNotEmpty)
+                                          Text(
+                                            createdAt,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppTheme.textMuted,
+                                              fontFeatures: [FontFeature.tabularFigures()],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: AppTheme.space4),
+                                    Text(
+                                      c['body']?.toString() ?? '',
+                                      style: const TextStyle(fontSize: 13, height: 1.35, color: AppTheme.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -152,26 +171,33 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
             ),
           ),
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
+              decoration: const BoxDecoration(
+                color: AppTheme.background,
+                border: Border(top: BorderSide(color: AppTheme.cardBorder, width: 1)),
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _commentController,
-                      decoration:
-                          const InputDecoration(hintText: 'Add a comment...'),
+                      decoration: const InputDecoration(
+                        hintText: 'Add an athletic analysis or comment...',
+                        isDense: true,
+                      ),
                       onSubmitted: (_) => _addComment(),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppTheme.space8),
                   IconButton(
                     icon: _sending
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.send),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send, color: AppTheme.primaryRed),
                     onPressed: _sending ? null : _addComment,
                   ),
                 ],

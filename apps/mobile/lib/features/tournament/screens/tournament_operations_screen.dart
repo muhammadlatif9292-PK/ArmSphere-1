@@ -1,7 +1,12 @@
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import 'tournament_screens.dart';
@@ -9,6 +14,30 @@ import 'tournament_screens.dart';
 const List<String> _kDivisions = ['SENIOR', 'JUNIOR', 'FEMALE'];
 const List<String> _kWeightClasses = ['-70kg', '-85kg', '-95kg', '+95kg'];
 const List<String> _kScoreOptions = ['3-0', '3-1', '3-2', '2-3', '1-3', '0-3'];
+
+StatusType _resolveOperationStatusType(String status) {
+  switch (status.toUpperCase()) {
+    case 'APPROVED':
+    case 'PASSED':
+    case 'COMPLETED':
+      return StatusType.success;
+    case 'PENDING':
+    case 'READY':
+    case 'SEEDED':
+      return StatusType.warning;
+    case 'CALLED':
+    case 'ACTIVE':
+      return StatusType.info;
+    case 'WAITLISTED':
+    case 'PENDING_PAYMENT':
+      return StatusType.warning;
+    case 'FAILED':
+    case 'REJECTED':
+      return StatusType.error;
+    default:
+      return StatusType.neutral;
+  }
+}
 
 /// Live operator console for one event: registration approvals, manual
 /// payment confirmation, weigh-ins and bracket production. Every action
@@ -35,20 +64,33 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             action: action,
           );
       if (mounted && successMessage != null) {
+        HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(successMessage),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(e.detail),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Action failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Action failed: $e'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -56,76 +98,29 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     }
   }
 
-  Color _statusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'APPROVED':
-      case 'PASSED':
-        return Colors.green;
-      case 'PENDING':
-        return Colors.orange;
-      case 'PENDING_PAYMENT':
-        return Colors.amber.shade700;
-      case 'WAITLISTED':
-        return Colors.purple;
-      case 'FAILED':
-      case 'REJECTED':
-        return Colors.red;
-      default:
-        return Colors.blueGrey;
-    }
-  }
-
   Future<void> _weighInDialog(Map<String, dynamic> reg) async {
-    final controller = TextEditingController();
-    final limitHint = reg['weightClass']?.toString() ?? '';
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Weigh-in — ${reg['athleteName'] ?? 'Athlete'}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Category limit: $limitHint', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Measured weight (kg)'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Record')),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    final weight = double.tryParse(controller.text.trim());
-    if (weight == null || weight <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid weight in kilograms.'), backgroundColor: Colors.red),
-      );
-      return;
-    }
-    await _run(
-      widget.tournamentId,
-      () => ref.read(tournamentRepositoryProvider).recordWeighIn(
-            registrationId: reg['id'].toString(),
-            weightKg: weight,
-          ),
-      successMessage: 'Weigh-in recorded.',
-    );
+    HapticFeedback.selectionClick();
+    final regId = reg['id']?.toString() ?? '';
+    context.push('/tournament/${widget.tournamentId}/weigh-in?registrationId=$regId');
   }
 
   Future<void> _reassignDialog(Map<String, dynamic> reg) async {
+    HapticFeedback.lightImpact();
     String division = reg['division']?.toString() ?? _kDivisions.first;
     String weightClass = reg['weightClass']?.toString() ?? _kWeightClasses.first;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Reassign — ${reg['athleteName'] ?? 'Athlete'}'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: Text(
+            'Reassign — ${reg['athleteName'] ?? 'Athlete'}',
+            style: const TextStyle(fontFamily: AppTheme.fontDisplay),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -145,8 +140,11 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Reassign')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Reassign')),
           ],
         ),
       ),
@@ -164,7 +162,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
   }
 
   Future<void> _createBracketDialog(List<Map<String, dynamic>> registrations) async {
-    // Only categories that actually have APPROVED athletes are offered.
+    HapticFeedback.lightImpact();
     final available = <String>{};
     for (final r in registrations) {
       if ((r['status']?.toString().toUpperCase()) == 'APPROVED') {
@@ -173,7 +171,11 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     }
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No approved registrations yet — approve entries first.')),
+        const SnackBar(
+          content: Text('No approved registrations yet — approve entries first.'),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -182,7 +184,12 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Create Bracket'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: const Text('Create Official Bracket', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -202,13 +209,16 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               const SizedBox(height: 8),
               const Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Format: Single Elimination', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                child: Text('Format: Double Elimination Bracket Engine', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Create')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Create')),
           ],
         ),
       ),
@@ -230,19 +240,28 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
   }
 
   Future<void> _createTableDialog() async {
+    HapticFeedback.lightImpact();
     final controller = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Add Match Table'),
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: const Text('Add Official Match Table', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Table name'),
+          decoration: const InputDecoration(labelText: 'Table Designation (e.g. Table 1, Table A)'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Add')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Add Table')),
         ],
       ),
     );
@@ -250,32 +269,44 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final name = controller.text.trim();
     if (name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Table name needs at least 2 characters.'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Table name needs at least 2 characters.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
     await _run(
       widget.tournamentId,
       () => ref.read(tournamentRepositoryProvider).createTable(name: name),
-      successMessage: 'Table added.',
+      successMessage: 'Official match table added.',
     );
   }
 
   Future<void> _assignRefereeDialog(Map<String, dynamic> match) async {
+    HapticFeedback.lightImpact();
     List<Map<String, dynamic>> referees;
     try {
       referees = await ref.read(refereeDirectoryProvider.future);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not load referee directory: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Could not load referee directory: $e'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
     if (!mounted) return;
     if (referees.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No certified referees registered in the federation directory yet.')),
+        const SnackBar(
+          content: Text('No certified referees registered in the federation directory yet.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -287,7 +318,15 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Assign Referee — R${match['round']} M${match['matchIndex']}'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: Text(
+            'Assign Referee — R${match['round']} M${match['matchIndex']}',
+            style: const TextStyle(fontFamily: AppTheme.fontDisplay),
+          ),
           content: DropdownButtonFormField<String>(
             initialValue: refereeId,
             isExpanded: true,
@@ -303,8 +342,11 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             decoration: const InputDecoration(labelText: 'Certified referee'),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Assign')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Assign')),
           ],
         ),
       ),
@@ -318,13 +360,18 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
   }
 
   Future<void> _callToTableDialog(Map<String, dynamic> match) async {
+    HapticFeedback.lightImpact();
     List<Map<String, dynamic>> tables;
     try {
       tables = await ref.read(matchTablesProvider.future);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not load tables: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Could not load tables: $e'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -332,7 +379,10 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     if (!mounted) return;
     if (idle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No idle tables available. Add a table or free one up first.')),
+        const SnackBar(
+          content: Text('No idle tables available. Add a table or free one up first.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -341,7 +391,15 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Call to Table — R${match['round']} M${match['matchIndex']}'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: Text(
+            'Call to Table — R${match['round']} M${match['matchIndex']}',
+            style: const TextStyle(fontFamily: AppTheme.fontDisplay),
+          ),
           content: DropdownButtonFormField<String>(
             initialValue: tableId,
             isExpanded: true,
@@ -356,8 +414,11 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             decoration: const InputDecoration(labelText: 'Idle table'),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Call')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Call Match')),
           ],
         ),
       ),
@@ -371,13 +432,18 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
   }
 
   Future<void> _submitResultDialog(Map<String, dynamic> match) async {
+    HapticFeedback.lightImpact();
     final athleteAId = match['athleteAId']?.toString() ?? '';
     final athleteBId = match['athleteBId']?.toString() ?? '';
     final nameA = match['athleteAName']?.toString() ?? 'Athlete A';
     final nameB = match['athleteBName']?.toString() ?? 'Athlete B';
     if (athleteAId.isEmpty || athleteBId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Both slots must be filled before a result can be recorded.')),
+        const SnackBar(
+          content: Text('Both competitor slots must be filled before a result can be recorded.'),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -387,7 +453,15 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('Record Result — R${match['round']} M${match['matchIndex']}'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: Text(
+            'Record Result — R${match['round']} M${match['matchIndex']}',
+            style: const TextStyle(fontFamily: AppTheme.fontDisplay),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -399,20 +473,36 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                   DropdownMenuItem(value: athleteBId, child: Text(nameB, overflow: TextOverflow.ellipsis)),
                 ],
                 onChanged: (v) => setDialogState(() => winnerId = v ?? winnerId),
-                decoration: const InputDecoration(labelText: 'Winner'),
+                decoration: const InputDecoration(labelText: 'Bout Winner'),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: scoreLine,
-                items: [for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s))],
+                items: [
+                  for (final s in _kScoreOptions)
+                    DropdownMenuItem(
+                      value: s,
+                      child: Text(
+                        s,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                ],
                 onChanged: (v) => setDialogState(() => scoreLine = v ?? scoreLine),
                 decoration: const InputDecoration(labelText: 'Score (winner perspective)'),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Submit')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Submit')),
           ],
         ),
       ),
@@ -440,7 +530,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final refereesAsync = ref.watch(refereeDirectoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Operations')),
+      appBar: AppBar(title: const Text('Event Operations Desk')),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(eventStatsProvider(widget.tournamentId));
@@ -451,50 +541,73 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
           ref.invalidate(refereeDirectoryProvider);
         },
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppTheme.space16),
           children: [
             // --- Event header ---
             eventAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => GlassCard(
-                child: ListTile(leading: const Icon(Icons.error_outline), title: Text('Event unavailable: $e')),
-              ),
-              data: (event) => GlassCard(
-                padding: const EdgeInsets.all(16),
+              loading: () => const Center(child: Padding(
+                padding: EdgeInsets.all(AppTheme.space16),
+                child: CircularProgressIndicator(),
+              )),
+              error: (e, _) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
                 child: Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(event['name']?.toString() ?? 'Event',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Fee: ${formatEventFee(event['registrationFeeCents'])}'
-                            ' • Payment: ${event['paymentMethod']?.toString() ?? 'N/A'}',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Chip(
-                      label: Text(event['status']?.toString() ?? 'UNKNOWN',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      backgroundColor: _statusColor(event['status']?.toString() ?? '').withValues(alpha: 0.15),
-                    ),
+                    const Icon(Icons.error_outline, color: AppTheme.error),
+                    const SizedBox(width: AppTheme.space12),
+                    Expanded(child: Text('Event unavailable: $e', style: const TextStyle(fontSize: 13))),
                   ],
                 ),
               ),
+              data: (event) {
+                final status = (event['status']?.toString() ?? 'UNKNOWN').toUpperCase();
+                return ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              event['name']?.toString() ?? 'Event',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: AppTheme.space4),
+                            Text(
+                              'Fee: ${formatEventFee(event['registrationFeeCents'])}'
+                              ' • Payment: ${event['paymentMethod']?.toString() ?? 'N/A'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      StatusChip(
+                        label: status,
+                        type: _resolveOperationStatusType(status),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.space14),
 
             // --- Stats ---
             statsAsync.maybeWhen(
               loading: () => const SizedBox(),
               orElse: () => const SizedBox(),
-              data: (s) => GlassCard(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              data: (s) => ElevatedActionCard(
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.space12, horizontal: AppTheme.space8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -507,106 +620,302 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.space14),
+
+            // --- Official Weigh-In Desk Quick Action (Canary 9) ---
+            ElevatedActionCard(
+              padding: const EdgeInsets.all(AppTheme.space16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.space10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                    ),
+                    child: const Icon(Icons.scale_rounded, color: AppTheme.goldPrimary, size: 24),
+                  ),
+                  const SizedBox(width: AppTheme.space14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'OFFICIAL WEIGH-IN DESK',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Calibrated digital scale, passport & rubber stamp clearance',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.space8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.goldPrimary,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/tournament/${widget.tournamentId}/weigh-in');
+                    },
+                    child: const Text(
+                      'OPEN DESK',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTheme.space12),
+
+            // --- Awards & Podium Ceremony Console (Canary 10) ---
+            ElevatedActionCard(
+              padding: const EdgeInsets.all(AppTheme.space16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.space10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                    ),
+                    child: const Icon(Icons.emoji_events_rounded, color: AppTheme.goldPrimary, size: 24),
+                  ),
+                  const SizedBox(width: AppTheme.space14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AWARDS & PODIUM CEREMONY',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'T4 ceremony sequence, medal awards & social export',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.space8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.elevatedSurface,
+                      foregroundColor: AppTheme.goldPrimary,
+                      side: const BorderSide(color: AppTheme.goldPrimary),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/tournament/${widget.tournamentId}/awards');
+                    },
+                    child: const Text(
+                      'CEREMONY',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppTheme.space20),
 
             // --- Registrations ---
-            Text('REGISTRATIONS',
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
+            Text(
+              'REGISTRATIONS',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
+                  ),
+            ),
+            const SizedBox(height: AppTheme.space10),
             regsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => GlassCard(child: ListTile(title: Text('Could not load registrations: $e'))),
+              loading: () => const Center(child: Padding(
+                padding: EdgeInsets.all(AppTheme.space16),
+                child: CircularProgressIndicator(),
+              )),
+              error: (e, _) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                child: Text('Could not load registrations: $e', style: const TextStyle(color: AppTheme.error)),
+              ),
               data: (regs) {
                 if (regs.isEmpty) {
-                  return const GlassCard(child: ListTile(title: Text('No registrations yet.')));
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space20),
+                    child: Center(
+                      child: Text('No registrations registered for this competition yet.', style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                  );
                 }
                 return Column(
-                  children: [for (final reg in regs) _registrationCard(reg)],
+                  children: [for (final reg in regs) RepaintBoundary(child: _registrationCard(reg))],
                 );
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.space24),
 
             // --- Brackets ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('BRACKETS',
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold)),
+                Text(
+                  'BRACKETS',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
                 TextButton.icon(
                   onPressed: _busy || regsAsync.value == null
                       ? null
                       : () => _createBracketDialog(regsAsync.value!),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Create'),
+                  label: const Text('Create Bracket'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.space10),
             bracketsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => GlassCard(child: ListTile(title: Text('Could not load brackets: $e'))),
+              loading: () => const Center(child: Padding(
+                padding: EdgeInsets.all(AppTheme.space16),
+                child: CircularProgressIndicator(),
+              )),
+              error: (e, _) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                child: Text('Could not load brackets: $e', style: const TextStyle(color: AppTheme.error)),
+              ),
               data: (brackets) {
                 if (brackets.isEmpty) {
-                  return const GlassCard(
-                      child: ListTile(title: Text('No brackets yet. Create one from approved registrations.')));
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space20),
+                    child: Center(
+                      child: Text('No brackets generated yet. Create one from approved registrations.', style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                  );
                 }
-                return Column(children: [for (final b in brackets) _bracketCard(b)]);
+                return Column(children: [for (final b in brackets) RepaintBoundary(child: _bracketCard(b))]);
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.space24),
 
             // --- Match-day tables ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('MATCH TABLES',
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold)),
+                Text(
+                  'MATCH TABLES',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
                 TextButton.icon(
                   onPressed: _busy ? null : _createTableDialog,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add'),
+                  label: const Text('Add Table'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.space10),
             tablesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => GlassCard(child: ListTile(title: Text('Could not load tables: $e'))),
+              loading: () => const Center(child: Padding(
+                padding: EdgeInsets.all(AppTheme.space16),
+                child: CircularProgressIndicator(),
+              )),
+              error: (e, _) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                child: Text('Could not load tables: $e', style: const TextStyle(color: AppTheme.error)),
+              ),
               data: (tables) {
                 if (tables.isEmpty) {
-                  return const GlassCard(child: ListTile(title: Text('No tables registered yet. Add one to start calling matches.')));
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space20),
+                    child: Center(
+                      child: Text('No tables registered yet. Add one to start calling matches.', style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                  );
                 }
-                return Column(children: [for (final t in tables) _tableTile(t)]);
+                return Column(children: [for (final t in tables) RepaintBoundary(child: _tableTile(t))]);
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.space24),
 
             // --- Match-day board ---
-            Text('MATCH-DAY BOARD',
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            matchesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => GlassCard(
-                child: ListTile(
-                  title: Text('Could not load matches: $e'),
-                  trailing: TextButton(
-                    onPressed: () => ref.invalidate(eventMatchesProvider(widget.tournamentId)),
-                    child: const Text('Retry'),
+            Text(
+              'MATCH-DAY BOARD',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
                   ),
+            ),
+            const SizedBox(height: AppTheme.space10),
+            matchesAsync.when(
+              loading: () => const Center(child: Padding(
+                padding: EdgeInsets.all(AppTheme.space16),
+                child: CircularProgressIndicator(),
+              )),
+              error: (e, _) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('Could not load matches: $e', style: const TextStyle(color: AppTheme.error))),
+                    TextButton(
+                      onPressed: () => ref.invalidate(eventMatchesProvider(widget.tournamentId)),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
               data: (matches) {
                 if (matches.isEmpty) {
-                  return const GlassCard(
-                      child: ListTile(title: Text('No matches generated yet. Generate matches from a locked bracket above.')));
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space20),
+                    child: Center(
+                      child: Text('No matches generated yet. Generate matches from a locked bracket above.', style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                  );
                 }
-                return Column(children: [for (final m in matches) _matchDayCard(m, refereesAsync.value ?? const [])]);
+                return Column(children: [
+                  for (final m in matches)
+                    RepaintBoundary(child: _matchDayCard(m, refereesAsync.value ?? const [])),
+                ]);
               },
             ),
           ],
@@ -618,10 +927,18 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
   Widget _statCell(String label, dynamic value) {
     return Column(
       children: [
-        Text('${(value as num?)?.toInt() ?? 0}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        Text(
+          '${(value as num?)?.toInt() ?? 0}',
+          style: const TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+            color: AppTheme.textPrimary,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary)),
       ],
     );
   }
@@ -634,28 +951,36 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final regId = reg['id']?.toString() ?? '';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GlassCard(
-        padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.only(bottom: AppTheme.space10),
+      child: ElevatedActionCard(
+        padding: const EdgeInsets.all(AppTheme.space14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(reg['athleteName']?.toString() ?? 'Athlete',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  child: Text(
+                    reg['athleteName']?.toString() ?? 'Athlete',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
                 ),
-                Chip(
-                  label: Text(status.isEmpty ? 'UNKNOWN' : status,
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  backgroundColor: _statusColor(status).withValues(alpha: 0.15),
+                StatusChip(
+                  label: status.isEmpty ? 'UNKNOWN' : status,
+                  type: _resolveOperationStatusType(status),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text('$category${paid ? '  •  payment confirmed' : ''}',
-                style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              '$category${paid ? '  •  payment confirmed' : ''}',
+              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -712,26 +1037,33 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final category = '${b['division'] ?? ''} • ${b['weightClass'] ?? ''} • ${b['arm'] ?? ''}';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GlassCard(
-        padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.only(bottom: AppTheme.space10),
+      child: ElevatedActionCard(
+        padding: const EdgeInsets.all(AppTheme.space14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(b['name']?.toString() ?? 'Bracket',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  child: Text(
+                    b['name']?.toString() ?? 'Bracket',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
                 ),
-                Chip(
-                  label: Text(status, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  backgroundColor: _statusColor(status).withValues(alpha: 0.15),
+                StatusChip(
+                  label: status,
+                  type: _resolveOperationStatusType(status),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(category, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(category, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -779,39 +1111,52 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     );
   }
 
-  Color _matchStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'COMPLETED':
-        return Colors.green;
-      case 'CALLED':
-        return Colors.blue;
-      case 'READY':
-        return Colors.orange;
-      default:
-        return Colors.blueGrey; // BYE and unknowns
-    }
-  }
-
   Widget _tableTile(Map<String, dynamic> t) {
     final status = (t['status']?.toString() ?? 'IDLE').toUpperCase();
-    final busy = status == 'ACTIVE';
+    final isBusy = status == 'ACTIVE';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: GlassCard(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-        child: ListTile(
-          leading: Icon(busy ? Icons.sports : Icons.table_restaurant,
-              color: busy ? Colors.orange : Colors.green, size: 22),
-          title: Text(t['name']?.toString() ?? 'Table',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          subtitle: busy ? const Text('Match in progress', style: TextStyle(fontSize: 11)) : null,
-          trailing: Chip(
-            label: Text(status,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-            backgroundColor:
-                (busy ? Colors.orange : Colors.green).withValues(alpha: 0.15),
-          ),
+      padding: const EdgeInsets.only(bottom: AppTheme.space8),
+      child: ElevatedActionCard(
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.space8, horizontal: AppTheme.space12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppTheme.space8),
+              decoration: BoxDecoration(
+                color: (isBusy ? AppTheme.warning : AppTheme.success).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              ),
+              child: Icon(
+                isBusy ? Icons.sports : Icons.table_restaurant,
+                color: isBusy ? AppTheme.warning : AppTheme.success,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: AppTheme.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t['name']?.toString() ?? 'Table',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  if (isBusy)
+                    const Text('Bout in progress', style: TextStyle(fontSize: 11, color: AppTheme.warning)),
+                ],
+              ),
+            ),
+            StatusChip(
+              label: status,
+              type: isBusy ? StatusType.warning : StatusType.success,
+            ),
+          ],
         ),
       ),
     );
@@ -834,44 +1179,75 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             .firstOrNull;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: GlassCard(
-        padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.only(bottom: AppTheme.space10),
+      child: ElevatedActionCard(
+        padding: const EdgeInsets.all(AppTheme.space14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'R${m['round']} • M${m['matchIndex']} — ${m['bracketName'] ?? 'Bracket'}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      Text(
+                        'R${m['round']} • M${m['matchIndex']}  ',
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: AppTheme.goldPrimary,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      Flexible(
+                        child: Text(
+                          m['bracketName'] ?? 'Bracket',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppTheme.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Chip(
-                  label: Text(status.isEmpty ? 'UNKNOWN' : status,
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                  backgroundColor: _matchStatusColor(status).withValues(alpha: 0.15),
+                StatusChip(
+                  label: status.isEmpty ? 'UNKNOWN' : status,
+                  type: _resolveOperationStatusType(status),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(category, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(category, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
             const SizedBox(height: 8),
-            Text(isBye ? '$nameA — BYE (advances)' : '$nameA  vs  $nameB',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              isBye ? '$nameA — BYE (advances)' : '$nameA  vs  $nameB',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+            ),
             if (completed && m['scoreLine'] != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('Final score: ${m['scoreLine']}',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                child: Text(
+                  'Final score: ${m['scoreLine']}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.success,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
               ),
             if (refereeName != null)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text('Referee: $refereeName',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                child: Text(
+                  'Referee: $refereeName',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                ),
               ),
             if (!isBye && !completed) ...[
               const SizedBox(height: 10),

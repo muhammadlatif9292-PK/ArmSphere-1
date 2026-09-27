@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,10 +146,14 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                                        color: _getExerciseColor(exercise).withValues(alpha: 0.15),
                                         shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: _getExerciseColor(exercise).withValues(alpha: 0.5),
+                                          width: 1.0,
+                                        ),
                                       ),
-                                      child: const Icon(Icons.fitness_center, color: AppTheme.goldPrimary, size: 18),
+                                      child: Icon(_getExerciseIcon(exercise), color: _getExerciseColor(exercise), size: 18),
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
@@ -171,6 +176,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                         fontFamily: 'Space Grotesk',
                                         fontWeight: FontWeight.w800,
                                         fontSize: 16,
+                                        fontFeatures: [FontFeature.tabularFigures()],
                                         color: AppTheme.goldPrimary,
                                       ),
                                     ),
@@ -178,7 +184,9 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                       Text(
                                         date,
                                         style: const TextStyle(
+                                          fontFamily: 'Space Grotesk',
                                           fontSize: 11,
+                                          fontFeatures: [FontFeature.tabularFigures()],
                                           color: AppTheme.textMuted,
                                         ),
                                       ),
@@ -238,10 +246,14 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.elevatedSurface,
+                            color: _getExerciseColor(exercise).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _getExerciseColor(exercise).withValues(alpha: 0.4),
+                              width: 1.0,
+                            ),
                           ),
-                          child: const Icon(Icons.fitness_center, size: 16, color: AppTheme.goldPrimary),
+                          child: Icon(_getExerciseIcon(exercise), size: 16, color: _getExerciseColor(exercise)),
                         ),
                         title: Text(
                           exercise,
@@ -265,6 +277,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                           style: const TextStyle(
                             fontFamily: 'Space Grotesk',
                             fontSize: 11,
+                            fontFeatures: [FontFeature.tabularFigures()],
                             color: AppTheme.textMuted,
                           ),
                         ),
@@ -289,4 +302,29 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+IconData _getExerciseIcon(String exercise) {
+  final ex = exercise.toUpperCase();
+  if (ex.contains('CUPPING') || ex.contains('WRIST')) {
+    return Icons.pan_tool_alt_rounded;
+  } else if (ex.contains('PRONATION')) {
+    return Icons.rotate_right_rounded;
+  } else if (ex.contains('RISING')) {
+    return Icons.arrow_upward_rounded;
+  } else if (ex.contains('BACKPRESSURE') || ex.contains('BICEP')) {
+    return Icons.fitness_center_rounded;
+  } else if (ex.contains('SIDE')) {
+    return Icons.sync_alt_rounded;
+  }
+  return Icons.sports_gymnastics_rounded;
+}
+
+Color _getExerciseColor(String exercise) {
+  final ex = exercise.toUpperCase();
+  if (ex.contains('CUPPING')) return AppTheme.goldPrimary;
+  if (ex.contains('PRONATION')) return AppTheme.cyanAccent;
+  if (ex.contains('RISING')) return AppTheme.success;
+  if (ex.contains('BACKPRESSURE')) return AppTheme.primaryAccent;
+  return AppTheme.goldPrimary;
 }

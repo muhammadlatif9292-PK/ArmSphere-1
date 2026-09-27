@@ -213,6 +213,18 @@ tournamentRouter.get(
 );
 
 tournamentRouter.get(
+  "/events/:id/awards",
+  authenticate,
+  TournamentController.getAwards
+);
+
+tournamentRouter.get(
+  "/:id/awards",
+  authenticate,
+  TournamentController.getAwards
+);
+
+tournamentRouter.get(
   "/events/:id/club-standings",
   authenticate,
   TournamentController.getClubStandings

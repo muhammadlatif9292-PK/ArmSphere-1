@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,6 +159,7 @@ class TournamentsListScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.refresh(tournamentProvider.future),
             child: ListView.separated(
+              key: const PageStorageKey<String>('tournaments_list_view'),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               itemCount: visible.length,
               separatorBuilder: (_, __) => const SizedBox(height: 14),
@@ -272,6 +274,8 @@ class TournamentDetailScreen extends ConsumerStatefulWidget {
 
 class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen> {
   Timer? _countdownTimer;
+  String _selectedCategory = 'ALL';
+  static const _categories = ['ALL', '-75 KG', '-85 KG', '-95 KG', '+105 KG', 'OPEN RIGHT', 'OPEN LEFT'];
 
   @override
   void initState() {
@@ -486,6 +490,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                             fontFamily: 'Space Grotesk',
                                             fontSize: 11,
                                             fontWeight: FontWeight.w700,
+                                            fontFeatures: [FontFeature.tabularFigures()],
                                             color: AppTheme.goldPrimary,
                                           ),
                                         ),
@@ -597,7 +602,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       ),
                       const SizedBox(height: 16),
 
-                      // 2. Event Description Card (if available)
+                      // 2. Weight & Division Tactical Filter Tray (Cat N)
+                      _buildCategoryFilterTray(),
+                      const SizedBox(height: 16),
+
+                      // 3. Multi-Table Live Arena Status Grid (SIG-1)
+                      _buildLiveArenaTables(context),
+                      const SizedBox(height: 16),
+
+                      // 4. Event Description Card (if available)
                       if ((event['description']?.toString() ?? '').isNotEmpty) ...[
                         ElevatedActionCard(
                           padding: const EdgeInsets.all(16),
@@ -682,6 +695,54 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         const SizedBox(height: 16),
                       ],
 
+                      // Championship Awards Ceremony Card (Canary 10)
+                      if (status == 'COMPLETED') ...[
+                        ElevatedActionCard(
+                          borderColor: AppTheme.goldPrimary,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/tournament/${widget.tournamentId}/awards');
+                          },
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                ),
+                                child: const Icon(Icons.workspace_premium_rounded, color: AppTheme.goldPrimary, size: 24),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Championship Awards & Podium',
+                                      style: TextStyle(
+                                        fontFamily: 'Space Grotesk',
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Official gold, silver & bronze medalist ceremony',
+                                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, color: AppTheme.goldPrimary, size: 20),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       // 4. Important Dates Timeline Widget
                       ImportantDatesTimelineWidget(tournament: event),
                       const SizedBox(height: 16),
@@ -752,21 +813,28 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 ? 'Register for Event'
                 : (status == 'ONGOING'
                     ? 'Track Live Matches'
-                    : (status == 'COMPLETED' ? 'View Final Results' : 'Registration Closed')),
+                    : (status == 'COMPLETED' ? 'View Awards & Ceremony' : 'Registration Closed')),
             primaryActionIcon: canRegister
                 ? Icons.how_to_reg
-                : (status == 'ONGOING' ? Icons.sports_kabaddi : Icons.emoji_events_outlined),
+                : (status == 'COMPLETED'
+                    ? Icons.workspace_premium_rounded
+                    : (status == 'ONGOING' ? Icons.sports_kabaddi : Icons.emoji_events_outlined)),
             onPrimaryAction: canRegister
                 ? () {
                     HapticFeedback.selectionClick();
                     context.push('/tournament/${widget.tournamentId}/register');
                   }
-                : (status == 'ONGOING' || status == 'COMPLETED'
+                : (status == 'COMPLETED'
                     ? () {
                         HapticFeedback.selectionClick();
-                        context.push('/tournament/${widget.tournamentId}/brackets');
+                        context.push('/tournament/${widget.tournamentId}/awards');
                       }
-                    : null),
+                    : (status == 'ONGOING'
+                        ? () {
+                            HapticFeedback.selectionClick();
+                            context.push('/tournament/${widget.tournamentId}/brackets');
+                          }
+                        : null)),
             secondaryAction: OutlinedButton.icon(
               onPressed: () {
                 HapticFeedback.selectionClick();
@@ -820,10 +888,383 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               fontFamily: 'Space Grotesk',
               fontSize: 13,
               fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
               color: isHighlighted ? AppTheme.goldPrimary : AppTheme.textPrimary,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilterTray() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.tune, size: 14, color: AppTheme.goldPrimary),
+            SizedBox(width: 6),
+            Text(
+              'Weight & Division Filter',
+              style: TextStyle(
+                fontFamily: 'Space Grotesk',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final cat = _categories[index];
+              final isSelected = cat == _selectedCategory;
+              return TactilePressWrapper(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedCategory = cat);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.goldPrimary.withValues(alpha: 0.18)
+                        : AppTheme.elevatedSurface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(
+                      color: isSelected ? AppTheme.goldPrimary : AppTheme.borderSubtle,
+                      width: isSelected ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      cat,
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: isSelected ? AppTheme.goldPrimary : AppTheme.textSecondary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLiveArenaTables(BuildContext context) {
+    return RepaintBoundary(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.sports_kabaddi, size: 16, color: AppTheme.goldPrimary),
+                  SizedBox(width: 8),
+                  Text(
+                    'Live Arena Tables',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, size: 8, color: Color(0xFF10B981)),
+                    SizedBox(width: 5),
+                    Text(
+                      '3 TABLES ACTIVE',
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF10B981),
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Table 1 (IN BOUT - Emerald Accent)
+          _buildArenaTableCard(
+            context: context,
+            tableNumber: 'TABLE 1',
+            stageName: 'Main Stage',
+            status: 'IN BOUT',
+            statusColor: const Color(0xFF10B981),
+            weightClass: '-85 KG · RIGHT ARM',
+            redCornerName: 'M. Todd',
+            redCornerCountry: 'CAN',
+            blueCornerName: 'D. Cyplenkov',
+            blueCornerCountry: 'UKR',
+            isLive: true,
+          ),
+          const SizedBox(height: 10),
+
+          // Table 2 (ON DECK - Amber Accent)
+          _buildArenaTableCard(
+            context: context,
+            tableNumber: 'TABLE 2',
+            stageName: 'Stream Table A',
+            status: 'ON DECK',
+            statusColor: const Color(0xFFF59E0B),
+            weightClass: 'OPEN · RIGHT ARM',
+            redCornerName: 'E. Gasparini',
+            redCornerCountry: 'ITA',
+            blueCornerName: 'A. Voevoda',
+            blueCornerCountry: 'RUS',
+            isLive: false,
+          ),
+          const SizedBox(height: 10),
+
+          // Table 3 (STANDBY - Slate Accent)
+          _buildArenaTableCard(
+            context: context,
+            tableNumber: 'TABLE 3',
+            stageName: 'Platform B',
+            status: 'STANDBY',
+            statusColor: AppTheme.borderSubtle,
+            weightClass: '-75 KG · LEFT ARM',
+            redCornerName: 'Next Call in 3:00',
+            redCornerCountry: '',
+            blueCornerName: 'Official Warmup',
+            blueCornerCountry: '',
+            isLive: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildArenaTableCard({
+    required BuildContext context,
+    required String tableNumber,
+    required String stageName,
+    required String status,
+    required Color statusColor,
+    required String weightClass,
+    required String redCornerName,
+    required String redCornerCountry,
+    required String blueCornerName,
+    required String blueCornerCountry,
+    required bool isLive,
+  }) {
+    return TactilePressWrapper(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.push('/tournament/${widget.tournamentId}/brackets');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.elevatedSurface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          border: Border.all(
+            color: isLive ? const Color(0xFF10B981).withValues(alpha: 0.6) : AppTheme.borderSubtle,
+            width: isLive ? 1.5 : 1.0,
+          ),
+          boxShadow: isLive
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.background,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        border: Border.all(color: AppTheme.borderSubtle, width: 1),
+                      ),
+                      child: Text(
+                        tableNumber,
+                        style: const TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.goldPrimary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      stageName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.5), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isLive) ...[
+                        const Icon(Icons.circle, size: 6, color: Color(0xFF10B981)),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        status,
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: statusColor,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              weightClass,
+              style: const TextStyle(
+                fontFamily: 'Space Grotesk',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          redCornerCountry.isNotEmpty
+                              ? '$redCornerName ($redCornerCountry)'
+                              : redCornerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'VS',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF38BDF8),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          blueCornerCountry.isNotEmpty
+                              ? '$blueCornerName ($blueCornerCountry)'
+                              : blueCornerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, size: 16, color: AppTheme.textMuted),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -305,6 +305,25 @@ class AthleteRepository extends BaseRepository {
     );
   }
 
+  Future<Map<String, dynamic>> compareAthletes({
+    required String athlete1Id,
+    required String athlete2Id,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'athlete_compare_${athlete1Id}_$athlete2Id',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/athletes/compare', queryParameters: {
+        'id1': athlete1Id,
+        'id2': athlete2Id,
+      }, cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getTrainingLog(String athleteId, {String? exerciseType, CancelToken? cancelToken}) async {
     return executeRequest(
       cacheKey: 'training_log_${athleteId}_${exerciseType ?? ''}',
@@ -547,6 +566,18 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_stats_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/stats', cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> getAwards({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_awards_$eventId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/tournaments/events/$eventId/awards', cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
     );
   }

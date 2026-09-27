@@ -1558,6 +1558,111 @@ export class TournamentService {
     };
   }
 
+  static async getAwards(eventId: string) {
+    const [event] = await (db as any).select().from(events).where(eq(events.id as any, eventId as any)).limit(1);
+    const eventBrackets = await (db as any).select().from(brackets).where(eq(brackets.eventId as any, eventId as any));
+
+    const awards = [];
+    for (const b of eventBrackets) {
+      const matches = await (db as any)
+        .select()
+        .from(tournamentMatches)
+        .where(eq(tournamentMatches.bracketId as any, b.id as any));
+
+      const grandFinals = matches.filter((m: any) => m.bracketType === "GRAND_FINAL" && m.status === "COMPLETED");
+      let finalMatch = grandFinals.length > 0
+        ? grandFinals.sort((a: any, b: any) => (b.round || 0) - (a.round || 0))[0]
+        : null;
+
+      if (!finalMatch) {
+        const primaryMatches = matches.filter((m: any) => m.bracketType === "PRIMARY" && m.status === "COMPLETED");
+        const primariesNoNext = primaryMatches.filter((m: any) => !m.nextMatchId);
+        finalMatch = primariesNoNext.length > 0 ? primariesNoNext[0] : null;
+      }
+
+      let goldAthlete = null;
+      let silverAthlete = null;
+      let bronzeAthlete = null;
+
+      if (finalMatch && finalMatch.winnerId) {
+        const winnerId = finalMatch.winnerId;
+        const runnerUpId = finalMatch.athleteAId === winnerId ? finalMatch.athleteBId : finalMatch.athleteAId;
+
+        const [goldProfile] = await (db as any).select().from(athleteProfiles).where(eq(athleteProfiles.id as any, winnerId as any)).limit(1);
+        goldAthlete = goldProfile ? {
+          tier: "1st Place",
+          badge: "CHAMPION",
+          medal: "GOLD MEDAL",
+          athleteId: goldProfile.id,
+          name: goldProfile.displayName || "Unknown",
+          club: "Affiliated Club",
+          province: goldProfile.province || "Pakistan",
+          record: "Undefeated Champion",
+          eloGain: "+32 ELO",
+          color: "#D4AF37",
+          avatar: (goldProfile.displayName || "A").substring(0, 1).toUpperCase()
+        } : null;
+
+        if (runnerUpId) {
+          const [silverProfile] = await (db as any).select().from(athleteProfiles).where(eq(athleteProfiles.id as any, runnerUpId as any)).limit(1);
+          silverAthlete = silverProfile ? {
+            tier: "2nd Place",
+            badge: "RUNNER-UP",
+            medal: "SILVER MEDAL",
+            athleteId: silverProfile.id,
+            name: silverProfile.displayName || "Unknown",
+            club: "Affiliated Club",
+            province: silverProfile.province || "Pakistan",
+            record: "Silver Medalist",
+            eloGain: "+18 ELO",
+            color: "#CBD5E1",
+            avatar: (silverProfile.displayName || "B").substring(0, 1).toUpperCase()
+          } : null;
+        }
+
+        const loserMatches = matches.filter((m: any) => m.bracketType === "LOSERS" && m.status === "COMPLETED");
+        if (loserMatches.length > 0) {
+          const sortedLosers = loserMatches.sort((a: any, b: any) => (b.round || 0) - (a.round || 0));
+          const lastLoserMatch = sortedLosers[0];
+          const bronzeId = lastLoserMatch.winnerId === lastLoserMatch.athleteAId ? lastLoserMatch.athleteBId : lastLoserMatch.athleteAId;
+          if (bronzeId) {
+            const [bronzeProfile] = await (db as any).select().from(athleteProfiles).where(eq(athleteProfiles.id as any, bronzeId as any)).limit(1);
+            bronzeAthlete = bronzeProfile ? {
+              tier: "3rd Place",
+              badge: "THIRD PLACE",
+              medal: "BRONZE MEDAL",
+              athleteId: bronzeProfile.id,
+              name: bronzeProfile.displayName || "Unknown",
+              club: "Affiliated Club",
+              province: bronzeProfile.province || "Pakistan",
+              record: "Bronze Medalist",
+              eloGain: "+10 ELO",
+              color: "#D97706",
+              avatar: (bronzeProfile.displayName || "C").substring(0, 1).toUpperCase()
+            } : null;
+          }
+        }
+      }
+
+      const podium = [goldAthlete, silverAthlete, bronzeAthlete].filter(Boolean);
+
+      awards.push({
+        bracketId: b.id,
+        bracketName: b.name,
+        division: b.division,
+        weightClass: b.weightClass,
+        arm: b.arm,
+        podium
+      });
+    }
+
+    return {
+      eventId,
+      eventName: event ? event.name : "Tournament Awards",
+      awards
+    };
+  }
+
   static async getMedalTable(eventId: string) {
     // Collect bracket winners
     const eventBrackets = await (db as any).select().from(brackets).where(eq(brackets.eventId as any, eventId as any));

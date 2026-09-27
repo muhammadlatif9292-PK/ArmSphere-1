@@ -87,6 +87,11 @@ final eventDetailProvider = FutureProvider.autoDispose.family<Map<String, dynami
   return repo.getEventById(eventId: eventId);
 });
 
+final eventAwardsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.getAwards(eventId: eventId);
+});
+
 final eventRegistrationsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getEventRegistrations(eventId: eventId);

@@ -1,7 +1,11 @@
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/messaging_provider.dart';
@@ -25,32 +29,37 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Athlete Profile'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.person_off_outlined, size: 44, color: Colors.grey),
-              const SizedBox(height: 12),
-              Text('Profile unavailable',
-                  style: theme.textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text('$err',
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.space24),
+            child: ElevatedActionCard(
+              padding: const EdgeInsets.all(AppTheme.space24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_off_outlined, size: 44, color: AppTheme.error),
+                  const SizedBox(height: AppTheme.space12),
+                  Text('Profile unavailable', style: theme.textTheme.titleSmall),
+                  const SizedBox(height: AppTheme.space6),
+                  Text(
+                    '$err',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: AppTheme.space16),
+                  ElevatedButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      ref.invalidate(publicAthleteProfileProvider(athleteId));
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(publicAthleteProfileProvider(athleteId)),
-                child: const Text('Retry'),
-              ),
-            ],
+            ),
           ),
         ),
         data: (p) {
@@ -70,54 +79,83 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
           final bio = p['biography']?.toString();
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppTheme.space16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
+                // Header with 2px Role-Coded Avatar Ring
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-                        backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                        onBackgroundImageError: photo.isNotEmpty
-                            ? (exception, stackTrace) {}
-                            : null,
-                        child: photo.isEmpty
-                            ? Text(
-                                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                                style: TextStyle(
-                                    fontSize: 40, color: theme.colorScheme.primary),
-                              )
-                            : null,
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppTheme.goldPrimary, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                              blurRadius: 16,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 48,
+                          backgroundColor: AppTheme.cardSurface,
+                          backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                          onBackgroundImageError: photo.isNotEmpty
+                              ? (exception, stackTrace) {}
+                              : null,
+                          child: photo.isEmpty
+                              ? Text(
+                                  displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.goldPrimary,
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppTheme.space16),
                       Text(
                         displayName,
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          color: AppTheme.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                       if (location.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          location,
-                          style: TextStyle(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                        const SizedBox(height: AppTheme.space4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 14, color: AppTheme.textMuted),
+                            const SizedBox(width: AppTheme.space4),
+                            Text(
+                              location,
+                              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                            ),
+                          ],
                         ),
                       ],
                       if (clubName != null && clubName.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          clubName,
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        const SizedBox(height: AppTheme.space6),
+                        StatusChip(
+                          label: clubName.toUpperCase(),
+                          type: StatusType.info,
                         ),
                       ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppTheme.space20),
 
                 // Social Action buttons
                 if (!isSelf)
@@ -125,98 +163,134 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: followAsync.when(
-                          loading: () => const ElevatedButton(
-                            onPressed: null,
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                          loading: () => const SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: null,
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
                             ),
                           ),
-                          error: (_, __) => ElevatedButton(
-                            onPressed: () =>
-                                ref.invalidate(followStatusProvider(athleteId)),
-                            child: const Text('Follow'),
+                          error: (_, __) => SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                ref.invalidate(followStatusProvider(athleteId));
+                              },
+                              child: const Text('Follow'),
+                            ),
                           ),
-                          data: (isFollowing) => ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                final notifier = ref.read(
-                                    followStatusProvider(athleteId).notifier);
-                                if (isFollowing) {
-                                  await notifier.unfollow();
-                                } else {
-                                  await notifier.follow();
+                          data: (isFollowing) => SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                HapticFeedback.lightImpact();
+                                try {
+                                  final notifier = ref.read(
+                                      followStatusProvider(athleteId).notifier);
+                                  if (isFollowing) {
+                                    await notifier.unfollow();
+                                  } else {
+                                    await notifier.follow();
+                                  }
+                                } catch (_) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Could not update follow status'),
+                                        backgroundColor: AppTheme.error,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
                                 }
-                              } catch (_) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content:
-                                            Text('Could not update follow status')),
-                                  );
-                                }
-                              }
-                            },
-                            child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+                              },
+                              child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppTheme.space12),
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _startConversation(context, ref, p),
-                          child: const Text('Message'),
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.chat_outlined, size: 18),
+                            label: const Text('Message'),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _startConversation(context, ref, p);
+                            },
+                          ),
                         ),
                       ),
                     ],
                   ),
-                if (!isSelf) const SizedBox(height: 32),
+                if (!isSelf) const SizedBox(height: AppTheme.space24),
 
-                // Specs — real fields only
+                // Specs — Athletic Overview
                 Text(
                   'ATHLETIC OVERVIEW',
                   style: theme.textTheme.labelMedium?.copyWith(
-                      letterSpacing: 1.0, fontWeight: FontWeight.bold),
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                GlassCard(
-                  padding: const EdgeInsets.all(20),
+                const SizedBox(height: AppTheme.space10),
+                ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
                   child: Column(
                     children: [
                       _SpecRow(
-                          label: 'Weight Category',
-                          value:
-                              (weightClass == null || weightClass.isEmpty) ? '—' : weightClass),
-                      const Divider(height: 24),
+                        label: 'Weight Category',
+                        value: (weightClass == null || weightClass.isEmpty) ? '—' : weightClass,
+                      ),
+                      const Divider(height: 20, color: AppTheme.cardBorder),
                       _SpecRow(
-                          label: 'Dominant Arm',
-                          value: (dominantArm == null || dominantArm.isEmpty)
-                              ? '—'
-                              : (dominantArm == 'LEFT' ? 'Left Arm' : 'Right Arm')),
-                      const Divider(height: 24),
+                        label: 'Dominant Arm',
+                        value: (dominantArm == null || dominantArm.isEmpty)
+                            ? '—'
+                            : (dominantArm == 'LEFT' ? 'Left Arm' : 'Right Arm'),
+                      ),
+                      const Divider(height: 20, color: AppTheme.cardBorder),
                       _SpecRow(
-                          label: 'Right Arm ELO',
-                          value: rightElo?.toString() ?? '—'),
-                      const Divider(height: 24),
+                        label: 'Right Arm ELO',
+                        value: rightElo != null ? '$rightElo ELO' : '—',
+                        isHighlighted: true,
+                        isTabular: true,
+                      ),
+                      const Divider(height: 20, color: AppTheme.cardBorder),
                       _SpecRow(
-                          label: 'Left Arm ELO',
-                          value: leftElo?.toString() ?? '—'),
+                        label: 'Left Arm ELO',
+                        value: leftElo != null ? '$leftElo ELO' : '—',
+                        isHighlighted: true,
+                        isTabular: true,
+                      ),
                     ],
                   ),
                 ),
                 if (bio != null && bio.isNotEmpty) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppTheme.space20),
                   Text(
                     'ABOUT',
                     style: theme.textTheme.labelMedium?.copyWith(
-                        letterSpacing: 1.0, fontWeight: FontWeight.bold),
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  GlassCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(bio,
-                        style: const TextStyle(fontSize: 13, height: 1.5)),
+                  const SizedBox(height: AppTheme.space10),
+                  ElevatedActionCard(
+                    padding: const EdgeInsets.all(AppTheme.space16),
+                    child: Text(
+                      bio,
+                      style: const TextStyle(fontSize: 13, height: 1.5, color: AppTheme.textSecondary),
+                    ),
                   ),
                 ],
               ],
@@ -235,8 +309,10 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
     if (targetUserId == null || targetUserId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('This athlete cannot be messaged yet'),
-            backgroundColor: Colors.red),
+          content: Text('This athlete cannot be messaged yet'),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -249,8 +325,10 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
       if (conversation == null || conversation['id'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Could not start conversation'),
-              backgroundColor: Colors.red),
+            content: Text('Could not start conversation'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         return;
       }
@@ -259,8 +337,10 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Could not start conversation'),
-              backgroundColor: Colors.red),
+            content: Text('Could not start conversation'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -270,16 +350,32 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
 class _SpecRow extends StatelessWidget {
   final String label;
   final String value;
+  final bool isHighlighted;
+  final bool isTabular;
 
-  const _SpecRow({required this.label, required this.value});
+  const _SpecRow({
+    required this.label,
+    required this.value,
+    this.isHighlighted = false,
+    this.isTabular = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: AppTheme.textSecondary, fontSize: 13)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isHighlighted ? AppTheme.goldPrimary : AppTheme.textPrimary,
+            fontSize: 14,
+            fontFamily: isTabular ? AppTheme.fontDisplay : AppTheme.fontBody,
+            fontFeatures: isTabular ? const [FontFeature.tabularFigures()] : null,
+          ),
+        ),
       ],
     );
   }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -17,7 +18,7 @@ class _AthleteRows extends ConsumerWidget {
     return listAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppTheme.space20),
         children: [
           const SizedBox(height: 80),
           const Center(
@@ -28,10 +29,13 @@ class _AthleteRows extends ConsumerWidget {
             child: Text('Could not load list',
                 style: Theme.of(context).textTheme.titleSmall),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Center(
             child: ElevatedButton(
-              onPressed: onRetry,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                onRetry();
+              },
               child: const Text('Retry'),
             ),
           ),
@@ -40,16 +44,16 @@ class _AthleteRows extends ConsumerWidget {
       data: (rows) {
         if (rows.isEmpty) {
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppTheme.space20),
             children: const [
               SizedBox(height: 100),
               Center(
                 child: Column(
                   children: [
-                    Icon(Icons.group_outlined, size: 48, color: Colors.grey),
+                    Icon(Icons.group_outlined, size: 48, color: AppTheme.textMuted),
                     SizedBox(height: 12),
                     Text('Nobody here yet',
-                        style: TextStyle(color: Colors.grey)),
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
                   ],
                 ),
               ),
@@ -57,9 +61,9 @@ class _AthleteRows extends ConsumerWidget {
           );
         }
         return ListView.separated(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppTheme.space16),
           itemCount: rows.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
           itemBuilder: (context, index) {
             final row = rows[index];
             final name = row['displayName']?.toString() ?? 'Athlete';
@@ -69,31 +73,56 @@ class _AthleteRows extends ConsumerWidget {
               row['province']?.toString(),
             ].where((v) => v != null && v.isNotEmpty).join(', ');
 
-            return GestureDetector(
-              onTap: () {
-                final id = row['id']?.toString();
-                if (id != null && id.isNotEmpty) context.push('/athlete/$id');
-              },
-              child: GlassCard(
-                padding: const EdgeInsets.all(12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                    backgroundImage:
-                        photo.isNotEmpty ? NetworkImage(photo) : null,
-                    onBackgroundImageError:
-                        photo.isNotEmpty ? (exception, stackTrace) {} : null,
-                    child: photo.isEmpty
-                        ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?')
-                        : null,
-                  ),
-                  title: Text(name,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: subtitle.isNotEmpty
-                      ? Text(subtitle, style: const TextStyle(fontSize: 12))
-                      : null,
-                  trailing: const Icon(Icons.chevron_right),
+            return RepaintBoundary(
+              child: ElevatedActionCard(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  final id = row['id']?.toString();
+                  if (id != null && id.isNotEmpty) context.push('/athlete/$id');
+                },
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.space14, vertical: AppTheme.space12),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                      backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                      onBackgroundImageError: photo.isNotEmpty ? (exception, stackTrace) {} : null,
+                      child: photo.isEmpty
+                          ? Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: AppTheme.space14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (subtitle.isNotEmpty) ...[
+                            const SizedBox(height: AppTheme.space2),
+                            Text(
+                              subtitle,
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, size: 20, color: AppTheme.textMuted),
+                  ],
                 ),
               ),
             );
@@ -115,8 +144,6 @@ class FollowersListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Followers'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: _AthleteRows(
         listAsync: ref.watch(followersProvider(athleteId)),
@@ -137,8 +164,6 @@ class FollowingListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Following'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: _AthleteRows(
         listAsync: ref.watch(followingProvider(athleteId)),

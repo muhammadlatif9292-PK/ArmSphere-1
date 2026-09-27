@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'shimmer_box.dart';
 class TournamentSkeletonLoadingWidget extends StatefulWidget {
   const TournamentSkeletonLoadingWidget({super.key});
@@ -110,7 +110,7 @@ class _TournamentSkeletonLoadingWidgetState
               const SizedBox(height: 16),
 
               // Hero Card Placeholder
-              _buildGlassCard(
+              _buildSkeletonCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -172,7 +172,7 @@ class _TournamentSkeletonLoadingWidgetState
               const SizedBox(height: 16),
 
               // Bracket Placeholder Glass Card
-              _buildGlassCard(
+              _buildSkeletonCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -259,7 +259,7 @@ class _TournamentSkeletonLoadingWidgetState
               const SizedBox(height: 16),
 
               // Timeline Placeholder Glass Card
-              _buildGlassCard(
+              _buildSkeletonCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -294,7 +294,7 @@ class _TournamentSkeletonLoadingWidgetState
               const SizedBox(height: 16),
 
               // Participants Carousel Skeleton Card
-              _buildGlassCard(
+              _buildSkeletonCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -345,7 +345,7 @@ class _TournamentSkeletonLoadingWidgetState
     );
   }
 
-  Widget _buildGlassCard({required Widget child}) {
+  Widget _buildSkeletonCard({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),

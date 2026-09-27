@@ -1,8 +1,20 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/venue_provider.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
+import '../../../core/widgets/status_chip.dart';
 
+/// Domain 9 / Stage 6 Convergence: Venue Detail Screen
+///
+/// Implements Canonical Training Space & Hardware Inspection Architecture:
+/// - Pulls venue profile and hardware verification status from GET /venues/:venueId.
+/// - Unbundled venue dossier: Venue Header, Contact Information, Table Inventory, and Certification Badge.
+/// - Eradication of nested `GlassCard` inside `ListView` in compliance with Audit Rule Item 2.2.
 class VenueDetailScreen extends ConsumerWidget {
   final String venueId;
 
@@ -13,107 +25,249 @@ class VenueDetailScreen extends ConsumerWidget {
     final venueAsync = ref.watch(venueDetailProvider(venueId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Venue Details')),
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        backgroundColor: AppTheme.cardSurface,
+        elevation: 0,
+        title: const Text(
+          'Venue Dossier',
+          style: TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+      ),
       body: RefreshIndicator(
+        color: AppTheme.goldPrimary,
+        backgroundColor: AppTheme.cardSurface,
         onRefresh: () async => ref.invalidate(venueDetailProvider(venueId)),
         child: venueAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              const SizedBox(height: 80),
-              const Icon(Icons.error_outline, size: 48),
-              const SizedBox(height: 12),
-              Text('Could not load venue', textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => ref.invalidate(venueDetailProvider(venueId)),
-                  child: const Text('Retry'),
-                ),
-              ),
+          loading: () => ListView(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            children: const [
+              SkeletonPlaceholder(height: 140, borderRadius: AppTheme.radiusMedium),
+              SizedBox(height: AppTheme.space16),
+              SkeletonPlaceholder(height: 80, borderRadius: AppTheme.radiusMedium),
+              SizedBox(height: AppTheme.space16),
+              SkeletonPlaceholder(height: 120, borderRadius: AppTheme.radiusMedium),
             ],
+          ),
+          error: (e, _) => AppEmptyState(
+            icon: Icons.error_outline,
+            title: 'Could not load venue dossier',
+            subtitle: e.toString(),
+            ctaLabel: 'Retry',
+            onCtaTap: () => ref.invalidate(venueDetailProvider(venueId)),
           ),
           data: (venue) {
             final name = venue['name']?.toString() ?? 'Venue';
+            final city = venue['city']?.toString() ?? '';
+            final province = venue['province']?.toString() ?? '';
             final addressLine = [
               venue['address']?.toString(),
-              venue['city']?.toString(),
-              venue['province']?.toString(),
+              city,
+              province,
             ].where((part) => part != null && part.isNotEmpty).join(', ');
             final description = venue['description']?.toString() ?? '';
             final contactInfo = venue['contactInfo']?.toString() ?? '';
             final verificationStatus =
-                (venue['verificationStatus']?.toString() ?? '').toUpperCase();
+                (venue['verificationStatus']?.toString() ?? 'VERIFIED').toUpperCase();
+            final isVerified = verificationStatus == 'VERIFIED';
 
             return ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppTheme.space16),
               children: [
-                GlassCard(
-                  padding: const EdgeInsets.all(20),
+                // 1. Venue Header Dossier Card
+                ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  borderColor: isVerified ? AppTheme.goldPrimary.withValues(alpha: 0.4) : AppTheme.border,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.elevatedSurface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isVerified ? AppTheme.goldPrimary : AppTheme.border,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.fitness_center_outlined,
+                              color: isVerified ? AppTheme.goldPrimary : AppTheme.textSecondary,
+                              size: 22,
+                            ),
+                          ),
+                          StatusChip(
+                            label: isVerified ? 'CERTIFIED TABLES' : 'VERIFICATION PENDING',
+                            type: isVerified ? StatusType.success : StatusType.warning,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppTheme.space16),
                       Text(
                         name,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
                       if (addressLine.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(addressLine,
-                            style: const TextStyle(color: Colors.grey)),
-                      ],
-                      if (contactInfo.isNotEmpty) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppTheme.space8),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.contact_phone_outlined,
-                                size: 18, color: Colors.grey),
-                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.place_outlined,
+                              size: 15,
+                              color: AppTheme.textMuted,
+                            ),
+                            const SizedBox(width: 6),
                             Expanded(
-                              child: Text(contactInfo,
-                                  style: const TextStyle(fontSize: 13)),
+                              child: Text(
+                                addressLine,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.textSecondary,
+                                  height: 1.4,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ],
-                      if (description.isNotEmpty) ...[
-                        const Divider(height: 32),
-                        const Text('About this venue',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text(description,
-                            style:
-                                const TextStyle(height: 1.6, fontSize: 13)),
-                      ],
                     ],
                   ),
                 ),
-                if (verificationStatus.isNotEmpty &&
-                    verificationStatus != 'VERIFIED')
-                  const SizedBox(height: 16),
-                if (verificationStatus.isNotEmpty &&
-                    verificationStatus != 'VERIFIED')
-                  GlassCard(
-                    padding: const EdgeInsets.all(16),
-                    child: ListTile(
-                      dense: true,
-                      leading: Icon(
-                        verificationStatus == 'REJECTED'
-                            ? Icons.gpp_bad_outlined
-                            : Icons.hourglass_empty,
-                        size: 22,
-                      ),
-                      title: const Text('Verification pending',
-                          style: TextStyle(fontSize: 14)),
-                      subtitle: const Text(
-                        'Federation admins are reviewing this venue.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
+                const SizedBox(height: AppTheme.space16),
+
+                // 2. Contact & Hours Card
+                if (contactInfo.isNotEmpty) ...[
+                  ElevatedActionCard(
+                    padding: const EdgeInsets.all(AppTheme.space16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.contact_phone_outlined, size: 16, color: AppTheme.goldPrimary),
+                            SizedBox(width: 8),
+                            Text(
+                              'COORDINATION & CONTACT',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
+                                color: AppTheme.goldLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppTheme.space12),
+                        const Divider(height: 1, color: AppTheme.border),
+                        const SizedBox(height: AppTheme.space12),
+                        Text(
+                          contactInfo,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textPrimary,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space16),
+                ],
+
+                // 3. Hardware & Table Description Card
+                if (description.isNotEmpty) ...[
+                  ElevatedActionCard(
+                    padding: const EdgeInsets.all(AppTheme.space16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.table_restaurant_outlined, size: 16, color: AppTheme.goldPrimary),
+                            SizedBox(width: 8),
+                            Text(
+                              'TABLE HARDWARE & FACILITY SPECS',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
+                                color: AppTheme.goldLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppTheme.space12),
+                        const Divider(height: 1, color: AppTheme.border),
+                        const SizedBox(height: AppTheme.space12),
+                        Text(
+                          description,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            height: 1.6,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space16),
+                ],
+
+                // 4. Verification Status Notice (if pending or rejected)
+                if (!isVerified)
+                  ElevatedActionCard(
+                    padding: const EdgeInsets.all(AppTheme.space16),
+                    borderColor: verificationStatus == 'REJECTED' ? AppTheme.error : AppTheme.secondaryAccent,
+                    child: Row(
+                      children: [
+                        Icon(
+                          verificationStatus == 'REJECTED'
+                              ? Icons.gpp_bad_outlined
+                              : Icons.hourglass_empty_outlined,
+                          size: 24,
+                          color: verificationStatus == 'REJECTED' ? AppTheme.error : AppTheme.secondaryAccent,
+                        ),
+                        const SizedBox(width: AppTheme.space12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                verificationStatus == 'REJECTED'
+                                    ? 'Certification Declined'
+                                    : 'Federation Review Pending',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                verificationStatus == 'REJECTED'
+                                    ? 'This facility does not meet official federation table safety standards.'
+                                    : 'Referees are auditing table padding, pin lines, and hardware tolerances.',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],

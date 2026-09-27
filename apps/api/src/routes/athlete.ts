@@ -11,6 +11,7 @@ athleteRouter.post("/", authenticate, AthleteController.createProfile);
 athleteRouter.get("/me", authenticate, AthleteController.getMe);
 athleteRouter.patch("/me/visibility", authenticate, AthleteController.updateVisibility);
 athleteRouter.get("/search", authenticate, AthleteController.searchAthletes);
+athleteRouter.get("/compare", authenticate, AthleteController.compareAthletes);
 
 // Club administration
 athleteRouter.get("/clubs", authenticate, AthleteController.getClubs);

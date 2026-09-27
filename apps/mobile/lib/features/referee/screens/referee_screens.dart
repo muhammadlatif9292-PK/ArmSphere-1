@@ -1,9 +1,10 @@
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/state_providers.dart';
@@ -15,18 +16,28 @@ import '../widgets/live_scorepad_controller.dart';
 
 const List<String> _kScoreOptions = ['3-0', '3-1', '3-2', '2-3', '1-3', '0-3'];
 
-Color _matchStatusColor(String status) {
+StatusType _resolveMatchStatusType(String status) {
   switch (status.toUpperCase()) {
     case 'COMPLETED':
-      return AppTheme.success;
+      return StatusType.success;
     case 'CALLED':
-      return AppTheme.info;
+      return StatusType.info;
     case 'READY':
-      return AppTheme.secondaryAccent;
+      return StatusType.warning;
     case 'BYE':
-      return AppTheme.textMuted;
     default:
-      return AppTheme.textMuted;
+      return StatusType.neutral;
+  }
+}
+
+StatusType _resolveCertStatusType(String status) {
+  switch (status.toUpperCase()) {
+    case 'ACTIVE':
+      return StatusType.success;
+    case 'REVOKED':
+      return StatusType.error;
+    default:
+      return StatusType.neutral;
   }
 }
 
@@ -51,19 +62,31 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       await action();
       if (mounted && successMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(successMessage),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(e.detail),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Action failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Action failed: $e'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -82,7 +105,10 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     if (!mounted) return;
     if (tables.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No tables exist yet — ask the organizer to add tables first.')),
+        const SnackBar(
+          content: Text('No tables exist yet — ask the organizer to add tables first.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -91,11 +117,16 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Call to Table'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: const Text('Call Match to Table', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
           content: DropdownButtonFormField<String>(
             initialValue: tableId,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Table'),
+            decoration: const InputDecoration(labelText: 'Select Assigned Table'),
             items: [
               for (final t in tables)
                 DropdownMenuItem(
@@ -106,8 +137,14 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             onChanged: (v) => setDialogState(() => tableId = v),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Call Match')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Call Match'),
+            ),
           ],
         ),
       ),
@@ -119,7 +156,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             tableId: tableId!,
           );
       await _refreshBoard();
-    }, successMessage: 'Match called to table.');
+    }, successMessage: 'Match successfully called to table.');
   }
 
   Future<void> _submitResult(Map<String, dynamic> match) async {
@@ -131,40 +168,62 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Submit Official Result'),
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: const Text('Submit Official Result', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              RadioGroup<String>(
+              RadioListTile<String>(
+                value: 'A',
                 groupValue: winnerSide,
+                activeColor: AppTheme.primaryRed,
+                title: Text(aName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Red Corner (Athlete A)', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                 onChanged: (v) => setDialogState(() => winnerSide = v ?? 'A'),
-                child: Column(
-                  children: [
-                    RadioListTile<String>(
-                      value: 'A',
-                      title: Text(aName, overflow: TextOverflow.ellipsis),
-                    ),
-                    RadioListTile<String>(
-                      value: 'B',
-                      title: Text(bName, overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                ),
               ),
-              const SizedBox(height: 8),
+              RadioListTile<String>(
+                value: 'B',
+                groupValue: winnerSide,
+                activeColor: AppTheme.primaryRed,
+                title: Text(bName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('White Corner (Athlete B)', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                onChanged: (v) => setDialogState(() => winnerSide = v ?? 'B'),
+              ),
+              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: scoreLine,
                 decoration: const InputDecoration(labelText: 'Score line (wins-pulls format)'),
                 items: [
-                  for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s)),
+                  for (final s in _kScoreOptions)
+                    DropdownMenuItem(
+                      value: s,
+                      child: Text(
+                        s,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
                 ],
                 onChanged: (v) => setDialogState(() => scoreLine = v ?? scoreLine),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Submit')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Submit Result'),
+            ),
           ],
         ),
       ),
@@ -174,7 +233,11 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     if (winnerId == null || winnerId.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Both athletes must be determined before a result can be submitted.')),
+          const SnackBar(
+            content: Text('Both athletes must be determined before a result can be submitted.'),
+            backgroundColor: AppTheme.warning,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
       return;
@@ -186,7 +249,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             scoreLine: scoreLine,
           );
       await _refreshBoard();
-    }, successMessage: 'Result recorded.');
+    }, successMessage: 'Official match result recorded.');
   }
 
   @override
@@ -201,28 +264,33 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
         title: const Text('Referee Panel'),
         actions: [
           IconButton(
+            tooltip: 'Logout',
             icon: const Icon(Icons.logout),
             onPressed: () => context.go('/login'),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               'OFFICIAL ACTIONS',
-              style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold),
+              style: theme.textTheme.labelMedium?.copyWith(
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textSecondary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.space12),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.5,
+              mainAxisSpacing: AppTheme.space12,
+              crossAxisSpacing: AppTheme.space12,
+              childAspectRatio: 1.45,
               children: [
                 _RefCard(
                   icon: Icons.assignment_outlined,
@@ -246,23 +314,36 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.space24),
 
             Text(
               'MY ASSIGNMENTS',
-              style: theme.textTheme.labelMedium?.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold),
+              style: theme.textTheme.labelMedium?.copyWith(
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textSecondary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.space12),
             eventsAsync.when(
-              loading: () => const Center(child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(),
-              )),
-              error: (e, _) => GlassCard(
-                padding: const EdgeInsets.all(16),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.space24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
                 child: Row(
                   children: [
-                    Expanded(child: Text('Could not load events: $e', style: const TextStyle(fontSize: 13))),
+                    const Icon(Icons.error_outline, color: AppTheme.error, size: 24),
+                    const SizedBox(width: AppTheme.space12),
+                    Expanded(
+                      child: Text(
+                        'Could not load events: $e',
+                        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                      ),
+                    ),
                     TextButton(
                       onPressed: () => ref.invalidate(tournamentProvider),
                       child: const Text('Retry'),
@@ -279,9 +360,14 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                   _selectedEventId = selectable.isNotEmpty ? selectable.first['id']?.toString() : null;
                 }
                 if (selectable.isEmpty) {
-                  return const GlassCard(
-                    padding: EdgeInsets.all(16),
-                    child: Text('No published events available yet.'),
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space20),
+                    child: Center(
+                      child: Text(
+                        'No published events available yet.',
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                      ),
+                    ),
                   );
                 }
                 return Column(
@@ -290,7 +376,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                     DropdownButtonFormField<String>(
                       initialValue: _selectedEventId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Event'),
+                      decoration: const InputDecoration(labelText: 'Active Competition Event'),
                       items: [
                         for (final e in selectable)
                           DropdownMenuItem(
@@ -300,7 +386,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                       ],
                       onChanged: (v) => setState(() => _selectedEventId = v),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.space16),
                     _AssignmentsBody(
                       eventId: _selectedEventId!,
                       myUserId: myUserId,
@@ -338,15 +424,24 @@ class _AssignmentsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final matchesAsync = ref.watch(eventMatchesProvider(eventId));
     return matchesAsync.when(
-      loading: () => const Center(child: Padding(
-        padding: EdgeInsets.all(16),
-        child: CircularProgressIndicator(),
-      )),
-      error: (e, _) => GlassCard(
-        padding: const EdgeInsets.all(16),
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppTheme.space16),
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (e, _) => ElevatedActionCard(
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Row(
           children: [
-            Expanded(child: Text('Could not load matches: $e', style: const TextStyle(fontSize: 13))),
+            const Icon(Icons.error_outline, color: AppTheme.error, size: 24),
+            const SizedBox(width: AppTheme.space12),
+            Expanded(
+              child: Text(
+                'Could not load matches: $e',
+                style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+              ),
+            ),
             TextButton(
               onPressed: () => ref.invalidate(eventMatchesProvider(eventId)),
               child: const Text('Retry'),
@@ -366,16 +461,23 @@ class _AssignmentsBody extends ConsumerWidget {
             return ra != rb ? ra.compareTo(rb) : ia.compareTo(ib);
           });
         if (mine.isEmpty) {
-          return const GlassCard(
-            padding: EdgeInsets.all(16),
-            child: Text('No matches assigned to you in this event yet.'),
+          return const ElevatedActionCard(
+            padding: EdgeInsets.all(AppTheme.space20),
+            child: Center(
+              child: Text(
+                'No matches assigned to you in this event yet.',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              ),
+            ),
           );
         }
         return Column(
           children: [
             for (final m in mine) ...[
-              _AssignmentCard(match: m, busy: busy, onCall: onCall, onResult: onResult),
-              const SizedBox(height: 10),
+              RepaintBoundary(
+                child: _AssignmentCard(match: m, busy: busy, onCall: onCall, onResult: onResult),
+              ),
+              const SizedBox(height: AppTheme.space12),
             ],
           ],
         );
@@ -390,14 +492,21 @@ class _AssignmentCard extends StatelessWidget {
   final Future<void> Function(Map<String, dynamic>) onCall;
   final Future<void> Function(Map<String, dynamic>) onResult;
 
-  const _AssignmentCard({required this.match, required this.busy, required this.onCall, required this.onResult});
+  const _AssignmentCard({
+    required this.match,
+    required this.busy,
+    required this.onCall,
+    required this.onResult,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final status = (match['status']?.toString() ?? '').toUpperCase();
     final aName = match['athleteAName']?.toString() ?? 'TBD';
     final bName = match['athleteBName']?.toString() ?? 'TBD';
+    final roundNumber = (match['round'] as num?)?.toInt();
+    final matchIndex = (match['matchIndex'] as num?)?.toInt();
+
     final category = [
       match['division']?.toString(),
       match['weightClass']?.toString(),
@@ -412,25 +521,39 @@ class _AssignmentCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  category.toUpperCase(),
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontBody,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
-                    letterSpacing: 0.3,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    if (roundNumber != null) ...[
+                      Text(
+                        'R$roundNumber-M${(matchIndex ?? 0) + 1} • ',
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.goldPrimary,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                    Flexible(
+                      child: Text(
+                        category.toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontBody,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary,
+                          letterSpacing: 0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               StatusChip(
                 label: status,
-                type: status == 'COMPLETED'
-                    ? StatusType.success
-                    : (status == 'CALLED'
-                        ? StatusType.info
-                        : (status == 'READY' ? StatusType.warning : StatusType.neutral)),
+                type: _resolveMatchStatusType(status),
               ),
             ],
           ),
@@ -446,14 +569,21 @@ class _AssignmentCard extends StatelessWidget {
           ),
           if ((match['scoreLine']?.toString() ?? '').isNotEmpty) ...[
             const SizedBox(height: AppTheme.space6),
-            Text(
-              'Final Score: ${match['scoreLine']}',
-              style: const TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: AppTheme.success,
-              ),
+            Row(
+              children: [
+                const Icon(Icons.scoreboard_outlined, size: 14, color: AppTheme.success),
+                const SizedBox(width: AppTheme.space6),
+                Text(
+                  'Final Score: ${match['scoreLine']}',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppTheme.success,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: AppTheme.space12),
@@ -468,6 +598,7 @@ class _AssignmentCard extends StatelessWidget {
                       onPressed: busy
                           ? null
                           : () {
+                              HapticFeedback.lightImpact();
                               context.push('/referee/submit-scorepad', extra: match);
                             },
                       icon: const Icon(Icons.touch_app, size: 18),
@@ -481,7 +612,12 @@ class _AssignmentCard extends StatelessWidget {
                   child: SizedBox(
                     height: 48,
                     child: OutlinedButton(
-                      onPressed: busy ? null : () => onResult(match),
+                      onPressed: busy
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              onResult(match);
+                            },
                       child: const Text('Quick Entry', style: TextStyle(fontSize: 12)),
                     ),
                   ),
@@ -493,7 +629,12 @@ class _AssignmentCard extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: OutlinedButton.icon(
-                onPressed: busy ? null : () => onCall(match),
+                onPressed: busy
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        onCall(match);
+                      },
                 icon: const Icon(Icons.table_restaurant, size: 18),
                 label: const Text('CALL TO TABLE'),
               ),
@@ -513,23 +654,41 @@ class _RefCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: GlassCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 32, color: theme.colorScheme.primary),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              textAlign: TextAlign.center,
+    return ElevatedActionCard(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space14),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppTheme.space10),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryRed.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              border: Border.all(
+                color: AppTheme.primaryRed.withValues(alpha: 0.25),
+                width: 1,
+              ),
             ),
-          ],
-        ),
+            child: Icon(icon, size: 24, color: AppTheme.primaryRed),
+          ),
+          const SizedBox(height: AppTheme.space10),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: AppTheme.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -538,17 +697,6 @@ class _RefCard extends StatelessWidget {
 /// Referee Certifications — real records from GET /referees/:userId/certifications.
 class RefereeCertificationsScreen extends ConsumerWidget {
   const RefereeCertificationsScreen({super.key});
-
-  Color _statusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'ACTIVE':
-        return Colors.green;
-      case 'REVOKED':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -560,87 +708,133 @@ class RefereeCertificationsScreen extends ConsumerWidget {
       body: certsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Could not load certifications', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(refereeCertificationsProvider),
-                child: const Text('Retry'),
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.space24),
+            child: ElevatedActionCard(
+              padding: const EdgeInsets.all(AppTheme.space24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 40, color: AppTheme.error),
+                  const SizedBox(height: AppTheme.space12),
+                  Text('Could not load certifications', style: theme.textTheme.titleSmall),
+                  const SizedBox(height: AppTheme.space16),
+                  ElevatedButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      ref.invalidate(refereeCertificationsProvider);
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         data: (certs) {
           if (certs.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.workspace_premium_outlined, size: 48, color: Colors.grey.shade400),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'No certifications on file.',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Certifications are issued by federation administrators.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
+                padding: const EdgeInsets.all(AppTheme.space32),
+                child: ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.workspace_premium_outlined, size: 48, color: AppTheme.textSecondary.withValues(alpha: 0.5)),
+                      const SizedBox(height: AppTheme.space12),
+                      const Text(
+                        'No certifications on file.',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.space8),
+                      const Text(
+                        'Official licenses and credentials are confirmed and issued directly by national federation administrators.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppTheme.space16),
             itemCount: certs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 14),
+            separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
             itemBuilder: (context, index) {
               final c = certs[index];
               final status = c['status']?.toString() ?? 'UNKNOWN';
               final expires = c['expiresAt']?.toString();
-              return GlassCard(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(c['certificationLevel']?.toString() ?? 'Certification',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          const SizedBox(height: 4),
-                          Text(c['issuingBody']?.toString() ?? '',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(height: 8),
-                          Text(
-                            expires == null || expires.isEmpty || expires == 'null'
-                                ? 'No expiry'
-                                : 'Expires ${expires.split('T').first}',
-                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+              return RepaintBoundary(
+                child: ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.space10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.3),
+                            width: 1,
                           ),
-                        ],
+                        ),
+                        child: const Icon(Icons.verified, size: 24, color: AppTheme.goldPrimary),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _statusColor(status).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: AppTheme.space14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c['certificationLevel']?.toString() ?? 'Certification',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: AppTheme.space4),
+                            Text(
+                              c['issuingBody']?.toString() ?? 'Federation Official Board',
+                              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                            ),
+                            const SizedBox(height: AppTheme.space8),
+                            Row(
+                              children: [
+                                const Icon(Icons.event_outlined, size: 13, color: AppTheme.textMuted),
+                                const SizedBox(width: AppTheme.space4),
+                                Text(
+                                  expires == null || expires.isEmpty || expires == 'null'
+                                      ? 'Permanent License'
+                                      : 'Expires ${expires.split('T').first}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textMuted,
+                                    fontFeatures: [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(
-                        status,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: _statusColor(status), fontSize: 12),
+                      StatusChip(
+                        label: status.toUpperCase(),
+                        type: _resolveCertStatusType(status),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -700,6 +894,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
   }
 
   Future<void> _pickAthlete(bool forChallenger) async {
+    HapticFeedback.lightImpact();
     final selected = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
@@ -726,7 +921,11 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentId = _opponent?['id']?.toString();
     if (challengerId == null || opponentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select both the challenger and the opponent.'), backgroundColor: AppTheme.error),
+        const SnackBar(
+          content: Text('Select both the challenger and the opponent.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -750,21 +949,34 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
         });
       }
       if (mounted) {
+        HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Match submitted successfully!'), backgroundColor: AppTheme.success),
+          const SnackBar(
+            content: Text('Match submitted successfully!'),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         context.pop();
       }
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          SnackBar(
+            content: Text(e.detail),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -778,6 +990,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     required String winnerSide,
     required String scoreLine,
   }) {
+    HapticFeedback.heavyImpact();
     setState(() {
       _winnerSide = winnerSide;
       _score = scoreLine;
@@ -806,14 +1019,19 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                 const SizedBox(width: AppTheme.space8),
                 Text(
                   'MATCH CONCLUDED',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: AppTheme.goldPrimary),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppTheme.goldPrimary,
+                    fontFamily: AppTheme.fontDisplay,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: AppTheme.space12),
             Text(
               '$winnerName wins the bout with score line $scoreLine.',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
             const SizedBox(height: AppTheme.space20),
             ElevatedButton(
@@ -846,7 +1064,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
           IconButton(
             tooltip: _isLiveScorepadMode ? 'Switch to Form View' : 'Switch to Table Scorepad',
             icon: Icon(_isLiveScorepadMode ? Icons.edit_note : Icons.sports),
-            onPressed: () => setState(() => _isLiveScorepadMode = !_isLiveScorepadMode),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() => _isLiveScorepadMode = !_isLiveScorepadMode);
+            },
           ),
         ],
       ),
@@ -872,7 +1093,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                   ),
                 ],
                 selected: {_isLiveScorepadMode},
-                onSelectionChanged: (v) => setState(() => _isLiveScorepadMode = v.first),
+                onSelectionChanged: (v) {
+                  HapticFeedback.lightImpact();
+                  setState(() => _isLiveScorepadMode = v.first);
+                },
               ),
             ),
 
@@ -880,21 +1104,29 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
               // Live Scorepad View
               if (_challenger == null || _opponent == null)
                 ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space24),
                   child: Column(
                     children: [
-                      const Icon(Icons.sports, size: 40, color: AppTheme.info),
-                      const SizedBox(height: AppTheme.space12),
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.space12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.info.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.sports, size: 36, color: AppTheme.info),
+                      ),
+                      const SizedBox(height: AppTheme.space16),
                       const Text(
                         'Select Table Competitors',
-                        style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       const SizedBox(height: AppTheme.space8),
                       const Text(
-                        'Select athletes for Corner Red and Corner White to unlock the live scorepad.',
+                        'Select athletes for Corner Red and Corner White to unlock the live interactive scorepad.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
                       ),
-                      const SizedBox(height: AppTheme.space16),
+                      const SizedBox(height: AppTheme.space20),
                       Row(
                         children: [
                           Expanded(
@@ -906,7 +1138,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: AppTheme.space8),
+                          const SizedBox(width: AppTheme.space12),
                           Expanded(
                             child: OutlinedButton(
                               onPressed: () => _pickAthlete(false),
@@ -946,7 +1178,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                         ButtonSegment(value: 'LEFT', label: Text('Left Arm')),
                       ],
                       selected: {_arm},
-                      onSelectionChanged: (v) => setState(() => _arm = v.first),
+                      onSelectionChanged: (v) {
+                        HapticFeedback.lightImpact();
+                        setState(() => _arm = v.first);
+                      },
                     ),
                     const SizedBox(height: AppTheme.space16),
                     SegmentedButton<String>(
@@ -955,14 +1190,28 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                         ButtonSegment(value: 'opponent', label: Text(_opponent?['displayName']?.toString() ?? 'Opponent wins')),
                       ],
                       selected: {_winnerSide},
-                      onSelectionChanged: (v) => setState(() => _winnerSide = v.first),
+                      onSelectionChanged: (v) {
+                        HapticFeedback.lightImpact();
+                        setState(() => _winnerSide = v.first);
+                      },
                     ),
                     const SizedBox(height: AppTheme.space16),
                     DropdownButtonFormField<String>(
                       initialValue: _score,
                       decoration: const InputDecoration(labelText: 'Outcome Score'),
                       items: [
-                        for (final s in _kScoreOptions) DropdownMenuItem(value: s, child: Text(s)),
+                        for (final s in _kScoreOptions)
+                          DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                              s,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.bold,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _score = val);
@@ -985,13 +1234,22 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
 
   Widget _athleteTile({required String label, required Map<String, dynamic>? athlete, required VoidCallback onTap}) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       child: InputDecorator(
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: const Icon(Icons.person_search, color: AppTheme.textSecondary),
+        ),
         child: Text(
           athlete?['displayName']?.toString() ?? 'Tap to search athletes',
-          style: TextStyle(color: athlete == null ? AppTheme.textMuted : null),
+          style: TextStyle(
+            color: athlete == null ? AppTheme.textMuted : AppTheme.textPrimary,
+            fontWeight: athlete != null ? FontWeight.w600 : FontWeight.normal,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
       ),
@@ -1048,7 +1306,7 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppTheme.space16),
                 child: TextField(
                   controller: _searchController,
                   autofocus: true,
@@ -1061,26 +1319,61 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
               ),
               if (_error != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
+                  child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 12)),
                 ),
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space8),
                         itemCount: _results.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space8),
                         itemBuilder: (context, index) {
                           final item = _results[index];
                           final id = item['id']?.toString();
                           if (widget.excludeId != null && widget.excludeId == id) return const SizedBox.shrink();
-                          return ListTile(
-                            title: Text(item['displayName']?.toString() ?? ''),
-                            subtitle: Text([
-                              item['weightClass']?.toString(),
-                              item['province']?.toString(),
-                            ].where((p) => p != null && p.isNotEmpty).join(' • ')),
-                            trailing: const Icon(Icons.check_circle_outline),
-                            onTap: () => Navigator.of(context).pop(item),
+                          return RepaintBoundary(
+                            child: ElevatedActionCard(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.of(context).pop(item);
+                              },
+                              padding: const EdgeInsets.all(AppTheme.space12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                                    child: Text(
+                                      (item['displayName']?.toString() ?? 'A').substring(0, 1).toUpperCase(),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppTheme.space12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item['displayName']?.toString() ?? '',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                        ),
+                                        const SizedBox(height: AppTheme.space2),
+                                        Text(
+                                          [
+                                            item['weightClass']?.toString(),
+                                            item['province']?.toString(),
+                                          ].where((p) => p != null && p.isNotEmpty).join(' • '),
+                                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.add_circle_outline, color: AppTheme.primaryRed),
+                                ],
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -1122,10 +1415,18 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
       });
     } catch (_) {
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -1133,7 +1434,7 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Search Athletes')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Column(
           children: [
             TextField(
@@ -1144,24 +1445,70 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
               ),
               onSubmitted: (_) => _search(),
             ),
-            const SizedBox(height: 20),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : Expanded(
-                    child: ListView.builder(
-                      itemCount: _results.length,
-                      itemBuilder: (context, index) {
-                        final item = _results[index];
-                        return Card(
-                          child: ListTile(
-                            title: Text(item['displayName'] ?? ''),
-                            subtitle: Text(item['weightClass'] ?? ''),
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+            const SizedBox(height: AppTheme.space16),
+            if (_isLoading)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else
+              Expanded(
+                child: _results.isEmpty
+                    ? Center(
+                        child: Text(
+                          _searchController.text.isEmpty
+                              ? 'Enter athlete name to verify roster eligibility.'
+                              : 'No matching athletes found.',
+                          style: const TextStyle(color: AppTheme.textSecondary),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: _results.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
+                        itemBuilder: (context, index) {
+                          final item = _results[index];
+                          final weightClass = item['weightClass']?.toString();
+                          final province = item['province']?.toString();
+                          return RepaintBoundary(
+                            child: ElevatedActionCard(
+                              padding: const EdgeInsets.all(AppTheme.space14),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                                    child: Text(
+                                      (item['displayName']?.toString() ?? 'A').substring(0, 1).toUpperCase(),
+                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppTheme.space14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item['displayName'] ?? '',
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: AppTheme.space4),
+                                        Text(
+                                          [weightClass, province].where((p) => p != null && p.isNotEmpty).join(' • '),
+                                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, color: AppTheme.textMuted),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
           ],
         ),
       ),
@@ -1179,14 +1526,23 @@ class EvidenceUploadScreen extends StatelessWidget {
     return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Not available yet'),
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: const Text('Direct Evidence Protocol', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
         content: const Text(
-          'Video evidence upload requires federation storage support that has '
-          'not been enabled for this competition yet. Document evidence can be '
-          'attached through dispute submissions.',
+          'Video evidence upload requires federation high-bandwidth storage tiers that have '
+          'not been enabled for this competition level yet. Document and scorepad evidence can be '
+          'attached directly through official match dispute submissions.',
+          style: TextStyle(color: AppTheme.textSecondary, height: 1.4),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Understood')),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Understood'),
+          ),
         ],
       ),
     );
@@ -1197,24 +1553,49 @@ class EvidenceUploadScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Evidence Upload')),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.videocam_off_outlined, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            const Text('Video Evidence Upload', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 8),
-            const Text(
-              'Not enabled for this competition yet',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+        child: Padding(
+          padding: const EdgeInsets.all(AppTheme.space24),
+          child: ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.info.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.videocam_off_outlined, size: 48, color: AppTheme.info),
+                ),
+                const SizedBox(height: AppTheme.space20),
+                const Text(
+                  'Video Evidence Upload',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space8),
+                const Text(
+                  'High-bandwidth match video ingest is currently restricted to federation head tables and broadcast feeds.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                ),
+                const SizedBox(height: AppTheme.space24),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  label: const Text('Storage Policy & Protocol'),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _explainUnsupported(context);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.info_outline),
-              label: const Text('Why?'),
-              onPressed: () => _explainUnsupported(context),
-            ),
-          ],
+          ),
         ),
       ),
     );

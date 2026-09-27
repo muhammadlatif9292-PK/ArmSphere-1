@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/providers/state_providers.dart';
 
 class NominateTalentScreen extends ConsumerStatefulWidget {
@@ -26,6 +28,7 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    HapticFeedback.mediumImpact();
     setState(() {
       _isLoading = true;
     });
@@ -37,15 +40,24 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
       await nominationRepository.nominateTalent(name, reason);
       
       if (mounted) {
+        HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nomination filed successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Nomination filed successfully with Federation Review!'),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -62,36 +74,87 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Nominate Talent')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Form(
           key: _formKey,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24.0),
+          child: ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.space10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(Icons.star, size: 22, color: AppTheme.goldPrimary),
+                    ),
+                    const SizedBox(width: AppTheme.space12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Grassroots Scout Submission',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: AppTheme.space2),
+                          Text(
+                            'Recommend upcoming talent for official federation ranking and sponsorship invites.',
+                            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.space20),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Candidate Athlete Name'),
+                  decoration: const InputDecoration(
+                    labelText: 'Candidate Athlete / Referee Name',
+                    hintText: 'e.g. John Doe',
+                  ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Required';
+                    if (value == null || value.trim().isEmpty) return 'Please provide candidate name';
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppTheme.space16),
                 TextFormField(
                   controller: _reasonController,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Reason for Nomination'),
+                  decoration: const InputDecoration(
+                    labelText: 'Scout Evaluation & Achievements',
+                    hintText: 'Describe their performance, tournament record, club affiliations, or standout puller attributes...',
+                  ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Required';
+                    if (value == null || value.trim().isEmpty) return 'Please provide evaluation details';
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppTheme.space24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
-                  child: _isLoading ? const CircularProgressIndicator() : const Text('File Official Nomination'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('File Official Nomination'),
                 ),
               ],
             ),

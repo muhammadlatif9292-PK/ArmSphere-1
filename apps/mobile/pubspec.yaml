@@ -52,6 +52,11 @@ flutter:
 
   assets:
     - assets/sounds/
+    - assets/images/brand/
+    - assets/images/heroes/
+    - assets/images/textures/
+    - assets/images/badges/
+    - assets/images/defaults/
 
   fonts:
     # Mobile fonts (used on native platforms)

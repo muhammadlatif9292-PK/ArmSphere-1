@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/utils/error_formatter.dart';
@@ -30,6 +31,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    HapticFeedback.mediumImpact();
     setState(() {
       _isLoading = true;
     });
@@ -41,10 +43,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       await authRepository.resetPassword(token, password);
       
       if (mounted) {
+        HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Password reset successfully. You can now login.'),
-            backgroundColor: Colors.green,
+            content: Text('Password updated successfully. You can now login.'),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         context.go('/login');
@@ -54,7 +58,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppErrorFormatter.format(e)),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -69,53 +74,60 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reset Password'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppTheme.space24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.lock_reset_outlined,
-                      size: 48,
-                      color: theme.colorScheme.primary,
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.space14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.lock_reset_outlined,
+                        size: 40,
+                        color: AppTheme.goldPrimary,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: AppTheme.space16),
+                    const Text(
                       'Enter New Password',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: theme.colorScheme.primary,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Enter the verification token from your email and your new password',
+                    const SizedBox(height: AppTheme.space8),
+                    const Text(
+                      'Enter the recovery token received in your email and your new password.',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
+                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppTheme.space24),
 
               Form(
                 key: _formKey,
-                child: GlassCard(
-                  padding: const EdgeInsets.all(24.0),
+                child: ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -123,7 +135,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         controller: _tokenController,
                         decoration: const InputDecoration(
                           labelText: 'Reset Token',
-                          prefixIcon: Icon(Icons.vpn_key_outlined),
+                          prefixIcon: Icon(Icons.vpn_key_outlined, color: AppTheme.textSecondary),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -132,16 +144,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppTheme.space16),
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'New Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
+                          labelText: 'New Strong Password',
+                          prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              color: AppTheme.textSecondary,
                             ),
                             onPressed: () {
                               setState(() {
@@ -160,7 +173,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppTheme.space24),
                       ElevatedButton(
                         onPressed: _isLoading ? null : _submit,
                         child: _isLoading
@@ -169,10 +182,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: AppTheme.textPrimary,
+                                  color: Colors.white,
                                 ),
                               )
-                            : const Text('Reset Password'),
+                            : const Text('Update & Reset Password'),
                       ),
                     ],
                   ),

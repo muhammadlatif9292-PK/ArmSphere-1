@@ -23,12 +23,15 @@ import '../../features/home/screens/discover_screen.dart';
 import '../../features/referee/screens/referee_screens.dart';
 import '../../features/tournament/screens/tournament_screens.dart';
 import '../../features/tournament/screens/tournament_operations_screen.dart';
+import '../../features/tournament/screens/tournament_weigh_in_screen.dart';
 import '../../features/tournament/screens/event_registration_screen.dart';
 import '../../features/governance/screens/governance_screens.dart';
 import '../../features/governance/screens/submit_complaint_screen.dart';
 import '../../features/notifications/screens/notification_screens.dart';
 import '../../features/session/screens/session_screens.dart';
 import '../../features/championship/screens/championship_screens.dart';
+import '../../features/championship/screens/tournament_awards_ceremony_screen.dart';
+import '../../features/match/screens/head_to_head_screen.dart';
 import '../../features/messaging/screens/messaging_screens.dart';
 import '../../features/messaging/screens/announcement_screens.dart';
 import '../../features/settings/screens/settings_screens.dart';
@@ -469,6 +472,121 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AppTransitionPage(
             key: state.pageKey,
             child: TournamentOperationsScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournament/:tournamentId/weigh-in',
+        name: 'tournament_weigh_in',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          final regId = state.uri.queryParameters['registrationId'];
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentWeighInScreen(
+              tournamentId: tournamentId,
+              initialRegistrationId: regId,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/:tournamentId/weigh-in',
+        name: 'tournaments_weigh_in_canonical',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          final regId = state.uri.queryParameters['registrationId'];
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentWeighInScreen(
+              tournamentId: tournamentId,
+              initialRegistrationId: regId,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournament/:tournamentId/awards',
+        name: 'tournament_awards',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentAwardsCeremonyScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/:tournamentId/awards',
+        name: 'tournaments_awards_canonical',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentAwardsCeremonyScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/matches/head-to-head',
+        name: 'match_head_to_head',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: HeadToHeadScreen(
+              matchId: state.uri.queryParameters['matchId'],
+              athleteId1: state.uri.queryParameters['athleteId1'] ?? state.uri.queryParameters['id1'],
+              athleteId2: state.uri.queryParameters['athleteId2'] ?? state.uri.queryParameters['id2'],
+              initialMatchData: extra,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/compare',
+        name: 'compare',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: HeadToHeadScreen(
+              matchId: state.uri.queryParameters['matchId'],
+              athleteId1: state.uri.queryParameters['athleteId1'] ?? state.uri.queryParameters['id1'],
+              athleteId2: state.uri.queryParameters['athleteId2'] ?? state.uri.queryParameters['id2'],
+              initialMatchData: extra,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/matches/:matchId/head-to-head',
+        name: 'match_id_head_to_head',
+        pageBuilder: (context, state) {
+          final matchId = state.pathParameters['matchId'];
+          final extra = state.extra as Map<String, dynamic>?;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: HeadToHeadScreen(
+              matchId: matchId,
+              initialMatchData: extra,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/matches/h2h',
+        name: 'matches_h2h_alias',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: HeadToHeadScreen(
+              matchId: state.uri.queryParameters['matchId'],
+              athleteId1: state.uri.queryParameters['athleteId1'],
+              athleteId2: state.uri.queryParameters['athleteId2'],
+              initialMatchData: extra,
+            ),
           );
         },
       ),

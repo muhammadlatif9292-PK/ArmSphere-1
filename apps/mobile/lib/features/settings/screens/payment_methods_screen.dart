@@ -1,7 +1,10 @@
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/providers/payment_methods_provider.dart';
 
 class PaymentMethodsScreen extends ConsumerStatefulWidget {
@@ -15,6 +18,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
   bool _isLoading = false;
 
   Future<void> _addPaymentMethod() async {
+    HapticFeedback.lightImpact();
     setState(() {
       _isLoading = true;
     });
@@ -38,8 +42,13 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       ref.invalidate(paymentMethodsProvider);
 
       if (mounted) {
+        HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment card linked securely via Stripe')),
+          const SnackBar(
+            content: Text('Payment card linked securely via Stripe'),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
@@ -47,7 +56,11 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
         final errString = e.toString();
         if (!errString.contains('canceled') && !errString.contains('Canceled')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Stripe setup failed: $e')),
+            SnackBar(
+              content: Text('Stripe setup failed: $e'),
+              backgroundColor: AppTheme.error,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       }
@@ -61,6 +74,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
   }
 
   Future<void> _deleteCard(String id) async {
+    HapticFeedback.mediumImpact();
     setState(() {
       _isLoading = true;
     });
@@ -69,13 +83,21 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       await ref.read(paymentMethodsProvider.notifier).deletePaymentMethod(id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment method removed successfully')),
+          const SnackBar(
+            content: Text('Payment method removed successfully'),
+            backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete payment method: $e')),
+          SnackBar(
+            content: Text('Failed to delete payment method: $e'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -94,30 +116,31 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Payment Methods')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
               'LINKED STRIPE CARDS',
               style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
-                color: Colors.grey,
-                letterSpacing: 1.0,
+                color: AppTheme.textSecondary,
+                letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppTheme.space12),
 
             methodsAsyncValue.when(
               data: (methods) {
                 if (methods.isEmpty) {
-                  return const GlassCard(
-                    padding: EdgeInsets.all(20),
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space24),
                     child: Center(
                       child: Text(
-                        'No payment methods linked.',
-                        style: TextStyle(color: Colors.grey),
+                        'No payment methods linked yet.',
+                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                       ),
                     ),
                   );
@@ -126,48 +149,90 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: methods.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
                   itemBuilder: (context, index) {
                     final item = methods[index];
-                    final brand = item['brand']?.toString() ?? 'Card';
+                    final brand = (item['brand']?.toString() ?? 'Card').toUpperCase();
                     final last4 = item['last4']?.toString() ?? '••••';
                     final id = item['id']?.toString() ?? '';
 
-                    return GlassCard(
-                      padding: const EdgeInsets.all(16),
-                      child: ListTile(
-                        leading: const Icon(
-                          Icons.credit_card,
-                          size: 32,
-                          color: Colors.amber,
-                        ),
-                        title: Text(
-                          '$brand •••• $last4',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: _isLoading || id.isEmpty
-                              ? null
-                              : () => _deleteCard(id),
+                    return RepaintBoundary(
+                      child: ElevatedActionCard(
+                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(AppTheme.space10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                border: Border.all(
+                                  color: AppTheme.goldPrimary.withValues(alpha: 0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.credit_card,
+                                size: 24,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: AppTheme.space14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    brand,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppTheme.space4),
+                                  Text(
+                                    '•••• •••• •••• $last4',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppTheme.textSecondary,
+                                      fontFeatures: [FontFeature.tabularFigures()],
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Delete Card',
+                              icon: const Icon(Icons.delete_outline, color: AppTheme.error, size: 20),
+                              onPressed: _isLoading || id.isEmpty
+                                  ? null
+                                  : () => _deleteCard(id),
+                            ),
+                          ],
                         ),
                       ),
                     );
                   },
                 );
               },
-              error: (err, stack) => GlassCard(
-                padding: const EdgeInsets.all(20),
+              error: (err, stack) => ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const Icon(Icons.error_outline, size: 36, color: AppTheme.error),
+                    const SizedBox(height: AppTheme.space8),
                     Center(
                       child: Text(
                         'Error: $err',
-                        style: const TextStyle(color: Colors.redAccent),
+                        style: const TextStyle(color: AppTheme.error, fontSize: 13),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppTheme.space12),
                     TextButton(
                       onPressed: () => ref.invalidate(paymentMethodsProvider),
                       child: const Text('Retry'),
@@ -177,42 +242,69 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
               ),
               loading: () => const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(20.0),
+                  padding: EdgeInsets.all(AppTheme.space24),
                   child: CircularProgressIndicator(),
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppTheme.space32),
 
             const Text(
-              'LINK NEW CARD',
+              'LINK NEW PAYMENT CARD',
               style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
-                color: Colors.grey,
-                letterSpacing: 1.0,
+                color: AppTheme.textSecondary,
+                letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(height: 12),
-            GlassCard(
-              padding: const EdgeInsets.all(20),
+            const SizedBox(height: AppTheme.space12),
+            ElevatedActionCard(
+              padding: const EdgeInsets.all(AppTheme.space20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'We partner with Stripe to ensure secure and seamless credit card processing. We never store your raw card details.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.space8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.info.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        ),
+                        child: const Icon(Icons.lock_outline, size: 20, color: AppTheme.info),
+                      ),
+                      const SizedBox(width: AppTheme.space12),
+                      const Expanded(
+                        child: Text(
+                          'PCI-DSS Certified Security',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _addPaymentMethod,
-                    child: _isLoading
+                  const SizedBox(height: AppTheme.space12),
+                  const Text(
+                    'We partner with Stripe to ensure military-grade 256-bit encryption for payment processing. ArmSphere never stores or sees your raw credit card numbers.',
+                    style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                  ),
+                  const SizedBox(height: AppTheme.space20),
+                  ElevatedButton.icon(
+                    icon: _isLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Add Payment Method'),
+                        : const Icon(Icons.add_card, size: 18),
+                    label: const Text('Add Payment Method'),
+                    onPressed: _isLoading ? null : _addPaymentMethod,
                   ),
                 ],
               ),

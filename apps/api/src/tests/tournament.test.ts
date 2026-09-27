@@ -1754,4 +1754,26 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
       expect(testDbStore.tournamentMatches[0].winnerId).toBe(UUID_ATHLETE_A);
     });
   });
+
+  describe("Tournament Awards & Podium API", () => {
+    it("should return awards and podium structure for an event", async () => {
+      const response = await request(app)
+        .get(`/tournaments/events/${UUID_EVENT_ACTIVE}/awards`)
+        .set("Authorization", authHeader(UserRole.ATHLETE));
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("eventId", UUID_EVENT_ACTIVE);
+      expect(response.body).toHaveProperty("awards");
+      expect(Array.isArray(response.body.awards)).toBe(true);
+    });
+
+    it("should support the canonical alias route /tournaments/:id/awards", async () => {
+      const response = await request(app)
+        .get(`/tournaments/${UUID_EVENT_ACTIVE}/awards`)
+        .set("Authorization", authHeader(UserRole.ATHLETE));
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("eventId", UUID_EVENT_ACTIVE);
+    });
+  });
 });

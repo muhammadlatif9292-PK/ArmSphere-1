@@ -21,3 +21,10 @@
 -keepattributes Signature
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
+
+# Google Tink & Secure Storage
+-keep class com.google.crypto.tink.** { *; }
+-dontwarn com.google.crypto.tink.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+

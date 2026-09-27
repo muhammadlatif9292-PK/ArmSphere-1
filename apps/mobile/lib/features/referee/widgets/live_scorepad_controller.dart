@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import 'foul_sheet_modal.dart';
 
 /// Table-Side Live Referee Scorepad Controller
 ///
@@ -56,10 +58,36 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
   int _secondsElapsed = 0;
   bool _timerRunning = false;
 
+  // SIG-8: Table Foul Flash state
+  bool _isFoulFlashing = false;
+  String? _foulFlashSide;
+  Timer? _foulFlashTimer;
+
   @override
   void dispose() {
     _timer?.cancel();
+    _foulFlashTimer?.cancel();
     super.dispose();
+  }
+
+  void _triggerFoulFlash(bool isRed) {
+    _foulFlashTimer?.cancel();
+    HapticFeedback.heavyImpact();
+    Future.delayed(const Duration(milliseconds: 60), () {
+      HapticFeedback.heavyImpact();
+    });
+    setState(() {
+      _isFoulFlashing = true;
+      _foulFlashSide = isRed ? 'RED' : 'WHITE';
+    });
+    _foulFlashTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _isFoulFlashing = false;
+          _foulFlashSide = null;
+        });
+      }
+    });
   }
 
   void _toggleTimer() {
@@ -118,7 +146,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
   }
 
   void _addFoul(bool isRed) {
-    HapticFeedback.mediumImpact();
+    _triggerFoulFlash(isRed);
     setState(() {
       if (isRed) {
         _foulsRed++;
@@ -166,6 +194,20 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
     setState(() {
       _inStraps = !_inStraps;
     });
+  }
+
+  void _openFoulSheet(bool isRed) {
+    FoulSheetModal.show(
+      context,
+      athleteAName: widget.challengerName,
+      athleteBName: widget.opponentName,
+      currentRound: _scoreRed + _scoreWhite + 1,
+      initialCorner: isRed ? 'RED' : 'BLUE',
+      onFoulConfirmed: (foulData) {
+        _addFoul(isRed);
+        _showFoulSnackbar('${foulData['type']} recorded on ${foulData['athleteName']}');
+      },
+    );
   }
 
   void _showFoulSnackbar(String message) {
@@ -217,193 +259,211 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // ---------------------------------------------------------------------
-        // Table Telemetry & Timer Strip
-        // ---------------------------------------------------------------------
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
-          decoration: BoxDecoration(
-            color: AppTheme.elevatedSurface,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            border: Border.all(color: AppTheme.border, width: 1.0),
+    return RepaintBoundary(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutQuad,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          border: Border.all(
+            color: _isFoulFlashing ? const Color(0xFFEF4444) : Colors.transparent,
+            width: _isFoulFlashing ? 3.5 : 0.0,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Arm & Division Pill
-              Row(
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ---------------------------------------------------------------------
+            // Table Telemetry & Timer Strip
+            // ---------------------------------------------------------------------
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
+              decoration: BoxDecoration(
+                color: AppTheme.elevatedSurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(color: AppTheme.border, width: 1.0),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ArmIndicatorPill(isRightArm: widget.arm.toUpperCase() == 'RIGHT'),
-                  const SizedBox(width: AppTheme.space8),
-                  if (_inStraps)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  // Arm & Division Pill
+                  Row(
+                    children: [
+                      ArmIndicatorPill(isRightArm: widget.arm.toUpperCase() == 'RIGHT'),
+                      const SizedBox(width: AppTheme.space8),
+                      if (_inStraps)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryAccent.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.secondaryAccent, width: 1.0),
+                          ),
+                          child: const Text(
+                            'IN STRAPS',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              color: AppTheme.secondaryAccent,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  // Running Match Clock
+                  InkWell(
+                    onTap: _toggleTimer,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.secondaryAccent.withValues(alpha: 0.2),
+                        color: _timerRunning ? AppTheme.info.withValues(alpha: 0.15) : AppTheme.cardSurface,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(color: AppTheme.secondaryAccent, width: 1.0),
-                      ),
-                      child: const Text(
-                        'IN STRAPS',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                          color: AppTheme.secondaryAccent,
+                        border: Border.all(
+                          color: _timerRunning ? AppTheme.info : AppTheme.border,
+                          width: 1.0,
                         ),
                       ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _timerRunning ? Icons.pause : Icons.play_arrow,
+                            size: 14,
+                            color: _timerRunning ? AppTheme.info : AppTheme.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTimer(),
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                              color: _timerRunning ? AppTheme.info : AppTheme.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+
+                  // Strap Toggle Action
+                  OutlinedButton.icon(
+                    onPressed: _toggleStraps,
+                    icon: Icon(
+                      Icons.link,
+                      size: 14,
+                      color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
+                    ),
+                    label: Text(
+                      _inStraps ? 'Release' : 'Straps',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(44, 34),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      side: BorderSide(color: _inStraps ? AppTheme.secondaryAccent : AppTheme.border),
+                    ),
+                  ),
                 ],
               ),
-
-              // Running Match Clock
-              InkWell(
-                onTap: _toggleTimer,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _timerRunning ? AppTheme.info.withValues(alpha: 0.15) : AppTheme.cardSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(
-                      color: _timerRunning ? AppTheme.info : AppTheme.border,
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _timerRunning ? Icons.pause : Icons.play_arrow,
-                        size: 14,
-                        color: _timerRunning ? AppTheme.info : AppTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatTimer(),
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: _timerRunning ? AppTheme.info : AppTheme.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Strap Toggle Action
-              OutlinedButton.icon(
-                onPressed: _toggleStraps,
-                icon: Icon(
-                  Icons.link,
-                  size: 14,
-                  color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
-                ),
-                label: Text(
-                  _inStraps ? 'Release' : 'Straps',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(44, 34),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  side: BorderSide(color: _inStraps ? AppTheme.secondaryAccent : AppTheme.border),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: AppTheme.space16),
-
-        // ---------------------------------------------------------------------
-        // Symmetrical Corner Scoring Columns (Red vs White/Cyan)
-        // ---------------------------------------------------------------------
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left Column: Corner Red (Challenger)
-            Expanded(
-              child: _CornerScoringCard(
-                cornerName: 'CORNER RED',
-                athleteName: widget.challengerName,
-                score: _scoreRed,
-                fouls: _foulsRed,
-                warnings: _warningsRed,
-                cornerColor: AppTheme.primaryAccent,
-                onAddPoint: () => _incrementScore(true),
-                onDeductPoint: () => _decrementScore(true),
-                onAddFoul: () => _addFoul(true),
-                onAddWarning: () => _addWarning(true),
-                onPinConfirmed: () => _confirmPin(true),
-              ),
             ),
 
-            const SizedBox(width: AppTheme.space12),
+            const SizedBox(height: AppTheme.space16),
 
-            // Right Column: Corner White/Cyan (Opponent)
-            Expanded(
-              child: _CornerScoringCard(
-                cornerName: 'CORNER WHITE',
-                athleteName: widget.opponentName,
-                score: _scoreWhite,
-                fouls: _foulsWhite,
-                warnings: _warningsWhite,
-                cornerColor: AppTheme.cyanAccent,
-                onAddPoint: () => _incrementScore(false),
-                onDeductPoint: () => _decrementScore(false),
-                onAddFoul: () => _addFoul(false),
-                onAddWarning: () => _addWarning(false),
-                onPinConfirmed: () => _confirmPin(false),
-              ),
+            // ---------------------------------------------------------------------
+            // Symmetrical Corner Scoring Columns (Red vs White/Cyan)
+            // ---------------------------------------------------------------------
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Column: Corner Red (Challenger)
+                Expanded(
+                  child: _CornerScoringCard(
+                    cornerName: 'CORNER RED',
+                    athleteName: widget.challengerName,
+                    score: _scoreRed,
+                    fouls: _foulsRed,
+                    warnings: _warningsRed,
+                    cornerColor: AppTheme.primaryAccent,
+                    isFoulFlashing: _isFoulFlashing && _foulFlashSide == 'RED',
+                    onAddPoint: () => _incrementScore(true),
+                    onDeductPoint: () => _decrementScore(true),
+                    onAddFoul: () => _addFoul(true),
+                    onAddFoulDetails: () => _openFoulSheet(true),
+                    onAddWarning: () => _addWarning(true),
+                    onPinConfirmed: () => _confirmPin(true),
+                  ),
+                ),
+
+                const SizedBox(width: AppTheme.space12),
+
+                // Right Column: Corner White/Cyan (Opponent)
+                Expanded(
+                  child: _CornerScoringCard(
+                    cornerName: 'CORNER WHITE',
+                    athleteName: widget.opponentName,
+                    score: _scoreWhite,
+                    fouls: _foulsWhite,
+                    warnings: _warningsWhite,
+                    cornerColor: AppTheme.cyanAccent,
+                    isFoulFlashing: _isFoulFlashing && _foulFlashSide == 'WHITE',
+                    onAddPoint: () => _incrementScore(false),
+                    onDeductPoint: () => _decrementScore(false),
+                    onAddFoul: () => _addFoul(false),
+                    onAddFoulDetails: () => _openFoulSheet(false),
+                    onAddWarning: () => _addWarning(false),
+                    onPinConfirmed: () => _confirmPin(false),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppTheme.space16),
+
+            // ---------------------------------------------------------------------
+            // Table Utility Bar (Reset Bout / Reset Clock)
+            // ---------------------------------------------------------------------
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton.icon(
+                  onPressed: _resetTimer,
+                  icon: const Icon(Icons.replay, size: 16),
+                  label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Reset Bout State?'),
+                        content: const Text('This will clear all points, fouls, and warnings for this match.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                          FilledButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryAccent),
+                            child: const Text('Reset'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) _resetBout();
+                  },
+                  icon: const Icon(Icons.refresh, size: 16, color: AppTheme.error),
+                  label: const Text('Reset Bout', style: TextStyle(fontSize: 12, color: AppTheme.error)),
+                ),
+              ],
             ),
           ],
         ),
-
-        const SizedBox(height: AppTheme.space16),
-
-        // ---------------------------------------------------------------------
-        // Table Utility Bar (Reset Bout / Reset Clock)
-        // ---------------------------------------------------------------------
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton.icon(
-              onPressed: _resetTimer,
-              icon: const Icon(Icons.replay, size: 16),
-              label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
-            ),
-            TextButton.icon(
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Reset Bout State?'),
-                    content: const Text('This will clear all points, fouls, and warnings for this match.'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryAccent),
-                        child: const Text('Reset'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) _resetBout();
-              },
-              icon: const Icon(Icons.refresh, size: 16, color: AppTheme.error),
-              label: const Text('Reset Bout', style: TextStyle(fontSize: 12, color: AppTheme.error)),
-            ),
-          ],
-        ),
-      ],
+      ),
     );
   }
 }
@@ -416,9 +476,11 @@ class _CornerScoringCard extends StatelessWidget {
   final int fouls;
   final int warnings;
   final Color cornerColor;
+  final bool isFoulFlashing;
   final VoidCallback onAddPoint;
   final VoidCallback onDeductPoint;
   final VoidCallback onAddFoul;
+  final VoidCallback? onAddFoulDetails;
   final VoidCallback onAddWarning;
   final VoidCallback onPinConfirmed;
 
@@ -429,236 +491,257 @@ class _CornerScoringCard extends StatelessWidget {
     required this.fouls,
     required this.warnings,
     required this.cornerColor,
+    this.isFoulFlashing = false,
     required this.onAddPoint,
     required this.onDeductPoint,
     required this.onAddFoul,
+    this.onAddFoulDetails,
     required this.onAddWarning,
     required this.onPinConfirmed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedActionCard(
-      padding: const EdgeInsets.all(AppTheme.space12),
-      borderColor: cornerColor.withValues(alpha: 0.4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Corner Header Pill
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: cornerColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-              border: Border.all(color: cornerColor, width: 1.0),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutQuad,
+      decoration: BoxDecoration(
+        color: isFoulFlashing ? const Color(0xFFEF4444).withValues(alpha: 0.15) : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      ),
+      child: ElevatedActionCard(
+        padding: const EdgeInsets.all(AppTheme.space12),
+        borderColor: isFoulFlashing
+            ? const Color(0xFFEF4444)
+            : cornerColor.withValues(alpha: 0.4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Corner Header Pill
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: isFoulFlashing
+                    ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                    : cornerColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                border: Border.all(
+                  color: isFoulFlashing ? const Color(0xFFEF4444) : cornerColor,
+                  width: 1.0,
+                ),
+              ),
+              child: Text(
+                cornerName,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: isFoulFlashing ? const Color(0xFFEF4444) : cornerColor,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
-            child: Text(
-              cornerName,
+
+            const SizedBox(height: AppTheme.space8),
+
+            // Athlete Name
+            Text(
+              athleteName,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontBody,
                 fontWeight: FontWeight.bold,
-                fontSize: 11,
-                color: cornerColor,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: AppTheme.space8),
-
-          // Athlete Name
-          Text(
-            athleteName,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: AppTheme.fontBody,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: AppTheme.textPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-
-          const SizedBox(height: AppTheme.space8),
-
-          // Giant Score Readout (SpaceGrotesk 52sp)
-          Center(
-            child: Text(
-              '$score',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.w800,
-                fontSize: 52,
+                fontSize: 14,
                 color: AppTheme.textPrimary,
-                height: 1.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: AppTheme.space8),
+
+            // Giant Score Readout (SpaceGrotesk 52sp, Tabular Figures)
+            Center(
+              child: Text(
+                '$score',
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 52,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                  color: AppTheme.textPrimary,
+                  height: 1.1,
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: AppTheme.space8),
+            const SizedBox(height: AppTheme.space8),
 
-          // Fouls and Warnings Badges
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Fouls (Max 2)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: fouls > 0 ? AppTheme.primaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.border,
-                    width: 1.0,
+            // Fouls and Warnings Badges
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Fouls (Max 2)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: fouls > 0 ? AppTheme.primaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.border,
+                      width: 1.0,
+                    ),
                   ),
-                ),
-                child: Text(
-                  'F: $fouls/2',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.textSecondary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppTheme.space6),
-              // Warnings (Max 2)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: warnings > 0 ? AppTheme.secondaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.border,
-                    width: 1.0,
-                  ),
-                ),
-                child: Text(
-                  'W: $warnings/2',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.textSecondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppTheme.space12),
-
-          // -------------------------------------------------------------------
-          // Primary 64×64dp Point Increment Button
-          // -------------------------------------------------------------------
-          SizedBox(
-            height: 64.0, // Strict 64dp hit target for chalked hands
-            child: ElevatedButton(
-              onPressed: onAddPoint,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: cornerColor,
-                foregroundColor: AppTheme.voidBackground,
-                padding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, size: 22),
-                  SizedBox(width: 4),
-                  Text(
-                    'POINT',
+                  child: Text(
+                    'F: $fouls/2',
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      letterSpacing: 0.5,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.textSecondary,
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: AppTheme.space8),
-
-          // -------------------------------------------------------------------
-          // Secondary 64×48dp Foul Button & Point Deduct Button
-          // -------------------------------------------------------------------
-          Row(
-            children: [
-              // Deduct Button (-1)
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 48.0,
-                  child: OutlinedButton(
-                    onPressed: onDeductPoint,
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      side: const BorderSide(color: AppTheme.border),
-                    ),
-                    child: const Text('-1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppTheme.space6),
-              // Foul Button (+1 Foul)
-              Expanded(
-                flex: 3,
-                child: SizedBox(
-                  height: 48.0,
-                  child: OutlinedButton(
-                    onPressed: onAddFoul,
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      side: BorderSide(color: AppTheme.primaryAccent.withValues(alpha: 0.6)),
-                      foregroundColor: AppTheme.primaryAccent,
+                const SizedBox(width: AppTheme.space6),
+                // Warnings (Max 2)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: warnings > 0 ? AppTheme.secondaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.border,
+                      width: 1.0,
                     ),
-                    child: const Text('FOUL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                  child: Text(
+                    'W: $warnings/2',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.textSecondary,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppTheme.space6),
-
-          // Warning Button (Compact)
-          SizedBox(
-            height: 38.0,
-            child: OutlinedButton(
-              onPressed: onAddWarning,
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.zero,
-                side: BorderSide(color: AppTheme.secondaryAccent.withValues(alpha: 0.5)),
-                foregroundColor: AppTheme.secondaryAccent,
-              ),
-              child: const Text('+ WARNING', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              ],
             ),
-          ),
 
-          const SizedBox(height: AppTheme.space10),
+            const SizedBox(height: AppTheme.space12),
 
-          // -------------------------------------------------------------------
-          // 400ms Long-Press Pin Confirmation Button
-          // -------------------------------------------------------------------
-          _PinHoldButton(
-            cornerColor: cornerColor,
-            onPinLocked: onPinConfirmed,
-          ),
-        ],
+            // -------------------------------------------------------------------
+            // Primary 64×64dp Point Increment Button
+            // -------------------------------------------------------------------
+            SizedBox(
+              height: 64.0, // Strict 64dp hit target for chalked hands
+              child: ElevatedButton(
+                onPressed: onAddPoint,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: cornerColor,
+                  foregroundColor: AppTheme.voidBackground,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 22),
+                    SizedBox(width: 4),
+                    Text(
+                      'POINT',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppTheme.space8),
+
+            // -------------------------------------------------------------------
+            // Secondary 64×48dp Foul Button & Point Deduct Button
+            // -------------------------------------------------------------------
+            Row(
+              children: [
+                // Deduct Button (-1)
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 48.0,
+                    child: OutlinedButton(
+                      onPressed: onDeductPoint,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        side: const BorderSide(color: AppTheme.border),
+                      ),
+                      child: const Text('-1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.space6),
+                // Foul Button (+1 Foul)
+                Expanded(
+                  flex: 3,
+                  child: SizedBox(
+                    height: 48.0,
+                    child: OutlinedButton(
+                      onPressed: onAddFoul,
+                      onLongPress: onAddFoulDetails,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        side: BorderSide(color: AppTheme.primaryAccent.withValues(alpha: 0.6)),
+                        foregroundColor: AppTheme.primaryAccent,
+                      ),
+                      child: const Text('FOUL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppTheme.space6),
+
+            // Warning Button (Compact)
+            SizedBox(
+              height: 38.0,
+              child: OutlinedButton(
+                onPressed: onAddWarning,
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  side: BorderSide(color: AppTheme.secondaryAccent.withValues(alpha: 0.5)),
+                  foregroundColor: AppTheme.secondaryAccent,
+                ),
+                child: const Text('+ WARNING', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              ),
+            ),
+
+            const SizedBox(height: AppTheme.space10),
+
+            // -------------------------------------------------------------------
+            // 400ms Long-Press Pin Confirmation Button (SIG-2)
+            // -------------------------------------------------------------------
+            _PinHoldButton(
+              cornerColor: cornerColor,
+              onPinLocked: onPinConfirmed,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// 400ms Hold-to-Pin Button with Continuous Radial Feedback
+/// 400ms Hold-to-Pin Button with Continuous Feedback (SIG-2)
 class _PinHoldButton extends StatefulWidget {
   final Color cornerColor;
   final VoidCallback onPinLocked;
@@ -676,6 +759,8 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
   late AnimationController _holdController;
   Timer? _tickTimer;
   bool _isHolding = false;
+  bool _isLocked = false;
+  bool _midpointFired = false;
 
   @override
   void initState() {
@@ -685,13 +770,32 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
       duration: const Duration(milliseconds: 400), // Strict 400ms hold threshold
     );
 
+    _holdController.addListener(() {
+      if (_holdController.value >= 0.5 && !_midpointFired) {
+        _midpointFired = true;
+        HapticFeedback.selectionClick();
+      }
+    });
+
     _holdController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _tickTimer?.cancel();
         HapticFeedback.heavyImpact(); // Authoritative impact at moment of lock
+        setState(() {
+          _isLocked = true;
+        });
         widget.onPinLocked();
-        _holdController.reset();
-        setState(() => _isHolding = false);
+        // 80ms locked flash settle before reset
+        Future.delayed(const Duration(milliseconds: 80), () {
+          if (mounted) {
+            _holdController.reset();
+            setState(() {
+              _isHolding = false;
+              _isLocked = false;
+              _midpointFired = false;
+            });
+          }
+        });
       }
     });
   }
@@ -704,8 +808,11 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
   }
 
   void _onTapDown(TapDownDetails details) {
-    HapticFeedback.selectionClick();
-    setState(() => _isHolding = true);
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isHolding = true;
+      _midpointFired = false;
+    });
     _holdController.forward(from: 0.0);
 
     // Continuous 100ms haptic ticks while holding
@@ -732,7 +839,10 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
     if (_holdController.isAnimating || _holdController.value > 0.0) {
       _holdController.reverse();
     }
-    setState(() => _isHolding = false);
+    setState(() {
+      _isHolding = false;
+      _midpointFired = false;
+    });
   }
 
   @override
@@ -745,65 +855,84 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
         animation: _holdController,
         builder: (context, child) {
           final progress = _holdController.value;
-          return Container(
-            height: 52.0,
-            decoration: BoxDecoration(
-              color: _isHolding
-                  ? widget.cornerColor.withValues(alpha: 0.25)
-                  : AppTheme.elevatedSurface,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              border: Border.all(
-                color: _isHolding ? widget.cornerColor : AppTheme.border,
-                width: _isHolding ? 2.0 : 1.0,
+          final remainingMs = ((1.0 - progress) * 400).ceil();
+          return AnimatedScale(
+            scale: _isHolding ? 0.96 : 1.0,
+            duration: const Duration(milliseconds: 50),
+            curve: Curves.easeOutQuad,
+            child: Container(
+              height: 52.0,
+              decoration: BoxDecoration(
+                color: _isLocked
+                    ? Colors.white
+                    : (_isHolding
+                        ? widget.cornerColor.withValues(alpha: 0.25)
+                        : AppTheme.elevatedSurface),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(
+                  color: _isHolding ? widget.cornerColor : AppTheme.border,
+                  width: _isHolding ? 2.0 : 1.0,
+                ),
+                boxShadow: _isHolding
+                    ? [
+                        BoxShadow(
+                          color: widget.cornerColor.withValues(alpha: 0.35),
+                          blurRadius: 10.0,
+                        )
+                      ]
+                    : null,
               ),
-              boxShadow: _isHolding
-                  ? [
-                      BoxShadow(
-                        color: widget.cornerColor.withValues(alpha: 0.3),
-                        blurRadius: 10.0,
-                      )
-                    ]
-                  : null,
-            ),
-            child: Stack(
-              children: [
-                // Horizontal Filling Progress Track
-                FractionallySizedBox(
-                  widthFactor: progress,
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: widget.cornerColor.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium - 1),
+              child: Stack(
+                children: [
+                  // Horizontal Filling Progress Track
+                  FractionallySizedBox(
+                    widthFactor: progress,
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: widget.cornerColor.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium - 1),
+                      ),
                     ),
                   ),
-                ),
 
-                // Button Label
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.lock_clock,
-                        size: 16,
-                        color: _isHolding ? widget.cornerColor : AppTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _isHolding ? 'LOCKING PIN...' : 'HOLD FOR PIN',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: _isHolding ? AppTheme.textPrimary : AppTheme.textSecondary,
-                          letterSpacing: 0.5,
+                  // Button Label
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isLocked
+                              ? Icons.check_circle
+                              : (_isHolding ? Icons.lock_clock : Icons.touch_app),
+                          size: 16,
+                          color: _isLocked
+                              ? Colors.black
+                              : (_isHolding ? widget.cornerColor : AppTheme.textSecondary),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          _isLocked
+                              ? 'PIN CONFIRMED'
+                              : (_isHolding
+                                  ? 'LOCKING PIN: ${remainingMs}ms'
+                                  : 'HOLD TO PIN (400ms)'),
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            color: _isLocked
+                                ? Colors.black
+                                : (_isHolding ? AppTheme.textPrimary : AppTheme.textSecondary),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

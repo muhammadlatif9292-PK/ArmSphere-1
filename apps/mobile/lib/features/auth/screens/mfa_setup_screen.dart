@@ -1,7 +1,10 @@
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -25,6 +28,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
   Future<void> _verify() async {
     if (_codeController.text.trim().length != 6) return;
 
+    HapticFeedback.mediumImpact();
     setState(() {
       _isLoading = true;
     });
@@ -39,9 +43,19 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
       await authRepository.verifyMfa(code, userId: userId);
       
       if (mounted) {
+        HapticFeedback.lightImpact();
         context.pushReplacement('/recovery-codes');
       }
     } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid verification code. Please check your authenticator app.'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -53,59 +67,75 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Setup MFA'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('Setup Two-Factor Auth'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppTheme.space24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Secure Your Account',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: theme.colorScheme.primary,
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.space14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(Icons.security, size: 40, color: AppTheme.goldPrimary),
+                  ),
+                  const SizedBox(height: AppTheme.space16),
+                  const Text(
+                    'Secure Your Account',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space8),
+                  const Text(
+                    'Scan the QR code with an authenticator app (Google Authenticator, Authy) and enter the 6-digit code below.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Scan the QR code with an authenticator app (Google Authenticator, Authy, etc.) and enter the 6-digit code below.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppTheme.space24),
 
             Center(
               child: Container(
-                width: 200,
-                height: 200,
+                width: 180,
+                height: 180,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 16,
                     ),
                   ],
                 ),
                 child: const Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Icon(Icons.qr_code_2, size: 160, color: Colors.black87),
+                  child: Icon(Icons.qr_code_2, size: 148, color: Colors.black87),
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppTheme.space24),
 
-            GlassCard(
-              padding: const EdgeInsets.all(24.0),
+            ElevatedActionCard(
+              padding: const EdgeInsets.all(AppTheme.space20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -114,7 +144,13 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
                     keyboardType: TextInputType.number,
                     maxLength: 6,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 8.0),
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8.0,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
                     decoration: const InputDecoration(
                       labelText: 'Verification Code',
                       alignLabelWithHint: true,
@@ -126,10 +162,16 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
                       }
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppTheme.space20),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _verify,
-                    child: _isLoading ? const CircularProgressIndicator() : const Text('Enable MFA'),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Enable MFA Protection'),
                   ),
                 ],
               ),

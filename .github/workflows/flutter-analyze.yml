@@ -134,25 +134,14 @@ jobs:
           echo "flutter.sdk=${FLUTTER_ROOT}" >> android/local.properties
         working-directory: apps/mobile
 
-      - name: Install ImageMagick
-        run: sudo apt-get update && sudo apt-get install -y imagemagick
-
-      - name: Generate placeholder launcher icons
+      - name: Verify repository Android launcher icons
         run: |
           R=app/src/main/res
-          for pair in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-            d=${pair%%:*}; s=${pair##*:}
-            mkdir -p "$R/mipmap-$d"
-            convert -size ${s}x${s} gradient:'#0B1220-#1E293B' \
-              -stroke '#38BDF8' -strokewidth $((s/24)) \
-              -fill none -draw "ellipse $((s/2)),$((s/2)) $((s*82/200)),$((s*82/200)) -60,240" \
-              -fill white -font DejaVu-Sans-Bold -pointsize $((s*40/100)) -gravity center \
-              -draw "text 0,$((s/50)) 'AS'" "$R/mipmap-$d/ic_launcher.png"
-            convert "$R/mipmap-$d/ic_launcher.png" \
-              -resize $((s*66/100))x$((s*66/100)) \
-              -background none -gravity center -extent ${s}x${s} \
-              "$R/mipmap-$d/ic_launcher_foreground.png"
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            test -f "$R/mipmap-$d/ic_launcher.png" || { echo "Missing $R/mipmap-$d/ic_launcher.png"; exit 1; }
+            test -f "$R/mipmap-$d/ic_launcher_foreground.png" || { echo "Missing $R/mipmap-$d/ic_launcher_foreground.png"; exit 1; }
           done
+          echo "All permanent Android launcher icons verified in repository."
         working-directory: apps/mobile/android
 
       - name: Display Flutter & Dart Environment

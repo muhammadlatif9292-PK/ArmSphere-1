@@ -365,6 +365,16 @@ export class TournamentController {
     }
   }
 
+  static async getAwards(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const awards = await TournamentService.getAwards(id);
+      res.json(awards);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getMedalTable(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/state_providers.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/count_up_text.dart';
 import '../../../core/audio/sound_service.dart';
 import '../../../core/widgets/celebration_overlay.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../widgets/foul_sheet_modal.dart';
 
 // ==========================================
 // SCREEN 13: OFFICIAL SCOREPAD & MATCH CERTIFICATION (CONCEPT 2)
@@ -438,11 +439,16 @@ class _OfficialScorepadScreenState
     final tournament =
         match['tournamentName'] ?? 'Pakistan National Championship 2026';
 
-    return GlassCard(
+    return ElevatedActionCard(
       padding: const EdgeInsets.all(14),
       borderColor: AppTheme.goldPrimary.withValues(alpha: 0.4),
-      enableGlow: true,
-      glowColor: AppTheme.goldPrimary.withValues(alpha: 0.1),
+      boxShadow: [
+        BoxShadow(
+          color: AppTheme.goldPrimary.withValues(alpha: 0.08),
+          blurRadius: 16,
+          spreadRadius: 1,
+        ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1309,120 +1315,33 @@ class _OfficialScorepadScreenState
   }
 
   void _showAddFoulDialog(BuildContext context, String nameA, String nameB) {
-    String selectedAthlete = nameA;
-    String foulType = 'Elbow Foul';
     int roundNum = 1;
+    for (int r = 1; r <= _maxRounds; r++) {
+      if (_roundWinners[r] != null) {
+        roundNum = (r < _maxRounds) ? r + 1 : _maxRounds;
+      }
+    }
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'RECORD OFFICIAL FOUL',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      fontFamily: AppTheme.fontDisplay,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  const Text('Select Athlete:',
-                      style:
-                          TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: RadioListTile<String>(
-                          title: Text(nameA,
-                              style: const TextStyle(
-                                  color: AppTheme.textPrimary, fontSize: 11)),
-                          value: nameA,
-                          groupValue: selectedAthlete,
-                          onChanged: (val) =>
-                              setModalState(() => selectedAthlete = val!),
-                        ),
-                      ),
-                      Expanded(
-                        child: RadioListTile<String>(
-                          title: Text(nameB,
-                              style: const TextStyle(
-                                  color: AppTheme.textPrimary, fontSize: 11)),
-                          value: nameB,
-                          groupValue: selectedAthlete,
-                          onChanged: (val) =>
-                              setModalState(() => selectedAthlete = val!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Text('Foul Type:',
-                      style:
-                          TextStyle(color: AppTheme.textMuted, fontSize: 11)),
-                  DropdownButton<String>(
-                    value: foulType,
-                    dropdownColor: AppTheme.surface,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'Elbow Foul', child: Text('Elbow Foul')),
-                      DropdownMenuItem(
-                          value: 'False Start', child: Text('False Start')),
-                      DropdownMenuItem(
-                          value: 'Running Foul', child: Text('Running Foul')),
-                      DropdownMenuItem(
-                          value: 'Slip-Out', child: Text('Slip-Out')),
-                      DropdownMenuItem(
-                          value: 'Intentional Slip',
-                          child: Text('Intentional Slip')),
-                    ],
-                    onChanged: (val) => setModalState(() => foulType = val!),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.warning,
-                      ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        setState(() {
-                          _fouls.add({
-                            'id': 'F-${DateTime.now().millisecondsSinceEpoch}',
-                            'athleteName': selectedAthlete,
-                            'type': foulType,
-                            'round': roundNum,
-                            'time': 'Just now',
-                            'referee': ref.read(authProvider).userProfile?['fullName'] ?? ref.read(authProvider).userProfile?['name'] ?? 'Official Referee',
-                          });
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Log Official Foul',
-                          style: TextStyle(
-                              color: AppTheme.background,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
+    FoulSheetModal.show(
+      context,
+      athleteAName: nameA,
+      athleteBName: nameB,
+      currentRound: roundNum,
+      onFoulConfirmed: (foulData) {
+        setState(() {
+          _fouls.add({
+            'id': foulData['id'],
+            'athleteName': foulData['athleteName'],
+            'corner': foulData['corner'],
+            'type': foulData['type'],
+            'category': foulData['category'],
+            'round': foulData['round'],
+            'time': 'Just now',
+            'referee': ref.read(authProvider).userProfile?['fullName'] ??
+                ref.read(authProvider).userProfile?['name'] ??
+                'Official Referee',
+          });
+        });
       },
     );
   }

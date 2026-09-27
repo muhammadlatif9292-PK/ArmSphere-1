@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'bracket_connector_line.dart';
 import 'bracket_connectors_painter.dart';
@@ -268,7 +269,10 @@ class BracketTreeWidget extends StatelessWidget {
                       width: cardWidth,
                       height: cardHeight,
                       child: RepaintBoundary(
-                        child: CompactBracketMatchCard(match: m),
+                        child: GestureDetector(
+                          onTap: () => HapticFeedback.selectionClick(),
+                          child: CompactBracketMatchCard(match: m),
+                        ),
                       ),
                     ),
             ],

@@ -1,4 +1,4 @@
-import { eq, and, like, or, SQL, desc, notInArray } from "drizzle-orm";
+import { eq, and, like, or, SQL, desc, notInArray, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { 
   users, 
@@ -11,7 +11,8 @@ import {
   athleteSocialLinks, 
   athleteProfileHistory,
   auditLogs,
-  blockedUsers
+  blockedUsers,
+  tournamentMatches
 } from "@armsphere/db-schema";
 import { 
   NotFoundError, 
@@ -684,5 +685,96 @@ export class AthleteService {
       .select()
       .from(athleteClubs)
       .where(eq(athleteClubs.isDeleted, false));
+  }
+
+  /**
+   * Compare two athletes head-to-head with Tale of the Tape and win expectancy
+   */
+  static async compareAthletes(athlete1Id: string, athlete2Id: string) {
+    if (!athlete1Id || !athlete2Id) {
+      throw new BadRequestError("Both athlete1Id and athlete2Id are required for comparison");
+    }
+
+    const athlete1 = await AthleteService.getProfileByUserId(athlete1Id);
+    const athlete2 = await AthleteService.getProfileByUserId(athlete2Id);
+
+    if (!athlete1 || !athlete2) {
+      throw new NotFoundError("One or both athletes could not be found");
+    }
+
+    // Query past matches between these two athletes
+    const h2hMatches = await db
+      .select()
+      .from(tournamentMatches)
+      .where(
+        and(
+          sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
+          eq(tournamentMatches.status, "COMPLETED")
+        )
+      );
+
+    let athlete1Wins = 0;
+    let athlete2Wins = 0;
+
+    for (const m of h2hMatches) {
+      if (m.winnerId === athlete1.id) athlete1Wins++;
+      else if (m.winnerId === athlete2.id) athlete2Wins++;
+    }
+
+    const elo1 = (athlete1 as any).rightArmElo || (athlete1 as any).eloRating || 1500;
+    const elo2 = (athlete2 as any).rightArmElo || (athlete2 as any).eloRating || 1500;
+    const exponent = (elo2 - elo1) / 400;
+    const athlete1Prob = 1 / (1 + Math.pow(10, exponent));
+    const athlete2Prob = 1 - athlete1Prob;
+
+    return {
+      athlete1: {
+        id: athlete1.id,
+        displayName: athlete1.displayName,
+        avatarUrl: athlete1.profilePhoto,
+        province: athlete1.province,
+        clubName: athlete1.club?.name || "Independent",
+        weightKg: athlete1.weight,
+        heightCm: athlete1.height,
+        reachCm: athlete1.reach,
+        dominantArm: athlete1.dominantArm,
+        eloRating: elo1,
+        weightClass: athlete1.weightClass,
+        measurements: athlete1.measurements,
+        biometrics: athlete1.biometrics,
+      },
+      athlete2: {
+        id: athlete2.id,
+        displayName: athlete2.displayName,
+        avatarUrl: athlete2.profilePhoto,
+        province: athlete2.province,
+        clubName: athlete2.club?.name || "Independent",
+        weightKg: athlete2.weight,
+        heightCm: athlete2.height,
+        reachCm: athlete2.reach,
+        dominantArm: athlete2.dominantArm,
+        eloRating: elo2,
+        weightClass: athlete2.weightClass,
+        measurements: athlete2.measurements,
+        biometrics: athlete2.biometrics,
+      },
+      headToHead: {
+        totalEncounters: h2hMatches.length,
+        athlete1Wins,
+        athlete2Wins,
+        matches: h2hMatches.map((m: any) => ({
+          id: m.id,
+          winnerId: m.winnerId,
+          scoreLine: m.scoreLine,
+          round: m.round,
+          bracketType: m.bracketType,
+          date: m.updatedAt,
+        })),
+      },
+      winProbability: {
+        athlete1: Math.round(athlete1Prob * 100),
+        athlete2: Math.round(athlete2Prob * 100),
+      },
+    };
   }
 }

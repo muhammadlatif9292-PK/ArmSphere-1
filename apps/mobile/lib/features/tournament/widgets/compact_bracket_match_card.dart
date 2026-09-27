@@ -1,4 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 
@@ -44,13 +47,31 @@ class CompactBracketMatchCard extends StatelessWidget {
     }
 
     return RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          GoRouter.of(context).push(
+            '/matches/head-to-head',
+            extra: {
+              'matchId': match['id']?.toString() ?? 'match-1',
+              'athleteA': p1,
+              'athleteB': p2,
+              'weightClass': match['weightClass'] ?? match['category'] ?? '-85 KG',
+              'matchTitle': 'TABLE $tableNo • ${match['round'] ?? 'BOUT'}',
+            },
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
           color: AppTheme.cardSurface,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: isLive ? AppTheme.info : AppTheme.borderSubtle,
-            width: isLive ? 1.5 : 1.0,
+            color: isLive
+                ? AppTheme.info
+                : ((isAWinner || isBWinner)
+                    ? AppTheme.goldPrimary.withValues(alpha: 0.5)
+                    : AppTheme.borderSubtle),
+            width: (isLive || isAWinner || isBWinner) ? 1.5 : 1.0,
           ),
           boxShadow: isLive
               ? [
@@ -200,6 +221,7 @@ class CompactBracketMatchCard extends StatelessWidget {
                       fontFamily: 'Space Grotesk',
                       fontSize: 11,
                       fontWeight: isAWinner ? FontWeight.w800 : FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                       color: isAWinner ? AppTheme.goldPrimary : AppTheme.textMuted,
                     ),
                   ),
@@ -232,6 +254,7 @@ class CompactBracketMatchCard extends StatelessWidget {
                       fontFamily: 'Space Grotesk',
                       fontSize: 11,
                       fontWeight: isBWinner ? FontWeight.w800 : FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                       color: isBWinner ? AppTheme.goldPrimary : AppTheme.textMuted,
                     ),
                   ),
@@ -240,6 +263,7 @@ class CompactBracketMatchCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
