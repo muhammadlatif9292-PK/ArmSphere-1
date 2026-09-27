@@ -75,7 +75,7 @@ void main() {
       expect(find.text('My Tickets & Passes'), findsOneWidget);
       expect(find.text('No purchased tickets'), findsOneWidget);
       expect(
-        find.text('Passes you purchase for events will appear here.'),
+        find.text('Passes and registration tickets you purchase for tournaments and seminars will appear here.'),
         findsOneWidget,
       );
       expect(find.byIcon(Icons.confirmation_number_outlined), findsOneWidget);
@@ -115,7 +115,7 @@ void main() {
 
       expect(find.text('My Tickets & Passes'), findsOneWidget);
       expect(find.text('East vs West Qualifiers'), findsOneWidget);
-      expect(find.text('VIP Front Row'), findsOneWidget);
+      expect(find.text('VIP FRONT ROW'), findsOneWidget);
       expect(find.text('Toronto, Ontario'), findsOneWidget);
     });
 
