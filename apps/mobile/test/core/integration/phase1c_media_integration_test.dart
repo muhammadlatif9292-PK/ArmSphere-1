@@ -53,6 +53,9 @@ void main() {
       expect(find.text('ArmSphere'), findsOneWidget);
       expect(find.text('THE COMPETITIVE ARMWRESTLING ECOSYSTEM'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
     testWidgets('WelcomeScreen integrates ArmSphereAssets.heroGrip and iconGold via ArmSphereImage', (WidgetTester tester) async {
@@ -88,6 +91,9 @@ void main() {
       expect(find.text('ENTER ARENA'), findsOneWidget);
       expect(find.text('I ALREADY HAVE AN ACCOUNT'), findsOneWidget);
       expect(find.text('SELECT YOUR ROLE IN THE ARENA'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
     testWidgets('AthleteDashboardScreen integrates ArmSphereAssets.heroArena and avatar', (WidgetTester tester) async {
@@ -133,6 +139,9 @@ void main() {
       expect(find.text('Tariq Iron Grip'), findsOneWidget);
       expect(find.text('COMPETITIVE STANDING'), findsOneWidget);
       expect(find.text('QUICK COMMANDS'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 }

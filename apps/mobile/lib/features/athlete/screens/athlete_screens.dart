@@ -124,15 +124,18 @@ class AthleteDashboardScreen extends ConsumerWidget {
                         },
                       ),
                       const SizedBox(width: 4),
-                      ArmSphereImage.avatar(
-                        imageUrl: profile['avatarUrl']?.toString(),
-                        initial: displayName,
-                        size: 34,
-                        fallbackAsset: ArmSphereAssets.defaultAvatar,
+                      GestureDetector(
                         onTap: () {
                           HapticFeedback.selectionClick();
                           context.push('/athlete/profile');
                         },
+                        child: ArmSphereImage.avatar(
+                          imageUrl: profile['avatarUrl']?.toString(),
+                          initial: displayName,
+                          size: 34,
+                          fallbackAsset: ArmSphereAssets.defaultAvatar,
+                          semanticLabel: 'Athlete Profile: $displayName',
+                        ),
                       ),
                     ],
                   ),
