@@ -371,6 +371,12 @@ The forensic audit uncovered 5 critical technical and architectural defects that
     - Focused test suite: `apps/mobile/test/core/integration/phase1c_media_integration_test.dart` (100% PASS in CI).
     - Release verification: Android Release APK/AAB compiled cleanly with R8; Flutter Web CanvasKit build succeeded.
     - Honest Quality Status: **CODE INTEGRATED | CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW**.
+  - **Phase 1C Batch 2 (Athlete Identity Cluster Media Integration)**: **IMPLEMENTED | Awaiting CI Verification**
+    - `AthleteProfileScreen` (`apps/mobile/lib/features/athlete/screens/athlete_screens.dart`): Replaced raw `CircleAvatar` with `ArmSphereImage.avatar` (size 72, fallback to `ArmSphereAssets.defaultAvatar`), role-coded status ring, plus integrated division/referee badge (`ArmSphereAssets.badgeHeavy`, `ArmSphereAssets.refNat`, etc.) beside competitor status.
+    - `PublicAthleteProfileScreen` (`apps/mobile/lib/features/athlete/screens/public_profile_screen.dart`): Replaced raw `CircleAvatar`/`NetworkImage` with `ArmSphereImage.avatar` (size 96, fallback to `ArmSphereAssets.defaultAvatar`), gold primary status ring, and added division badge next to weight class.
+    - `RankingsScreen` (`apps/mobile/lib/features/athlete/screens/rankings_screen.dart`): Added `ArmSphereAssets.sealFed` (24x24) to the AppBar title, replaced list `CircleAvatar` with `ArmSphereImage.avatar` with memory bounds (`cacheWidth: 80`, `cacheHeight: 80`) and fallback asset.
+    - Focused test suite: `apps/mobile/test/core/integration/phase1c_batch2_media_integration_test.dart` (verifying avatar sizes, fallback assets, bounded decode dimensions, federation seal, and data preservation).
+    - Honest Quality Status: **CODE INTEGRATED | Awaiting CI Verification | NEEDS PHYSICAL VISUAL REVIEW**.
 
 
 ### Defect 2: Android Launcher Icon CI Workaround (RESOLVED)
@@ -444,6 +450,17 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
 │ • Integrated Authenticated Home: heroArena + avatar    │
 │ • Added focused Phase 1C integration widget tests      │
 │ • Status: CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW   │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 1C: ATHLETE IDENTITY MEDIA INTEGRATION (BATCH 2) │
+│ [IMPLEMENTED | Awaiting CI Verification]               │
+│ • AthleteProfileScreen: avatar + division badge        │
+│ • PublicAthleteProfileScreen: avatar + division badge  │
+│ • RankingsScreen: sealFed in AppBar + bounded avatars  │
+│ • Added focused Phase 1C Batch 2 widget tests          │
+│ • Status: INTEGRATED | NEEDS CI & PHYSICAL REVIEW      │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼

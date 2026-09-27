@@ -26,6 +26,18 @@ String _fmtDate(dynamic iso) {
   return '${d.day} ${_months[d.month] ?? ''} ${d.year}';
 }
 
+String _getDivisionBadge(dynamic weightVal, dynamic weightClassStr) {
+  final cls = weightClassStr?.toString().toLowerCase() ?? '';
+  if (cls.contains('heavy') || cls.contains('open') || cls.contains('+')) return ArmSphereAssets.badgeHeavy;
+  if (cls.contains('light')) return ArmSphereAssets.badgeLight;
+  if (cls.contains('junior')) return ArmSphereAssets.badgeJunior;
+  if (cls.contains('master')) return ArmSphereAssets.badgeMasters;
+  final w = (weightVal is num) ? weightVal.toDouble() : double.tryParse(weightVal?.toString() ?? '') ?? 85.0;
+  if (w >= 95) return ArmSphereAssets.badgeHeavy;
+  if (w >= 75) return ArmSphereAssets.badgeMiddle;
+  return ArmSphereAssets.badgeLight;
+}
+
 /// Athlete Dashboard Screen (Canary 2 Specification)
 ///
 /// Grounded in:
@@ -928,22 +940,12 @@ class AthleteProfileScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppTheme.elevatedSurface,
-                    backgroundImage: (profile['profilePhoto'] != null && profile['profilePhoto'].toString().isNotEmpty)
-                        ? NetworkImage(profile['profilePhoto'].toString())
-                        : null,
-                    onBackgroundImageError: (profile['profilePhoto'] != null && profile['profilePhoto'].toString().isNotEmpty)
-                        ? (_, __) {}
-                        : null,
-                    child: (profile['profilePhoto'] != null && profile['profilePhoto'].toString().isNotEmpty)
-                        ? null
-                        : Icon(
-                            Icons.person,
-                            size: 36,
-                            color: isOfficial ? AppTheme.info : AppTheme.goldPrimary,
-                          ),
+                  child: ArmSphereImage.avatar(
+                    imageUrl: (profile['profilePhoto'] ?? profile['avatarUrl'])?.toString(),
+                    initial: displayName,
+                    size: 72,
+                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                    semanticLabel: 'Athlete Avatar for $displayName',
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -980,12 +982,15 @@ class AthleteProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          Icon(
-                            Icons.verified,
-                            size: 14,
-                            color: isOfficial ? AppTheme.info : AppTheme.goldPrimary,
+                          ArmSphereImage(
+                            assetPath: isOfficial
+                                ? ArmSphereAssets.refNat
+                                : _getDivisionBadge(profile['weightKg'] ?? profile['weight'], profile['weightClass']),
+                            width: 20,
+                            height: 20,
+                            semanticLabel: isOfficial ? 'Certified Referee Insignia' : 'Division Category Badge',
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
                             isOfficial ? 'Certified Federation Official' : 'Official PAFF Competitor',
                             style: TextStyle(

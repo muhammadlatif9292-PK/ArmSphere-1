@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -100,24 +102,12 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        child: CircleAvatar(
-                          radius: 48,
-                          backgroundColor: AppTheme.cardSurface,
-                          backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                          onBackgroundImageError: photo.isNotEmpty
-                              ? (exception, stackTrace) {}
-                              : null,
-                          child: photo.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.goldPrimary,
-                                  ),
-                                )
-                              : null,
+                        child: ArmSphereImage.avatar(
+                          imageUrl: photo.isNotEmpty ? photo : null,
+                          initial: displayName,
+                          size: 96,
+                          fallbackAsset: ArmSphereAssets.defaultAvatar,
+                          semanticLabel: 'Athlete profile photo for $displayName',
                         ),
                       ),
                       const SizedBox(height: AppTheme.space16),
@@ -131,6 +121,30 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         ),
                         textAlign: TextAlign.center,
                       ),
+                      if (weightClass != null && weightClass.isNotEmpty) ...[
+                        const SizedBox(height: AppTheme.space6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ArmSphereImage(
+                              assetPath: _getDivisionBadge(null, weightClass),
+                              width: 18,
+                              height: 18,
+                              semanticLabel: '$weightClass division badge',
+                            ),
+                            const SizedBox(width: AppTheme.space6),
+                            Text(
+                              weightClass.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.goldPrimary,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (location.isNotEmpty) ...[
                         const SizedBox(height: AppTheme.space4),
                         Row(
@@ -345,6 +359,16 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
       }
     }
   }
+}
+
+String _getDivisionBadge(num? weight, String? weightClass) {
+  final wc = (weightClass ?? '').toLowerCase();
+  final w = weight ?? 0;
+  if (wc.contains('junior') || wc.contains('youth')) return ArmSphereAssets.badgeJunior;
+  if (wc.contains('master') || wc.contains('senior')) return ArmSphereAssets.badgeMasters;
+  if (wc.contains('heavy') || w >= 95) return ArmSphereAssets.badgeHeavy;
+  if (wc.contains('light') || (w > 0 && w < 75)) return ArmSphereAssets.badgeLight;
+  return ArmSphereAssets.badgeMiddle;
 }
 
 class _SpecRow extends StatelessWidget {

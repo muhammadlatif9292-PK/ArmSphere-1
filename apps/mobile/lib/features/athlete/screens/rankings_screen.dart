@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/providers/rankings_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -71,7 +73,19 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Leaderboard & Rankings'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ArmSphereImage(
+              assetPath: ArmSphereAssets.sealFed,
+              width: 24,
+              height: 24,
+              semanticLabel: 'Official Federation Seal',
+            ),
+            const SizedBox(width: 8),
+            const Text('Leaderboard & Rankings'),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -255,13 +269,14 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                 ),
                               ),
                               const SizedBox(width: AppTheme.space12),
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : 'A',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                                ),
+                              ArmSphereImage.avatar(
+                                imageUrl: (athlete['avatarUrl'] ?? athlete['profilePhoto'])?.toString(),
+                                initial: name,
+                                size: 40,
+                                cacheWidth: 80,
+                                cacheHeight: 80,
+                                fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                semanticLabel: 'Athlete Avatar for $name',
                               ),
                               const SizedBox(width: AppTheme.space12),
                               Expanded(
