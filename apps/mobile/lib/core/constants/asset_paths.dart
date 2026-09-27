@@ -64,6 +64,14 @@ abstract final class ArmSphereAssets {
   /// Certified Regional Referee - Gunmetal Steel Shield
   static const String refRegional = 'assets/images/badges/m4_ref_reg.webp';
 
+  /// Concise canonical aliases matching physical asset short filenames
+  static const String sealFed = sealFederation;
+  static const String badgeHeavy = badgeHeavyweight;
+  static const String badgeMiddle = badgeMiddleweight;
+  static const String badgeLight = badgeLightweight;
+  static const String refNat = refNational;
+  static const String refReg = refRegional;
+
   // ---------------------------------------------------------------------------
   // Level 2 Fallbacks & System Defaults (assets/images/defaults/)
   // ---------------------------------------------------------------------------

@@ -48,6 +48,15 @@ void main() {
       }
     });
 
+    test('Concise aliases map identically to canonical constants', () {
+      expect(ArmSphereAssets.sealFed, equals(ArmSphereAssets.sealFederation));
+      expect(ArmSphereAssets.badgeHeavy, equals(ArmSphereAssets.badgeHeavyweight));
+      expect(ArmSphereAssets.badgeMiddle, equals(ArmSphereAssets.badgeMiddleweight));
+      expect(ArmSphereAssets.badgeLight, equals(ArmSphereAssets.badgeLightweight));
+      expect(ArmSphereAssets.refNat, equals(ArmSphereAssets.refNational));
+      expect(ArmSphereAssets.refReg, equals(ArmSphereAssets.refRegional));
+    });
+
     test('System Defaults & Fallbacks have valid paths and webp extensions', () {
       expect(ArmSphereAssets.defaultAvatar, startsWith('assets/images/defaults/'));
       expect(ArmSphereAssets.defaultAvatar, endsWith('.webp'));
