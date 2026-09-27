@@ -52,7 +52,7 @@ void main() {
             authProvider.overrideWith((ref) => TestAuthNotifier(
                   AuthState(
                     status: AuthStatus.authenticated,
-                    userProfile: {'id': 'user_1', 'displayName': 'Ali Khan', 'role': 'ATHLETE'},
+                    userProfile: {'id': 'profile_1', 'displayName': 'Ali Khan', 'role': 'ATHLETE'},
                   ),
                 )),
             athleteProfileProvider.overrideWith(() => FakeAthleteProfileNotifier({
@@ -63,6 +63,7 @@ void main() {
                 })),
             liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
             trainingLogPRsProvider('profile_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
+            trainingLogPRsProvider('user_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
@@ -138,7 +139,7 @@ void main() {
             authProvider.overrideWith((ref) => TestAuthNotifier(
                   AuthState(
                     status: AuthStatus.authenticated,
-                    userProfile: {'id': 'user_4', 'displayName': 'Guest User'},
+                    userProfile: {'id': 'profile_4', 'displayName': 'Guest User'},
                   ),
                 )),
             athleteProfileProvider.overrideWith(() => FakeAthleteProfileNotifier({
@@ -148,6 +149,7 @@ void main() {
                 })),
             liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
             trainingLogPRsProvider('profile_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
+            trainingLogPRsProvider('user_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(
             home: Scaffold(body: RoleAwareHomeScreen()),
