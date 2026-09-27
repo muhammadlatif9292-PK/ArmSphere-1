@@ -28,3 +28,6 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
+# Play Core & Flutter Deferred Components (SplitCompat)
+-dontwarn com.google.android.play.core.**
+
