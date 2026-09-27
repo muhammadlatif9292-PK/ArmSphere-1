@@ -46,11 +46,17 @@ class AppTheme {
   /// Elevated bright divider for focused states (#475569).
   static const Color borderLight = Color(0xFF475569);
 
+  /// Backward-compatible alias for structural card border (#334155).
+  static const Color cardBorder = border;
+
   // ---------------------------------------------------------------------------
   // 2. Accents & Semantics (WCAG AA/AAA Compliant)
   // ---------------------------------------------------------------------------
   /// Coral Crimson (#EF4444) - Table fouls, match losses, forfeits, and live alerts.
   static const Color primaryAccent = Color(0xFFEF4444);
+
+  /// Backward-compatible alias for primaryAccent (#EF4444).
+  static const Color primaryRed = primaryAccent;
 
   /// Amber Gold (#F59E0B) - Warnings, pending sanctions, and in-straps status.
   static const Color secondaryAccent = Color(0xFFF59E0B);
@@ -130,9 +136,11 @@ class AppTheme {
   static const double space8 = 8.0;
   static const double space10 = 10.0;
   static const double space12 = 12.0;
+  static const double space14 = 14.0;
   static const double space16 = 16.0;
   static const double space20 = 20.0;
   static const double space24 = 24.0;
+  static const double space28 = 28.0;
   static const double space32 = 32.0;
   static const double space40 = 40.0;
   static const double space48 = 48.0;

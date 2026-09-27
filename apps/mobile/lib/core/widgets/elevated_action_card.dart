@@ -19,6 +19,7 @@ class ElevatedActionCard extends StatelessWidget {
   final VoidCallback? onTap;
   final String? semanticLabel;
   final List<BoxShadow>? customShadow;
+  final List<BoxShadow>? boxShadow;
 
   const ElevatedActionCard({
     super.key,
@@ -31,6 +32,7 @@ class ElevatedActionCard extends StatelessWidget {
     this.onTap,
     this.semanticLabel,
     this.customShadow,
+    this.boxShadow,
   });
 
   @override
@@ -48,7 +50,7 @@ class ElevatedActionCard extends StatelessWidget {
           color: effectiveBorderColor,
           width: 1.0,
         ),
-        boxShadow: customShadow ?? [AppTheme.cardShadow()],
+        boxShadow: customShadow ?? boxShadow ?? [AppTheme.cardShadow()],
       ),
       child: child,
     );

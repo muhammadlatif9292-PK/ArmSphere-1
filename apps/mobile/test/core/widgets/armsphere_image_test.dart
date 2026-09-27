@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/constants/asset_paths.dart';
 import 'package:mobile/core/widgets/armsphere_image.dart';
 
 void main() {
