@@ -189,7 +189,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
               decoration: InputDecoration(
                 hintText: 'e.g. PAFF-REF-2026-081',
                 filled: true,
-                fillColor: AppTheme.cardBackground,
+                fillColor: AppTheme.cardSurface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   borderSide: const BorderSide(color: AppTheme.cardBorder),
@@ -219,7 +219,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
               decoration: InputDecoration(
                 hintText: 'Describe your armwrestling officiating, organizing, or club background...',
                 filled: true,
-                fillColor: AppTheme.cardBackground,
+                fillColor: AppTheme.cardSurface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   borderSide: const BorderSide(color: AppTheme.cardBorder),

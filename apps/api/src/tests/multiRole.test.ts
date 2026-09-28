@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { testDbStore } from "./setup.js";
 import request from "supertest";
 import { app } from "../app.js";
-import { testDbStore } from "./setup.js";
 import { UserRole } from "@armsphere/types";
 import { generateAccessToken } from "@armsphere/cryptography";
 import env from "../config/env.js";
