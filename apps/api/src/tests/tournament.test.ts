@@ -1765,6 +1765,11 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
       expect(response.body).toHaveProperty("eventId", UUID_EVENT_ACTIVE);
       expect(response.body).toHaveProperty("awards");
       expect(Array.isArray(response.body.awards)).toBe(true);
+      if (response.body.awards.length > 0 && response.body.awards[0].podium?.length > 0) {
+        expect(response.body.awards[0].podium[0]).toHaveProperty("tier");
+        expect(response.body.awards[0].podium[0]).toHaveProperty("athleteId");
+        expect(response.body.awards[0].podium[0]).toHaveProperty("avatarUrl");
+      }
     });
 
     it("should support the canonical alias route /tournaments/:id/awards", async () => {

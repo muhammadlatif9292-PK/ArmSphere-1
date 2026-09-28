@@ -1604,7 +1604,8 @@ export class TournamentService {
           record: "Undefeated Champion",
           eloGain: "+32 ELO",
           color: "#D4AF37",
-          avatar: (goldProfile.displayName || "A").substring(0, 1).toUpperCase()
+          avatar: (goldProfile.displayName || "A").substring(0, 1).toUpperCase(),
+          avatarUrl: goldProfile.profilePhoto || null
         } : null;
 
         if (runnerUpId) {
@@ -1620,7 +1621,8 @@ export class TournamentService {
             record: "Silver Medalist",
             eloGain: "+18 ELO",
             color: "#CBD5E1",
-            avatar: (silverProfile.displayName || "B").substring(0, 1).toUpperCase()
+            avatar: (silverProfile.displayName || "B").substring(0, 1).toUpperCase(),
+            avatarUrl: silverProfile.profilePhoto || null
           } : null;
         }
 
@@ -1642,7 +1644,8 @@ export class TournamentService {
               record: "Bronze Medalist",
               eloGain: "+10 ELO",
               color: "#D97706",
-              avatar: (bronzeProfile.displayName || "C").substring(0, 1).toUpperCase()
+              avatar: (bronzeProfile.displayName || "C").substring(0, 1).toUpperCase(),
+              avatarUrl: bronzeProfile.profilePhoto || null
             } : null;
           }
         }
