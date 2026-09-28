@@ -112,12 +112,12 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                       Container(
                         padding: const EdgeInsets.all(AppTheme.space10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryGold.withValues(alpha: 0.15),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           _roleIcon(activeRole),
-                          color: AppTheme.primaryGold,
+                          color: AppTheme.goldPrimary,
                           size: 24,
                         ),
                       ),
@@ -148,9 +148,8 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                           ],
                         ),
                       ),
-                      const StatusChip(
+                      const StatusChip.success(
                         label: 'Active',
-                        color: AppTheme.success,
                       ),
                     ],
                   ),
@@ -212,7 +211,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                       ),
                       leading: Icon(
                         _roleIcon(role),
-                        color: isCurrentActive ? AppTheme.primaryGold : AppTheme.textSecondary,
+                        color: isCurrentActive ? AppTheme.goldPrimary : AppTheme.textSecondary,
                       ),
                       title: Text(
                         _formatRoleName(role),
@@ -239,7 +238,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
                                               content: Text('Switched persona to ${_formatRoleName(role)}'),
-                                              backgroundColor: AppTheme.primaryGold,
+                                              backgroundColor: AppTheme.goldPrimary,
                                             ),
                                           );
                                         }
@@ -319,9 +318,8 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                             : 'Submitted for federation review',
                         style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                       ),
-                      trailing: const StatusChip(
+                      trailing: const StatusChip.warning(
                         label: 'PENDING',
-                        color: AppTheme.warning,
                       ),
                     );
                   },
@@ -338,7 +336,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.space14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                 ),
               ),
             ),

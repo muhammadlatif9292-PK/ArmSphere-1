@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/providers/dependency_providers.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class ApplyRoleScreen extends ConsumerStatefulWidget {
@@ -104,7 +104,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, color: AppTheme.primaryGold, size: 22),
+                  const Icon(Icons.info_outline, color: AppTheme.goldPrimary, size: 22),
                   const SizedBox(width: AppTheme.space12),
                   Expanded(
                     child: Column(
@@ -163,7 +163,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
                     ),
                     value: roleInfo['key']!,
                     groupValue: _selectedRole,
-                    activeColor: AppTheme.primaryGold,
+                    activeColor: AppTheme.goldPrimary,
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedRole = val);
                     },
@@ -191,11 +191,11 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
                 filled: true,
                 fillColor: AppTheme.cardBackground,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   borderSide: const BorderSide(color: AppTheme.cardBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   borderSide: const BorderSide(color: AppTheme.cardBorder),
                 ),
               ),
@@ -221,11 +221,11 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
                 filled: true,
                 fillColor: AppTheme.cardBackground,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   borderSide: const BorderSide(color: AppTheme.cardBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   borderSide: const BorderSide(color: AppTheme.cardBorder),
                 ),
               ),
@@ -244,7 +244,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.space14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radius10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                 ),
               ),
               child: _isSubmitting

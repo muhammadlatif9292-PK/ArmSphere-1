@@ -34,7 +34,14 @@ export class UserRoleService {
           userId: userRecords[0].id,
           role: userRecords[0].role,
           status: "ACTIVE",
+          scope: null,
+          grantedBy: null,
           grantedAt: userRecords[0].createdAt || new Date(),
+          revokedAt: null,
+          revocationReason: null,
+          verificationMetadata: {},
+          createdAt: userRecords[0].createdAt || new Date(),
+          updatedAt: new Date(),
         },
       ];
     }
@@ -105,7 +112,7 @@ export class UserRoleService {
     roleGrants: any[];
     pendingApplications: any[];
   }> {
-    let grants = await db
+    let grants: any[] = await db
       .select()
       .from(userRoleGrants)
       .where(eq(userRoleGrants.userId, userId));
@@ -123,7 +130,14 @@ export class UserRoleService {
           userId,
           role: userRecords[0].role,
           status: "ACTIVE",
+          scope: null,
+          grantedBy: null,
           grantedAt: userRecords[0].createdAt || new Date(),
+          revokedAt: null,
+          revocationReason: null,
+          verificationMetadata: {},
+          createdAt: userRecords[0].createdAt || new Date(),
+          updatedAt: new Date(),
         };
         // Ensure inserted into userRoleGrants for consistency
         await db.insert(userRoleGrants).values(legacyGrant as any);
