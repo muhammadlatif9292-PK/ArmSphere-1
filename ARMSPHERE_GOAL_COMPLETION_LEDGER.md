@@ -382,7 +382,13 @@ The forensic audit uncovered 5 critical technical and architectural defects that
     - `TournamentDetailScreen` (`apps/mobile/lib/features/tournament/screens/tournament_screens.dart`): Replaced raw `Image.network` with `ArmSphereImage` featuring `fallbackAsset: ArmSphereAssets.defaultTournament`, bounded `BoxFit.cover`, semantic accessibility labels, and integrated `ArmSphereImage(assetPath: ArmSphereAssets.sealFed, width: 14, height: 14)` for official Sanctioning certification. Preserved all existing tournament schedule, venue, registration, and action controls.
     - `HeadToHeadScreen` (`apps/mobile/lib/features/match/screens/head_to_head_screen.dart`): Integrated official federation sanctioning seal (`ArmSphereAssets.sealFed`, 16x16) in the AppBar title, replaced hardcoded initial monograms in Red and Blue walkout panels with `ArmSphereImage.avatar` (size 52, `fallbackAsset: ArmSphereAssets.defaultAvatar`) nested in role-glowing border rings (Red #EF4444 and Blue #38BDF8). Preserved dynamic `avatarUrl` resolution, arm flip toggle, and live ELO data.
     - Focused test suite: `apps/mobile/test/core/integration/phase1c_batch3_media_integration_test.dart` (4 comprehensive integration test cases covering hero banners, sanctioning seals, error states, and dynamic matchups, 100% PASS in CI).
-    - Release verification: Android Release APK (signed with R8, `app-release.apk` 73,295,741 bytes, Artifact ID `10947940467`) and AppBundle AAB (Artifact ID `10947399154`) built successfully; Flutter Web preview deployed cleanly.
+    - Honest Quality Status: **CODE INTEGRATED | CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW**.
+  - **Phase 1C Batch 4 (Community / Social Identity Media Integration)**: **CI-VERIFIED** (GitHub Actions Runs `36439916890`, `36439916759`, `36439917223`, `36439916985`, Commit `2fc7df1`).
+    - `CommunityFeedScreen` (`apps/mobile/lib/features/community/screens/community_feed_screen.dart`): Added official federation seal (`ArmSphereAssets.sealFed`, 18x18) in AppBar title alongside "COMMUNITY ARENA". Replaced list item and vertical clips avatars with `ArmSphereImage.avatar` (`fallbackAsset: ArmSphereAssets.defaultAvatar`, gold border ring, memory bounds `cacheWidth: 108, cacheHeight: 108`). Upgraded combat video preview with dynamic YouTube CDN thumbnail derivation (`https://img.youtube.com/vi/$ytId/hqdefault.jpg`) and fallback to `ArmSphereAssets.heroGrip` (TECHNIQUE/SPARRING) or `ArmSphereAssets.heroArena`, backed by `_GridTexturePainter()` and `AppTheme.heroScrim()`.
+    - `PostCommentsScreen` (`apps/mobile/lib/features/community/screens/post_comments_screen.dart`): Added official federation seal (`ArmSphereAssets.sealFed`, 18x18) in AppBar title. Upgraded discussion comment items from raw `CircleAvatar` to `ArmSphereImage.avatar` (size 36, `fallbackAsset: ArmSphereAssets.defaultAvatar`, memory bounds `cacheWidth: 108, cacheHeight: 108`).
+    - `CreatePostScreen` (`apps/mobile/lib/features/community/screens/create_post_screen.dart`): Added official federation seal (`ArmSphereAssets.sealFed`, 18x18) in AppBar title. Replaced generic icon in submission header with `ArmSphereImage(assetPath: ArmSphereAssets.sealFed, width: 22, height: 22)`. Implemented live video link preview thumbnail card with `ArmSphereAssets.heroGrip` fallback and "Federation Preview Verified" gold badge upon detecting a valid video URL.
+    - Focused test suite: `apps/mobile/test/core/integration/phase1c_batch4_media_integration_test.dart` (100% PASS in CI, verifying feed cards, commenter avatars, submission seals, and live preview rendering).
+    - Release verification: Android Release APK (signed with R8, `app-release.apk` 73,345,205 bytes, Artifact ID `10979550260`, downloaded to `e:/ArmSphere/build-artifact/app-release.apk`), AppBundle AAB (Artifact ID `10979560251`), and Flutter Web CanvasKit preview (Artifact ID `10977406625`) built successfully.
     - Honest Quality Status: **CODE INTEGRATED | CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW**.
 
 
@@ -489,6 +495,17 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
 │ • TournamentDetailScreen: hero banner + sealFed badge  │
 │ • HeadToHeadScreen: sealFed AppBar + corner avatars    │
 │ • Added focused Phase 1C Batch 3 widget tests          │
+│ • Status: CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW   │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 1C: COMMUNITY MEDIA INTEGRATION (BATCH 4)        │
+│ [CI-VERIFIED] (Runs 36439916890, 36439916759, 2fc7df1) │
+│ • CommunityFeedScreen: sealFed + dynamic YT thumbs     │
+│ • PostCommentsScreen: sealFed + bounded avatars        │
+│ • CreatePostScreen: sealFed + live preview card        │
+│ • Added focused Phase 1C Batch 4 widget tests          │
 │ • Status: CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW   │
 └──────────────────────────┬─────────────────────────────┘
                            │
