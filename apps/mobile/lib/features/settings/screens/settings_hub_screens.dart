@@ -174,24 +174,27 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor ?? AppTheme.textPrimary, size: 22),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: titleColor ?? AppTheme.textPrimary,
-          fontSize: 14,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: Icon(icon, color: iconColor ?? AppTheme.textPrimary, size: 22),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: titleColor ?? AppTheme.textPrimary,
+            fontSize: 14,
+          ),
         ),
+        subtitle: subtitle != null
+            ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary))
+            : null,
+        trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textMuted),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
       ),
-      subtitle: subtitle != null
-          ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary))
-          : null,
-      trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textMuted),
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
     );
   }
 }

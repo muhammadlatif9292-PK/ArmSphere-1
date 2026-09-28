@@ -208,6 +208,13 @@ void main() {
 
   group('Auth Session Teardown - Navigation & Widget Awaiting Tests', () {
     testWidgets('A: Logout is awaited before navigation to /login occurs', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       final completer = Completer<void>();
       final controlledNotifier = ControlledLogoutNotifier(logoutCompleter: completer);
       final navigatedRoutes = <String>[];
@@ -250,12 +257,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Find the Log Out tile
-      final logoutTile = find.widgetWithText(ListTile, 'Log Out');
-      expect(logoutTile, findsOneWidget);
+      // Find the Log Out text
+      final logoutFinder = find.text('Log Out');
+      expect(logoutFinder, findsOneWidget);
 
       // Tap Log Out
-      await tester.tap(logoutTile);
+      await tester.tap(logoutFinder);
       await tester.pump();
 
       // Verify logout() has been triggered
