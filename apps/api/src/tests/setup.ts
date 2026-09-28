@@ -66,7 +66,9 @@ import {
   tickets,
   scheduledJobs,
   authTokens,
-  syncTombstones
+  syncTombstones,
+  userRoleGrants,
+  roleApplications
 } from "@armsphere/db-schema";
 import { createTestUserFixture } from "./factories.js";
 
@@ -147,6 +149,8 @@ export const testDbStore = {
   scheduledJobs: [] as any[],
   authTokens: [] as any[],
   syncTombstones: [] as any[],
+  userRoleGrants: [] as any[],
+  roleApplications: [] as any[],
 };
 
 // Reset store before each test run
@@ -234,6 +238,8 @@ beforeEach(() => {
   testDbStore.tickets = [];
   testDbStore.scheduledJobs = [];
   testDbStore.authTokens = [];
+  testDbStore.userRoleGrants = [];
+  testDbStore.roleApplications = [];
 });
 
 // Helper to evaluate mock query matching conditions
@@ -667,6 +673,10 @@ const mockDrizzle = {
         results = testDbStore.authTokens;
       } else if (table === syncTombstones) {
         results = testDbStore.syncTombstones;
+      } else if (table === userRoleGrants) {
+        results = testDbStore.userRoleGrants;
+      } else if (table === roleApplications) {
+        results = testDbStore.roleApplications;
       }
 
       const chain = {
@@ -935,6 +945,10 @@ const mockDrizzle = {
           testDbStore.authTokens.push(record);
         } else if (table === syncTombstones) {
           testDbStore.syncTombstones.push(record);
+        } else if (table === userRoleGrants) {
+          testDbStore.userRoleGrants.push(record);
+        } else if (table === roleApplications) {
+          testDbStore.roleApplications.push(record);
         }
       });
 
@@ -1374,6 +1388,24 @@ const mockDrizzle = {
             }
             return at;
           });
+        } else if (table === userRoleGrants) {
+          testDbStore.userRoleGrants = testDbStore.userRoleGrants.map((urg) => {
+            if (checkMatch(urg, expression)) {
+              const updated = { ...urg, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return urg;
+          });
+        } else if (table === roleApplications) {
+          testDbStore.roleApplications = testDbStore.roleApplications.map((ra) => {
+            if (checkMatch(ra, expression)) {
+              const updated = { ...ra, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return ra;
+          });
         }
         
         const returnObj = {
@@ -1483,6 +1515,10 @@ const mockDrizzle = {
         testDbStore.authTokens = filterFn(testDbStore.authTokens);
       } else if (table === ticketTypes) {
         testDbStore.ticketTypes = filterFn(testDbStore.ticketTypes);
+      } else if (table === userRoleGrants) {
+        testDbStore.userRoleGrants = filterFn(testDbStore.userRoleGrants);
+      } else if (table === roleApplications) {
+        testDbStore.roleApplications = filterFn(testDbStore.roleApplications);
       }
 
       return {
@@ -1534,6 +1570,8 @@ const mockDrizzle = {
       processedStripeEvents: [...testDbStore.processedStripeEvents],
       tickets: [...testDbStore.tickets],
       ticketTypes: [...testDbStore.ticketTypes],
+      userRoleGrants: [...testDbStore.userRoleGrants],
+      roleApplications: [...testDbStore.roleApplications],
     };
 
     try {
@@ -1570,6 +1608,8 @@ const mockDrizzle = {
       testDbStore.processedStripeEvents = snapshot.processedStripeEvents;
       testDbStore.tickets = snapshot.tickets;
       testDbStore.ticketTypes = snapshot.ticketTypes;
+      testDbStore.userRoleGrants = snapshot.userRoleGrants;
+      testDbStore.roleApplications = snapshot.roleApplications;
       throw error;
     }
   },

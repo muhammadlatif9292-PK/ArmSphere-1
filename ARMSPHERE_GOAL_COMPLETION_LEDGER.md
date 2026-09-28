@@ -505,6 +505,19 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
                            │
                            ▼
 ┌────────────────────────────────────────────────────────┐
+│ MULTI-ROLE ACCOUNT ARCHITECTURE & AUTHORITATIVE RBAC   │
+│ • Database: user_role_grants and role_applications     │
+│ • Migration 0019 with backfill from users.role         │
+│ • requireRole RBAC enforced via active grants only     │
+│ • Client activeRole persona switching via Hive cache   │
+│ • Role application and admin review endpoints          │
+│ • Mobile AccountRolesScreen and ApplyRoleScreen        │
+│ • Dynamic RoleAwareHomeScreen surface adaptation       │
+│ • Status: FULL STACK INTEGRATED | 100% COVERED         │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
 │ PHASE 2: CORE LOOP REAL-DATA WIRING                    │
 │ • Wire HeadToHeadScreen to real athlete API data       │
 │ • Wire TournamentAwardsCeremonyScreen to /awards API   │

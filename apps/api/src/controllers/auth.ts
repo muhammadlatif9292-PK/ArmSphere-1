@@ -5,7 +5,15 @@ import { UserRole } from "@armsphere/types";
 import { BadRequestError, UnauthorizedError } from "@armsphere/core";
 import { MFAService } from "../services/mfa.js";
 import { SocialAuthService } from "../services/socialAuth.js";
+import { UserRoleService } from "../services/userRole.js";
 import env from "../config/env.js";
+
+const ApplyRoleSchema = z.object({
+  role: z.nativeEnum(UserRole),
+  experienceDetails: z.string().optional(),
+  certificationNumber: z.string().optional(),
+  documents: z.any().optional(),
+});
 
 // Define strict Zod validation schemas
 const RegisterSchema = z.object({
@@ -575,6 +583,66 @@ export class AuthController {
       res.status(200).json({
         success: true,
         data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /auth/roles - Returns verified roles, grants, and pending applications
+   */
+  static async getUserRoles(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new UnauthorizedError("User is not authenticated.");
+      const result = await UserRoleService.getUserRolesOverview(req.user.id);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /auth/roles/apply - Submit application for an additional role
+   */
+  static async applyRole(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new UnauthorizedError("User is not authenticated.");
+      const parsed = ApplyRoleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        throw parsed.error;
+      }
+      const application = await UserRoleService.applyForRole(
+        req.user.id,
+        parsed.data.role,
+        {
+          experienceDetails: parsed.data.experienceDetails,
+          certificationNumber: parsed.data.certificationNumber,
+          documents: parsed.data.documents,
+        }
+      );
+      res.status(201).json({
+        success: true,
+        data: application,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /auth/roles/applications - Get current user's role applications
+   */
+  static async getUserApplications(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new UnauthorizedError("User is not authenticated.");
+      const applications = await UserRoleService.getUserApplications(req.user.id);
+      res.status(200).json({
+        success: true,
+        data: applications,
       });
     } catch (error) {
       next(error);

@@ -246,4 +246,27 @@ adminRouter.post(
   AdministrationController.exportReport
 );
 
+// 13. Role Applications Management
+adminRouter.get(
+  "/roles/applications",
+  authenticate,
+  requireRole(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.NATIONAL_DIRECTOR,
+    UserRole.PROVINCIAL_DIRECTOR
+  ),
+  AdministrationController.getRoleApplications
+);
+
+adminRouter.post(
+  "/roles/applications/:id/review",
+  authenticate,
+  requireRole(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.NATIONAL_DIRECTOR,
+    UserRole.PROVINCIAL_DIRECTOR
+  ),
+  AdministrationController.reviewRoleApplication
+);
+
 export default adminRouter;

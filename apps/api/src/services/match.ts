@@ -17,6 +17,7 @@ import {
 } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 import { RefereeCertificationService } from "./refereeCertification.js";
+import { UserRoleService } from "./userRole.js";
 
 export interface CreateMatchInput {
   challengerId: string;
@@ -114,7 +115,10 @@ export class MatchService {
       UserRole.NATIONAL_DIRECTOR,
       UserRole.SYSTEM_ADMIN,
     ];
-    if (!AUTHORIZED_SUBMITTER_ROLES.includes(refereeUser.role as UserRole)) {
+    const hasAuthorizedRole =
+      AUTHORIZED_SUBMITTER_ROLES.includes(refereeUser.role as UserRole) ||
+      (await UserRoleService.hasActiveRole(refereeId, AUTHORIZED_SUBMITTER_ROLES));
+    if (!hasAuthorizedRole) {
       throw new ForbiddenError(
         "Only referees, directors, or system administrators may submit match results."
       );

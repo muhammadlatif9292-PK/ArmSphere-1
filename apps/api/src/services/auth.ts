@@ -12,6 +12,7 @@ import { MFAService } from "./mfa.js";
 import { SessionSecurityService } from "./sessionSecurity.js";
 import { auditLedgerService } from "./auditLedger.js";
 import { EmailDeliveryService } from "./emailDelivery.js";
+import { UserRoleService } from "./userRole.js";
 
 // Zero-cost TTL-supported in-memory store for ephemeral auth rate-limiting & lockout caching (background scheduled jobs use PostgreSQL scheduled_jobs)
 const inMemoryStore = new Map<string, { value: string; expiresAt?: number }>();
@@ -370,12 +371,17 @@ export class AuthService {
       .limit(1);
     const isOnboarded = !!athleteProfile;
 
+    const rolesOverview = await UserRoleService.getUserRolesOverview(user.id);
+
     const { passwordHash, ...userResponse } = user;
     return {
       mfaRequired: false,
       user: {
         ...userResponse,
         isOnboarded,
+        verifiedRoles: rolesOverview.verifiedRoles,
+        roleGrants: rolesOverview.roleGrants,
+        pendingApplications: rolesOverview.pendingApplications,
       },
       accessToken,
       refreshToken,
@@ -458,12 +464,17 @@ export class AuthService {
       .limit(1);
     const isOnboarded = !!athleteProfile;
 
+    const rolesOverview = await UserRoleService.getUserRolesOverview(user.id);
+
     const { passwordHash, ...userResponse } = user;
     return {
       mfaRequired: false,
       user: {
         ...userResponse,
         isOnboarded,
+        verifiedRoles: rolesOverview.verifiedRoles,
+        roleGrants: rolesOverview.roleGrants,
+        pendingApplications: rolesOverview.pendingApplications,
       },
       accessToken,
       refreshToken,
@@ -594,10 +605,15 @@ export class AuthService {
       .limit(1);
     const isOnboarded = !!athleteProfile;
 
+    const rolesOverview = await UserRoleService.getUserRolesOverview(userId);
+
     const { passwordHash, ...profile } = user;
     return {
       ...profile,
       isOnboarded,
+      verifiedRoles: rolesOverview.verifiedRoles,
+      roleGrants: rolesOverview.roleGrants,
+      pendingApplications: rolesOverview.pendingApplications,
     };
   }
 

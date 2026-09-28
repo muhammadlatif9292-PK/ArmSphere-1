@@ -23,6 +23,7 @@ import { RefereeCertificationService } from "./refereeCertification.js";
 import { auditLedgerService } from "./auditLedger.js";
 import { StorageService } from "./storage.js";
 import { env } from "../config/env.js";
+import { UserRoleService } from "./userRole.js";
 
 export class TournamentService {
   // ==========================================
@@ -1170,7 +1171,10 @@ export class TournamentService {
     }
 
     const assignableRoles: string[] = [UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN];
-    if (!assignableRoles.includes(refereeUser.role)) {
+    const hasAssignableRole =
+      assignableRoles.includes(refereeUser.role) ||
+      (await UserRoleService.hasActiveRole(refereeId, assignableRoles));
+    if (!hasAssignableRole) {
       throw new BadRequestError("Referee must hold a referee or director role.");
     }
 

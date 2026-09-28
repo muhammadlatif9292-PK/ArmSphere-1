@@ -30,6 +30,13 @@ class SettingsHubScreen extends ConsumerWidget {
                   onTap: () => context.push('/athlete/profile'),
                 ),
                 const Divider(height: 1, color: AppTheme.cardBorder),
+                _SettingsTile(
+                  icon: Icons.badge_outlined,
+                  title: 'Account Roles',
+                  subtitle: 'Manage verified roles and persona',
+                  onTap: () => context.push('/settings/roles'),
+                ),
+                const Divider(height: 1, color: AppTheme.cardBorder),
                 const BiometricSettingsTile(),
                 const Divider(height: 1, color: AppTheme.cardBorder),
                 _SettingsTile(

@@ -16,12 +16,14 @@ import {
   sanctions, 
   auditEvents, 
   auditLogs,
-  refereeCertifications
+  refereeCertifications,
+  userRoleGrants
 } from "@armsphere/db-schema";
 import { BadRequestError, ForbiddenError, NotFoundError, logger } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 import { scheduleJob, SCHEDULED_JOB_TYPES, processedJobsTracker } from "./scheduledJobs.js";
 import { MatchService } from "./match.js";
+import { UserRoleService } from "./userRole.js";
 import crypto from "crypto";
 
 export class AdministrationService {
@@ -348,7 +350,19 @@ export class AdministrationService {
   static async getReferees() {
     logger.info("Fetching referees list");
 
-    const refereeUsers = await db.select().from(users).where(eq(users.role, "REFEREE"));
+    const primaryReferees = await db.select().from(users).where(eq(users.role, "REFEREE"));
+    const activeGrants = await db
+      .select()
+      .from(userRoleGrants)
+      .where(and(eq(userRoleGrants.role, "REFEREE"), eq(userRoleGrants.status, "ACTIVE")));
+    const primaryIds = new Set(primaryReferees.map((u) => u.id));
+    const additionalIds = activeGrants.map((g) => g.userId).filter((id) => !primaryIds.has(id));
+    let additionalReferees: any[] = [];
+    if (additionalIds.length > 0) {
+      const allUsers = await db.select().from(users);
+      additionalReferees = allUsers.filter((u) => additionalIds.includes(u.id));
+    }
+    const refereeUsers = [...primaryReferees, ...additionalReferees];
     const allMatches = await db.select().from(matches);
     const allTMatches = await db.select().from(tournamentMatches);
     const allCertifications = await db.select().from(refereeCertifications);
@@ -410,8 +424,14 @@ export class AdministrationService {
   static async updateRefereeLicense(refereeId: string, certification: string, status: string, reviewerId: string) {
     logger.info({ refereeId, certification, status }, "Updating referee license");
 
-    const [user] = await db.select().from(users).where(and(eq(users.id, refereeId), eq(users.role, "REFEREE")));
+    const [user] = await db.select().from(users).where(eq(users.id, refereeId));
     if (!user) {
+      throw new NotFoundError("Referee not found");
+    }
+    const isReferee =
+      user.role === "REFEREE" ||
+      (await UserRoleService.hasActiveRole(refereeId, [UserRole.REFEREE]));
+    if (!isReferee) {
       throw new NotFoundError("Referee not found");
     }
 
@@ -428,13 +448,24 @@ export class AdministrationService {
   static async handleRefereeSuspension(refereeId: string, reviewerId: string, reason: string) {
     logger.info({ refereeId, reason }, "Suspending referee license");
 
-    const [user] = await db.select().from(users).where(and(eq(users.id, refereeId), eq(users.role, "REFEREE")));
+    const [user] = await db.select().from(users).where(eq(users.id, refereeId));
     if (!user) {
       throw new NotFoundError("Referee not found");
     }
+    const isReferee =
+      user.role === "REFEREE" ||
+      (await UserRoleService.hasActiveRole(refereeId, [UserRole.REFEREE]));
+    if (!isReferee) {
+      throw new NotFoundError("Referee not found");
+    }
 
-    // Deactivate referee account
-    await db.update(users).set({ isActive: false }).where(eq(users.id, refereeId));
+    // Suspend the referee role grant
+    await UserRoleService.suspendRole(refereeId, "REFEREE", reviewerId, reason);
+
+    // Deactivate user account only if primary role was REFEREE
+    if (user.role === "REFEREE") {
+      await db.update(users).set({ isActive: false }).where(eq(users.id, refereeId));
+    }
 
     // Create a formal sanction
     await db.insert(sanctions).values({

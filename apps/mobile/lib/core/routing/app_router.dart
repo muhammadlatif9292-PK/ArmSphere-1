@@ -37,6 +37,8 @@ import '../../features/messaging/screens/announcement_screens.dart';
 import '../../features/settings/screens/settings_screens.dart';
 import '../../features/settings/screens/payment_methods_screen.dart';
 import '../../features/settings/screens/settings_hub_screens.dart';
+import '../../features/settings/screens/account_roles_screen.dart';
+import '../../features/settings/screens/apply_role_screen.dart';
 import '../../features/team/screens/team_screens.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/search/screens/search_screen.dart';
@@ -84,7 +86,7 @@ class RoleAwareHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userRole = authState.userProfile?['role']?.toString().toUpperCase();
+    final userRole = (authState.activeRole ?? authState.userProfile?['role'])?.toString().toUpperCase();
 
     if (_isRefereeLikeRole(userRole)) {
       return const RefereeDashboardScreen();
@@ -787,6 +789,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
           child: const SettingsHubScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings/roles',
+        name: 'account_roles',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const AccountRolesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/settings/roles/apply',
+        name: 'apply_role',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const ApplyRoleScreen(),
         ),
       ),
       GoRoute(

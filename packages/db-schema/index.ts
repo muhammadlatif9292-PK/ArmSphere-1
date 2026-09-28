@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, uuid, jsonb, real, varchar, numeric, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, uuid, jsonb, real, varchar, numeric, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -724,3 +724,44 @@ export const follows = pgTable("follows", {
   followingId: uuid("following_id").references(() => athleteProfiles.id).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const userRoleGrants = pgTable("user_role_grants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  role: varchar("role", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
+  scope: varchar("scope", { length: 100 }),
+  grantedBy: uuid("granted_by").references(() => users.id),
+  grantedAt: timestamp("granted_at").notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+  revocationReason: text("revocation_reason"),
+  verificationMetadata: jsonb("verification_metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    userRoleIdx: uniqueIndex("idx_user_role_grants_user_role").on(table.userId, table.role),
+    userStatusIdx: index("idx_user_role_grants_user_status").on(table.userId, table.status),
+  };
+});
+
+export const roleApplications = pgTable("role_applications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  role: varchar("role", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("PENDING"),
+  experienceDetails: text("experience_details"),
+  certificationNumber: varchar("certification_number", { length: 100 }),
+  documents: jsonb("documents"),
+  reviewerId: uuid("reviewer_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    userRoleStatusIdx: index("idx_role_applications_user_role_status").on(table.userId, table.role, table.status),
+    statusIdx: index("idx_role_applications_status").on(table.status),
+  };
+});
+

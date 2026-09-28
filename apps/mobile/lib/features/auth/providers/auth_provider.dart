@@ -23,12 +23,18 @@ class AuthState {
   final Map<String, dynamic>? userProfile;
   final String? errorMessage;
   final String? roleIntent;
+  final List<String> verifiedRoles;
+  final List<Map<String, dynamic>> pendingRoleApplications;
+  final String? activeRole;
 
   AuthState({
     required this.status,
     this.userProfile,
     this.errorMessage,
     this.roleIntent,
+    this.verifiedRoles = const [],
+    this.pendingRoleApplications = const [],
+    this.activeRole,
   });
 
   AuthState copyWith({
@@ -36,12 +42,18 @@ class AuthState {
     Map<String, dynamic>? userProfile,
     String? errorMessage,
     String? roleIntent,
+    List<String>? verifiedRoles,
+    List<Map<String, dynamic>>? pendingRoleApplications,
+    String? activeRole,
   }) {
     return AuthState(
       status: status ?? this.status,
       userProfile: userProfile ?? this.userProfile,
       errorMessage: errorMessage ?? this.errorMessage,
       roleIntent: roleIntent ?? this.roleIntent,
+      verifiedRoles: verifiedRoles ?? this.verifiedRoles,
+      pendingRoleApplications: pendingRoleApplications ?? this.pendingRoleApplications,
+      activeRole: activeRole ?? this.activeRole,
     );
   }
 }
@@ -116,10 +128,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       final onboarded = profile['isOnboarded'] as bool? ?? false;
+      final verified = _extractVerifiedRoles(profile);
+      final pending = _extractPendingApplications(profile);
+      final cachedRole = _readActiveRole(hiveStorage);
+      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
+
       state = AuthState(
         status: onboarded ? AuthStatus.authenticated : AuthStatus.onboardingRequired,
         userProfile: profile,
         roleIntent: _readRoleIntent(hiveStorage),
+        verifiedRoles: verified,
+        pendingRoleApplications: pending,
+        activeRole: activeRole,
       );
       if (onboarded) {
         _initializeSync();
@@ -127,6 +147,59 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {
       state = AuthState(status: AuthStatus.unauthenticated);
     }
+  }
+
+  List<String> _extractVerifiedRoles(Map<String, dynamic>? profile) {
+    if (profile == null) return const [];
+    if (profile['verifiedRoles'] is List) {
+      return (profile['verifiedRoles'] as List).map((e) => e.toString()).toList();
+    }
+    final primaryRole = profile['role']?.toString();
+    if (primaryRole != null && primaryRole.isNotEmpty) {
+      return [primaryRole];
+    }
+    return const ['ATHLETE'];
+  }
+
+  List<Map<String, dynamic>> _extractPendingApplications(Map<String, dynamic>? profile) {
+    if (profile == null) return const [];
+    if (profile['pendingApplications'] is List) {
+      return (profile['pendingApplications'] as List)
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return const [];
+  }
+
+  String _resolveActiveRole(
+    List<String> verified,
+    Map<String, dynamic>? profile,
+    String? cachedRole,
+  ) {
+    if (cachedRole != null && verified.contains(cachedRole)) {
+      return cachedRole;
+    }
+    final primary = profile?['role']?.toString();
+    if (primary != null && verified.contains(primary)) {
+      return primary;
+    }
+    if (verified.isNotEmpty) {
+      return verified.first;
+    }
+    return primary ?? 'ATHLETE';
+  }
+
+  String? _readActiveRole(HiveStorage hiveStorage) {
+    try {
+      final cached = hiveStorage.getCachedData('auth_active_role');
+      if (cached is Map && cached['activeRole'] is String) {
+        return cached['activeRole'] as String;
+      } else if (cached is String) {
+        return cached;
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<Map<String, dynamic>?> _loadStoredProfile(SecureStorage secureStorage) async {
@@ -213,11 +286,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(errorMessage: null);
       final profile = await _establishSession(email, password);
       final onboarded = profile['isOnboarded'] as bool? ?? false;
+      final verified = _extractVerifiedRoles(profile);
+      final pending = _extractPendingApplications(profile);
+      final hiveStorage = ref.read(hiveStorageProvider);
+      final cachedRole = _readActiveRole(hiveStorage);
+      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
 
       state = AuthState(
         status: onboarded ? AuthStatus.authenticated : AuthStatus.onboardingRequired,
         userProfile: profile,
         roleIntent: state.roleIntent,
+        verifiedRoles: verified,
+        pendingRoleApplications: pending,
+        activeRole: activeRole,
       );
       if (onboarded) {
         _initializeSync();
@@ -240,11 +321,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       //    protected onboarding APIs receive a valid bearer token. Without
       //    this handoff, profile submission would fail with 401.
       final profile = await _establishSession(email, password);
+      final verified = _extractVerifiedRoles(profile);
+      final pending = _extractPendingApplications(profile);
+      final hiveStorage = ref.read(hiveStorageProvider);
+      final cachedRole = _readActiveRole(hiveStorage);
+      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
 
       state = AuthState(
         status: AuthStatus.onboardingRequired,
         userProfile: profile,
         roleIntent: state.roleIntent,
+        verifiedRoles: verified,
+        pendingRoleApplications: pending,
+        activeRole: activeRole,
       );
     } catch (e) {
       state = state.copyWith(
@@ -282,6 +371,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.authenticated,
         userProfile: updatedUser,
         roleIntent: state.roleIntent,
+        verifiedRoles: state.verifiedRoles,
+        pendingRoleApplications: state.pendingRoleApplications,
+        activeRole: state.activeRole,
       );
       _initializeSync();
     } catch (e) {
@@ -295,6 +387,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.authenticated,
         userProfile: updatedUser,
         roleIntent: state.roleIntent,
+        verifiedRoles: state.verifiedRoles,
+        pendingRoleApplications: state.pendingRoleApplications,
+        activeRole: state.activeRole,
       );
       _initializeSync();
     }
@@ -314,6 +409,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       status: AuthStatus.authenticated,
       userProfile: updatedUser,
       roleIntent: state.roleIntent ?? 'athlete',
+      verifiedRoles: state.verifiedRoles,
+      pendingRoleApplications: state.pendingRoleApplications,
+      activeRole: state.activeRole,
     );
     _initializeSync();
   }
@@ -332,6 +430,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
           ? Map<String, dynamic>.from(data['user'])
           : Map<String, dynamic>.from(currentUser);
       final onboarded = profile['isOnboarded'] as bool? ?? false;
+      final verified = _extractVerifiedRoles(profile);
+      final pending = _extractPendingApplications(profile);
+      final hiveStorage = ref.read(hiveStorageProvider);
+      final cachedRole = _readActiveRole(hiveStorage);
+      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
 
       await _persistSession(profile, data['accessToken']?.toString(), data['refreshToken']?.toString());
 
@@ -339,6 +442,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: onboarded ? AuthStatus.authenticated : AuthStatus.onboardingRequired,
         userProfile: profile,
         roleIntent: state.roleIntent,
+        verifiedRoles: verified,
+        pendingRoleApplications: pending,
+        activeRole: activeRole,
       );
       if (onboarded) {
         _initializeSync();
@@ -388,6 +494,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final hiveStorage = ref.read(hiveStorageProvider);
         await hiveStorage.evictCache('auth_session_user');
         await hiveStorage.evictCache('auth_role_intent');
+        await hiveStorage.evictCache('auth_active_role');
       } catch (_) {}
 
       state = AuthState(status: AuthStatus.unauthenticated);
@@ -418,10 +525,56 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final hiveStorage = ref.read(hiveStorageProvider);
         await hiveStorage.evictCache('auth_session_user');
         await hiveStorage.evictCache('auth_role_intent');
+        await hiveStorage.evictCache('auth_active_role');
       } catch (_) {}
 
       state = AuthState(status: AuthStatus.unauthenticated);
     }
+  }
+
+  /// Switches the client presentation persona to another verified role.
+  /// Server authorization never trusts activeRole; permissions remain server-authoritative.
+  Future<void> switchActiveRole(String newRole) async {
+    if (!state.verifiedRoles.contains(newRole)) {
+      throw Exception('Role $newRole is not verified for this account.');
+    }
+    try {
+      final hiveStorage = ref.read(hiveStorageProvider);
+      await hiveStorage.cacheData('auth_active_role', {'activeRole': newRole});
+    } catch (_) {}
+
+    state = state.copyWith(activeRole: newRole);
+  }
+
+  /// Refreshes verified roles and pending applications from the backend.
+  Future<void> refreshUserRoles() async {
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      final rolesData = await repo.getUserRoles();
+      final verified = (rolesData['verifiedRoles'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          state.verifiedRoles;
+      final pending = (rolesData['pendingApplications'] as List?)
+              ?.whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          state.pendingRoleApplications;
+
+      final hiveStorage = ref.read(hiveStorageProvider);
+      final cachedRole = _readActiveRole(hiveStorage);
+      final currentActive = _resolveActiveRole(
+        verified,
+        state.userProfile,
+        state.activeRole ?? cachedRole,
+      );
+
+      state = state.copyWith(
+        verifiedRoles: verified,
+        pendingRoleApplications: pending,
+        activeRole: currentActive,
+      );
+    } catch (_) {}
   }
 }
 

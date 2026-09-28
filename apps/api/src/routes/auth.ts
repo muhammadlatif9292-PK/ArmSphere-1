@@ -11,6 +11,11 @@ authRouter.post("/logout", AuthController.logout);
 authRouter.get("/me", authenticate, AuthController.me);
 authRouter.delete("/me", authenticate, AuthController.deleteAccount);
 
+// --- Multi-Role Management ---
+authRouter.get("/roles", authenticate, AuthController.getUserRoles);
+authRouter.post("/roles/apply", authenticate, AuthController.applyRole);
+authRouter.get("/roles/applications", authenticate, AuthController.getUserApplications);
+
 // --- Session & Device Management ---
 authRouter.get("/sessions", authenticate, AuthController.getSessions);
 authRouter.post("/sessions/revoke-others", authenticate, AuthController.revokeOtherSessions);

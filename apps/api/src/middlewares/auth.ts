@@ -4,6 +4,7 @@ import { UnauthorizedError, ForbiddenError } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 import env from "../config/env.js";
 import { SecretRotationService } from "../services/secretRotation.js";
+import { UserRoleService } from "../services/userRole.js";
 
 /**
  * Middleware to authenticate requests via Bearer JWT Access Tokens.
@@ -55,27 +56,37 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
 /**
  * Middleware to enforce strict Role-Based Access Control.
+ * Server-authoritatively verifies active role grants from database.
  */
 export function requireRole(...allowedRoles: UserRole[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new UnauthorizedError());
     }
 
-    const hasRole = allowedRoles.includes(req.user.role as UserRole);
-    if (!hasRole) {
-      req.log.warn(
-        { userId: req.user.id, userRole: req.user.role, requiredRoles: allowedRoles },
-        "Unauthorized role access attempt detected"
+    try {
+      const hasRole = await UserRoleService.hasActiveRole(
+        req.user.id,
+        allowedRoles,
+        req.user.role
       );
-      return next(
-        new ForbiddenError(
-          `Access denied. Role privilege required: [${allowedRoles.join(", ")}]. Current: ${req.user.role}`
-        )
-      );
-    }
 
-    next();
+      if (!hasRole) {
+        req.log.warn(
+          { userId: req.user.id, userRole: req.user.role, requiredRoles: allowedRoles },
+          "Unauthorized role access attempt detected"
+        );
+        return next(
+          new ForbiddenError(
+            `Access denied. Role privilege required: [${allowedRoles.join(", ")}]. Current: ${req.user.role}`
+          )
+        );
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 }
 

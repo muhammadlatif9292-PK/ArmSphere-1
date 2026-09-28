@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { AdministrationService } from "../services/administration.js";
+import { UserRoleService } from "../services/userRole.js";
 import { z } from "zod";
 import { BadRequestError } from "@armsphere/core";
 
 // Zod schemas for admin operations
+const reviewRoleApplicationSchema = z.object({
+  decision: z.enum(["APPROVED", "REJECTED"]),
+  notes: z.string().optional(),
+});
 const reviewProfileSchema = z.object({
   status: z.enum(["VERIFIED", "REJECTED"]),
   reason: z.string().optional(),
@@ -333,6 +338,32 @@ export class AdministrationController {
       
       const content = `Federation Report,Type: ${validated.reportType},Format: ${validated.format}\nGeneratedAt,${new Date().toISOString()}\nStatus,CONFIDENTIAL\n`;
       res.status(200).send(content);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async getRoleApplications(req: any, res: any, next: NextFunction) {
+    try {
+      const roleFilter = req.query.role as string | undefined;
+      const applications = await UserRoleService.getPendingApplications(roleFilter);
+      res.status(200).json({ success: true, data: applications });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async reviewRoleApplication(req: any, res: any, next: NextFunction) {
+    try {
+      const validated = reviewRoleApplicationSchema.parse(req.body);
+      const result = await UserRoleService.reviewApplication(
+        req.params.id,
+        req.user.id,
+        req.user.role,
+        validated.decision,
+        validated.notes
+      );
+      res.status(200).json({ success: true, data: result });
     } catch (err) {
       next(err);
     }

@@ -184,6 +184,7 @@ class AuthRepository extends BaseRepository {
       await dioClient.secureStorage.clearSession();
       await hiveStorage.evictCache('auth_session_user');
       await hiveStorage.evictCache('auth_role_intent');
+      await hiveStorage.evictCache('auth_active_role');
     }
   }
 
@@ -194,6 +195,52 @@ class AuthRepository extends BaseRepository {
       await dioClient.secureStorage.clearSession();
       await hiveStorage.evictCache('auth_session_user');
       await hiveStorage.evictCache('auth_role_intent');
+      await hiveStorage.evictCache('auth_active_role');
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserRoles({CancelToken? cancelToken}) async {
+    try {
+      final response = await dioClient.dio.get('/auth/roles', cancelToken: cancelToken);
+      return _unwrap(response.data);
+    } on DioException catch (e) {
+      _rethrowAuthError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> applyForRole({
+    required String role,
+    String? experienceDetails,
+    String? certificationNumber,
+    dynamic documents,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await dioClient.dio.post('/auth/roles/apply', data: {
+        'role': role,
+        if (experienceDetails != null) 'experienceDetails': experienceDetails,
+        if (certificationNumber != null) 'certificationNumber': certificationNumber,
+        if (documents != null) 'documents': documents,
+      }, cancelToken: cancelToken);
+      return _unwrap(response.data);
+    } on DioException catch (e) {
+      _rethrowAuthError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRoleApplications({CancelToken? cancelToken}) async {
+    try {
+      final response = await dioClient.dio.get('/auth/roles/applications', cancelToken: cancelToken);
+      final raw = response.data;
+      if (raw is Map && raw['data'] is List) {
+        return (raw['data'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+      if (raw is List) {
+        return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+      return const [];
+    } on DioException catch (e) {
+      _rethrowAuthError(e);
     }
   }
 }
