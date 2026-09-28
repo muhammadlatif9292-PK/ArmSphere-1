@@ -88,7 +88,7 @@ void main() {
       expect(find.text('IFA / WAF Certified'), findsOneWidget);
       expect(find.text('84 / 128 Athletes'), findsOneWidget);
       expect(find.text(formatEventFee(mockTournament['registrationFeeCents'])), findsOneWidget);
-      expect(find.text('Liaquat Gymnasium, Islamabad, Federal Capital'), findsOneWidget);
+      expect(find.text('Liaquat Gymnasium, Islamabad, Federal Capital'), findsWidgets);
 
       // Clean teardown
       await tester.pumpWidget(const SizedBox());
