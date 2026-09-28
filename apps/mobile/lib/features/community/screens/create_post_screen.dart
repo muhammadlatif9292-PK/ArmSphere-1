@@ -255,7 +255,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
-                                  AppTheme.backgroundDark.withValues(alpha: 0.75),
+                                  AppTheme.voidBackground.withValues(alpha: 0.75),
                                 ],
                               ),
                             ),
@@ -265,14 +265,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             left: 12,
                             child: Row(
                               children: const [
-                                Icon(Icons.check_circle_outline, size: 14, color: AppTheme.accentGold),
+                                Icon(Icons.check_circle_outline, size: 14, color: AppTheme.goldPrimary),
                                 SizedBox(width: 6),
                                 Text(
                                   'Federation Preview Verified',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: AppTheme.accentGold,
+                                    color: AppTheme.goldPrimary,
                                     letterSpacing: 0.5,
                                   ),
                                 ),
