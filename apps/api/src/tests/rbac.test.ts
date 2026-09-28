@@ -52,7 +52,7 @@ describe("RBAC & Token Validation Middlewares Unit Tests", () => {
   });
 
   describe("requireRole() middleware", () => {
-    it("should allow a matching authorized role context to pass", () => {
+    it("should allow a matching authorized role context to pass", async () => {
       mockRequest.user = {
         id: "user-1",
         email: "director@armsphere.com",
@@ -60,12 +60,12 @@ describe("RBAC & Token Validation Middlewares Unit Tests", () => {
       };
 
       const middleware = requireRole(UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN);
-      middleware(mockRequest as Request, mockResponse as Response, nextFunction);
+      await middleware(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalledWith();
     });
 
-    it("should throw a ForbiddenError if user carries an unauthorized lower role context", () => {
+    it("should throw a ForbiddenError if user carries an unauthorized lower role context", async () => {
       mockRequest.user = {
         id: "user-1",
         email: "referee@armsphere.com",
@@ -73,7 +73,7 @@ describe("RBAC & Token Validation Middlewares Unit Tests", () => {
       };
 
       const middleware = requireRole(UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN);
-      middleware(mockRequest as Request, mockResponse as Response, nextFunction);
+      await middleware(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalledWith(expect.any(ForbiddenError));
     });
