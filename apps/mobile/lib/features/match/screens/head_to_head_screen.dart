@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -167,6 +169,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         'rank': '#1 MATCHUP',
         'weightClass': a['weightClass']?.toString() ?? '-85 KG',
         'avatar': (a['avatarUrl']?.toString().isNotEmpty == true) ? a['avatarUrl'] : (name.isNotEmpty ? name[0].toUpperCase() : 'A'),
+        'avatarUrl': (a['avatarUrl'] ?? a['profilePhoto'])?.toString(),
         'eloRight': elo,
         'eloLeft': elo,
         'winRateRight': 75.0,
@@ -188,6 +191,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'rank': '#1 NATIONAL',
       'weightClass': '-85 KG',
       'avatar': 'H',
+      'avatarUrl': null,
       'eloRight': 1945,
       'eloLeft': 1880,
       'winRateRight': 89.2,
@@ -216,6 +220,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         'rank': '#2 MATCHUP',
         'weightClass': a['weightClass']?.toString() ?? '-85 KG',
         'avatar': (a['avatarUrl']?.toString().isNotEmpty == true) ? a['avatarUrl'] : (name.isNotEmpty ? name[0].toUpperCase() : 'T'),
+        'avatarUrl': (a['avatarUrl'] ?? a['profilePhoto'])?.toString(),
         'eloRight': elo,
         'eloLeft': elo,
         'winRateRight': 72.0,
@@ -237,6 +242,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'rank': '#2 NATIONAL',
       'weightClass': '-85 KG',
       'avatar': 'T',
+      'avatarUrl': null,
       'eloRight': 1885,
       'eloLeft': 1910,
       'winRateRight': 83.0,
@@ -279,7 +285,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           children: [
             const Row(
               children: [
-                Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 16),
+                ArmSphereImage(
+                  assetPath: ArmSphereAssets.sealFed,
+                  width: 16,
+                  height: 16,
+                  semanticLabel: 'Official Federation Sanctioned Match',
+                ),
                 SizedBox(width: 6),
                 Text(
                   'TALE OF THE TAPE',
@@ -435,7 +446,6 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                               height: 52,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFF1A1A1A),
                                 border: Border.all(color: const Color(0xFFEF4444), width: 2.2),
                                 boxShadow: [
                                   BoxShadow(
@@ -444,16 +454,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   ),
                                 ],
                               ),
-                              child: Center(
-                                child: Text(
-                                  red['avatar'] ?? 'R',
-                                  style: const TextStyle(
-                                    fontFamily: 'Space Grotesk',
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 22,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                              child: ArmSphereImage.avatar(
+                                imageUrl: red['avatarUrl']?.toString(),
+                                initial: red['avatar']?.toString() ?? (red['name']?.toString().isNotEmpty == true ? red['name']![0] : 'R'),
+                                size: 52,
+                                fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                semanticLabel: 'Red corner competitor avatar for ${red['name']}',
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -537,7 +543,6 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                               height: 52,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFF1A1A1A),
                                 border: Border.all(color: const Color(0xFF38BDF8), width: 2.2),
                                 boxShadow: [
                                   BoxShadow(
@@ -546,16 +551,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   ),
                                 ],
                               ),
-                              child: Center(
-                                child: Text(
-                                  blue['avatar'] ?? 'B',
-                                  style: const TextStyle(
-                                    fontFamily: 'Space Grotesk',
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 22,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                              child: ArmSphereImage.avatar(
+                                imageUrl: blue['avatarUrl']?.toString(),
+                                initial: blue['avatar']?.toString() ?? (blue['name']?.toString().isNotEmpty == true ? blue['name']![0] : 'B'),
+                                size: 52,
+                                fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                semanticLabel: 'Blue corner competitor avatar for ${blue['name']}',
                               ),
                             ),
                             const SizedBox(height: 10),

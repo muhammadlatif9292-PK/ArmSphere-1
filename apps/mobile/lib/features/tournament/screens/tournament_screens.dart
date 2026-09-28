@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -314,29 +316,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     }
   }
 
-  Widget _buildFallbackHeroBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF1E293B),
-            Color(0xFF070A11),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.sports_kabaddi,
-          size: 80,
-          color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -439,14 +418,14 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     fit: StackFit.expand,
                     children: [
                       // 1. Background Image or Dynamic Arena Fallback
-                      if (event['imageUrl'] != null && event['imageUrl'].toString().isNotEmpty)
-                        Image.network(
-                          event['imageUrl'].toString(),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildFallbackHeroBackground(),
-                        )
-                      else
-                        _buildFallbackHeroBackground(),
+                      ArmSphereImage(
+                        imageUrl: event['imageUrl']?.toString(),
+                        fallbackAsset: ArmSphereAssets.defaultTournament,
+                        fit: BoxFit.cover,
+                        semanticLabel: event['name'] != null
+                            ? 'Tournament banner for ${event['name']}'
+                            : 'Tournament banner',
+                      ),
 
                       // 2. Canonical 4-Stop Hero Scrim Gradient (AppTheme.heroScrim)
                       Positioned.fill(
@@ -593,6 +572,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                     icon: Icons.verified_outlined,
                                     label: 'Sanctioning',
                                     value: 'IFA / WAF Certified',
+                                    badgeAsset: ArmSphereAssets.sealFed,
                                   ),
                                 ),
                               ],
@@ -859,6 +839,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     required String label,
     required String value,
     bool isHighlighted = false,
+    String? badgeAsset,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -867,8 +848,18 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         children: [
           Row(
             children: [
-              Icon(icon, size: 13, color: AppTheme.textMuted),
-              const SizedBox(width: 4),
+              if (badgeAsset != null) ...[
+                ArmSphereImage(
+                  assetPath: badgeAsset,
+                  width: 14,
+                  height: 14,
+                  semanticLabel: '$label official seal',
+                ),
+                const SizedBox(width: 4),
+              ] else ...[
+                Icon(icon, size: 13, color: AppTheme.textMuted),
+                const SizedBox(width: 4),
+              ],
               Text(
                 label,
                 style: const TextStyle(
