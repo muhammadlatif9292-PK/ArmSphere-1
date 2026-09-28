@@ -269,4 +269,14 @@ adminRouter.post(
   AdministrationController.reviewRoleApplication
 );
 
+adminRouter.post(
+  "/roles/grant",
+  authenticate,
+  requireRole(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.NATIONAL_DIRECTOR
+  ),
+  AdministrationController.grantUserRole
+);
+
 export default adminRouter;

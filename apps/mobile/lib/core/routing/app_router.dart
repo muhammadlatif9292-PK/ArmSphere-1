@@ -155,13 +155,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               location == '/' || entryRoutes.contains(location) || location.startsWith('/mfa/verify');
           
           if (atEntry) {
-            // Get verified server-side role from profile for initial routing decision
-            final userRole = authState.userProfile?['role']?.toString().toUpperCase();
+            // Check active client persona first, then fallback to user profile role
+            final activeRole = authState.activeRole?.toUpperCase();
+            final profileRole = authState.userProfile?['role']?.toString().toUpperCase();
+            final effectiveRole = activeRole ?? profileRole;
             
-            if (_isRefereeLikeRole(userRole)) {
+            if (_isRefereeLikeRole(effectiveRole)) {
               return '/referee/dashboard';
             }
-            if (_isGovernanceRole(userRole)) {
+            if (_isGovernanceRole(effectiveRole)) {
               return '/governance';
             }
             // For athletes or pending roles, go to home
@@ -169,11 +171,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
           
           // Enforce server-side role-based boundary protection for non-entry routes:
-          final userRole = authState.userProfile?['role']?.toString().toUpperCase();
-          if (location.startsWith('/referee') && !_isRefereeLikeRole(userRole)) {
+          final activeRole = authState.activeRole?.toUpperCase();
+          final profileRole = authState.userProfile?['role']?.toString().toUpperCase();
+          final effectiveRole = activeRole ?? profileRole;
+          final allUserRoles = <String>{
+            ...authState.verifiedRoles.map((r) => r.toUpperCase()),
+            if (effectiveRole != null) effectiveRole,
+          };
+
+          final hasRefereeAccess = allUserRoles.any((r) => _isRefereeLikeRole(r));
+          final hasGovernanceAccess = allUserRoles.any((r) => _isGovernanceRole(r));
+
+          if (location.startsWith('/referee') && !hasRefereeAccess) {
             return '/home';
           }
-          if (location.startsWith('/governance') && !_isGovernanceRole(userRole)) {
+          if (location.startsWith('/governance') && !hasGovernanceAccess) {
             return '/home';
           }
           return null; // Already at an authorized non-entry route — allow navigation

@@ -3,8 +3,14 @@ import { AdministrationService } from "../services/administration.js";
 import { UserRoleService } from "../services/userRole.js";
 import { z } from "zod";
 import { BadRequestError } from "@armsphere/core";
+import { UserRole } from "@armsphere/types";
 
 // Zod schemas for admin operations
+const grantRoleSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  role: z.nativeEnum(UserRole),
+  metadata: z.record(z.any()).optional(),
+});
 const reviewRoleApplicationSchema = z.object({
   decision: z.enum(["APPROVED", "REJECTED"]),
   notes: z.string().optional(),
@@ -361,7 +367,21 @@ export class AdministrationController {
         req.user.id,
         req.user.role,
         validated.decision,
-        validated.notes
+      );
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async grantUserRole(req: any, res: any, next: NextFunction) {
+    try {
+      const validated = grantRoleSchema.parse(req.body);
+      const result = await UserRoleService.grantRole(
+        validated.userId,
+        validated.role,
+        req.user.id,
+        validated.metadata
       );
       res.status(200).json({ success: true, data: result });
     } catch (err) {
