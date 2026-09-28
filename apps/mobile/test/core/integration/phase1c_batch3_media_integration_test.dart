@@ -87,7 +87,7 @@ void main() {
       expect(find.text('National Armwrestling Championship 2026'), findsWidgets);
       expect(find.text('IFA / WAF Certified'), findsOneWidget);
       expect(find.text('84 / 128 Athletes'), findsOneWidget);
-      expect(find.text('PKR 2,500'), findsOneWidget);
+      expect(find.text(formatEventFee(mockTournament['registrationFeeCents'])), findsOneWidget);
       expect(find.text('Liaquat Gymnasium, Islamabad, Federal Capital'), findsOneWidget);
 
       // Clean teardown
