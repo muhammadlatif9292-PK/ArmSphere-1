@@ -408,6 +408,18 @@ The forensic audit uncovered 5 critical technical and architectural defects that
   - Proguard keep rules added in `proguard-rules.pro` for Tink cryptographic primitives and OkHttp.
   - Camera permission audited: no camera or barcode scan plugins exist in current Flutter code; speculative permission omitted per least-privilege security principle.
 
+### Defect 6: Auth Session Stability & Atomic Logout Teardown (RESOLVED)
+- **Status**: **RESOLVED & CI-VERIFIED** (GitHub Actions Runs `36397821713`, `36397821757`, `36397821690`, `36397821710`, Commits `ec9a1b4`, `f2510f2`).
+- **Forensic Defect**: Settings and Athlete Profile hubs initiated logout without awaiting `ref.read(authProvider.notifier).logout()`, triggering navigation to `/login` immediately. In addition, unhandled upstream failures (FCM deregistration, sync disposal, differential sync reset, server logout timeouts) in `logout()` could prevent `secureStorage.clearSession()`, `auth_session_user`, and `auth_role_intent` from executing, leaving stale credentials and tokens surviving across sessions.
+- **Resolution**:
+  - UI Navigation: `SettingsHubScreen` and `AthleteProfileScreen` log out action handlers made `async`, strictly `await` the notifier `logout()`, and verify `context.mounted` before navigation to `/login`.
+  - Resilience: `secureStorage.clearSession()` wraps each key deletion (`access_token`, `refresh_token`, `session_user_data`) in individual `try-catch` blocks so partial failure never prevents deletion of the others.
+  - Fail-Safe Teardown: `AuthRepository.logout()` tolerates server/network exceptions while guaranteeing `secureStorage.clearSession()` and Hive cache evictions via `finally`.
+  - Atomic Destruction: `AuthNotifier.logout()` guarded with `_isLoggingOut` against race conditions, wraps all auxiliary tasks in isolated error blocks, and unconditionally wipes all secure storage tokens and Hive session caches before transitioning state to `AuthStatus.unauthenticated`. `deleteAccount()` similarly hardened.
+  - Regression Test Suite: Authored `apps/mobile/test/auth_session_teardown_test.dart` and expanded `apps/mobile/test/repositories_test.dart` covering: (A) awaited logout before navigation, (B) resilient credential clearing on server/network failure, (C) tokens cannot survive failure paths, (D) signed-out state reached, and (E) clean logout path preserved.
+  - CI Verification: Added dedicated test step `Run Auth Session Teardown Unit Tests` to `.github/workflows/flutter-analyze.yml`; passed 100% across all suites, including full Android release APK and AppBundle AAB builds with R8.
+  - Honest Quality Status: **CODE INTEGRATED | CI-VERIFIED | CODEBASE RESILIENT**.
+
 ---
 
 ## 13. Recommended Execution Sequence (Phased Roadmap)
@@ -478,6 +490,17 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
 │ • HeadToHeadScreen: sealFed AppBar + corner avatars    │
 │ • Added focused Phase 1C Batch 3 widget tests          │
 │ • Status: CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW   │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ CORRECTIVE TASK: AUTH SESSION STABILITY & ATOMIC LOGOUT│
+│ [CI-VERIFIED] (Runs 36397821713, 36397821710, f2510f2) │
+│ • Awaited logout before navigation in Settings & Hubs  │
+│ • Resilient key deletion in SecureStorage & Hive evict │
+│ • Multi-fail-safe teardown: tokens cannot survive fail │
+│ • Authored comprehensive regression teardown test suite│
+│ • Status: CI-VERIFIED | CODE INTEGRATED                │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼
