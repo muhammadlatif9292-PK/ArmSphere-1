@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:mobile/core/api/repositories.dart';
 import 'package:mobile/core/constants/asset_paths.dart';
 import 'package:mobile/core/widgets/armsphere_image.dart';
 import 'package:mobile/features/community/screens/community_feed_screen.dart';
 import 'package:mobile/features/community/screens/post_comments_screen.dart';
 import 'package:mobile/features/community/screens/create_post_screen.dart';
-import 'package:mobile/core/providers/community_provider.dart';
 import 'package:mobile/core/providers/state_providers.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 
@@ -17,22 +18,24 @@ class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeCommunityFeedNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>>
-    implements CommunityFeedNotifier {
-  final List<Map<String, dynamic>> _data;
-  _FakeCommunityFeedNotifier(this._data);
+class _MockCommunityRepository implements CommunityRepository {
+  final List<Map<String, dynamic>> _feed;
+  final List<Map<String, dynamic>> _comments;
+
+  _MockCommunityRepository({
+    List<Map<String, dynamic>> feed = const [],
+    List<Map<String, dynamic>> comments = const [],
+  })  : _feed = feed,
+        _comments = comments;
 
   @override
-  Future<List<Map<String, dynamic>>> build() async => _data;
-}
-
-class _FakePostCommentsNotifier extends AutoDisposeFamilyAsyncNotifier<List<Map<String, dynamic>>, String>
-    implements PostCommentsNotifier {
-  final List<Map<String, dynamic>> _data;
-  _FakePostCommentsNotifier(this._data);
+  Future<List<Map<String, dynamic>>> getFeed({int? limit, String? cursor, CancelToken? cancelToken}) async => _feed;
 
   @override
-  Future<List<Map<String, dynamic>>> build(String arg) async => _data;
+  Future<List<Map<String, dynamic>>> getComments(String postId, {CancelToken? cancelToken}) async => _comments;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -70,7 +73,9 @@ void main() {
                     userProfile: {'id': 'ath_101', 'role': 'ATHLETE'},
                   ),
                 )),
-            communityFeedProvider.overrideWith(() => _FakeCommunityFeedNotifier(mockFeedData)),
+            communityRepositoryProvider.overrideWithValue(
+              _MockCommunityRepository(feed: mockFeedData),
+            ),
           ],
           child: const MaterialApp(
             home: CommunityFeedScreen(),
@@ -145,7 +150,9 @@ void main() {
             authProvider.overrideWith((ref) => _FakeAuthNotifier(
                   AuthState(status: AuthStatus.authenticated),
                 )),
-            postCommentsProvider(postId).overrideWith(() => _FakePostCommentsNotifier(mockComments)),
+            communityRepositoryProvider.overrideWithValue(
+              _MockCommunityRepository(comments: mockComments),
+            ),
           ],
           child: const MaterialApp(
             home: PostCommentsScreen(postId: postId),
