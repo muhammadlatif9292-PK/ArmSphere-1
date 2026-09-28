@@ -484,28 +484,31 @@ class _TournamentAwardsCeremonyScreenState
             borderRadius: BorderRadius.circular(4),
             border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.3)),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ArmSphereImage(
-                assetPath: ArmSphereAssets.sealFed,
-                width: 14,
-                height: 14,
-                fit: BoxFit.contain,
-                excludeFromSemantics: true,
-              ),
-              const SizedBox(width: 6),
-              const Text(
-                'PAKISTAN ARMWRESTLING FEDERATION • OFFICIAL PODIUM',
-                style: TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 9,
-                  color: AppTheme.goldPrimary,
-                  letterSpacing: 0.8,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ArmSphereImage(
+                  assetPath: ArmSphereAssets.sealFed,
+                  width: 14,
+                  height: 14,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                const Text(
+                  'PAKISTAN ARMWRESTLING FEDERATION • OFFICIAL PODIUM',
+                  style: TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    fontWeight: FontWeight.w800,
+                    fontSize: 9,
+                    color: AppTheme.goldPrimary,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -792,14 +795,17 @@ class _TournamentAwardsCeremonyScreenState
                 alignment: Alignment.center,
                 children: [
                   // Large Monospace Rank Number
-                  Text(
-                    rankNumber,
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w900,
-                      fontSize: isChampion ? 54 : 42,
-                      color: accentColor.withValues(alpha: 0.35),
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      rankNumber,
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontWeight: FontWeight.w900,
+                        fontSize: isChampion ? 54 : 42,
+                        color: accentColor.withValues(alpha: 0.35),
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
 
@@ -812,14 +818,17 @@ class _TournamentAwardsCeremonyScreenState
                         color: accentColor.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
-                        athlete['badge'],
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontWeight: FontWeight.w800,
-                          fontSize: 8,
-                          color: accentColor,
-                          letterSpacing: 0.6,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          athlete['badge'],
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontWeight: FontWeight.w800,
+                            fontSize: 8,
+                            color: accentColor,
+                            letterSpacing: 0.6,
+                          ),
                         ),
                       ),
                     ),
@@ -926,22 +935,29 @@ class _TournamentAwardsCeremonyScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(athlete['trophy'] as IconData, color: color, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    athlete['medal'],
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                      color: color,
-                      letterSpacing: 0.8,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(athlete['trophy'] as IconData, color: color, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        athlete['medal'],
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          color: color,
+                          letterSpacing: 0.8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -981,6 +997,8 @@ class _TournamentAwardsCeremonyScreenState
               fontSize: 11.5,
               color: AppTheme.textMuted,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 12),
           const Divider(color: Color(0xFF334155), height: 1),
@@ -1023,22 +1041,25 @@ class _TournamentAwardsCeremonyScreenState
                 HapticFeedback.selectionClick();
                 context.push('/athletes/$athleteId');
               },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.person_outline, size: 16, color: color),
-                  const SizedBox(width: 6),
-                  Text(
-                    'VIEW ATHLETE CAREER PROFILE',
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11,
-                      color: color,
-                      letterSpacing: 0.5,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_outline, size: 16, color: color),
+                    const SizedBox(width: 6),
+                    Text(
+                      'VIEW ATHLETE CAREER PROFILE',
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        color: color,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
         ],
@@ -1113,22 +1134,25 @@ class _TournamentAwardsCeremonyScreenState
             ),
           ],
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.share_rounded, color: Colors.black, size: 18),
-            SizedBox(width: 8),
-            Text(
-              'SHARE OFFICIAL PODIUM GRAPHIC',
-              style: TextStyle(
-                fontFamily: 'Space Grotesk',
-                fontWeight: FontWeight.w900,
-                fontSize: 12.5,
-                color: Colors.black,
-                letterSpacing: 0.8,
+        child: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.share_rounded, color: Colors.black, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'SHARE OFFICIAL PODIUM GRAPHIC',
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5,
+                  color: Colors.black,
+                  letterSpacing: 0.8,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -318,7 +318,10 @@ void main() {
       // Set small handset viewport (e.g. 320x568)
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
       await tester.pumpWidget(
         ProviderScope(
