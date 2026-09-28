@@ -46,8 +46,8 @@ The following production screens present hardcoded data or simulated logic rathe
 2. **`TournamentScreens._buildArenaTableCard` (`apps/mobile/lib/features/tournament/screens/tournament_screens.dart`, Lines 1025–1065)**:
    - Hardcodes international celebrity pullers: Michael Todd vs Denis Cyplenkov (Table 1), Ermes Gasparini vs Alexey Voevoda (Table 2).
    - Does not bind to live bout states from Riverpod `liveMatchesProvider`.
-3. **`TournamentAwardsCeremonyScreen` (`apps/mobile/lib/features/championship/screens/tournament_awards_ceremony_screen.dart`, Lines 115–160)**:
-   - `_resolvePodiumAthletes` injects hardcoded mock podium medalists because `apps/api` lacks `/awards` or `/podium` endpoints.
+3. **`TournamentAwardsCeremonyScreen` (`apps/mobile/lib/features/championship/screens/tournament_awards_ceremony_screen.dart`)**:
+   - **RESOLVED in Phase 1C Batch 5**. Completely eliminated synthetic fallback athletes ("Hamza Khan", "Tariq Malik", "Bilal Ahmed"). Fully wired to real `GET /tournaments/events/:id/awards` backend data, dynamic category brackets, honest empty/error states, and reduced motion accessibility.
 4. **Android App Launcher Icons (`.github/workflows/flutter-analyze.yml`, Lines 140–156)**:
    - `apps/mobile/android/app/src/main/res/` has zero launcher png icons (`mipmap-mdpi`, `mipmap-hdpi`, etc.).
    - CI synthesizes placeholder square icons on the fly using ImageMagick (`convert -draw "text 'AS'"`). A local build outside CI fails icon lookup immediately.
@@ -389,6 +389,15 @@ The forensic audit uncovered 5 critical technical and architectural defects that
     - `CreatePostScreen` (`apps/mobile/lib/features/community/screens/create_post_screen.dart`): Added official federation seal (`ArmSphereAssets.sealFed`, 18x18) in AppBar title. Replaced generic icon in submission header with `ArmSphereImage(assetPath: ArmSphereAssets.sealFed, width: 22, height: 22)`. Implemented live video link preview thumbnail card with `ArmSphereAssets.heroGrip` fallback and "Federation Preview Verified" gold badge upon detecting a valid video URL.
     - Focused test suite: `apps/mobile/test/core/integration/phase1c_batch4_media_integration_test.dart` (100% PASS in CI, verifying feed cards, commenter avatars, submission seals, and live preview rendering).
     - Release verification: Android Release APK (signed with R8, `app-release.apk` 73,345,205 bytes, Artifact ID `10979550260`, downloaded to `e:/ArmSphere/build-artifact/app-release.apk`), AppBundle AAB (Artifact ID `10979560251`), and Flutter Web CanvasKit preview (Artifact ID `10977406625`) built successfully.
+  - **Phase 1C Batch 5 (Ceremony & Awards Real-Data Integration)**: **CI-VERIFIED** (GitHub Actions Runs `36450158370`, `36450158556`, `36450158343`, `36450158314`, Commits `aa2b0e8`, `bab1b57`).
+    - `TournamentAwardsCeremonyScreen` (`apps/mobile/lib/features/championship/screens/tournament_awards_ceremony_screen.dart`): Replaced direct `.value` Riverpod unwrap with explicit `.when()` states handling loading, error, empty ("OFFICIAL PODIUM PENDING"), and data states. Completely eliminated legacy synthetic athletes ("Hamza Khan", "Tariq Malik", "Bilal Ahmed", `ath_hamza_01`).
+    - Dynamic Category Brackets: Category trays are derived dynamically from authoritative backend awards array; tapping category refreshes podium and medalist cards with real division names, arms, and weight classes.
+    - Federation Media & Avatars: Integrated `ArmSphereImage` with official federation seal (`ArmSphereAssets.sealFed`) in AppBar, podium banner, loading spinner, and pending notices. Centralized athlete headshots via `ArmSphereImage.avatar` with memory caching constraints (`cacheWidth: 80, cacheHeight: 80`) and `ArmSphereAssets.defaultAvatar` fallback.
+    - Reduced Motion Accessibility: Evaluates `MediaQuery.maybeOf(context)?.disableAnimations`; bypasses 600ms particle burst and pedestal translation animations when active, immediately settling pedestals at `1.0`.
+    - Viewport Layout Resilience: Wrapped rank typography, badges, medalist titles, and action buttons in `FittedBox(fit: BoxFit.scaleDown)` and flex constraints to eliminate layout overflow on compact screens down to 320dp width.
+    - Backend Avatar Enhancement: Enriched `TournamentService.getAwards()` in `apps/api/src/services/tournament.ts` to query `userProfiles` for gold, silver, and bronze profile photos, exposing `avatarUrl` to clients. Added backend unit test assertions in `tournament.test.ts`.
+    - Focused test suite: `apps/mobile/test/core/integration/phase1c_batch5_awards_ceremony_test.dart` (11 comprehensive test cases A–K covering loading, real data, empty podium, error retry, reduced motion, and compact layout overflow resilience — 100% PASS in CI).
+    - Release verification: Android Release APK (`armsphere-release-apk`, 36,591,726 bytes) and AppBundle AAB (`armsphere-release-aab`, 74,204,790 bytes) compiled cleanly with R8; Flutter Web CanvasKit preview deployed cleanly.
     - Honest Quality Status: **CODE INTEGRATED | CI-VERIFIED | NEEDS PHYSICAL VISUAL REVIEW**.
 
 
@@ -400,7 +409,7 @@ The forensic audit uncovered 5 critical technical and architectural defects that
 - **Location**:
   1. `apps/mobile/lib/features/match/screens/head_to_head_screen.dart`: Wired to `athleteComparisonProvider` with live backend fallback.
   2. `apps/mobile/lib/features/tournament/screens/tournament_screens.dart` (Lines 1025–1065): Hardcodes Denis Cyplenkov, Michael Todd, Ermes Gasparini on arena tables.
-  3. `apps/mobile/lib/features/championship/screens/tournament_awards_ceremony_screen.dart`: Wired to `eventAwardsProvider` with live backend fallback.
+  3. `apps/mobile/lib/features/championship/screens/tournament_awards_ceremony_screen.dart`: **RESOLVED in Phase 1C Batch 5**. Zero mock data, real Riverpod state handling, dynamic category derivation, reduced motion accessibility, and federation crest integration.
 - **Impact**: Real users see fake names and dummy stats on remaining unwired production screens.
 
 ### Defect 4: Missing Backend Endpoints for Flow Completion (RESOLVED)
