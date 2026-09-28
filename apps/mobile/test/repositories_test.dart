@@ -3,12 +3,14 @@ import 'package:mocktail/mocktail.dart';
 import 'package:dio/dio.dart';
 import 'package:mobile/core/api/dio_client.dart';
 import 'package:mobile/core/storage/hive_storage.dart';
+import 'package:mobile/core/storage/secure_storage.dart';
 import 'package:mobile/core/api/repositories.dart';
 
 // Mock Classes
 class MockDioClient extends Mock implements DioClient {}
 class MockDio extends Mock implements Dio {}
 class MockHiveStorage extends Mock implements HiveStorage {}
+class MockSecureStorage extends Mock implements SecureStorage {}
 class MockCancelToken extends Mock implements CancelToken {}
 
 void main() {
@@ -185,6 +187,56 @@ void main() {
             '/tournaments/registrations/reg_382/confirm-manual-payment',
             cancelToken: cancelToken,
           )).called(1);
+    });
+  });
+
+  group('AuthRepository Unit Tests', () {
+    test('logout posts to /auth/logout and clears secureStorage and hiveCache', () async {
+      final mockSecureStorage = MockSecureStorage();
+      when(() => mockDioClient.secureStorage).thenReturn(mockSecureStorage);
+      when(() => mockDio.post('/auth/logout', cancelToken: any(named: 'cancelToken')))
+          .thenAnswer((_) async => Response(
+                requestOptions: RequestOptions(path: '/auth/logout'),
+                statusCode: 200,
+              ));
+      when(() => mockSecureStorage.clearSession()).thenAnswer((_) async {});
+      when(() => mockHiveStorage.evictCache(any())).thenAnswer((_) async {});
+
+      final repository = AuthRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      await repository.logout();
+
+      verify(() => mockDio.post('/auth/logout', cancelToken: any(named: 'cancelToken'))).called(1);
+      verify(() => mockSecureStorage.clearSession()).called(1);
+      verify(() => mockHiveStorage.evictCache('auth_session_user')).called(1);
+      verify(() => mockHiveStorage.evictCache('auth_role_intent')).called(1);
+    });
+
+    test('logout clears secureStorage and hiveCache even if server call throws', () async {
+      final mockSecureStorage = MockSecureStorage();
+      when(() => mockDioClient.secureStorage).thenReturn(mockSecureStorage);
+      when(() => mockDio.post('/auth/logout', cancelToken: any(named: 'cancelToken')))
+          .thenThrow(DioException(
+            requestOptions: RequestOptions(path: '/auth/logout'),
+            type: DioExceptionType.connectionError,
+          ));
+      when(() => mockSecureStorage.clearSession()).thenAnswer((_) async {});
+      when(() => mockHiveStorage.evictCache(any())).thenAnswer((_) async {});
+
+      final repository = AuthRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      // Should complete cleanly without throwing unhandled network error
+      await repository.logout();
+
+      verify(() => mockSecureStorage.clearSession()).called(1);
+      verify(() => mockHiveStorage.evictCache('auth_session_user')).called(1);
+      verify(() => mockHiveStorage.evictCache('auth_role_intent')).called(1);
     });
   });
 }

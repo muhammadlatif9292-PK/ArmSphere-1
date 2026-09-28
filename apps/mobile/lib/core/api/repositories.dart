@@ -177,9 +177,13 @@ class AuthRepository extends BaseRepository {
   Future<void> logout({CancelToken? cancelToken}) async {
     try {
       await dioClient.dio.post('/auth/logout', cancelToken: cancelToken);
+    } catch (_) {
+      // Best-effort remote revocation: network/server failures must never
+      // prevent local credential and session cleanup.
     } finally {
       await dioClient.secureStorage.clearSession();
       await hiveStorage.evictCache('auth_session_user');
+      await hiveStorage.evictCache('auth_role_intent');
     }
   }
 

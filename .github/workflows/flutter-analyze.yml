@@ -94,6 +94,10 @@ jobs:
       run: flutter test test/discovery_and_home_routing_test.dart --reporter=expanded
       working-directory: apps/mobile
 
+    - name: Run Auth Session Teardown Unit Tests
+      run: flutter test test/auth_session_teardown_test.dart --reporter=expanded
+      working-directory: apps/mobile
+
     - name: Run Complete Mobile Flutter Test Suite
       run: flutter test --reporter=expanded
       working-directory: apps/mobile

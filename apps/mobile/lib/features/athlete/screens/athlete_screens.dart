@@ -1137,10 +1137,12 @@ class AthleteProfileScreen extends ConsumerWidget {
                     title: 'Log Out',
                     subtitle: null,
                     isDestructive: true,
-                    onTap: () {
+                    onTap: () async {
                       HapticFeedback.heavyImpact();
-                      ref.read(authProvider.notifier).logout();
-                      context.go('/login');
+                      await ref.read(authProvider.notifier).logout();
+                      if (context.mounted) {
+                        context.go('/login');
+                      }
                     },
                   ),
                 ],

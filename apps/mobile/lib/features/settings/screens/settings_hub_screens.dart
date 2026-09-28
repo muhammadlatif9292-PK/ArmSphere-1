@@ -123,10 +123,12 @@ class SettingsHubScreen extends ConsumerWidget {
                   iconColor: AppTheme.error,
                   title: 'Log Out',
                   titleColor: AppTheme.error,
-                  onTap: () {
+                  onTap: () async {
                     HapticFeedback.mediumImpact();
-                    ref.read(authProvider.notifier).logout();
-                    context.go('/login');
+                    await ref.read(authProvider.notifier).logout();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
                   },
                 ),
               ],

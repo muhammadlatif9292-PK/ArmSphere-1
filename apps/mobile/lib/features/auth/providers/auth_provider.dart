@@ -349,26 +349,49 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  bool _isLoggingOut = false;
+
   Future<void> logout() async {
+    if (_isLoggingOut) return;
+    _isLoggingOut = true;
     try {
-      _disposeSync();
-      // Deregister FCM token from server on logout to ensure security
-      await ref.read(pushNotificationManagerProvider).deregisterCurrentDevice();
-      await ref.read(differentialSyncManagerProvider).resetCache();
-      final repo = ref.read(authRepositoryProvider);
-      await repo.logout();
-    } catch (_) {
+      // 1. Terminate realtime listeners and periodic sync tasks
+      try {
+        _disposeSync();
+      } catch (_) {}
+
+      // 2. Best-effort server-side push token deregistration
+      try {
+        await ref.read(pushNotificationManagerProvider).deregisterCurrentDevice();
+      } catch (_) {}
+
+      // 3. Best-effort offline/differential sync cache reset
+      try {
+        await ref.read(differentialSyncManagerProvider).resetCache();
+      } catch (_) {}
+
+      // 4. Server-side session revocation via repository (best-effort over the wire)
+      try {
+        final repo = ref.read(authRepositoryProvider);
+        await repo.logout();
+      } catch (_) {}
+    } finally {
+      // 5. Unconditional local credential & session destruction:
+      // Even if every network or auxiliary step above threw or timed out,
+      // local security credentials must NEVER survive logout.
+      try {
+        final secureStorage = ref.read(secureStorageProvider);
+        await secureStorage.clearSession();
+      } catch (_) {}
+
       try {
         final hiveStorage = ref.read(hiveStorageProvider);
         await hiveStorage.evictCache('auth_session_user');
-      } catch (_) {}
-    } finally {
-      // Role intent belongs to the account session; clear it on sign-out.
-      try {
-        final hiveStorage = ref.read(hiveStorageProvider);
         await hiveStorage.evictCache('auth_role_intent');
       } catch (_) {}
+
       state = AuthState(status: AuthStatus.unauthenticated);
+      _isLoggingOut = false;
     }
   }
 
@@ -376,11 +399,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Server deactivates + anonymizes the account and revokes every session;
   /// local session material is cleared unconditionally.
   Future<void> deleteAccount() async {
-    _disposeSync();
-    final repo = ref.read(authRepositoryProvider);
     try {
-      await repo.deleteAccount();
+      try {
+        _disposeSync();
+      } catch (_) {}
+
+      final repo = ref.read(authRepositoryProvider);
+      try {
+        await repo.deleteAccount();
+      } catch (_) {}
     } finally {
+      try {
+        final secureStorage = ref.read(secureStorageProvider);
+        await secureStorage.clearSession();
+      } catch (_) {}
+
+      try {
+        final hiveStorage = ref.read(hiveStorageProvider);
+        await hiveStorage.evictCache('auth_session_user');
+        await hiveStorage.evictCache('auth_role_intent');
+      } catch (_) {}
+
       state = AuthState(status: AuthStatus.unauthenticated);
     }
   }
