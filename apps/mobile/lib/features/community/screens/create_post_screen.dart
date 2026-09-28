@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/post_creation_provider.dart';
-import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/services/sensory_feedback_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/embed_url_builder.dart';
+import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 
 /// Compose screen — submits a real video-link post via POST /community/links.
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
@@ -27,11 +30,28 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final _repsController = TextEditingController();
   String? _category;
   bool _submitting = false;
+  String? _previewThumbnailUrl;
 
   static const _categories = ['HIGHLIGHTS', 'TUTORIALS', 'GYM'];
 
   @override
+  void initState() {
+    super.initState();
+    _urlController.addListener(_onUrlChanged);
+  }
+
+  void _onUrlChanged() {
+    final text = _urlController.text.trim();
+    final ytId = EmbedUrlBuilder.extractYouTubeId(text);
+    final nextThumb = ytId != null ? 'https://img.youtube.com/vi/$ytId/hqdefault.jpg' : null;
+    if (_previewThumbnailUrl != nextThumb) {
+      setState(() => _previewThumbnailUrl = nextThumb);
+    }
+  }
+
+  @override
   void dispose() {
+    _urlController.removeListener(_onUrlChanged);
     _urlController.dispose();
     _captionController.dispose();
     _exerciseTypeController.dispose();
@@ -112,7 +132,22 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Share a Video Clip')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ArmSphereImage(
+              assetPath: ArmSphereAssets.sealFed,
+              width: 18,
+              height: 18,
+              fit: BoxFit.contain,
+              semanticLabel: 'Official Federation Seal',
+            ),
+            SizedBox(width: 8),
+            Text('Share a Video Clip'),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppTheme.space16),
         child: Form(
@@ -134,7 +169,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                           width: 1,
                         ),
                       ),
-                      child: const Icon(Icons.video_library, size: 22, color: AppTheme.primaryRed),
+                      child: const ArmSphereImage(
+                        assetPath: ArmSphereAssets.sealFed,
+                        width: 22,
+                        height: 22,
+                        semanticLabel: 'Federation Submission Seal',
+                      ),
                     ),
                     const SizedBox(width: AppTheme.space12),
                     const Expanded(
@@ -184,6 +224,66 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     return null;
                   },
                 ),
+                if (_previewThumbnailUrl != null) ...[
+                  const SizedBox(height: AppTheme.space12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ArmSphereImage(
+                            imageUrl: _previewThumbnailUrl,
+                            fallbackAsset: ArmSphereAssets.heroGrip,
+                            fit: BoxFit.cover,
+                            cacheWidth: 480,
+                            cacheHeight: 270,
+                            semanticLabel: 'Video Preview Thumbnail',
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  AppTheme.backgroundDark.withValues(alpha: 0.75),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            left: 12,
+                            child: Row(
+                              children: const [
+                                Icon(Icons.check_circle_outline, size: 14, color: AppTheme.accentGold),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Federation Preview Verified',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.accentGold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppTheme.space16),
                 DropdownButtonFormField<String>(
                   initialValue: _category,

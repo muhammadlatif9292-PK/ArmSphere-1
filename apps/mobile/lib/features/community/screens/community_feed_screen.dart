@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/providers/community_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/embed_url_builder.dart';
@@ -53,6 +55,13 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
         elevation: 0,
         title: Row(
           children: [
+            const ArmSphereImage(
+              assetPath: ArmSphereAssets.sealFed,
+              width: 18,
+              height: 18,
+              semanticLabel: 'Official Federation Community Arena',
+            ),
+            const SizedBox(width: 8),
             const Text(
               'COMMUNITY ARENA',
               style: TextStyle(
@@ -301,6 +310,11 @@ class _TacticalFeedCard extends StatelessWidget {
     final rawDate = post['createdAt']?.toString() ?? '';
     final dateDisplay = rawDate.isNotEmpty ? rawDate.split('T').first : '';
     final postId = post['id']?.toString() ?? '';
+    final ytId = EmbedUrlBuilder.extractYouTubeId(rawUrl);
+    final thumbnailUrl = ytId != null ? 'https://img.youtube.com/vi/$ytId/hqdefault.jpg' : null;
+    final fallbackCombatAsset = (category == 'SPARRING' || category == 'TECHNIQUE')
+        ? ArmSphereAssets.heroGrip
+        : ArmSphereAssets.heroArena;
 
     return RepaintBoundary(
       child: Container(
@@ -324,28 +338,21 @@ class _TacticalFeedCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  // Athlete Avatar with 1.5px Gold/Cyan Ring
+                  // Athlete Avatar with 1.5px Gold Ring
                   Container(
                     padding: const EdgeInsets.all(1.5),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
                     ),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppTheme.elevatedSurface,
-                      backgroundImage: athletePhoto.isNotEmpty ? NetworkImage(athletePhoto) : null,
-                      child: athletePhoto.isEmpty
-                          ? Text(
-                              _initial(athleteName),
-                              style: const TextStyle(
-                                fontFamily: 'Space Grotesk',
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary,
-                                fontSize: 13,
-                              ),
-                            )
-                          : null,
+                    child: ArmSphereImage.avatar(
+                      imageUrl: athletePhoto.isNotEmpty ? athletePhoto : null,
+                      initial: athleteName,
+                      size: 36,
+                      fallbackAsset: ArmSphereAssets.defaultAvatar,
+                      cacheWidth: 108,
+                      cacheHeight: 108,
+                      semanticLabel: 'Profile photo for $athleteName',
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -483,22 +490,28 @@ class _TacticalFeedCard extends StatelessWidget {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
+                        // Background combat media or fallback hero
+                        Positioned.fill(
+                          child: ArmSphereImage(
+                            imageUrl: thumbnailUrl,
+                            fallbackAsset: fallbackCombatAsset,
+                            fit: BoxFit.cover,
+                            cacheWidth: 720,
+                            cacheHeight: 405,
+                            semanticLabel: caption.isNotEmpty
+                                ? 'Combat clip: $caption'
+                                : 'Combat video preview',
+                          ),
+                        ),
                         // Subtle grid background texture
                         CustomPaint(
                           size: const Size(double.infinity, 190),
                           painter: _GridTexturePainter(),
                         ),
-                        // Dark radial scrim
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment.center,
-                              radius: 0.9,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.75),
-                              ],
-                            ),
+                        // Dark 4-stop hero scrim
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: AppTheme.heroScrim(),
                           ),
                         ),
                         // Platform Tag in Top-Left
@@ -749,6 +762,11 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
         final category = (post['category']?.toString() ?? 'TECHNIQUE').toUpperCase();
         final caption = post['caption']?.toString() ?? '';
         final postId = post['id']?.toString() ?? '';
+        final ytId = EmbedUrlBuilder.extractYouTubeId(rawUrl);
+        final thumbnailUrl = ytId != null ? 'https://img.youtube.com/vi/$ytId/hqdefault.jpg' : null;
+        final fallbackCombatAsset = (category == 'SPARRING' || category == 'TECHNIQUE')
+            ? ArmSphereAssets.heroGrip
+            : ArmSphereAssets.heroArena;
 
         return RepaintBoundary(
           child: Container(
@@ -774,9 +792,34 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
+                          Positioned.fill(
+                            child: ArmSphereImage(
+                              imageUrl: thumbnailUrl,
+                              fallbackAsset: fallbackCombatAsset,
+                              fit: BoxFit.cover,
+                              semanticLabel: caption.isNotEmpty
+                                  ? 'Combat clip: $caption'
+                                  : 'Combat video background',
+                            ),
+                          ),
                           CustomPaint(
                             size: const Size(double.infinity, double.infinity),
                             painter: _GridTexturePainter(),
+                          ),
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.5),
+                                    Colors.black.withValues(alpha: 0.2),
+                                    Colors.black.withValues(alpha: 0.85),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                           Container(
                             width: 68,
@@ -891,21 +934,14 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                               shape: BoxShape.circle,
                               border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
                             ),
-                            child: CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppTheme.elevatedSurface,
-                              backgroundImage: athletePhoto.isNotEmpty ? NetworkImage(athletePhoto) : null,
-                              child: athletePhoto.isEmpty
-                                  ? Text(
-                                      _initial(athleteName),
-                                      style: const TextStyle(
-                                        fontFamily: 'Space Grotesk',
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    )
-                                  : null,
+                            child: ArmSphereImage.avatar(
+                              imageUrl: athletePhoto.isNotEmpty ? athletePhoto : null,
+                              initial: athleteName,
+                              size: 32,
+                              fallbackAsset: ArmSphereAssets.defaultAvatar,
+                              cacheWidth: 96,
+                              cacheHeight: 96,
+                              semanticLabel: 'Profile photo for $athleteName',
                             ),
                           ),
                           const SizedBox(width: 8),

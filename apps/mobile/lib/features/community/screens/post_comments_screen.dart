@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/community_provider.dart';
-import '../../../core/widgets/app_empty_state.dart';
-import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/elevated_action_card.dart';
 
 /// Post comments — real GET/POST /community/posts/:id/comments.
 class PostCommentsScreen extends ConsumerStatefulWidget {
@@ -69,7 +71,22 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Community Discussion')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ArmSphereImage(
+              assetPath: ArmSphereAssets.sealFed,
+              width: 18,
+              height: 18,
+              fit: BoxFit.contain,
+              semanticLabel: 'Official Federation Seal',
+            ),
+            SizedBox(width: 8),
+            Text('Community Discussion'),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -113,16 +130,14 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
-                                backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                                child: photo.isEmpty
-                                    ? Text(
-                                        name.isNotEmpty ? name[0].toUpperCase() : 'A',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                                      )
-                                    : null,
+                              ArmSphereImage.avatar(
+                                imageUrl: photo.isNotEmpty ? photo : null,
+                                initial: name,
+                                size: 36,
+                                fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                cacheWidth: 108,
+                                cacheHeight: 108,
+                                semanticLabel: 'Profile photo for $name',
                               ),
                               const SizedBox(width: AppTheme.space12),
                               Expanded(
