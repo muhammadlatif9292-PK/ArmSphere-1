@@ -65,6 +65,7 @@ bool _isRefereeLandingRole(String? role) {
 /// Roles that route to the governance dashboard.
 bool _isGovernanceLandingRole(String? role) {
   const govRoles = {
+    'TOURNAMENT_OPERATOR',
     'COMPLIANCE_OFFICER',
     'SUPPORT_AGENT',
     'PROVINCIAL_DIRECTOR',
