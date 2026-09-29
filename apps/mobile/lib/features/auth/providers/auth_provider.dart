@@ -154,14 +154,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (profile['verifiedRoles'] is List) {
       final roles = (profile['verifiedRoles'] as List).map((e) => e.toString()).toList();
       if (roles.contains('SYSTEM_ADMIN') || profile['role'] == 'SYSTEM_ADMIN') {
-        return ['SYSTEM_ADMIN', 'ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'COMPLIANCE_OFFICER', 'SUPPORT_AGENT', 'ORGANIZATION_LEADER'];
+        return ['SYSTEM_ADMIN', 'ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR'];
       }
       return roles;
     }
     final primaryRole = profile['role']?.toString();
     if (primaryRole != null && primaryRole.isNotEmpty) {
       if (primaryRole == 'SYSTEM_ADMIN') {
-        return ['SYSTEM_ADMIN', 'ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'COMPLIANCE_OFFICER', 'SUPPORT_AGENT', 'ORGANIZATION_LEADER'];
+        return ['SYSTEM_ADMIN', 'ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR'];
       }
       return [primaryRole];
     }

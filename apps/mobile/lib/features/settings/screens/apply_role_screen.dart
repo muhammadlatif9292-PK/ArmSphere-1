@@ -29,13 +29,8 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
     },
     {
       'key': 'TOURNAMENT_OPERATOR',
-      'label': 'Tournament Operator',
-      'description': 'Manage weigh-ins, table assignments, and bracket operations for federation events.',
-    },
-    {
-      'key': 'ORGANIZATION_LEADER',
-      'label': 'Organization / Club Leader',
-      'description': 'Manage official club rosters, affiliated teams, and club member athlete accounts.',
+      'label': 'Tournament / Club Operator',
+      'description': 'Manage weigh-ins, table assignments, bracket operations, and club rosters.',
     },
   ];
 

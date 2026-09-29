@@ -34,16 +34,6 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         return 'Certified Referee';
       case 'TOURNAMENT_OPERATOR':
         return 'Tournament Operator';
-      case 'PROVINCIAL_DIRECTOR':
-        return 'Provincial Director';
-      case 'NATIONAL_DIRECTOR':
-        return 'National Director';
-      case 'COMPLIANCE_OFFICER':
-        return 'Compliance Officer';
-      case 'SUPPORT_AGENT':
-        return 'Support Agent';
-      case 'ORGANIZATION_LEADER':
-        return 'Organization Leader';
       case 'SYSTEM_ADMIN':
         return 'System Administrator';
       default:
@@ -59,13 +49,6 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         return Icons.sports;
       case 'TOURNAMENT_OPERATOR':
         return Icons.table_chart;
-      case 'ORGANIZATION_LEADER':
-        return Icons.groups;
-      case 'PROVINCIAL_DIRECTOR':
-      case 'NATIONAL_DIRECTOR':
-        return Icons.account_balance;
-      case 'COMPLIANCE_OFFICER':
-        return Icons.gavel;
       case 'SYSTEM_ADMIN':
         return Icons.security;
       default:
