@@ -259,9 +259,10 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
 
   @override
   Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return RepaintBoundary(
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
         curve: Curves.easeOutQuad,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -313,61 +314,71 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                   ),
 
                   // Running Match Clock
-                  InkWell(
-                    onTap: _toggleTimer,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _timerRunning ? AppTheme.info.withValues(alpha: 0.15) : AppTheme.cardSurface,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(
-                          color: _timerRunning ? AppTheme.info : AppTheme.border,
-                          width: 1.0,
+                  Semantics(
+                    button: true,
+                    label: _timerRunning ? 'Pause match timer' : 'Start match timer',
+                    value: _formatTimer(),
+                    child: InkWell(
+                      onTap: _toggleTimer,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _timerRunning ? AppTheme.info.withValues(alpha: 0.15) : AppTheme.cardSurface,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          border: Border.all(
+                            color: _timerRunning ? AppTheme.info : AppTheme.border,
+                            width: 1.0,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _timerRunning ? Icons.pause : Icons.play_arrow,
-                            size: 14,
-                            color: _timerRunning ? AppTheme.info : AppTheme.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatTimer(),
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              fontFeatures: const [FontFeature.tabularFigures()],
-                              color: _timerRunning ? AppTheme.info : AppTheme.textPrimary,
+                        child: Row(
+                          children: [
+                            Icon(
+                              _timerRunning ? Icons.pause : Icons.play_arrow,
+                              size: 14,
+                              color: _timerRunning ? AppTheme.info : AppTheme.textSecondary,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatTimer(),
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                                color: _timerRunning ? AppTheme.info : AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
                   // Strap Toggle Action
-                  OutlinedButton.icon(
-                    onPressed: _toggleStraps,
-                    icon: Icon(
-                      Icons.link,
-                      size: 14,
-                      color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
-                    ),
-                    label: Text(
-                      _inStraps ? 'Release' : 'Straps',
-                      style: TextStyle(
-                        fontSize: 12,
+                  Semantics(
+                    button: true,
+                    label: _inStraps ? 'Release straps' : 'Apply straps to competitors',
+                    value: _inStraps ? 'In Straps' : 'Straps Off',
+                    child: OutlinedButton.icon(
+                      onPressed: _toggleStraps,
+                      icon: Icon(
+                        Icons.link,
+                        size: 14,
                         color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(44, 34),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      side: BorderSide(color: _inStraps ? AppTheme.secondaryAccent : AppTheme.border),
+                      label: Text(
+                        _inStraps ? 'Release' : 'Straps',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(44, 34),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        side: BorderSide(color: _inStraps ? AppTheme.secondaryAccent : AppTheme.border),
+                      ),
                     ),
                   ),
                 ],
@@ -432,32 +443,40 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextButton.icon(
-                  onPressed: _resetTimer,
-                  icon: const Icon(Icons.replay, size: 16),
-                  label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
+                Semantics(
+                  button: true,
+                  label: 'Reset match clock',
+                  child: TextButton.icon(
+                    onPressed: _resetTimer,
+                    icon: const Icon(Icons.replay, size: 16),
+                    label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
+                  ),
                 ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Reset Bout State?'),
-                        content: const Text('This will clear all points, fouls, and warnings for this match.'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-                          FilledButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryAccent),
-                            child: const Text('Reset'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) _resetBout();
-                  },
-                  icon: const Icon(Icons.refresh, size: 16, color: AppTheme.error),
-                  label: const Text('Reset Bout', style: TextStyle(fontSize: 12, color: AppTheme.error)),
+                Semantics(
+                  button: true,
+                  label: 'Reset bout scores and fouls',
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Reset Bout State?'),
+                          content: const Text('This will clear all points, fouls, and warnings for this match.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                            FilledButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryAccent),
+                              child: const Text('Reset'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) _resetBout();
+                    },
+                    icon: const Icon(Icons.refresh, size: 16, color: AppTheme.error),
+                    label: const Text('Reset Bout', style: TextStyle(fontSize: 12, color: AppTheme.error)),
+                  ),
                 ),
               ],
             ),
@@ -502,8 +521,9 @@ class _CornerScoringCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+      duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
       curve: Curves.easeOutQuad,
       decoration: BoxDecoration(
         color: isFoulFlashing ? const Color(0xFFEF4444).withValues(alpha: 0.15) : Colors.transparent,
@@ -562,16 +582,19 @@ class _CornerScoringCard extends StatelessWidget {
             const SizedBox(height: AppTheme.space8),
 
             // Giant Score Readout (SpaceGrotesk 52sp, Tabular Figures)
-            Center(
-              child: Text(
-                '$score',
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 52,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                  color: AppTheme.textPrimary,
-                  height: 1.1,
+            Semantics(
+              label: 'Score for $athleteName: $score',
+              child: Center(
+                child: Text(
+                  '$score',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 52,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                    color: AppTheme.textPrimary,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ),
@@ -583,47 +606,53 @@ class _CornerScoringCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Fouls (Max 2)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: fouls > 0 ? AppTheme.primaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.border,
-                      width: 1.0,
+                Semantics(
+                  label: 'Fouls for $athleteName: $fouls of 2',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: fouls > 0 ? AppTheme.primaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.border,
+                        width: 1.0,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'F: $fouls/2',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                      color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.textSecondary,
+                    child: Text(
+                      'F: $fouls/2',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.textSecondary,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: AppTheme.space6),
                 // Warnings (Max 2)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: warnings > 0 ? AppTheme.secondaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.border,
-                      width: 1.0,
+                Semantics(
+                  label: 'Warnings for $athleteName: $warnings of 2',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: warnings > 0 ? AppTheme.secondaryAccent.withValues(alpha: 0.2) : AppTheme.elevatedSurface,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.border,
+                        width: 1.0,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    'W: $warnings/2',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                      color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.textSecondary,
+                    child: Text(
+                      'W: $warnings/2',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.textSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -637,31 +666,35 @@ class _CornerScoringCard extends StatelessWidget {
             // -------------------------------------------------------------------
             SizedBox(
               height: 64.0, // Strict 64dp hit target for chalked hands
-              child: ElevatedButton(
-                onPressed: onAddPoint,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: cornerColor,
-                  foregroundColor: AppTheme.voidBackground,
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add, size: 22),
-                    SizedBox(width: 4),
-                    Text(
-                      'POINT',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        letterSpacing: 0.5,
-                      ),
+              child: Semantics(
+                button: true,
+                label: 'Add point for $athleteName on $cornerName',
+                child: ElevatedButton(
+                  onPressed: onAddPoint,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: cornerColor,
+                    foregroundColor: AppTheme.voidBackground,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                     ),
-                  ],
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, size: 22),
+                      SizedBox(width: 4),
+                      Text(
+                        'POINT',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -669,7 +702,7 @@ class _CornerScoringCard extends StatelessWidget {
             const SizedBox(height: AppTheme.space8),
 
             // -------------------------------------------------------------------
-            // Secondary 64×48dp Foul Button & Point Deduct Button
+            // Secondary 64dp Foul Button & Point Deduct Button
             // -------------------------------------------------------------------
             Row(
               children: [
@@ -677,14 +710,18 @@ class _CornerScoringCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: SizedBox(
-                    height: 48.0,
-                    child: OutlinedButton(
-                      onPressed: onDeductPoint,
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        side: const BorderSide(color: AppTheme.border),
+                    height: 64.0, // Strict 64dp hit target per Canary 7 spec
+                    child: Semantics(
+                      button: true,
+                      label: 'Deduct point from $athleteName on $cornerName',
+                      child: OutlinedButton(
+                        onPressed: onDeductPoint,
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          side: const BorderSide(color: AppTheme.border),
+                        ),
+                        child: const Text('-1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       ),
-                      child: const Text('-1', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
                 ),
@@ -693,16 +730,20 @@ class _CornerScoringCard extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: SizedBox(
-                    height: 48.0,
-                    child: OutlinedButton(
-                      onPressed: onAddFoul,
-                      onLongPress: onAddFoulDetails,
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        side: BorderSide(color: AppTheme.primaryAccent.withValues(alpha: 0.6)),
-                        foregroundColor: AppTheme.primaryAccent,
+                    height: 64.0, // Strict 64dp hit target per Canary 7 spec
+                    child: Semantics(
+                      button: true,
+                      label: 'Assess foul on $athleteName on $cornerName. Current fouls: $fouls of 2',
+                      child: OutlinedButton(
+                        onPressed: onAddFoul,
+                        onLongPress: onAddFoulDetails,
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          side: BorderSide(color: AppTheme.primaryAccent.withValues(alpha: 0.6)),
+                          foregroundColor: AppTheme.primaryAccent,
+                        ),
+                        child: const Text('FOUL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       ),
-                      child: const Text('FOUL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
                 ),
@@ -714,14 +755,18 @@ class _CornerScoringCard extends StatelessWidget {
             // Warning Button (Compact)
             SizedBox(
               height: 38.0,
-              child: OutlinedButton(
-                onPressed: onAddWarning,
-                style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  side: BorderSide(color: AppTheme.secondaryAccent.withValues(alpha: 0.5)),
-                  foregroundColor: AppTheme.secondaryAccent,
+              child: Semantics(
+                button: true,
+                label: 'Assess warning on $athleteName on $cornerName. Current warnings: $warnings of 2',
+                child: OutlinedButton(
+                  onPressed: onAddWarning,
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    side: BorderSide(color: AppTheme.secondaryAccent.withValues(alpha: 0.5)),
+                    foregroundColor: AppTheme.secondaryAccent,
+                  ),
+                  child: const Text('+ WARNING', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
-                child: const Text('+ WARNING', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
               ),
             ),
 
@@ -847,6 +892,7 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
 
   @override
   Widget build(BuildContext context) {
+    final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -856,82 +902,91 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
         builder: (context, child) {
           final progress = _holdController.value;
           final remainingMs = ((1.0 - progress) * 400).ceil();
-          return AnimatedScale(
-            scale: _isHolding ? 0.96 : 1.0,
-            duration: const Duration(milliseconds: 50),
-            curve: Curves.easeOutQuad,
-            child: Container(
-              height: 52.0,
-              decoration: BoxDecoration(
-                color: _isLocked
-                    ? Colors.white
-                    : (_isHolding
-                        ? widget.cornerColor.withValues(alpha: 0.25)
-                        : AppTheme.elevatedSurface),
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                border: Border.all(
-                  color: _isHolding ? widget.cornerColor : AppTheme.border,
-                  width: _isHolding ? 2.0 : 1.0,
+          return Semantics(
+            button: true,
+            label: _isLocked
+                ? 'Pin confirmed'
+                : (_isHolding
+                    ? 'Locking pin, $remainingMs milliseconds remaining'
+                    : 'Hold for 400 milliseconds to confirm pin lock'),
+            value: _isLocked ? 'Locked' : (_isHolding ? '${(progress * 100).toInt()}%' : 'Ready'),
+            child: AnimatedScale(
+              scale: _isHolding ? 0.96 : 1.0,
+              duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 50),
+              curve: Curves.easeOutQuad,
+              child: Container(
+                height: 64.0, // Strict 64dp hit target per Canary 7 spec
+                decoration: BoxDecoration(
+                  color: _isLocked
+                      ? Colors.white
+                      : (_isHolding
+                          ? widget.cornerColor.withValues(alpha: 0.25)
+                          : AppTheme.elevatedSurface),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  border: Border.all(
+                    color: _isHolding ? widget.cornerColor : AppTheme.border,
+                    width: _isHolding ? 2.0 : 1.0,
+                  ),
+                  boxShadow: _isHolding
+                      ? [
+                          BoxShadow(
+                            color: widget.cornerColor.withValues(alpha: 0.35),
+                            blurRadius: 10.0,
+                          )
+                        ]
+                      : null,
                 ),
-                boxShadow: _isHolding
-                    ? [
-                        BoxShadow(
-                          color: widget.cornerColor.withValues(alpha: 0.35),
-                          blurRadius: 10.0,
-                        )
-                      ]
-                    : null,
-              ),
-              child: Stack(
-                children: [
-                  // Horizontal Filling Progress Track
-                  FractionallySizedBox(
-                    widthFactor: progress,
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: widget.cornerColor.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium - 1),
+                child: Stack(
+                  children: [
+                    // Horizontal Filling Progress Track
+                    FractionallySizedBox(
+                      widthFactor: progress,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: widget.cornerColor.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium - 1),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Button Label
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isLocked
-                              ? Icons.check_circle
-                              : (_isHolding ? Icons.lock_clock : Icons.touch_app),
-                          size: 16,
-                          color: _isLocked
-                              ? Colors.black
-                              : (_isHolding ? widget.cornerColor : AppTheme.textSecondary),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _isLocked
-                              ? 'PIN CONFIRMED'
-                              : (_isHolding
-                                  ? 'LOCKING PIN: ${remainingMs}ms'
-                                  : 'HOLD TO PIN (400ms)'),
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                    // Button Label
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _isLocked
+                                ? Icons.check_circle
+                                : (_isHolding ? Icons.lock_clock : Icons.touch_app),
+                            size: 16,
                             color: _isLocked
                                 ? Colors.black
-                                : (_isHolding ? AppTheme.textPrimary : AppTheme.textSecondary),
-                            letterSpacing: 0.5,
+                                : (_isHolding ? widget.cornerColor : AppTheme.textSecondary),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          Text(
+                            _isLocked
+                                ? 'PIN CONFIRMED'
+                                : (_isHolding
+                                    ? 'LOCKING PIN: ${remainingMs}ms'
+                                    : 'HOLD TO PIN (400ms)'),
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                              color: _isLocked
+                                  ? Colors.black
+                                  : (_isHolding ? AppTheme.textPrimary : AppTheme.textSecondary),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

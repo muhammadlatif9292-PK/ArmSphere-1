@@ -993,6 +993,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/referee/scorepad',
+        name: 'referee_scorepad',
+        pageBuilder: (context, state) {
+          final match = state.extra as Map<String, dynamic>?;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: MatchSubmissionScreen(match: match),
+          );
+        },
+      ),
+      GoRoute(
         path: '/referee/submit-scorepad',
         name: 'referee_submit_scorepad',
         pageBuilder: (context, state) {

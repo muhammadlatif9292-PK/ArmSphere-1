@@ -875,16 +875,16 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
       final bId = m['athleteBId']?.toString();
       final bName = m['athleteBName']?.toString();
 
-      if (aId != null || aName != null) {
+      if ((aId != null && aId.isNotEmpty) || (aName != null && aName.isNotEmpty)) {
         _challenger = {
           'id': aId ?? '',
-          'displayName': aName ?? 'Challenger (Red)',
+          'displayName': (aName != null && aName.isNotEmpty) ? aName : 'Challenger (Red)',
         };
       }
-      if (bId != null || bName != null) {
+      if ((bId != null && bId.isNotEmpty) || (bName != null && bName.isNotEmpty)) {
         _opponent = {
           'id': bId ?? '',
-          'displayName': bName ?? 'Opponent (White)',
+          'displayName': (bName != null && bName.isNotEmpty) ? bName : 'Opponent (White)',
         };
       }
       if (m['arm'] != null && m['arm'].toString().isNotEmpty) {
@@ -917,6 +917,8 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isLoading) return;
+
     final challengerId = _challenger?['id']?.toString();
     final opponentId = _opponent?['id']?.toString();
     if (challengerId == null || opponentId == null) {
@@ -952,8 +954,20 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Match submitted successfully!'),
+            content: Text('Match result confirmed by server.'),
             backgroundColor: AppTheme.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.pop();
+      }
+    } on OfflineException catch (e) {
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Result saved on this device and queued to sync when connection returns.'),
+            backgroundColor: Color(0xFFF59E0B),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -1035,11 +1049,19 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             ),
             const SizedBox(height: AppTheme.space20),
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                _submit();
-              },
-              child: const Text('SUBMIT OFFICIAL RESULT'),
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      Navigator.of(ctx).pop();
+                      _submit();
+                    },
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('SUBMIT OFFICIAL RESULT'),
             ),
             const SizedBox(height: AppTheme.space8),
             TextButton(

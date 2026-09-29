@@ -842,16 +842,30 @@ class TournamentRepository extends BaseRepository {
     required String scoreLine,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'match_result_$matchId',
-      cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post('/tournaments/matches/result', data: {
-        'matchId': matchId,
-        'winnerId': winnerId,
-        'scoreLine': scoreLine,
-      }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
-    );
+    final payload = {
+      'matchId': matchId,
+      'winnerId': winnerId,
+      'scoreLine': scoreLine,
+    };
+    try {
+      final response = await dioClient.dio.post(
+        '/tournaments/matches/result',
+        data: payload,
+        cancelToken: cancelToken,
+      );
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      if (e.error is OfflineException || e.type == DioExceptionType.connectionError) {
+        await hiveStorage.enqueueAction(
+          actionType: 'TOURNAMENT_MATCH_RESULT',
+          endpoint: '/tournaments/matches/result',
+          payload: payload,
+          method: 'POST',
+        );
+        throw OfflineException('Submission queued offline. Will sync automatically when back online.');
+      }
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTicketTypes({
