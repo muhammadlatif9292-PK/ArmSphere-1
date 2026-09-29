@@ -57,19 +57,37 @@ import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
 
 /// Roles that route to the referee / official dashboard.
-bool _isRefereeLikeRole(String? role) {
-  const refereeRoles = {
+bool _isRefereeLandingRole(String? role) {
+  const refereeRoles = {'REFEREE'};
+  return role != null && refereeRoles.contains(role);
+}
+
+/// Roles that route to the governance dashboard.
+bool _isGovernanceLandingRole(String? role) {
+  const govRoles = {
+    'COMPLIANCE_OFFICER',
+    'SUPPORT_AGENT',
+    'PROVINCIAL_DIRECTOR',
+    'NATIONAL_DIRECTOR',
+    'SYSTEM_ADMIN',
+  };
+  return role != null && govRoles.contains(role);
+}
+
+/// Roles that have permission to access Referee routes.
+bool _canAccessReferee(String? role) {
+  const accessRoles = {
     'REFEREE',
     'PROVINCIAL_DIRECTOR',
     'NATIONAL_DIRECTOR',
     'SYSTEM_ADMIN',
   };
-  return role != null && refereeRoles.contains(role);
+  return role != null && accessRoles.contains(role);
 }
 
-/// Roles that route to the governance dashboard.
-bool _isGovernanceRole(String? role) {
-  const govRoles = {
+/// Roles that have permission to access Governance routes.
+bool _canAccessGovernance(String? role) {
+  const accessRoles = {
     'TOURNAMENT_OPERATOR',
     'COMPLIANCE_OFFICER',
     'SUPPORT_AGENT',
@@ -78,7 +96,7 @@ bool _isGovernanceRole(String? role) {
     'NATIONAL_DIRECTOR',
     'SYSTEM_ADMIN',
   };
-  return role != null && govRoles.contains(role);
+  return role != null && accessRoles.contains(role);
 }
 
 /// Role-aware personalized home dispatcher widget.
@@ -91,10 +109,10 @@ class RoleAwareHomeScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final userRole = (authState.activeRole ?? authState.userProfile?['role'])?.toString().toUpperCase();
 
-    if (_isRefereeLikeRole(userRole)) {
+    if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
     }
-    if (_isGovernanceRole(userRole)) {
+    if (_isGovernanceLandingRole(userRole)) {
       return const GovernanceDashboardScreen();
     }
     return const AthleteDashboardScreen();
@@ -163,10 +181,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             final profileRole = authState.userProfile?['role']?.toString().toUpperCase();
             final effectiveRole = activeRole ?? profileRole;
             
-            if (_isRefereeLikeRole(effectiveRole)) {
+            if (_isRefereeLandingRole(effectiveRole)) {
               return '/referee/dashboard';
             }
-            if (_isGovernanceRole(effectiveRole)) {
+            if (_isGovernanceLandingRole(effectiveRole)) {
               return '/governance';
             }
             // For athletes or pending roles, go to home
@@ -182,8 +200,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             if (effectiveRole != null) effectiveRole,
           };
 
-          final hasRefereeAccess = allUserRoles.any((r) => _isRefereeLikeRole(r));
-          final hasGovernanceAccess = allUserRoles.any((r) => _isGovernanceRole(r));
+          final hasRefereeAccess = allUserRoles.any((r) => _canAccessReferee(r));
+          final hasGovernanceAccess = allUserRoles.any((r) => _canAccessGovernance(r));
 
           if (location.startsWith('/referee') && !hasRefereeAccess) {
             return '/home';
