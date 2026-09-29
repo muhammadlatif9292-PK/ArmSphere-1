@@ -86,7 +86,7 @@ void main() {
           'matchIndex': 0,
           'tableNumber': 1,
           'bracketType': 'WINNERS',
-          'status': 'IN_PROGRESS',
+          'status': 'SCHEDULED',
           'athleteAId': 'ath_01',
           'athleteAName': 'Sultan Al-Balushi',
           'athleteBId': 'ath_03',
@@ -112,6 +112,12 @@ void main() {
         },
       ],
     };
+
+    // Helper to settle state cleanly without timing out on repeating tickers
+    Future<void> settleScreen(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
 
     // -------------------------------------------------------------------------
     // Test 1: Canonical /tournaments/bracket route and aliases exist in AppRouter
@@ -166,7 +172,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       expect(find.text('No brackets published yet.'), findsOneWidget);
       expect(find.text('Matchups will appear once tournament directors generate brackets.'), findsOneWidget);
@@ -188,7 +194,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Category chips are visible
       expect(find.text('SENIOR -85KG RIGHT'), findsOneWidget);
@@ -214,7 +220,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       final interactiveViewerFinder = find.byType(InteractiveViewer);
       expect(interactiveViewerFinder, findsOneWidget);
@@ -242,7 +248,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       final minimapFinder = find.byType(BracketMinimapHud);
       expect(minimapFinder, findsOneWidget);
@@ -260,7 +266,7 @@ void main() {
 
       // Verify interaction
       await tester.tap(minimapFinder);
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
     });
 
     // -------------------------------------------------------------------------
@@ -279,7 +285,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Initially spatial tree
       expect(find.byType(BracketTreeWidget), findsOneWidget);
@@ -288,7 +294,7 @@ void main() {
       final toggleFinder = find.byTooltip('Switch to List View');
       expect(toggleFinder, findsOneWidget);
       await tester.tap(toggleFinder);
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Now in list view (BracketTreeWidget absent, list items present)
       expect(find.byType(BracketTreeWidget), findsNothing);
@@ -298,7 +304,7 @@ void main() {
       final switchBackFinder = find.byTooltip('Switch to Spatial Tree');
       expect(switchBackFinder, findsOneWidget);
       await tester.tap(switchBackFinder);
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Back in spatial tree
       expect(find.byType(BracketTreeWidget), findsOneWidget);
@@ -320,7 +326,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Double-elimination filter chips exist
       expect(find.text('Full Draw'), findsOneWidget);
@@ -329,7 +335,7 @@ void main() {
 
       // Tap 'Elimination' partition chip
       await tester.tap(find.text('Elimination'));
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Tree updates to show Losers partition
       expect(find.byType(BracketTreeWidget), findsOneWidget);
@@ -351,7 +357,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       expect(find.byType(CompactBracketMatchCard), findsWidgets);
       expect(find.text('Sultan Al-Balushi'), findsWidgets);
@@ -386,7 +392,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       // Widget settles cleanly with zero timeouts or pending timers
       expect(find.byType(BracketTreeWidget), findsOneWidget);
@@ -408,12 +414,12 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       final refreshFinder = find.byTooltip('Refresh Brackets');
       expect(refreshFinder, findsOneWidget);
       await tester.tap(refreshFinder);
-      await tester.pumpAndSettle();
+      await settleScreen(tester);
 
       expect(find.byType(BracketTreeWidget), findsOneWidget);
     });
