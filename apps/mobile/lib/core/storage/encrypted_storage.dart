@@ -29,19 +29,31 @@ class EncryptedStorage {
 
     // 2. Open all encrypted boxes with AES-256 cypher
     final cipher = HiveAesCipher(encryptionKey);
-    await Hive.openBox<String>(boxUsers, encryptionCipher: cipher);
-    await Hive.openBox<String>(boxAthleteProfiles, encryptionCipher: cipher);
-    await Hive.openBox<String>(boxMatches, encryptionCipher: cipher);
-    await Hive.openBox<String>(boxTournaments, encryptionCipher: cipher);
-    await Hive.openBox<String>(boxNotifications, encryptionCipher: cipher);
-    await Hive.openBox<String>(boxPendingActions, encryptionCipher: cipher);
-    await Hive.openBox<String>(boxRankingsCache, encryptionCipher: cipher);
+    await _safeOpenBox<String>(boxUsers, cipher);
+    await _safeOpenBox<String>(boxAthleteProfiles, cipher);
+    await _safeOpenBox<String>(boxMatches, cipher);
+    await _safeOpenBox<String>(boxTournaments, cipher);
+    await _safeOpenBox<String>(boxNotifications, cipher);
+    await _safeOpenBox<String>(boxPendingActions, cipher);
+    await _safeOpenBox<String>(boxRankingsCache, cipher);
 
     // 3. Execute migrations if needed
     await _runSchemaMigrations();
 
     // 4. Run automatic cleanup of expired cached items
     await runAutomaticCleanup();
+  }
+
+  Future<Box<E>> _safeOpenBox<E>(String name, HiveAesCipher cipher) async {
+    try {
+      return await Hive.openBox<E>(name, encryptionCipher: cipher);
+    } catch (e) {
+      // If decryption fails (e.g. HiveError: MAC check failed), it means the key 
+      // changed (likely due to Android Auto-Backup restoring prefs without the Keystore).
+      // We must delete the corrupted box from disk and recreate it.
+      await Hive.deleteBoxFromDisk(name);
+      return await Hive.openBox<E>(name, encryptionCipher: cipher);
+    }
   }
 
   /// Fetches existing encryption key from Keychain/Keystore, or generates and
