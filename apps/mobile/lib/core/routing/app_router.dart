@@ -634,6 +634,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/awards',
+        name: 'awards_canonical',
+        pageBuilder: (context, state) {
+          final tournamentId = state.uri.queryParameters['tournamentId'] ??
+              state.uri.queryParameters['id'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['tournamentId']?.toString()
+                  : null) ??
+              '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentAwardsCeremonyScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/awards',
+        name: 'tournaments_awards_alias',
+        pageBuilder: (context, state) {
+          final tournamentId = state.uri.queryParameters['tournamentId'] ??
+              state.uri.queryParameters['id'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['tournamentId']?.toString()
+                  : null) ??
+              '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentAwardsCeremonyScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
         path: '/tournament/:tournamentId/awards',
         name: 'tournament_awards',
         pageBuilder: (context, state) {

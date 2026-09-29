@@ -28,7 +28,7 @@ class TournamentAwardsCeremonyScreen extends ConsumerStatefulWidget {
 
   const TournamentAwardsCeremonyScreen({
     super.key,
-    required this.tournamentId,
+    this.tournamentId = '',
   });
 
   @override
@@ -170,7 +170,12 @@ class _TournamentAwardsCeremonyScreenState
     }).toList();
   }
 
-  void _showSharePodiumModal(BuildContext context, Map<String, dynamic> champion, String eventName) {
+  void _showMedalCitationModal(
+    BuildContext context,
+    Map<String, dynamic> athlete,
+    String eventName, [
+    String? categoryLabel,
+  ]) {
     showDialog(
       context: context,
       builder: (ctx) => Center(
@@ -182,14 +187,15 @@ class _TournamentAwardsCeremonyScreenState
             children: [
               ChampionshipGoldCard(
                 championshipTitle: eventName,
-                athleteName: champion['name'] ?? 'Tournament Champion',
-                dateLocation: 'PAFF National Finals • Official Ledger',
+                athleteName: athlete['name'] ?? 'Official Medalist',
+                dateLocation:
+                    '${athlete['medal']} • ${athlete['tier']}${categoryLabel != null && categoryLabel.isNotEmpty ? ' • $categoryLabel' : ' • Official Certification'}',
                 onShare: () {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Championship Card exported to Photos & Federation Feed.'),
-                      backgroundColor: Color(0xFF10B981),
+                    SnackBar(
+                      content: Text('${athlete['medal']} Citation exported to Photos & Federation Feed.'),
+                      backgroundColor: const Color(0xFF10B981),
                     ),
                   );
                 },
@@ -207,10 +213,26 @@ class _TournamentAwardsCeremonyScreenState
     );
   }
 
+  void _showSharePodiumModal(BuildContext context, Map<String, dynamic> champion, String eventName) {
+    _showMedalCitationModal(context, champion, eventName);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
-    final awardsAsync = ref.watch(eventAwardsProvider(widget.tournamentId));
+    final effectiveTournamentId = widget.tournamentId.isNotEmpty
+        ? widget.tournamentId
+        : (ref.watch(tournamentProvider).valueOrNull?.firstOrNull?['id']?.toString() ?? '');
+
+    if (effectiveTournamentId.isEmpty) {
+      final tournamentsAsync = ref.watch(tournamentProvider);
+      if (tournamentsAsync.isLoading) {
+        return _buildLoadingState(context);
+      }
+      return _buildEmptyState(context, 'No Active Tournament Available', effectiveTournamentId);
+    }
+
+    final eventAsync = ref.watch(eventDetailProvider(effectiveTournamentId));
+    final awardsAsync = ref.watch(eventAwardsProvider(effectiveTournamentId));
 
     // Handle Loading State
     if (awardsAsync.isLoading || eventAsync.isLoading) {
@@ -219,10 +241,10 @@ class _TournamentAwardsCeremonyScreenState
 
     // Handle Error State
     if (awardsAsync.hasError) {
-      return _buildErrorState(context, awardsAsync.error, eventAsync.value?['name']?.toString());
+      return _buildErrorState(context, awardsAsync.error, eventAsync.value?['name']?.toString(), effectiveTournamentId);
     }
     if (eventAsync.hasError && !awardsAsync.hasValue) {
-      return _buildErrorState(context, eventAsync.error, null);
+      return _buildErrorState(context, eventAsync.error, null, effectiveTournamentId);
     }
 
     // Extract Authoritative Awards Data
@@ -238,7 +260,7 @@ class _TournamentAwardsCeremonyScreenState
 
     // Handle Empty Awards State (Podium Pending)
     if (bracketsList.isEmpty) {
-      return _buildEmptyState(context, eventName);
+      return _buildEmptyState(context, eventName, effectiveTournamentId);
     }
 
     // Active Category Selection
@@ -289,9 +311,38 @@ class _TournamentAwardsCeremonyScreenState
                         ),
                         const SizedBox(height: 20),
 
-                        // Selected Podium Medalist Reveal Card
+                        // Selected Podium Medalist Reveal Card with Smooth Animated Switcher
                         if (selectedAthlete != null)
-                          _buildSelectedMedalistCard(selectedAthlete),
+                          AnimatedSwitcher(
+                            duration: disableAnimations
+                                ? Duration.zero
+                                : const Duration(milliseconds: 200),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, animation) {
+                              if (disableAnimations) return child;
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0.0, 0.04),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: KeyedSubtree(
+                              key: ValueKey<String>(
+                                '${selectedAthlete['athleteId']}_${selectedAthlete['tier']}_$_selectedBracketIndex',
+                              ),
+                              child: _buildSelectedMedalistCard(
+                                selectedAthlete,
+                                eventName,
+                                categoryLabel,
+                              ),
+                            ),
+                          ),
                         const SizedBox(height: 16),
 
                         // Share Action Bar
@@ -434,36 +485,41 @@ class _TournamentAwardsCeremonyScreenState
           final isSelected = i == _selectedBracketIndex;
           final catLabel = _formatCategoryLabel(brackets[i]);
 
-          return GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              setState(() {
-                _selectedBracketIndex = i;
-                _selectedTierIndex = 0;
-              });
-              _replayCeremony();
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.goldPrimary.withValues(alpha: 0.15)
-                    : const Color(0xFF121826),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : const Color(0xFF334155),
-                  width: 1.0,
+          return Semantics(
+            button: true,
+            selected: isSelected,
+            label: '$catLabel division awards',
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  _selectedBracketIndex = i;
+                  _selectedTierIndex = 0;
+                });
+                _replayCeremony();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.goldPrimary.withValues(alpha: 0.15)
+                      : const Color(0xFF121826),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.goldPrimary : const Color(0xFF334155),
+                    width: 1.0,
+                  ),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                catLabel,
-                style: TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                  fontSize: 10.5,
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.textMuted,
-                  letterSpacing: 0.5,
+                alignment: Alignment.center,
+                child: Text(
+                  catLabel,
+                  style: TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 10.5,
+                    color: isSelected ? AppTheme.goldPrimary : AppTheme.textMuted,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
@@ -909,7 +965,11 @@ class _TournamentAwardsCeremonyScreenState
   }
 
   /// Selected Podium Medalist Reveal Card
-  Widget _buildSelectedMedalistCard(Map<String, dynamic> athlete) {
+  Widget _buildSelectedMedalistCard(
+    Map<String, dynamic> athlete,
+    String eventName,
+    String categoryLabel,
+  ) {
     final color = athlete['color'] as Color;
     final athleteId = athlete['athleteId']?.toString() ?? '';
 
@@ -1028,6 +1088,48 @@ class _TournamentAwardsCeremonyScreenState
             ],
           ),
           const SizedBox(height: 14),
+
+          // Medal Unboxing / Citation Inspection Card Button
+          Semantics(
+            button: true,
+            label: 'Inspect ${athlete['medal']} citation for ${athlete['name']}',
+            child: TactilePressWrapper(
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                _showMedalCitationModal(context, athlete, eventName, categoryLabel);
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: color.withValues(alpha: 0.5)),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(athlete['trophy'] as IconData, size: 16, color: color),
+                      const SizedBox(width: 8),
+                      Text(
+                        'UNBOX & INSPECT ${athlete['medal']} CITATION',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                          color: color,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (athleteId.isNotEmpty) const SizedBox(height: 8),
 
           // View Profile CTA
           if (athleteId.isNotEmpty)
@@ -1284,7 +1386,12 @@ class _TournamentAwardsCeremonyScreenState
   }
 
   /// Honest Human-Readable Error State with Active Retry
-  Widget _buildErrorState(BuildContext context, Object? error, String? eventName) {
+  Widget _buildErrorState(
+    BuildContext context,
+    Object? error,
+    String? eventName,
+    String effectiveTournamentId,
+  ) {
     return Scaffold(
       backgroundColor: const Color(0xFF070A11),
       body: Stack(
@@ -1343,8 +1450,13 @@ class _TournamentAwardsCeremonyScreenState
                           TactilePressWrapper(
                             onTap: () {
                               HapticFeedback.selectionClick();
-                              ref.invalidate(eventAwardsProvider(widget.tournamentId));
-                              ref.invalidate(eventDetailProvider(widget.tournamentId));
+                              if (effectiveTournamentId.isNotEmpty) {
+                                ref.invalidate(eventAwardsProvider(effectiveTournamentId));
+                                ref.invalidate(eventDetailProvider(effectiveTournamentId));
+                              }
+                              if (widget.tournamentId.isEmpty) {
+                                ref.invalidate(tournamentProvider);
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -1393,7 +1505,11 @@ class _TournamentAwardsCeremonyScreenState
   }
 
   /// Honest Empty State when Tournament has No Certified Awards Yet
-  Widget _buildEmptyState(BuildContext context, String eventName) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    String eventName,
+    String effectiveTournamentId,
+  ) {
     return Scaffold(
       backgroundColor: const Color(0xFF070A11),
       body: Stack(
@@ -1462,8 +1578,13 @@ class _TournamentAwardsCeremonyScreenState
                           TactilePressWrapper(
                             onTap: () {
                               HapticFeedback.selectionClick();
-                              ref.invalidate(eventAwardsProvider(widget.tournamentId));
-                              ref.invalidate(eventDetailProvider(widget.tournamentId));
+                              if (effectiveTournamentId.isNotEmpty) {
+                                ref.invalidate(eventAwardsProvider(effectiveTournamentId));
+                                ref.invalidate(eventDetailProvider(effectiveTournamentId));
+                              }
+                              if (widget.tournamentId.isEmpty) {
+                                ref.invalidate(tournamentProvider);
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
