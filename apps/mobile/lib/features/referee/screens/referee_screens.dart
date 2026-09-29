@@ -959,7 +959,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        context.pop();
+        Navigator.of(context).maybePop();
       }
     } on OfflineException catch (e) {
       if (mounted) {
@@ -971,7 +971,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        context.pop();
+        Navigator.of(context).maybePop();
       }
     } on ApiException catch (e) {
       if (mounted) {

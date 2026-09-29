@@ -62,18 +62,21 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
   bool _isFoulFlashing = false;
   String? _foulFlashSide;
   Timer? _foulFlashTimer;
+  Timer? _foulHapticTimer;
 
   @override
   void dispose() {
     _timer?.cancel();
     _foulFlashTimer?.cancel();
+    _foulHapticTimer?.cancel();
     super.dispose();
   }
 
   void _triggerFoulFlash(bool isRed) {
     _foulFlashTimer?.cancel();
+    _foulHapticTimer?.cancel();
     HapticFeedback.heavyImpact();
-    Future.delayed(const Duration(milliseconds: 60), () {
+    _foulHapticTimer = Timer(const Duration(milliseconds: 60), () {
       HapticFeedback.heavyImpact();
     });
     setState(() {
@@ -904,6 +907,7 @@ class _PinHoldButtonState extends State<_PinHoldButton> with SingleTickerProvide
           final remainingMs = ((1.0 - progress) * 400).ceil();
           return Semantics(
             button: true,
+            excludeSemantics: true,
             label: _isLocked
                 ? 'Pin confirmed'
                 : (_isHolding

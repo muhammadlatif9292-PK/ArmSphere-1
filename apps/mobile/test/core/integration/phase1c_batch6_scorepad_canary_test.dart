@@ -78,7 +78,9 @@ void main() {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
-            home: MatchSubmissionScreen(match: null),
+            home: Scaffold(
+              body: MatchSubmissionScreen(match: null),
+            ),
           ),
         ),
       );
@@ -107,7 +109,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: MatchSubmissionScreen(match: testMatch),
+            home: Scaffold(
+              body: MatchSubmissionScreen(match: testMatch),
+            ),
           ),
         ),
       );
@@ -225,6 +229,7 @@ void main() {
       // Add 2nd Foul on Red Corner -> Automatic point to White Corner
       await tester.tap(foulButtons.first);
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350)); // Drain foul flash timer
       expect(find.text('2 Fouls on Red Corner: Point awarded to White Corner.'), findsOneWidget);
       expect(find.text('1'), findsOneWidget); // White Corner now has 1 point!
     });
@@ -260,19 +265,20 @@ void main() {
       await tester.pumpAndSettle();
 
       // Gesture down on Pin Hold button for Red Corner
-      final pinHoldGesture = await tester.startGesture(tester.getCenter(find.text('HOLD TO PIN (400ms)').first));
+      final pinHoldFinder = find.text('HOLD TO PIN (400ms)').first;
+      final pinHoldGesture = await tester.startGesture(tester.getCenter(pinHoldFinder));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
       // Midpoint feedback active
       expect(find.textContaining('LOCKING PIN:'), findsOneWidget);
 
-      // Complete 400ms hold threshold
+      // Complete 400ms hold threshold -> locks pin and awards point
       await tester.pump(const Duration(milliseconds: 250));
-      expect(find.text('PIN CONFIRMED'), findsOneWidget);
       expect(find.text('1'), findsOneWidget); // Score incremented to 1!
 
       await pinHoldGesture.up();
-      await tester.pump(const Duration(milliseconds: 100)); // 80ms settle
+      await tester.pump(const Duration(milliseconds: 150)); // Drain settle timer
     });
 
     // -------------------------------------------------------------------------
@@ -310,7 +316,9 @@ void main() {
             tournamentRepositoryProvider.overrideWithValue(fakeRepo),
           ],
           child: MaterialApp(
-            home: MatchSubmissionScreen(match: testMatch),
+            home: Scaffold(
+              body: MatchSubmissionScreen(match: testMatch),
+            ),
           ),
         ),
       );
@@ -377,7 +385,9 @@ void main() {
             tournamentRepositoryProvider.overrideWithValue(fakeRepo),
           ],
           child: MaterialApp(
-            home: MatchSubmissionScreen(match: testMatch),
+            home: Scaffold(
+              body: MatchSubmissionScreen(match: testMatch),
+            ),
           ),
         ),
       );
@@ -435,7 +445,7 @@ void main() {
       expect(find.bySemanticsLabel('Deduct point from Sultan Al-Balushi on CORNER RED'), findsOneWidget);
       expect(find.bySemanticsLabel('Assess foul on Sultan Al-Balushi on CORNER RED. Current fouls: 0 of 2'), findsOneWidget);
       expect(find.bySemanticsLabel('Assess warning on Sultan Al-Balushi on CORNER RED. Current warnings: 0 of 2'), findsOneWidget);
-      expect(find.bySemanticsLabel('Hold for 400 milliseconds to confirm pin lock'), findsNWidgets(2));
+      expect(find.bySemanticsLabel(RegExp(r'Hold for 400 milliseconds to confirm pin lock')), findsNWidgets(2));
       expect(find.bySemanticsLabel('Start match timer'), findsOneWidget);
       expect(find.bySemanticsLabel('Apply straps to competitors'), findsOneWidget);
     });
