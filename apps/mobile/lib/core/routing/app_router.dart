@@ -74,6 +74,9 @@ bool _isGovernanceRole(String? role) {
     'COMPLIANCE_OFFICER',
     'SUPPORT_AGENT',
     'ORGANIZATION_LEADER',
+    'PROVINCIAL_DIRECTOR',
+    'NATIONAL_DIRECTOR',
+    'SYSTEM_ADMIN',
   };
   return role != null && govRoles.contains(role);
 }
