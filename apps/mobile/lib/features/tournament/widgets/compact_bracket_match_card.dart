@@ -54,6 +54,7 @@ class CompactBracketMatchCard extends StatelessWidget {
 
     return RepaintBoundary(
       child: Semantics(
+        container: true,
         button: true,
         label: semanticsLabel,
         child: GestureDetector(

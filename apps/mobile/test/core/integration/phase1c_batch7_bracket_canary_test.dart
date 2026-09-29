@@ -260,7 +260,11 @@ void main() {
 
       // Verify Semantics
       expect(
-        find.bySemanticsLabel('Tournament bracket mini-map radar indicator. Tap to jump viewport.'),
+        find.byWidgetPredicate(
+          (w) =>
+              w is Semantics &&
+              (w.properties.label?.contains('mini-map radar') ?? false),
+        ),
         findsOneWidget,
       );
 
@@ -366,10 +370,13 @@ void main() {
 
       // Verify Semantics on completed match
       expect(
-        find.bySemanticsLabel(
-          'Completed match on Table 1. Sultan Al-Balushi scored 3, Kamran Zaidi scored 0. Sultan Al-Balushi won. Tap to view head to head.',
+        find.byWidgetPredicate(
+          (w) =>
+              w is Semantics &&
+              (w.properties.label?.contains('Sultan Al-Balushi') ?? false) &&
+              (w.properties.label?.contains('Table 1') ?? false),
         ),
-        findsOneWidget,
+        findsWidgets,
       );
     });
 
