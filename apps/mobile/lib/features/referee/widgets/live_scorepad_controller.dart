@@ -319,6 +319,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                   // Running Match Clock
                   Semantics(
                     button: true,
+                    excludeSemantics: true,
                     label: _timerRunning ? 'Pause match timer' : 'Start match timer',
                     value: _formatTimer(),
                     child: InkWell(
@@ -361,6 +362,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                   // Strap Toggle Action
                   Semantics(
                     button: true,
+                    excludeSemantics: true,
                     label: _inStraps ? 'Release straps' : 'Apply straps to competitors',
                     value: _inStraps ? 'In Straps' : 'Straps Off',
                     child: OutlinedButton.icon(

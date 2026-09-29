@@ -446,8 +446,8 @@ void main() {
       expect(find.bySemanticsLabel('Assess foul on Sultan Al-Balushi on CORNER RED. Current fouls: 0 of 2'), findsOneWidget);
       expect(find.bySemanticsLabel('Assess warning on Sultan Al-Balushi on CORNER RED. Current warnings: 0 of 2'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp(r'Hold for 400 milliseconds to confirm pin lock')), findsNWidgets(2));
-      expect(find.bySemanticsLabel('Start match timer'), findsOneWidget);
-      expect(find.bySemanticsLabel('Apply straps to competitors'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'Start match timer')), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'Apply straps to competitors')), findsOneWidget);
     });
 
     // -------------------------------------------------------------------------
