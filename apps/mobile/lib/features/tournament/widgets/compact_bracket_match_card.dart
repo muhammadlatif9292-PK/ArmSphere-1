@@ -46,21 +46,30 @@ class CompactBracketMatchCard extends StatelessWidget {
       }
     }
 
+    final semanticsLabel = isCompleted
+        ? 'Completed match on Table $tableNo. $p1 scored $score1, $p2 scored $score2. ${isAWinner ? "$p1 won." : (isBWinner ? "$p2 won." : "")} Tap to view head to head.'
+        : (isLive
+            ? 'Live match on Table $tableNo. $p1 versus $p2. Current score $score1 to $score2. Tap to view head to head.'
+            : 'Scheduled match on Table $tableNo. $p1 versus $p2. Round ${match['round'] ?? '1'}. Status: $statusStr. Tap to view head to head.');
+
     return RepaintBoundary(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          GoRouter.of(context).push(
-            '/matches/head-to-head',
-            extra: {
-              'matchId': match['id']?.toString() ?? 'match-1',
-              'athleteA': p1,
-              'athleteB': p2,
-              'weightClass': match['weightClass'] ?? match['category'] ?? '-85 KG',
-              'matchTitle': 'TABLE $tableNo • ${match['round'] ?? 'BOUT'}',
-            },
-          );
-        },
+      child: Semantics(
+        button: true,
+        label: semanticsLabel,
+        child: GestureDetector(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            GoRouter.of(context).push(
+              '/matches/head-to-head',
+              extra: {
+                'matchId': match['id']?.toString() ?? 'match-1',
+                'athleteA': p1,
+                'athleteB': p2,
+                'weightClass': match['weightClass'] ?? match['category'] ?? '-85 KG',
+                'matchTitle': 'TABLE $tableNo • ${match['round'] ?? 'BOUT'}',
+              },
+            );
+          },
         child: Container(
           decoration: BoxDecoration(
           color: AppTheme.cardSurface,
@@ -264,6 +273,7 @@ class CompactBracketMatchCard extends StatelessWidget {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 }

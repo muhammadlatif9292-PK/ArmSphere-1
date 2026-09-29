@@ -1273,10 +1273,17 @@ class TournamentBracketsScreen extends ConsumerStatefulWidget {
 
 class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScreen> {
   String? _selectedBracketId;
+  bool _isSpatialView = true;
 
   @override
   Widget build(BuildContext context) {
-    final bracketsAsync = ref.watch(eventBracketsProvider(widget.tournamentId));
+    final effectiveTournamentId = widget.tournamentId.isNotEmpty
+        ? widget.tournamentId
+        : (ref.watch(tournamentProvider).valueOrNull?.firstOrNull?['id']?.toString() ?? '');
+
+    final bracketsAsync = effectiveTournamentId.isNotEmpty
+        ? ref.watch(eventBracketsProvider(effectiveTournamentId))
+        : const AsyncValue<List<dynamic>>.loading();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -1285,6 +1292,29 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
           'Tournament Brackets',
           style: TextStyle(fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(_isSpatialView ? Icons.view_list_rounded : Icons.account_tree_rounded),
+            tooltip: _isSpatialView ? 'Switch to List View' : 'Switch to Spatial Tree',
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              setState(() => _isSpatialView = !_isSpatialView);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
+            tooltip: 'Refresh Brackets',
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              if (effectiveTournamentId.isNotEmpty) {
+                ref.invalidate(eventBracketsProvider(effectiveTournamentId));
+              }
+              if (_selectedBracketId != null) {
+                ref.invalidate(bracketDetailsProvider(_selectedBracketId!));
+              }
+            },
+          ),
+        ],
       ),
       body: bracketsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
@@ -1449,6 +1479,18 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
                   ),
                 ),
               ],
+            );
+          }
+
+          if (_isSpatialView) {
+            final matchesList = matches
+                .map((m) => Map<String, dynamic>.from(m as Map))
+                .toList();
+            final format = bracket['format']?.toString().toUpperCase() ?? '';
+            final prefix = format == 'DOUBLE_ELIMINATION' ? 'WINNERS' : 'BRACKET';
+            return BracketTreeWidget(
+              matches: matchesList,
+              titlePrefix: prefix,
             );
           }
 

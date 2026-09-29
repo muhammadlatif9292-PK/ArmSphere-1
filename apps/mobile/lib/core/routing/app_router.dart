@@ -500,6 +500,54 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/tournament/:tournamentId/bracket',
+        name: 'tournament_bracket_singular',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentBracketsScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/:tournamentId/brackets',
+        name: 'tournaments_brackets_canonical',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentBracketsScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/:tournamentId/bracket',
+        name: 'tournaments_bracket_id_canonical',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentBracketsScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/bracket',
+        name: 'tournaments_bracket_canary',
+        pageBuilder: (context, state) {
+          final tournamentId = state.uri.queryParameters['tournamentId'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['tournamentId']?.toString()
+                  : null) ??
+              '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentBracketsScreen(tournamentId: tournamentId),
+          );
+        },
+      ),
+      GoRoute(
         path: '/tournament/:tournamentId/operations',
         name: 'tournament_operations',
         pageBuilder: (context, state) {

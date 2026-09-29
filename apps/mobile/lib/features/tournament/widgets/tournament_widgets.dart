@@ -7,6 +7,7 @@ export 'grand_final_match_widget.dart';
 export 'compact_bracket_match_card.dart';
 export 'bracket_connector_line.dart';
 export 'bracket_connectors_painter.dart';
+export 'bracket_minimap_hud.dart';
 export 'live_countdown_timer_widget.dart';
 export 'glass_shimmer_skeleton_list.dart';
 export 'tournament_details_hero_widget.dart';
