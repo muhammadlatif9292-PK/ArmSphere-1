@@ -430,6 +430,20 @@ The forensic audit uncovered 5 critical technical and architectural defects that
     - `Physical Visual Review`: **APPROVED** by Product Owner on target physical Android device.
     - `Explicitly Accepted Limitations`: Round-by-round List View is provided alongside 2D spatial canvas as an accessible fallback for smaller viewports and screen readers.
     - Honest Quality Status: **COMPLETE / PHYSICALLY APPROVED**.
+  - **Phase 1C Batch 8 (Weigh-In & Athlete Certification Canary Convergence — Canary 9)**: **COMPLETE / PHYSICALLY APPROVED**:
+    - `Canonical Routing`: Added canonical `/weigh-in` (`weigh_in_canonical`) and `/tournaments/weigh-in` (`tournaments_weigh_in_alias`) with query parameter resolution (`tournamentId`) and fallback to active tournament context in `apps/mobile/lib/core/routing/app_router.dart`, supporting seamless referee and operator weigh-in flows while maintaining full backwards compatibility.
+    - `Athlete Digital Passport Layout`: Implemented official athlete digital passport card displaying full athlete name, division, arm, ELO rating, federation certification badge, and live weigh-in verification status.
+    - `64dp Numeric Keypad Controls`: Built 64.0dp touch-target numeric keypad controls (`_buildKeypad()`) with large monospace readout, tactile feedback, and comprehensive semantic labels (`Semantics(button: true, label: "...")`), fully compliant with venue chalk and sweat tolerance standards.
+    - `Calibrated Scale Readout & Dynamic Overweight Warning`: Implemented real-time category weight limit ceiling verification; dynamic amber border pulse and explicit warning notification ("ATHLETE OVER LIMIT FOR CLASS") when entered weight exceeds official category maximum.
+    - `SIG-5 Rubber Stamp Clearance`: Implemented official `WeighInClearanceStamp` (`apps/mobile/lib/core/widgets/signature_ceremonies.dart`) with rapid 150ms `Curves.easeInQuad` descent, scale transition from 2.5 to 1.0, -12° rotation, emerald green seal (`#10B981`), chalk shockwave ring dissipation, and heavy haptic impact (`HapticFeedback.heavyImpact()`).
+    - `Honest Verification Gate`: SIG-5 Rubber Stamp Clearance executes exclusively upon genuine weigh-in certification; prevents premature stamp triggers and validates against category ceiling before submission.
+    - `Reduced Motion Compliance`: Integrated `MediaQuery.maybeOf(context)?.disableAnimations`; bypasses 150ms transform animations and shockwave particles, settling the clearance seal immediately at `1.0` scale and 0.0 rotation.
+    - `Mission-Critical HUD Aesthetics`: Strictly vector HUD rendering, zero decorative media or video backgrounds, `RepaintBoundary` isolation on stamp and keypad to ensure 60fps thermal stability on mobile chipsets.
+    - `Offline & Error Resilience`: Enforces honest operational states for network errors and uncertified states without fake local bypasses, preserving cryptographic audit integrity.
+    - `Focused Test Suite`: Authored `apps/mobile/test/core/integration/phase1c_batch8_weigh_in_canary_test.dart` with 10 comprehensive integration tests covering canonical `/weigh-in` routing, digital passport rendering, 64dp keypad touch targets, keypad input entry, overweight ceiling warning, SIG-5 Rubber Stamp execution, reduced motion compliance, accessibility semantics, error handling, and tournament ID fallback (100% PASS in CI).
+    - `Physical Visual Review`: **APPROVED** by Product Owner on target physical Android device.
+    - `Explicitly Accepted Limitations`: Manual referee scale balance entry is the authoritative design pattern; physical Bluetooth scale streaming is not required by repository specification.
+    - Honest Quality Status: **COMPLETE / PHYSICALLY APPROVED**.
 
 
 ### Defect 2: Android Launcher Icon CI Workaround (RESOLVED)
