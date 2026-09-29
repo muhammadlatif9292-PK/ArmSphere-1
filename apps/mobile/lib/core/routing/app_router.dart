@@ -590,6 +590,50 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/weigh-in',
+        name: 'weigh_in_canonical',
+        pageBuilder: (context, state) {
+          final tournamentId = state.uri.queryParameters['tournamentId'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['tournamentId']?.toString()
+                  : null) ??
+              '';
+          final regId = state.uri.queryParameters['registrationId'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['registrationId']?.toString()
+                  : null);
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentWeighInScreen(
+              tournamentId: tournamentId,
+              initialRegistrationId: regId,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/tournaments/weigh-in',
+        name: 'tournaments_weigh_in_alias',
+        pageBuilder: (context, state) {
+          final tournamentId = state.uri.queryParameters['tournamentId'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['tournamentId']?.toString()
+                  : null) ??
+              '';
+          final regId = state.uri.queryParameters['registrationId'] ??
+              ((state.extra is Map<String, dynamic>)
+                  ? (state.extra as Map<String, dynamic>)['registrationId']?.toString()
+                  : null);
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: TournamentWeighInScreen(
+              tournamentId: tournamentId,
+              initialRegistrationId: regId,
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: '/tournament/:tournamentId/awards',
         name: 'tournament_awards',
         pageBuilder: (context, state) {

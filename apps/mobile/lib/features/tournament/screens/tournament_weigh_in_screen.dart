@@ -135,8 +135,25 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       return;
     }
 
+    final ceiling = _parseClassCeiling(reg['weightClass']?.toString());
+    if (ceiling < 999.0 && weight > ceiling) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cannot certify overweight athlete: ${weight.toStringAsFixed(1)} KG exceeds ${ceiling.toStringAsFixed(1)} KG ceiling. Reassignment required.',
+          ),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
+
     final regId = reg['id']?.toString() ?? '';
     setState(() => _isBusy = true);
+
+    final effectiveTournamentId = widget.tournamentId.isNotEmpty
+        ? widget.tournamentId
+        : (ref.read(tournamentProvider).valueOrNull?.firstOrNull?['id']?.toString() ?? '');
 
     try {
       // 1. Record weigh-in to repository
@@ -151,8 +168,10 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
           );
 
       // 3. Invalidate providers so lists refresh
-      ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
-      ref.invalidate(eventStatsProvider(widget.tournamentId));
+      if (effectiveTournamentId.isNotEmpty) {
+        ref.invalidate(eventRegistrationsProvider(effectiveTournamentId));
+        ref.invalidate(eventStatsProvider(effectiveTournamentId));
+      }
 
       if (mounted) {
         setState(() {
@@ -190,15 +209,16 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       }
     } catch (e) {
       if (mounted) {
-        // Fallback for offline simulation / cache sign
-        setState(() {
-          _isCertified = true;
-          _isBusy = false;
-        });
+        setState(() => _isBusy = false);
+        final errorMsg = e.toString().toLowerCase().contains('connection') ||
+                e.toString().toLowerCase().contains('socket') ||
+                e.toString().toLowerCase().contains('offline')
+            ? 'Network connection unavailable. Certification could not be submitted to the server.'
+            : 'Certification failed: ${e.toString()}';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Offline Certification Hash Sealed locally in SQLite.'),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: AppTheme.error,
           ),
         );
       }
@@ -207,8 +227,50 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
 
   @override
   Widget build(BuildContext context) {
-    final regsAsync = ref.watch(eventRegistrationsProvider(widget.tournamentId));
-    final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
+    final effectiveTournamentId = widget.tournamentId.isNotEmpty
+        ? widget.tournamentId
+        : (ref.watch(tournamentProvider).valueOrNull?.firstOrNull?['id']?.toString() ?? '');
+
+    if (effectiveTournamentId.isEmpty) {
+      final tournamentsAsync = ref.watch(tournamentProvider);
+      return Scaffold(
+        backgroundColor: const Color(0xFF070A11),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0B0F19),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text(
+            'OFFICIAL WEIGH-IN DESK',
+            style: TextStyle(
+              fontFamily: 'Space Grotesk',
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+              color: Colors.white,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        body: tournamentsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
+          error: (err, _) => Center(
+            child: Text('Error finding tournament: $err', style: const TextStyle(color: AppTheme.error)),
+          ),
+          data: (tournaments) => const Center(
+            child: Text(
+              'No active tournament found for weigh-in.',
+              style: TextStyle(color: AppTheme.textMuted),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final regsAsync = ref.watch(eventRegistrationsProvider(effectiveTournamentId));
+    final eventAsync = ref.watch(eventDetailProvider(effectiveTournamentId));
+    final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     return Scaffold(
       backgroundColor: const Color(0xFF070A11), // L0 Substrate
@@ -327,6 +389,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                   isOverweight: isOverweight,
                   diff: diff,
                   isCertified: isAlreadyCertified,
+                  disableAnimations: disableAnimations,
                 ),
                 const SizedBox(height: 16),
 
@@ -369,6 +432,17 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
 
   // --- 1. Athlete Selector Tray ---
   Widget _buildAthleteSelectorTray(List<Map<String, dynamic>> registrations) {
+    final filtered = registrations.where((r) {
+      if (_filter == 'PENDING') {
+        final status = (r['status']?.toString() ?? '').toUpperCase();
+        return status != 'PASSED' && status != 'WEIGHED';
+      } else if (_filter == 'CERTIFIED') {
+        final status = (r['status']?.toString() ?? '').toUpperCase();
+        return status == 'PASSED' || status == 'WEIGHED';
+      }
+      return true;
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -399,68 +473,85 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         const SizedBox(height: 8),
         SizedBox(
           height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: registrations.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              final reg = registrations[i];
-              final regId = reg['id']?.toString() ?? '';
-              final name = reg['athleteName']?.toString() ?? 'Athlete';
-              final isSelected = regId == _selectedRegId;
-              final isPassed = (reg['status']?.toString() ?? '').toUpperCase() == 'PASSED';
-
-              return TactilePressWrapper(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  setState(() {
-                    _selectedRegId = regId;
-                    _inputWeight = '';
-                    _isCertified = isPassed;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF1E293B)
-                        : const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppTheme.goldPrimary
-                          : const Color(0xFF334155),
-                      width: isSelected ? 1.5 : 1.0,
+          child: filtered.isEmpty
+              ? const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'No athletes match the current filter.',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 11,
+                      color: AppTheme.textMuted,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isPassed
-                              ? const Color(0xFF10B981)
-                              : (isSelected ? AppTheme.goldPrimary : const Color(0xFF64748B)),
+                )
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final reg = filtered[i];
+                    final regId = reg['id']?.toString() ?? '';
+                    final name = reg['athleteName']?.toString() ?? 'Athlete';
+                    final isSelected = regId == _selectedRegId;
+                    final isPassed = (reg['status']?.toString() ?? '').toUpperCase() == 'PASSED';
+
+                    return Semantics(
+                      button: true,
+                      selected: isSelected,
+                      label: '$name. Status: ${isPassed ? 'Passed' : 'Pending'}. ${isSelected ? 'Selected' : 'Tap to select'}',
+                      child: TactilePressWrapper(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _selectedRegId = regId;
+                            _inputWeight = '';
+                            _isCertified = isPassed;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF1E293B)
+                                : const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppTheme.goldPrimary
+                                  : const Color(0xFF334155),
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isPassed
+                                      ? const Color(0xFF10B981)
+                                      : (isSelected ? AppTheme.goldPrimary : const Color(0xFF64748B)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                name,
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                  fontSize: 12,
+                                  color: isSelected ? Colors.white : AppTheme.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        name,
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                          fontSize: 12,
-                          color: isSelected ? Colors.white : AppTheme.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -468,28 +559,33 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
 
   Widget _filterPill(String label) {
     final active = _filter == label;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _filter = label);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: active ? AppTheme.goldPrimary.withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: active ? AppTheme.goldPrimary : Colors.white12,
-            width: 0.8,
+    return Semantics(
+      button: true,
+      selected: active,
+      label: 'Filter competitors: $label',
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _filter = label);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: active ? AppTheme.goldPrimary.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: active ? AppTheme.goldPrimary : Colors.white12,
+              width: 0.8,
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Space Grotesk',
-            fontSize: 9,
-            fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-            color: active ? AppTheme.goldPrimary : AppTheme.textMuted,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Space Grotesk',
+              fontSize: 9,
+              fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+              color: active ? AppTheme.goldPrimary : AppTheme.textMuted,
+            ),
           ),
         ),
       ),
@@ -505,6 +601,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     required bool isOverweight,
     required double diff,
     required bool isCertified,
+    required bool disableAnimations,
   }) {
     final athleteName = selected['athleteName']?.toString() ?? 'Official Competitor';
     final regId = selected['id']?.toString() ?? 'REG-001';
@@ -512,16 +609,14 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final arm = selected['arm']?.toString() ?? 'RIGHT ARM';
     final license = selected['licenseNumber']?.toString() ?? 'PAFF-LIC-${regId.hashCode.abs().toString().substring(0, 4)}';
 
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, child) {
-        final borderColor = isCertified
-            ? const Color(0xFF10B981)
-            : (isOverweight
-                ? Color.lerp(const Color(0xFFEF4444), const Color(0xFFF59E0B), _pulseAnimation.value)!
-                : const Color(0xFF334155));
+    Widget buildPassportContent(double animValue) {
+      final borderColor = isCertified
+          ? const Color(0xFF10B981)
+          : (isOverweight
+              ? Color.lerp(const Color(0xFFEF4444), const Color(0xFFF59E0B), animValue)!
+              : const Color(0xFF334155));
 
-        return Container(
+      return Container(
           width: double.infinity,
           decoration: BoxDecoration(
             color: const Color(0xFF121826), // L2 Surface Card
@@ -771,9 +866,19 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
             ],
           ),
         );
-      },
-    );
-  }
+      }
+
+      return Semantics(
+        container: true,
+        label: 'Athlete Digital Passport: $athleteName. License: $license. Division: $division. Arm: $arm. Category limit: ${ceiling < 999.0 ? '${ceiling.toStringAsFixed(1)} kilograms' : 'Open'}. Current status: ${isCertified ? 'Passed and certified' : (isOverweight ? 'Over limit by ${diff.toStringAsFixed(1)} kilograms' : 'Pending weigh-in')}.',
+        child: disableAnimations
+            ? buildPassportContent(0.85)
+            : AnimatedBuilder(
+                animation: _pulseAnimation,
+                builder: (context, child) => buildPassportContent(_pulseAnimation.value),
+              ),
+      );
+    }
 
   // --- 3. Scale Readout Section ---
   Widget _buildScaleReadoutSection({
@@ -788,100 +893,115 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
             ? const Color(0xFF10B981)
             : (measured != null ? AppTheme.goldPrimary : AppTheme.textMuted));
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B0F19),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B0F19),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF334155)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.monitor_weight_outlined, size: 14, color: AppTheme.goldPrimary),
+                    SizedBox(width: 6),
+                    Text(
+                      'CALIBRATED SCALE READOUT',
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textMuted,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    // -0.1kg nudge
+                    _buildNudgeButton('-0.1', () => _nudgeWeight(-0.1), isCertified),
+                    const SizedBox(width: 6),
+                    // +0.1kg nudge
+                    _buildNudgeButton('+0.1', () => _nudgeWeight(0.1), isCertified),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Large 52sp Tabular Monospace Readout
+            Semantics(
+              readOnly: true,
+              label: 'Calibrated scale reading: ${_inputWeight.isEmpty ? '0.0' : _inputWeight} kilograms',
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Icon(Icons.monitor_weight_outlined, size: 14, color: AppTheme.goldPrimary),
-                  SizedBox(width: 6),
                   Text(
-                    'CALIBRATED SCALE READOUT',
+                    _inputWeight.isEmpty ? '00.0' : _inputWeight,
                     style: TextStyle(
                       fontFamily: 'Space Grotesk',
-                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 52,
+                      color: readoutColor,
+                      letterSpacing: -1.0,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'KG',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
                       fontWeight: FontWeight.w800,
+                      fontSize: 18,
                       color: AppTheme.textMuted,
-                      letterSpacing: 0.8,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ],
               ),
-              Row(
-                children: [
-                  // -0.1kg nudge
-                  _buildNudgeButton('-0.1', () => _nudgeWeight(-0.1), isCertified),
-                  const SizedBox(width: 6),
-                  // +0.1kg nudge
-                  _buildNudgeButton('+0.1', () => _nudgeWeight(0.1), isCertified),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Large 52sp Tabular Monospace Readout
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                _inputWeight.isEmpty ? '00.0' : _inputWeight,
-                style: TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.w900,
-                  fontSize: 52,
-                  color: readoutColor,
-                  letterSpacing: -1.0,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'KG',
-                style: TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                  color: AppTheme.textMuted,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNudgeButton(String label, VoidCallback onTap, bool isCertified) {
-    return TactilePressWrapper(
-      onTap: isCertified ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFF334155)),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontFamily: 'Space Grotesk',
-            fontWeight: FontWeight.w800,
-            fontSize: 10.5,
-            color: Colors.white,
-            fontFeatures: [FontFeature.tabularFigures()],
+    final semanticLabel = label.startsWith('+')
+        ? 'Increase weight by 0.1 kilograms'
+        : 'Decrease weight by 0.1 kilograms';
+
+    return Semantics(
+      button: true,
+      enabled: !isCertified,
+      label: semanticLabel,
+      child: TactilePressWrapper(
+        onTap: isCertified ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: const Color(0xFF334155)),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Space Grotesk',
+              fontWeight: FontWeight.w800,
+              fontSize: 10.5,
+              color: Colors.white,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
           ),
         ),
       ),
@@ -890,47 +1010,51 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
 
   // --- 4. Overweight Inline Alert Banner ---
   Widget _buildOverweightWarningBanner(double ceiling, double diff) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF7F1D1D).withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'DISQUALIFICATION WARNING: OVERWEIGHT',
-                  style: TextStyle(
-                    fontFamily: 'Space Grotesk',
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                    color: Color(0xFFEF4444),
-                    letterSpacing: 0.5,
+    return Semantics(
+      container: true,
+      label: 'Disqualification warning: overweight. Athlete exceeds ${ceiling.toStringAsFixed(1)} kilograms limit by ${diff.toStringAsFixed(1)} kilograms. Reassignment required.',
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF7F1D1D).withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFEF4444), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'DISQUALIFICATION WARNING: OVERWEIGHT',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      color: Color(0xFFEF4444),
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Athlete exceeds ${ceiling.toStringAsFixed(1)} KG limit by +${diff.toStringAsFixed(1)} KG. '
-                  'Mandatory 60-min re-weigh window or reassign to heavier weight class.',
-                  style: const TextStyle(
-                    fontFamily: 'Space Grotesk',
-                    fontSize: 10,
-                    color: Colors.white70,
-                    height: 1.3,
+                  const SizedBox(height: 2),
+                  Text(
+                    'Athlete exceeds ${ceiling.toStringAsFixed(1)} KG limit by +${diff.toStringAsFixed(1)} KG. '
+                    'Mandatory 60-min re-weigh window or reassign to heavier weight class.',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 10,
+                      color: Colors.white70,
+                      height: 1.3,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -944,58 +1068,65 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       ['.', '0', '⌫'],
     ];
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
-      ),
-      child: Column(
-        children: [
-          for (final row in keys)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  for (final key in row)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: _buildKeypadButton(
-                          key,
-                          isCertified,
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF334155)),
+        ),
+        child: Column(
+          children: [
+            for (final row in keys)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    for (final key in row)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: _buildKeypadButton(
+                            key,
+                            isCertified,
+                          ),
                         ),
                       ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            // Clear All Button
+            Semantics(
+              button: true,
+              enabled: !isCertified,
+              label: 'Clear entered weight reading',
+              child: TactilePressWrapper(
+                onTap: isCertified ? null : () => _onKeyPress('CLEAR'),
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF334155)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'CLEAR READING',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      color: AppTheme.textMuted,
+                      letterSpacing: 0.8,
                     ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 4),
-          // Clear All Button
-          TactilePressWrapper(
-            onTap: isCertified ? null : () => _onKeyPress('CLEAR'),
-            child: Container(
-              height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF334155)),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'CLEAR READING',
-                style: TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: AppTheme.textMuted,
-                  letterSpacing: 0.8,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1003,36 +1134,44 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
   Widget _buildKeypadButton(String key, bool isCertified) {
     final isBackspace = key == '⌫';
     final action = isBackspace ? 'BACKSPACE' : key;
+    final semanticLabel = isBackspace
+        ? 'Backspace, delete last digit'
+        : (key == '.' ? 'Decimal point' : 'Number $key');
 
-    return TactilePressWrapper(
-      onTap: isCertified ? null : () => _onKeyPress(action),
-      child: Container(
-        height: 64, // Strict 64dp height requirement
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF334155)),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black45,
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: isBackspace
-            ? const Icon(Icons.backspace_outlined, size: 20, color: Colors.white)
-            : Text(
-                key,
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 22,
-                  color: Colors.white,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+    return Semantics(
+      button: true,
+      enabled: !isCertified,
+      label: semanticLabel,
+      child: TactilePressWrapper(
+        onTap: isCertified ? null : () => _onKeyPress(action),
+        child: Container(
+          height: 64, // Strict 64dp height requirement
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF334155)),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black45,
+                blurRadius: 4,
+                offset: Offset(0, 2),
               ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: isBackspace
+              ? const Icon(Icons.backspace_outlined, size: 20, color: Colors.white)
+              : Text(
+                  key,
+                  style: const TextStyle(
+                    fontFamily: 'Space Grotesk',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    color: Colors.white,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+        ),
       ),
     );
   }
@@ -1080,27 +1219,31 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         // Reassign Class Shortcut
         Expanded(
           flex: 1,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 52),
-              side: const BorderSide(color: Color(0xFF334155)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Use Operations Console to reassign athlete division or weight class.'),
+          child: Semantics(
+            button: true,
+            label: 'Reassign competitor division or weight class',
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 52),
+                side: const BorderSide(color: Color(0xFF334155)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Use Operations Console to reassign athlete division or weight class.'),
+                  ),
+                );
+              },
+              child: const Text(
+                'REASSIGN',
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textMuted,
                 ),
-              );
-            },
-            child: const Text(
-              'REASSIGN',
-              style: TextStyle(
-                fontFamily: 'Space Grotesk',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textMuted,
               ),
             ),
           ),
@@ -1110,57 +1253,62 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         // Authoritative Rubber Stamp Clearance Trigger
         Expanded(
           flex: 2,
-          child: TactilePressWrapper(
-            onTap: canCertify ? () => _certifyWeight(selected) : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: canCertify
-                    ? const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
-                      )
-                    : null,
-                color: canCertify ? null : const Color(0xFF1E293B),
-                boxShadow: canCertify
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : null,
-              ),
-              alignment: Alignment.center,
-              child: _isBusy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.verified_rounded,
-                          size: 18,
-                          color: canCertify ? Colors.white : AppTheme.textMuted,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'CERTIFY & SEAL WEIGHT',
-                          style: TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12.5,
-                            color: canCertify ? Colors.white : AppTheme.textMuted,
-                            letterSpacing: 0.8,
+          child: Semantics(
+            button: true,
+            enabled: canCertify,
+            label: 'Certify and seal measured weight of ${measured?.toStringAsFixed(1) ?? '0.0'} kilograms',
+            child: TactilePressWrapper(
+              onTap: canCertify ? () => _certifyWeight(selected) : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: canCertify
+                      ? const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        )
+                      : null,
+                  color: canCertify ? null : const Color(0xFF1E293B),
+                  boxShadow: canCertify
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
                           ),
-                        ),
-                      ],
-                    ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: _isBusy
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 18,
+                            color: canCertify ? Colors.white : AppTheme.textMuted,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'CERTIFY & SEAL WEIGHT',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12.5,
+                              color: canCertify ? Colors.white : AppTheme.textMuted,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),

@@ -474,11 +474,31 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
     }
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (disableAnimations && widget.isApproved) {
+      _stampController.value = 1.0;
+      _shockwaveController.value = 0.0;
+    }
+  }
+
   void _triggerStamp() {
+    final disableAnimations = (mounted && context.mounted)
+        ? (MediaQuery.maybeOf(context)?.disableAnimations ?? false)
+        : false;
+    if (disableAnimations) {
+      _stampController.value = 1.0;
+      _shockwaveController.value = 0.0;
+      return;
+    }
     _stampController.forward(from: 0.0).then((_) {
       // Impact at 150ms: Heavy haptic shockwave
       HapticFeedback.heavyImpact();
-      _shockwaveController.forward(from: 0.0);
+      if (mounted) {
+        _shockwaveController.forward(from: 0.0);
+      }
     });
   }
 
@@ -501,40 +521,52 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
   Widget build(BuildContext context) {
     if (!widget.isApproved) return const SizedBox.shrink();
 
+    final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     const stampAngle = -12.0 * (math.pi / 180.0); // Exactly -12 degrees
 
-    return RepaintBoundary(
-      child: Stack(
-        alignment: Alignment.center,
-        clipBehavior: Clip.none,
-        children: [
-          // 8-particle chalk shockwave expanding and fading
-          AnimatedBuilder(
-            animation: _shockwaveAnim,
-            builder: (context, _) {
-              if (_shockwaveAnim.value <= 0.0 || _shockwaveAnim.value >= 1.0) {
-                return const SizedBox.shrink();
-              }
-              return CustomPaint(
-                size: Size(180 * widget.size, 80 * widget.size),
-                painter: _ChalkShockwavePainter(
-                  progress: _shockwaveAnim.value,
-                  particleColor: const Color(0xFF10B981),
-                ),
-              );
-            },
-          ),
+    return Semantics(
+      container: true,
+      label: 'Athlete weigh-in clearance seal: ${widget.clearanceText}. ${widget.subText ?? ''}',
+      child: RepaintBoundary(
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            // 8-particle chalk shockwave expanding and fading (skipped if reduced motion)
+            if (!disableAnimations)
+              AnimatedBuilder(
+                animation: _shockwaveAnim,
+                builder: (context, _) {
+                  if (_shockwaveAnim.value <= 0.0 || _shockwaveAnim.value >= 1.0) {
+                    return const SizedBox.shrink();
+                  }
+                  return CustomPaint(
+                    size: Size(180 * widget.size, 80 * widget.size),
+                    painter: _ChalkShockwavePainter(
+                      progress: _shockwaveAnim.value,
+                      particleColor: const Color(0xFF10B981),
+                    ),
+                  );
+                },
+              ),
 
-          // Technical Rubber Stamp
-          AnimatedBuilder(
-            animation: _stampController,
-            builder: (context, child) {
-              return Transform.rotate(
-                angle: stampAngle,
-                child: Transform.scale(
-                  scale: _scaleAnimation.value * widget.size,
-                  child: Opacity(
-                    opacity: _opacityAnimation.value,
+            // Technical Rubber Stamp
+            AnimatedBuilder(
+              animation: _stampController,
+              builder: (context, child) {
+                final effectiveScale = disableAnimations
+                    ? 1.0 * widget.size
+                    : _scaleAnimation.value * widget.size;
+                final effectiveOpacity = disableAnimations
+                    ? 1.0
+                    : _opacityAnimation.value;
+
+                return Transform.rotate(
+                  angle: stampAngle,
+                  child: Transform.scale(
+                    scale: effectiveScale,
+                    child: Opacity(
+                      opacity: effectiveOpacity,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
