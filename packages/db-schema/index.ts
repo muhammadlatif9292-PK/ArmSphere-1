@@ -408,11 +408,16 @@ export const bracketSeeds = pgTable("bracket_seeds", {
 
 export const matchTables = pgTable("match_tables", {
   id: uuid("id").primaryKey().defaultRandom(),
+  eventId: uuid("event_id").references(() => events.id, { onDelete: "cascade" }).notNull(),
   name: varchar("name", { length: 100 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("IDLE"),
   currentMatchId: uuid("current_match_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    eventIdIdx: index("idx_match_tables_event_id").on(table.eventId),
+  };
 });
 
 export const tournamentMatches = pgTable("tournament_matches", {
@@ -433,6 +438,21 @@ export const tournamentMatches = pgTable("tournament_matches", {
   losersNextMatchId: uuid("losers_next_match_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const tournamentTableQueue = pgTable("tournament_table_queue", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tableId: uuid("table_id").references(() => matchTables.id, { onDelete: "cascade" }).notNull(),
+  matchId: uuid("match_id").references(() => tournamentMatches.id, { onDelete: "cascade" }).notNull(),
+  position: integer("position").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    matchUnique: uniqueIndex("idx_tournament_table_queue_match_id").on(table.matchId),
+    tablePositionUnique: uniqueIndex("idx_tournament_table_queue_table_position").on(table.tableId, table.position),
+    tableIdIdx: index("idx_tournament_table_queue_table_id").on(table.tableId),
+  };
 });
 
 export const officialWeighins = pgTable("official_weighins", {

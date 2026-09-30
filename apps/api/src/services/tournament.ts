@@ -10,13 +10,14 @@ import {
   bracketSeeds,
   tournamentMatches,
   matchTables,
+  tournamentTableQueue,
   athleteProfiles,
   athleteClubs,
   users,
   auditLogs,
   payments
 } from "@armsphere/db-schema";
-import { BadRequestError, NotFoundError, ForbiddenError, logger } from "@armsphere/core";
+import { BadRequestError, NotFoundError, ForbiddenError, ConflictError, logger } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 import { getStripe } from "./stripe.js";
 import { RefereeCertificationService } from "./refereeCertification.js";
@@ -1152,14 +1153,97 @@ export class TournamentService {
   // 6. Match Queue & Table Management
   // ==========================================
 
-  static async createTable(name: string) {
-    const [table] = await db.insert(matchTables).values({ name, status: "IDLE" }).returning();
+  static async createTable(eventId: string, name: string) {
+    if (!eventId) {
+      throw new BadRequestError("Event ID is required to create a match table.");
+    }
+    logger.info({ eventId, name }, "Creating event-scoped match table");
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+    const [table] = await db.insert(matchTables).values({ eventId, name, status: "IDLE" }).returning();
     return table;
   }
 
-  static async listTables() {
-    logger.info("Listing match tables");
+  static async listTables(eventId?: string) {
+    logger.info({ eventId }, "Listing match tables");
+    if (eventId) {
+      return db.select().from(matchTables).where(eq(matchTables.eventId, eventId)).orderBy(asc(matchTables.name));
+    }
     return db.select().from(matchTables).orderBy(asc(matchTables.name));
+  }
+
+  static async getEventTables(eventId: string) {
+    logger.info({ eventId }, "Getting event tables with queues");
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
+    const tables = await db.select().from(matchTables).where(eq(matchTables.eventId, eventId)).orderBy(asc(matchTables.name));
+    if (tables.length === 0) return [];
+
+    const tableIds = tables.map((t) => t.id);
+    const queueEntries = await db
+      .select()
+      .from(tournamentTableQueue)
+      .where(inArray(tournamentTableQueue.tableId, tableIds))
+      .orderBy(asc(tournamentTableQueue.position));
+
+    const enrichedQueue: any[] = [];
+    for (const q of queueEntries) {
+      const [match] = await db
+        .select()
+        .from(tournamentMatches)
+        .where(eq(tournamentMatches.id, q.matchId))
+        .limit(1);
+
+      let athleteAName: string | null = null;
+      let athleteBName: string | null = null;
+      if (match?.athleteAId) {
+        const [profA] = await db
+          .select()
+          .from(athleteProfiles)
+          .where(eq(athleteProfiles.id, match.athleteAId))
+          .limit(1);
+        athleteAName = profA?.displayName || null;
+      }
+      if (match?.athleteBId) {
+        const [profB] = await db
+          .select()
+          .from(athleteProfiles)
+          .where(eq(athleteProfiles.id, match.athleteBId))
+          .limit(1);
+        athleteBName = profB?.displayName || null;
+      }
+
+      enrichedQueue.push({
+        id: q.id,
+        tableId: q.tableId,
+        matchId: q.matchId,
+        position: q.position,
+        createdAt: q.createdAt,
+        round: match?.round,
+        matchIndex: match?.matchIndex,
+        status: match?.status,
+        athleteAId: match?.athleteAId,
+        athleteBId: match?.athleteBId,
+        athleteAName,
+        athleteBName,
+      });
+    }
+
+    const queueMap = new Map<string, any[]>();
+    for (const q of enrichedQueue) {
+      if (!queueMap.has(q.tableId)) queueMap.set(q.tableId, []);
+      queueMap.get(q.tableId)!.push(q);
+    }
+
+    return tables.map((t) => ({
+      ...t,
+      queue: queueMap.get(t.id) || [],
+    }));
   }
 
   static async assignReferee(matchId: string, refereeId: string) {
@@ -1198,29 +1282,276 @@ export class TournamentService {
     }
     logger.info({ matchId, tableId }, "Calling tournament match to table");
 
-    const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
-    if (!match) {
-      throw new NotFoundError("Match not found.");
+    return await db.transaction(async (tx) => {
+      const [match] = await tx.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
+      if (!match) {
+        throw new NotFoundError("Match not found.");
+      }
+
+      const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
+      if (!bracket) {
+        throw new NotFoundError("Bracket for match not found.");
+      }
+
+      if (match.status === "COMPLETED" || match.status === "BYE") {
+        throw new BadRequestError("Completed or walkover matches cannot be called to a table.");
+      }
+
+      if (match.status === "PENDING" || !match.athleteAId || !match.athleteBId) {
+        throw new BadRequestError("Match competitors not determined yet.");
+      }
+
+      const [table] = await tx.select().from(matchTables).where(eq(matchTables.id, tableId)).limit(1);
+      if (!table) {
+        throw new NotFoundError("Match table not found.");
+      }
+
+      if (table.eventId && bracket.eventId && table.eventId !== bracket.eventId) {
+        throw new BadRequestError("Cross-event assignment rejected: table and match belong to different tournament events.");
+      }
+
+      if (table.status === "ACTIVE" && table.currentMatchId && table.currentMatchId !== matchId) {
+        throw new ConflictError("Table is currently active with another match.");
+      }
+
+      // Clean prior table ownership if match was assigned elsewhere
+      if (match.tableId && match.tableId !== tableId) {
+        await tx
+          .update(matchTables)
+          .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+          .where(and(eq(matchTables.id, match.tableId), eq(matchTables.currentMatchId, matchId)));
+      }
+
+      // Also clean any orphaned table pointing to this matchId
+      await tx
+        .update(matchTables)
+        .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+        .where(and(eq(matchTables.currentMatchId, matchId), not(eq(matchTables.id, tableId))));
+
+      // Remove from queue if it was queued
+      await tx.delete(tournamentTableQueue).where(eq(tournamentTableQueue.matchId, matchId));
+
+      const [updatedMatch] = await tx
+        .update(tournamentMatches)
+        .set({ status: "CALLED", tableId, updatedAt: new Date() })
+        .where(eq(tournamentMatches.id, matchId))
+        .returning();
+
+      await tx
+        .update(matchTables)
+        .set({ status: "ACTIVE", currentMatchId: matchId, updatedAt: new Date() })
+        .where(eq(matchTables.id, tableId));
+
+      return updatedMatch;
+    });
+  }
+
+  static async unassignMatch(matchId: string, actorId?: string) {
+    if (actorId) {
+      await RefereeCertificationService.assertActiveCertification(actorId);
     }
+    logger.info({ matchId }, "Unassigning tournament match from table");
 
-    const [table] = await db.select().from(matchTables).where(eq(matchTables.id, tableId)).limit(1);
-    if (!table) {
-      throw new NotFoundError("Match table not found.");
+    return await db.transaction(async (tx) => {
+      const [match] = await tx.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
+      if (!match) {
+        throw new NotFoundError("Match not found.");
+      }
+
+      if (match.status === "COMPLETED" || match.status === "BYE") {
+        throw new BadRequestError("Cannot unassign a completed or walkover match.");
+      }
+
+      const isActivelyAssigned = match.tableId || match.status === "CALLED" || match.status === "IN_PROGRESS";
+      const [queued] = await tx.select().from(tournamentTableQueue).where(eq(tournamentTableQueue.matchId, matchId)).limit(1);
+
+      if (!isActivelyAssigned && !queued) {
+        return match;
+      }
+
+      if (match.tableId) {
+        await tx
+          .update(matchTables)
+          .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+          .where(and(eq(matchTables.id, match.tableId), eq(matchTables.currentMatchId, matchId)));
+      }
+
+      await tx
+        .update(matchTables)
+        .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+        .where(eq(matchTables.currentMatchId, matchId));
+
+      await tx.delete(tournamentTableQueue).where(eq(tournamentTableQueue.matchId, matchId));
+
+      const nextStatus = (match.athleteAId && match.athleteBId) ? "READY" : "PENDING";
+      const [updatedMatch] = await tx
+        .update(tournamentMatches)
+        .set({ status: nextStatus, tableId: null, updatedAt: new Date() })
+        .where(eq(tournamentMatches.id, matchId))
+        .returning();
+
+      return updatedMatch;
+    });
+  }
+
+  static async queueMatchToTable(tableId: string, matchId: string, position?: number, actorId?: string) {
+    if (actorId) {
+      await RefereeCertificationService.assertActiveCertification(actorId);
     }
+    logger.info({ tableId, matchId, position }, "Queueing match to table");
 
-    // Call match updates
-    const [updatedMatch] = await db
-      .update(tournamentMatches)
-      .set({ status: "CALLED", tableId, updatedAt: new Date() })
-      .where(eq(tournamentMatches.id, matchId))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [match] = await tx.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
+      if (!match) {
+        throw new NotFoundError("Match not found.");
+      }
 
-    await db
-      .update(matchTables)
-      .set({ status: "ACTIVE", currentMatchId: matchId, updatedAt: new Date() })
-      .where(eq(matchTables.id, tableId));
+      const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
+      if (!bracket) {
+        throw new NotFoundError("Bracket not found.");
+      }
 
-    return updatedMatch;
+      const [table] = await tx.select().from(matchTables).where(eq(matchTables.id, tableId)).limit(1);
+      if (!table) {
+        throw new NotFoundError("Match table not found.");
+      }
+
+      if (table.eventId && bracket.eventId && table.eventId !== bracket.eventId) {
+        throw new BadRequestError("Cross-event assignment rejected: table and match belong to different tournament events.");
+      }
+
+      if (match.status === "COMPLETED" || match.status === "BYE") {
+        throw new BadRequestError("Completed or walkover matches cannot be queued.");
+      }
+      if (match.status === "PENDING" || !match.athleteAId || !match.athleteBId) {
+        throw new BadRequestError("Match competitors not determined yet.");
+      }
+      if (match.status === "CALLED" || match.status === "IN_PROGRESS" || match.tableId != null) {
+        throw new ConflictError("Match is already actively assigned to a table.");
+      }
+
+      const existingQueue = await tx.select().from(tournamentTableQueue).where(eq(tournamentTableQueue.matchId, matchId));
+      if (existingQueue.length > 0) {
+        throw new ConflictError("Match is already queued for a table.");
+      }
+
+      const currentQueue = await tx
+        .select()
+        .from(tournamentTableQueue)
+        .where(eq(tournamentTableQueue.tableId, tableId))
+        .orderBy(asc(tournamentTableQueue.position));
+
+      let targetPos: number;
+      if (position !== undefined && position !== null) {
+        if (position < 1 || position > currentQueue.length + 1) {
+          throw new BadRequestError(`Invalid queue position: ${position}. Must be between 1 and ${currentQueue.length + 1}.`);
+        }
+        targetPos = position;
+        for (let i = currentQueue.length - 1; i >= 0; i--) {
+          const entry = currentQueue[i];
+          if (entry.position >= targetPos) {
+            await tx
+              .update(tournamentTableQueue)
+              .set({ position: entry.position + 1, updatedAt: new Date() })
+              .where(eq(tournamentTableQueue.id, entry.id));
+          }
+        }
+      } else {
+        targetPos = currentQueue.length + 1;
+      }
+
+      const [newEntry] = await tx
+        .insert(tournamentTableQueue)
+        .values({
+          tableId,
+          matchId,
+          position: targetPos,
+        })
+        .returning();
+
+      return newEntry;
+    });
+  }
+
+  static async rebalanceTableQueue(matchId: string, targetTableId: string, targetPosition?: number, actorId?: string) {
+    if (actorId) {
+      await RefereeCertificationService.assertActiveCertification(actorId);
+    }
+    logger.info({ matchId, targetTableId, targetPosition }, "Rebalancing table queue for match");
+
+    return await db.transaction(async (tx) => {
+      const [existingEntry] = await tx.select().from(tournamentTableQueue).where(eq(tournamentTableQueue.matchId, matchId)).limit(1);
+      if (!existingEntry) {
+        throw new BadRequestError("Match is not currently in any queue to rebalance.");
+      }
+
+      const [match] = await tx.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
+      if (!match) throw new NotFoundError("Match not found.");
+      const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
+      if (!bracket) throw new NotFoundError("Bracket not found.");
+
+      const [targetTable] = await tx.select().from(matchTables).where(eq(matchTables.id, targetTableId)).limit(1);
+      if (!targetTable) throw new NotFoundError("Target match table not found.");
+
+      if (targetTable.eventId && bracket.eventId && targetTable.eventId !== bracket.eventId) {
+        throw new BadRequestError("Cross-event assignment rejected: target table and match belong to different tournament events.");
+      }
+
+      const oldTableId = existingEntry.tableId;
+
+      await tx.delete(tournamentTableQueue).where(eq(tournamentTableQueue.id, existingEntry.id));
+
+      const oldQueue = await tx
+        .select()
+        .from(tournamentTableQueue)
+        .where(eq(tournamentTableQueue.tableId, oldTableId))
+        .orderBy(asc(tournamentTableQueue.position));
+
+      for (let i = 0; i < oldQueue.length; i++) {
+        if (oldQueue[i].position !== i + 1) {
+          await tx
+            .update(tournamentTableQueue)
+            .set({ position: i + 1, updatedAt: new Date() })
+            .where(eq(tournamentTableQueue.id, oldQueue[i].id));
+        }
+      }
+
+      const targetQueue = await tx
+        .select()
+        .from(tournamentTableQueue)
+        .where(eq(tournamentTableQueue.tableId, targetTableId))
+        .orderBy(asc(tournamentTableQueue.position));
+
+      let finalPos: number;
+      if (targetPosition !== undefined && targetPosition !== null) {
+        if (targetPosition < 1 || targetPosition > targetQueue.length + 1) {
+          throw new BadRequestError(`Invalid target position: ${targetPosition}. Must be between 1 and ${targetQueue.length + 1}.`);
+        }
+        finalPos = targetPosition;
+        for (let i = targetQueue.length - 1; i >= 0; i--) {
+          const entry = targetQueue[i];
+          if (entry.position >= finalPos) {
+            await tx
+              .update(tournamentTableQueue)
+              .set({ position: entry.position + 1, updatedAt: new Date() })
+              .where(eq(tournamentTableQueue.id, entry.id));
+          }
+        }
+      } else {
+        finalPos = targetQueue.length + 1;
+      }
+
+      const [rebalanced] = await tx
+        .insert(tournamentTableQueue)
+        .values({
+          tableId: targetTableId,
+          matchId,
+          position: finalPos,
+        })
+        .returning();
+
+      return rebalanced;
+    });
   }
 
   static async reconcileBracketMatches(bracketId: string) {
@@ -1464,13 +1795,23 @@ export class TournamentService {
       .where(eq(tournamentMatches.id as any, matchId as any))
       .returning();
 
-    // Release table
+    // Release table referencing this match (handles tableId or any table where currentMatchId was set)
+    await (db as any)
+      .update(matchTables)
+      .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+      .where(eq(matchTables.currentMatchId as any, matchId as any));
+
     if (tableId) {
       await (db as any)
         .update(matchTables)
         .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
         .where(eq(matchTables.id as any, tableId as any));
     }
+
+    // Clean queue entry for this match if it was queued
+    await (db as any)
+      .delete(tournamentTableQueue)
+      .where(eq(tournamentTableQueue.matchId as any, matchId as any));
 
     // Run recursive, comprehensive progression & reconciliation engine
     await TournamentService.reconcileBracketMatches((match as any).bracketId);

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { TournamentService } from "../services/tournament.js";
 import { z } from "zod";
-import { ForbiddenError, NotFoundError } from "@armsphere/core";
+import { BadRequestError, ForbiddenError, NotFoundError } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 
 const createEventSchema = z.object({
@@ -72,7 +72,8 @@ const overrideSeedSchema = z.object({
 });
 
 const createTableSchema = z.object({
-  name: z.string().min(2)
+  eventId: z.string().uuid("Event ID must be a valid UUID").optional(),
+  name: z.string().min(2, "Table name must be at least 2 characters")
 });
 
 const assignRefereeSchema = z.object({
@@ -81,8 +82,24 @@ const assignRefereeSchema = z.object({
 });
 
 const callMatchSchema = z.object({
-  matchId: z.string(),
-  tableId: z.string()
+  matchId: z.string().uuid("Match ID must be a valid UUID"),
+  tableId: z.string().uuid("Table ID must be a valid UUID")
+});
+
+const unassignMatchSchema = z.object({
+  matchId: z.string().uuid("Match ID must be a valid UUID")
+});
+
+const queueMatchSchema = z.object({
+  tableId: z.string().uuid("Table ID must be a valid UUID"),
+  matchId: z.string().uuid("Match ID must be a valid UUID"),
+  position: z.number().int().positive("Queue position must be a positive integer").optional()
+});
+
+const rebalanceQueueSchema = z.object({
+  matchId: z.string().uuid("Match ID must be a valid UUID"),
+  targetTableId: z.string().uuid("Target table ID must be a valid UUID"),
+  targetPosition: z.number().int().positive("Target queue position must be a positive integer").optional()
 });
 
 const submitResultSchema = z.object({
@@ -303,7 +320,11 @@ export class TournamentController {
   static async createTable(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = createTableSchema.parse(req.body);
-      const table = await TournamentService.createTable(validated.name);
+      const eventId = req.params.id || validated.eventId;
+      if (!eventId) {
+        throw new BadRequestError("Event ID is required to create a table.");
+      }
+      const table = await TournamentService.createTable(eventId, validated.name);
       res.status(201).json(table);
     } catch (error) {
       next(error);
@@ -325,6 +346,46 @@ export class TournamentController {
       const validated = callMatchSchema.parse(req.body);
       const updated = await TournamentService.callMatchToTable(validated.matchId, validated.tableId, req.user!.id);
       res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async unassignMatch(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = unassignMatchSchema.parse(req.body);
+      const updated = await TournamentService.unassignMatch(validated.matchId, req.user!.id);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async queueMatch(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = queueMatchSchema.parse(req.body);
+      const queued = await TournamentService.queueMatchToTable(
+        validated.tableId,
+        validated.matchId,
+        validated.position,
+        req.user!.id
+      );
+      res.status(201).json(queued);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async rebalanceQueue(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validated = rebalanceQueueSchema.parse(req.body);
+      const rebalanced = await TournamentService.rebalanceTableQueue(
+        validated.matchId,
+        validated.targetTableId,
+        validated.targetPosition,
+        req.user!.id
+      );
+      res.json(rebalanced);
     } catch (error) {
       next(error);
     }
@@ -474,7 +535,19 @@ export class TournamentController {
 
   static async listTables(req: Request, res: Response, next: NextFunction) {
     try {
-      const tables = await TournamentService.listTables();
+      const eventId = typeof req.query.eventId === "string" ? req.query.eventId : undefined;
+      const tables = await TournamentService.listTables(eventId);
+      res.json(tables);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getEventTables(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const tables = await TournamentService.getEventTables(eventId);
       res.json(tables);
     } catch (error) {
       next(error);

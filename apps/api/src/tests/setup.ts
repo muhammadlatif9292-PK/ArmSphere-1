@@ -35,6 +35,7 @@ import {
   bracketSeeds,
   tournamentMatches,
   matchTables,
+  tournamentTableQueue,
   disputes,
   disputeEvidence,
   disputeComments,
@@ -117,6 +118,7 @@ export const testDbStore = {
   bracketSeeds: [] as any[],
   tournamentMatches: [] as any[],
   matchTables: [] as any[],
+  tournamentTableQueue: [] as any[],
   disputes: [] as any[],
   disputeEvidence: [] as any[],
   disputeComments: [] as any[],
@@ -209,6 +211,7 @@ beforeEach(() => {
   testDbStore.bracketSeeds = [];
   testDbStore.tournamentMatches = [];
   testDbStore.matchTables = [];
+  testDbStore.tournamentTableQueue = [];
   testDbStore.disputes = [];
   testDbStore.disputeEvidence = [];
   testDbStore.disputeComments = [];
@@ -566,6 +569,8 @@ const mockDrizzle = {
         });
       } else if (table === matchTables) {
         results = testDbStore.matchTables;
+      } else if (table === tournamentTableQueue) {
+        results = testDbStore.tournamentTableQueue;
       } else if (table === disputes) {
         results = testDbStore.disputes;
       } else if (table === disputeEvidence) {
@@ -885,6 +890,18 @@ const mockDrizzle = {
           testDbStore.tournamentMatches.push(record);
         } else if (table === matchTables) {
           testDbStore.matchTables.push(record);
+        } else if (table === tournamentTableQueue) {
+          if (testDbStore.tournamentTableQueue.some((q: any) => q.matchId === record.matchId)) {
+            const err: any = new Error("duplicate key value violates unique constraint \"idx_tournament_table_queue_match_id\"");
+            err.code = "23505";
+            throw err;
+          }
+          if (testDbStore.tournamentTableQueue.some((q: any) => q.tableId === record.tableId && q.position === record.position)) {
+            const err: any = new Error("duplicate key value violates unique constraint \"idx_tournament_table_queue_table_position\"");
+            err.code = "23505";
+            throw err;
+          }
+          testDbStore.tournamentTableQueue.push(record);
         } else if (table === disputes) {
           testDbStore.disputes.push(record);
         } else if (table === disputeEvidence) {
@@ -1160,6 +1177,15 @@ const mockDrizzle = {
               return updated;
             }
             return mt;
+          });
+        } else if (table === tournamentTableQueue) {
+          testDbStore.tournamentTableQueue = testDbStore.tournamentTableQueue.map((q: any) => {
+            if (checkMatch(q, expression)) {
+              const updated = { ...q, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return q;
           });
         } else if (table === disputes) {
           testDbStore.disputes = testDbStore.disputes.map((d) => {
@@ -1463,6 +1489,8 @@ const mockDrizzle = {
         testDbStore.tournamentMatches = filterFn(testDbStore.tournamentMatches);
       } else if (table === matchTables) {
         testDbStore.matchTables = filterFn(testDbStore.matchTables);
+      } else if (table === tournamentTableQueue) {
+        testDbStore.tournamentTableQueue = filterFn(testDbStore.tournamentTableQueue);
       } else if (table === disputes) {
         testDbStore.disputes = filterFn(testDbStore.disputes);
       } else if (table === disputeEvidence) {
@@ -1572,6 +1600,9 @@ const mockDrizzle = {
       ticketTypes: [...testDbStore.ticketTypes],
       userRoleGrants: [...testDbStore.userRoleGrants],
       roleApplications: [...testDbStore.roleApplications],
+      matchTables: [...testDbStore.matchTables],
+      tournamentMatches: [...testDbStore.tournamentMatches],
+      tournamentTableQueue: [...testDbStore.tournamentTableQueue],
     };
 
     try {
@@ -1610,6 +1641,9 @@ const mockDrizzle = {
       testDbStore.ticketTypes = snapshot.ticketTypes;
       testDbStore.userRoleGrants = snapshot.userRoleGrants;
       testDbStore.roleApplications = snapshot.roleApplications;
+      testDbStore.matchTables = snapshot.matchTables;
+      testDbStore.tournamentMatches = snapshot.tournamentMatches;
+      testDbStore.tournamentTableQueue = snapshot.tournamentTableQueue;
       throw error;
     }
   },

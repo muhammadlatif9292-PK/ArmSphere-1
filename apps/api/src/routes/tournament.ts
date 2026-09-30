@@ -152,6 +152,20 @@ tournamentRouter.post(
 
 // --- Table & Referee Match Management ---
 tournamentRouter.get(
+  "/events/:id/tables",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.getEventTables
+);
+
+tournamentRouter.post(
+  "/events/:id/tables",
+  authenticate,
+  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.createTable
+);
+
+tournamentRouter.get(
   "/tables",
   authenticate,
   requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
@@ -184,6 +198,27 @@ tournamentRouter.post(
   authenticate,
   requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.callMatchToTable
+);
+
+tournamentRouter.post(
+  "/matches/unassign",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.unassignMatch
+);
+
+tournamentRouter.post(
+  "/tables/queue",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.queueMatch
+);
+
+tournamentRouter.post(
+  "/tables/queue/rebalance",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.rebalanceQueue
 );
 
 tournamentRouter.post(

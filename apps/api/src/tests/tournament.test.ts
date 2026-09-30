@@ -821,8 +821,17 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
   // ==========================================
   describe("Match Queue & Table Management", () => {
     beforeEach(() => {
+      testDbStore.brackets.push({
+        id: UUID_BRACKET,
+        eventId: UUID_EVENT_ACTIVE,
+        name: "Senior Right Arm 70KG",
+        format: "SINGLE_ELIMINATION",
+        status: "ACTIVE"
+      });
+
       testDbStore.matchTables.push({
         id: UUID_TABLE,
+        eventId: UUID_EVENT_ACTIVE,
         name: "Table Alpha",
         status: "IDLE",
         currentMatchId: null
@@ -1640,8 +1649,17 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
         status: "PENDING"
       });
 
+      testDbStore.brackets.push({
+        id: UUID_BRACKET,
+        eventId: UUID_EVENT_ACTIVE,
+        name: "Senior Right Arm 70KG",
+        format: "SINGLE_ELIMINATION",
+        status: "ACTIVE"
+      });
+
       testDbStore.matchTables.push({
         id: UUID_TABLE,
+        eventId: UUID_EVENT_ACTIVE,
         name: "Table Boundary",
         status: "IDLE",
         currentMatchId: null
