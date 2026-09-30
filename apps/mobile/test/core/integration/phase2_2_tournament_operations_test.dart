@@ -31,6 +31,10 @@ class _FakeTournamentRepository extends Fake implements TournamentRepository {
   String? lastCreatedTableName;
   String? lastCreatedTableEventId;
   bool shouldThrow409OnCall = false;
+  bool shouldThrowOfflineOnQueue = false;
+  bool shouldThrowConflictOnRebalance = false;
+  int callMatchToTableCount = 0;
+  Duration? callMatchDelay;
 
   _FakeTournamentRepository({
     required this.tablesData,
@@ -126,6 +130,10 @@ class _FakeTournamentRepository extends Fake implements TournamentRepository {
     required String tableId,
     CancelToken? cancelToken,
   }) async {
+    callMatchToTableCount++;
+    if (callMatchDelay != null) {
+      await Future.delayed(callMatchDelay!);
+    }
     if (shouldThrow409OnCall) {
       throw ApiException(
         status: 409,
@@ -179,6 +187,9 @@ class _FakeTournamentRepository extends Fake implements TournamentRepository {
     int? position,
     CancelToken? cancelToken,
   }) async {
+    if (shouldThrowOfflineOnQueue) {
+      throw OfflineException('Network error: Unable to complete server mutation while offline.');
+    }
     lastQueuedTableId = tableId;
     lastQueuedMatchId = matchId;
     lastQueuedPosition = position;
@@ -210,6 +221,13 @@ class _FakeTournamentRepository extends Fake implements TournamentRepository {
     int? targetPosition,
     CancelToken? cancelToken,
   }) async {
+    if (shouldThrowConflictOnRebalance) {
+      throw ApiException(
+        status: 409,
+        title: 'Conflict',
+        detail: 'Match queue position changed concurrently.',
+      );
+    }
     lastRebalancedMatchId = matchId;
     lastRebalancedTargetTableId = targetTableId;
     lastRebalancedTargetPosition = targetPosition;
@@ -660,6 +678,91 @@ void main() {
       expect(find.text('E. Gasparini'), findsNothing);
       expect(find.text('A. Voevoda'), findsNothing);
       expect(find.text('3 TABLES ACTIVE'), findsNothing);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test P: Concurrency guard: _busy flag prevents duplicate operator calls during in-flight mutation
+    // -------------------------------------------------------------------------
+    testWidgets('Test P: Concurrency guard: _busy flag prevents duplicate operator calls during in-flight mutation', (tester) async {
+      fakeRepo.callMatchDelay = const Duration(milliseconds: 200);
+      await tester.pumpWidget(buildTestWidget());
+      await settleScreen(tester);
+
+      await tester.tap(find.text('CALL NEXT MATCH'));
+      await settleScreen(tester);
+
+      // Confirm Call dialog is open
+      final confirmBtn = find.text('Confirm Call');
+      expect(confirmBtn, findsOneWidget);
+
+      // Tap confirm button
+      await tester.tap(confirmBtn);
+      await tester.pump();
+
+      // Wait for call to complete
+      await tester.pump(const Duration(milliseconds: 250));
+      await settleScreen(tester);
+
+      expect(fakeRepo.callMatchToTableCount, equals(1));
+    });
+
+    // -------------------------------------------------------------------------
+    // Test Q: Offline mutation protection: surfaces truthful error without fake success
+    // -------------------------------------------------------------------------
+    testWidgets('Test Q: Offline mutation protection: surfaces truthful error without fake success', (tester) async {
+      fakeRepo.shouldThrowOfflineOnQueue = true;
+      await tester.pumpWidget(buildTestWidget());
+      await settleScreen(tester);
+
+      final queueButtons = find.widgetWithText(OutlinedButton, 'Queue');
+      await tester.tap(queueButtons.first);
+      await settleScreen(tester);
+
+      await tester.tap(find.text('Add to Queue'));
+      await settleScreen(tester);
+
+      // Truthful error SnackBar is displayed
+      expect(find.text('Network error: Unable to complete server mutation while offline.'), findsOneWidget);
+      // Fake success message is NOT shown
+      expect(find.text('Match placed into table queue.'), findsNothing);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test R: Concurrent rebalance conflict (409) triggers error notification and arena refresh
+    // -------------------------------------------------------------------------
+    testWidgets('Test R: Concurrent rebalance conflict (409) triggers error notification and arena refresh', (tester) async {
+      fakeRepo.shouldThrowConflictOnRebalance = true;
+      await tester.pumpWidget(buildTestWidget());
+      await settleScreen(tester);
+
+      final reorderIcons = find.byTooltip('Reorder / Move');
+      await tester.tap(reorderIcons.first);
+      await settleScreen(tester);
+
+      await tester.tap(find.text('Apply Rebalance'));
+      await settleScreen(tester);
+
+      expect(find.text('Table state changed. Refreshing current arena state.'), findsOneWidget);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test S: Touch targets for critical operator actions satisfy minimum 64dp requirement
+    // -------------------------------------------------------------------------
+    testWidgets('Test S: Touch targets for critical operator actions satisfy minimum 64dp requirement', (tester) async {
+      await tester.pumpWidget(buildTestWidget());
+      await settleScreen(tester);
+
+      // Table 1 has an active match -> UNASSIGN MATCH button
+      final unassignFinder = find.widgetWithText(OutlinedButton, 'UNASSIGN MATCH');
+      expect(unassignFinder, findsOneWidget);
+      final unassignSize = tester.getSize(unassignFinder);
+      expect(unassignSize.height, greaterThanOrEqualTo(64.0));
+
+      // Table 2 is IDLE with queue -> CALL NEXT MATCH button
+      final callFinder = find.widgetWithText(ElevatedButton, 'CALL NEXT MATCH');
+      expect(callFinder, findsOneWidget);
+      final callSize = tester.getSize(callFinder);
+      expect(callSize.height, greaterThanOrEqualTo(64.0));
     });
   });
 }

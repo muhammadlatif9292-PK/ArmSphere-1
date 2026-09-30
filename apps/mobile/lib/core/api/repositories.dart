@@ -19,16 +19,20 @@ abstract class BaseRepository {
     CancelToken? cancelToken,
     int maxRetries = 3,
     Duration retryDelay = const Duration(seconds: 2),
+    bool isMutation = false,
   }) async {
     int attempts = 0;
-    while (attempts < maxRetries) {
+    final effectiveRetries = isMutation ? 1 : maxRetries;
+    while (attempts < effectiveRetries) {
       try {
         attempts++;
         final response = await request(cancelToken);
         
         // Success - cache the response data and return parsed object
         if (response.statusCode == 200 || response.statusCode == 201) {
-          await hiveStorage.cacheData(cacheKey, response.data);
+          if (!isMutation) {
+            await hiveStorage.cacheData(cacheKey, response.data);
+          }
           return parse(response.data);
         }
       } on DioException catch (e) {
@@ -47,11 +51,14 @@ abstract class BaseRepository {
 
         // If network error and we have offline cached fallback, return cache
         if (isNetworkError) {
+          if (isMutation) {
+            throw OfflineException('Network error: Unable to complete server mutation while offline.');
+          }
           final cached = hiveStorage.getCachedData(cacheKey);
           if (cached != null) {
             return parse(cached);
           }
-          if (attempts >= maxRetries) {
+          if (attempts >= effectiveRetries) {
             throw OfflineException('No connection. No offline cache available.');
           }
         }
@@ -62,19 +69,19 @@ abstract class BaseRepository {
         }
 
         // Wait before retrying
-        if (attempts < maxRetries && isNetworkError) {
+        if (attempts < effectiveRetries && isNetworkError) {
           await Future.delayed(retryDelay * attempts);
           continue;
         }
 
         rethrow;
       } catch (e) {
-        if (attempts >= maxRetries) {
+        if (attempts >= effectiveRetries) {
           rethrow;
         }
       }
     }
-    throw Exception('Request execution failed after $maxRetries retries.');
+    throw Exception('Request execution failed after $effectiveRetries retries.');
   }
 }
 
@@ -799,6 +806,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'create_table_${eventId ?? "global"}',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post(endpoint, data: {'name': name}, cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
     );
@@ -811,6 +819,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'unassign_match_$matchId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/matches/unassign', data: {'matchId': matchId}, cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
     );
@@ -832,6 +841,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'queue_match_${tableId}_$matchId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/tables/queue', data: payload, cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
     );
@@ -853,6 +863,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'rebalance_queue_$matchId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/tables/queue/rebalance', data: payload, cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
     );
@@ -882,6 +893,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'assign_referee_$matchId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/matches/referee', data: {
         'matchId': matchId,
         'refereeId': refereeId,
@@ -898,6 +910,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'call_match_$matchId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/matches/call', data: {
         'matchId': matchId,
         'tableId': tableId,
