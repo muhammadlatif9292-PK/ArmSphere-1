@@ -776,14 +776,84 @@ class TournamentRepository extends BaseRepository {
     );
   }
 
-  Future<Map<String, dynamic>> createTable({
-    required String name,
+  Future<List<Map<String, dynamic>>> listEventTables({
+    required String eventId,
     CancelToken? cancelToken,
   }) async {
     return executeRequest(
-      cacheKey: 'create_table',
+      cacheKey: 'event_tables_$eventId',
       cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post('/tournaments/tables', data: {'name': name}, cancelToken: token),
+      request: (token) => dioClient.dio.get('/tournaments/events/$eventId/tables', cancelToken: token),
+      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+    );
+  }
+
+  Future<Map<String, dynamic>> createTable({
+    required String name,
+    String? eventId,
+    CancelToken? cancelToken,
+  }) async {
+    final endpoint = eventId != null
+        ? '/tournaments/events/$eventId/tables'
+        : '/tournaments/tables';
+    return executeRequest(
+      cacheKey: 'create_table_${eventId ?? "global"}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(endpoint, data: {'name': name}, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> unassignMatch({
+    required String matchId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'unassign_match_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/matches/unassign', data: {'matchId': matchId}, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> queueMatchToTable({
+    required String tableId,
+    required String matchId,
+    int? position,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = <String, dynamic>{
+      'tableId': tableId,
+      'matchId': matchId,
+    };
+    if (position != null) {
+      payload['position'] = position;
+    }
+    return executeRequest(
+      cacheKey: 'queue_match_${tableId}_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/tables/queue', data: payload, cancelToken: token),
+      parse: (data) => Map<String, dynamic>.from(data),
+    );
+  }
+
+  Future<Map<String, dynamic>> rebalanceTableQueue({
+    required String matchId,
+    required String targetTableId,
+    int? targetPosition,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = <String, dynamic>{
+      'matchId': matchId,
+      'targetTableId': targetTableId,
+    };
+    if (targetPosition != null) {
+      payload['targetPosition'] = targetPosition;
+    }
+    return executeRequest(
+      cacheKey: 'rebalance_queue_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tournaments/tables/queue/rebalance', data: payload, cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data),
     );
   }

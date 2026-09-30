@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'tournament_screens.dart';
 
 const List<String> _kDivisions = ['SENIOR', 'JUNIOR', 'FEMALE'];
@@ -53,6 +55,25 @@ class TournamentOperationsScreen extends ConsumerStatefulWidget {
 
 class _TournamentOperationsScreenState extends ConsumerState<TournamentOperationsScreen> {
   bool _busy = false;
+  Timer? _autoRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Bounded screen-scoped refresh for operator war room
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted && !_busy) {
+        ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
+        ref.invalidate(eventMatchesProvider(widget.tournamentId));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _run(String eventId, Future<Map<String, dynamic>> Function() action,
       {String? successMessage}) async {
@@ -75,9 +96,18 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       }
     } on ApiException catch (e) {
       if (mounted) {
+        final is409 = e.status == 409;
+        final msg = is409
+            ? 'Table state changed. Refreshing current arena state.'
+            : e.detail;
+        if (is409) {
+          ref.invalidate(eventMatchTablesProvider(eventId));
+          ref.invalidate(eventMatchesProvider(eventId));
+          ref.invalidate(eventLiveArenaTablesProvider(eventId));
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.detail),
+            content: Text(msg),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -279,7 +309,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     }
     await _run(
       widget.tournamentId,
-      () => ref.read(tournamentRepositoryProvider).createTable(name: name),
+      () => ref.read(tournamentRepositoryProvider).createTable(name: name, eventId: widget.tournamentId),
       successMessage: 'Official match table added.',
     );
   }
@@ -363,7 +393,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     HapticFeedback.lightImpact();
     List<Map<String, dynamic>> tables;
     try {
-      tables = await ref.read(matchTablesProvider.future);
+      tables = await ref.read(eventMatchTablesProvider(widget.tournamentId).future);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -400,18 +430,29 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             'Call to Table — R${match['round']} M${match['matchIndex']}',
             style: const TextStyle(fontFamily: AppTheme.fontDisplay),
           ),
-          content: DropdownButtonFormField<String>(
-            initialValue: tableId,
-            isExpanded: true,
-            items: [
-              for (final t in idle)
-                DropdownMenuItem(
-                  value: t['id'].toString(),
-                  child: Text(t['name']?.toString() ?? 'Table', overflow: TextOverflow.ellipsis),
-                ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${match['athleteAName'] ?? 'TBD'} vs ${match['athleteBName'] ?? 'TBD'}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: tableId,
+                isExpanded: true,
+                items: [
+                  for (final t in idle)
+                    DropdownMenuItem(
+                      value: t['id'].toString(),
+                      child: Text(t['name']?.toString() ?? 'Table', overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: (v) => setDialogState(() => tableId = v ?? tableId),
+                decoration: const InputDecoration(labelText: 'Idle table'),
+              ),
             ],
-            onChanged: (v) => setDialogState(() => tableId = v ?? tableId),
-            decoration: const InputDecoration(labelText: 'Idle table'),
           ),
           actions: [
             TextButton(
@@ -428,6 +469,327 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       widget.tournamentId,
       () => ref.read(tournamentRepositoryProvider).callMatchToTable(matchId: match['id'].toString(), tableId: tableId),
       successMessage: 'Match called to table.',
+    );
+  }
+
+  Future<void> _callNextMatchDialog(Map<String, dynamic> table, Map<String, dynamic> nextMatch) async {
+    HapticFeedback.lightImpact();
+    final matchId = nextMatch['matchId']?.toString() ?? '';
+    final round = nextMatch['round'];
+    final matchIndex = nextMatch['matchIndex'];
+    final aName = nextMatch['athleteAName'] ?? 'Athlete A';
+    final bName = nextMatch['athleteBName'] ?? 'Athlete B';
+    final tableName = table['name'] ?? 'Table';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: Text('Call Next Match to $tableName', style: const TextStyle(fontFamily: AppTheme.fontDisplay)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Round $round • Match $matchIndex', style: const TextStyle(color: AppTheme.goldPrimary, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('$aName vs $bName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.textPrimary)),
+            const SizedBox(height: 12),
+            const Text(
+              'This will promote queue position 1 and set table status to ACTIVE. Competitors will be summoned to the arena table.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.goldPrimary,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Confirm Call', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).callMatchToTable(matchId: matchId, tableId: table['id'].toString()),
+      successMessage: 'Queue match promoted: $aName vs $bName called to $tableName.',
+    );
+  }
+
+  Future<void> _unassignMatchDialog({
+    required String matchId,
+    required String label,
+    String? tableName,
+    bool isQueue = false,
+  }) async {
+    HapticFeedback.lightImpact();
+    final title = isQueue ? 'Remove from Queue' : 'Unassign Match from Table';
+    final content = isQueue
+        ? 'Remove "$label" from the queue? Match will return to the unassigned READY pool.'
+        : 'Unassign "$label" from ${tableName ?? "table"}? The table will become IDLE and the match will return to the READY pool.';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: Text(title, style: const TextStyle(fontFamily: AppTheme.fontDisplay)),
+        content: Text(content, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.combatCrimson, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(isQueue ? 'Remove' : 'Unassign Match'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).unassignMatch(matchId: matchId),
+      successMessage: isQueue ? 'Match removed from queue.' : 'Match unassigned from table.',
+    );
+  }
+
+  Future<void> _queueMatchDialog(
+    Map<String, dynamic> table,
+    List<Map<String, dynamic>> allMatches,
+    List<Map<String, dynamic>> allTables,
+  ) async {
+    HapticFeedback.lightImpact();
+    final assignedMatchIds = <String>{};
+    for (final t in allTables) {
+      final cur = t['currentMatchId']?.toString();
+      if (cur != null && cur.isNotEmpty) assignedMatchIds.add(cur);
+      final q = (t['queue'] as List?) ?? const [];
+      for (final item in q) {
+        final qm = item['matchId']?.toString();
+        if (qm != null && qm.isNotEmpty) assignedMatchIds.add(qm);
+      }
+    }
+
+    final candidates = allMatches.where((m) {
+      final status = (m['status']?.toString() ?? '').toUpperCase();
+      if (status != 'READY') return false;
+      final aId = m['athleteAId']?.toString();
+      final bId = m['athleteBId']?.toString();
+      if (aId == null || aId.isEmpty || bId == null || bId.isEmpty) return false;
+      final mId = m['id']?.toString() ?? '';
+      if (assignedMatchIds.contains(mId)) return false;
+      if (m['tableId'] != null) return false;
+      return true;
+    }).toList();
+
+    if (candidates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No eligible READY matches available to queue. Ensure bracket matches are generated and competitors determined.'),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    String selectedMatchId = candidates.first['id'].toString();
+    final existingQueue = (table['queue'] as List?) ?? const [];
+    int targetPosition = existingQueue.length + 1;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: Text('Queue Match — ${table['name'] ?? 'Table'}', style: const TextStyle(fontFamily: AppTheme.fontDisplay)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Select an eligible READY match from this event:', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: selectedMatchId,
+                isExpanded: true,
+                items: [
+                  for (final m in candidates)
+                    DropdownMenuItem(
+                      value: m['id'].toString(),
+                      child: Text(
+                        'R${m['round']} M${m['matchIndex']} • ${m['athleteAName'] ?? 'A'} vs ${m['athleteBName'] ?? 'B'}',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+                onChanged: (v) => setDialogState(() => selectedMatchId = v ?? selectedMatchId),
+                decoration: const InputDecoration(labelText: 'Match Candidate'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                initialValue: targetPosition,
+                items: [
+                  for (int i = 1; i <= existingQueue.length + 1; i++)
+                    DropdownMenuItem(value: i, child: Text('Position $i ${i == existingQueue.length + 1 ? '(Next in line)' : ''}')),
+                ],
+                onChanged: (v) => setDialogState(() => targetPosition = v ?? targetPosition),
+                decoration: const InputDecoration(labelText: 'Queue Order'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.goldPrimary, foregroundColor: Colors.black),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Add to Queue', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).queueMatchToTable(
+            tableId: table['id'].toString(),
+            matchId: selectedMatchId,
+            position: targetPosition,
+          ),
+      successMessage: 'Match placed into table queue.',
+    );
+  }
+
+  Future<void> _rebalanceDialog({
+    required Map<String, dynamic> queueItem,
+    required Map<String, dynamic> currentTable,
+    required List<Map<String, dynamic>> allTables,
+  }) async {
+    HapticFeedback.lightImpact();
+    final matchId = queueItem['matchId']?.toString() ?? '';
+    String targetTableId = currentTable['id'].toString();
+    int targetPosition = (queueItem['position'] as num?)?.toInt() ?? 1;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final targetTable = allTables.firstWhere(
+            (t) => t['id']?.toString() == targetTableId,
+            orElse: () => currentTable,
+          );
+          final targetQueue = (targetTable['queue'] as List?) ?? const [];
+          final isSameTable = targetTableId == currentTable['id']?.toString();
+          final maxPos = isSameTable ? targetQueue.length : targetQueue.length + 1;
+          final validPos = targetPosition.clamp(1, maxPos > 0 ? maxPos : 1);
+
+          return AlertDialog(
+            backgroundColor: AppTheme.cardSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+              side: const BorderSide(color: AppTheme.cardBorder),
+            ),
+            title: Text(
+              'Rebalance Match — R${queueItem['round']} M${queueItem['matchIndex']}',
+              style: const TextStyle(fontFamily: AppTheme.fontDisplay),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${queueItem['athleteAName'] ?? 'Athlete A'} vs ${queueItem['athleteBName'] ?? 'Athlete B'}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: targetTableId,
+                  isExpanded: true,
+                  items: [
+                    for (final t in allTables)
+                      DropdownMenuItem(
+                        value: t['id'].toString(),
+                        child: Text(t['name']?.toString() ?? 'Table', overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      setDialogState(() {
+                        targetTableId = v;
+                        final newTarget = allTables.firstWhere((t) => t['id']?.toString() == v, orElse: () => currentTable);
+                        final nq = (newTarget['queue'] as List?) ?? const [];
+                        targetPosition = (v == currentTable['id']?.toString())
+                            ? ((queueItem['position'] as num?)?.toInt() ?? 1)
+                            : nq.length + 1;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(labelText: 'Target Table'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: validPos,
+                  items: [
+                    for (int i = 1; i <= (maxPos > 0 ? maxPos : 1); i++)
+                      DropdownMenuItem(value: i, child: Text('Position $i')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setDialogState(() => targetPosition = v);
+                  },
+                  decoration: const InputDecoration(labelText: 'Target Queue Position'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.goldPrimary, foregroundColor: Colors.black),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Apply Rebalance', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).rebalanceTableQueue(
+            matchId: matchId,
+            targetTableId: targetTableId,
+            targetPosition: targetPosition,
+          ),
+      successMessage: 'Queue rebalanced successfully.',
     );
   }
 
@@ -525,18 +887,46 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final statsAsync = ref.watch(eventStatsProvider(widget.tournamentId));
     final regsAsync = ref.watch(eventRegistrationsProvider(widget.tournamentId));
     final bracketsAsync = ref.watch(eventBracketsProvider(widget.tournamentId));
-    final tablesAsync = ref.watch(matchTablesProvider);
+    final tablesAsync = ref.watch(eventMatchTablesProvider(widget.tournamentId));
     final matchesAsync = ref.watch(eventMatchesProvider(widget.tournamentId));
     final refereesAsync = ref.watch(refereeDirectoryProvider);
+    final auth = ref.watch(authProvider);
+
+    final userRole = auth.activeRole ?? auth.userProfile?['role']?.toString().toUpperCase() ?? '';
+    const operatorRoles = {'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+    final isDirectorOrAdmin = operatorRoles.contains(userRole) ||
+        auth.hasAnyRole(operatorRoles);
+    final isOrganizer = eventAsync.value?['organizerId'] != null &&
+        auth.userProfile?['id'] == eventAsync.value?['organizerId'];
+    final isReferee = userRole == 'REFEREE' || auth.hasRole('REFEREE');
+    final canOperate = isDirectorOrAdmin || isOrganizer || isReferee;
+    final canManageTables = isDirectorOrAdmin || isOrganizer;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Event Operations Desk')),
+      appBar: AppBar(
+        title: const Text('Event Operations Desk'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Arena Operations',
+            onPressed: _busy
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
+                    ref.invalidate(eventMatchesProvider(widget.tournamentId));
+                    ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
+                  },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(eventStatsProvider(widget.tournamentId));
           ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
           ref.invalidate(eventBracketsProvider(widget.tournamentId));
-          ref.invalidate(matchTablesProvider);
+          ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
+          ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
           ref.invalidate(eventMatchesProvider(widget.tournamentId));
           ref.invalidate(refereeDirectoryProvider);
         },
@@ -838,18 +1228,19 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'MATCH TABLES',
+                  'ARENA TABLES & QUEUES',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         letterSpacing: 1.2,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textSecondary,
                       ),
                 ),
-                TextButton.icon(
-                  onPressed: _busy ? null : _createTableDialog,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Table'),
-                ),
+                if (canManageTables)
+                  TextButton.icon(
+                    onPressed: _busy ? null : _createTableDialog,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add Table'),
+                  ),
               ],
             ),
             const SizedBox(height: AppTheme.space10),
@@ -860,18 +1251,45 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               )),
               error: (e, _) => ElevatedActionCard(
                 padding: const EdgeInsets.all(AppTheme.space16),
-                child: Text('Could not load tables: $e', style: const TextStyle(color: AppTheme.error)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AppTheme.error),
+                    const SizedBox(width: AppTheme.space12),
+                    Expanded(child: Text('Could not load tables: $e', style: const TextStyle(color: AppTheme.error))),
+                    TextButton(
+                      onPressed: () => ref.invalidate(eventMatchTablesProvider(widget.tournamentId)),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
               ),
               data: (tables) {
                 if (tables.isEmpty) {
                   return const ElevatedActionCard(
                     padding: EdgeInsets.all(AppTheme.space20),
                     child: Center(
-                      child: Text('No tables registered yet. Add one to start calling matches.', style: TextStyle(color: AppTheme.textSecondary)),
+                      child: Text(
+                        'No tables registered for this event yet. Add an official match table to start queueing and calling bouts.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
                     ),
                   );
                 }
-                return Column(children: [for (final t in tables) RepaintBoundary(child: _tableTile(t))]);
+                return Column(
+                  children: [
+                    for (final t in tables)
+                      RepaintBoundary(
+                        child: _tableCard(
+                          table: t,
+                          allTables: tables,
+                          allMatches: matchesAsync.value ?? const [],
+                          allReferees: refereesAsync.value ?? const [],
+                          canOperate: canOperate,
+                        ),
+                      ),
+                  ],
+                );
               },
             ),
             const SizedBox(height: AppTheme.space24),
@@ -1111,53 +1529,428 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     );
   }
 
-  Widget _tableTile(Map<String, dynamic> t) {
-    final status = (t['status']?.toString() ?? 'IDLE').toUpperCase();
-    final isBusy = status == 'ACTIVE';
+  Widget _tableCard({
+    required Map<String, dynamic> table,
+    required List<Map<String, dynamic>> allTables,
+    required List<Map<String, dynamic>> allMatches,
+    required List<Map<String, dynamic>> allReferees,
+    required bool canOperate,
+  }) {
+    final status = (table['status']?.toString() ?? 'IDLE').toUpperCase();
+    final isActive = status == 'ACTIVE';
+    final tableName = table['name']?.toString() ?? 'Table';
+    final currentMatchId = table['currentMatchId']?.toString();
+    final rawQueue = (table['queue'] as List?) ?? const [];
+    final queue = rawQueue.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+      ..sort((a, b) => ((a['position'] as num?)?.toInt() ?? 0).compareTo((b['position'] as num?)?.toInt() ?? 0));
+
+    // Resolve active match if present
+    Map<String, dynamic>? activeMatch;
+    if (currentMatchId != null && currentMatchId.isNotEmpty) {
+      activeMatch = allMatches.where((m) => m['id']?.toString() == currentMatchId).firstOrNull;
+    }
+
+    String? refereeName;
+    if (activeMatch != null) {
+      final refId = activeMatch['refereeId']?.toString();
+      if (refId != null && refId.isNotEmpty) {
+        refereeName = allReferees
+            .where((r) => r['id']?.toString() == refId)
+            .map((r) => r['fullName']?.toString() ?? r['email']?.toString() ?? 'Referee')
+            .firstOrNull;
+      }
+    }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.space8),
+      padding: const EdgeInsets.only(bottom: AppTheme.space14),
       child: ElevatedActionCard(
-        padding: const EdgeInsets.symmetric(vertical: AppTheme.space8, horizontal: AppTheme.space12),
-        child: Row(
+        padding: const EdgeInsets.all(AppTheme.space14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(AppTheme.space8),
-              decoration: BoxDecoration(
-                color: (isBusy ? AppTheme.warning : AppTheme.success).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-              ),
-              child: Icon(
-                isBusy ? Icons.sports : Icons.table_restaurant,
-                color: isBusy ? AppTheme.warning : AppTheme.success,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: AppTheme.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    t['name']?.toString() ?? 'Table',
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: AppTheme.textPrimary,
+            // --- Table Header ---
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.space8),
+                  decoration: BoxDecoration(
+                    color: (isActive ? AppTheme.activeCyan : AppTheme.success).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(
+                      color: (isActive ? AppTheme.activeCyan : AppTheme.success).withValues(alpha: 0.3),
                     ),
                   ),
-                  if (isBusy)
-                    const Text('Bout in progress', style: TextStyle(fontSize: 11, color: AppTheme.warning)),
+                  child: Icon(
+                    isActive ? Icons.sports : Icons.table_restaurant,
+                    color: isActive ? AppTheme.activeCyan : AppTheme.success,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.space12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tableName,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        isActive ? 'Match in progress' : 'Ready for assignment',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isActive ? AppTheme.activeCyan : AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Semantics(
+                  label: 'Table status: $status',
+                  child: StatusChip(
+                    label: status,
+                    type: isActive ? StatusType.info : StatusType.success,
+                  ),
+                ),
+                if (canOperate) ...[
+                  const SizedBox(width: AppTheme.space8),
+                  Semantics(
+                    label: 'Queue match to $tableName',
+                    button: true,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48, minWidth: 64),
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          side: const BorderSide(color: AppTheme.goldPrimary),
+                        ),
+                        onPressed: _busy ? null : () => _queueMatchDialog(table, allMatches, allTables),
+                        icon: const Icon(Icons.add, size: 16, color: AppTheme.goldPrimary),
+                        label: const Text('Queue', style: TextStyle(fontSize: 11, color: AppTheme.goldPrimary, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: AppTheme.space12),
+            const Divider(color: AppTheme.cardBorder, height: 1),
+            const SizedBox(height: AppTheme.space12),
+
+            // --- Active Bout Section ---
+            if (isActive && activeMatch != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppTheme.space12),
+                decoration: BoxDecoration(
+                  color: AppTheme.activeCyan.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  border: Border.all(color: AppTheme.activeCyan.withValues(alpha: 0.25)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.activeCyan,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'ACTIVE BOUT',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                                letterSpacing: 0.8,
+                                color: AppTheme.activeCyan,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          'R${activeMatch['round']} • M${activeMatch['matchIndex']}',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: AppTheme.goldPrimary,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${activeMatch['athleteAName'] ?? 'Athlete A'}  vs  ${activeMatch['athleteBName'] ?? 'Athlete B'}',
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${activeMatch['division'] ?? ''} • ${activeMatch['weightClass'] ?? ''} • ${activeMatch['arm'] ?? ''}'
+                      '${refereeName != null ? '  •  Ref: $refereeName' : ''}',
+                      style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                    ),
+                    if (canOperate) ...[
+                      const SizedBox(height: AppTheme.space10),
+                      Semantics(
+                        label: 'Unassign active match from $tableName',
+                        button: true,
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 64, // >= 64dp touch target
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.combatCrimson,
+                              side: const BorderSide(color: AppTheme.combatCrimson, width: 1.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                              ),
+                            ),
+                            onPressed: _busy
+                                ? null
+                                : () => _unassignMatchDialog(
+                                      matchId: activeMatch!['id'].toString(),
+                                      label: '${activeMatch['athleteAName']} vs ${activeMatch['athleteBName']}',
+                                      tableName: tableName,
+                                    ),
+                            icon: const Icon(Icons.cancel_outlined, size: 22),
+                            label: const Text(
+                              'UNASSIGN MATCH',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppTheme.space12),
+            ] else if (!isActive && queue.isNotEmpty && canOperate) ...[
+              // Idle Table with Queue -> CALL NEXT MATCH prominent button
+              Semantics(
+                label: 'Call next match to $tableName: ${queue.first['athleteAName']} vs ${queue.first['athleteBName']}',
+                button: true,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 64, // >= 64dp touch target
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.goldPrimary,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      ),
+                    ),
+                    onPressed: _busy ? null : () => _callNextMatchDialog(table, queue.first),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'CALL NEXT MATCH',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        Text(
+                          '${queue.first['athleteAName'] ?? 'A'} vs ${queue.first['athleteBName'] ?? 'B'} (Queue #1)',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppTheme.space12),
+            ],
+
+            // --- Queue Section ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'TABLE QUEUE (${queue.length})',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                    letterSpacing: 0.8,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppTheme.space8),
+            if (queue.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.space8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.inbox_outlined, size: 16, color: AppTheme.textMuted),
+                    const SizedBox(width: AppTheme.space8),
+                    const Text('No matches queued for this table.', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  ],
+                ),
+              )
+            else
+              Column(
+                children: [
+                  for (final item in queue)
+                    _queueItemTile(
+                      item: item,
+                      currentTable: table,
+                      allTables: allTables,
+                      canOperate: canOperate,
+                    ),
                 ],
               ),
-            ),
-            StatusChip(
-              label: status,
-              type: isBusy ? StatusType.warning : StatusType.success,
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _queueItemTile({
+    required Map<String, dynamic> item,
+    required Map<String, dynamic> currentTable,
+    required List<Map<String, dynamic>> allTables,
+    required bool canOperate,
+  }) {
+    final pos = (item['position'] as num?)?.toInt() ?? 1;
+    final aName = item['athleteAName']?.toString() ?? 'TBD';
+    final bName = item['athleteBName']?.toString() ?? 'TBD';
+    final round = item['round'];
+    final matchIndex = item['matchIndex'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppTheme.space6),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.cardSurface.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Row(
+        children: [
+          // Queue position number
+          Semantics(
+            label: 'Queue position $pos',
+            child: Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.elevatedSurface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.cardBorder),
+              ),
+              child: Text(
+                '$pos',
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: AppTheme.goldPrimary,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Athlete names and round
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$aName  vs  $bName',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12.5,
+                    color: AppTheme.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'R$round • M$matchIndex',
+                  style: const TextStyle(fontSize: 10.5, color: AppTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          if (canOperate) ...[
+            // Reorder / Move button (64dp touch target via Semantics & ConstrainedBox)
+            Semantics(
+              label: 'Reorder or move match R$round M$matchIndex to another table',
+              button: true,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  icon: const Icon(Icons.swap_vert, size: 20, color: AppTheme.goldPrimary),
+                  tooltip: 'Reorder / Move',
+                  onPressed: _busy
+                      ? null
+                      : () => _rebalanceDialog(
+                            queueItem: item,
+                            currentTable: currentTable,
+                            allTables: allTables,
+                          ),
+                ),
+              ),
+            ),
+            // Remove from queue button
+            Semantics(
+              label: 'Remove match R$round M$matchIndex from queue',
+              button: true,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  icon: const Icon(Icons.close, size: 18, color: AppTheme.textSecondary),
+                  tooltip: 'Remove',
+                  onPressed: _busy
+                      ? null
+                      : () => _unassignMatchDialog(
+                            matchId: item['matchId'].toString(),
+                            label: '$aName vs $bName',
+                            isQueue: true,
+                          ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1263,6 +2056,17 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                     OutlinedButton(
                       onPressed: _busy ? null : () => _callToTableDialog(m),
                       child: const Text('Call to Table'),
+                    ),
+                  if (status == 'CALLED' || (m['tableId'] != null && status != 'COMPLETED' && status != 'BYE'))
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(foregroundColor: AppTheme.combatCrimson),
+                      onPressed: _busy
+                          ? null
+                          : () => _unassignMatchDialog(
+                                matchId: m['id'].toString(),
+                                label: '$nameA vs $nameB',
+                              ),
+                      child: const Text('Unassign Table'),
                     ),
                   OutlinedButton(
                     onPressed: _busy ? null : () => _submitResultDialog(m),

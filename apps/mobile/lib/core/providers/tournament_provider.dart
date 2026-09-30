@@ -64,6 +64,7 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     ref.invalidate(eventBracketsProvider(eventId));
     ref.invalidate(eventMatchesProvider(eventId));
     ref.invalidate(eventLiveArenaTablesProvider(eventId));
+    ref.invalidate(eventMatchTablesProvider(eventId));
     ref.invalidate(matchTablesProvider);
     ref.invalidate(refereeDirectoryProvider);
   }
@@ -128,10 +129,16 @@ final eventMatchesProvider = FutureProvider.autoDispose.family<List<Map<String, 
   return repo.getEventMatches(eventId: eventId);
 });
 
-/// Physical match tables (IDLE/ACTIVE) used for match calls.
+/// Physical match tables (IDLE/ACTIVE) used for match calls (global fallback).
 final matchTablesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.listTables();
+});
+
+/// Physical match tables scoped to an event, including live queue orders.
+final eventMatchTablesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  return repo.listEventTables(eventId: eventId);
 });
 
 /// Referee directory (admin surface; director roles only).
@@ -201,7 +208,7 @@ final eventLiveArenaTablesProvider = FutureProvider.autoDispose.family<List<Map<
   Map<String, String> tableNames = {};
   if (isOperator) {
     try {
-      final tables = await repo.listTables();
+      final tables = await repo.listEventTables(eventId: eventId);
       for (final t in tables) {
         if (t['id'] != null && t['name'] != null) {
           tableNames[t['id'].toString()] = t['name'].toString();
