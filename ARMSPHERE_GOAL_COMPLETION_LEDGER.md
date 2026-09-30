@@ -44,8 +44,7 @@ The following production screens present hardcoded data or simulated logic rathe
    - Hardcodes Hamza "The Hammer" Khan (1840 ELO) vs Tariq "Iron Grip" Malik (1795 ELO) regardless of what athlete IDs or route parameters are passed.
    - Win probability (58% vs 42%) and radar charts are completely synthetic.
 2. **`TournamentScreens._buildArenaTableCard` (`apps/mobile/lib/features/tournament/screens/tournament_screens.dart`, Lines 1025–1065)**:
-   - Hardcodes international celebrity pullers: Michael Todd vs Denis Cyplenkov (Table 1), Ermes Gasparini vs Alexey Voevoda (Table 2).
-   - Does not bind to live bout states from Riverpod `liveMatchesProvider`.
+   - **RESOLVED in Phase 2.1**: Completely eliminated hardcoded international celebrity pullers (Todd, Cyplenkov, Gasparini, Voevoda). Bound directly to `eventLiveArenaTablesProvider(eventId)` with dynamic active-table count, real athlete identities, live bout statuses, and honest loading/empty/error states. Physically approved at commit `f3488f4`.
 3. **`TournamentAwardsCeremonyScreen` (`apps/mobile/lib/features/championship/screens/tournament_awards_ceremony_screen.dart`)**:
    - **RESOLVED in Phase 1C Batch 5 & Canary 10 Convergence**. Completely eliminated synthetic fallback athletes ("Hamza Khan", "Tariq Malik", "Bilal Ahmed"). Fully wired to real `GET /tournaments/events/:id/awards` backend data, canonical `/awards` routing, 3-tier Olympic podium hierarchy, T4 600ms motion sequence, medal citation unboxing card, honest empty/error states, reduced motion accessibility, and physically approved on target Android device.
 4. **Android App Launcher Icons (`.github/workflows/flutter-analyze.yml`, Lines 140–156)**:
@@ -85,10 +84,10 @@ The following production screens present hardcoded data or simulated logic rathe
 | **DOM-08** | Competition | National ELO Leaderboard | **DONE** | Top pullers ranked by ELO, division tabs, arm filters | **Level C** | `apps/mobile/lib/features/ranking/screens/rankings_screen.dart` | DB ELO rank | National seeding | P1 | Cache top 100 in Redis |
 | **DOM-09** | Competition | Global Athlete Search | **DONE** | Debounced search query across athletes, clubs, events | **Level B** | `apps/mobile/lib/features/home/screens/search_screen.dart` | Search API | Quick navigation | P2 | Verify empty state UX |
 | **DOM-10** | Competition | Tournament Discovery | **DONE** | Sanctioned events feed, province selector, status filters | **Level C** | `apps/mobile/lib/features/tournament/screens/tournament_screens.dart` | Tournament API | Event entry | P0 | Ensure hero card image fallback |
-| **DOM-11** | Competition | Tournament Detail & Spec | **DONE** | Rules, schedule, prize pool, registered athlete list | **Level B** | `apps/mobile/lib/features/tournament/screens/tournament_detail_screen.dart` | Tournament API | Registration | P0 | Eliminate table card mock data |
+| **DOM-11** | Competition | Tournament Detail & Spec | **DONE** | Rules, schedule, prize pool, registered athlete list, real Riverpod arena tables | **Level E** | `apps/mobile/lib/features/tournament/screens/tournament_detail_screen.dart`<br>`apps/mobile/lib/features/tournament/screens/tournament_screens.dart` | Tournament API | Registration | P0 | Physically approved in Phase 2.1 (`f3488f4`) |
 | **DOM-12** | Competition | Tournament Registration | **DONE** | Division picker, anti-doping waiver, entry checkout | **Level C** | `apps/mobile/lib/features/tournament/screens/event_registration_screen.dart` | Stripe API | Bracket seeding | P0 | Validate currency PKR/CAD logic |
 | **DOM-13** | Competition | Double Elimination Brackets | **DONE** | Custom painter bracket tree, node zoom, winner advance | **Level C** | `apps/mobile/lib/features/tournament/widgets/full_interactive_bracket_modal.dart` | Bracket API | Match day | P0 | Ensure table pulse animation |
-| **DOM-14** | Operations | Tournament Operator Console | **DONE** | Weigh-in clearance, table load balancer, queue manager | **Level B** | `apps/mobile/lib/features/tournament/screens/tournament_operations_screen.dart` | WebSocket hub | Arena logistics | P0 | Wire live table assignment API |
+| **DOM-14** | Operations | Tournament Operator Console | **DONE** | Live table assignments, dedicated event queue, atomic callMatchToTable, unassignMatch, queue rebalancing, offline mutation protection | **Level C** | `apps/mobile/lib/features/tournament/screens/tournament_operations_screen.dart`<br>`apps/api/src/services/tournament.ts` | Tournament API, PostgreSQL | Arena logistics | P0 | Hardened in Phase 2.2; 77 backend + 19 widget tests |
 | **DOM-15** | Officiating | Official Referee Scorepad | **DONE** | Split red/white pads, foul counters, 400ms pin hold | **Level B** | `apps/mobile/lib/features/referee/screens/official_scorepad_screen.dart` | Wakelock, Sound | Bout outcome | P0 | Verify audio playback on Android |
 | **DOM-16** | Officiating | Referee Certification Engine | **DONE** | WAF grade status, seminar logs, license renewal | **Level B** | `apps/mobile/lib/features/referee/screens/referee_certification_screen.dart` | Backend DB | Official assign | P2 | Connect to federation PDF seal |
 | **DOM-17** | Governance | Dispute Filing & Arbitration | **DONE** | Video upload, incident categorization, ruling audit | **Level B** | `apps/mobile/lib/features/governance/screens/governance_screens.dart` | S3 upload | Match integrity | P1 | Remove mock dispute entries |
@@ -603,11 +602,35 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
                            │
                            ▼
 ┌────────────────────────────────────────────────────────┐
-│ PHASE 2: CORE LOOP REAL-DATA WIRING                    │
+│ PHASE 2.1: ARENA TABLE REAL-DATA WIRING (TOURNAMENT)   │
+│ [CI-VERIFIED] (Commit f3488f4)                         │
+│ • Eliminated simulated table cards in Tournament Detail│
+│ • Bound to eventLiveArenaTablesProvider(eventId)       │
+│ • Dynamic active-table count replaces static '3 TABLES'│
+│ • 100% CI pass & dedicated widget integration tests    │
+│ • Status: PHYSICALLY APPROVED                          │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 2.2: LIVE ARENA TABLE OPERATIONS & QUEUE ENGINE   │
+│ [CI/LOCAL VERIFIED] (Commits 12ef0a9, 8549e75, 1bdd060)│
+│ • Backend: Event-scoped tables, tournament_table_queue │
+│ • Atomic callMatchToTable, safe unassignMatch          │
+│ • Queue insert & rebalance endpoints with invariants   │
+│ • Mobile: Real-data operator console & queue manager   │
+│ • Concurrency guards, 409 conflict refresh, offline safe│
+│ • 77/77 Vitest tests passing; 19 Flutter test cases    │
+│ • Status: CODE INTEGRATED | CI/LOCAL VERIFIED |        │
+│   NEEDS PHYSICAL VISUAL REVIEW                         │
+└──────────────────────────┬─────────────────────────────┘
+                           │
+                           ▼
+┌────────────────────────────────────────────────────────┐
+│ PHASE 2.3: HEAD-TO-HEAD REAL COMPETITOR COMPARISON     │
 │ • Wire HeadToHeadScreen to real athlete API data       │
-│ • Wire TournamentAwardsCeremonyScreen to /awards API   │
-│ • Wire ArenaTableCards to real Riverpod live matches   │
-│ • Eliminate all Category 5 hardcoded simulations       │
+│ • Remove hardcoded Hamza Khan vs Tariq Malik names     │
+│ • Wire dynamic ELO calculation & historical matches    │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼
