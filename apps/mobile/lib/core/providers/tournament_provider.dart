@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state_providers.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
@@ -62,6 +63,7 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     ref.invalidate(eventStatsProvider(eventId));
     ref.invalidate(eventBracketsProvider(eventId));
     ref.invalidate(eventMatchesProvider(eventId));
+    ref.invalidate(eventLiveArenaTablesProvider(eventId));
     ref.invalidate(matchTablesProvider);
     ref.invalidate(refereeDirectoryProvider);
   }
@@ -146,4 +148,162 @@ final ticketTypesProvider = FutureProvider.autoDispose.family<List<Map<String, d
 final myTicketsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getMyTickets();
+});
+
+/// Live active arena tables for an event (IN_PROGRESS, CALLED, READY matches mapped to arena tables).
+final eventLiveArenaTablesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+
+  // Gather all brackets for this event
+  final allBrackets = await repo.listBrackets();
+  final eventBrackets = allBrackets.where((b) => b['eventId']?.toString() == eventId).toList();
+
+  List<Map<String, dynamic>> matches = [];
+
+  // Check if current user has an operator/referee role
+  final auth = ref.watch(authProvider);
+  final role = auth.userProfile?['role']?.toString().toUpperCase();
+  const operatorRoles = {'REFEREE', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+  final isOperator = operatorRoles.contains(role);
+
+  if (isOperator) {
+    try {
+      matches = await repo.getEventMatches(eventId: eventId);
+    } catch (_) {
+      matches = [];
+    }
+  }
+
+  // If not operator or if getEventMatches is empty, fetch matches via bracket details
+  if (matches.isEmpty && eventBrackets.isNotEmpty) {
+    final detailFutures = eventBrackets.map((b) async {
+      try {
+        final detail = await repo.getBracket(b['id'].toString());
+        final rawMatches = (detail['matches'] as List?) ?? [];
+        return rawMatches.map((m) {
+          final map = Map<String, dynamic>.from(m as Map);
+          map['bracketName'] = detail['name'];
+          map['division'] = detail['division'];
+          map['weightClass'] = detail['weightClass'];
+          map['arm'] = detail['arm'];
+          map['bracketId'] = detail['id'];
+          return map;
+        }).toList();
+      } catch (_) {
+        return <Map<String, dynamic>>[];
+      }
+    });
+    final results = await Future.wait(detailFutures);
+    matches = results.expand((list) => list).toList();
+  }
+
+  // Fetch table names if accessible
+  Map<String, String> tableNames = {};
+  if (isOperator) {
+    try {
+      final tables = await repo.listTables();
+      for (final t in tables) {
+        if (t['id'] != null && t['name'] != null) {
+          tableNames[t['id'].toString()] = t['name'].toString();
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Filter for live/active matches (IN_PROGRESS, CALLED, READY)
+  const activeStatuses = {'IN_PROGRESS', 'CALLED', 'READY'};
+  final activeMatches = matches.where((m) {
+    final s = (m['status']?.toString() ?? '').toUpperCase();
+    if (!activeStatuses.contains(s)) return false;
+    final a = m['athleteAName']?.toString() ?? '';
+    final b = m['athleteBName']?.toString() ?? '';
+    return a.isNotEmpty || b.isNotEmpty;
+  }).toList();
+
+  // Sort priority: IN_PROGRESS (0) -> CALLED (1) -> READY (2), then round & matchIndex
+  int statusPriority(String s) {
+    switch (s.toUpperCase()) {
+      case 'IN_PROGRESS':
+        return 0;
+      case 'CALLED':
+        return 1;
+      case 'READY':
+        return 2;
+      default:
+        return 3;
+    }
+  }
+
+  activeMatches.sort((a, b) {
+    final pA = statusPriority(a['status']?.toString() ?? '');
+    final pB = statusPriority(b['status']?.toString() ?? '');
+    if (pA != pB) return pA.compareTo(pB);
+    final rA = (a['round'] as num?)?.toInt() ?? 0;
+    final rB = (b['round'] as num?)?.toInt() ?? 0;
+    if (rA != rB) return rA.compareTo(rB);
+    final iA = (a['matchIndex'] as num?)?.toInt() ?? 0;
+    final iB = (b['matchIndex'] as num?)?.toInt() ?? 0;
+    return iA.compareTo(iB);
+  });
+
+  return List.generate(activeMatches.length, (index) {
+    final m = activeMatches[index];
+    final rawStatus = (m['status']?.toString() ?? '').toUpperCase();
+    final tableId = m['tableId']?.toString();
+    final hasNamedTable = tableId != null && tableNames.containsKey(tableId);
+
+    final tableNumber = hasNamedTable
+        ? tableNames[tableId]!.toUpperCase()
+        : 'TABLE ${index + 1}';
+
+    final stageName = m['bracketName']?.toString().isNotEmpty == true
+        ? m['bracketName'].toString()
+        : (hasNamedTable ? 'Main Stage' : 'Arena Table ${index + 1}');
+
+    String statusLabel;
+    if (rawStatus == 'IN_PROGRESS') {
+      statusLabel = 'IN BOUT';
+    } else if (rawStatus == 'CALLED') {
+      statusLabel = 'ON DECK';
+    } else {
+      statusLabel = 'READY';
+    }
+
+    final isLive = rawStatus == 'IN_PROGRESS';
+
+    final div = (m['division']?.toString() ?? '').toUpperCase();
+    final wt = (m['weightClass']?.toString() ?? '').toUpperCase();
+    final arm = (m['arm']?.toString() ?? '').toUpperCase();
+
+    String weightClassFormatted;
+    if (wt.isNotEmpty && arm.isNotEmpty) {
+      weightClassFormatted = '$wt · $arm ARM';
+    } else if (wt.isNotEmpty) {
+      weightClassFormatted = wt;
+    } else if (div.isNotEmpty && arm.isNotEmpty) {
+      weightClassFormatted = '$div · $arm ARM';
+    } else {
+      weightClassFormatted = m['bracketName']?.toString() ?? 'OPEN CATEGORY';
+    }
+
+    return {
+      'id': m['id'],
+      'bracketId': m['bracketId'],
+      'tableNumber': tableNumber,
+      'stageName': stageName,
+      'status': statusLabel,
+      'rawStatus': rawStatus,
+      'isLive': isLive,
+      'weightClass': weightClassFormatted,
+      'division': div,
+      'arm': arm,
+      'rawWeightClass': wt,
+      'redCornerName': m['athleteAName']?.toString() ?? 'TBD',
+      'redCornerCountry': m['athleteACountry']?.toString() ?? '',
+      'blueCornerName': m['athleteBName']?.toString() ?? 'TBD',
+      'blueCornerCountry': m['athleteBCountry']?.toString() ?? '',
+      'round': m['round'],
+      'matchIndex': m['matchIndex'],
+    };
+  });
 });

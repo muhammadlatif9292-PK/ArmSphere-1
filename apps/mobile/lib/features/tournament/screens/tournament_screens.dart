@@ -959,109 +959,253 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   }
 
   Widget _buildLiveArenaTables(BuildContext context) {
-    return RepaintBoundary(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
+    final liveTablesAsync = ref.watch(eventLiveArenaTablesProvider(widget.tournamentId));
+
+    return liveTablesAsync.when(
+      loading: () => RepaintBoundary(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildArenaTableHeader(activeCount: null, isLoading: true),
+            const SizedBox(height: 12),
+            Container(
+              height: 110,
+              decoration: BoxDecoration(
+                color: AppTheme.elevatedSurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.goldPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      error: (e, _) => RepaintBoundary(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildArenaTableHeader(activeCount: 0, isLoading: false),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.elevatedSurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(color: AppTheme.borderSubtle),
+              ),
+              child: Row(
                 children: [
-                  Icon(Icons.sports_kabaddi, size: 16, color: AppTheme.goldPrimary),
-                  SizedBox(width: 8),
-                  Text(
-                    'Live Arena Tables',
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: AppTheme.textPrimary,
+                  const Icon(Icons.error_outline, color: AppTheme.error, size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Could not load live arena tables',
+                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                     ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId)),
+                    child: const Text('Retry', style: TextStyle(color: AppTheme.goldPrimary, fontSize: 12)),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  border: Border.all(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                    width: 1,
+            ),
+          ],
+        ),
+      ),
+      data: (tables) {
+        final filteredTables = tables.where((t) => _matchesCategory(
+          _selectedCategory,
+          t['weightClass']?.toString() ?? '',
+          t['division']?.toString() ?? '',
+        )).toList();
+
+        final activeCount = tables.length;
+
+        return RepaintBoundary(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildArenaTableHeader(activeCount: activeCount, isLoading: false),
+              const SizedBox(height: 12),
+              if (tables.isEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.elevatedSurface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.sports_kabaddi, size: 36, color: AppTheme.textMuted.withValues(alpha: 0.5)),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'No Live Arena Tables Active',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Arena tables will appear here once matches are called to the table.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, size: 8, color: Color(0xFF10B981)),
-                    SizedBox(width: 5),
-                    Text(
-                      '3 TABLES ACTIVE',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF10B981),
-                        letterSpacing: 0.6,
+              ] else if (filteredTables.isEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.elevatedSurface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    border: Border.all(color: AppTheme.borderSubtle),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.tune, size: 32, color: AppTheme.textMuted.withValues(alpha: 0.5)),
+                      const SizedBox(height: 10),
+                      Text(
+                        'No Live Tables in $_selectedCategory',
+                        style: const TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Select "ALL" to view active tables across all divisions.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                for (int i = 0; i < filteredTables.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 10),
+                  _buildArenaTableCard(
+                    context: context,
+                    tableNumber: filteredTables[i]['tableNumber']?.toString() ?? 'TABLE ${i + 1}',
+                    stageName: filteredTables[i]['stageName']?.toString() ?? 'Main Stage',
+                    status: filteredTables[i]['status']?.toString() ?? 'IN BOUT',
+                    statusColor: _resolveArenaStatusColor(filteredTables[i]['status']?.toString() ?? ''),
+                    weightClass: filteredTables[i]['weightClass']?.toString() ?? '',
+                    redCornerName: filteredTables[i]['redCornerName']?.toString() ?? 'TBD',
+                    redCornerCountry: filteredTables[i]['redCornerCountry']?.toString() ?? '',
+                    blueCornerName: filteredTables[i]['blueCornerName']?.toString() ?? 'TBD',
+                    blueCornerCountry: filteredTables[i]['blueCornerCountry']?.toString() ?? '',
+                    isLive: filteredTables[i]['isLive'] == true,
+                  ),
+                ],
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildArenaTableHeader({required int? activeCount, bool isLoading = false}) {
+    final hasActive = (activeCount ?? 0) > 0;
+    final badgeColor = hasActive ? const Color(0xFF10B981) : AppTheme.textMuted;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.sports_kabaddi, size: 16, color: AppTheme.goldPrimary),
+            SizedBox(width: 8),
+            Text(
+              'Live Arena Tables',
+              style: TextStyle(
+                fontFamily: 'Space Grotesk',
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: badgeColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            border: Border.all(
+              color: badgeColor.withValues(alpha: 0.4),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.circle, size: 8, color: badgeColor),
+              const SizedBox(width: 5),
+              Text(
+                isLoading
+                    ? 'SYNCING TABLES'
+                    : (hasActive
+                        ? '$activeCount TABLE${activeCount == 1 ? '' : 'S'} ACTIVE'
+                        : '0 TABLES ACTIVE'),
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: badgeColor,
+                  letterSpacing: 0.6,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // Table 1 (IN BOUT - Emerald Accent)
-          _buildArenaTableCard(
-            context: context,
-            tableNumber: 'TABLE 1',
-            stageName: 'Main Stage',
-            status: 'IN BOUT',
-            statusColor: const Color(0xFF10B981),
-            weightClass: '-85 KG · RIGHT ARM',
-            redCornerName: 'M. Todd',
-            redCornerCountry: 'CAN',
-            blueCornerName: 'D. Cyplenkov',
-            blueCornerCountry: 'UKR',
-            isLive: true,
-          ),
-          const SizedBox(height: 10),
-
-          // Table 2 (ON DECK - Amber Accent)
-          _buildArenaTableCard(
-            context: context,
-            tableNumber: 'TABLE 2',
-            stageName: 'Stream Table A',
-            status: 'ON DECK',
-            statusColor: const Color(0xFFF59E0B),
-            weightClass: 'OPEN · RIGHT ARM',
-            redCornerName: 'E. Gasparini',
-            redCornerCountry: 'ITA',
-            blueCornerName: 'A. Voevoda',
-            blueCornerCountry: 'RUS',
-            isLive: false,
-          ),
-          const SizedBox(height: 10),
-
-          // Table 3 (STANDBY - Slate Accent)
-          _buildArenaTableCard(
-            context: context,
-            tableNumber: 'TABLE 3',
-            stageName: 'Platform B',
-            status: 'STANDBY',
-            statusColor: AppTheme.borderSubtle,
-            weightClass: '-75 KG · LEFT ARM',
-            redCornerName: 'Next Call in 3:00',
-            redCornerCountry: '',
-            blueCornerName: 'Official Warmup',
-            blueCornerCountry: '',
-            isLive: false,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  bool _matchesCategory(String filter, String weightClassFormatted, String division) {
+    if (filter == 'ALL') return true;
+    final f = filter.toUpperCase().replaceAll(' ', '');
+    final w = weightClassFormatted.toUpperCase().replaceAll(' ', '');
+    final d = division.toUpperCase().replaceAll(' ', '');
+    if (w.contains(f) || d.contains(f)) return true;
+
+    final tokens = filter.toUpperCase().split(' ').where((s) => s.isNotEmpty);
+    return tokens.every((token) =>
+        weightClassFormatted.toUpperCase().contains(token) ||
+        division.toUpperCase().contains(token));
+  }
+
+  Color _resolveArenaStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'IN BOUT':
+        return const Color(0xFF10B981); // Emerald
+      case 'ON DECK':
+        return const Color(0xFFF59E0B); // Amber
+      case 'READY':
+        return AppTheme.goldPrimary; // Gold
+      default:
+        return AppTheme.textMuted;
+    }
   }
 
   Widget _buildArenaTableCard({
@@ -1077,11 +1221,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     required String blueCornerCountry,
     required bool isLive,
   }) {
-    return TactilePressWrapper(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        context.push('/tournament/${widget.tournamentId}/brackets');
-      },
+    final semanticLabel = '$tableNumber, $stageName, $status, $weightClass. Red corner: $redCornerName. Blue corner: $blueCornerName.';
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      child: TactilePressWrapper(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          context.push('/tournament/${widget.tournamentId}/brackets');
+        },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -1256,6 +1404,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }
