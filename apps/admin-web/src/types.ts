@@ -10,12 +10,29 @@ export enum UserRole {
   ORGANIZATION_LEADER = "ORGANIZATION_LEADER"
 }
 
+export interface RoleGrant {
+  id: string;
+  userId: string;
+  role: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+  scope?: string | null;
+  grantedBy?: string | null;
+  grantedAt?: string;
+  verificationMetadata?: Record<string, any>;
+}
+
 export interface User {
   id: string;
   email: string;
   username: string;
   role: UserRole;
+  activeRole?: UserRole;
   fullName: string;
+  province?: string | null;
+  regionalCoverage?: string | null;
+  verifiedRoles?: string[];
+  roleGrants?: RoleGrant[];
+  isOnboarded?: boolean;
 }
 
 export const ADMIN_ROLES: UserRole[] = [

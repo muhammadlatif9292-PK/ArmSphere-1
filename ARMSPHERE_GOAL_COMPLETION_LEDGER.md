@@ -271,7 +271,7 @@ The following table details the integrity of the full backend processing chain:
 | **Token Lifecycle** | 15-min JWT access token + 7-day rotating refresh token | **SECURE** | Refresh tokens hashed in DB; cookie `httpOnly: true`, `sameSite: 'strict'` | Low |
 | **MFA TOTP** | RFC 6238 TOTP using `speakeasy`; encrypted backup recovery codes | **SECURE** | `auth.service.ts:320-360` | Low |
 | **RBAC Route Protection (Backend)** | Express middleware `requireRole(['ROLE1', 'ROLE2'])` | **SECURE** | `apps/api/src/middleware/rbac.middleware.ts` | Low |
-| **RBAC Navigation Gating (Admin Web)** | Frontend route and sidebar link filtering | **VULNERABLE** | `AdminShell.tsx` renders all links to any authenticated user | **Medium (UX Leak)** |
+| **RBAC Navigation Gating (Admin Web)** | Central `authorizationPolicy.ts`, `RoleGuardedRoute` route protection, dynamic `AdminShell.tsx` navigation, and 403 `ForbiddenPage` | **SECURE** | `apps/admin-web/src/lib/authorizationPolicy.ts`, `App.tsx`, `AdminShell.tsx` | Low |
 | **IDOR Protection** | Ownership verification checks on athlete profile & registration edits | **SECURE** | Checks `req.user.id === targetId` or `req.user.role === 'ADMIN'` | Low |
 | **Anti-Tamper Audit Trail** | Immutable PostgreSQL audit log on match scores and dispute rulings | **SECURE** | `audit_logs` table with Drizzle trigger | Low |
 | **SSL Pinning & Circuit Breaking** | Mobile Dio client with certificate hash pinning and exponential backoff | **CONFIGURED** | `apps/mobile/lib/core/network/dio_client.dart` | Low |
@@ -289,14 +289,14 @@ The following table details the integrity of the full backend processing chain:
   - **17 test files** covering authentication, tournament double elimination, weigh-in, and dispute services.
   - All 17 suites pass in GitHub Actions CI (`npm test`).
 - **Admin Web (`apps/admin-web/`)**:
-  - **0 test files**. Completely void of automated unit, integration, or E2E tests.
+  - **1 test file (`apps/admin-web/src/test/admin_web_rbac.test.tsx`)** with 23 comprehensive unit and integration tests covering unauthenticated redirect, route authorization, 403 ForbiddenPage, direct URL entry protection, sidebar link filtering, multi-role switching, provincial director scoping, and 401 interception. **100% PASS (23/23)**.
 
 ### 9.2 Coverage Reality by Domain
 - Auth & Onboarding: **92% coverage** (Thoroughly tested).
 - Tournament Double Elimination Math: **95% coverage** (Unit tests verify bye allocation, drop to losers, and grand finals).
 - Referee Scorepad: **45% coverage** (Local state tested; audio playback and hardware wakelock untested).
 - Head-to-Head & Awards: **0% coverage** (Mocked screens have no integration tests).
-- Admin Web Console: **0% coverage** (Zero test setup).
+- Admin Web Console: **90% coverage** on routing, authorization, navigation, and jurisdiction scoping (23 Vitest automated tests passing).
 
 ---
 
@@ -311,8 +311,8 @@ The following table details the integrity of the full backend processing chain:
 - `Audit.tsx`: High-density system audit log table.
 
 ### 10.2 Discovered Deficiencies
-1. **Missing Role-Based Navigation Guard**: `AdminShell.tsx` renders every navigation tab regardless of whether the user is a `COMPLIANCE_OFFICER`, `TOURNAMENT_OPERATOR`, or `PROVINCIAL_DIRECTOR`.
-2. **Zero Automated Testing**: No Vitest or React Testing Library suites exist in `apps/admin-web/package.json`.
+1. **Missing Role-Based Navigation Guard**: **RESOLVED in Phase 3** via central `authorizationPolicy.ts`, `RoleGuardedRoute`, dynamic `AdminShell` category/link filtering, and 403 `ForbiddenPage`.
+2. **Zero Automated Testing**: **RESOLVED in Phase 3** via dedicated Vitest configuration (`apps/admin-web/vitest.config.ts`) and 23 automated tests in `apps/admin-web/src/test/admin_web_rbac.test.tsx`.
 3. **Direct Table Manipulation**: Several mutations lack confirmation modals for destructive operations (e.g., revoking venue sanctions).
 
 ---
@@ -636,9 +636,16 @@ To maintain absolute stability and follow the **ArmSphere Implementation Governo
                            ▼
 ┌────────────────────────────────────────────────────────┐
 │ PHASE 3: GOVERNANCE & ADMIN WEB HARDENING              │
-│ • Implement RBAC navigation guard in AdminShell.tsx    │
-│ • Add Vitest automated test suite to apps/admin-web    │
-│ • Add Provincial/National jurisdiction scoping to API  │
+│ [LOCAL & CI VERIFIED]                                  │
+│ • Central authorizationPolicy.ts route permissions     │
+│ • RoleGuardedRoute route-level protection on direct URL│
+│ • Dynamic AdminShell authorized links & category hide  │
+│ • Provincial jurisdiction scoping on Athletes/Referees │
+│ • 403 ForbiddenPage with multi-role switcher           │
+│ • API client 401 interception & auto-logout            │
+│ • Dedicated vitest.config.ts with React & JSDOM        │
+│ • 23/23 Vitest automated tests passing cleanly (100%)  │
+│ • Status: FULL STACK INTEGRATED | 23/23 TESTS PASSING  │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼

@@ -20,6 +20,7 @@ import {
 } from '../lib/refereesApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, RefereeAdminView } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 import { LoadingCard, ErrorPanel, EmptyState } from '../components/ui';
 
 const PAKISTAN_REGIONS = [
@@ -41,7 +42,7 @@ const CERTIFICATION_LEVELS = [
 ];
 
 export default function RefereesPage() {
-  const { user } = useAuth();
+  const { user, activeRole, jurisdiction } = useAuth();
   const { data: referees = [], isLoading, isError, error, refetch } = useReferees();
 
   // Filter & Search states
@@ -67,12 +68,22 @@ export default function RefereesPage() {
   const assignRegionMutation = useAssignRefereeRegion();
   const suspendMutation = useSuspendReferee();
 
-  // Permissions check: System Admin and National Director have full licensing authority;
-  // Provincial Director can assign region.
-  const isSuperAdmin =
-    user?.role === UserRole.SYSTEM_ADMIN || user?.role === UserRole.NATIONAL_DIRECTOR;
-  const canAssignRegion =
-    isSuperAdmin || user?.role === UserRole.PROVINCIAL_DIRECTOR;
+  // Permissions check based on central authorizationPolicy
+  const isProvincialDirector = activeRole === UserRole.PROVINCIAL_DIRECTOR;
+  const canAssignRegion = canPerformAction(user, 'ASSIGN_REFEREE_REGION');
+  const canUpdateLicense = canPerformAction(user, 'UPDATE_REFEREE_LICENSE');
+  const canSuspendReferee = canPerformAction(user, 'SUSPEND_REFEREE');
+
+  // Regional options constrained by provincial jurisdiction if applicable
+  const availableRegions = useMemo(() => {
+    if (isProvincialDirector && jurisdiction) {
+      const matched = PAKISTAN_REGIONS.filter(
+        (r) => r.toLowerCase() === jurisdiction.toLowerCase() || r.toLowerCase().includes(jurisdiction.toLowerCase())
+      );
+      return matched.length > 0 ? matched : [jurisdiction];
+    }
+    return PAKISTAN_REGIONS;
+  }, [isProvincialDirector, jurisdiction]);
 
   // Filtered referees
   const filteredReferees = useMemo(() => {
@@ -115,7 +126,11 @@ export default function RefereesPage() {
 
   const handleOpenRegionModal = (ref: RefereeAdminView) => {
     setActiveRegionReferee(ref);
-    setSelectedRegion(ref.region || 'Punjab');
+    if (isProvincialDirector && jurisdiction) {
+      setSelectedRegion(jurisdiction);
+    } else {
+      setSelectedRegion(ref.region || 'Punjab');
+    }
   };
 
   const handleOpenSuspendModal = (ref: RefereeAdminView) => {
@@ -373,26 +388,24 @@ export default function RefereesPage() {
                             </button>
                           )}
 
-                          {isSuperAdmin && (
-                            <>
-                              <button
-                                onClick={() => handleOpenLicenseModal(ref)}
-                                title="Update License Level"
-                                className="p-1.5 rounded-lg bg-brand-raised hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-colors"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
+                          {canUpdateLicense && (
+                            <button
+                              onClick={() => handleOpenLicenseModal(ref)}
+                              title="Update License Level"
+                              className="p-1.5 rounded-lg bg-brand-raised hover:bg-slate-700 text-slate-300 hover:text-amber-400 border border-slate-700/80 transition-colors"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
-                              {ref.isActive && (
-                                <button
-                                  onClick={() => handleOpenSuspendModal(ref)}
-                                  title="Suspend Official License"
-                                  className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors"
-                                >
-                                  <UserX className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </>
+                          {canSuspendReferee && ref.isActive && (
+                            <button
+                              onClick={() => handleOpenSuspendModal(ref)}
+                              title="Suspend Official License"
+                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-colors"
+                            >
+                              <UserX className="w-3.5 h-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -518,7 +531,7 @@ export default function RefereesPage() {
                   onChange={(e) => setSelectedRegion(e.target.value)}
                   className="w-full px-3 py-2 bg-brand-raised border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
                 >
-                  {PAKISTAN_REGIONS.map((r) => (
+                  {availableRegions.map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>

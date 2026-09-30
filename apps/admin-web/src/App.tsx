@@ -14,6 +14,8 @@ import ModerationQueuePage from './pages/ModerationQueuePage';
 import VenuesPage from './pages/VenuesPage';
 import NominationsPage from './pages/NominationsPage';
 import AuditPage from './pages/AuditPage';
+import ForbiddenPage from './pages/ForbiddenPage';
+import { canAccessRoute } from './lib/authorizationPolicy';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -77,18 +79,28 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Never retry 401 or 403 authorization failures
+        const status = error?.response?.status;
+        if (status === 401 || status === 403) return false;
+        return failureCount < 1;
+      },
     },
   },
 });
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface RoleGuardedRouteProps {
+  path: string;
+  children: React.ReactNode;
+}
+
+export function RoleGuardedRoute({ path, children }: RoleGuardedRouteProps) {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0B0F19]">
+      <div className="flex items-center justify-center min-h-screen bg-[#070A11]">
         <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -98,7 +110,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  const access = canAccessRoute(user, path);
+  if (!access.allowed) {
+    return (
+      <AdminShell>
+        <ForbiddenPage
+          requiredRoles={access.requiredRoles}
+          currentRole={access.userRole}
+        />
+      </AdminShell>
+    );
+  }
+
+  return <AdminShell>{children}</AdminShell>;
 }
 
 export default function App() {
@@ -111,105 +135,85 @@ export default function App() {
               {/* Public Auth Route */}
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Protected Shell Routes */}
+              {/* Protected Shell Routes with Central Route-Level RBAC Enforcement */}
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <DashboardPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/">
+                    <DashboardPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/analytics"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <AnalyticsPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/analytics">
+                    <AnalyticsPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/championships"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <ChampionshipsPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/championships">
+                    <ChampionshipsPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/governance"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <GovernancePage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/governance">
+                    <GovernancePage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/athletes"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <AthletesPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/athletes">
+                    <AthletesPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/referees"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <RefereesPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/referees">
+                    <RefereesPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/moderation"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <ModerationQueuePage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/moderation">
+                    <ModerationQueuePage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/venues"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <VenuesPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/venues">
+                    <VenuesPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/nominations"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <NominationsPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/nominations">
+                    <NominationsPage />
+                  </RoleGuardedRoute>
                 }
               />
               <Route
                 path="/audit"
                 element={
-                  <ProtectedRoute>
-                    <AdminShell>
-                      <AuditPage />
-                    </AdminShell>
-                  </ProtectedRoute>
+                  <RoleGuardedRoute path="/audit">
+                    <AuditPage />
+                  </RoleGuardedRoute>
                 }
               />
 

@@ -1,16 +1,20 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient, setAuthToken } from '../lib/apiClient';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { apiClient, setAuthToken, onUnauthorized } from '../lib/apiClient';
 import { User, UserRole, ADMIN_ROLES } from '../types';
+import { canSwitchToRole, getEffectiveRole, getUserJurisdiction } from '../lib/authorizationPolicy';
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
+  activeRole: UserRole | null;
+  jurisdiction: string | null;
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
+  switchActiveRole: (newRole: UserRole) => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Safe localStorage helpers for sandboxed iframe environments
 function getSafeStorageItem(key: string): string | null {
@@ -42,21 +46,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const logout = useCallback(async () => {
+    try {
+      await apiClient.post('/auth/logout', {}, { withCredentials: true });
+    } catch {
+      // Ignore logout API failures and clear local memory
+    } finally {
+      setToken(null);
+      setAuthToken(null);
+      setUser(null);
+      removeSafeStorageItem('armsphere_admin_user');
+      removeSafeStorageItem('armsphere_admin_token');
+      removeSafeStorageItem('armsphere_admin_active_role');
+    }
+  }, []);
+
+  // Listen for 401 unauthorized signals from apiClient
+  useEffect(() => {
+    onUnauthorized(() => {
+      logout();
+    });
+    return () => {
+      onUnauthorized(null);
+    };
+  }, [logout]);
+
   // Initialize and attempt to recover session via cookie-based refresh token or cached local session
   useEffect(() => {
     async function initAuth() {
       try {
         const cachedUserStr = getSafeStorageItem('armsphere_admin_user');
         const cachedToken = getSafeStorageItem('armsphere_admin_token');
+        const cachedActiveRole = getSafeStorageItem('armsphere_admin_active_role') as UserRole | null;
+
         if (cachedUserStr && cachedToken) {
           try {
-            const parsed = JSON.parse(cachedUserStr);
-            setUser(parsed);
+            const parsed = JSON.parse(cachedUserStr) as User;
+            const effectiveRole = cachedActiveRole && canSwitchToRole(parsed, cachedActiveRole)
+              ? cachedActiveRole
+              : parsed.role;
+            setUser({ ...parsed, activeRole: effectiveRole });
             setToken(cachedToken);
             setAuthToken(cachedToken);
           } catch {
             removeSafeStorageItem('armsphere_admin_user');
             removeSafeStorageItem('armsphere_admin_token');
+            removeSafeStorageItem('armsphere_admin_active_role');
           }
         }
 
@@ -64,21 +99,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await apiClient.post('/auth/refresh', {}, { withCredentials: true });
         if (res.data && res.data.success && res.data.data) {
           const { accessToken, user: loggedUser } = res.data.data;
-          
-          if (ADMIN_ROLES.includes(loggedUser.role as UserRole)) {
+
+          const userRoles: UserRole[] = [];
+          if (loggedUser.role) userRoles.push(loggedUser.role as UserRole);
+          if (Array.isArray(loggedUser.verifiedRoles)) {
+            userRoles.push(...(loggedUser.verifiedRoles as UserRole[]));
+          }
+
+          const hasAdminPrivilege = userRoles.some((r) => ADMIN_ROLES.includes(r));
+
+          if (hasAdminPrivilege) {
+            const savedActiveRole = getSafeStorageItem('armsphere_admin_active_role') as UserRole | null;
+            const validActive = savedActiveRole && canSwitchToRole(loggedUser, savedActiveRole)
+              ? savedActiveRole
+              : (ADMIN_ROLES.find((r) => userRoles.includes(r)) || loggedUser.role);
+
+            const enrichedUser: User = {
+              ...loggedUser,
+              activeRole: validActive,
+            };
+
             setToken(accessToken);
             setAuthToken(accessToken);
-            setUser(loggedUser);
+            setUser(enrichedUser);
             setSafeStorageItem('armsphere_admin_user', JSON.stringify(loggedUser));
             setSafeStorageItem('armsphere_admin_token', accessToken);
+            setSafeStorageItem('armsphere_admin_active_role', validActive);
           } else {
             setAuthToken(null);
             removeSafeStorageItem('armsphere_admin_user');
             removeSafeStorageItem('armsphere_admin_token');
+            removeSafeStorageItem('armsphere_admin_active_role');
           }
         }
-      } catch (err) {
-        // Ignored, session not recoverable via API
+      } catch {
+        // Session not recoverable via API
       } finally {
         setIsLoading(false);
       }
@@ -89,40 +144,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<User> => {
     const response = await apiClient.post('/auth/login', { email, password }, { withCredentials: true });
-    
+
     if (response.data && response.data.success && response.data.data) {
       const { user: loggedUser, accessToken } = response.data.data;
 
-      if (!ADMIN_ROLES.includes(loggedUser.role as UserRole)) {
+      const userRoles: UserRole[] = [];
+      if (loggedUser.role) userRoles.push(loggedUser.role as UserRole);
+      if (Array.isArray(loggedUser.verifiedRoles)) {
+        userRoles.push(...(loggedUser.verifiedRoles as UserRole[]));
+      }
+
+      const hasAdminPrivilege = userRoles.some((r) => ADMIN_ROLES.includes(r));
+      if (!hasAdminPrivilege) {
         throw new Error(`Access denied. Role privilege required. Current: ${loggedUser.role}`);
       }
 
+      const activeRole = ADMIN_ROLES.find((r) => userRoles.includes(r)) || (loggedUser.role as UserRole);
+      const enrichedUser: User = {
+        ...loggedUser,
+        activeRole,
+      };
+
       setToken(accessToken);
       setAuthToken(accessToken);
-      setUser(loggedUser);
+      setUser(enrichedUser);
       setSafeStorageItem('armsphere_admin_user', JSON.stringify(loggedUser));
       setSafeStorageItem('armsphere_admin_token', accessToken);
-      return loggedUser;
+      setSafeStorageItem('armsphere_admin_active_role', activeRole);
+      return enrichedUser;
     }
     throw new Error('Authentication failed');
   };
 
-  const logout = async () => {
-    try {
-      await apiClient.post('/auth/logout', {}, { withCredentials: true });
-    } catch (err) {
-      // Ignore logout API failures and clear local memory
-    } finally {
-      setToken(null);
-      setAuthToken(null);
-      setUser(null);
-      removeSafeStorageItem('armsphere_admin_user');
-      removeSafeStorageItem('armsphere_admin_token');
-    }
+  const switchActiveRole = (newRole: UserRole): boolean => {
+    if (!user) return false;
+    if (!canSwitchToRole(user, newRole)) return false;
+
+    const updatedUser: User = {
+      ...user,
+      activeRole: newRole,
+    };
+    setUser(updatedUser);
+    setSafeStorageItem('armsphere_admin_active_role', newRole);
+    return true;
   };
 
+  const activeRole = getEffectiveRole(user);
+  const jurisdiction = getUserJurisdiction(user);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        activeRole,
+        jurisdiction,
+        token,
+        isLoading,
+        login,
+        logout,
+        switchActiveRole,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

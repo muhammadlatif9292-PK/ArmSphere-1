@@ -30,16 +30,21 @@ import {
 } from '../lib/athletesApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, AthleteAdminView } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 import { LoadingCard, ErrorPanel, EmptyState } from '../components/ui';
 
 export default function AthletesPage() {
-  const { user } = useAuth();
+  const { user, activeRole, jurisdiction } = useAuth();
   
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [provinceFilter, setProvinceFilter] = useState('');
   
+  // Provincial Director jurisdiction scoping
+  const isProvincialDirector = activeRole === UserRole.PROVINCIAL_DIRECTOR;
+  const effectiveProvinceFilter = isProvincialDirector ? (jurisdiction || undefined) : (provinceFilter || undefined);
+
   // Local state for pagination (Client-side view pagination ONLY, with explicit ledger note)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -54,7 +59,7 @@ export default function AthletesPage() {
   } = useAthletes({
     search: searchQuery || undefined,
     status: statusFilter || undefined,
-    province: provinceFilter || undefined
+    province: effectiveProvinceFilter
   });
 
   // Mutations
@@ -95,20 +100,13 @@ export default function AthletesPage() {
   // Local feedback messages
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Gating calculations based on requireRole in adminRouter:
-  const isSysAdminOrNational = user?.role === UserRole.SYSTEM_ADMIN || user?.role === UserRole.NATIONAL_DIRECTOR;
-  
-  const canReview = isSysAdminOrNational || 
-                    user?.role === UserRole.PROVINCIAL_DIRECTOR || 
-                    user?.role === UserRole.COMPLIANCE_OFFICER;
-
-  const canSuspend = isSysAdminOrNational || 
-                     user?.role === UserRole.PROVINCIAL_DIRECTOR;
-
-  const canBlacklist = isSysAdminOrNational;
-  const canRecover = isSysAdminOrNational;
-  const canCorrect = isSysAdminOrNational;
-  const canManageCertifications = isSysAdminOrNational || user?.role === UserRole.PROVINCIAL_DIRECTOR;
+  // Gating calculations backed by authorizationPolicy:
+  const canReview = canPerformAction(user, 'REVIEW_ATHLETE');
+  const canSuspend = canPerformAction(user, 'SUSPEND_ATHLETE');
+  const canBlacklist = canPerformAction(user, 'BLACKLIST_ATHLETE');
+  const canRecover = canPerformAction(user, 'RECOVER_ATHLETE');
+  const canCorrect = canPerformAction(user, 'CORRECT_ATHLETE');
+  const canManageCertifications = canPerformAction(user, 'MANAGE_CERTIFICATIONS');
 
   // Extract distinct provinces dynamically from data for filter dropdown
   const provincesList = useMemo(() => {
@@ -349,16 +347,27 @@ export default function AthletesPage() {
           </div>
 
           <div className="flex-1 md:flex-none">
-            <select
-              value={provinceFilter}
-              onChange={handleProvinceFilterChange}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
-            >
-              <option value="">All Provinces</option>
-              {provincesList.map(prov => (
-                <option key={prov} value={prov}>{prov}</option>
-              ))}
-            </select>
+            {isProvincialDirector && jurisdiction ? (
+              <div 
+                data-testid="locked-jurisdiction-badge"
+                className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-mono text-amber-400"
+                title={`Scope locked to assigned jurisdiction: ${jurisdiction}`}
+              >
+                <MapPin className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span>JURISDICTION: {jurisdiction.toUpperCase()}</span>
+              </div>
+            ) : (
+              <select
+                value={provinceFilter}
+                onChange={handleProvinceFilterChange}
+                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
+              >
+                <option value="">All Provinces</option>
+                {provincesList.map(prov => (
+                  <option key={prov} value={prov}>{prov}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -394,7 +403,9 @@ export default function AthletesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {paginatedAthletes.map((athlete) => (
+                {paginatedAthletes.map((athlete) => {
+                  const isWithinJurisdiction = !isProvincialDirector || !jurisdiction || !athlete.province || athlete.province.toLowerCase() === jurisdiction.toLowerCase();
+                  return (
                   <tr key={athlete.id} className="hover:bg-slate-800/10 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -445,7 +456,7 @@ export default function AthletesPage() {
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {/* Review Profile Action */}
-                        {canReview && athlete.verificationStatus === 'PENDING' && (
+                        {canReview && isWithinJurisdiction && athlete.verificationStatus === 'PENDING' && (
                           <button
                             onClick={() => openReviewModal(athlete)}
                             className="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-md transition-colors"
@@ -456,7 +467,7 @@ export default function AthletesPage() {
                         )}
 
                         {/* Suspend Action */}
-                        {canSuspend && athlete.isActive && athlete.verificationStatus !== 'SUSPENDED' && athlete.verificationStatus !== 'BLACKLISTED' && (
+                        {canSuspend && isWithinJurisdiction && athlete.isActive && athlete.verificationStatus !== 'SUSPENDED' && athlete.verificationStatus !== 'BLACKLISTED' && (
                           <button
                             onClick={() => openSuspendModal(athlete)}
                             className="p-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 rounded-md transition-colors"
@@ -500,7 +511,7 @@ export default function AthletesPage() {
                         )}
 
                         {/* Manage Referee Certifications */}
-                        {canManageCertifications && (
+                        {canManageCertifications && isWithinJurisdiction && (
                           <button
                             id={`manage-cert-btn-${athlete.id}`}
                             onClick={() => {
@@ -516,7 +527,8 @@ export default function AthletesPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>

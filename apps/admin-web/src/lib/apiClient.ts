@@ -42,14 +42,32 @@ apiClient.interceptors.request.use(
   }
 );
 
+type UnauthorizedHandler = () => void;
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function onUnauthorized(handler: UnauthorizedHandler | null) {
+  unauthorizedHandler = handler;
+}
+
 // Surface real server failure details instead of swallowing them.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error?.response?.status;
     const detail = error?.response?.data?.detail || error?.response?.data?.message;
+
     if (detail) {
-      error.message = Array.isArray(detail) ? detail.map((d: any) => d?.message || String(d)).join('; ') : String(detail);
+      error.message = Array.isArray(detail)
+        ? detail.map((d: any) => d?.message || String(d)).join('; ')
+        : String(detail);
     }
+
+    if (status === 401) {
+      if (unauthorizedHandler) {
+        unauthorizedHandler();
+      }
+    }
+
     return Promise.reject(error);
   }
 );
