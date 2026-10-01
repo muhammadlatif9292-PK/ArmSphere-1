@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.js";
 import { authenticate, optionalAuthenticate } from "../middlewares/auth.js";
+import { rateLimiter } from "../middlewares/security.js";
 
 export const authRouter = Router();
 
@@ -25,7 +26,7 @@ authRouter.post("/sessions/:id/revoke", authenticate, AuthController.revokeSessi
 authRouter.post("/mfa/setup", authenticate, AuthController.setupMFA);
 authRouter.post("/mfa/verify", optionalAuthenticate, AuthController.verifyMFA); // Authenticated (to enable) or Public (to login)
 authRouter.post("/mfa/disable", authenticate, AuthController.disableMFA);
-authRouter.post("/mfa/recovery", AuthController.recoveryMFA);
+authRouter.post("/mfa/recovery", rateLimiter(60 * 1000, 5), AuthController.recoveryMFA);
 
 // --- Social Authentication (OAuth2) ---
 authRouter.get("/google", AuthController.googleLogin);

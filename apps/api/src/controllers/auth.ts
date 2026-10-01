@@ -371,20 +371,26 @@ export class AuthController {
   }
 
   /**
-   * POST /auth/mfa/recovery - Recover MFA using a backup code
+   * POST /auth/mfa/recovery - Recover MFA using primary password and backup recovery code
    */
   static async recoveryMFA(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, recoveryCode } = req.body;
-      if (!email || !recoveryCode) {
-        throw new BadRequestError("Email and backup recovery code are required.");
+      const email = req.body?.email;
+      const password = req.body?.password ?? req.body?.passwordPlain;
+      const recoveryCode = req.body?.recoveryCode;
+
+      if (!email || !password || !recoveryCode) {
+        throw new BadRequestError("Email, password, and backup recovery code are required.");
       }
 
-      const recoveryResult = await MFAService.recoverMFA(email, recoveryCode);
+      const recoveryResult = await MFAService.recoverMFA(
+        String(email),
+        String(password),
+        String(recoveryCode)
+      );
 
-      // Issue a session directly from the verified recovery identity — never
-      // call login with an empty password (it always fails and would strand
-      // users after their recovery code has already been consumed).
+      // Issue a session directly from the verified recovery identity only AFTER
+      // both primary password and recovery code have been successfully verified.
       const loginResult = await AuthService.completeMfaLogin(recoveryResult.userId, {
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],

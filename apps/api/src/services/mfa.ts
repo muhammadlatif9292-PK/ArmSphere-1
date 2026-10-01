@@ -4,8 +4,25 @@ import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { users } from "@armsphere/db-schema";
-import { BadRequestError, NotFoundError } from "@armsphere/core";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "@armsphere/core";
+import { comparePassword } from "@armsphere/cryptography";
+import { safeSecretCompare } from "../middlewares/security.js";
 import { auditLedgerService } from "./auditLedger.js";
+
+/**
+ * Deterministically normalizes and computes the SHA-256 hash of a backup recovery code.
+ */
+export function hashRecoveryCode(code: string): string {
+  const normalized = code.trim().toUpperCase();
+  return crypto.createHash("sha256").update(normalized).digest("hex");
+}
+
+/**
+ * Checks whether a stored recovery code string is already a 64-character SHA-256 hex hash.
+ */
+export function isHashedRecoveryCode(code: string): boolean {
+  return typeof code === "string" && code.length === 64 && /^[0-9a-fA-F]{64}$/.test(code);
+}
 
 export class MFAService {
   /**
@@ -39,16 +56,19 @@ export class MFAService {
 
     // 3. Generate 8 secure backup recovery codes
     const recoveryCodes: string[] = [];
+    const hashedRecoveryCodes: string[] = [];
     for (let i = 0; i < 8; i++) {
-      recoveryCodes.push(crypto.randomBytes(5).toString("hex").toUpperCase());
+      const code = crypto.randomBytes(5).toString("hex").toUpperCase();
+      recoveryCodes.push(code);
+      hashedRecoveryCodes.push(hashRecoveryCode(code));
     }
 
-    // 4. Store secret & recovery codes in DB
+    // 4. Store secret & SHA-256 hashed recovery codes in DB (NEVER plaintext)
     await db
       .update(users)
       .set({
         mfaSecret: secret.base32,
-        mfaRecoveryCodes: JSON.stringify(recoveryCodes),
+        mfaRecoveryCodes: JSON.stringify(hashedRecoveryCodes),
         mfaEnabled: false,
         updatedAt: new Date(),
       } as any)
@@ -208,54 +228,121 @@ export class MFAService {
   }
 
   /**
-   * Recovers MFA access using a backup recovery code.
+   * Recovers MFA access using primary password and a backup recovery code.
+   * Strictly enforces:
+   * 1. Primary password verification via comparePassword
+   * 2. Atomic consumption of recovery code via constant-time comparison
+   * 3. Prevents credential factor enumeration (safe error convention)
+   * 4. Does not leak or log plaintext recovery codes
    */
-  static async recoverMFA(email: string, recoveryCode: string) {
+  static async recoverMFA(email: string, passwordPlain: string, recoveryCode: string) {
+    const emailLower = email.toLowerCase().trim();
+
+    // 1. Lookup user safely
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.email, email.toLowerCase().trim()))
+      .where(eq(users.email, emailLower))
       .limit(1);
 
-    if (!user) {
-      throw new NotFoundError("User not found.");
+    // If user does not exist or is disabled, fail with uniform auth error (no enumeration)
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError("Invalid email, password, or recovery code provided.");
     }
 
+    // 2. Primary factor: verify primary password
+    const passwordMatch = await comparePassword(passwordPlain, user.passwordHash);
+    if (!passwordMatch) {
+      throw new UnauthorizedError("Invalid email, password, or recovery code provided.");
+    }
+
+    // 3. MFA enrollment and recovery codes check
     const userAny = user as any;
-
     if (!userAny.mfaEnabled || !userAny.mfaRecoveryCodes) {
-      throw new BadRequestError("MFA is not enabled or recovery codes are not generated.");
+      throw new UnauthorizedError("Invalid email, password, or recovery code provided.");
     }
 
-    let codes: string[] = [];
-    try {
-      codes = JSON.parse(userAny.mfaRecoveryCodes);
-    } catch {
-      throw new BadRequestError("Recovery codes are corrupted.");
+    // 4. Verify and atomically consume candidate recovery code
+    const normalizedInput = recoveryCode.trim().toUpperCase();
+    const candidateHash = hashRecoveryCode(normalizedInput);
+
+    const consumptionResult = await db.transaction(async (tx) => {
+      const [lockedUser] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, user.id))
+        .for("update");
+
+      if (!lockedUser) return null;
+      const lockedAny = lockedUser as any;
+      if (!lockedAny.mfaRecoveryCodes) return null;
+
+      let storedCodes: string[] = [];
+      try {
+        storedCodes = JSON.parse(lockedAny.mfaRecoveryCodes);
+      } catch {
+        return null;
+      }
+
+      if (!Array.isArray(storedCodes) || storedCodes.length === 0) {
+        return null;
+      }
+
+      let matchedIndex = -1;
+      for (let i = 0; i < storedCodes.length; i++) {
+        const stored = storedCodes[i];
+        if (typeof stored !== "string") continue;
+
+        if (isHashedRecoveryCode(stored)) {
+          if (safeSecretCompare(candidateHash, stored.toLowerCase())) {
+            matchedIndex = i;
+            break;
+          }
+        } else {
+          // Backward-compatibility fallback for unmigrated legacy plaintext codes
+          if (safeSecretCompare(normalizedInput, stored.trim().toUpperCase())) {
+            matchedIndex = i;
+            break;
+          }
+        }
+      }
+
+      if (matchedIndex === -1) {
+        return null;
+      }
+
+      // Atomically remove the consumed code
+      storedCodes.splice(matchedIndex, 1);
+
+      // Ensure all remaining codes are stored as hashes (forward migrate on the fly)
+      const sanitizedCodes = storedCodes.map((c) => {
+        if (isHashedRecoveryCode(c)) {
+          return c.toLowerCase();
+        }
+        return hashRecoveryCode(String(c));
+      });
+
+      await tx
+        .update(users)
+        .set({
+          mfaRecoveryCodes: JSON.stringify(sanitizedCodes),
+          updatedAt: new Date(),
+        } as any)
+        .where(eq(users.id, user.id));
+
+      return { remainingCount: sanitizedCodes.length };
+    });
+
+    if (!consumptionResult) {
+      throw new UnauthorizedError("Invalid email, password, or recovery code provided.");
     }
-
-    const codeIndex = codes.indexOf(recoveryCode.trim().toUpperCase());
-    if (codeIndex === -1) {
-      throw new BadRequestError("Invalid MFA backup recovery code.");
-    }
-
-    // Remove the used recovery code
-    codes.splice(codeIndex, 1);
-
-    await db
-      .update(users)
-      .set({
-        mfaRecoveryCodes: JSON.stringify(codes),
-        updatedAt: new Date(),
-      } as any)
-      .where(eq(users.id, user.id));
 
     await auditLedgerService.logEvent({
       actorId: user.id,
       entityType: "USER",
       entityId: user.id,
       action: "AUTH_MFA_RECOVERY_USED",
-      payload: { email: user.email, remainingCodes: codes.length },
+      payload: { email: user.email, remainingCodes: consumptionResult.remainingCount },
     });
 
     return {
@@ -263,7 +350,7 @@ export class MFAService {
       userId: user.id,
       email: user.email,
       role: user.role,
-      message: "MFA bypassed successfully using backup recovery code.",
+      message: "MFA verified successfully using backup recovery code.",
     };
   }
 }
