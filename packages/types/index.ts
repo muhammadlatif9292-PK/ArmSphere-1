@@ -53,3 +53,11 @@ export enum SupportTicketCategory {
   EVENT = "EVENT",
   DISPUTE = "DISPUTE"
 }
+
+export enum SparringInviteStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  DECLINED = "DECLINED",
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED"
+}

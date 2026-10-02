@@ -597,6 +597,7 @@ export const officialCertificates = pgTable("official_certificates", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+
 export const talentNominations = pgTable("talent_nominations", {
   id: uuid("id").primaryKey().defaultRandom(),
   nominatedByUserId: uuid("nominated_by_user_id").references(() => users.id).notNull(),
@@ -838,5 +839,26 @@ export const supportTicketMessages = pgTable("support_ticket_messages", {
   return {
     ticketIdx: index("idx_support_ticket_messages_ticket").on(table.ticketId),
     senderIdx: index("idx_support_ticket_messages_sender").on(table.senderId),
+  };
+});
+
+export const sparringInvites = pgTable("sparring_invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  senderTeamId: uuid("sender_team_id").references(() => teams.id).notNull(),
+  recipientTeamId: uuid("recipient_team_id").references(() => teams.id).notNull(),
+  creatorId: uuid("creator_id").references(() => users.id).notNull(),
+  responderId: uuid("responder_id").references(() => users.id),
+  status: varchar("status", { length: 50 }).notNull().default("PENDING"),
+  scheduledDate: timestamp("scheduled_date"),
+  location: varchar("location", { length: 255 }),
+  message: text("message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  respondedAt: timestamp("responded_at"),
+}, (table) => {
+  return {
+    senderTeamIdx: index("idx_sparring_invites_sender_team").on(table.senderTeamId),
+    recipientTeamIdx: index("idx_sparring_invites_recipient_team").on(table.recipientTeamId),
+    statusIdx: index("idx_sparring_invites_status").on(table.status),
   };
 });
