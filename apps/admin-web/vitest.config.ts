@@ -27,6 +27,7 @@ export default defineConfig({
     poolOptions: {
       forks: {
         singleFork: true,
+        execArgv: ['--import', path.resolve(__dirname, './register.js')],
       },
     },
   },
