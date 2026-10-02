@@ -1,9 +1,13 @@
-import './polyfill.cjs';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { createRequire } from 'node:module';
 
-const polyfillPath = path.resolve(__dirname, './polyfill.cjs');
+const require = createRequire(import.meta.url);
+const wt = require('node:worker_threads');
+if (typeof wt.markAsUncloneable !== 'function') {
+  wt.markAsUncloneable = () => {};
+}
 
 export default defineConfig({
   root: path.resolve(__dirname),
@@ -16,14 +20,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [polyfillPath],
+    setupFiles: [path.resolve(__dirname, './src/test/setup.ts')],
     include: ['src/test/**/*.test.tsx', 'src/test/**/*.test.ts'],
     testTimeout: 20000,
     pool: 'forks',
     poolOptions: {
       forks: {
         singleFork: true,
-        execArgv: ['--require', polyfillPath],
       },
     },
   },

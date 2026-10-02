@@ -10,6 +10,13 @@ import 'package:mobile/core/providers/tournament_provider.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/tournament/screens/tournament_operations_screen.dart';
 
+class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+  _FakeAuthNotifier(super.state);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _FakeTournamentRepository extends Fake implements TournamentRepository {
   List<Map<String, dynamic>> tablesData;
   List<Map<String, dynamic>> matchesData;
@@ -136,6 +143,7 @@ class _FakeTournamentRepository extends Fake implements TournamentRepository {
     }
     if (shouldThrow409OnCall) {
       throw ApiException(
+        type: 'https://armsphere.com/errors/conflict',
         status: 409,
         title: 'Conflict',
         detail: 'Table is currently active with another match.',
@@ -223,6 +231,7 @@ class _FakeTournamentRepository extends Fake implements TournamentRepository {
   }) async {
     if (shouldThrowConflictOnRebalance) {
       throw ApiException(
+        type: 'https://armsphere.com/errors/conflict',
         status: 409,
         title: 'Conflict',
         detail: 'Match queue position changed concurrently.',
@@ -408,7 +417,7 @@ void main() {
       return ProviderScope(
         overrides: [
           tournamentRepositoryProvider.overrideWithValue(fakeRepo),
-          authProvider.overrideWith((ref) => StateController(customAuth ?? defaultAuth)),
+          authProvider.overrideWith((ref) => _FakeAuthNotifier(customAuth ?? defaultAuth)),
           eventDetailProvider(testTournamentId).overrideWith((ref) => fakeRepo.getEventById(eventId: testTournamentId)),
           eventStatsProvider(testTournamentId).overrideWith((ref) => fakeRepo.getEventStats(eventId: testTournamentId)),
           eventRegistrationsProvider(testTournamentId).overrideWith((ref) => fakeRepo.getEventRegistrations(eventId: testTournamentId)),

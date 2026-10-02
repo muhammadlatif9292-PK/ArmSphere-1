@@ -10,6 +10,14 @@ import 'package:mobile/core/widgets/armsphere_image.dart';
 import 'package:mobile/core/widgets/signature_ceremonies.dart';
 import 'package:mobile/features/championship/screens/tournament_awards_ceremony_screen.dart';
 
+class _FakeTournamentNotifier extends TournamentNotifier {
+  final List<Map<String, dynamic>> _data;
+  _FakeTournamentNotifier(this._data);
+
+  @override
+  Future<List<Map<String, dynamic>>> build() async => _data;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -117,7 +125,7 @@ void main() {
           overrides: [
             eventDetailProvider(tourneyId).overrideWith((ref) async => mockEventDetail),
             eventAwardsProvider(tourneyId).overrideWith((ref) async => mockAwardsData),
-            tournamentProvider.overrideWith((ref) async => mockTournamentsList),
+            tournamentProvider.overrideWith(() => _FakeTournamentNotifier(mockTournamentsList)),
           ],
           child: MaterialApp.router(
             routerConfig: testRouter,
@@ -138,7 +146,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            tournamentProvider.overrideWith((ref) async => mockTournamentsList),
+            tournamentProvider.overrideWith(() => _FakeTournamentNotifier(mockTournamentsList)),
             eventDetailProvider(tourneyId).overrideWith((ref) async => mockEventDetail),
             eventAwardsProvider(tourneyId).overrideWith((ref) async => mockAwardsData),
           ],
