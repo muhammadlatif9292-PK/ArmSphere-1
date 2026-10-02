@@ -20,7 +20,8 @@ import {
   useCreateTitle
 } from '../lib/championshipApi';
 import { useAuth } from '../context/AuthContext';
-import { UserRole, CreateTitlePayload } from '../types';
+import { CreateTitlePayload } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 
 export default function ChampionshipsPage() {
   const { user } = useAuth();
@@ -65,8 +66,8 @@ export default function ChampionshipsPage() {
   // - Vacate: POST /championships/vacate requires requireRole(UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN)
   // - Accept: POST /championships/challenges/:id/accept requires only authenticate (accessible to logged-in admins)
   // - Decline: POST /championships/challenges/:id/decline requires only authenticate (accessible to logged-in admins)
-  const canVacate = user?.role === UserRole.SYSTEM_ADMIN || user?.role === UserRole.NATIONAL_DIRECTOR;
-  const canCreateTitle = user?.role === UserRole.SYSTEM_ADMIN || user?.role === UserRole.NATIONAL_DIRECTOR;
+  const canVacate = canPerformAction(user, 'MANAGE_CHAMPIONSHIPS');
+  const canCreateTitle = canPerformAction(user, 'MANAGE_CHAMPIONSHIPS');
   const canManageChallenges = true; // No requireRole constraints exist on challenges endpoints
 
   const handleRetry = () => {

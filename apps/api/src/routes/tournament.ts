@@ -70,7 +70,7 @@ tournamentRouter.post(
 tournamentRouter.post(
   "/registrations/:id/approve",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.approveRegistration
 );
 
@@ -84,21 +84,21 @@ tournamentRouter.post(
 tournamentRouter.post(
   "/weighins",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.recordWeighIn
 );
 
 tournamentRouter.post(
   "/registrations/reassign",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.reassignRegistration
 );
 
 tournamentRouter.post(
   "/registrations/:id/certify",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.certifyWeighIn
 );
 
@@ -106,7 +106,7 @@ tournamentRouter.post(
 tournamentRouter.post(
   "/brackets",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.createBracket
 );
 
@@ -125,28 +125,28 @@ tournamentRouter.get(
 tournamentRouter.post(
   "/brackets/:id/seeds",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.generateSeeds
 );
 
 tournamentRouter.post(
   "/brackets/seeds/override",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.overrideSeed
 );
 
 tournamentRouter.post(
   "/brackets/:id/seeds/lock",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.lockSeeds
 );
 
 tournamentRouter.post(
   "/brackets/:id/generate",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.generateBracketMatches
 );
 
@@ -154,77 +154,77 @@ tournamentRouter.post(
 tournamentRouter.get(
   "/events/:id/tables",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.getEventTables
 );
 
 tournamentRouter.post(
   "/events/:id/tables",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.createTable
 );
 
 tournamentRouter.get(
   "/tables",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.listTables
 );
 
 tournamentRouter.post(
   "/tables",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.createTable
 );
 
 tournamentRouter.get(
   "/events/:id/matches",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.getEventMatches
 );
 
 tournamentRouter.post(
   "/matches/referee",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.assignReferee
 );
 
 tournamentRouter.post(
   "/matches/call",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.callMatchToTable
 );
 
 tournamentRouter.post(
   "/matches/unassign",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.unassignMatch
 );
 
 tournamentRouter.post(
   "/tables/queue",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.queueMatch
 );
 
 tournamentRouter.post(
   "/tables/queue/rebalance",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.rebalanceQueue
 );
 
 tournamentRouter.post(
   "/matches/result",
   authenticate,
-  requireRole(UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.submitMatchResult
 );
 
@@ -264,6 +264,7 @@ tournamentRouter.get(
   authenticate,
   TournamentController.getClubStandings
 );
+
 // --- Official Documents & Sanction Certificate Management ---
 tournamentRouter.get(
   "/events/:id/documents",

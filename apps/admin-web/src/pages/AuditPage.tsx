@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuditEvents, useVerifyLedger } from '../lib/auditApi';
 import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 import { ErrorBanner } from '../components/ui';
 
 function formatDateTime(value?: string): string {
@@ -29,8 +29,8 @@ export default function AuditPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Ledger integrity verification is a SYSTEM_ADMIN / COMPLIANCE_OFFICER capability
-  // enforced by the backend; the UI mirrors that gate honestly.
-  const canVerify = user?.role === UserRole.SYSTEM_ADMIN || user?.role === UserRole.COMPLIANCE_OFFICER;
+  // enforced by the backend; the UI mirrors that gate honestly via central authorizationPolicy.
+  const canVerify = canPerformAction(user, 'VERIFY_AUDIT_LEDGER');
 
   return (
     <div className="space-y-6" id="audit-page-container">

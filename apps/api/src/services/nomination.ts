@@ -56,14 +56,27 @@ export class NominationService {
   /**
    * List all nominations (admin roles only)
    */
-  static async getNominations(options: {
-    status?: string;
-    city?: string;
-    province?: string;
-    limit: number;
-    offset: number;
-  }) {
-    const { status, city, province, limit, offset } = options;
+  static async getNominations(
+    options: {
+      status?: string;
+      city?: string;
+      province?: string;
+      limit: number;
+      offset: number;
+    },
+    actorUserId?: string,
+    role?: string
+  ) {
+    const { status, city, limit, offset } = options;
+    let province = options.province;
+
+    if (role && role.toLowerCase() === "provincial_director" && actorUserId) {
+      const [actor] = await db.select().from(users).where(eq(users.id, actorUserId)).limit(1);
+      if (actor?.regionalCoverage) {
+        province = actor.regionalCoverage;
+      }
+    }
+
     const conditions: SQL[] = [];
 
     if (status) {
@@ -132,6 +145,13 @@ export class NominationService {
 
     if (!existing) {
       throw new NotFoundError("Talent nomination not found");
+    }
+
+    if (role.toLowerCase() === "provincial_director") {
+      const [actor] = await db.select().from(users).where(eq(users.id, actorUserId)).limit(1);
+      if (!actor || !actor.regionalCoverage || existing.province.trim().toUpperCase() !== actor.regionalCoverage.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only update nomination status within your provincial jurisdiction.");
+      }
     }
 
     const [updated] = await db

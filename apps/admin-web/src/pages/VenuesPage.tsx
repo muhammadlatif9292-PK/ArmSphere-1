@@ -14,15 +14,20 @@ import {
 import { useVenues, useVerifyVenue } from '../lib/venuesApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 import { LoadingCard, ErrorPanel, EmptyState, ErrorBanner } from '../components/ui';
 
 export default function VenuesPage() {
-  const { user } = useAuth();
+  const { user, activeRole, jurisdiction } = useAuth();
 
   // Search & Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [provinceFilter, setProvinceFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
+
+  // Provincial Director jurisdiction scoping
+  const isProvincialDirector = activeRole === UserRole.PROVINCIAL_DIRECTOR;
+  const effectiveProvinceFilter = isProvincialDirector ? (jurisdiction || '') : provinceFilter;
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,12 +47,8 @@ export default function VenuesPage() {
   const [activeVerifyVenueId, setActiveVerifyVenueId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Check roles (SYSTEM_ADMIN, NATIONAL_DIRECTOR, PROVINCIAL_DIRECTOR can verify)
-  const canVerify = user && [
-    UserRole.SYSTEM_ADMIN,
-    UserRole.NATIONAL_DIRECTOR,
-    UserRole.PROVINCIAL_DIRECTOR
-  ].includes(user.role);
+  // Check roles via central authorizationPolicy
+  const canVerify = canPerformAction(user, 'VERIFY_VENUE');
 
   // Extract distinct provinces and cities for filter dropdowns dynamically
   const provincesList = useMemo(() => {
@@ -56,9 +57,12 @@ export default function VenuesPage() {
   }, [venues]);
 
   const citiesList = useMemo(() => {
-    const list = venues.map(v => v.city).filter(Boolean);
+    const list = venues
+      .filter(v => effectiveProvinceFilter === '' || v.province.toLowerCase() === effectiveProvinceFilter.toLowerCase())
+      .map(v => v.city)
+      .filter(Boolean);
     return Array.from(new Set(list)).sort();
-  }, [venues]);
+  }, [venues, effectiveProvinceFilter]);
 
   // Client-side filtering based on search query and dropdown selections
   const filteredVenues = useMemo(() => {
@@ -69,12 +73,13 @@ export default function VenuesPage() {
         v.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
         v.province.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesProvince = provinceFilter === '' || v.province === provinceFilter;
-      const matchesCity = cityFilter === '' || v.city === cityFilter;
+      const matchesProvince = effectiveProvinceFilter === '' ||
+        v.province.toLowerCase() === effectiveProvinceFilter.toLowerCase();
+      const matchesCity = cityFilter === '' || v.city.toLowerCase() === cityFilter.toLowerCase();
 
       return matchesSearch && matchesProvince && matchesCity;
     });
-  }, [venues, searchQuery, provinceFilter, cityFilter]);
+  }, [venues, searchQuery, effectiveProvinceFilter, cityFilter]);
 
   // Client-side pagination slice
   const paginatedVenues = useMemo(() => {
@@ -101,6 +106,11 @@ export default function VenuesPage() {
 
   // Perform verification action
   const handleVerify = async (venueId: string) => {
+    const targetVenue = venues.find(v => v.id === venueId);
+    if (isProvincialDirector && jurisdiction && targetVenue?.province && targetVenue.province.toLowerCase() !== jurisdiction.toLowerCase()) {
+      setActionError(`Provincial Directors can only verify gyms within their assigned jurisdiction (${jurisdiction}).`);
+      return;
+    }
     try {
       setActionError(null);
       setActiveVerifyVenueId(venueId);
@@ -189,17 +199,28 @@ export default function VenuesPage() {
             />
           </div>
 
-          {/* Province selector */}
-          <select
-            value={provinceFilter}
-            onChange={handleProvinceChange}
-            className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/40"
-          >
-            <option value="">All Provinces</option>
-            {provincesList.map(prov => (
-              <option key={prov} value={prov}>{prov}</option>
-            ))}
-          </select>
+          {/* Province selector / Locked jurisdiction badge */}
+          {isProvincialDirector && jurisdiction ? (
+            <div
+              data-testid="locked-jurisdiction-badge"
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-mono text-amber-400"
+              title={`Scope locked to assigned jurisdiction: ${jurisdiction}`}
+            >
+              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>JURISDICTION: {jurisdiction.toUpperCase()}</span>
+            </div>
+          ) : (
+            <select
+              value={provinceFilter}
+              onChange={handleProvinceChange}
+              className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-hidden focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/40"
+            >
+              <option value="">All Provinces</option>
+              {provincesList.map(prov => (
+                <option key={prov} value={prov}>{prov}</option>
+              ))}
+            </select>
+          )}
 
           {/* City selector */}
           <select
@@ -303,18 +324,22 @@ export default function VenuesPage() {
                           Verified
                         </span>
                       ) : canVerify ? (
-                        <button
-                          onClick={() => handleVerify(venue.id)}
-                          disabled={activeVerifyVenueId === venue.id}
-                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                        >
-                          {activeVerifyVenueId === venue.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <ShieldCheck className="h-3.5 w-3.5" />
-                          )}
-                          Approve Gym
-                        </button>
+                        isProvincialDirector && jurisdiction && venue.province && venue.province.toLowerCase() !== jurisdiction.toLowerCase() ? (
+                          <span className="text-xs text-slate-500 italic" title="Outside assigned jurisdiction">Out of Scope</span>
+                        ) : (
+                          <button
+                            onClick={() => handleVerify(venue.id)}
+                            disabled={activeVerifyVenueId === venue.id}
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                          >
+                            {activeVerifyVenueId === venue.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                            )}
+                            Approve Gym
+                          </button>
+                        )
                       ) : (
                         <span className="text-xs text-slate-600 italic">No actions</span>
                       )}

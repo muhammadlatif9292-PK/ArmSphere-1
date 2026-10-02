@@ -1,3 +1,7 @@
+import AuditPage from '../pages/AuditPage';
+import GovernancePage from '../pages/GovernancePage';
+import NominationsPage from '../pages/NominationsPage';
+import VenuesPage from '../pages/VenuesPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -629,6 +633,207 @@ describe('ArmSphere Admin Web RBAC & Governance Hardening Suite', () => {
       expect(canPerformAction(sysAdmin, 'SUSPEND_REFEREE')).toBe(true);
       expect(canPerformAction(sysAdmin, 'MANAGE_CHAMPIONSHIPS')).toBe(true);
       expect(canPerformAction(sysAdmin, 'VERIFY_AUDIT_LEDGER')).toBe(true);
+    });
+  });
+  // =========================================================================
+  // 9. Page-Level Scoping & Action Hardening
+  // =========================================================================
+  describe('VenuesPage - Jurisdiction & Verification RBAC', () => {
+    it('locks jurisdiction badge and filters to assigned province for Provincial Director', () => {
+      const provDir = makeMockUser({
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        province: 'Punjab',
+      });
+      const authCtx = createMockAuthContext({
+        user: provDir,
+        activeRole: UserRole.PROVINCIAL_DIRECTOR,
+        jurisdiction: 'Punjab',
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <VenuesPage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      // Badge must appear
+      expect(screen.getByTestId('locked-jurisdiction-badge')).toBeDefined();
+      expect(screen.getByText(/JURISDICTION: PUNJAB/i)).toBeDefined();
+
+      // Only Lahore Iron Gym (Punjab) should be in the list
+      expect(screen.getByText('Lahore Iron Gym')).toBeDefined();
+      expect(screen.queryByText('Quetta Power Pit')).toBeNull();
+    });
+
+    it('renders normal province selector and shows all venues for System Admin', () => {
+      const sysAdmin = makeMockUser({
+        role: UserRole.SYSTEM_ADMIN,
+      });
+      const authCtx = createMockAuthContext({
+        user: sysAdmin,
+        activeRole: UserRole.SYSTEM_ADMIN,
+        jurisdiction: null,
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <VenuesPage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      // Locked badge should NOT appear
+      expect(screen.queryByTestId('locked-jurisdiction-badge')).toBeNull();
+
+      // Both gyms should be visible
+      expect(screen.getByText('Lahore Iron Gym')).toBeDefined();
+      expect(screen.getByText('Quetta Power Pit')).toBeDefined();
+    });
+  });
+
+  describe('NominationsPage - Jurisdiction & Workflow RBAC', () => {
+    it('locks jurisdiction badge and scopes nominations for Provincial Director', () => {
+      const provDir = makeMockUser({
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        province: 'Punjab',
+      });
+      const authCtx = createMockAuthContext({
+        user: provDir,
+        activeRole: UserRole.PROVINCIAL_DIRECTOR,
+        jurisdiction: 'Punjab',
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <NominationsPage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      expect(screen.getByTestId('locked-jurisdiction-badge')).toBeDefined();
+      expect(screen.getByText(/JURISDICTION: PUNJAB/i)).toBeDefined();
+
+      // Scoped to Punjab nominee
+      expect(screen.getByText('Ali Raza')).toBeDefined();
+      expect(screen.queryByText('Kamran Khan')).toBeNull();
+    });
+  });
+
+  describe('GovernancePage - Cross-Jurisdiction Dispute Adjudication', () => {
+    it('allows Provincial Director to adjudicate dispute within their jurisdiction', () => {
+      const provDir = makeMockUser({
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        province: 'Punjab',
+      });
+      const authCtx = createMockAuthContext({
+        user: provDir,
+        activeRole: UserRole.PROVINCIAL_DIRECTOR,
+        jurisdiction: 'Punjab',
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <GovernancePage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      // Default selected dispute is disp-1 (Punjab)
+      expect(screen.getAllByText('Foul Protest Punjab').length).toBeGreaterThan(0);
+      // Adjudication form should be enabled
+      expect(screen.getByText('Adjudicate Case')).toBeDefined();
+    });
+
+    it('blocks Provincial Director from adjudicating cross-province dispute with clear warning', () => {
+      const provDir = makeMockUser({
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        province: 'Punjab',
+      });
+      const authCtx = createMockAuthContext({
+        user: provDir,
+        activeRole: UserRole.PROVINCIAL_DIRECTOR,
+        jurisdiction: 'Punjab',
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <GovernancePage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      // Click the Balochistan dispute in the index
+      const balochistanDisputeBtn = screen.getByText('Elbow Foul Balochistan');
+      fireEvent.click(balochistanDisputeBtn);
+
+      // Warning banner should appear instead of submit button
+      expect(screen.getByText('Cross-Jurisdiction Restriction')).toBeDefined();
+      expect(screen.getByText(/scoped to Punjab.*originated in Balochistan/i)).toBeDefined();
+      expect(screen.queryByText('Adjudicate Case')).toBeNull();
+    });
+  });
+
+  describe('AuditPage - Ledger Verification Capability', () => {
+    it('disables Recompute button for unauthorized role', () => {
+      const provDir = makeMockUser({
+        role: UserRole.PROVINCIAL_DIRECTOR,
+      });
+      const authCtx = createMockAuthContext({
+        user: provDir,
+        activeRole: UserRole.PROVINCIAL_DIRECTOR,
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <AuditPage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      const verifyBtn = screen.getByRole('button', { name: /verify chain integrity/i }) as HTMLButtonElement;
+      expect(verifyBtn.disabled).toBe(true);
+    });
+
+    it('enables Recompute button for Compliance Officer', () => {
+      const compOfficer = makeMockUser({
+        role: UserRole.COMPLIANCE_OFFICER,
+      });
+      const authCtx = createMockAuthContext({
+        user: compOfficer,
+        activeRole: UserRole.COMPLIANCE_OFFICER,
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <AuditPage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      const verifyBtn = screen.getByRole('button', { name: /verify chain integrity/i }) as HTMLButtonElement;
+      expect(verifyBtn.disabled).toBe(false);
     });
   });
 });

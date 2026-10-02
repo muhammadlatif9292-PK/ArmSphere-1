@@ -143,6 +143,7 @@ export interface Dispute {
   status: string; // OPEN, UNDER_REVIEW, AWAITING_EVIDENCE, RESOLVED, REJECTED, ESCALATED, CLOSED
   resolutionDetails: string | null;
   assignedReviewerId: string | null;
+  province?: string | null;
   createdAt: string;
   updatedAt: string;
 }

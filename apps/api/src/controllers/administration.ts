@@ -98,7 +98,7 @@ export class AdministrationController {
         status: req.query.status ? String(req.query.status) : undefined,
         province: req.query.province ? String(req.query.province) : undefined,
       };
-      const list = await AdministrationService.getAthletes(filters);
+      const list = await AdministrationService.getAthletes(filters, req.user?.id, req.user?.role);
       res.status(200).json({ success: true, data: list });
     } catch (err) {
       next(err);

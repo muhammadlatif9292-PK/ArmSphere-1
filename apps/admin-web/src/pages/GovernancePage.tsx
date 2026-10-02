@@ -16,9 +16,10 @@ import {
 import { useDisputes, useResolveDispute } from '../lib/governanceApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, Dispute } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 
 export default function GovernancePage() {
-  const { user } = useAuth();
+  const { user, activeRole, jurisdiction } = useAuth();
   const { 
     data: disputes, 
     isLoading, 
@@ -36,10 +37,17 @@ export default function GovernancePage() {
   const [decision, setDecision] = useState<'RESOLVED' | 'REJECTED'>('RESOLVED');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Gating check: requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR, UserRole.COMPLIANCE_OFFICER)
-  const canResolve = user?.role === UserRole.SYSTEM_ADMIN || 
-                      user?.role === UserRole.NATIONAL_DIRECTOR || 
-                      user?.role === UserRole.COMPLIANCE_OFFICER;
+  // Provincial Director jurisdiction scoping
+  const isProvincialDirector = activeRole === UserRole.PROVINCIAL_DIRECTOR;
+  const isCrossProvinceDispute = Boolean(
+    isProvincialDirector &&
+    selectedDispute?.province &&
+    jurisdiction &&
+    selectedDispute.province.trim().toLowerCase() !== jurisdiction.trim().toLowerCase()
+  );
+
+  // Gating check: central authorizationPolicy with jurisdiction integrity
+  const canResolve = canPerformAction(user, 'RESOLVE_DISPUTE') && !isCrossProvinceDispute;
 
   const handleSelectDispute = (dispute: Dispute) => {
     setSelectedDispute(dispute);
@@ -50,6 +58,10 @@ export default function GovernancePage() {
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDispute) return;
+    if (isCrossProvinceDispute) {
+      setSubmitError(`Provincial Directors can only resolve disputes originating in their jurisdiction (${jurisdiction}).`);
+      return;
+    }
     if (resolutionDetails.trim().length < 5) {
       setSubmitError('Resolution details must be at least 5 characters.');
       return;
@@ -369,13 +381,23 @@ export default function GovernancePage() {
                           </button>
                         </div>
                       </form>
+                    ) : isCrossProvinceDispute ? (
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-300">Cross-Jurisdiction Restriction</p>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            Your active role as Provincial Director is scoped to {jurisdiction}. This dispute originated in {selectedDispute?.province}. Cross-provincial disputes must be escalated to a National Director or System Admin.
+                          </p>
+                        </div>
+                      </div>
                     ) : (
                       <div className="p-4 bg-slate-900 border border-slate-800 rounded-lg flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs font-semibold text-slate-300">Resolution Access Restricted</p>
                           <p className="text-[11px] text-slate-500 mt-1">
-                            Your logged-in role ({user?.role}) does not have administrative clearance to resolve disputes. Only Compliance Officers, National Directors, and System Admins may decide dispute resolutions.
+                            Your active role ({activeRole || user?.role}) does not have administrative clearance to resolve disputes. Only authorized Directors, Compliance Officers, and System Admins may decide dispute resolutions.
                           </p>
                         </div>
                       </div>

@@ -255,6 +255,7 @@ export function canPerformAction(user: User | null, action: AdminAction): boolea
       return (
         role === UserRole.SYSTEM_ADMIN ||
         role === UserRole.NATIONAL_DIRECTOR ||
+        role === UserRole.PROVINCIAL_DIRECTOR ||
         role === UserRole.COMPLIANCE_OFFICER
       );
 

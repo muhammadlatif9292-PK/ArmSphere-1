@@ -49,7 +49,7 @@ export class NominationController {
   static async getNominations(req: Request, res: Response, next: NextFunction) {
     try {
       const filters = getNominationsQuerySchema.parse(req.query);
-      const nominations = await NominationService.getNominations(filters as any);
+      const nominations = await NominationService.getNominations(filters as any, req.user?.id, req.user?.role);
 
       res.status(200).json({
         success: true,

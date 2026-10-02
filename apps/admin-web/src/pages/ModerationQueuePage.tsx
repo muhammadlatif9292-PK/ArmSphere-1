@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { usePendingSubmissions, useModerateSubmission } from '../lib/communityApi';
 import { useAuth } from '../context/AuthContext';
-import { UserRole, PendingCommunityPost } from '../types';
+import { PendingCommunityPost } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 import { getEmbedUrl } from '../utils/embedUrlBuilder';
 
 export default function ModerationQueuePage() {
@@ -33,10 +34,8 @@ export default function ModerationQueuePage() {
   const [selectedSubmission, setSelectedSubmission] = useState<PendingCommunityPost | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Role Gate check matching the backend perfectly
-  const canModerate = user?.role === UserRole.SYSTEM_ADMIN || 
-                      user?.role === UserRole.NATIONAL_DIRECTOR || 
-                      user?.role === UserRole.PROVINCIAL_DIRECTOR;
+  // Role Gate check matching the backend perfectly via central authorizationPolicy
+  const canModerate = canPerformAction(user, 'MODERATE_COMMUNITY');
 
   const handleSelectSubmission = (post: PendingCommunityPost) => {
     setSelectedSubmission(post);

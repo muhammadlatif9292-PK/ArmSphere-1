@@ -12,15 +12,20 @@ import {
 import { useNominations, useUpdateNominationStatus } from '../lib/nominationsApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
+import { canPerformAction } from '../lib/authorizationPolicy';
 import { LoadingCard, ErrorPanel, EmptyState, ErrorBanner } from '../components/ui';
 
 export default function NominationsPage() {
-  const { user } = useAuth();
+  const { user, activeRole, jurisdiction } = useAuth();
 
   // Search & Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [provinceFilter, setProvinceFilter] = useState('');
+
+  // Provincial Director jurisdiction scoping
+  const isProvincialDirector = activeRole === UserRole.PROVINCIAL_DIRECTOR;
+  const effectiveProvinceFilter = isProvincialDirector ? (jurisdiction || '') : provinceFilter;
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,12 +45,8 @@ export default function NominationsPage() {
   const [activeActionNomId, setActiveActionNomId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Check roles (SYSTEM_ADMIN, NATIONAL_DIRECTOR, PROVINCIAL_DIRECTOR can update status)
-  const canManage = user && [
-    UserRole.SYSTEM_ADMIN,
-    UserRole.NATIONAL_DIRECTOR,
-    UserRole.PROVINCIAL_DIRECTOR
-  ].includes(user.role);
+  // Check roles via central authorizationPolicy
+  const canManage = canPerformAction(user, 'UPDATE_NOMINATION');
 
   // Provinces list for filtering
   const provincesList = useMemo(() => {
@@ -63,11 +64,12 @@ export default function NominationsPage() {
         (n.notes && n.notes.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesStatus = statusFilter === '' || n.status === statusFilter;
-      const matchesProvince = provinceFilter === '' || n.province === provinceFilter;
+      const matchesProvince = effectiveProvinceFilter === '' ||
+        n.province.toLowerCase() === effectiveProvinceFilter.toLowerCase();
 
       return matchesSearch && matchesStatus && matchesProvince;
     });
-  }, [nominations, searchQuery, statusFilter, provinceFilter]);
+  }, [nominations, searchQuery, statusFilter, effectiveProvinceFilter]);
 
   // Pagination slice
   const paginatedNominations = useMemo(() => {
@@ -79,6 +81,11 @@ export default function NominationsPage() {
 
   const handleStatusChange = async (nominationId: string, newStatus: string) => {
     if (!canManage) return;
+    const targetNom = nominations.find(n => n.id === nominationId);
+    if (isProvincialDirector && jurisdiction && targetNom?.province && targetNom.province.toLowerCase() !== jurisdiction.toLowerCase()) {
+      setActionError(`Provincial Directors can only update nominations within their assigned jurisdiction (${jurisdiction}).`);
+      return;
+    }
     setActiveActionNomId(nominationId);
     setActionError(null);
     try {
@@ -208,20 +215,31 @@ export default function NominationsPage() {
           </div>
 
           <div className="w-full md:w-48">
-            <select
-              value={provinceFilter}
-              onChange={(e) => {
-                setProvinceFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-hidden focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/40"
-              id="select-filter-province"
-            >
-              <option value="">All Provinces</option>
-              {provincesList.map(prov => (
-                <option key={prov} value={prov}>{prov}</option>
-              ))}
-            </select>
+            {isProvincialDirector && jurisdiction ? (
+              <div
+                data-testid="locked-jurisdiction-badge"
+                className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-mono text-amber-400"
+                title={`Scope locked to assigned jurisdiction: ${jurisdiction}`}
+              >
+                <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>JURISDICTION: {jurisdiction.toUpperCase()}</span>
+              </div>
+            ) : (
+              <select
+                value={provinceFilter}
+                onChange={(e) => {
+                  setProvinceFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-hidden focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/40"
+                id="select-filter-province"
+              >
+                <option value="">All Provinces</option>
+                {provincesList.map(prov => (
+                  <option key={prov} value={prov}>{prov}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -308,38 +326,42 @@ export default function NominationsPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         {canManage ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {nom.status === 'PENDING' && (
-                              <button
-                                onClick={() => handleStatusChange(nom.id, 'CONTACTED')}
-                                disabled={isUpdating}
-                                className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
-                              >
-                                {isUpdating ? '...' : 'Mark Contacted'}
-                              </button>
-                            )}
-                            {nom.status === 'CONTACTED' && (
-                              <>
+                          isProvincialDirector && jurisdiction && nom.province && nom.province.toLowerCase() !== jurisdiction.toLowerCase() ? (
+                            <span className="text-xs text-slate-500 italic" title="Outside assigned jurisdiction">Out of Scope</span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {nom.status === 'PENDING' && (
                                 <button
-                                  onClick={() => handleStatusChange(nom.id, 'REGISTERED')}
+                                  onClick={() => handleStatusChange(nom.id, 'CONTACTED')}
                                   disabled={isUpdating}
-                                  className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                                  className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
                                 >
-                                  Registered
+                                  {isUpdating ? '...' : 'Mark Contacted'}
                                 </button>
-                                <button
-                                  onClick={() => handleStatusChange(nom.id, 'DECLINED')}
-                                  disabled={isUpdating}
-                                  className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
-                                >
-                                  Decline
-                                </button>
-                              </>
-                            )}
-                            {['REGISTERED', 'DECLINED'].includes(nom.status) && (
-                              <span className="text-xs text-slate-500">Pipeline Finished</span>
-                            )}
-                          </div>
+                              )}
+                              {nom.status === 'CONTACTED' && (
+                                <>
+                                  <button
+                                    onClick={() => handleStatusChange(nom.id, 'REGISTERED')}
+                                    disabled={isUpdating}
+                                    className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                                  >
+                                    Registered
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(nom.id, 'DECLINED')}
+                                    disabled={isUpdating}
+                                    className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
+                                  >
+                                    Decline
+                                  </button>
+                                </>
+                              )}
+                              {['REGISTERED', 'DECLINED'].includes(nom.status) && (
+                                <span className="text-xs text-slate-500">Pipeline Finished</span>
+                              )}
+                            </div>
+                          )
                         ) : (
                           <span className="text-xs text-slate-500">No Permission</span>
                         )}

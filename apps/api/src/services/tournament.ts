@@ -1033,19 +1033,28 @@ export class TournamentService {
 
       // Connect Winners Bracket losers to Losers Bracket matches:
       // - Losers of WB Round 1 go to LB Round 1: Match W1-i loser goes to LB Round 1, Match Math.floor((i-1)/2) + 1
-      if (wbMatchesByRound[1]) {
+      if (wbMatchesByRound[1] && lbMatchesByRound[1]) {
         for (let i = 0; i < wbMatchesByRound[1].length; i++) {
           const m = wbMatchesByRound[1][i];
           const targetIdx = Math.floor(i / 2);
-          m.losersNextMatchId = lbMatchesByRound[1][targetIdx].id;
+          if (lbMatchesByRound[1][targetIdx]) {
+            m.losersNextMatchId = lbMatchesByRound[1][targetIdx].id;
+          }
+        }
+      } else if (lbRoundCount === 0 && wbMatchesByRound[1]) {
+        // When only 2 athletes (K=1, lbRoundCount=0), loser routes directly to Grand Final 1 Slot B
+        for (const m of wbMatchesByRound[1]) {
+          m.losersNextMatchId = gf1Id;
         }
       }
       // - Losers of WB Round r (for r >= 2) go to LB Round 2r - 2: Match Wr-m loser goes to LB Round 2r - 2, Match m
       for (let r = 2; r <= K; r++) {
-        if (wbMatchesByRound[r]) {
+        if (wbMatchesByRound[r] && lbMatchesByRound[2 * r - 2]) {
           for (let m = 0; m < wbMatchesByRound[r].length; m++) {
             const match = wbMatchesByRound[r][m];
-            match.losersNextMatchId = lbMatchesByRound[2 * r - 2][m].id;
+            if (lbMatchesByRound[2 * r - 2][m]) {
+              match.losersNextMatchId = lbMatchesByRound[2 * r - 2][m].id;
+            }
           }
         }
       }
@@ -1283,7 +1292,12 @@ export class TournamentService {
     logger.info({ matchId, tableId }, "Calling tournament match to table");
 
     return await db.transaction(async (tx) => {
-      const [match] = await tx.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
+      const [match] = await tx
+        .select()
+        .from(tournamentMatches)
+        .where(eq(tournamentMatches.id, matchId))
+        .for("update")
+        .limit(1);
       if (!match) {
         throw new NotFoundError("Match not found.");
       }
@@ -1301,7 +1315,12 @@ export class TournamentService {
         throw new BadRequestError("Match competitors not determined yet.");
       }
 
-      const [table] = await tx.select().from(matchTables).where(eq(matchTables.id, tableId)).limit(1);
+      const [table] = await tx
+        .select()
+        .from(matchTables)
+        .where(eq(matchTables.id, tableId))
+        .for("update")
+        .limit(1);
       if (!table) {
         throw new NotFoundError("Match table not found.");
       }
@@ -1411,7 +1430,12 @@ export class TournamentService {
         throw new NotFoundError("Bracket not found.");
       }
 
-      const [table] = await tx.select().from(matchTables).where(eq(matchTables.id, tableId)).limit(1);
+      const [table] = await tx
+        .select()
+        .from(matchTables)
+        .where(eq(matchTables.id, tableId))
+        .for("update")
+        .limit(1);
       if (!table) {
         throw new NotFoundError("Match table not found.");
       }
@@ -1490,7 +1514,12 @@ export class TournamentService {
       const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
       if (!bracket) throw new NotFoundError("Bracket not found.");
 
-      const [targetTable] = await tx.select().from(matchTables).where(eq(matchTables.id, targetTableId)).limit(1);
+      const [targetTable] = await tx
+        .select()
+        .from(matchTables)
+        .where(eq(matchTables.id, targetTableId))
+        .for("update")
+        .limit(1);
       if (!targetTable) throw new NotFoundError("Target match table not found.");
 
       if (targetTable.eventId && bracket.eventId && targetTable.eventId !== bracket.eventId) {
@@ -1765,11 +1794,11 @@ export class TournamentService {
       const [actorUser] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
       const isSupervisor =
         actorUser &&
-        [UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN].includes(
+        [UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN].includes(
           actorUser.role as UserRole
         );
       if (!isSupervisor && match.refereeId !== actorId) {
-        throw new ForbiddenError("Only the assigned referee or a tournament director can submit this match result.");
+        throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
       }
     }
 

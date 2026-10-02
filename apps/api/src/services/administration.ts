@@ -122,8 +122,20 @@ export class AdministrationService {
   /**
    * 2. Athlete Administration
    */
-  static async getAthletes(filters: { search?: string; status?: string; province?: string } = {}) {
+  static async getAthletes(
+    filters: { search?: string; status?: string; province?: string } = {},
+    actorUserId?: string,
+    actorRole?: string
+  ) {
     logger.info(filters, "Searching athletes list");
+
+    let effectiveProvince = filters.province;
+    if (actorRole === UserRole.PROVINCIAL_DIRECTOR && actorUserId) {
+      const [actor] = await db.select().from(users).where(eq(users.id, actorUserId)).limit(1);
+      if (actor?.regionalCoverage) {
+        effectiveProvince = actor.regionalCoverage;
+      }
+    }
 
     const profiles = await db.select().from(athleteProfiles);
     const uRecords = await db.select().from(users);
@@ -164,8 +176,8 @@ export class AdministrationService {
       list = list.filter(item => item.verificationStatus === filters.status);
     }
 
-    if (filters.province) {
-      list = list.filter(item => item.province.toLowerCase() === filters.province!.toLowerCase());
+    if (effectiveProvince) {
+      list = list.filter(item => item.province.toLowerCase() === effectiveProvince!.toLowerCase());
     }
 
     return list;
@@ -174,9 +186,20 @@ export class AdministrationService {
   static async reviewProfile(athleteId: string, reviewerId: string, status: "VERIFIED" | "REJECTED", reason?: string) {
     logger.info({ athleteId, reviewerId, status }, "Reviewing athlete profile");
 
+    const [reviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (!reviewer) {
+      throw new NotFoundError("Reviewer user not found");
+    }
+
     const [profile] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, athleteId));
     if (!profile) {
       throw new NotFoundError("Athlete profile not found");
+    }
+
+    if (reviewer.role === UserRole.PROVINCIAL_DIRECTOR) {
+      if (!reviewer.regionalCoverage || profile.province.trim().toUpperCase() !== reviewer.regionalCoverage.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only review profiles within your provincial jurisdiction.");
+      }
     }
 
     const [existingVerif] = await db.select().from(athleteVerifications).where(eq(athleteVerifications.athleteId, profile.userId));
@@ -213,9 +236,20 @@ export class AdministrationService {
   static async suspendAthlete(athleteId: string, reviewerId: string, reason: string, durationDays = 30) {
     logger.info({ athleteId, reviewerId, reason }, "Suspending athlete profile");
 
+    const [reviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (!reviewer) {
+      throw new NotFoundError("Reviewer user not found");
+    }
+
     const [profile] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, athleteId));
     if (!profile) {
       throw new NotFoundError("Athlete profile not found");
+    }
+
+    if (reviewer.role === UserRole.PROVINCIAL_DIRECTOR) {
+      if (!reviewer.regionalCoverage || profile.province.trim().toUpperCase() !== reviewer.regionalCoverage.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only suspend athletes within your provincial jurisdiction.");
+      }
     }
 
     // Update verification table status

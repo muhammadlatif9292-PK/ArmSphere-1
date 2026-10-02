@@ -127,6 +127,13 @@ export class VenueService {
       throw new ForbiddenError("You are not authorized to update this venue");
     }
 
+    if (role.toLowerCase() === "provincial_director" && !isOwner) {
+      const [actor] = await db.select().from(users).where(eq(users.id, actorUserId)).limit(1);
+      if (!actor || !actor.regionalCoverage || existingVenue.province.trim().toUpperCase() !== actor.regionalCoverage.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only update venues within your provincial jurisdiction.");
+      }
+    }
+
     // 3. Compile update data
     const updatePayload: any = {};
     if (input.name !== undefined) updatePayload.name = input.name;
@@ -165,6 +172,13 @@ export class VenueService {
 
     if (!existingVenue) {
       throw new NotFoundError("Venue partner not found");
+    }
+
+    if (role.toLowerCase() === "provincial_director") {
+      const [actor] = await db.select().from(users).where(eq(users.id, actorUserId)).limit(1);
+      if (!actor || !actor.regionalCoverage || existingVenue.province.trim().toUpperCase() !== actor.regionalCoverage.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only verify venues within your provincial jurisdiction.");
+      }
     }
 
     const [updatedVenue] = await db
