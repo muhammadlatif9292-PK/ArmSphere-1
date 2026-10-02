@@ -109,6 +109,9 @@ class AppTheme {
   /// Cool Cyan Accent (#38BDF8) - Table telemetry and structural lines.
   static const Color cyanAccent = Color(0xFF38BDF8);
 
+  /// Backward-compatible alias for cyanAccent (#38BDF8).
+  static const Color activeCyan = cyanAccent;
+
   /// Soft Ice Blue (#7DD3FC) - Highlights and active chip fills.
   static const Color cyanLight = Color(0xFF7DD3FC);
 
