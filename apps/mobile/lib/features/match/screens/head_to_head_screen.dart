@@ -183,25 +183,25 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       };
     }
     return {
-      'name': 'Hamza "The Hammer" Khan',
-      'nickname': 'THE HAMMER',
-      'club': 'Lahore Armwrestling Club',
-      'province': 'Punjab, Pakistan',
+      'name': 'Red Corner Contender',
+      'nickname': 'RED CORNER',
+      'club': 'Pending Selection',
+      'province': 'Pakistan',
       'countryCode': 'PK',
-      'rank': '#1 NATIONAL',
-      'weightClass': '-85 KG',
-      'avatar': 'H',
+      'rank': 'CONTENDER',
+      'weightClass': 'OPEN',
+      'avatar': 'R',
       'avatarUrl': null,
-      'eloRight': 1945,
-      'eloLeft': 1880,
-      'winRateRight': 89.2,
-      'winRateLeft': 81.5,
-      'forearmCm': 43.5,
-      'bicepCm': 46.0,
-      'handSpanCm': 22.0,
-      'reachCm': 184.0,
-      'weightKg': 84.8,
-      'pullStyle': 'TOP-ROLL & HIGH HOOK',
+      'eloRight': 1500,
+      'eloLeft': 1500,
+      'winRateRight': 0.0,
+      'winRateLeft': 0.0,
+      'forearmCm': 0.0,
+      'bicepCm': 0.0,
+      'handSpanCm': 0.0,
+      'reachCm': 0.0,
+      'weightKg': 0.0,
+      'pullStyle': 'UNSPECIFIED',
     };
   }
 
@@ -234,25 +234,25 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       };
     }
     return {
-      'name': 'Tariq "Iron Grip" Malik',
-      'nickname': 'IRON GRIP',
-      'club': 'Rawalpindi Grippers',
-      'province': 'Federal Capital',
+      'name': 'Blue Corner Contender',
+      'nickname': 'BLUE CORNER',
+      'club': 'Pending Selection',
+      'province': 'Pakistan',
       'countryCode': 'PK',
-      'rank': '#2 NATIONAL',
-      'weightClass': '-85 KG',
-      'avatar': 'T',
+      'rank': 'CONTENDER',
+      'weightClass': 'OPEN',
+      'avatar': 'B',
       'avatarUrl': null,
-      'eloRight': 1885,
-      'eloLeft': 1910,
-      'winRateRight': 83.0,
-      'winRateLeft': 86.5,
-      'forearmCm': 42.0,
-      'bicepCm': 44.5,
-      'handSpanCm': 22.5,
-      'reachCm': 181.0,
-      'weightKg': 85.0,
-      'pullStyle': 'INSIDE DEEP HOOK',
+      'eloRight': 1500,
+      'eloLeft': 1500,
+      'winRateRight': 0.0,
+      'winRateLeft': 0.0,
+      'forearmCm': 0.0,
+      'bicepCm': 0.0,
+      'handSpanCm': 0.0,
+      'reachCm': 0.0,
+      'weightKg': 0.0,
+      'pullStyle': 'UNSPECIFIED',
     };
   }
 
@@ -353,15 +353,96 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ),
         ],
       ),
-      body: RepaintBoundary(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            // 1. Walkout Hero Stage with 15° Diagonal Shear Divider
-            _buildWalkoutHeroStage(red, blue, redElo, blueElo, redFavored, eloDiff),
+      body: (comparisonAsync != null && comparisonAsync.isLoading)
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppTheme.goldPrimary),
+                  SizedBox(height: 16),
+                  Text(
+                    'LOADING OFFICIAL MATCHUP DATA...',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textMuted,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : (comparisonAsync != null && comparisonAsync.hasError)
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFEF4444)),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'FAILED TO LOAD MATCHUP',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          comparisonAsync.error.toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.goldPrimary,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () => ref.invalidate(athleteComparisonProvider),
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('RETRY'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RepaintBoundary(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      if (widget.athleteId1 == null || widget.athleteId2 == null)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          color: Colors.amber.shade900.withValues(alpha: 0.35),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, size: 16, color: Colors.amber),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'DEMO PREVIEW: Select two athletes from the National Rankings ladder to load real-time Tale of the Tape data.',
+                                  style: TextStyle(
+                                    fontFamily: 'Space Grotesk',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.amber,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // 1. Walkout Hero Stage with 15° Diagonal Shear Divider
+                      _buildWalkoutHeroStage(red, blue, redElo, blueElo, redFavored, eloDiff),
 
-            // 2. Tactical Arm Toggle & Favorability Banner
-            _buildTacticalMatchBanner(red, blue, redFavored, eloDiff),
+                      // 2. Tactical Arm Toggle & Favorability Banner
+                      _buildTacticalMatchBanner(red, blue, redFavored, eloDiff),
 
             const SizedBox(height: 16),
 
