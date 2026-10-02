@@ -19,6 +19,7 @@ import {
   Award,
   ChevronDown,
   MapPin,
+  Headphones,
 } from 'lucide-react';
 import {
   getAuthorizedNavLinks,
@@ -65,6 +66,7 @@ const ROUTE_ICONS: Record<string, React.ReactNode> = {
   '/moderation': <Video className="w-4 h-4 text-indigo-400" />,
   '/venues': <Building2 className="w-4 h-4 text-teal-400" />,
   '/audit': <ScrollText className="w-4 h-4 text-emerald-400" />,
+  '/support': <Headphones className="w-4 h-4 text-cyan-400" />,
 };
 
 interface AdminShellProps {

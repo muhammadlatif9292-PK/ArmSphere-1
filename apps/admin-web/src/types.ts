@@ -297,3 +297,57 @@ export interface SuspendRefereePayload {
 export interface AssignRefereeRegionPayload {
   region: string;
 }
+
+export type SupportTicketStatus = 'PENDING' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type SupportTicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+export type SupportTicketCategory = 'GENERAL' | 'TECHNICAL' | 'ACCOUNT' | 'EVENT' | 'DISPUTE';
+
+export interface SupportTicketMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  message: string;
+  isInternal: boolean;
+  createdAt: string;
+  sender?: {
+    id: string;
+    fullName: string;
+    username: string;
+    role: string;
+  } | null;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  assignedAgentId?: string | null;
+  category: SupportTicketCategory;
+  priority: SupportTicketPriority;
+  subject: string;
+  description: string;
+  status: SupportTicketStatus;
+  resolutionNotes?: string | null;
+  resolvedAt?: string | null;
+  resolvedById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  requester?: {
+    id: string;
+    fullName: string;
+    username: string;
+    email: string;
+    role: string;
+  } | null;
+  assignedAgent?: {
+    id: string;
+    fullName: string;
+    username: string;
+    role: string;
+  } | null;
+  resolver?: {
+    id: string;
+    fullName: string;
+    username: string;
+  } | null;
+  messages?: SupportTicketMessage[];
+}

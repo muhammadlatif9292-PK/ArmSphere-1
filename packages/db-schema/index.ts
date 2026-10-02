@@ -804,3 +804,39 @@ export const roleApplications = pgTable("role_applications", {
   };
 });
 
+export const supportTickets = pgTable("support_tickets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  assignedAgentId: uuid("assigned_agent_id").references(() => users.id),
+  category: varchar("category", { length: 50 }).notNull().default("GENERAL"),
+  priority: varchar("priority", { length: 20 }).notNull().default("NORMAL"),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 30 }).notNull().default("OPEN"),
+  resolutionNotes: text("resolution_notes"),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedById: uuid("resolved_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    userIdx: index("idx_support_tickets_user").on(table.userId),
+    agentIdx: index("idx_support_tickets_agent").on(table.assignedAgentId),
+    statusIdx: index("idx_support_tickets_status").on(table.status),
+    createdAtIdx: index("idx_support_tickets_created_at").on(table.createdAt),
+  };
+});
+
+export const supportTicketMessages = pgTable("support_ticket_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ticketId: uuid("ticket_id").references(() => supportTickets.id).notNull(),
+  senderId: uuid("sender_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    ticketIdx: index("idx_support_ticket_messages_ticket").on(table.ticketId),
+    senderIdx: index("idx_support_ticket_messages_sender").on(table.senderId),
+  };
+});

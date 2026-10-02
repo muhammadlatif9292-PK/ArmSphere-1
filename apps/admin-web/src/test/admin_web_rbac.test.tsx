@@ -1,7 +1,3 @@
-import AuditPage from '../pages/AuditPage';
-import GovernancePage from '../pages/GovernancePage';
-import NominationsPage from '../pages/NominationsPage';
-import VenuesPage from '../pages/VenuesPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -23,6 +19,10 @@ import AdminShell from '../layout/AdminShell';
 import ForbiddenPage from '../pages/ForbiddenPage';
 import AthletesPage from '../pages/AthletesPage';
 import RefereesPage from '../pages/RefereesPage';
+import VenuesPage from '../pages/VenuesPage';
+import NominationsPage from '../pages/NominationsPage';
+import GovernancePage from '../pages/GovernancePage';
+import AuditPage from '../pages/AuditPage';
 
 // Mock API hooks used by AthletesPage and RefereesPage
 vi.mock('../lib/athletesApi', () => ({
@@ -106,6 +106,125 @@ vi.mock('../lib/refereesApi', () => ({
   useAssignRefereeRegion: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateRefereeLicense: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSuspendReferee: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../lib/venuesApi', () => ({
+  useVenues: vi.fn(() => ({
+    data: [
+      {
+        id: 'venue-1',
+        name: 'Lahore Iron Gym',
+        address: 'Gulberg III',
+        city: 'Lahore',
+        province: 'Punjab',
+        contactInfo: '+923001234567',
+        isVerified: false,
+      },
+      {
+        id: 'venue-2',
+        name: 'Quetta Power Pit',
+        address: 'Jinnah Road',
+        city: 'Quetta',
+        province: 'Balochistan',
+        contactInfo: '+923007654321',
+        isVerified: false,
+      },
+    ],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+  useVerifyVenue: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../lib/nominationsApi', () => ({
+  useNominations: vi.fn(() => ({
+    data: [
+      {
+        id: 'nom-1',
+        nomineeName: 'Ali Raza',
+        contactPhone: '+923001112233',
+        city: 'Lahore',
+        province: 'Punjab',
+        status: 'PENDING',
+        notes: 'Promising talent',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'nom-2',
+        nomineeName: 'Kamran Khan',
+        contactPhone: '+923004445566',
+        city: 'Quetta',
+        province: 'Balochistan',
+        status: 'PENDING',
+        notes: 'Regional champion',
+        createdAt: new Date().toISOString(),
+      },
+    ],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+  useUpdateNominationStatus: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../lib/governanceApi', () => ({
+  useDisputes: vi.fn(() => ({
+    data: [
+      {
+        id: 'disp-1',
+        matchId: 'm-12345678',
+        creatorId: 'u-athlete-1',
+        title: 'Foul Protest Punjab',
+        description: 'Referee missed slip in Punjab championship',
+        status: 'OPEN',
+        resolutionDetails: null,
+        assignedReviewerId: null,
+        province: 'Punjab',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'disp-2',
+        matchId: 'm-87654321',
+        creatorId: 'u-athlete-2',
+        title: 'Elbow Foul Balochistan',
+        description: 'Elbow lifted in Balochistan championship',
+        status: 'OPEN',
+        resolutionDetails: null,
+        assignedReviewerId: null,
+        province: 'Balochistan',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+  useResolveDispute: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock('../lib/auditApi', () => ({
+  useAuditEvents: vi.fn(() => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+    isRefetching: false,
+  })),
+  useVerifyLedger: vi.fn(() => ({
+    data: { valid: true, count: 10, chainHead: 'abc' },
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+    isRefetching: false,
+  })),
 }));
 
 // Helper to create fully compliant User objects
@@ -222,18 +341,55 @@ describe('ArmSphere Admin Web RBAC & Governance Hardening Suite', () => {
   // 2. Route Protection Permissions Matrix
   // =========================================================================
   describe('authorizationPolicy - Route Permissions Matrix', () => {
-    it('SYSTEM_ADMIN has access to all 10 administrative routes including /audit', () => {
+    it('SYSTEM_ADMIN has access to all 11 administrative routes including /audit and /support', () => {
       const admin = makeMockUser({
         role: UserRole.SYSTEM_ADMIN,
       });
 
       const allRoutes = ADMIN_ROUTE_PERMISSIONS.map((r) => r.path);
-      expect(allRoutes.length).toBe(10);
+      expect(allRoutes.length).toBe(11);
 
       allRoutes.forEach((route) => {
         expect(canAccessRoute(admin, route).allowed).toBe(true);
       });
       expect(canAccessRoute(admin, '/audit').allowed).toBe(true);
+      expect(canAccessRoute(admin, '/support').allowed).toBe(true);
+    });
+
+    it('SUPPORT_AGENT has access to /support, /, /athletes, and /governance, but forbidden on others', () => {
+      const supportAgent = makeMockUser({
+        role: UserRole.SUPPORT_AGENT,
+      });
+
+      expect(canAccessRoute(supportAgent, '/').allowed).toBe(true);
+      expect(canAccessRoute(supportAgent, '/support').allowed).toBe(true);
+      expect(canAccessRoute(supportAgent, '/athletes').allowed).toBe(true);
+      expect(canAccessRoute(supportAgent, '/governance').allowed).toBe(true);
+
+      // Forbidden routes for SUPPORT_AGENT:
+      expect(canAccessRoute(supportAgent, '/referees').allowed).toBe(false);
+      expect(canAccessRoute(supportAgent, '/championships').allowed).toBe(false);
+      expect(canAccessRoute(supportAgent, '/nominations').allowed).toBe(false);
+      expect(canAccessRoute(supportAgent, '/venues').allowed).toBe(false);
+      expect(canAccessRoute(supportAgent, '/moderation').allowed).toBe(false);
+      expect(canAccessRoute(supportAgent, '/analytics').allowed).toBe(false);
+      expect(canAccessRoute(supportAgent, '/audit').allowed).toBe(false);
+    });
+
+    it('Non-support non-admin roles are forbidden on /support', () => {
+      const athlete = makeMockUser({ role: UserRole.ATHLETE });
+      const referee = makeMockUser({ role: UserRole.REFEREE });
+      const op = makeMockUser({ role: UserRole.TOURNAMENT_OPERATOR });
+      const provDir = makeMockUser({ role: UserRole.PROVINCIAL_DIRECTOR });
+      const natDir = makeMockUser({ role: UserRole.NATIONAL_DIRECTOR });
+      const compOfficer = makeMockUser({ role: UserRole.COMPLIANCE_OFFICER });
+
+      expect(canAccessRoute(athlete, '/support').allowed).toBe(false);
+      expect(canAccessRoute(referee, '/support').allowed).toBe(false);
+      expect(canAccessRoute(op, '/support').allowed).toBe(false);
+      expect(canAccessRoute(provDir, '/support').allowed).toBe(false);
+      expect(canAccessRoute(natDir, '/support').allowed).toBe(false);
+      expect(canAccessRoute(compOfficer, '/support').allowed).toBe(false);
     });
 
     it('NATIONAL_DIRECTOR has access to competition routes (/championships) but is strictly forbidden on /audit', () => {
@@ -301,15 +457,33 @@ describe('ArmSphere Admin Web RBAC & Governance Hardening Suite', () => {
   // 3. Navigation Sidebar Links Filtering
   // =========================================================================
   describe('AdminShell - Sidebar Authorization & Visibility', () => {
-    it('SYSTEM_ADMIN receives all 10 links in navigation', () => {
+    it('SYSTEM_ADMIN receives all 11 links in navigation', () => {
       const admin = makeMockUser({
         role: UserRole.SYSTEM_ADMIN,
       });
 
       const links = getAuthorizedNavLinks(admin);
-      expect(links.length).toBe(10);
+      expect(links.length).toBe(11);
       expect(links.some((l) => l.path === '/audit')).toBe(true);
       expect(links.some((l) => l.path === '/championships')).toBe(true);
+      expect(links.some((l) => l.path === '/support')).toBe(true);
+    });
+
+    it('SUPPORT_AGENT navigation includes /support, /, /athletes, and /governance only', () => {
+      const supportAgent = makeMockUser({
+        role: UserRole.SUPPORT_AGENT,
+      });
+
+      const links = getAuthorizedNavLinks(supportAgent);
+      const paths = links.map((l) => l.path);
+      expect(paths).toContain('/support');
+      expect(paths).toContain('/');
+      expect(paths).toContain('/athletes');
+      expect(paths).toContain('/governance');
+      expect(paths).not.toContain('/audit');
+      expect(paths).not.toContain('/championships');
+      expect(paths).not.toContain('/referees');
+      expect(paths).not.toContain('/venues');
     });
 
     it('NATIONAL_DIRECTOR navigation hides /audit', () => {
@@ -633,8 +807,65 @@ describe('ArmSphere Admin Web RBAC & Governance Hardening Suite', () => {
       expect(canPerformAction(sysAdmin, 'SUSPEND_REFEREE')).toBe(true);
       expect(canPerformAction(sysAdmin, 'MANAGE_CHAMPIONSHIPS')).toBe(true);
       expect(canPerformAction(sysAdmin, 'VERIFY_AUDIT_LEDGER')).toBe(true);
+      expect(canPerformAction(sysAdmin, 'RESOLVE_DISPUTE')).toBe(true);
+      expect(canPerformAction(sysAdmin, 'MODERATE_COMMUNITY')).toBe(true);
+      expect(canPerformAction(sysAdmin, 'VERIFY_VENUE')).toBe(true);
+      expect(canPerformAction(sysAdmin, 'UPDATE_NOMINATION')).toBe(true);
+      expect(canPerformAction(sysAdmin, 'MANAGE_SUPPORT_TICKETS')).toBe(true);
+    });
+
+    it('enforces specific governance action rules across all roles', () => {
+      const natDir = makeMockUser({ role: UserRole.NATIONAL_DIRECTOR });
+      const provDir = makeMockUser({ role: UserRole.PROVINCIAL_DIRECTOR });
+      const compOfficer = makeMockUser({ role: UserRole.COMPLIANCE_OFFICER });
+      const tourneyOp = makeMockUser({ role: UserRole.TOURNAMENT_OPERATOR });
+      const athlete = makeMockUser({ role: UserRole.ATHLETE });
+      const supportAgent = makeMockUser({ role: UserRole.SUPPORT_AGENT });
+
+      // MANAGE_SUPPORT_TICKETS
+      expect(canPerformAction(supportAgent, 'MANAGE_SUPPORT_TICKETS')).toBe(true);
+      expect(canPerformAction(natDir, 'MANAGE_SUPPORT_TICKETS')).toBe(false);
+      expect(canPerformAction(provDir, 'MANAGE_SUPPORT_TICKETS')).toBe(false);
+      expect(canPerformAction(compOfficer, 'MANAGE_SUPPORT_TICKETS')).toBe(false);
+      expect(canPerformAction(tourneyOp, 'MANAGE_SUPPORT_TICKETS')).toBe(false);
+      expect(canPerformAction(athlete, 'MANAGE_SUPPORT_TICKETS')).toBe(false);
+
+      // RESOLVE_DISPUTE
+      expect(canPerformAction(natDir, 'RESOLVE_DISPUTE')).toBe(true);
+      expect(canPerformAction(provDir, 'RESOLVE_DISPUTE')).toBe(true);
+      expect(canPerformAction(compOfficer, 'RESOLVE_DISPUTE')).toBe(true);
+      expect(canPerformAction(tourneyOp, 'RESOLVE_DISPUTE')).toBe(false);
+      expect(canPerformAction(athlete, 'RESOLVE_DISPUTE')).toBe(false);
+
+      // VERIFY_AUDIT_LEDGER
+      expect(canPerformAction(compOfficer, 'VERIFY_AUDIT_LEDGER')).toBe(true);
+      expect(canPerformAction(natDir, 'VERIFY_AUDIT_LEDGER')).toBe(false);
+      expect(canPerformAction(provDir, 'VERIFY_AUDIT_LEDGER')).toBe(false);
+
+      // MANAGE_CHAMPIONSHIPS
+      expect(canPerformAction(natDir, 'MANAGE_CHAMPIONSHIPS')).toBe(true);
+      expect(canPerformAction(provDir, 'MANAGE_CHAMPIONSHIPS')).toBe(false);
+      expect(canPerformAction(compOfficer, 'MANAGE_CHAMPIONSHIPS')).toBe(false);
+
+      // MODERATE_COMMUNITY
+      expect(canPerformAction(natDir, 'MODERATE_COMMUNITY')).toBe(true);
+      expect(canPerformAction(provDir, 'MODERATE_COMMUNITY')).toBe(true);
+      expect(canPerformAction(compOfficer, 'MODERATE_COMMUNITY')).toBe(false);
+
+      // VERIFY_VENUE
+      expect(canPerformAction(natDir, 'VERIFY_VENUE')).toBe(true);
+      expect(canPerformAction(provDir, 'VERIFY_VENUE')).toBe(true);
+      expect(canPerformAction(compOfficer, 'VERIFY_VENUE')).toBe(false);
+      expect(canPerformAction(tourneyOp, 'VERIFY_VENUE')).toBe(false);
+
+      // UPDATE_NOMINATION
+      expect(canPerformAction(natDir, 'UPDATE_NOMINATION')).toBe(true);
+      expect(canPerformAction(provDir, 'UPDATE_NOMINATION')).toBe(true);
+      expect(canPerformAction(compOfficer, 'UPDATE_NOMINATION')).toBe(false);
+      expect(canPerformAction(tourneyOp, 'UPDATE_NOMINATION')).toBe(false);
     });
   });
+
   // =========================================================================
   // 9. Page-Level Scoping & Action Hardening
   // =========================================================================

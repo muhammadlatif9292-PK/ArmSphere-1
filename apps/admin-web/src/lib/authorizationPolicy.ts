@@ -23,7 +23,8 @@ export type AdminAction =
   | 'MANAGE_CERTIFICATIONS'
   | 'MODERATE_COMMUNITY'
   | 'VERIFY_VENUE'
-  | 'UPDATE_NOMINATION';
+  | 'UPDATE_NOMINATION'
+  | 'MANAGE_SUPPORT_TICKETS';
 
 export const ADMIN_ROUTE_PERMISSIONS: RoutePermission[] = [
   {
@@ -119,6 +120,12 @@ export const ADMIN_ROUTE_PERMISSIONS: RoutePermission[] = [
     label: 'Audit Ledger',
     category: 'Platform',
     allowedRoles: [UserRole.SYSTEM_ADMIN, UserRole.COMPLIANCE_OFFICER],
+  },
+  {
+    path: '/support',
+    label: 'Support Helpdesk',
+    category: 'Governance',
+    allowedRoles: [UserRole.SYSTEM_ADMIN, UserRole.SUPPORT_AGENT],
   },
 ];
 
@@ -261,6 +268,9 @@ export function canPerformAction(user: User | null, action: AdminAction): boolea
 
     case 'VERIFY_AUDIT_LEDGER':
       return role === UserRole.SYSTEM_ADMIN || role === UserRole.COMPLIANCE_OFFICER;
+
+    case 'MANAGE_SUPPORT_TICKETS':
+      return role === UserRole.SYSTEM_ADMIN || role === UserRole.SUPPORT_AGENT;
 
     default:
       return false;

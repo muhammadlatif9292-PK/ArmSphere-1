@@ -26,6 +26,7 @@ import { nominationRouter } from "./routes/nomination.js";
 import { refereeCertificationRouter } from "./routes/refereeCertification.js";
 import { informalEventRouter } from "./routes/informalEvent.js";
 import { ticketRouter } from "./routes/ticket.js";
+import { supportRouter } from "./routes/support.js";
 import { internalRouter } from "./routes/internal.js";
 import env from "./config/env.js";
 
@@ -147,6 +148,8 @@ app.use("/admin", adminRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/internal", internalRouter);
 app.use("/api/v1/internal", internalRouter);
+app.use("/support", supportRouter);
+app.use("/api/v1/support", supportRouter);
 app.use("/", ticketRouter);
 
 const candidateDistPaths = [
@@ -182,6 +185,7 @@ const apiPrefixes = [
   "/informal-events",
   "/admin",
   "/internal",
+  "/support",
   "/tickets",
   "/events",
   "/health",

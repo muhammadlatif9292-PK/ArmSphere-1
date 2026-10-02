@@ -30,3 +30,26 @@ export enum CertificateStatus {
   ISSUED = "ISSUED",
   FAILED = "FAILED"
 }
+
+export enum SupportTicketStatus {
+  PENDING = "PENDING",
+  OPEN = "OPEN",
+  IN_PROGRESS = "IN_PROGRESS",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED"
+}
+
+export enum SupportTicketPriority {
+  LOW = "LOW",
+  NORMAL = "NORMAL",
+  HIGH = "HIGH",
+  URGENT = "URGENT"
+}
+
+export enum SupportTicketCategory {
+  GENERAL = "GENERAL",
+  TECHNICAL = "TECHNICAL",
+  ACCOUNT = "ACCOUNT",
+  EVENT = "EVENT",
+  DISPUTE = "DISPUTE"
+}

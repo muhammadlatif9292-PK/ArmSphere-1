@@ -14,6 +14,7 @@ import ModerationQueuePage from './pages/ModerationQueuePage';
 import VenuesPage from './pages/VenuesPage';
 import NominationsPage from './pages/NominationsPage';
 import AuditPage from './pages/AuditPage';
+import SupportPage from './pages/SupportPage';
 import ForbiddenPage from './pages/ForbiddenPage';
 import { canAccessRoute } from './lib/authorizationPolicy';
 
@@ -213,6 +214,14 @@ export default function App() {
                 element={
                   <RoleGuardedRoute path="/audit">
                     <AuditPage />
+                  </RoleGuardedRoute>
+                }
+              />
+              <Route
+                path="/support"
+                element={
+                  <RoleGuardedRoute path="/support">
+                    <SupportPage />
                   </RoleGuardedRoute>
                 }
               />

@@ -70,7 +70,9 @@ import {
   authTokens,
   syncTombstones,
   userRoleGrants,
-  roleApplications
+  roleApplications,
+  supportTickets,
+  supportTicketMessages
 } from "@armsphere/db-schema";
 import { createTestUserFixture } from "./factories.js";
 
@@ -155,6 +157,8 @@ export const testDbStore = {
   syncTombstones: [] as any[],
   userRoleGrants: [] as any[],
   roleApplications: [] as any[],
+  supportTickets: [] as any[],
+  supportTicketMessages: [] as any[],
 };
 
 // Reset store before each test run
@@ -246,6 +250,8 @@ beforeEach(() => {
   testDbStore.authTokens = [];
   testDbStore.userRoleGrants = [];
   testDbStore.roleApplications = [];
+  testDbStore.supportTickets = [];
+  testDbStore.supportTicketMessages = [];
 });
 
 // Helper to evaluate mock query matching conditions
@@ -687,6 +693,10 @@ const mockDrizzle = {
         results = testDbStore.userRoleGrants;
       } else if (table === roleApplications) {
         results = testDbStore.roleApplications;
+      } else if (table === supportTickets) {
+        results = testDbStore.supportTickets;
+      } else if (table === supportTicketMessages) {
+        results = testDbStore.supportTicketMessages;
       }
 
       const chain = {
@@ -964,6 +974,24 @@ const mockDrizzle = {
             }
             return oc;
           });
+        } else if (table === supportTickets) {
+          testDbStore.supportTickets = testDbStore.supportTickets.map((st) => {
+            if (checkMatch(st, expression)) {
+              const updated = { ...st, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return st;
+          });
+        } else if (table === supportTicketMessages) {
+          testDbStore.supportTicketMessages = testDbStore.supportTicketMessages.map((stm) => {
+            if (checkMatch(stm, expression)) {
+              const updated = { ...stm, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return stm;
+          });
         } else if (table === informalEvents) {
           testDbStore.informalEvents.push(record);
         } else if (table === informalEventParticipants) {
@@ -982,6 +1010,10 @@ const mockDrizzle = {
           testDbStore.userRoleGrants.push(record);
         } else if (table === roleApplications) {
           testDbStore.roleApplications.push(record);
+        } else if (table === supportTickets) {
+          testDbStore.supportTickets.push(record);
+        } else if (table === supportTicketMessages) {
+          testDbStore.supportTicketMessages.push(record);
         }
       });
 
@@ -1365,6 +1397,24 @@ const mockDrizzle = {
             }
             return oc;
           });
+        } else if (table === supportTickets) {
+          testDbStore.supportTickets = testDbStore.supportTickets.map((st) => {
+            if (checkMatch(st, expression)) {
+              const updated = { ...st, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return st;
+          });
+        } else if (table === supportTicketMessages) {
+          testDbStore.supportTicketMessages = testDbStore.supportTicketMessages.map((stm) => {
+            if (checkMatch(stm, expression)) {
+              const updated = { ...stm, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return stm;
+          });
         } else if (table === informalEvents) {
           testDbStore.informalEvents = testDbStore.informalEvents.map((ie) => {
             if (checkMatch(ie, expression)) {
@@ -1629,6 +1679,8 @@ const mockDrizzle = {
       tournamentMatches: [...testDbStore.tournamentMatches],
       tournamentTableQueue: [...testDbStore.tournamentTableQueue],
       officialCertificates: [...testDbStore.officialCertificates],
+      supportTickets: [...testDbStore.supportTickets],
+      supportTicketMessages: [...testDbStore.supportTicketMessages],
     };
 
     try {
@@ -1671,6 +1723,8 @@ const mockDrizzle = {
       testDbStore.tournamentMatches = snapshot.tournamentMatches;
       testDbStore.tournamentTableQueue = snapshot.tournamentTableQueue;
       testDbStore.officialCertificates = snapshot.officialCertificates;
+      testDbStore.supportTickets = snapshot.supportTickets;
+      testDbStore.supportTicketMessages = snapshot.supportTicketMessages;
       throw error;
     }
   },
