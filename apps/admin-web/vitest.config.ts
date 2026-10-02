@@ -3,11 +3,19 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { createRequire } from 'node:module';
 
+if (typeof globalThis.Iterator === 'undefined') {
+  (globalThis as any).Iterator = class Iterator {};
+}
+
 const require = createRequire(import.meta.url);
 const wt = require('node:worker_threads');
 if (typeof wt.markAsUncloneable !== 'function') {
   wt.markAsUncloneable = () => {};
 }
+
+import { pathToFileURL } from 'node:url';
+
+const registerUrl = pathToFileURL(path.resolve(__dirname, './register.js')).href;
 
 export default defineConfig({
   root: path.resolve(__dirname),
@@ -27,7 +35,7 @@ export default defineConfig({
     poolOptions: {
       forks: {
         singleFork: true,
-        execArgv: ['--import', path.resolve(__dirname, './register.js')],
+        execArgv: ['--import', registerUrl],
       },
     },
   },
