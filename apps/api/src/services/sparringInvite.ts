@@ -209,9 +209,9 @@ export class SparringInviteService {
     await auditLedgerService.logEvent({
       actorId: userId,
       action: "SPARRING_INVITE_CREATED",
-      resourceType: "SPARRING_INVITE",
-      resourceId: invite.id,
-      details: {
+      entityType: "SPARRING_INVITE",
+      entityId: invite.id,
+      payload: {
         senderTeamId: input.senderTeamId,
         recipientTeamId: input.recipientTeamId,
         scheduledDate: invite.scheduledDate,
@@ -390,19 +390,19 @@ export class SparringInviteService {
     if (action === "ACCEPT") {
       // Connect to real Direct Messaging infrastructure between both organization leaders
       try {
-        const conversation = await MessagingService.getOrCreateConversation(
+        const result = await MessagingService.getOrCreateConversation(
           invite.creatorId,
           userId,
           "DIRECT"
         );
-        conversationId = conversation.id;
+        conversationId = result.conversation.id;
 
         // Post confirmation message in the thread
-        await MessagingService.sendMessage(
-          userId,
-          conversation.id,
-          "Sparring invitation accepted! Let's coordinate table availability and athlete roster matchups."
-        );
+        await MessagingService.sendMessage({
+          conversationId: result.conversation.id,
+          senderId: userId,
+          content: "Sparring invitation accepted! Let's coordinate table availability and athlete roster matchups.",
+        });
       } catch (chatErr) {
         logger.warn({ err: chatErr }, "Non-fatal error creating conversation for accepted sparring invite");
       }
@@ -425,9 +425,9 @@ export class SparringInviteService {
       await auditLedgerService.logEvent({
         actorId: userId,
         action: "SPARRING_INVITE_ACCEPTED",
-        resourceType: "SPARRING_INVITE",
-        resourceId: invite.id,
-        details: { responderId: userId, conversationId },
+        entityType: "SPARRING_INVITE",
+        entityId: invite.id,
+        payload: { responderId: userId, conversationId },
       });
     } else {
       // Notify sender of decline
@@ -436,7 +436,7 @@ export class SparringInviteService {
           userId: invite.creatorId,
           title: "Sparring Invitation Declined",
           content: "Your sparring invitation was declined.",
-          priority: "NORMAL",
+          priority: "MEDIUM",
           category: "MATCH",
           metadata: { inviteId: invite.id, status: newStatus },
         });
@@ -448,9 +448,9 @@ export class SparringInviteService {
       await auditLedgerService.logEvent({
         actorId: userId,
         action: "SPARRING_INVITE_DECLINED",
-        resourceType: "SPARRING_INVITE",
-        resourceId: invite.id,
-        details: { responderId: userId },
+        entityType: "SPARRING_INVITE",
+        entityId: invite.id,
+        payload: { responderId: userId },
       });
     }
 
@@ -508,9 +508,9 @@ export class SparringInviteService {
     await auditLedgerService.logEvent({
       actorId: userId,
       action: "SPARRING_INVITE_CANCELLED",
-      resourceType: "SPARRING_INVITE",
-      resourceId: invite.id,
-      details: { cancelledBy: userId },
+      entityType: "SPARRING_INVITE",
+      entityId: invite.id,
+      payload: { cancelledBy: userId },
     });
 
     return updated;

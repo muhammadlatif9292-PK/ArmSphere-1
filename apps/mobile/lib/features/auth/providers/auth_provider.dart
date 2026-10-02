@@ -56,6 +56,15 @@ class AuthState {
       activeRole: activeRole ?? this.activeRole,
     );
   }
+
+  bool hasRole(String role) {
+    final r = role.toUpperCase();
+    if (activeRole?.toUpperCase() == r) return true;
+    if (userProfile?['role']?.toString().toUpperCase() == r) return true;
+    return verifiedRoles.any((vr) => vr.toUpperCase() == r);
+  }
+
+  bool hasAnyRole(Iterable<String> roles) => roles.any(hasRole);
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {

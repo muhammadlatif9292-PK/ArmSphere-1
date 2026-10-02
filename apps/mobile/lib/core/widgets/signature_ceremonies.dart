@@ -642,8 +642,9 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// 8 micro-particles radiating outwards from stamp impact

@@ -49,6 +49,12 @@ class AppTheme {
   /// Backward-compatible alias for structural card border (#334155).
   static const Color cardBorder = border;
 
+  /// Backward-compatible alias for cardSurface (#121826).
+  static const Color cardBackground = cardSurface;
+
+  /// Backward-compatible alias for background (#0B0F19).
+  static const Color surfaceDark = background;
+
   // ---------------------------------------------------------------------------
   // 2. Accents & Semantics (WCAG AA/AAA Compliant)
   // ---------------------------------------------------------------------------
@@ -58,11 +64,17 @@ class AppTheme {
   /// Backward-compatible alias for primaryAccent (#EF4444).
   static const Color primaryRed = primaryAccent;
 
+  /// Backward-compatible alias for primaryAccent (#EF4444).
+  static const Color combatCrimson = primaryAccent;
+
   /// Amber Gold (#F59E0B) - Warnings, pending sanctions, and in-straps status.
   static const Color secondaryAccent = Color(0xFFF59E0B);
 
   /// High-contrast Orange (#F97316) - Distinguishable operational warnings.
   static const Color accentOrange = Color(0xFFF97316);
+
+  /// Backward-compatible alias for accentOrange (#F97316).
+  static const Color primaryOrange = accentOrange;
 
   /// Champagne Gold (#D4AF37) - Medals, championship belts, and high-prestige CTAs.
   static const Color goldPrimary = Color(0xFFD4AF37);

@@ -58,7 +58,6 @@ export async function seedStaging() {
         username: "staging_director_punjab",
         passwordHash,
         role: UserRole.PROVINCIAL_DIRECTOR,
-        province: "Punjab",
         regionalCoverage: "Punjab",
         fullName: "Punjab Staging Director",
         isActive: true,
@@ -78,7 +77,6 @@ export async function seedStaging() {
         username: "athlete_alpha_staging",
         passwordHash,
         role: UserRole.ATHLETE,
-        province: "Punjab",
         regionalCoverage: "Punjab",
         fullName: "Alpha Staging Contender",
         isActive: true,
@@ -89,7 +87,6 @@ export async function seedStaging() {
         username: "athlete_beta_staging",
         passwordHash,
         role: UserRole.ATHLETE,
-        province: "Punjab",
         regionalCoverage: "Punjab",
         fullName: "Beta Staging Contender",
         isActive: true,
@@ -104,7 +101,6 @@ export async function seedStaging() {
           target: users.id,
           set: {
             role: u.role,
-            province: u.province,
             regionalCoverage: u.regionalCoverage,
             passwordHash: u.passwordHash,
             fullName: u.fullName,
@@ -120,7 +116,7 @@ export async function seedStaging() {
         userId: u.id,
         role: u.role,
         status: "ACTIVE",
-        scope: u.province || null,
+        scope: u.regionalCoverage || null,
         grantedAt: new Date(),
       });
     }
