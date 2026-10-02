@@ -17,6 +17,7 @@ import {
   eloLedger,
 } from "@armsphere/db-schema";
 import { eq, inArray, like } from "drizzle-orm";
+import { assertIsolatedStagingDatabase } from "../config/databaseGuard.js";
 
 export async function cleanReviewer() {
   console.log("================================================================================");
@@ -24,6 +25,7 @@ export async function cleanReviewer() {
   console.log("================================================================================");
 
   try {
+    assertIsolatedStagingDatabase("cleanReviewer fixture cleanup");
     const reviewerEmail = "reviewer@armsphere.com";
     const refereeEmail = "referee.test@armsphere.com";
     const opponentEmail = "sparring.partner@armsphere.com";

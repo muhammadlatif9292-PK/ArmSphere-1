@@ -6,11 +6,15 @@ import { eq, inArray } from "drizzle-orm";
 import { generateAccessToken } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
 import crypto from "crypto";
+import { assertIsolatedStagingDatabase } from "../config/databaseGuard.js";
 
 async function main() {
   console.log("================================================================================");
   console.log("       ARMSPHERE PHASE 14 — REAL POSTGRESQL RUNTIME PROOF VERIFICATION");
   console.log("================================================================================");
+
+  // Safety Invariant: Refuse execution if connected to production database
+  assertIsolatedStagingDatabase("realPostgresProof runtime verification");
 
   // 1. Verify Real Database Connection
   console.log("\n[STEP 1] Probing Real PostgreSQL Engine...");

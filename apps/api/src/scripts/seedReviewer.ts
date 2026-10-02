@@ -21,6 +21,8 @@ import { hashPassword } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
 import crypto from "crypto";
 
+import { assertIsolatedStagingDatabase } from "../config/databaseGuard.js";
+
 function resolveSeedPassword(envVarName: string, defaultDevPassword: string, roleLabel: string): string {
   const isProduction = process.env.NODE_ENV === "production";
   if (process.env[envVarName]) {
@@ -44,11 +46,8 @@ export async function seedReviewer() {
   console.log("  - In production, set REVIEWER_PASSWORD / REFEREE_PASSWORD or secure randoms apply.");
 
   try {
-    if (process.env.NODE_ENV === "production" && process.env.ALLOW_STORE_REVIEW_SEED_IN_PRODUCTION !== "true") {
-      const errorMsg =
-        "SAFETY ABORT: seedReviewer is a store-review test fixture script and cannot run in production without ALLOW_STORE_REVIEW_SEED_IN_PRODUCTION=true.";
-      console.error(`\n❌ ${errorMsg}\n`);
-      throw new Error(errorMsg);
+    if (process.env.ALLOW_STORE_REVIEW_SEED_IN_PRODUCTION !== "true") {
+      assertIsolatedStagingDatabase("seedReviewer fixture generation");
     }
 
     // 1. Reviewer Athlete Account

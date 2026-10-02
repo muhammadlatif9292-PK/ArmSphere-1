@@ -1,15 +1,25 @@
 import dotenv from "dotenv";
 import { z } from "zod";
+import { isProductionDatabase } from "./databaseGuard.js";
 
 // Load environment variables from .env if present
 dotenv.config();
+
+if (process.env.NODE_ENV === "staging" || process.env.APP_ENV === "staging") {
+  dotenv.config({ path: ".env.staging" });
+  dotenv.config({ path: "../../.env.staging" });
+}
+
 if (!process.env.DATABASE_URL && process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: ".env.staging" });
+  dotenv.config({ path: "../../.env.staging" });
   dotenv.config({ path: "../../.env" });
   dotenv.config({ path: ".env.neon" });
   dotenv.config({ path: "../../.env.neon" });
 }
 
 const isProduction = process.env.NODE_ENV === "production";
+const isStaging = process.env.NODE_ENV === "staging" || process.env.APP_ENV === "staging";
 const isTest = !!(process.env.VITEST || process.env.NODE_ENV === "test");
 
 if (isTest && !process.env.CRON_SECRET) {
@@ -45,7 +55,7 @@ function hasUnsafeSecret(value?: string) {
 }
 
 export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: z.enum(["development", "production", "test", "staging"]).default("development"),
   IS_SERVERLESS: z.preprocess(
     (val) => val === "true" || val === true,
     z.boolean()
@@ -146,6 +156,16 @@ export const envSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ["STRIPE_WEBHOOK_SECRET"],
         message: "Production STRIPE_WEBHOOK_SECRET is required to verify Stripe webhook signatures.",
+      });
+    }
+  }
+
+  if (data.NODE_ENV === "staging") {
+    if (isProductionDatabase(data.DATABASE_URL, process.env.NEON_BRANCH, data.NODE_ENV)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["DATABASE_URL"],
+        message: "Staging environment cannot point to production database or NEON_BRANCH=main.",
       });
     }
   }

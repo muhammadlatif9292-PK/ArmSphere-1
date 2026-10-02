@@ -1,0 +1,71 @@
+name: ArmSphere Isolated Staging & Real PostgreSQL CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-integration-test:
+    name: Isolated Staging Migration, Seed & API Proof
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: armsphere_staging
+          POSTGRES_USER: armsphere_staging_user
+          POSTGRES_PASSWORD: armsphere_staging_ci_password_secure
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: staging
+      NEON_BRANCH: staging
+      PORT: 4000
+      DATABASE_URL: postgresql://armsphere_staging_user:armsphere_staging_ci_password_secure@localhost:5432/armsphere_staging?sslmode=disable
+      DATABASE_URL_UNPOOLED: postgresql://armsphere_staging_user:armsphere_staging_ci_password_secure@localhost:5432/armsphere_staging?sslmode=disable
+      JWT_ACCESS_SECRET: staging_super_secret_armsphere_access_jwt_key_32bytes_minimum_length
+      JWT_REFRESH_SECRET: staging_super_secret_armsphere_refresh_jwt_key_32bytes_minimum_length
+      CRON_SECRET: staging_cron_secret_armsphere_1234567890
+      ALLOW_LOCAL_TEST_DB: "true"
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Workspace Dependencies
+        run: npm ci
+
+      - name: Build Monorepo Workspaces & SDKs
+        run: npm run build
+
+      - name: Run Schema Migrations Against Isolated Staging Database
+        run: npm --prefix apps/api run db:migrate
+
+      - name: Verify Staging Database Schema & Invariant Guard
+        run: npm --prefix apps/api run test src/tests/databaseGuard.test.ts
+
+      - name: Provision Staging Fixtures (Isolated @armsphere.staging)
+        run: npm --prefix apps/api run db:seed:staging
+
+      - name: Execute Live Real PostgreSQL Integration Verification
+        run: npx tsx apps/api/src/scripts/realPostgresProof.ts
+
+      - name: Test Safe Staging Reset & Cleanup
+        run: npm --prefix apps/api run db:reset:staging
