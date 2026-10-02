@@ -106,8 +106,18 @@ export const envSchema = z.object({
   APNS_SANDBOX: z.string().optional().default("true"),
   CRON_SECRET: z.string().min(1, "CRON_SECRET environment variable is required and cannot be empty"),
   STRIPE_SECRET_KEY: z.string().optional().default(""),
-  STRIPE_WEBHOOK_SECRET: z.string().optional().default("")
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default(""),
+  // Federation PDF / Certificate Stamping Microservice
+  FEDERATION_CERT_SERVICE_URL: z.string().optional().default(""),
+  FEDERATION_CERT_API_KEY: z.string().optional().default(""),
+  FEDERATION_CERT_SIGNING_KEY_ID: z.string().optional().default(""),
+  FEDERATION_CERT_TIMEOUT_MS: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return 5000;
+    const parsed = Number(val);
+    return Number.isFinite(parsed) ? parsed : 5000;
+  }, z.number().int().min(500).max(60000)).default(5000)
 }).superRefine((data, ctx) => {
+
   if (data.NODE_ENV === "production") {
     const isTesting = typeof process !== "undefined" && (process.env.VITEST || process.env.NODE_ENV === "test");
 

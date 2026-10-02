@@ -39,6 +39,42 @@ export class ConflictError extends CustomError {
   }
 }
 
+export class ExternalServiceUnconfiguredError extends CustomError {
+  public code = "EXTERNAL_SERVICE_UNCONFIGURED";
+  constructor(message = "External service is unconfigured") {
+    super(message, 503);
+  }
+}
+
+export class CertificateTimeoutError extends CustomError {
+  public code = "CERTIFICATE_GENERATION_TIMEOUT";
+  constructor(message = "External certificate generation service timed out") {
+    super(message, 504);
+  }
+}
+
+export class CertificateUpstreamError extends CustomError {
+  public code = "CERTIFICATE_UPSTREAM_ERROR";
+  constructor(message = "External certificate service returned an upstream error") {
+    super(message, 502);
+  }
+}
+
+export class InvalidCertificateArtifactError extends CustomError {
+  public code = "INVALID_CERTIFICATE_ARTIFACT";
+  constructor(message = "External service returned an invalid or malformed certificate artifact") {
+    super(message, 502);
+  }
+}
+
+export class StorageUploadError extends CustomError {
+  public code = "STORAGE_UPLOAD_FAILED";
+  constructor(message = "Failed to persist certificate artifact to object storage") {
+    super(message, 502);
+  }
+}
+
+
 export const logger = {
   info: (msg: any, ...args: any[]) => console.log(`[INFO]`, msg, ...args),
   error: (msg: any, ...args: any[]) => console.error(`[ERROR]`, msg, ...args),
@@ -66,6 +102,7 @@ const HTTP_STATUS_TITLES: Record<number, string> = {
   422: "Unprocessable Entity",
   429: "Too Many Requests",
   500: "Internal Server Error",
+  503: "Service Unavailable",
 };
 
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
@@ -118,17 +155,22 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
 
   // In production or staging, sanitize 5xx messages and never expose raw stack or query traces
   const isProdOrStaging = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
-  if (status >= 500 && isProdOrStaging) {
+  if (status >= 500 && isProdOrStaging && !err.code?.startsWith("EXTERNAL_") && !err.code?.startsWith("CERTIFICATE_") && !err.code?.startsWith("STORAGE_")) {
     message = "An internal server error occurred.";
   }
 
   logger.error(`${req.method} ${req.path} failed: ${message}`, err);
 
-  res.status(status).json({
+  const responseBody: Record<string, any> = {
     success: false,
     title,
     detail: message,
     status,
     requestId: (req as any).id,
-  });
+  };
+  if (err.code) {
+    responseBody.code = err.code;
+  }
+
+  res.status(status).json(responseBody);
 }

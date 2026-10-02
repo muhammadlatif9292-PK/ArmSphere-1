@@ -264,3 +264,28 @@ tournamentRouter.get(
   authenticate,
   TournamentController.getClubStandings
 );
+// --- Official Documents & Sanction Certificate Management ---
+tournamentRouter.get(
+  "/events/:id/documents",
+  authenticate,
+  TournamentController.listEventDocuments
+);
+
+tournamentRouter.get(
+  "/events/:id/documents/:documentId",
+  authenticate,
+  TournamentController.getEventDocument
+);
+
+tournamentRouter.post(
+  "/events/:id/sanction-certificate",
+  authenticate,
+  requireRole(UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.issueSanctionCertificate
+);
+
+tournamentRouter.get(
+  "/events/:id/sanction-certificate",
+  authenticate,
+  TournamentController.getSanctionCertificateStatus
+);

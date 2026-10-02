@@ -578,6 +578,25 @@ export const refereeCertifications = pgTable("referee_certifications", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const officialCertificates = pgTable("official_certificates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  certificateType: varchar("certificate_type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("BLOCKED"),
+  eventId: uuid("event_id").references(() => events.id),
+  recipientUserId: uuid("recipient_user_id").references(() => users.id),
+  issuerUserId: uuid("issuer_user_id").references(() => users.id).notNull(),
+  certificateNumber: varchar("certificate_number", { length: 100 }),
+  fileKey: varchar("file_key", { length: 1024 }),
+  sha256Hash: varchar("sha256_hash", { length: 64 }),
+  metadata: jsonb("metadata"),
+  blockedReason: text("blocked_reason"),
+  idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull().unique(),
+  issuedAt: timestamp("issued_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const talentNominations = pgTable("talent_nominations", {
   id: uuid("id").primaryKey().defaultRandom(),
   nominatedByUserId: uuid("nominated_by_user_id").references(() => users.id).notNull(),

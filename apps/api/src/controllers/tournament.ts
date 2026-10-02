@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { TournamentService } from "../services/tournament.js";
+import { FederationCertificateService } from "../services/federationCertificate.js";
 import { z } from "zod";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
@@ -560,6 +561,51 @@ export class TournamentController {
       await TournamentService.getEvent(id); // 404s when the event does not exist
       const matches = await TournamentService.getEventMatches(id);
       res.json(matches);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async listEventDocuments(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const docs = await FederationCertificateService.listTournamentDocuments(id);
+      res.json(docs);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getEventDocument(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id, documentId } = req.params;
+      const doc = await FederationCertificateService.getTournamentDocument(id, documentId);
+      res.json({ success: true, data: doc });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async issueSanctionCertificate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const user = (req as any).user;
+      const result = await FederationCertificateService.issueSanctionCertificate(
+        user.id,
+        user.role,
+        id
+      );
+      res.status(201).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getSanctionCertificateStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const status = await FederationCertificateService.getEventSanctionCertificate(id);
+      res.json({ success: true, data: status });
     } catch (error) {
       next(error);
     }

@@ -61,6 +61,7 @@ import {
   venuePartners,
   talentNominations,
   refereeCertifications,
+  officialCertificates,
   informalEvents,
   informalEventParticipants,
   ticketTypes,
@@ -144,6 +145,7 @@ export const testDbStore = {
   venuePartners: [] as any[],
   talentNominations: [] as any[],
   refereeCertifications: [] as any[],
+  officialCertificates: [] as any[],
   informalEvents: [] as any[],
   informalEventParticipants: [] as any[],
   ticketTypes: [] as any[],
@@ -235,6 +237,7 @@ beforeEach(() => {
   testDbStore.venuePartners = [];
   testDbStore.talentNominations = [];
   testDbStore.refereeCertifications = [];
+  testDbStore.officialCertificates = [];
   testDbStore.informalEvents = [];
   testDbStore.informalEventParticipants = [];
   testDbStore.ticketTypes = [];
@@ -653,6 +656,8 @@ const mockDrizzle = {
         results = testDbStore.talentNominations;
       } else if (table === refereeCertifications) {
         results = testDbStore.refereeCertifications;
+      } else if (table === officialCertificates) {
+        results = testDbStore.officialCertificates;
       } else if (table === informalEvents) {
         results = testDbStore.informalEvents;
       } else if (table === informalEventParticipants) {
@@ -948,6 +953,17 @@ const mockDrizzle = {
           testDbStore.talentNominations.push(record);
         } else if (table === refereeCertifications) {
           testDbStore.refereeCertifications.push(record);
+        } else if (table === officialCertificates) {
+          testDbStore.officialCertificates.push(record);
+        } else if (table === officialCertificates) {
+          testDbStore.officialCertificates = testDbStore.officialCertificates.map((oc) => {
+            if (checkMatch(oc, expression)) {
+              const updated = { ...oc, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return oc;
+          });
         } else if (table === informalEvents) {
           testDbStore.informalEvents.push(record);
         } else if (table === informalEventParticipants) {
@@ -1340,6 +1356,15 @@ const mockDrizzle = {
             }
             return rc;
           });
+        } else if (table === officialCertificates) {
+          testDbStore.officialCertificates = testDbStore.officialCertificates.map((oc) => {
+            if (checkMatch(oc, expression)) {
+              const updated = { ...oc, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return oc;
+          });
         } else if (table === informalEvents) {
           testDbStore.informalEvents = testDbStore.informalEvents.map((ie) => {
             if (checkMatch(ie, expression)) {
@@ -1603,6 +1628,7 @@ const mockDrizzle = {
       matchTables: [...testDbStore.matchTables],
       tournamentMatches: [...testDbStore.tournamentMatches],
       tournamentTableQueue: [...testDbStore.tournamentTableQueue],
+      officialCertificates: [...testDbStore.officialCertificates],
     };
 
     try {
@@ -1644,6 +1670,7 @@ const mockDrizzle = {
       testDbStore.matchTables = snapshot.matchTables;
       testDbStore.tournamentMatches = snapshot.tournamentMatches;
       testDbStore.tournamentTableQueue = snapshot.tournamentTableQueue;
+      testDbStore.officialCertificates = snapshot.officialCertificates;
       throw error;
     }
   },

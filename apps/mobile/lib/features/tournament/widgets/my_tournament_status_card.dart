@@ -407,13 +407,21 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
         final catName = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship';
         final standing = reg?['finalStanding']?.toString() ?? 'Official Participant';
         final certId = reg?['certificateId']?.toString() ?? reg?['athleteNumber']?.toString() ?? widget.tournament['id']?.toString() ?? 'CERT';
+        final certUrl = reg?['certificateUrl']?.toString() ??
+            widget.tournament['certificateUrl']?.toString() ??
+            widget.tournament['sanctionCertificateUrl']?.toString();
+        final hasValidCert = certUrl != null && certUrl.isNotEmpty && certUrl.startsWith('http');
 
         return Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.workspace_premium_rounded, size: 44, color: Color(0xFFFFD700)),
+              Icon(
+                hasValidCert ? Icons.workspace_premium_rounded : Icons.pending_actions_rounded,
+                size: 44,
+                color: hasValidCert ? const Color(0xFFFFD700) : Colors.amber,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'OFFICIAL DIGITAL CERTIFICATE',
@@ -426,33 +434,89 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
               ),
               const SizedBox(height: 8),
               Text(
-                '$standing • $catName\nVerified Digital Certificate #$certId',
+                '$standing • $catName\nCertificate Record: #$certId',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
               ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFD700),
-                foregroundColor: Colors.black,
-                minimumSize: const Size(double.infinity, 44),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✓ Official Certificate downloaded to device.'),
-                    backgroundColor: Color(0xFFFFD700),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: hasValidCert
+                      ? const Color(0xFFFFD700).withValues(alpha: 0.12)
+                      : Colors.amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: hasValidCert
+                        ? const Color(0xFFFFD700).withValues(alpha: 0.4)
+                        : Colors.amber.withValues(alpha: 0.4),
                   ),
-                );
-              },
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text('DOWNLOAD PDF CERTIFICATE', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      );
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasValidCert ? Icons.verified_rounded : Icons.info_outline_rounded,
+                      size: 15,
+                      color: hasValidCert ? const Color(0xFFFFD700) : Colors.amber,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        hasValidCert
+                            ? 'Certificate Verified & Available for Download'
+                            : 'Official digital certificate generation is pending external federation service integration. Status: PENDING EXTERNAL SERVICE.',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: hasValidCert ? const Color(0xFFFFD700) : Colors.amber,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: hasValidCert ? const Color(0xFFFFD700) : const Color(0xFF1E293B),
+                  foregroundColor: hasValidCert ? Colors.black : Colors.white70,
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  side: hasValidCert ? null : const BorderSide(color: Colors.white24),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  if (hasValidCert) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✓ Opening verified certificate...'),
+                        backgroundColor: Color(0xFFFFD700),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Official digital certificate generation is pending external federation service integration. Status: PENDING EXTERNAL SERVICE.',
+                        ),
+                        backgroundColor: Colors.amber,
+                      ),
+                    );
+                  }
+                },
+                icon: Icon(
+                  hasValidCert ? Icons.download_rounded : Icons.lock_outline_rounded,
+                  size: 18,
+                ),
+                label: Text(
+                  hasValidCert ? 'DOWNLOAD PDF CERTIFICATE' : 'PENDING EXTERNAL SERVICE',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
     },
   );
 }
