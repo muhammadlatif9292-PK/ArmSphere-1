@@ -1,7 +1,11 @@
 import { createRequire } from 'node:module';
 
-if (typeof globalThis.Iterator === 'undefined') {
-  globalThis.Iterator = class Iterator {};
+if (typeof (globalThis as any).Iterator === 'undefined') {
+  (globalThis as any).Iterator = class Iterator {
+    static from(it: any) {
+      return it;
+    }
+  };
 }
 
 const require = createRequire(import.meta.url);
