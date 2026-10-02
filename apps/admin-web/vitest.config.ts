@@ -17,6 +17,10 @@ import { pathToFileURL } from 'node:url';
 
 const registerUrl = pathToFileURL(path.resolve(__dirname, './register.js')).href;
 
+if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes(registerUrl)) {
+  process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --import ${registerUrl}`.trim();
+}
+
 export default defineConfig({
   root: path.resolve(__dirname),
   plugins: [react()],
@@ -33,6 +37,7 @@ export default defineConfig({
     testTimeout: 20000,
     pool: 'forks',
     poolOptions: {
+      execArgv: ['--import', registerUrl],
       forks: {
         singleFork: true,
         execArgv: ['--import', registerUrl],
