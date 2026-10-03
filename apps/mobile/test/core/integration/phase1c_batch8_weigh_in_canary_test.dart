@@ -516,58 +516,60 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            eventRegistrationsProvider(testTournamentId).overrideWith((ref) async => mockRegistrations),
-            eventDetailProvider(testTournamentId).overrideWith((ref) async => {
-                  'id': testTournamentId,
-                  'name': 'National Championship 2026',
-                }),
-          ],
-          child: const MaterialApp(
-            home: MediaQuery(
-              data: MediaQueryData(
-                size: Size(800, 2400),
-                disableAnimations: true,
+      try {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              eventRegistrationsProvider(testTournamentId).overrideWith((ref) async => mockRegistrations),
+              eventDetailProvider(testTournamentId).overrideWith((ref) async => {
+                    'id': testTournamentId,
+                    'name': 'National Championship 2026',
+                  }),
+            ],
+            child: const MaterialApp(
+              home: MediaQuery(
+                data: MediaQueryData(
+                  size: Size(800, 2400),
+                  disableAnimations: true,
+                ),
+                child: TournamentWeighInScreen(tournamentId: testTournamentId),
               ),
-              child: TournamentWeighInScreen(tournamentId: testTournamentId),
             ),
           ),
-        ),
-      );
-      await settleScreen(tester);
-      await tester.pump(const Duration(milliseconds: 300));
-
-      Finder findSemantics(String label) {
-        final f = find.bySemanticsLabel(label, skipOffstage: false);
-        if (f.evaluate().isNotEmpty) return f;
-        return find.byWidgetPredicate(
-          (w) => w is Semantics && (w.properties.label == label || (w.properties.label?.contains(label) ?? false)),
-          skipOffstage: false,
         );
+        await settleScreen(tester);
+        await tester.pump(const Duration(milliseconds: 300));
+
+        Finder findSemantics(String label) {
+          final f = find.bySemanticsLabel(label, skipOffstage: false);
+          if (f.evaluate().isNotEmpty) return f;
+          return find.byWidgetPredicate(
+            (w) => w is Semantics && (w.properties.label == label || (w.properties.label?.contains(label) ?? false)),
+            skipOffstage: false,
+          );
+        }
+
+        // Check keypad semantic labels
+        expect(findSemantics('Number 5'), findsOneWidget);
+        expect(findSemantics('Decimal point'), findsOneWidget);
+        expect(findSemantics('Backspace, delete last digit'), findsOneWidget);
+        expect(findSemantics('Clear entered weight reading'), findsOneWidget);
+
+        // Check nudge button semantics matching production implementation
+        expect(findSemantics('Increase weight by 0.1 kilograms'), findsOneWidget);
+        expect(findSemantics('Decrease weight by 0.1 kilograms'), findsOneWidget);
+
+        // Check athlete passport semantics
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is Semantics && (w.properties.label?.contains('Athlete Digital Passport: Zubair Khan') ?? false),
+            skipOffstage: false,
+          ),
+          findsOneWidget,
+        );
+      } finally {
+        semantics.dispose();
       }
-
-      // Check keypad semantic labels
-      expect(findSemantics('Number 5'), findsOneWidget);
-      expect(findSemantics('Decimal point'), findsOneWidget);
-      expect(findSemantics('Backspace, delete last digit'), findsOneWidget);
-      expect(findSemantics('Clear entered weight reading'), findsOneWidget);
-
-      // Check nudge button semantics matching production implementation
-      expect(findSemantics('Increase weight by 0.1 kilograms'), findsOneWidget);
-      expect(findSemantics('Decrease weight by 0.1 kilograms'), findsOneWidget);
-
-      // Check athlete passport semantics
-      expect(
-        find.byWidgetPredicate(
-          (w) => w is Semantics && (w.properties.label?.contains('Athlete Digital Passport: Zubair Khan') ?? false),
-          skipOffstage: false,
-        ),
-        findsOneWidget,
-      );
     });
   });
 }
