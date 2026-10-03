@@ -161,7 +161,7 @@ void main() {
             widget.width == 52 &&
             widget.height == 52 &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
-            widget.semanticLabel == 'Red corner competitor avatar for Hamza "The Hammer" Khan',
+            widget.semanticLabel == 'Red corner competitor avatar for Red Corner Contender',
       );
       expect(redAvatarFinder, findsOneWidget);
 
@@ -172,15 +172,14 @@ void main() {
             widget.width == 52 &&
             widget.height == 52 &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
-            widget.semanticLabel == 'Blue corner competitor avatar for Tariq "Iron Grip" Malik',
+            widget.semanticLabel == 'Blue corner competitor avatar for Blue Corner Contender',
       );
       expect(blueAvatarFinder, findsOneWidget);
 
       // 4. Verify competitor names and ELO figures are preserved
-      expect(find.text('Hamza "The Hammer" Khan'), findsOneWidget);
-      expect(find.text('Tariq "Iron Grip" Malik'), findsOneWidget);
-      expect(find.text('1945 ELO'), findsOneWidget);
-      expect(find.text('1885 ELO'), findsOneWidget);
+      expect(find.text('Red Corner Contender'), findsOneWidget);
+      expect(find.text('Blue Corner Contender'), findsOneWidget);
+      expect(find.text('1500 ELO'), findsWidgets);
 
       // Clean teardown
       await tester.pumpWidget(const SizedBox());

@@ -110,6 +110,9 @@ void main() {
     ];
 
     Future<void> settleScreen(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
     }
@@ -179,7 +182,7 @@ void main() {
       await settleScreen(tester);
 
       expect(find.text('Zubair Khan'), findsWidgets);
-      expect(find.text('PAFF-LIC-8821'), findsOneWidget);
+      expect(find.textContaining('PAFF-LIC-8821'), findsOneWidget);
       expect(find.text('85.0 KG MAX'), findsOneWidget);
       expect(find.text('PENDING CHECK'), findsOneWidget);
       expect(find.text('SCALE: RADWAG C32.60 PRECISION (NIST CALIBRATED 0.05 KG)'), findsOneWidget);

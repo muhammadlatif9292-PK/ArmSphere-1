@@ -404,9 +404,16 @@ void main() {
     });
 
     Widget buildTestWidget({
+      WidgetTester? tester,
       AuthState? customAuth,
       List<Override>? additionalOverrides,
     }) {
+      if (tester != null) {
+        tester.view.physicalSize = const Size(800, 3000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+      }
+
       final defaultAuth = AuthState(
         status: AuthStatus.authenticated,
         userProfile: {'id': 'dir_01', 'role': 'PROVINCIAL_DIRECTOR', 'fullName': 'Director Khan'},
@@ -434,6 +441,9 @@ void main() {
     }
 
     Future<void> settleScreen(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
     }
@@ -442,7 +452,7 @@ void main() {
     // Test A: Event-scoped table loading and rendering
     // -------------------------------------------------------------------------
     testWidgets('Test A: Loads event-scoped tables and displays section header', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       expect(find.text('ARENA TABLES & QUEUES'), findsOneWidget);
@@ -455,7 +465,7 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Test B: Displays truthful empty state when no tables exist for event', (tester) async {
       fakeRepo.tablesData.clear();
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       expect(find.textContaining('No tables registered for this event yet'), findsOneWidget);
@@ -467,6 +477,7 @@ void main() {
     testWidgets('Test C: Displays loading indicator while event tables are fetching', (tester) async {
       final completer = Completer<List<Map<String, dynamic>>>();
       await tester.pumpWidget(buildTestWidget(
+        tester: tester,
         additionalOverrides: [
           eventMatchTablesProvider(testTournamentId).overrideWith((ref) => completer.future),
         ],
@@ -483,6 +494,7 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Test D: Displays error card and retry action on backend error', (tester) async {
       await tester.pumpWidget(buildTestWidget(
+        tester: tester,
         additionalOverrides: [
           eventMatchTablesProvider(testTournamentId).overrideWith((ref) => Future.error('DB Connection Timeout')),
         ],
@@ -497,7 +509,7 @@ void main() {
     // Test E: Active table rendering with active bout details and unassign action
     // -------------------------------------------------------------------------
     testWidgets('Test E: Renders ACTIVE table with active bout athletes, referee, and unassign button', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       expect(find.text('ACTIVE BOUT'), findsOneWidget);
@@ -510,7 +522,7 @@ void main() {
     // Test F: Table queue rendering with position numbers and match details
     // -------------------------------------------------------------------------
     testWidgets('Test F: Renders table queue with position badges and athlete names', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       expect(find.text('TABLE QUEUE (1)'), findsNWidgets(2)); // Table 1 and Table 2 each have 1 queue item
@@ -522,7 +534,7 @@ void main() {
     // Test G: Call Next Match for idle table with queue
     // -------------------------------------------------------------------------
     testWidgets('Test G: Prominent CALL NEXT MATCH button on idle table triggers confirmation and calls match', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       // Stream Table 2 is IDLE with Hamza vs Usman in queue -> displays CALL NEXT MATCH
@@ -549,7 +561,7 @@ void main() {
     // Test H: Unassign active match from table
     // -------------------------------------------------------------------------
     testWidgets('Test H: Tapping UNASSIGN MATCH opens confirmation and releases table', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       // Find UNASSIGN MATCH button
@@ -574,7 +586,7 @@ void main() {
     // Test I: Queue insertion flow
     // -------------------------------------------------------------------------
     testWidgets('Test I: Tapping Queue opens dialog and queues eligible READY match', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       // Find Queue button for Stream Table 2
@@ -600,7 +612,7 @@ void main() {
     // Test J & K: Queue reorder & move to another table
     // -------------------------------------------------------------------------
     testWidgets('Test J & K: Rebalance dialog opens and permits moving match to another table', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       final reorderIcons = find.byTooltip('Reorder / Move');
@@ -623,7 +635,7 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Test L: Handles 409 conflict error truthfully and refreshes arena state', (tester) async {
       fakeRepo.shouldThrow409OnCall = true;
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       await tester.tap(find.text('CALL NEXT MATCH'));
@@ -645,7 +657,7 @@ void main() {
         verifiedRoles: ['ATHLETE'],
       );
 
-      await tester.pumpWidget(buildTestWidget(customAuth: athleteAuth));
+      await tester.pumpWidget(buildTestWidget(tester: tester, customAuth: athleteAuth));
       await settleScreen(tester);
 
       // Add Table button must NOT be rendered for athlete
@@ -659,7 +671,7 @@ void main() {
     // Test N: Table creation scopes table to tournament event ID
     // -------------------------------------------------------------------------
     testWidgets('Test N: Table creation scopes table to current event ID', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       expect(find.text('Add Table'), findsOneWidget);
@@ -679,7 +691,7 @@ void main() {
     // Test O: Falsification check proves zero legacy simulated pullers or hardcoded counts
     // -------------------------------------------------------------------------
     testWidgets('Test O: Zero legacy simulated names or static 3 tables active remain', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       expect(find.text('M. Todd'), findsNothing);
@@ -694,7 +706,7 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Test P: Concurrency guard: _busy flag prevents duplicate operator calls during in-flight mutation', (tester) async {
       fakeRepo.callMatchDelay = const Duration(milliseconds: 200);
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       await tester.tap(find.text('CALL NEXT MATCH'));
@@ -720,7 +732,7 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Test Q: Offline mutation protection: surfaces truthful error without fake success', (tester) async {
       fakeRepo.shouldThrowOfflineOnQueue = true;
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       final queueButtons = find.widgetWithText(OutlinedButton, 'Queue');
@@ -741,7 +753,7 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Test R: Concurrent rebalance conflict (409) triggers error notification and arena refresh', (tester) async {
       fakeRepo.shouldThrowConflictOnRebalance = true;
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       final reorderIcons = find.byTooltip('Reorder / Move');
@@ -758,7 +770,7 @@ void main() {
     // Test S: Touch targets for critical operator actions satisfy minimum 64dp requirement
     // -------------------------------------------------------------------------
     testWidgets('Test S: Touch targets for critical operator actions satisfy minimum 64dp requirement', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
+      await tester.pumpWidget(buildTestWidget(tester: tester));
       await settleScreen(tester);
 
       // Table 1 has an active match -> UNASSIGN MATCH button

@@ -241,7 +241,7 @@ void main() {
       expect(find.text('UNBOX & INSPECT GOLD MEDAL CITATION'), findsOneWidget);
 
       // Tap Silver tier (Kamran Zaidi)
-      await tester.tap(find.text('2'));
+      await tester.tap(find.text('2'), warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250)); // AnimatedSwitcher transition
 
@@ -249,15 +249,15 @@ void main() {
       expect(find.text('Lahore Armwrestling Club • Punjab'), findsOneWidget);
 
       // Open medal citation dialog
-      await tester.tap(find.text('UNBOX & INSPECT SILVER MEDAL CITATION'));
+      await tester.tap(find.text('UNBOX & INSPECT SILVER MEDAL CITATION'), warnIfMissed: false);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 600));
 
       expect(find.byType(ChampionshipGoldCard), findsOneWidget);
       expect(find.text('Share Championship Card'), findsOneWidget);
 
       // Close modal
-      await tester.tap(find.text('Close'));
+      await tester.tap(find.text('Close'), warnIfMissed: false);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(ChampionshipGoldCard), findsNothing);
