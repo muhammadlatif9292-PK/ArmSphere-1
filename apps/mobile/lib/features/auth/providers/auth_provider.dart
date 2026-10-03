@@ -140,7 +140,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final verified = _extractVerifiedRoles(profile);
       final pending = _extractPendingApplications(profile);
       final cachedRole = _readActiveRole(hiveStorage);
-      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
+      final activeRole = _resolveActiveRoleOnLaunch(verified, cachedRole);
+
+      // Keep storage in sync with resolved launch role
+      if (cachedRole != activeRole) {
+        await hiveStorage.cacheData('auth_active_role', {'activeRole': activeRole});
+      }
 
       state = AuthState(
         status: onboarded ? AuthStatus.authenticated : AuthStatus.onboardingRequired,
@@ -163,14 +168,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (profile['verifiedRoles'] is List) {
       final roles = (profile['verifiedRoles'] as List).map((e) => e.toString()).toList();
       if (roles.contains('SYSTEM_ADMIN') || profile['role'] == 'SYSTEM_ADMIN') {
-        return ['SYSTEM_ADMIN', 'ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR'];
+        return ['ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR', 'SYSTEM_ADMIN'];
       }
       return roles;
     }
     final primaryRole = profile['role']?.toString();
     if (primaryRole != null && primaryRole.isNotEmpty) {
       if (primaryRole == 'SYSTEM_ADMIN') {
-        return ['SYSTEM_ADMIN', 'ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR'];
+        return ['ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR', 'SYSTEM_ADMIN'];
       }
       return [primaryRole];
     }
@@ -188,22 +193,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return const [];
   }
 
-  String _resolveActiveRole(
-    List<String> verified,
-    Map<String, dynamic>? profile,
-    String? cachedRole,
-  ) {
-    if (cachedRole != null && verified.contains(cachedRole)) {
-      return cachedRole;
+  /// When a user logs in (e.g. fresh install / login with existing account):
+  /// Default strictly to ATHLETE role unless the user has only 1 verified role.
+  String _resolveActiveRoleOnLogin(List<String> verified) {
+    if (verified.length == 1) {
+      return verified.first;
     }
-    final primary = profile?['role']?.toString();
-    if (primary != null && verified.contains(primary)) {
-      return primary;
+    if (verified.contains('ATHLETE')) {
+      return 'ATHLETE';
     }
     if (verified.isNotEmpty) {
       return verified.first;
     }
-    return primary ?? 'ATHLETE';
+    return 'ATHLETE';
+  }
+
+  /// When a user launches / returns to the app (cold start or continuing usage):
+  /// Restore the last used role if verified; if only 1 role exists, use that; otherwise default to ATHLETE.
+  String _resolveActiveRoleOnLaunch(
+    List<String> verified,
+    String? cachedRole,
+  ) {
+    if (verified.length == 1) {
+      return verified.first;
+    }
+    if (cachedRole != null && verified.contains(cachedRole)) {
+      return cachedRole;
+    }
+    if (verified.contains('ATHLETE')) {
+      return 'ATHLETE';
+    }
+    if (verified.isNotEmpty) {
+      return verified.first;
+    }
+    return 'ATHLETE';
   }
 
   String? _readActiveRole(HiveStorage hiveStorage) {
@@ -305,8 +328,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final verified = _extractVerifiedRoles(profile);
       final pending = _extractPendingApplications(profile);
       final hiveStorage = ref.read(hiveStorageProvider);
-      final cachedRole = _readActiveRole(hiveStorage);
-      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
+
+      // On fresh login, always default strictly to ATHLETE (unless user only has 1 verified role)
+      final activeRole = _resolveActiveRoleOnLogin(verified);
+      await hiveStorage.cacheData('auth_active_role', {'activeRole': activeRole});
 
       state = AuthState(
         status: onboarded ? AuthStatus.authenticated : AuthStatus.onboardingRequired,
@@ -340,8 +365,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final verified = _extractVerifiedRoles(profile);
       final pending = _extractPendingApplications(profile);
       final hiveStorage = ref.read(hiveStorageProvider);
-      final cachedRole = _readActiveRole(hiveStorage);
-      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
+      final activeRole = _resolveActiveRoleOnLogin(verified);
+      await hiveStorage.cacheData('auth_active_role', {'activeRole': activeRole});
 
       state = AuthState(
         status: AuthStatus.onboardingRequired,
@@ -449,8 +474,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final verified = _extractVerifiedRoles(profile);
       final pending = _extractPendingApplications(profile);
       final hiveStorage = ref.read(hiveStorageProvider);
-      final cachedRole = _readActiveRole(hiveStorage);
-      final activeRole = _resolveActiveRole(verified, profile, cachedRole);
+      final activeRole = _resolveActiveRoleOnLogin(verified);
+      await hiveStorage.cacheData('auth_active_role', {'activeRole': activeRole});
 
       await _persistSession(profile, data['accessToken']?.toString(), data['refreshToken']?.toString());
 
@@ -579,11 +604,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final hiveStorage = ref.read(hiveStorageProvider);
       final cachedRole = _readActiveRole(hiveStorage);
-      final currentActive = _resolveActiveRole(
+      final currentActive = _resolveActiveRoleOnLaunch(
         verified,
-        state.userProfile,
         state.activeRole ?? cachedRole,
       );
+
+      if (currentActive != cachedRole) {
+        await hiveStorage.cacheData('auth_active_role', {'activeRole': currentActive});
+      }
 
       state = state.copyWith(
         verifiedRoles: verified,

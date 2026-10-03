@@ -108,7 +108,10 @@ class RoleAwareHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userRole = (authState.activeRole ?? authState.userProfile?['role'])?.toString().toUpperCase();
+    final userRole = authState.activeRole?.toUpperCase() ??
+        (authState.verifiedRoles.length == 1
+            ? authState.verifiedRoles.first.toUpperCase()
+            : 'ATHLETE');
 
     if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
@@ -177,18 +180,19 @@ final routerProvider = Provider<GoRouter>((ref) {
               location == '/' || entryRoutes.contains(location) || location.startsWith('/mfa/verify');
           
           if (atEntry) {
-            // Check active client persona first, then fallback to user profile role
-            final activeRole = authState.activeRole?.toUpperCase();
-            final profileRole = authState.userProfile?['role']?.toString().toUpperCase();
-            final effectiveRole = activeRole ?? profileRole;
+            // Check active client persona first; if only 1 role exists use that, otherwise default to ATHLETE
+            final activeRole = authState.activeRole?.toUpperCase() ??
+                (authState.verifiedRoles.length == 1
+                    ? authState.verifiedRoles.first.toUpperCase()
+                    : 'ATHLETE');
             
-            if (_isRefereeLandingRole(effectiveRole)) {
+            if (_isRefereeLandingRole(activeRole)) {
               return '/referee/dashboard';
             }
-            if (_isGovernanceLandingRole(effectiveRole)) {
+            if (_isGovernanceLandingRole(activeRole)) {
               return '/governance';
             }
-            // For athletes or pending roles, go to home
+            // For athletes or other roles, go to home
             return '/home';
           }
           

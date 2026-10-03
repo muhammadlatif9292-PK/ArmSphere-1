@@ -60,7 +60,8 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final verifiedRoles = authState.verifiedRoles;
-    final activeRole = authState.activeRole ?? (verifiedRoles.isNotEmpty ? verifiedRoles.first : 'ATHLETE');
+    final activeRole = authState.activeRole ??
+        (verifiedRoles.length == 1 ? verifiedRoles.first : 'ATHLETE');
     final pendingApplications = authState.pendingRoleApplications;
 
     return Scaffold(
