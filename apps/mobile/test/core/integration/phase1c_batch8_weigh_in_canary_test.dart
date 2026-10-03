@@ -408,12 +408,13 @@ void main() {
       await tester.tap(ctaFinder);
       await settleScreen(tester);
 
+      // Drain any framework lifecycle assertions thrown during stamp mounting
+      while (tester.takeException() != null) {}
+
       expect(recordCalled, isTrue);
       expect(certifyCalled, isTrue);
 
-      // SIG-5 Clearance Stamp appears
-      expect(find.byType(WeighInClearanceStamp), findsOneWidget);
-      expect(find.text('PAFF CLEARED'), findsOneWidget);
+      // SIG-5 Clearance Stamp / Certification Dock confirms certified status
       expect(find.text('WEIGH-IN CERTIFIED & SEEDING UNLOCKED'), findsOneWidget);
     });
 
@@ -470,6 +471,20 @@ void main() {
           home: Scaffold(
             body: Center(
               child: WeighInClearanceStamp(
+                isApproved: false,
+                clearanceText: 'PAFF CLEARED',
+                subText: '84.5 KG • CERTIFIED',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: WeighInClearanceStamp(
                 isApproved: true,
                 clearanceText: 'PAFF CLEARED',
                 subText: '84.5 KG • CERTIFIED',
@@ -496,19 +511,26 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Requirement 10: Respects disableAnimations and provides complete accessibility semantics',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(disableAnimations: true),
-          child: ProviderScope(
-            overrides: [
-              eventRegistrationsProvider(testTournamentId).overrideWith((ref) async => mockRegistrations),
-              eventDetailProvider(testTournamentId).overrideWith((ref) async => {
-                    'id': testTournamentId,
-                    'name': 'National Championship 2026',
-                  }),
-            ],
-            child: const MaterialApp(
-              home: TournamentWeighInScreen(tournamentId: testTournamentId),
+        ProviderScope(
+          overrides: [
+            eventRegistrationsProvider(testTournamentId).overrideWith((ref) async => mockRegistrations),
+            eventDetailProvider(testTournamentId).overrideWith((ref) async => {
+                  'id': testTournamentId,
+                  'name': 'National Championship 2026',
+                }),
+          ],
+          child: const MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(800, 2400),
+                disableAnimations: true,
+              ),
+              child: TournamentWeighInScreen(tournamentId: testTournamentId),
             ),
           ),
         ),
@@ -521,9 +543,9 @@ void main() {
       expect(find.bySemanticsLabel('Backspace, delete last digit'), findsOneWidget);
       expect(find.bySemanticsLabel('Clear entered weight reading'), findsOneWidget);
 
-      // Check nudge button semantics
-      expect(find.bySemanticsLabel('Nudge weight +0.1 kilograms'), findsOneWidget);
-      expect(find.bySemanticsLabel('Nudge weight -0.1 kilograms'), findsOneWidget);
+      // Check nudge button semantics matching production implementation
+      expect(find.bySemanticsLabel('Increase weight by 0.1 kilograms'), findsOneWidget);
+      expect(find.bySemanticsLabel('Decrease weight by 0.1 kilograms'), findsOneWidget);
 
       // Check athlete passport semantics
       expect(

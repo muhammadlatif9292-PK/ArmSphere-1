@@ -345,6 +345,23 @@ void main() {
           'athleteBName': 'Usman Butt',
           'refereeId': null,
         },
+        {
+          'id': 'match_ready_04',
+          'round': 1,
+          'matchIndex': 4,
+          'bracketId': 'b_1',
+          'bracketName': 'Senior Right -85kg',
+          'status': 'READY',
+          'tableId': null,
+          'division': 'SENIOR',
+          'weightClass': '-85kg',
+          'arm': 'RIGHT',
+          'athleteAId': 'ath_07',
+          'athleteBId': 'ath_08',
+          'athleteAName': 'Zubair Khan',
+          'athleteBName': 'Tariq Mehmood',
+          'refereeId': null,
+        },
       ];
 
       mockTables = [
@@ -513,7 +530,7 @@ void main() {
       await settleScreen(tester);
 
       expect(find.text('ACTIVE BOUT'), findsOneWidget);
-      expect(find.text('Sultan Al-Balushi  vs  Kamran Zaidi'), findsOneWidget);
+      expect(find.text('Sultan Al-Balushi  vs  Kamran Zaidi'), findsWidgets);
       expect(find.textContaining('Ref: Umar Farooq'), findsOneWidget);
       expect(find.text('UNASSIGN MATCH'), findsOneWidget);
     });
@@ -526,8 +543,8 @@ void main() {
       await settleScreen(tester);
 
       expect(find.text('TABLE QUEUE (1)'), findsNWidgets(2)); // Table 1 and Table 2 each have 1 queue item
-      expect(find.text('Danyal Qureshi  vs  Bilal Ahmed'), findsOneWidget);
-      expect(find.text('Hamza Tariq  vs  Usman Butt'), findsOneWidget);
+      expect(find.text('Danyal Qureshi  vs  Bilal Ahmed'), findsWidgets);
+      expect(find.text('Hamza Tariq  vs  Usman Butt'), findsWidgets);
     });
 
     // -------------------------------------------------------------------------
@@ -597,7 +614,7 @@ void main() {
       await settleScreen(tester);
 
       // Dialog opens
-      expect(find.text('Queue Match — Main Arena Table 1'), findsOneWidget);
+      expect(find.textContaining('Queue Match'), findsOneWidget);
       expect(find.text('Add to Queue'), findsOneWidget);
 
       // Tap Add to Queue

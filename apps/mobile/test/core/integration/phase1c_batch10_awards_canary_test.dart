@@ -222,6 +222,10 @@ void main() {
 
     testWidgets('5. Tapping podium tier selects medalist and reveals unbox citation action',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -249,7 +253,7 @@ void main() {
       expect(find.text('Lahore Armwrestling Club • Punjab'), findsOneWidget);
 
       // Open medal citation dialog
-      await tester.tap(find.text('UNBOX & INSPECT SILVER MEDAL CITATION'), warnIfMissed: false);
+      await tester.tap(find.text('UNBOX & INSPECT SILVER MEDAL CITATION'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
 
@@ -257,9 +261,9 @@ void main() {
       expect(find.text('Share Championship Card'), findsOneWidget);
 
       // Close modal
-      await tester.tap(find.text('Close'), warnIfMissed: false);
+      await tester.tap(find.text('Close'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 600));
       expect(find.byType(ChampionshipGoldCard), findsNothing);
     });
 
