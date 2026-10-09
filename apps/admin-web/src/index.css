@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,14 +6,72 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-display: "Space Grotesk", sans-serif;
 
-  /* Unified dark surface scale (matches AdminShell's established palette). */
-  --color-brand-canvas: #070A11; /* deepest backdrop (main content area) */
-  --color-brand-bg: #0B0F19; /* chrome bars / sidebar header */
-  --color-brand-panel: #0F172A; /* sidebar + elevated panels */
-  --color-brand-raised: #161F30; /* hover raise / inset cards */
-  --color-brand-card: #1E293B; /* primary card surface */
-  --color-brand-border: #334155; /* slate-700 hairlines */
-  --color-brand-accent: #f59e0b; /* amber-500 */
+  /* ARMSPHERE TITANIUM GLASS — ELITE CHAMPIONSHIP EDITION */
+  --color-brand-canvas: #070A11; /* Void Black - Deepest Arena Substrate */
+  --color-brand-bg: #0B0F19; /* Midnight Graphite */
+  --color-brand-panel: #111722; /* Smoked Optical Glass Panel */
+  --color-brand-titanium: #151B24; /* Machined Titanium Surface */
+  --color-brand-raised: #1A2330; /* Dark Brushed Steel */
+  --color-brand-silver: #202832; /* Silver Plane */
+  --color-brand-recessed: #0E131C; /* Recessed Graphite Inset */
+  --color-brand-card: #151B24; /* Primary Card Surface */
+  --color-brand-border: rgba(214, 220, 227, 0.12); /* Crisp Titanium Hairline */
+  --color-brand-border-highlight: rgba(218, 226, 235, 0.22); /* Specular Reflection Rim */
+  
+  /* Semantic Championship Accents */
+  --color-brand-accent: #D4AF37; /* Championship Champagne Gold */
+  --color-brand-gold: #D4AF37;
+  --color-brand-crimson: #E23B3B; /* Competition Crimson */
+  --color-brand-cyan: #38BDF8; /* Electric Cyan Telemetry */
+  --color-brand-emerald: #10B981; /* Verified Emerald */
+}
+
+/* Material Layer Utility Classes */
+.titanium-panel {
+  background: linear-gradient(145deg, #18202B 0%, #151B24 45%, #10151E 100%);
+  border: 1px solid rgba(214, 220, 227, 0.12);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.titanium-card {
+  background: linear-gradient(135deg, #18202B 0%, #151B24 50%, #0F141C 100%);
+  border: 1px solid rgba(214, 220, 227, 0.12);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.brushed-steel {
+  background: linear-gradient(145deg, #202A38 0%, #1A2330 50%, #141C27 100%);
+  border: 1px solid rgba(214, 220, 227, 0.14);
+}
+
+.recessed-graphite {
+  background: #0E131C;
+  border: 1px solid rgba(214, 220, 227, 0.08);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.smoked-glass {
+  background: rgba(17, 23, 34, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(214, 220, 227, 0.14);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.champagne-glow {
+  box-shadow: 0 0 24px -4px rgba(212, 175, 55, 0.25);
+}
+
+.crimson-glow {
+  box-shadow: 0 0 24px -4px rgba(226, 59, 59, 0.25);
+}
+
+.cyan-glow {
+  box-shadow: 0 0 24px -4px rgba(56, 189, 248, 0.25);
+}
+
+.emerald-glow {
+  box-shadow: 0 0 24px -4px rgba(16, 185, 129, 0.25);
 }
 
 html, body, #root {
@@ -21,6 +79,7 @@ html, body, #root {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--color-brand-bg);
+  background-color: var(--color-brand-canvas);
+  color: #F8FAFC;
   font-family: var(--font-sans);
 }

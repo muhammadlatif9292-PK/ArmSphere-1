@@ -23,6 +23,7 @@ import '../../features/home/screens/discover_screen.dart';
 import '../../features/referee/screens/referee_screens.dart';
 import '../../features/tournament/screens/tournament_screens.dart';
 import '../../features/tournament/screens/tournament_operations_screen.dart';
+import '../../features/tournament/screens/tournament_operator_dashboard_screen.dart';
 import '../../features/tournament/screens/tournament_weigh_in_screen.dart';
 import '../../features/tournament/screens/event_registration_screen.dart';
 import '../../features/governance/screens/governance_screens.dart';
@@ -62,10 +63,15 @@ bool _isRefereeLandingRole(String? role) {
   return role != null && refereeRoles.contains(role);
 }
 
+/// Roles that route to the tournament operator dashboard.
+bool _isOperatorLandingRole(String? role) {
+  const operatorRoles = {'TOURNAMENT_OPERATOR'};
+  return role != null && operatorRoles.contains(role);
+}
+
 /// Roles that route to the governance dashboard.
 bool _isGovernanceLandingRole(String? role) {
   const govRoles = {
-    'TOURNAMENT_OPERATOR',
     'COMPLIANCE_OFFICER',
     'SUPPORT_AGENT',
     'PROVINCIAL_DIRECTOR',
@@ -115,6 +121,9 @@ class RoleAwareHomeScreen extends ConsumerWidget {
 
     if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
+    }
+    if (_isOperatorLandingRole(userRole)) {
+      return const TournamentOperatorDashboardScreen();
     }
     if (_isGovernanceLandingRole(userRole)) {
       return const GovernanceDashboardScreen();

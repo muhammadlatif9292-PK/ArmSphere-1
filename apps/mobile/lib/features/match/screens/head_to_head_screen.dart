@@ -782,9 +782,11 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: AppTheme.titanium,
+        gradient: AppTheme.brushedSteelGradient,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -849,9 +851,11 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826), // L2 Surface Card
+        color: AppTheme.titanium,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1106,9 +1110,11 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: AppTheme.titanium,
+        gradient: AppTheme.brushedSteelGradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

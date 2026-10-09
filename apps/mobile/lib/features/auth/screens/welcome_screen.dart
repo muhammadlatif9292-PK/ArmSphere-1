@@ -422,40 +422,44 @@ class _RoleSelectCard extends StatelessWidget {
     return TactilePressWrapper(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.goldPrimary.withValues(alpha: 0.12)
-              : AppTheme.cardSurface,
+              : AppTheme.titanium,
+          gradient: isSelected
+              ? null
+              : AppTheme.brushedSteelGradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderSubtle,
+            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
             width: isSelected ? 1.5 : 1.0,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.22),
-                    blurRadius: 10,
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.25),
+                    blurRadius: 14,
                     spreadRadius: 0.5,
                   ),
+                  AppTheme.titaniumShadow(),
                 ]
-              : null,
+              : [AppTheme.titaniumShadow()],
         ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected
                     ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.elevatedSurface,
+                    : AppTheme.silverPlane,
                 border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderSubtle,
+                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
                   width: 1.0,
                 ),
               ),
@@ -476,7 +480,7 @@ class _RoleSelectCard extends StatelessWidget {
                       fontFamily: 'Space Grotesk',
                       fontWeight: FontWeight.w800,
                       fontSize: 13,
-                      letterSpacing: 0.4,
+                      letterSpacing: 0.5,
                       color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
                     ),
                   ),
@@ -494,18 +498,18 @@ class _RoleSelectCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Container(
-              width: 18,
-              height: 18,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected ? AppTheme.goldPrimary : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderSubtle,
+                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
                   width: 1.5,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 12, color: Colors.black)
+                  ? const Icon(Icons.check, size: 13, color: Colors.black)
                   : null,
             ),
           ],
@@ -568,12 +572,16 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
         child: Container(
           height: 52,
           decoration: BoxDecoration(
-            color: AppTheme.goldPrimary,
+            gradient: AppTheme.championshipGoldGradient,
             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            border: Border.all(
+              color: AppTheme.glassBorderSpecular,
+              width: 1.0,
+            ),
             boxShadow: [
               BoxShadow(
                 color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                blurRadius: 14,
+                blurRadius: 16,
                 spreadRadius: 1,
                 offset: const Offset(0, 3),
               ),

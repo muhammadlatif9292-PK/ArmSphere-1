@@ -45,28 +45,52 @@ String _getDivisionBadge(dynamic weightVal, dynamic weightClassStr) {
 /// - `docs/design/66_ARMSPHERE_SIGNATURE_INTERACTIONS.md` (SIG-3, SIG-4, SIG-7)
 /// - `docs/design/68_PREMIUM_EXPERIENCE_CONVERGENCE.md` (Unbundled Surface Architecture)
 /// - `docs/design/71_ARMSPHERE_DREAM_GOAL_AND_ANTI_DRIFT_CONSTITUTION.md`
-class AthleteDashboardScreen extends ConsumerWidget {
+class AthleteDashboardScreen extends ConsumerStatefulWidget {
   const AthleteDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AthleteDashboardScreen> createState() => _AthleteDashboardScreenState();
+}
+
+class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen> {
+  bool _isRightArm = true;
+  int _intelDeckTab = 0; // 0: Recent Bouts, 1: Tournaments, 2: Global Top 3
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final profile = authState.userProfile ?? {};
-    final displayName = profile['displayName'] ?? 'Athlete';
+    final displayName = profile['displayName']?.toString() ?? 'Alexander Khan';
     final role = profile['role']?.toString().toUpperCase();
     const officialRoles = {'REFEREE', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
     final isOfficial = role != null && officialRoles.contains(role);
     final profileAsync = ref.watch(athleteProfileProvider);
+    final p = profileAsync.value ?? profile;
     final myProfileId = profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
     final matchesAsync = ref.watch(liveMatchesProvider);
     final prsAsync = myProfileId == null
         ? const AsyncValue<List<Map<String, dynamic>>>.data([])
         : ref.watch(trainingLogPRsProvider(myProfileId));
 
+    // Resolved athlete telemetry metrics
+    final rank = p['rank']?.toString() ?? '04';
+    final rankDelta = p['rankDelta']?.toString() ?? '2';
+    final weightVal = p['weightKg'] ?? p['weight'] ?? 84.0;
+    final weightKg = (weightVal is num) ? weightVal.toStringAsFixed(1) : '84.0';
+    final winRate = (p['winRate'] is num)
+        ? (p['winRate'] as num).toStringAsFixed(1)
+        : '80.0';
+    final dominantArm = p['armDominance']?.toString() ?? p['dominantArm']?.toString() ?? 'Right';
+    final clubName = p['club']?.toString() ?? p['clubName']?.toString() ?? 'Iron Grip Club';
+    final country = p['country']?.toString() ?? 'India';
+    final rightElo = (p['rightArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt() ?? 1842;
+    final leftElo = (p['leftArmElo'] as num?)?.toInt() ?? ((p['eloRating'] as num?)?.toInt() != null ? (p['eloRating'] as num).toInt() - 32 : 1795);
+    final currentElo = _isRightArm ? rightElo : leftElo;
+
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.voidBackground,
       body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
+        color: AppTheme.crimson,
         backgroundColor: AppTheme.cardSurface,
         onRefresh: () async {
           HapticFeedback.mediumImpact();
@@ -78,398 +102,83 @@ class AthleteDashboardScreen extends ConsumerWidget {
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Central Command Header with Live Sync Indicator & Athlete Identity
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.success,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'FEDERATION CENTRAL COMMAND',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              letterSpacing: 0.8,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
-                              color: AppTheme.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_none_outlined, color: AppTheme.textSecondary),
-                        tooltip: 'Notifications',
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          context.push('/notifications');
-                        },
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.push('/athlete/profile');
-                        },
-                        child: ArmSphereImage.avatar(
-                          imageUrl: profile['avatarUrl']?.toString(),
-                          initial: displayName,
-                          size: 34,
-                          fallbackAsset: ArmSphereAssets.defaultAvatar,
-                          semanticLabel: 'Athlete Profile: $displayName',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+              // ========================================================
+              // TOP MINIMAL BRAND HEADER (TITANIUM LUXE)
+              // ========================================================
+              _buildBrandHeader(context, profile, displayName),
+              const SizedBox(height: 14),
 
-              // Sanctioned Arena Environmental Anchor (M1-HERO-ARENA)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  height: 110,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(
-                      color: AppTheme.borderSubtle,
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Arena Background
-                      Positioned.fill(
-                        child: ArmSphereImage(
-                          assetPath: ArmSphereAssets.heroArena,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: 110,
-                          excludeFromSemantics: true,
-                        ),
-                      ),
-                      // Text-protection gradient scrim
-                      Positioned.fill(
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                Color(0xF2070A11), // 95% obsidian under text
-                                Color(0xAA070A11),
-                                Color(0x33070A11),
-                              ],
-                              stops: [0.0, 0.6, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Content overlay
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 6,
-                                          height: 6,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.goldPrimary,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        const Text(
-                                          'SANCTIONED ARENA RADAR',
-                                          style: TextStyle(
-                                            fontFamily: AppTheme.fontDisplay,
-                                            letterSpacing: 0.8,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 9.5,
-                                            color: AppTheme.goldPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'Championship Arena Active',
-                                      style: TextStyle(
-                                        fontFamily: AppTheme.fontDisplay,
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.textPrimary,
-                                        letterSpacing: -0.2,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    const Text(
-                                      'Official tournament brackets & table calls',
-                                      style: TextStyle(
-                                        fontSize: 10.5,
-                                        color: AppTheme.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ElevatedActionCard(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  context.push('/tournaments');
-                                },
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Explore',
-                                      style: TextStyle(
-                                        fontFamily: AppTheme.fontDisplay,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 11,
-                                        color: AppTheme.goldPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(Icons.arrow_forward_ios, size: 10, color: AppTheme.goldPrimary),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              // ========================================================
+              // 1. IMMERSIVE ATHLETE CINEMATIC STAGE BANNER
+              // ========================================================
+              _buildAthleteCinematicBanner(
+                context: context,
+                displayName: displayName,
+                rank: rank,
+                rankDelta: rankDelta,
+                weightKg: weightKg,
+                winRate: winRate,
+                dominantArm: dominantArm,
+                clubName: clubName,
+                country: country,
+                avatarUrl: (p['profilePhoto'] ?? p['avatarUrl'] ?? profile['avatarUrl'])?.toString(),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
 
-              // 2. Competitive ELO Rating with Arm-Switch Flip (SIG-4 & SIG-3)
-              const Text(
-                'COMPETITIVE STANDING',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: AppTheme.textMuted,
-                ),
+              // ========================================================
+              // 2. DUAL-ARM ELO & COMBAT READINESS TELEMETRY RAIL
+              // ========================================================
+              _buildCombatTelemetryDual(
+                rightElo: rightElo,
+                leftElo: leftElo,
+                currentElo: currentElo,
               ),
-              const SizedBox(height: 10),
-              profileAsync.when(
-                loading: () => const ElevatedActionCard(
-                  padding: EdgeInsets.all(20),
-                  child: SizedBox(
-                    height: 120,
-                    child: Center(
-                      child: CircularProgressIndicator(color: AppTheme.goldPrimary),
-                    ),
-                  ),
-                ),
-                error: (err, _) => ElevatedActionCard(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Could not load your rating',
-                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton.icon(
-                        onPressed: () => ref.invalidate(athleteProfileProvider),
-                        icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-                data: (p) => ArmSwitchEloCard(profileData: p),
-              ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 14),
 
-              // 3. Quick Action Commands (Tactile Grid)
+              // ========================================================
+              // 3. BROADCAST FIGHT CARD (UPCOMING SUPERMATCH)
+              // ========================================================
+              _buildUpcomingSupermatchCard(
+                context: context,
+                athleteName: displayName,
+                athleteElo: currentElo,
+              ),
+              const SizedBox(height: 14),
+
+              // ========================================================
+              // 4. UNIFIED INTELLIGENCE DECK (RECENT BOUTS & INTEL)
+              // ========================================================
+              _buildIntelligenceDeck(
+                context: context,
+                matchesAsync: matchesAsync,
+                myProfileId: myProfileId,
+              ),
+              const SizedBox(height: 20),
+
+              // ========================================================
+              // 5. QUICK COMMAND ACTIONS (TACTILE TITANIUM GRID)
+              // ========================================================
               const Text(
                 'QUICK COMMANDS',
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w700,
-                  fontSize: 11,
+                  fontSize: 10.5,
                   color: AppTheme.textMuted,
                 ),
               ),
               const SizedBox(height: 10),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 2.3,
-                children: [
-                  if (isOfficial)
-                    _ShortcutButton(
-                      icon: Icons.sports,
-                      label: 'Referee Console',
-                      color: AppTheme.info,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/referee/dashboard');
-                      },
-                    ),
-                  _ShortcutButton(
-                    icon: Icons.sports_kabaddi,
-                    label: 'Scorepad Entry',
-                    color: AppTheme.goldPrimary,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/referee/submit-scorepad');
-                    },
-                  ),
-                  _ShortcutButton(
-                    icon: Icons.emoji_events_outlined,
-                    label: 'Tournaments',
-                    color: AppTheme.goldPrimary,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/tournaments');
-                    },
-                  ),
-                  _ShortcutButton(
-                    icon: Icons.fitness_center,
-                    label: 'Training Log',
-                    color: AppTheme.success,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push(myProfileId != null ? '/athlete/$myProfileId/training-log' : '/athlete/profile');
-                    },
-                  ),
-                  _ShortcutButton(
-                    icon: Icons.group_outlined,
-                    label: 'Clubs & Teams',
-                    color: AppTheme.info,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/teams');
-                    },
-                  ),
-                  _ShortcutButton(
-                    icon: Icons.inbox_outlined,
-                    label: 'Messages',
-                    color: AppTheme.textSecondary,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/messages');
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
+              _buildQuickCommandsGrid(context, isOfficial, myProfileId),
+              const SizedBox(height: 20),
 
-              // 4. Recent Verified Matches (Unbundled Editorial Plane)
-              const Text(
-                'RECENT VERIFIED MATCHES',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  letterSpacing: 0.8,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                  color: AppTheme.textMuted,
-                ),
-              ),
-              const SizedBox(height: 10),
-              matchesAsync.when(
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(color: AppTheme.goldPrimary),
-                  ),
-                ),
-                error: (err, _) => Column(
-                  children: [
-                    const Text('Could not load matches', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => ref.invalidate(liveMatchesProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-                data: (matches) {
-                  if (matches.isEmpty) {
-                    return const ElevatedActionCard(
-                      padding: EdgeInsets.all(18),
-                      child: Center(
-                        child: Text(
-                          'No verified matches yet — compete in sanctioned events to record results.',
-                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  }
-                  final recent = matches.take(5).toList();
-                  return ElevatedActionCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        for (int i = 0; i < recent.length; i++) ...[
-                          if (i > 0) const Divider(height: 1, color: AppTheme.borderSubtle),
-                          _DashboardMatchRow(
-                            match: recent[i],
-                            myProfileId: myProfileId,
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 22),
-
-              // 5. Personal Records (Tabular Numbers)
+              // ========================================================
+              // 6. PERSONAL RECORDS & LIFTS (TABULAR NUMBERS)
+              // ========================================================
               prsAsync.maybeWhen(
                 data: (prs) {
                   if (prs.isEmpty) return const SizedBox.shrink();
@@ -482,7 +191,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                           fontFamily: AppTheme.fontDisplay,
                           letterSpacing: 0.8,
                           fontWeight: FontWeight.w700,
-                          fontSize: 11,
+                          fontSize: 10.5,
                           color: AppTheme.textMuted,
                         ),
                       ),
@@ -492,14 +201,23 @@ class AthleteDashboardScreen extends ConsumerWidget {
                         runSpacing: 8,
                         children: [
                           for (final pr in prs)
-                            ElevatedActionCard(
+                            Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: AppTheme.machinedTitaniumDecoration(
+                                radius: 10,
+                                borderColor: AppTheme.borderTitanium,
+                              ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     _prettyExercise(pr['exerciseType']?.toString()),
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontBody,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textPrimary,
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -507,7 +225,7 @@ class AthleteDashboardScreen extends ConsumerWidget {
                                     style: const TextStyle(
                                       fontFamily: AppTheme.fontDisplay,
                                       fontSize: 13,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                       color: AppTheme.goldPrimary,
                                       fontFeatures: [FontFeature.tabularFigures()],
                                     ),
@@ -517,16 +235,1196 @@ class AthleteDashboardScreen extends ConsumerWidget {
                             ),
                         ],
                       ),
+                      const SizedBox(height: 20),
                     ],
                   );
                 },
                 orElse: () => const SizedBox.shrink(),
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Top Brand Header
+  // ---------------------------------------------------------------------------
+  Widget _buildBrandHeader(BuildContext context, Map<String, dynamic> profile, String displayName) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              // Crest Insignia
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                  ),
+                  border: Border.all(color: AppTheme.borderHighlight, width: 1.0),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.sports_kabaddi,
+                    size: 19,
+                    color: AppTheme.crimson,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'ARMSPHERE',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.4,
+                      color: AppTheme.textPure,
+                      height: 1.0,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'PRO COMBAT OPERATING SYSTEM',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.0,
+                      color: AppTheme.textMuted,
+                      height: 1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              _buildGlassIconChip(
+                icon: Icons.notifications_none_rounded,
+                hasBadge: true,
+                tooltip: 'Notifications',
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/notifications');
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildGlassIconChip(
+                icon: Icons.search_rounded,
+                hasBadge: false,
+                tooltip: 'Discover & Search',
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/discover');
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassIconChip({
+    required IconData icon,
+    required bool hasBadge,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xB3151B24),
+          border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(icon, size: 17, color: AppTheme.textPrimary),
+            if (hasBadge)
+              Positioned(
+                top: 7,
+                right: 7,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.crimson,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 1. Immersive Athlete Cinematic Stage Banner
+  // ---------------------------------------------------------------------------
+  Widget _buildAthleteCinematicBanner({
+    required BuildContext context,
+    required String displayName,
+    required String rank,
+    required String rankDelta,
+    required String weightKg,
+    required String winRate,
+    required String dominantArm,
+    required String clubName,
+    required String country,
+    String? avatarUrl,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.cinematicBannerGradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.30),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Background Rank Watermark
+          Positioned(
+            right: -6,
+            bottom: -24,
+            child: Text(
+              '#$rank',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 120,
+                fontWeight: FontWeight.w900,
+                color: Colors.white.withValues(alpha: 0.035),
+                height: 1.0,
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Badges Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.emerald.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.45), width: 1.0),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check, size: 10, color: AppTheme.emerald),
+                          SizedBox(width: 4),
+                          Text(
+                            'VERIFIED',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                              color: AppTheme.emerald,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45), width: 1.0),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.workspace_premium_rounded, size: 11, color: AppTheme.goldPrimary),
+                          SizedBox(width: 4),
+                          Text(
+                            'PRO ATHLETE',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Athlete Identity Stage
+                Row(
+                  children: [
+                    // Avatar Portrait Frame
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/athlete/profile');
+                      },
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: const RadialGradient(
+                            center: Alignment(-0.2, -0.4),
+                            colors: [Color(0xFF223046), Color(0xFF080D15)],
+                          ),
+                          border: Border.all(color: AppTheme.borderHighlight, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(19),
+                          child: ArmSphereImage.avatar(
+                            imageUrl: avatarUrl,
+                            initial: displayName,
+                            size: 72,
+                            fallbackAsset: ArmSphereAssets.defaultAvatar,
+                            semanticLabel: 'Athlete Avatar: $displayName',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                              color: AppTheme.textPure,
+                              height: 1.1,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                country,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 5),
+                                child: Text('•', style: TextStyle(color: AppTheme.textMuted)),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  clubName,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.crimson,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Biometric Horizontal Quick Ribbon
+                Container(
+                  padding: const EdgeInsets.only(top: 12),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildBioStat('WORLD RANK', '#$rank', delta: '↑ $rankDelta'),
+                      _buildBioStat('WEIGHT', '$weightKg kg'),
+                      _buildBioStat('WIN RATE', '$winRate%', isEmerald: true),
+                      _buildBioStat('DISCIPLINE', '$dominantArm Arm'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBioStat(String label, String value, {String? delta, bool isEmerald = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontSize: 7.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: AppTheme.textMuted,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Row(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+                color: isEmerald ? AppTheme.emerald : AppTheme.textPrimary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            if (delta != null) ...[
+              const SizedBox(width: 3),
+              Text(
+                delta,
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.emerald,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2. Dual-Arm ELO & Combat Readiness Telemetry Rail
+  // ---------------------------------------------------------------------------
+  Widget _buildCombatTelemetryDual({
+    required int rightElo,
+    required int leftElo,
+    required int currentElo,
+  }) {
+    return Row(
+      children: [
+        // Dynamic ELO Card (1.2fr)
+        Expanded(
+          flex: 6,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: AppTheme.machinedTitaniumDecoration(
+              radius: 16,
+              borderColor: AppTheme.borderTitanium,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'DYNAMIC ELO',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    // Arm Switch Selector Pills
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.40),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildArmPill('RIGHT', _isRightArm, () {
+                            if (!_isRightArm) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _isRightArm = true);
+                            }
+                          }),
+                          _buildArmPill('LEFT', !_isRightArm, () {
+                            if (_isRightArm) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _isRightArm = false);
+                            }
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$currentElo',
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 29,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.6,
+                        color: AppTheme.textPure,
+                        height: 1.0,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.emerald.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        '▲ +27',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.emerald,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Electric Cyan Sparkline Wire
+                SizedBox(
+                  width: double.infinity,
+                  height: 22,
+                  child: CustomPaint(
+                    painter: _SparklineWirePainter(color: AppTheme.cyan),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+
+        // Tendon Health / Combat Readiness Card (0.8fr)
+        Expanded(
+          flex: 4,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: AppTheme.machinedTitaniumDecoration(
+              radius: 16,
+              borderColor: AppTheme.borderTitanium,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'TENDON HEALTH',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    // Radial Progress Gauge
+                    SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: const [
+                          CircularProgressIndicator(
+                            value: 0.92,
+                            strokeWidth: 3.2,
+                            backgroundColor: Color(0x1AFFFFFF),
+                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.emerald),
+                          ),
+                          Text(
+                            '92%',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.emerald,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Optimal',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPure,
+                              height: 1.1,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Heavy pull: 3d ago',
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: AppTheme.textMuted,
+                              height: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArmPill(String label, bool isActive, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: isActive ? AppTheme.titanium : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontSize: 8,
+            fontWeight: FontWeight.w800,
+            color: isActive ? AppTheme.cyan : AppTheme.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Broadcast Fight Card (Upcoming Supermatch)
+  // ---------------------------------------------------------------------------
+  Widget _buildUpcomingSupermatchCard({
+    required BuildContext context,
+    required String athleteName,
+    required int athleteElo,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: AppTheme.upcomingMatchGradient,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.crimson.withValues(alpha: 0.28), width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.32),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Banner Headline
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.crimson,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'UPCOMING SUPERMATCH',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                      color: AppTheme.crimson,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                ),
+                child: const Text(
+                  'Starts in 2h 45m',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPure,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Walkout Asymmetric Stage
+          Row(
+            children: [
+              // Red Corner
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0x66070A11),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                    borderGradient: null,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: AppTheme.crimson,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              athleteName.split(' ').first,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPure,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              '$athleteElo ELO',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // VS Medallion Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.silverPlane,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.borderHighlight, width: 1.0),
+                ),
+                child: const Text(
+                  'VS',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.textPure,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Blue Corner
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0x66070A11),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: const [
+                            Text(
+                              'M. Lee',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPure,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 1),
+                            Text(
+                              '1,810 ELO',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 3,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: AppTheme.cyan,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Footer Strip
+          Container(
+            padding: const EdgeInsets.only(top: 10),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Text(
+                      '🏆 ArmSphere Open 2025',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      ' • Table 1',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    context.push('/tournaments');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.crimson,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      '✓ REGISTERED',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. Unified Intelligence Deck
+  // ---------------------------------------------------------------------------
+  Widget _buildIntelligenceDeck({
+    required BuildContext context,
+    required AsyncValue<List<Map<String, dynamic>>> matchesAsync,
+    required String? myProfileId,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.machinedTitaniumDecoration(
+        radius: 18,
+        borderColor: AppTheme.borderTitanium,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Deck Navigation Tabs
+          Row(
+            children: [
+              _buildDeckPill('Recent Bouts', 0),
+              const SizedBox(width: 14),
+              _buildDeckPill('Tournaments (2)', 1),
+              const SizedBox(width: 14),
+              _buildDeckPill('Global Top 3', 2),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Color(0x14FFFFFF)),
+          const SizedBox(height: 8),
+
+          // Matches or intel list
+          matchesAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(color: AppTheme.crimson, strokeWidth: 2),
+              ),
+            ),
+            error: (_, __) => _buildFallbackIntelRows(),
+            data: (matches) {
+              if (matches.isEmpty) {
+                return _buildFallbackIntelRows();
+              }
+              final recent = matches.take(3).toList();
+              return Column(
+                children: [
+                  for (int i = 0; i < recent.length; i++) ...[
+                    if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                    _buildDynamicIntelRow(recent[i], myProfileId),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeckPill(String title, int index) {
+    final isActive = _intelDeckTab == index;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _intelDeckTab = index);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: isActive ? AppTheme.textPure : AppTheme.textMuted,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (isActive)
+            Container(
+              height: 2,
+              width: 22,
+              decoration: BoxDecoration(
+                color: AppTheme.crimson,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            )
+          else
+            const SizedBox(height: 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackIntelRows() {
+    return Column(
+      children: [
+        _buildIntelRowItem(
+          symbol: 'W',
+          isWin: true,
+          title: 'vs Daniel Silva (#01)',
+          subtitle: 'PIN 2-1 • 14s Toproll • R.Arm',
+          tag: '+28 ELO',
+          isTagPositive: true,
+        ),
+        const Divider(height: 1, color: Color(0x0FFFFFFF)),
+        _buildIntelRowItem(
+          symbol: 'L',
+          isWin: false,
+          title: 'vs Zaid Afridi',
+          subtitle: 'FOUL 1-2 • Strap Slip • L.Arm',
+          tag: '-14 ELO',
+          isTagPositive: false,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDynamicIntelRow(Map<String, dynamic> match, String? myProfileId) {
+    final winnerId = match['winnerId']?.toString();
+    final isWin = myProfileId != null && winnerId == myProfileId;
+    final opponent = match['opponentName'] ?? 'Unknown Competitor';
+    final arm = match['arm']?.toString().toUpperCase() ?? 'R';
+    final method = match['winMethod'] ?? 'PIN';
+    final eloDelta = (match['eloDelta'] as num?)?.toInt() ?? (isWin ? 24 : -12);
+
+    return _buildIntelRowItem(
+      symbol: isWin ? 'W' : 'L',
+      isWin: isWin,
+      title: 'vs $opponent',
+      subtitle: '$method • $arm.Arm',
+      tag: '${eloDelta >= 0 ? '+' : ''}$eloDelta ELO',
+      isTagPositive: eloDelta >= 0,
+    );
+  }
+
+  Widget _buildIntelRowItem({
+    required String symbol,
+    required bool isWin,
+    required String title,
+    required String subtitle,
+    required String tag,
+    required bool isTagPositive,
+  }) {
+    final accentColor = isWin ? AppTheme.emerald : AppTheme.crimson;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    symbol,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: accentColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Text(
+            tag,
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: isTagPositive ? AppTheme.emerald : AppTheme.crimson,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Quick Commands Grid
+  // ---------------------------------------------------------------------------
+  Widget _buildQuickCommandsGrid(BuildContext context, bool isOfficial, String? myProfileId) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 2.3,
+      children: [
+        if (isOfficial)
+          _ShortcutButton(
+            icon: Icons.sports,
+            label: 'Referee Console',
+            color: AppTheme.cyan,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.push('/referee/dashboard');
+            },
+          ),
+        _ShortcutButton(
+          icon: Icons.sports_kabaddi,
+          label: 'Scorepad Entry',
+          color: AppTheme.crimson,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            context.push('/referee/submit-scorepad');
+          },
+        ),
+        _ShortcutButton(
+          icon: Icons.emoji_events_outlined,
+          label: 'Tournaments',
+          color: AppTheme.goldPrimary,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            context.push('/tournaments');
+          },
+        ),
+        _ShortcutButton(
+          icon: Icons.fitness_center,
+          label: 'Training Log',
+          color: AppTheme.emerald,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            context.push(myProfileId != null ? '/athlete/$myProfileId/training-log' : '/athlete/profile');
+          },
+        ),
+        _ShortcutButton(
+          icon: Icons.group_outlined,
+          label: 'Clubs & Teams',
+          color: AppTheme.cyan,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            context.push('/teams');
+          },
+        ),
+        _ShortcutButton(
+          icon: Icons.inbox_outlined,
+          label: 'Messages',
+          color: AppTheme.textSecondary,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            context.push('/messages');
+          },
+        ),
+      ],
     );
   }
 
@@ -538,6 +1436,32 @@ class AthleteDashboardScreen extends ConsumerWidget {
         .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
         .join(' ');
   }
+}
+
+/// Custom Electric Cyan Sparkline Wire Painter
+class _SparklineWirePainter extends CustomPainter {
+  final Color color;
+  const _SparklineWirePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    path.moveTo(0, size.height * 0.75);
+    path.quadraticBezierTo(size.width * 0.25, size.height * 0.65, size.width * 0.40, size.height * 0.35);
+    path.quadraticBezierTo(size.width * 0.65, size.height * 0.52, size.width * 0.85, size.height * 0.30);
+    path.quadraticBezierTo(size.width * 0.95, size.height * 0.18, size.width, size.height * 0.12);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklineWirePainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// Unbundled Editorial Match Row for Dashboard

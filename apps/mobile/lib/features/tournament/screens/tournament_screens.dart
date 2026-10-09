@@ -1126,7 +1126,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
   Widget _buildArenaTableHeader({required int? activeCount, bool isLoading = false}) {
     final hasActive = (activeCount ?? 0) > 0;
-    final badgeColor = hasActive ? const Color(0xFF10B981) : AppTheme.textMuted;
+    final badgeColor = hasActive ? AppTheme.verifiedEmerald : AppTheme.textMuted;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1198,7 +1198,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   Color _resolveArenaStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'IN BOUT':
-        return const Color(0xFF10B981); // Emerald
+        return AppTheme.verifiedEmerald;
       case 'ON DECK':
         return const Color(0xFFF59E0B); // Amber
       case 'READY':
@@ -1234,20 +1234,21 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.elevatedSurface,
+          gradient: isLive ? AppTheme.machinedTitaniumGradient : null,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           border: Border.all(
-            color: isLive ? const Color(0xFF10B981).withValues(alpha: 0.6) : AppTheme.borderSubtle,
+            color: isLive ? AppTheme.verifiedEmerald.withValues(alpha: 0.6) : AppTheme.borderTitanium,
             width: isLive ? 1.5 : 1.0,
           ),
           boxShadow: isLive
               ? [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                    blurRadius: 10,
+                    color: AppTheme.verifiedEmerald.withValues(alpha: 0.12),
+                    blurRadius: 12,
                     offset: const Offset(0, 2),
                   ),
                 ]
-              : null,
+              : AppTheme.titaniumShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1262,7 +1263,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       decoration: BoxDecoration(
                         color: AppTheme.background,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(color: AppTheme.borderSubtle, width: 1),
+                        border: Border.all(color: AppTheme.borderTitanium, width: 1),
                       ),
                       child: Text(
                         tableNumber,
@@ -1297,7 +1298,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isLive) ...[
-                        const Icon(Icons.circle, size: 6, color: Color(0xFF10B981)),
+                        const Icon(Icons.circle, size: 6, color: AppTheme.verifiedEmerald),
                         const SizedBox(width: 4),
                       ],
                       Text(
@@ -1335,7 +1336,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
+                          color: AppTheme.competitionCrimson,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -1376,7 +1377,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF38BDF8),
+                          color: AppTheme.electricCyan,
                           shape: BoxShape.circle,
                         ),
                       ),

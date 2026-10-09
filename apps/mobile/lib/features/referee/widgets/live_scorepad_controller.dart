@@ -531,13 +531,13 @@ class _CornerScoringCard extends StatelessWidget {
       duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 180),
       curve: Curves.easeOutQuad,
       decoration: BoxDecoration(
-        color: isFoulFlashing ? const Color(0xFFEF4444).withValues(alpha: 0.15) : Colors.transparent,
+        color: isFoulFlashing ? AppTheme.competitionCrimson.withValues(alpha: 0.15) : Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       ),
       child: ElevatedActionCard(
         padding: const EdgeInsets.all(AppTheme.space12),
         borderColor: isFoulFlashing
-            ? const Color(0xFFEF4444)
+            ? AppTheme.competitionCrimson
             : cornerColor.withValues(alpha: 0.4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -547,11 +547,11 @@ class _CornerScoringCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
                 color: isFoulFlashing
-                    ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                    ? AppTheme.competitionCrimson.withValues(alpha: 0.25)
                     : cornerColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                 border: Border.all(
-                  color: isFoulFlashing ? const Color(0xFFEF4444) : cornerColor,
+                  color: isFoulFlashing ? AppTheme.competitionCrimson : cornerColor,
                   width: 1.0,
                 ),
               ),
@@ -562,7 +562,7 @@ class _CornerScoringCard extends StatelessWidget {
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
-                  color: isFoulFlashing ? const Color(0xFFEF4444) : cornerColor,
+                  color: isFoulFlashing ? AppTheme.competitionCrimson : cornerColor,
                   letterSpacing: 0.5,
                 ),
               ),

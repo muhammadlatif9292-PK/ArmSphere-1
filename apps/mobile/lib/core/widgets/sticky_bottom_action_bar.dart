@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
@@ -5,12 +6,10 @@ import 'tactile_press_wrapper.dart';
 
 /// Sticky Bottom Action Bar with Responsive Constraints & Keyboard Avoidance
 ///
-/// Grounded in:
-/// - `docs/design/01_PRODUCT_EXPERIENCE_AUDIT.md` (§4.3)
-/// - `docs/design/22_SCREEN_BY_SCREEN_SPEC.md` (Line 177: max-width 640dp on wide viewports)
-/// - `docs/design/27_UI_UX_IMPLEMENTATION_BACKLOG.md` ([P0-02])
-///
-/// Prevents soft keyboards from obscuring primary form CTAs.
+/// Upgraded to Smoked Optical Glass:
+/// - Backdrop filter blur (sigma 16) with heavy smoked glass substrate.
+/// - Machined titanium top rim border with upper specular highlight line.
+/// - Tactile CTA button with championship gradient.
 class StickyBottomActionBar extends StatelessWidget {
   final Widget? child;
   final String? primaryActionLabel;
@@ -46,28 +45,40 @@ class StickyBottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBgColor = backgroundColor ?? AppTheme.cardSurface;
-    final effectiveBorderColor = borderColor ?? AppTheme.border;
+    final effectiveBgColor = backgroundColor ?? AppTheme.glassSurfaceHeavy;
+    final effectiveBorderColor = borderColor ?? AppTheme.borderTitanium;
 
     Widget content = child ?? _buildDefaultContent(context);
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: effectiveBgColor,
-        border: Border(
-          top: BorderSide(color: effectiveBorderColor, width: 1.0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: effectiveBgColor,
+            border: Border(
+              top: BorderSide(color: effectiveBorderColor, width: 1.0),
+            ),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0x1AFFFFFF), // Fine specular highlight edge at top
+                Colors.transparent,
+              ],
+              stops: [0.0, 0.25],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
+          child: SafeArea(
+            top: false,
         child: Align(
           alignment: Alignment.center,
           heightFactor: 1.0,
@@ -120,17 +131,20 @@ class StickyBottomActionBar extends StatelessWidget {
                   height: 50,
                   decoration: BoxDecoration(
                     color: onPrimaryAction == null
-                        ? AppTheme.elevatedSurface
-                        : AppTheme.goldPrimary,
+                        ? AppTheme.recessedSurface
+                        : null,
+                    gradient: onPrimaryAction != null
+                        ? AppTheme.championshipGoldGradient
+                        : null,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                     border: onPrimaryAction == null
-                        ? Border.all(color: AppTheme.border, width: 1.0)
-                        : null,
+                        ? Border.all(color: AppTheme.borderTitanium, width: 1.0)
+                        : Border.all(color: AppTheme.glassBorderSpecular, width: 1.0),
                     boxShadow: onPrimaryAction != null
                         ? [
                             BoxShadow(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.3),
-                              blurRadius: 8,
+                              color: AppTheme.goldGlow,
+                              blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),
                           ]
