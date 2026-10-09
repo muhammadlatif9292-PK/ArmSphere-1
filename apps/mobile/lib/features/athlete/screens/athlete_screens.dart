@@ -136,6 +136,12 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               const SizedBox(height: 14),
 
               // ========================================================
+              // SANCTIONED ARENA RADAR (ENVIRONMENTAL ANCHOR)
+              // ========================================================
+              _buildSanctionedArenaRadar(context),
+              const SizedBox(height: 14),
+
+              // ========================================================
               // 1. IMMERSIVE ATHLETE CINEMATIC STAGE BANNER
               // ========================================================
               _buildAthleteCinematicBanner(
@@ -156,6 +162,17 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               // ========================================================
               // 2. DUAL-ARM ELO & COMBAT READINESS TELEMETRY RAIL
               // ========================================================
+              const Text(
+                'COMPETITIVE STANDING',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10.5,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+              const SizedBox(height: 10),
               _buildCombatTelemetryDual(
                 context: context,
                 currentElo: currentElo,
@@ -408,6 +425,153 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sanctioned Arena Environmental Anchor (Titanium Luxe Glass)
+  // ---------------------------------------------------------------------------
+  Widget _buildSanctionedArenaRadar(BuildContext context) {
+    return Container(
+      height: 96,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.borderTitanium,
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            // Arena Background
+            Positioned.fill(
+              child: ArmSphereImage(
+                assetPath: ArmSphereAssets.heroArena,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 96,
+                excludeFromSemantics: true,
+              ),
+            ),
+            // Text-protection gradient scrim (Machined Titanium / Obsidian Glass)
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Color(0xF50B0F17),
+                      Color(0xCC0B0F17),
+                      Color(0x550B0F17),
+                    ],
+                    stops: [0.0, 0.65, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            // Content overlay
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'SANCTIONED ARENA RADAR',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  letterSpacing: 0.8,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 9.5,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          const Text(
+                            'Championship Arena Active',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPure,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Official tournament brackets & table calls',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TactilePressWrapper(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/tournaments');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: AppTheme.machinedTitaniumDecoration(
+                          radius: 10,
+                          borderColor: AppTheme.borderTitanium,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Explore',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_ios, size: 9, color: AppTheme.goldPrimary),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
