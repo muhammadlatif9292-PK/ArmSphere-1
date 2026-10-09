@@ -1248,7 +1248,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     offset: const Offset(0, 2),
                   ),
                 ]
-              : AppTheme.titaniumShadow,
+              : [AppTheme.titaniumShadow()],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

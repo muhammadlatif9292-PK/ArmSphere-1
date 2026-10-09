@@ -14,6 +14,8 @@ import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/achievements_section.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
+import '../../../core/providers/tournament_provider.dart';
+import '../../../core/providers/rankings_provider.dart';
 
 const Map<int, String> _months = {
   1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
@@ -60,7 +62,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final profile = authState.userProfile ?? {};
-    final displayName = profile['displayName']?.toString() ?? 'Alexander Khan';
+    final rawName = profile['displayName'] ?? profile['name'] ?? profile['fullName'] ?? profile['email']?.toString().split('@').first;
+    final displayName = (rawName != null && rawName.toString().trim().isNotEmpty) ? rawName.toString().trim() : 'Athlete';
     final role = profile['role']?.toString().toUpperCase();
     const officialRoles = {'REFEREE', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
     final isOfficial = role != null && officialRoles.contains(role);
@@ -68,24 +71,41 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     final p = profileAsync.value ?? profile;
     final myProfileId = profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
     final matchesAsync = ref.watch(liveMatchesProvider);
+    final tournamentsAsync = ref.watch(tournamentProvider);
+    final rankingsAsync = ref.watch(rankingsProvider);
+    final trainingLogsAsync = myProfileId == null
+        ? const AsyncValue<List<Map<String, dynamic>>>.data([])
+        : ref.watch(trainingLogProvider(myProfileId));
     final prsAsync = myProfileId == null
         ? const AsyncValue<List<Map<String, dynamic>>>.data([])
         : ref.watch(trainingLogPRsProvider(myProfileId));
 
-    // Resolved athlete telemetry metrics
-    final rank = p['rank']?.toString() ?? '04';
-    final rankDelta = p['rankDelta']?.toString() ?? '2';
-    final weightVal = p['weightKg'] ?? p['weight'] ?? 84.0;
-    final weightKg = (weightVal is num) ? weightVal.toStringAsFixed(1) : '84.0';
-    final winRate = (p['winRate'] is num)
-        ? (p['winRate'] as num).toStringAsFixed(1)
-        : '80.0';
-    final dominantArm = p['armDominance']?.toString() ?? p['dominantArm']?.toString() ?? 'Right';
-    final clubName = p['club']?.toString() ?? p['clubName']?.toString() ?? 'Iron Grip Club';
-    final country = p['country']?.toString() ?? 'India';
-    final rightElo = (p['rightArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt() ?? 1842;
-    final leftElo = (p['leftArmElo'] as num?)?.toInt() ?? ((p['eloRating'] as num?)?.toInt() != null ? (p['eloRating'] as num).toInt() - 32 : 1795);
-    final currentElo = _isRightArm ? rightElo : leftElo;
+    // Resolved athlete telemetry metrics (truthful, no fabrication)
+    final rawRank = p['rank']?.toString().trim();
+    final hasRank = rawRank != null && rawRank.isNotEmpty;
+    final rank = hasRank ? '#$rawRank' : 'Unranked';
+    final rawDelta = p['rankDelta']?.toString().trim();
+    final rankDelta = (rawDelta != null && rawDelta.isNotEmpty) ? '↑ $rawDelta' : null;
+
+    final weightVal = p['weightKg'] ?? p['weight'];
+    final weightKg = (weightVal is num) ? weightVal.toStringAsFixed(1) : null;
+
+    final winRateVal = p['winRate'];
+    final winRate = (winRateVal is num) ? winRateVal.toStringAsFixed(1) : null;
+
+    final rawArm = p['armDominance']?.toString().trim() ?? p['dominantArm']?.toString().trim();
+    final dominantArm = (rawArm != null && rawArm.isNotEmpty) ? rawArm : null;
+
+    final rawClub = p['club']?.toString().trim() ?? p['clubName']?.toString().trim();
+    final clubName = (rawClub != null && rawClub.isNotEmpty) ? rawClub : 'No club registered';
+
+    final rawCountry = p['country']?.toString().trim();
+    final country = (rawCountry != null && rawCountry.isNotEmpty) ? rawCountry : null;
+
+    final rawRightElo = (p['rightArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt();
+    final rawLeftElo = (p['leftArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt();
+    final currentElo = _isRightArm ? rawRightElo : rawLeftElo;
+    final eloDelta = (p['eloDelta'] as num?)?.toInt();
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -96,7 +116,10 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
           HapticFeedback.mediumImpact();
           ref.invalidate(athleteProfileProvider);
           ref.invalidate(liveMatchesProvider);
+          ref.invalidate(tournamentProvider);
+          ref.invalidate(rankingsProvider);
           if (myProfileId != null) {
+            ref.invalidate(trainingLogProvider(myProfileId));
             ref.invalidate(trainingLogPRsProvider(myProfileId));
           }
         },
@@ -120,6 +143,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 displayName: displayName,
                 rank: rank,
                 rankDelta: rankDelta,
+                hasRank: hasRank,
                 weightKg: weightKg,
                 winRate: winRate,
                 dominantArm: dominantArm,
@@ -133,9 +157,11 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               // 2. DUAL-ARM ELO & COMBAT READINESS TELEMETRY RAIL
               // ========================================================
               _buildCombatTelemetryDual(
-                rightElo: rightElo,
-                leftElo: leftElo,
+                context: context,
                 currentElo: currentElo,
+                eloDelta: eloDelta,
+                trainingLogsAsync: trainingLogsAsync,
+                myProfileId: myProfileId,
               ),
               const SizedBox(height: 14),
 
@@ -144,6 +170,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               // ========================================================
               _buildUpcomingSupermatchCard(
                 context: context,
+                matchesAsync: matchesAsync,
                 athleteName: displayName,
                 athleteElo: currentElo,
               ),
@@ -155,6 +182,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               _buildIntelligenceDeck(
                 context: context,
                 matchesAsync: matchesAsync,
+                tournamentsAsync: tournamentsAsync,
+                rankingsAsync: rankingsAsync,
                 myProfileId: myProfileId,
               ),
               const SizedBox(height: 20),
@@ -392,12 +421,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     required BuildContext context,
     required String displayName,
     required String rank,
-    required String rankDelta,
-    required String weightKg,
-    required String winRate,
-    required String dominantArm,
+    required String? rankDelta,
+    required bool hasRank,
+    required String? weightKg,
+    required String? winRate,
+    required String? dominantArm,
     required String clubName,
-    required String country,
+    required String? country,
     String? avatarUrl,
   }) {
     return Container(
@@ -415,21 +445,22 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
       ),
       child: Stack(
         children: [
-          // Background Rank Watermark
-          Positioned(
-            right: -6,
-            bottom: -24,
-            child: Text(
-              '#$rank',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 120,
-                fontWeight: FontWeight.w900,
-                color: Colors.white.withValues(alpha: 0.035),
-                height: 1.0,
+          // Background Rank Watermark (only if athlete has verified ranking)
+          if (hasRank)
+            Positioned(
+              right: -6,
+              bottom: -24,
+              child: Text(
+                rank,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 120,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white.withValues(alpha: 0.035),
+                  height: 1.0,
+                ),
               ),
             ),
-          ),
 
           Padding(
             padding: const EdgeInsets.all(16),
@@ -478,7 +509,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                           Icon(Icons.workspace_premium_rounded, size: 11, color: AppTheme.goldPrimary),
                           SizedBox(width: 4),
                           Text(
-                            'PRO ATHLETE',
+                            'PAFF COMPETITOR',
                             style: TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontSize: 8.5,
@@ -554,18 +585,20 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Text(
-                                country,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                              if (country != null && country.isNotEmpty) ...[
+                                Text(
+                                  country,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 5),
-                                child: Text('•', style: TextStyle(color: AppTheme.textMuted)),
-                              ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 5),
+                                  child: Text('•', style: TextStyle(color: AppTheme.textMuted)),
+                                ),
+                              ],
                               Flexible(
                                 child: Text(
                                   clubName,
@@ -597,10 +630,10 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildBioStat('WORLD RANK', '#$rank', delta: '↑ $rankDelta'),
-                      _buildBioStat('WEIGHT', '$weightKg kg'),
-                      _buildBioStat('WIN RATE', '$winRate%', isEmerald: true),
-                      _buildBioStat('DISCIPLINE', '$dominantArm Arm'),
+                      _buildBioStat('WORLD RANK', rank, delta: rankDelta),
+                      _buildBioStat('WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
+                      _buildBioStat('WIN RATE', winRate != null ? '$winRate%' : '--', isEmerald: winRate != null),
+                      _buildBioStat('DISCIPLINE', dominantArm != null ? '$dominantArm Arm' : '--'),
                     ],
                   ),
                 ),
@@ -661,9 +694,11 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   // 2. Dual-Arm ELO & Combat Readiness Telemetry Rail
   // ---------------------------------------------------------------------------
   Widget _buildCombatTelemetryDual({
-    required int rightElo,
-    required int leftElo,
-    required int currentElo,
+    required BuildContext context,
+    required int? currentElo,
+    required int? eloDelta,
+    required AsyncValue<List<Map<String, dynamic>>> trainingLogsAsync,
+    required String? myProfileId,
   }) {
     return Row(
       children: [
@@ -726,7 +761,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$currentElo',
+                      currentElo != null ? '$currentElo' : '--',
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 29,
@@ -737,22 +772,41 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                         fontFeatures: [FontFeature.tabularFigures()],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppTheme.emerald.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        '▲ +27',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.emerald,
+                    if (eloDelta != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: (eloDelta >= 0 ? AppTheme.emerald : AppTheme.crimson).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${eloDelta >= 0 ? '▲ +' : '▼ '}$eloDelta',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: eloDelta >= 0 ? AppTheme.emerald : AppTheme.crimson,
+                          ),
                         ),
                       ),
-                    ),
+                    ] else ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'PROVISIONAL',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -770,88 +824,169 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
         ),
         const SizedBox(width: 10),
 
-        // Tendon Health / Combat Readiness Card (0.8fr)
+        // Truthful Readiness / Training Recovery Card (0.8fr)
         Expanded(
           flex: 4,
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: AppTheme.machinedTitaniumDecoration(
-              radius: 16,
-              borderColor: AppTheme.borderTitanium,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'TENDON HEALTH',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: AppTheme.textMuted,
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              if (myProfileId != null) {
+                context.push('/athlete/$myProfileId/training-log');
+              } else {
+                context.push('/athlete/profile');
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: AppTheme.machinedTitaniumDecoration(
+                radius: 16,
+                borderColor: AppTheme.borderTitanium,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        'RECOVERY STATUS',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                      Icon(
+                        Icons.fitness_center_outlined,
+                        size: 11,
+                        color: AppTheme.textMuted,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    // Radial Progress Gauge
-                    SizedBox(
-                      width: 44,
+                  const SizedBox(height: 8),
+                  trainingLogsAsync.when(
+                    loading: () => const SizedBox(
                       height: 44,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: const [
-                          CircularProgressIndicator(
-                            value: 0.92,
-                            strokeWidth: 3.2,
-                            backgroundColor: Color(0x1AFFFFFF),
-                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.emerald),
+                      child: Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.cyan),
+                        ),
+                      ),
+                    ),
+                    error: (_, __) => _buildNeutralRecoveryView(),
+                    data: (logs) {
+                      if (logs.isEmpty) {
+                        return _buildNeutralRecoveryView();
+                      }
+                      final latest = logs.first;
+                      final dateStr = latest['date'] ?? latest['createdAt'];
+                      final parsedDate = DateTime.tryParse(dateStr?.toString() ?? '');
+                      final daysAgo = parsedDate != null
+                          ? DateTime.now().difference(parsedDate).inDays
+                          : null;
+                      final sessionsCount = logs.length;
+
+                      return Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.emerald.withValues(alpha: 0.12),
+                              border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.4), width: 1.0),
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.fitness_center, size: 18, color: AppTheme.emerald),
+                            ),
                           ),
-                          Text(
-                            '92%',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.emerald,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$sessionsCount Logged',
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.textPure,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  daysAgo != null
+                                      ? (daysAgo == 0 ? 'Last: Today' : 'Last: ${daysAgo}d ago')
+                                      : 'Activity tracked',
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    color: AppTheme.textMuted,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Optimal',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.textPure,
-                              height: 1.1,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Heavy pull: 3d ago',
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: AppTheme.textMuted,
-                              height: 1.1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-              ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 6),
+                ],
+              ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNeutralRecoveryView() {
+    return Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.04),
+            border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+          ),
+          child: const Center(
+            child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Data Unavailable',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textSecondary,
+                  height: 1.1,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Tap to log training',
+                style: TextStyle(
+                  fontSize: 8,
+                  color: AppTheme.textMuted,
+                  height: 1.1,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -881,52 +1016,286 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // 3. Broadcast Fight Card (Upcoming Supermatch)
+  // 3. Broadcast Fight Card (Real upcoming match or truthful standby card)
   // ---------------------------------------------------------------------------
   Widget _buildUpcomingSupermatchCard({
     required BuildContext context,
+    required AsyncValue<List<Map<String, dynamic>>> matchesAsync,
     required String athleteName,
-    required int athleteElo,
+    required int? athleteElo,
   }) {
+    return matchesAsync.when(
+      loading: () => Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: AppTheme.glassSurfaceHeavy,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppTheme.crimson, strokeWidth: 2),
+        ),
+      ),
+      error: (_, __) => _buildNoUpcomingBoutsCard(context),
+      data: (matches) {
+        final upcomingMatches = matches.where((m) {
+          final s = m['status']?.toString().toUpperCase() ?? '';
+          return s == 'IN_PROGRESS' || s == 'CALLED' || s == 'READY' || s == 'SCHEDULED';
+        }).toList();
+
+        if (upcomingMatches.isEmpty) {
+          return _buildNoUpcomingBoutsCard(context);
+        }
+
+        final match = upcomingMatches.first;
+        final aName = match['athleteAName']?.toString() ?? athleteName;
+        final bName = match['athleteBName']?.toString() ?? 'Opponent';
+        final tableNum = match['tableNumber']?.toString() ?? match['tableName']?.toString() ?? '1';
+        final tournamentTitle = match['tournamentName']?.toString() ?? 'Sanctioned Tournament';
+        final statusText = (match['status']?.toString() ?? 'SCHEDULED').toUpperCase();
+
+        return Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            gradient: AppTheme.upcomingMatchGradient,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppTheme.crimson.withValues(alpha: 0.28), width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.32),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.crimson,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'LIVE ARENA BOUT',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: AppTheme.crimson,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPure,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0x66070A11),
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppTheme.crimson,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              aName,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPure,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.silverPlane,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.borderHighlight, width: 1.0),
+                    ),
+                    child: const Text(
+                      'VS',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textPure,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0x66070A11),
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              bName,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPure,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 3,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppTheme.cyan,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.only(top: 10),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Table $tableNum • $tournamentTitle',
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        context.push('/tournaments');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.crimson,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'VIEW BRACKET',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNoUpcomingBoutsCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppTheme.upcomingMatchGradient,
+        color: AppTheme.glassSurfaceHeavy,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.crimson.withValues(alpha: 0.28), width: 1.0),
+        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.32),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner Headline
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.crimson,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'UPCOMING SUPERMATCH',
+                  Icon(Icons.calendar_today_outlined, size: 14, color: AppTheme.goldPrimary),
+                  SizedBox(width: 6),
+                  Text(
+                    'ARENA SCHEDULE',
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
-                      color: AppTheme.crimson,
+                      color: AppTheme.goldPrimary,
                     ),
                   ),
                 ],
@@ -934,209 +1303,67 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
                 ),
                 child: const Text(
-                  'Starts in 2h 45m',
+                  'STANDBY',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 9.5,
+                    fontSize: 9,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPure,
+                    color: AppTheme.textMuted,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
-          // Walkout Asymmetric Stage
-          Row(
-            children: [
-              // Red Corner
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0x66070A11),
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-                    borderGradient: null,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 3,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: AppTheme.crimson,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              athleteName.split(' ').first,
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPure,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              '$athleteElo ELO',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 8.5,
-                                color: AppTheme.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // VS Medallion Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.silverPlane,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.borderHighlight, width: 1.0),
-                ),
-                child: const Text(
-                  'VS',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.textPure,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Blue Corner
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0x66070A11),
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
-                            Text(
-                              'M. Lee',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPure,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 1),
-                            Text(
-                              '1,810 ELO',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 8.5,
-                                color: AppTheme.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 3,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: AppTheme.cyan,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Footer Strip
-          Container(
-            padding: const EdgeInsets.only(top: 10),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0)),
+          const Text(
+            'NO UPCOMING BOUTS SCHEDULED',
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPure,
+              letterSpacing: 0.2,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
-                  children: [
-                    Text(
-                      '🏆 ArmSphere Open 2025',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      ' • Table 1',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                  ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Register for sanctioned tournaments to compete in official brackets.',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppTheme.textMuted,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                context.push('/tournaments');
+              },
+              icon: const Icon(Icons.emoji_events_outlined, size: 16, color: Colors.black),
+              label: const Text(
+                'BROWSE TOURNAMENTS',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                  color: Colors.black,
                 ),
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    context.push('/tournaments');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.crimson,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      '✓ REGISTERED',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.goldPrimary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                elevation: 0,
+              ),
             ),
           ),
         ],
@@ -1145,11 +1372,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // 4. Unified Intelligence Deck
+  // 4. Unified Intelligence Deck (Functional, Truthful Tabs)
   // ---------------------------------------------------------------------------
   Widget _buildIntelligenceDeck({
     required BuildContext context,
     required AsyncValue<List<Map<String, dynamic>>> matchesAsync,
+    required AsyncValue<List<Map<String, dynamic>>> tournamentsAsync,
+    required AsyncValue<List<Map<String, dynamic>>> rankingsAsync,
     required String? myProfileId,
   }) {
     return Container(
@@ -1166,7 +1395,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
             children: [
               _buildDeckPill('Recent Bouts', 0),
               const SizedBox(width: 14),
-              _buildDeckPill('Tournaments (2)', 1),
+              _buildDeckPill('Tournaments', 1),
               const SizedBox(width: 14),
               _buildDeckPill('Global Top 3', 2),
             ],
@@ -1175,101 +1404,262 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
           const Divider(height: 1, color: Color(0x14FFFFFF)),
           const SizedBox(height: 8),
 
-          // Matches or intel list
-          matchesAsync.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(color: AppTheme.crimson, strokeWidth: 2),
+          // Deck Tab Content
+          if (_intelDeckTab == 0) ...[
+            matchesAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(color: AppTheme.crimson, strokeWidth: 2),
+                ),
               ),
-            ),
-            error: (_, __) => _buildFallbackIntelRows(),
-            data: (matches) {
-              if (matches.isEmpty) {
-                return _buildFallbackIntelRows();
-              }
-              final recent = matches.take(3).toList();
-              return Column(
-                children: [
-                  for (int i = 0; i < recent.length; i++) ...[
-                    if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
-                    _buildDynamicIntelRow(recent[i], myProfileId),
+              error: (err, _) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text('Could not load bouts: $err', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+              ),
+              data: (matches) {
+                if (matches.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Column(
+                        children: const [
+                          Icon(Icons.sports_kabaddi_outlined, color: AppTheme.textMuted, size: 24),
+                          SizedBox(height: 6),
+                          Text('No verified bouts yet', style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, fontSize: 12)),
+                          SizedBox(height: 2),
+                          Text('Compete in sanctioned bouts to build verified records.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                final recent = matches.take(3).toList();
+                return Column(
+                  children: [
+                    for (int i = 0; i < recent.length; i++) ...[
+                      if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                      _buildDynamicIntelRow(recent[i], myProfileId),
+                    ],
                   ],
-                ],
-              );
-            },
-          ),
+                );
+              },
+            ),
+          ] else if (_intelDeckTab == 1) ...[
+            tournamentsAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(color: AppTheme.goldPrimary, strokeWidth: 2),
+                ),
+              ),
+              error: (err, _) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text('Could not load tournaments: $err', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+              ),
+              data: (tournaments) {
+                final list = tournaments.where((t) => t['status']?.toString().toUpperCase() != 'CANCELLED').take(3).toList();
+                if (list.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Column(
+                        children: const [
+                          Icon(Icons.emoji_events_outlined, color: AppTheme.textMuted, size: 24),
+                          SizedBox(height: 6),
+                          Text('No tournaments scheduled', style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, fontSize: 12)),
+                          SizedBox(height: 2),
+                          Text('Upcoming sanctioned events will appear here.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (int i = 0; i < list.length; i++) ...[
+                      if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                      _buildTournamentRowItem(context, list[i]),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ] else if (_intelDeckTab == 2) ...[
+            rankingsAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(color: AppTheme.cyan, strokeWidth: 2),
+                ),
+              ),
+              error: (err, _) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text('Could not load rankings: $err', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+              ),
+              data: (rankings) {
+                final top3 = rankings.take(3).toList();
+                if (top3.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Column(
+                        children: const [
+                          Icon(Icons.leaderboard_outlined, color: AppTheme.textMuted, size: 24),
+                          SizedBox(height: 6),
+                          Text('Rankings data unavailable', style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, fontSize: 12)),
+                          SizedBox(height: 2),
+                          Text('Standings update as sanctioned events conclude.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (int i = 0; i < top3.length; i++) ...[
+                      if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                      _buildRankingRowItem(top3[i], i + 1),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildDeckPill(String title, int index) {
-    final isActive = _intelDeckTab == index;
-    return GestureDetector(
+  Widget _buildTournamentRowItem(BuildContext context, Map<String, dynamic> t) {
+    final name = t['name']?.toString() ?? 'Sanctioned Tournament';
+    final date = _fmtDate(t['startDate'] ?? t['date']);
+    final location = [t['city'], t['venue']].where((v) => v != null && v.toString().isNotEmpty).join(' • ');
+
+    return InkWell(
       onTap: () {
         HapticFeedback.selectionClick();
-        setState(() => _intelDeckTab = index);
+        context.push('/tournaments');
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    [date, if (location.isNotEmpty) location].where((s) => s.isNotEmpty).join(' • '),
+                    style: const TextStyle(fontSize: 9, color: AppTheme.textMuted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 16, color: AppTheme.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRankingRowItem(Map<String, dynamic> r, int position) {
+    final name = r['athleteName'] ?? r['displayName'] ?? r['fullName'] ?? 'Competitor';
+    final club = r['clubName'] ?? r['province'] ?? 'Independent';
+    final elo = r['eloRating'] ?? r['points'] ?? '--';
+    final Color badgeColor = position == 1
+        ? AppTheme.goldPrimary
+        : (position == 2 ? const Color(0xFF94A3B8) : const Color(0xFFB45309));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: badgeColor.withValues(alpha: 0.15),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.4), width: 1.0),
+                ),
+                child: Center(
+                  child: Text(
+                    '#$position',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: badgeColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name.toString(),
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    club.toString(),
+                    style: const TextStyle(fontSize: 9, color: AppTheme.textMuted),
+                  ),
+                ],
+              ),
+            ],
+          ),
           Text(
-            title,
-            style: TextStyle(
+            '$elo ELO',
+            style: const TextStyle(
               fontFamily: AppTheme.fontDisplay,
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: isActive ? AppTheme.textPure : AppTheme.textMuted,
+              color: AppTheme.textPrimary,
+              fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),
-          const SizedBox(height: 4),
-          if (isActive)
-            Container(
-              height: 2,
-              width: 22,
-              decoration: BoxDecoration(
-                color: AppTheme.crimson,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            )
-          else
-            const SizedBox(height: 2),
         ],
       ),
-    );
-  }
-
-  Widget _buildFallbackIntelRows() {
-    return Column(
-      children: [
-        _buildIntelRowItem(
-          symbol: 'W',
-          isWin: true,
-          title: 'vs Daniel Silva (#01)',
-          subtitle: 'PIN 2-1 • 14s Toproll • R.Arm',
-          tag: '+28 ELO',
-          isTagPositive: true,
-        ),
-        const Divider(height: 1, color: Color(0x0FFFFFFF)),
-        _buildIntelRowItem(
-          symbol: 'L',
-          isWin: false,
-          title: 'vs Zaid Afridi',
-          subtitle: 'FOUL 1-2 • Strap Slip • L.Arm',
-          tag: '-14 ELO',
-          isTagPositive: false,
-        ),
-      ],
     );
   }
 
   Widget _buildDynamicIntelRow(Map<String, dynamic> match, String? myProfileId) {
     final winnerId = match['winnerId']?.toString();
     final isWin = myProfileId != null && winnerId == myProfileId;
-    final opponent = match['opponentName'] ?? 'Unknown Competitor';
+    final opponent = match['opponentName'] ??
+        (myProfileId != null && match['athleteAId']?.toString() == myProfileId
+            ? match['athleteBName']
+            : match['athleteAName']) ??
+        'Competitor';
     final arm = match['arm']?.toString().toUpperCase() ?? 'R';
-    final method = match['winMethod'] ?? 'PIN';
+    final method = match['winMethod'] ?? match['scoreLine'] ?? 'MATCH';
     final eloDelta = (match['eloDelta'] as num?)?.toInt() ?? (isWin ? 24 : -12);
 
     return _buildIntelRowItem(
@@ -1817,7 +2207,7 @@ class AthleteProfileScreen extends ConsumerWidget {
     final myProfileId = profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
         elevation: 0,
@@ -1846,89 +2236,112 @@ class AthleteProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Athlete Identity Header with 2px Role-Coded Ring
-            Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isOfficial ? AppTheme.info : AppTheme.goldPrimary,
-                      width: 2.0,
+            // 1. Athlete Identity Header with Smoked Titanium Glass Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.glassSurfaceHeavy,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0x1AFFFFFF),
+                    Color(0xB3151B24),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isOfficial ? AppTheme.cyan : AppTheme.goldPrimary,
+                        width: 2.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isOfficial ? AppTheme.cyan : AppTheme.goldPrimary).withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isOfficial ? AppTheme.info : AppTheme.goldPrimary).withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ],
+                    child: ArmSphereImage.avatar(
+                      imageUrl: (profile['profilePhoto'] ?? profile['avatarUrl'])?.toString(),
+                      initial: displayName,
+                      size: 72,
+                      fallbackAsset: ArmSphereAssets.defaultAvatar,
+                      semanticLabel: 'Athlete Avatar for $displayName',
+                    ),
                   ),
-                  child: ArmSphereImage.avatar(
-                    imageUrl: (profile['profilePhoto'] ?? profile['avatarUrl'])?.toString(),
-                    initial: displayName,
-                    size: 72,
-                    fallbackAsset: ArmSphereAssets.defaultAvatar,
-                    semanticLabel: 'Athlete Avatar for $displayName',
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              displayName,
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 20,
-                                color: AppTheme.textPrimary,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                displayName,
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 20,
+                                  color: AppTheme.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          StatusChip.info(label: role),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        email.isEmpty ? 'Federation Member' : email,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          ArmSphereImage(
-                            assetPath: isOfficial
-                                ? ArmSphereAssets.refNat
-                                : _getDivisionBadge(profile['weightKg'] ?? profile['weight'], profile['weightClass']),
-                            width: 20,
-                            height: 20,
-                            semanticLabel: isOfficial ? 'Certified Referee Insignia' : 'Division Category Badge',
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isOfficial ? 'Certified Federation Official' : 'Official PAFF Competitor',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isOfficial ? AppTheme.info : AppTheme.goldPrimary,
+                            const SizedBox(width: 6),
+                            StatusChip.info(label: role),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          email.isEmpty ? 'Federation Member' : email,
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            ArmSphereImage(
+                              assetPath: isOfficial
+                                  ? ArmSphereAssets.refNat
+                                  : _getDivisionBadge(profile['weightKg'] ?? profile['weight'], profile['weightClass']),
+                              width: 20,
+                              height: 20,
+                              semanticLabel: isOfficial ? 'Certified Referee Insignia' : 'Division Category Badge',
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 6),
+                            Text(
+                              isOfficial ? 'Certified Federation Official' : 'Official PAFF Competitor',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isOfficial ? AppTheme.cyan : AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -2080,15 +2493,20 @@ class AthleteProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildBiometricsCard(Map<String, dynamic> profile) {
+    final weight = profile['weightKg'] ?? profile['weight'];
+    final height = profile['heightCm'] ?? profile['height'];
+    final reach = profile['reachCm'] ?? profile['reach'];
+    final dominance = profile['armDominance']?.toString() ?? profile['dominantArm']?.toString();
+
     return ElevatedActionCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _SpecItem(label: 'Weight', value: '${(profile['weightKg'] ?? profile['weight'] ?? 85).toString()}kg'),
-          _SpecItem(label: 'Height', value: '${(profile['heightCm'] ?? profile['height'] ?? 182).toString()}cm'),
-          _SpecItem(label: 'Reach', value: '${(profile['reachCm'] ?? profile['reach'] ?? 180).toString()}cm'),
-          _SpecItem(label: 'Dominance', value: profile['armDominance']?.toString() ?? profile['dominantArm']?.toString() ?? 'RIGHT'),
+          _SpecItem(label: 'Weight', value: weight != null ? '${weight}kg' : '--'),
+          _SpecItem(label: 'Height', value: height != null ? '${height}cm' : '--'),
+          _SpecItem(label: 'Reach', value: reach != null ? '${reach}cm' : '--'),
+          _SpecItem(label: 'Dominance', value: dominance != null && dominance.isNotEmpty ? dominance.toUpperCase() : '--'),
         ],
       ),
     );

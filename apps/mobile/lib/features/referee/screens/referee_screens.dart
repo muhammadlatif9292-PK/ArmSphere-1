@@ -1,4 +1,4 @@
-import 'dart:ui' show FontFeature;
+import 'dart:ui' show FontFeature, ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -260,6 +260,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     final eventsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         title: const Text('Referee Panel'),
         actions: [
@@ -513,137 +514,170 @@ class _AssignmentCard extends StatelessWidget {
       match['arm']?.toString(),
     ].where((p) => p != null && p.isNotEmpty).join(' • ');
 
-    return ElevatedActionCard(
-      padding: const EdgeInsets.all(AppTheme.space16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Row(
+    final isCalled = status == 'CALLED';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.glassSurfaceHeavy,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(
+          color: isCalled ? AppTheme.cyan.withValues(alpha: 0.6) : AppTheme.glassBorder,
+          width: isCalled ? 1.5 : 1.0,
+        ),
+        boxShadow: isCalled
+            ? [
+                BoxShadow(
+                  color: AppTheme.cyanGlow,
+                  blurRadius: 14.0,
+                  spreadRadius: 1.0,
+                ),
+                AppTheme.titaniumShadow(),
+              ]
+            : [AppTheme.titaniumShadow()],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+          child: Container(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            decoration: const BoxDecoration(
+              gradient: AppTheme.glassSheenGradient,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    if (roundNumber != null) ...[
+                    Expanded(
+                      child: Row(
+                        children: [
+                          if (roundNumber != null) ...[
+                            Text(
+                              'R$roundNumber-M${(matchIndex ?? 0) + 1} • ',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.goldPrimary,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                          Flexible(
+                            child: Text(
+                              category.toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontBody,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textSecondary,
+                                letterSpacing: 0.3,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    StatusChip(
+                      label: status,
+                      type: _resolveMatchStatusType(status),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.space10),
+                Text(
+                  '$aName  vs  $bName',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                if ((match['scoreLine']?.toString() ?? '').isNotEmpty) ...[
+                  const SizedBox(height: AppTheme.space6),
+                  Row(
+                    children: [
+                      const Icon(Icons.scoreboard_outlined, size: 14, color: AppTheme.success),
+                      const SizedBox(width: AppTheme.space6),
                       Text(
-                        'R$roundNumber-M${(matchIndex ?? 0) + 1} • ',
+                        'Final Score: ${match['scoreLine']}',
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
+                          fontSize: 13,
+                          color: AppTheme.success,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
                     ],
-                    Flexible(
-                      child: Text(
-                        category.toUpperCase(),
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontBody,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textSecondary,
-                          letterSpacing: 0.3,
+                  ),
+                ],
+                const SizedBox(height: AppTheme.space12),
+                if (status == 'CALLED')
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: busy
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    context.push('/referee/submit-scorepad', extra: match);
+                                  },
+                            icon: const Icon(Icons.touch_app, size: 18),
+                            label: const Text('OPEN SCOREPAD'),
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              StatusChip(
-                label: status,
-                type: _resolveMatchStatusType(status),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.space10),
-          Text(
-            '$aName  vs  $bName',
-            style: const TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          if ((match['scoreLine']?.toString() ?? '').isNotEmpty) ...[
-            const SizedBox(height: AppTheme.space6),
-            Row(
-              children: [
-                const Icon(Icons.scoreboard_outlined, size: 14, color: AppTheme.success),
-                const SizedBox(width: AppTheme.space6),
-                Text(
-                  'Final Score: ${match['scoreLine']}',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: AppTheme.success,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: AppTheme.space12),
-          if (status == 'CALLED')
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: SizedBox(
+                      const SizedBox(width: AppTheme.space8),
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: busy
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    onResult(match);
+                                  },
+                            child: const Text('Quick Entry', style: TextStyle(fontSize: 12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else if (status == 'READY')
+                  SizedBox(
+                    width: double.infinity,
                     height: 48,
-                    child: ElevatedButton.icon(
+                    child: OutlinedButton.icon(
                       onPressed: busy
                           ? null
                           : () {
                               HapticFeedback.lightImpact();
-                              context.push('/referee/submit-scorepad', extra: match);
+                              onCall(match);
                             },
-                      icon: const Icon(Icons.touch_app, size: 18),
-                      label: const Text('OPEN SCOREPAD'),
+                      icon: const Icon(Icons.table_restaurant, size: 18),
+                      label: const Text('CALL TO TABLE'),
                     ),
                   ),
-                ),
-                const SizedBox(width: AppTheme.space8),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: busy
-                          ? null
-                          : () {
-                              HapticFeedback.lightImpact();
-                              onResult(match);
-                            },
-                      child: const Text('Quick Entry', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                ),
               ],
-            )
-          else if (status == 'READY')
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: busy
-                    ? null
-                    : () {
-                        HapticFeedback.lightImpact();
-                        onCall(match);
-                      },
-                icon: const Icon(Icons.table_restaurant, size: 18),
-                label: const Text('CALL TO TABLE'),
-              ),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
 }
+
+typedef _MatchItemCard = _AssignmentCard;
 
 class _RefCard extends StatelessWidget {
   final IconData icon;
@@ -659,6 +693,10 @@ class _RefCard extends StatelessWidget {
         HapticFeedback.lightImpact();
         onTap();
       },
+      backgroundColor: AppTheme.titanium,
+      gradient: AppTheme.machinedTitaniumGradient,
+      borderColor: AppTheme.borderTitanium,
+      customShadow: [AppTheme.titaniumShadow()],
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space14),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -704,6 +742,7 @@ class RefereeCertificationsScreen extends ConsumerWidget {
     final certsAsync = ref.watch(refereeCertificationsProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(title: const Text('Certifications')),
       body: certsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -1080,6 +1119,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentDisplayName = _opponent?['displayName']?.toString() ?? 'Corner White (Select)';
 
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         title: const Text('Referee Table Scorepad'),
         actions: [
@@ -1454,6 +1494,7 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(title: const Text('Search Athletes')),
       body: Padding(
         padding: const EdgeInsets.all(AppTheme.space16),
@@ -1573,6 +1614,7 @@ class EvidenceUploadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(title: const Text('Evidence Upload')),
       body: Center(
         child: Padding(
