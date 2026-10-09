@@ -79,14 +79,16 @@ class StickyBottomActionBar extends StatelessWidget {
           ),
           child: SafeArea(
             top: false,
-        child: Align(
-          alignment: Alignment.center,
-          heightFactor: 1.0,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Padding(
-              padding: padding,
-              child: content,
+            child: Align(
+              alignment: Alignment.center,
+              heightFactor: 1.0,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Padding(
+                  padding: padding,
+                  child: content,
+                ),
+              ),
             ),
           ),
         ),

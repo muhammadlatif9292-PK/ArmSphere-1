@@ -1371,6 +1371,36 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     );
   }
 
+  Widget _buildDeckPill(String title, int index) {
+    final isSelected = _intelDeckTab == index;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _intelDeckTab = index);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.crimson.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.crimson : const Color(0x1FFFFFFF),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // 4. Unified Intelligence Deck (Functional, Truthful Tabs)
   // ---------------------------------------------------------------------------

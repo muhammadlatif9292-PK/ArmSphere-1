@@ -84,6 +84,7 @@ class AppTheme {
   static const Color primaryAccent = crimson;
   static const Color primaryRed = crimson;
   static const Color combatCrimson = crimson;
+  static const Color competitionCrimson = crimson;
 
   /// Restrained 12% Crimson glow.
   static const Color crimsonGlow = Color(0x1FE23B3B);
@@ -92,6 +93,7 @@ class AppTheme {
   static const Color goldPrimary = Color(0xFFD4AF37);
   static const Color goldLight = Color(0xFFF5E096);
   static const Color goldDark = Color(0xFF997A15);
+  static const Color championshipGold = goldPrimary;
 
   /// Restrained 10% Gold Halo glow.
   static const Color goldGlow = Color(0x1AD4AF37);
@@ -102,6 +104,7 @@ class AppTheme {
   static const Color activeCyan = cyan;
   static const Color cyanLight = Color(0xFF7DD3FC);
   static const Color info = cyan;
+  static const Color electricCyan = cyan;
 
   /// Restrained 12% Cyan glow.
   static const Color cyanGlow = Color(0x1F38BDF8);
@@ -109,6 +112,7 @@ class AppTheme {
   /// Verified Emerald (#10B981) - Official verification, cleared weigh-ins, match victories.
   static const Color emerald = Color(0xFF10B981);
   static const Color success = emerald;
+  static const Color verifiedEmerald = emerald;
 
   /// Restrained 12% Emerald glow.
   static const Color emeraldGlow = Color(0x1F10B981);
