@@ -114,10 +114,11 @@ class RoleAwareHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final profileRole = authState.userProfile?['role']?.toString();
     final userRole = authState.activeRole?.toUpperCase() ??
         (authState.verifiedRoles.length == 1
             ? authState.verifiedRoles.first.toUpperCase()
-            : 'ATHLETE');
+            : (profileRole?.toUpperCase() ?? 'ATHLETE'));
 
     if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
