@@ -11,6 +11,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/tournament_widgets.dart';
@@ -131,6 +132,7 @@ class TournamentsListScreen extends ConsumerWidget {
               onRefresh: () async => ref.refresh(tournamentProvider.future),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(16, 20, 16, MainShellScope.bottomClearance(context)),
                 children: const [
                   SizedBox(height: 120),
                   Icon(Icons.emoji_events_outlined, size: 56, color: AppTheme.textMuted),
@@ -162,7 +164,12 @@ class TournamentsListScreen extends ConsumerWidget {
             onRefresh: () async => ref.refresh(tournamentProvider.future),
             child: ListView.separated(
               key: const PageStorageKey<String>('tournaments_list_view'),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                20,
+                16,
+                MainShellScope.bottomClearance(context, additionalPadding: 20),
+              ),
               itemCount: visible.length,
               separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {

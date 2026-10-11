@@ -9,6 +9,7 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 
 /// Domain 6 / Stage 6 Convergence: Governance Dashboard Screen
 ///
@@ -106,7 +107,12 @@ class _GovernanceDashboardScreenState
       ),
       body: disputesAsync.when(
         loading: () => ListView.separated(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.bottomClearance(context, additionalPadding: 16),
+          ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
           itemBuilder: (_, __) => const SkeletonPlaceholder(
@@ -159,7 +165,12 @@ class _GovernanceDashboardScreenState
             onRefresh: () async => ref.invalidate(disputeProvider),
             child: ListView(
               key: const PageStorageKey<String>('governance_disputes_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 20),
+              ),
               children: [
                 // Top Operational Metrics Ribbon
                 Container(

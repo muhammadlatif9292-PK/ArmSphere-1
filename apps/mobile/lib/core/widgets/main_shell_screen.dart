@@ -5,6 +5,86 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
 
+/// Dimensions and footprint metrics for the floating bottom navigation dock.
+const double kFloatingDockHeight = 64.0;
+const double kFloatingDockBottomMargin = 12.0;
+
+/// Total vertical height of the floating dock including its bottom margin (76.0 dp).
+const double kFloatingDockTotalHeight = kFloatingDockHeight + kFloatingDockBottomMargin;
+
+/// Calculates dynamic bottom clearance for scrollable views inside or outside [MainShellScreen].
+///
+/// If inside the shell: returns `kFloatingDockTotalHeight + safeArea.bottom + additionalPadding`.
+/// If outside the shell: returns `safeArea.bottom + additionalPadding`.
+double mainShellBottomClearance(BuildContext context, {double additionalPadding = 16.0}) {
+  return MainShellScope.bottomClearance(context, additionalPadding: additionalPadding);
+}
+
+/// A [FloatingActionButtonLocation] that positions the button safely above the floating dock.
+/// It delegates horizontal alignment to [FloatingActionButtonLocation.endFloat] and offsets
+/// the vertical coordinate upward by [bottomOffset] (default: [kFloatingDockTotalHeight]).
+class DockAwareEndFloatLocation extends FloatingActionButtonLocation {
+  final double bottomOffset;
+
+  const DockAwareEndFloatLocation({this.bottomOffset = kFloatingDockTotalHeight});
+
+  @override
+  Offset getOffset(ScaffoldGeometry scaffoldGeometry) {
+    final double fabX = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dx;
+    final double fabY = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dy - bottomOffset;
+    return Offset(fabX, fabY);
+  }
+}
+
+/// Scope provided by [MainShellScreen] to inform descendant screens and widgets
+/// of the floating navigation dock's dimensions and clearance requirements.
+class MainShellScope extends InheritedWidget {
+  final double dockHeight;
+  final double dockBottomMargin;
+
+  const MainShellScope({
+    super.key,
+    this.dockHeight = kFloatingDockHeight,
+    this.dockBottomMargin = kFloatingDockBottomMargin,
+    required super.child,
+  });
+
+  static MainShellScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<MainShellScope>();
+  }
+
+  static bool isInsideShell(BuildContext context) {
+    return maybeOf(context) != null;
+  }
+
+  /// Calculates dynamic bottom clearance for scrollable views.
+  ///
+  /// - If inside [MainShellScreen]: returns `dockHeight + dockBottomMargin + safeArea.bottom + additionalPadding`.
+  /// - If outside the shell: returns `safeArea.bottom + additionalPadding`.
+  static double bottomClearance(BuildContext context, {double additionalPadding = 16.0}) {
+    final scope = maybeOf(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    if (scope != null) {
+      return scope.dockHeight + scope.dockBottomMargin + bottomInset + additionalPadding;
+    }
+    return bottomInset + additionalPadding;
+  }
+
+  /// Returns a [FloatingActionButtonLocation] that lifts the button above the floating dock
+  /// when rendered inside [MainShellScreen], or defaults to [FloatingActionButtonLocation.endFloat]
+  /// when viewed outside the shell.
+  static FloatingActionButtonLocation fabLocation(BuildContext context, {double extraOffset = 0.0}) {
+    if (isInsideShell(context)) {
+      return DockAwareEndFloatLocation(bottomOffset: kFloatingDockTotalHeight + extraOffset);
+    }
+    return FloatingActionButtonLocation.endFloat;
+  }
+
+  @override
+  bool updateShouldNotify(MainShellScope oldWidget) =>
+      dockHeight != oldWidget.dockHeight || dockBottomMargin != oldWidget.dockBottomMargin;
+}
+
 /// Primary Navigation Shell for ArmSphere
 ///
 /// Upgraded to ArmSphere Titanium Glass Master Design System:
@@ -31,24 +111,25 @@ class MainShellScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
-      extendBody: true,
-      body: Stack(
-        children: [
-          const AmbientParticleBackground(),
-          SafeArea(
-            bottom: false,
-            child: navigationShell,
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Container(
-            height: 64,
+    return MainShellScope(
+      child: Scaffold(
+        backgroundColor: AppTheme.voidBackground,
+        extendBody: true,
+        body: Stack(
+          children: [
+            const AmbientParticleBackground(),
+            SafeArea(
+              bottom: false,
+              child: navigationShell,
+            ),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, kFloatingDockBottomMargin),
+            child: Container(
+              height: kFloatingDockHeight,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
@@ -124,8 +205,9 @@ class MainShellScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNavItem(
     BuildContext context, {

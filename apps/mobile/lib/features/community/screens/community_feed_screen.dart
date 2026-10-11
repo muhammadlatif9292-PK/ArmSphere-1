@@ -11,6 +11,7 @@ import '../../../core/utils/embed_url_builder.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import 'video_player_modal.dart';
 
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
@@ -211,7 +212,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
       ),
       body: feedAsync.when(
         loading: () => ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MainShellScope.bottomClearance(context, additionalPadding: 16),
+          ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (_, __) => const RepaintBoundary(
@@ -274,7 +280,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               },
               child: ListView.separated(
                 key: const PageStorageKey<String>('community_feed_list_view'),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 16),
+                ),
                 itemCount: posts.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
@@ -866,7 +877,7 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                 // Right Translucent Action Dock
                 Positioned(
                   right: 14,
-                  bottom: 100,
+                  bottom: MainShellScope.bottomClearance(context, additionalPadding: 86),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -921,7 +932,7 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                 Positioned(
                   left: 16,
                   right: 80,
-                  bottom: 30,
+                  bottom: MainShellScope.bottomClearance(context, additionalPadding: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,

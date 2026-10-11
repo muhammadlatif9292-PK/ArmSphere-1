@@ -7,6 +7,7 @@ import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/referee_provider.dart';
@@ -272,7 +273,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
+        padding: EdgeInsets.fromLTRB(
+          AppTheme.space16,
+          AppTheme.space16,
+          AppTheme.space16,
+          MainShellScope.bottomClearance(context, additionalPadding: 20),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

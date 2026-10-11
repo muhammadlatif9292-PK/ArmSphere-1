@@ -12,6 +12,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/achievements_section.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
@@ -125,7 +126,12 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            MainShellScope.bottomClearance(context, additionalPadding: 20),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2426,7 +2432,12 @@ class AthleteProfileScreen extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          18,
+          16,
+          MainShellScope.bottomClearance(context, additionalPadding: 20),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
