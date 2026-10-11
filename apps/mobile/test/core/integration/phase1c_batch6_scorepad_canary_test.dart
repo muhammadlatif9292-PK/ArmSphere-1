@@ -266,6 +266,9 @@ void main() {
 
       // Gesture down on Pin Hold button for Red Corner
       final pinHoldFinder = find.text('HOLD TO PIN (400ms)').first;
+      await tester.ensureVisible(pinHoldFinder);
+      await tester.pumpAndSettle();
+
       final pinHoldGesture = await tester.startGesture(tester.getCenter(pinHoldFinder));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -274,8 +277,12 @@ void main() {
       expect(find.textContaining('LOCKING PIN:'), findsOneWidget);
 
       // Complete 400ms hold threshold -> locks pin and awards point
-      await tester.pump(const Duration(milliseconds: 350));
+      for (int i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       await tester.pump();
+      final allTexts = tester.widgetList<Text>(find.byType(Text)).map((w) => w.data).toList();
+      debugPrint('>>> ALL TEXTS AT REQ 6: $allTexts');
       expect(find.text('1'), findsOneWidget); // Score incremented to 1!
 
       await pinHoldGesture.up();
