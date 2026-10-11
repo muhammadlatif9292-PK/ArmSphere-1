@@ -41,6 +41,125 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     }
   }
 
+  String _roleContextDescription(String role) {
+    switch (role) {
+      case 'ATHLETE':
+        return 'Switches your workspace to athlete competition profile, personal PR logs, and ELO ranking progression.';
+      case 'REFEREE':
+        return 'Switches your workspace to the certified referee console, live table scorepads, and match evidence management.';
+      case 'TOURNAMENT_OPERATOR':
+        return 'Switches your workspace to tournament operations, double-elimination brackets, weigh-in desk, and podium ceremonies.';
+      case 'SYSTEM_ADMIN':
+        return 'Switches your workspace to federation governance, disciplinary dockets, and arbitration administration.';
+      default:
+        return 'Switches your client navigation and operational permissions to this federation role.';
+    }
+  }
+
+  Future<void> _confirmAndSwitchRole(String targetRole, String currentActiveRole) async {
+    if (targetRole == currentActiveRole) return;
+    if (_isLoading) return;
+
+    HapticFeedback.lightImpact();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: Row(
+          children: [
+            Icon(_roleIcon(targetRole), color: AppTheme.goldPrimary, size: 24),
+            const SizedBox(width: AppTheme.space8),
+            Expanded(
+              child: Text(
+                'Switch to ${_formatRoleName(targetRole)}?',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: AppTheme.fontDisplay,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _roleContextDescription(targetRole),
+              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+            ),
+            const SizedBox(height: AppTheme.space12),
+            Container(
+              padding: const EdgeInsets.all(AppTheme.space10),
+              decoration: BoxDecoration(
+                color: AppTheme.elevatedSurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                border: Border.all(color: AppTheme.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: AppTheme.goldPrimary),
+                  const SizedBox(width: AppTheme.space8),
+                  Expanded(
+                    child: Text(
+                      'Currently active: ${_formatRoleName(currentActiveRole)}',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.goldPrimary,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Switch Role'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authProvider.notifier).switchActiveRole(targetRole);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
+            backgroundColor: AppTheme.goldPrimary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   IconData _roleIcon(String role) {
     switch (role) {
       case 'ATHLETE':
@@ -193,6 +312,9 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                         horizontal: AppTheme.space16,
                         vertical: AppTheme.space4,
                       ),
+                      onTap: (isCurrentActive || _isLoading)
+                          ? null
+                          : () => _confirmAndSwitchRole(role, activeRole),
                       leading: Icon(
                         _roleIcon(role),
                         color: isCurrentActive ? AppTheme.goldPrimary : AppTheme.textSecondary,
@@ -213,32 +335,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                           : TextButton(
                               onPressed: _isLoading
                                   ? null
-                                  : () async {
-                                      HapticFeedback.lightImpact();
-                                      setState(() => _isLoading = true);
-                                      try {
-                                        await ref.read(authProvider.notifier).switchActiveRole(role);
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Switched persona to ${_formatRoleName(role)}'),
-                                              backgroundColor: AppTheme.goldPrimary,
-                                            ),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(e.toString()),
-                                              backgroundColor: AppTheme.error,
-                                            ),
-                                          );
-                                        }
-                                      } finally {
-                                        if (mounted) setState(() => _isLoading = false);
-                                      }
-                                    },
+                                  : () => _confirmAndSwitchRole(role, activeRole),
                               child: const Text('Switch'),
                             ),
                     );

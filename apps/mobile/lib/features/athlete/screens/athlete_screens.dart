@@ -2547,8 +2547,53 @@ class AthleteProfileScreen extends ConsumerWidget {
               onSelectAthlete: () {
                 // Already in Athlete profile
               },
-              onSelectOfficial: () {
-                context.push('/referee/dashboard');
+              onSelectOfficial: () async {
+                HapticFeedback.lightImpact();
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: AppTheme.cardSurface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                      side: const BorderSide(color: AppTheme.cardBorder),
+                    ),
+                    title: const Row(
+                      children: [
+                        Icon(Icons.gavel_rounded, color: AppTheme.info, size: 24),
+                        SizedBox(width: AppTheme.space8),
+                        Text(
+                          'Switch to Official Mode?',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: AppTheme.fontDisplay,
+                          ),
+                        ),
+                      ],
+                    ),
+                    content: const Text(
+                      'This will switch your active operational view to the Referee Console and table officiating tools.',
+                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.goldPrimary,
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text('Switch Role'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && context.mounted) {
+                  context.push('/referee/dashboard');
+                }
               },
             ),
             const SizedBox(height: 20),

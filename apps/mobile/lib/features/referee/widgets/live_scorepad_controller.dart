@@ -440,50 +440,139 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
               ],
             ),
 
-            const SizedBox(height: AppTheme.space16),
+            const SizedBox(height: AppTheme.space24),
+            const Divider(height: 1, color: AppTheme.borderSubtle),
+            const SizedBox(height: AppTheme.space12),
 
             // ---------------------------------------------------------------------
-            // Table Utility Bar (Reset Bout / Reset Clock)
+            // Table Utility Bar (Reset Clock / Reset Score)
+            // Spatially separated from active corner scoring and pin-lock targets
             // ---------------------------------------------------------------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Semantics(
-                  button: true,
-                  label: 'Reset match clock',
-                  child: TextButton.icon(
-                    onPressed: _resetTimer,
-                    icon: const Icon(Icons.replay, size: 16),
-                    label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space8),
+              decoration: BoxDecoration(
+                color: AppTheme.cardSurface.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                border: Border.all(color: AppTheme.cardBorder),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Semantics(
+                    button: true,
+                    label: 'Reset match clock',
+                    child: TextButton.icon(
+                      onPressed: _resetTimer,
+                      icon: const Icon(Icons.replay, size: 16),
+                      label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
+                    ),
                   ),
-                ),
-                Semantics(
-                  button: true,
-                  label: 'Reset bout scores and fouls',
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Reset Bout State?'),
-                          content: const Text('This will clear all points, fouls, and warnings for this match.'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-                            FilledButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryAccent),
-                              child: const Text('Reset'),
+                  Semantics(
+                    button: true,
+                    label: 'Reset score and bout state',
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        HapticFeedback.selectionClick();
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: AppTheme.cardSurface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                              side: const BorderSide(color: AppTheme.cardBorder),
                             ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) _resetBout();
-                    },
-                    icon: const Icon(Icons.refresh, size: 16, color: AppTheme.error),
-                    label: const Text('Reset Bout', style: TextStyle(fontSize: 12, color: AppTheme.error)),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 22),
+                                SizedBox(width: AppTheme.space8),
+                                Text(
+                                  'Reset Score & Bout State?',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: AppTheme.fontDisplay,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'This action will clear all live scoring progress recorded for this bout:',
+                                  style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                                ),
+                                const SizedBox(height: AppTheme.space12),
+                                Container(
+                                  padding: const EdgeInsets.all(AppTheme.space12),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.elevatedSurface,
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                    border: Border.all(color: AppTheme.cardBorder),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '• Current Score: Red $_scoreRed — White $_scoreWhite',
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '• Fouls: Red $_foulsRed/2 — White $_foulsWhite/2',
+                                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '• Warnings: Red $_warningsRed/2 — White $_warningsWhite/2',
+                                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                      ),
+                                      if (_inStraps) ...[
+                                        const SizedBox(height: 2),
+                                        const Text(
+                                          '• In-Straps: Engaged (will disengage)',
+                                          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                        ),
+                                      ],
+                                      if (_secondsElapsed > 0) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '• Match Clock: ${_secondsElapsed}s elapsed',
+                                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: AppTheme.space12),
+                                const Text(
+                                  'Score data cannot be recovered once reset. Keep existing scores if this was triggered accidentally.',
+                                  style: TextStyle(fontSize: 12, color: AppTheme.textMuted, height: 1.3),
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: const Text('Cancel (Keep Score)'),
+                              ),
+                              FilledButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
+                                child: const Text('Reset Score'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) _resetBout();
+                      },
+                      icon: const Icon(Icons.refresh, size: 16, color: AppTheme.error),
+                      label: const Text('Reset Score', style: TextStyle(fontSize: 12, color: AppTheme.error, fontWeight: FontWeight.w600)),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
