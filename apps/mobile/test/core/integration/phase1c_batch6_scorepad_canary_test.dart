@@ -275,6 +275,7 @@ void main() {
 
       // Complete 400ms hold threshold -> locks pin and awards point
       await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
       expect(find.text('1'), findsOneWidget); // Score incremented to 1!
 
       await pinHoldGesture.up();
