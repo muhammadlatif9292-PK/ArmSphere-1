@@ -274,7 +274,7 @@ void main() {
       expect(find.textContaining('LOCKING PIN:'), findsOneWidget);
 
       // Complete 400ms hold threshold -> locks pin and awards point
-      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 350));
       expect(find.text('1'), findsOneWidget); // Score incremented to 1!
 
       await pinHoldGesture.up();
@@ -532,6 +532,7 @@ void main() {
       expect(resetScoreButton, findsOneWidget);
 
       // 4. Tap Reset Score -> Dialog MUST appear
+      await tester.ensureVisible(resetScoreButton);
       await tester.tap(resetScoreButton);
       await tester.pumpAndSettle();
 
@@ -548,6 +549,7 @@ void main() {
       expect(find.text('F: 1/2'), findsOneWidget); // Foul unchanged!
 
       // 6. Tap Reset Score again and CONFIRM
+      await tester.ensureVisible(resetScoreButton);
       await tester.tap(resetScoreButton);
       await tester.pumpAndSettle();
 
