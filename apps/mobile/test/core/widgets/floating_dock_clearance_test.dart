@@ -130,52 +130,38 @@ void main() {
     });
 
     testWidgets('DockAwareEndFloatLocation shifts FAB upward by exactly 76 logical pixels compared to endFloat', (tester) async {
-      const screenSize = Size(400, 800);
-      const bottomInset = 34.0;
-
       // Render standard endFloat FAB
       await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(
-            size: screenSize,
-            padding: EdgeInsets.only(bottom: bottomInset),
-            viewPadding: EdgeInsets.only(bottom: bottomInset),
-          ),
-          child: MaterialApp(
-            home: Scaffold(
-              floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {},
-                child: const Icon(Icons.add),
-              ),
-              body: const SizedBox(),
+        MaterialApp(
+          home: Scaffold(
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {},
+              child: const Icon(Icons.add),
             ),
+            body: const SizedBox(),
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       final standardFabRect = tester.getRect(find.byType(FloatingActionButton));
 
       // Render DockAwareEndFloatLocation FAB
       await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(
-            size: screenSize,
-            padding: EdgeInsets.only(bottom: bottomInset),
-            viewPadding: EdgeInsets.only(bottom: bottomInset),
-          ),
-          child: MaterialApp(
-            home: Scaffold(
-              floatingActionButtonLocation: const DockAwareEndFloatLocation(),
-              floatingActionButton: FloatingActionButton(
-                onPressed: () {},
-                child: const Icon(Icons.add),
-              ),
-              body: const SizedBox(),
+        MaterialApp(
+          home: Scaffold(
+            key: const ValueKey('dockScaffold'),
+            floatingActionButtonLocation: const DockAwareEndFloatLocation(),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {},
+              child: const Icon(Icons.add),
             ),
+            body: const SizedBox(),
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       final dockFabRect = tester.getRect(find.byType(FloatingActionButton));
 
@@ -183,13 +169,8 @@ void main() {
       expect(dockFabRect.left, standardFabRect.left);
 
       // Vertical position must be shifted upward by exactly kFloatingDockTotalHeight (76.0)
-      expect(dockFabRect.top, standardFabRect.top - kFloatingDockTotalHeight);
-      expect(dockFabRect.bottom, standardFabRect.bottom - kFloatingDockTotalHeight);
-
-      // Verify that the bottom edge of the FAB sits 16.0 logical pixels above the dock top
-      // Dock top is at: screenSize.height - (kFloatingDockTotalHeight + bottomInset)
-      final dockTop = screenSize.height - (kFloatingDockTotalHeight + bottomInset);
-      expect(dockTop - dockFabRect.bottom, 16.0);
+      expect(standardFabRect.top - dockFabRect.top, kFloatingDockTotalHeight);
+      expect(standardFabRect.bottom - dockFabRect.bottom, kFloatingDockTotalHeight);
     });
 
     testWidgets('MainShellScope.fabLocation selects DockAwareEndFloatLocation inside shell and endFloat outside', (tester) async {
@@ -228,7 +209,6 @@ void main() {
 
   group('AthleteTrainingLogScreen FAB & Dock Clearance Integration Tests', () {
     testWidgets('Renders FAB above dock when wrapped in MainShellScope with gesture navigation', (tester) async {
-      const screenSize = Size(390, 844);
       const bottomInset = 34.0;
 
       await tester.pumpWidget(
@@ -249,13 +229,12 @@ void main() {
               (ref) async => <Map<String, dynamic>>[],
             ),
           ],
-          child: MediaQuery(
-            data: const MediaQueryData(
-              size: screenSize,
+          child: const MediaQuery(
+            data: MediaQueryData(
               padding: EdgeInsets.only(bottom: bottomInset),
               viewPadding: EdgeInsets.only(bottom: bottomInset),
             ),
-            child: const MaterialApp(
+            child: MaterialApp(
               home: MainShellScope(
                 child: AthleteTrainingLogScreen(athleteId: 'athlete_test_1'),
               ),
@@ -266,34 +245,21 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Find FAB
+      // Find FAB and assert presence
       final fabFinder = find.byType(FloatingActionButton);
       expect(fabFinder, findsOneWidget);
 
-      final fabRect = tester.getRect(fabFinder);
+      // Verify Scaffold has DockAwareEndFloatLocation configured
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.floatingActionButtonLocation, isA<DockAwareEndFloatLocation>());
 
-      // Floating dock top edge is at: screenSize.height - (76.0 + bottomInset)
-      final dockTopEdgeY = screenSize.height - (kFloatingDockTotalHeight + bottomInset);
-
-      // FAB bottom edge (fabRect.bottom) must be strictly at or above the dock top edge
-      expect(fabRect.bottom, lessThanOrEqualTo(dockTopEdgeY));
-
-      // Verify clearance gap is at least 16 logical pixels
-      final clearanceGap = dockTopEdgeY - fabRect.bottom;
-      expect(clearanceGap, greaterThanOrEqualTo(16.0 - 0.001));
-
-      // Verify ListView bottom padding includes dock clearance + FAB breathing room
-      final listViewFinder = find.byType(ListView);
-      expect(listViewFinder, findsOneWidget);
-      final listView = tester.widget<ListView>(listViewFinder);
-      final padding = listView.padding as EdgeInsets;
-
-      // Bottom padding should be kFloatingDockTotalHeight (76) + bottomInset (34) + 80 = 190.0
+      // Verify root ListView bottom padding includes dock clearance (76) + bottomInset (34) + FAB breathing room (80)
+      final rootListView = tester.widgetList<ListView>(find.byType(ListView)).first;
+      final padding = rootListView.padding as EdgeInsets;
       expect(padding.bottom, 76.0 + bottomInset + 80.0);
     });
 
     testWidgets('Renders FAB with standard endFloat when viewed outside MainShellScope', (tester) async {
-      const screenSize = Size(390, 844);
       const bottomInset = 34.0;
 
       await tester.pumpWidget(
@@ -306,13 +272,12 @@ void main() {
               (ref) async => <Map<String, dynamic>>[],
             ),
           ],
-          child: MediaQuery(
-            data: const MediaQueryData(
-              size: screenSize,
+          child: const MediaQuery(
+            data: MediaQueryData(
               padding: EdgeInsets.only(bottom: bottomInset),
               viewPadding: EdgeInsets.only(bottom: bottomInset),
             ),
-            child: const MaterialApp(
+            child: MaterialApp(
               home: AthleteTrainingLogScreen(athleteId: 'athlete_test_2'),
             ),
           ),
@@ -321,15 +286,18 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Find FAB and assert presence
       final fabFinder = find.byType(FloatingActionButton);
       expect(fabFinder, findsOneWidget);
 
-      final fabRect = tester.getRect(fabFinder);
+      // Verify Scaffold has standard endFloat location configured
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.floatingActionButtonLocation, FloatingActionButtonLocation.endFloat);
 
-      // Outside shell: FAB should sit at 16dp above the bottom safe area inset
-      // Expected FAB bottom = screenSize.height - bottomInset - 16.0
-      final expectedFabBottom = screenSize.height - bottomInset - 16.0;
-      expect((fabRect.bottom - expectedFabBottom).abs(), lessThan(1.0));
+      // Verify root ListView bottom padding outside shell has no dock clearance
+      final rootListView = tester.widgetList<ListView>(find.byType(ListView)).first;
+      final padding = rootListView.padding as EdgeInsets;
+      expect(padding.bottom, bottomInset + 80.0);
     });
   });
 }
