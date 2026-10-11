@@ -29,7 +29,7 @@ class DockAwareEndFloatLocation extends FloatingActionButtonLocation {
   const DockAwareEndFloatLocation({this.bottomOffset = kFloatingDockTotalHeight});
 
   @override
-  Offset getOffset(ScaffoldGeometry scaffoldGeometry) {
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final double fabX = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dx;
     final double fabY = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dy - bottomOffset;
     return Offset(fabX, fabY);

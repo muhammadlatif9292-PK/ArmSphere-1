@@ -129,41 +129,67 @@ void main() {
       expect(clearanceShellGestureInset, 130.0);
     });
 
-    testWidgets('DockAwareEndFloatLocation correctly lifts FAB above floating dock', (tester) async {
-      const scaffoldSize = Size(400, 800);
-      const fabSize = Size(56, 56);
-      const bottomViewPadding = 34.0;
+    testWidgets('DockAwareEndFloatLocation shifts FAB upward by exactly 76 logical pixels compared to endFloat', (tester) async {
+      const screenSize = Size(400, 800);
+      const bottomInset = 34.0;
 
-      // Scaffold geometry with gesture nav bottom padding
-      final geometry = ScaffoldGeometry(
-        bottomViewPadding: bottomViewPadding,
-        scaffoldSize: scaffoldSize,
-        floatingActionButtonSize: fabSize,
+      // Render standard endFloat FAB
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: screenSize,
+            padding: EdgeInsets.only(bottom: bottomInset),
+            viewPadding: EdgeInsets.only(bottom: bottomInset),
+          ),
+          child: MaterialApp(
+            home: Scaffold(
+              floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+              floatingActionButton: FloatingActionButton(
+                onPressed: () {},
+                child: const Icon(Icons.add),
+              ),
+              body: const SizedBox(),
+            ),
+          ),
+        ),
       );
 
-      const dockLocation = DockAwareEndFloatLocation();
-      final dockOffset = dockLocation.getOffset(geometry);
+      final standardFabRect = tester.getRect(find.byType(FloatingActionButton));
 
-      final standardOffset = FloatingActionButtonLocation.endFloat.getOffset(geometry);
+      // Render DockAwareEndFloatLocation FAB
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: screenSize,
+            padding: EdgeInsets.only(bottom: bottomInset),
+            viewPadding: EdgeInsets.only(bottom: bottomInset),
+          ),
+          child: MaterialApp(
+            home: Scaffold(
+              floatingActionButtonLocation: const DockAwareEndFloatLocation(),
+              floatingActionButton: FloatingActionButton(
+                onPressed: () {},
+                child: const Icon(Icons.add),
+              ),
+              body: const SizedBox(),
+            ),
+          ),
+        ),
+      );
 
-      // Horizontal coordinate must remain standard endFloat alignment
-      expect(dockOffset.dx, standardOffset.dx);
+      final dockFabRect = tester.getRect(find.byType(FloatingActionButton));
 
-      // Vertical coordinate must be shifted upward by exactly kFloatingDockTotalHeight (76.0)
-      expect(dockOffset.dy, standardOffset.dy - kFloatingDockTotalHeight);
+      // Horizontal coordinate must remain identical
+      expect(dockFabRect.left, standardFabRect.left);
 
-      // Bottom edge of the FAB: dockOffset.dy + fabSize.height
-      final fabBottomEdge = dockOffset.dy + fabSize.height;
-      final distanceToScreenBottom = scaffoldSize.height - fabBottomEdge;
+      // Vertical position must be shifted upward by exactly kFloatingDockTotalHeight (76.0)
+      expect(dockFabRect.top, standardFabRect.top - kFloatingDockTotalHeight);
+      expect(dockFabRect.bottom, standardFabRect.bottom - kFloatingDockTotalHeight);
 
-      // Distance to screen bottom must be 16.0 margin + 76.0 dock height + 34.0 bottomViewPadding = 126.0
-      expect(distanceToScreenBottom, 16.0 + kFloatingDockTotalHeight + bottomViewPadding);
-
-      // Dock top boundary from screen bottom is 76.0 + bottomViewPadding = 110.0
-      final dockTopBoundary = 76.0 + bottomViewPadding;
-
-      // The clearance gap between the top of the dock and the bottom of the FAB is strictly 16.0 logical pixels
-      expect(distanceToScreenBottom - dockTopBoundary, 16.0);
+      // Verify that the bottom edge of the FAB sits 16.0 logical pixels above the dock top
+      // Dock top is at: screenSize.height - (kFloatingDockTotalHeight + bottomInset)
+      final dockTop = screenSize.height - (kFloatingDockTotalHeight + bottomInset);
+      expect(dockTop - dockFabRect.bottom, 16.0);
     });
 
     testWidgets('MainShellScope.fabLocation selects DockAwareEndFloatLocation inside shell and endFloat outside', (tester) async {
@@ -202,14 +228,14 @@ void main() {
 
   group('AthleteTrainingLogScreen FAB & Dock Clearance Integration Tests', () {
     testWidgets('Renders FAB above dock when wrapped in MainShellScope with gesture navigation', (tester) async {
-      const screenSize = Size(390, 844); // Modern phone size
+      const screenSize = Size(390, 844);
       const bottomInset = 34.0;
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             trainingLogProvider('athlete_test_1').overrideWith(
-              (ref) => const AsyncValue.data([
+              (ref) async => <Map<String, dynamic>>[
                 {
                   'id': 'log_1',
                   'exercise': 'CUPPING WRIST CURL',
@@ -217,10 +243,10 @@ void main() {
                   'reps': 10,
                   'createdAt': '2026-10-10T14:00:00Z',
                 },
-              ]),
+              ],
             ),
             trainingLogPRsProvider('athlete_test_1').overrideWith(
-              (ref) => const AsyncValue.data([]),
+              (ref) async => <Map<String, dynamic>>[],
             ),
           ],
           child: MediaQuery(
@@ -274,10 +300,10 @@ void main() {
         ProviderScope(
           overrides: [
             trainingLogProvider('athlete_test_2').overrideWith(
-              (ref) => const AsyncValue.data([]),
+              (ref) async => <Map<String, dynamic>>[],
             ),
             trainingLogPRsProvider('athlete_test_2').overrideWith(
-              (ref) => const AsyncValue.data([]),
+              (ref) async => <Map<String, dynamic>>[],
             ),
           ],
           child: MediaQuery(
