@@ -83,13 +83,13 @@ void main() {
 
       // Simulate open soft keyboard with 300dp viewInsets.bottom
       await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(
-            size: Size(400, 600),
-            viewInsets: EdgeInsets.only(bottom: 300.0),
-          ),
-          child: MaterialApp(
-            home: StickyFormScaffold(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(400, 600),
+              viewInsets: EdgeInsets.only(bottom: 300.0),
+            ),
+            child: StickyFormScaffold(
               primaryActionLabel: 'Docked Above Keyboard',
               onPrimaryAction: () {},
               child: Column(
@@ -121,13 +121,13 @@ void main() {
     testWidgets('Dynamically adjusts shell clearance: dock clearance when keyboard closed, 0 when keyboard open', (tester) async {
       // 1. Inside MainShellScope, keyboard closed (viewInsets = 0)
       await tester.pumpWidget(
-        const MediaQuery(
-          data: MediaQueryData(
-            size: Size(400, 800),
-            viewInsets: EdgeInsets.zero,
-          ),
-          child: MaterialApp(
-            home: MainShellScope(
+        const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: Size(400, 800),
+              viewInsets: EdgeInsets.zero,
+            ),
+            child: MainShellScope(
               child: StickyFormScaffold(
                 primaryActionLabel: 'Shell Form Submit',
                 child: Text('Shell Form Body'),
@@ -154,13 +154,13 @@ void main() {
 
       // 2. Inside MainShellScope, keyboard OPEN (viewInsets = 300)
       await tester.pumpWidget(
-        const MediaQuery(
-          data: MediaQueryData(
-            size: Size(400, 800),
-            viewInsets: EdgeInsets.only(bottom: 300.0),
-          ),
-          child: MaterialApp(
-            home: MainShellScope(
+        const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: Size(400, 800),
+              viewInsets: EdgeInsets.only(bottom: 300.0),
+            ),
+            child: MainShellScope(
               child: StickyFormScaffold(
                 primaryActionLabel: 'Shell Form Submit',
                 child: Text('Shell Form Body'),
