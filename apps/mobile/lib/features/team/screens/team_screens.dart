@@ -12,6 +12,7 @@ import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
@@ -44,13 +45,43 @@ class TeamsListScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.group_add_outlined, color: AppTheme.goldPrimary),
-            tooltip: 'Create team',
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              context.push('/teams/create');
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: InkWell(
+                key: const ValueKey('teams_list_create_button'),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/teams/create');
+                },
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.group_add_outlined, size: 14, color: AppTheme.goldPrimary),
+                      SizedBox(width: 4),
+                      Text(
+                        'CREATE TEAM',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.goldPrimary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -96,7 +127,12 @@ class TeamsListScreen extends ConsumerWidget {
             onRefresh: () async => ref.invalidate(myTeamsProvider),
             child: ListView(
               key: const PageStorageKey<String>('teams_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
+              ),
               children: [
                 // Top Roster Overview Ribbon
                 Container(
