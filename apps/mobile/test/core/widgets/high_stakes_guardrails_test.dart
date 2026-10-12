@@ -290,7 +290,8 @@ void main() {
       await tester.tap(deleteBtnFinder);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Permanently Delete'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(fakeAuthNotifier.deleteAccountCalled, isTrue);
     });
