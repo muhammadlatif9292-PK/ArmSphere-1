@@ -161,6 +161,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       final elo = (a['eloRating'] as num?)?.toInt() ?? 1500;
       final name = a['displayName']?.toString() ?? 'Athlete 1';
       return {
+        'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? widget.athleteId1,
         'name': name,
         'nickname': 'CONTENDER',
         'club': a['clubName']?.toString() ?? 'Independent',
@@ -183,6 +184,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       };
     }
     return {
+      'id': widget.athleteId1,
       'name': 'Red Corner Contender',
       'nickname': 'RED CORNER',
       'club': 'Pending Selection',
@@ -212,6 +214,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       final elo = (a['eloRating'] as num?)?.toInt() ?? 1500;
       final name = a['displayName']?.toString() ?? 'Athlete 2';
       return {
+        'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? widget.athleteId2,
         'name': name,
         'nickname': 'RIVAL',
         'club': a['clubName']?.toString() ?? 'Independent',
@@ -234,6 +237,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       };
     }
     return {
+      'id': widget.athleteId2,
       'name': 'Blue Corner Contender',
       'nickname': 'BLUE CORNER',
       'club': 'Pending Selection',
@@ -315,38 +319,142 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ],
         ),
         actions: [
-          // Arm Switch Toggle Button (SIG-4 Trigger)
+          // Arm Switch Dual-Pill Container (ISSUE-P3-01: 90% opacity, gold border on active arm)
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: TactilePressWrapper(
-              onTap: _toggleArm,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.sync_alt_rounded,
-                      size: 14,
-                      color: _isRightArm ? const Color(0xFFEF4444) : const Color(0xFF38BDF8),
+            child: Center(
+              child: Semantics(
+                button: true,
+                label: 'Switch arm comparison. Currently ${_isRightArm ? "Right Arm" : "Left Arm"} selected.',
+                child: Container(
+                  height: 32,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.90),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF334155),
+                      width: 1.0,
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      _isRightArm ? 'RIGHT ARM' : 'LEFT ARM',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: _isRightArm ? const Color(0xFFEF4444) : const Color(0xFF38BDF8),
-                        letterSpacing: 0.6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Right Arm Segment
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () {
+                          if (!_isRightArm) _toggleArm();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _isRightArm
+                                ? const Color(0xFF1E293B)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: _isRightArm
+                                  ? AppTheme.goldPrimary
+                                  : Colors.transparent,
+                              width: 1.5,
+                            ),
+                            boxShadow: _isRightArm
+                                ? [
+                                    BoxShadow(
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.pan_tool_alt_rounded,
+                                size: 12,
+                                color: _isRightArm
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF94A3B8),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'RIGHT',
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: _isRightArm
+                                      ? Colors.white
+                                      : const Color(0xFF94A3B8),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 2),
+                      // Left Arm Segment
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () {
+                          if (_isRightArm) _toggleArm();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: !_isRightArm
+                                ? const Color(0xFF1E293B)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: !_isRightArm
+                                  ? AppTheme.goldPrimary
+                                  : Colors.transparent,
+                              width: 1.5,
+                            ),
+                            boxShadow: !_isRightArm
+                                ? [
+                                    BoxShadow(
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.pan_tool_alt_rounded,
+                                size: 12,
+                                color: !_isRightArm
+                                    ? const Color(0xFF38BDF8)
+                                    : const Color(0xFF94A3B8),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LEFT',
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: !_isRightArm
+                                      ? Colors.white
+                                      : const Color(0xFF94A3B8),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -521,26 +629,44 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                             _buildCornerPill('RED CORNER', const Color(0xFFEF4444)),
                             const SizedBox(height: 12),
 
-                            // Avatar with Red Ring
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFFEF4444), width: 2.2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFEF4444).withValues(alpha: 0.4),
-                                    blurRadius: 12,
+                            // Clickable Avatar with Red Ring (ISSUE-P3-01: Direct passport navigation)
+                            TactilePressWrapper(
+                              onTap: () {
+                                final athleteId = red['id']?.toString() ?? widget.athleteId1;
+                                if (athleteId != null && athleteId.isNotEmpty) {
+                                  context.push('/athlete/$athleteId');
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Athlete passport unavailable in preview mode.'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Tooltip(
+                                message: 'View ${red['name']} Passport',
+                                child: Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: const Color(0xFFEF4444), width: 2.2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: ArmSphereImage.avatar(
-                                imageUrl: red['avatarUrl']?.toString(),
-                                initial: red['avatar']?.toString() ?? (red['name']?.toString().isNotEmpty == true ? red['name']![0] : 'R'),
-                                size: 52,
-                                fallbackAsset: ArmSphereAssets.defaultAvatar,
-                                semanticLabel: 'Red corner competitor avatar for ${red['name']}',
+                                  child: ArmSphereImage.avatar(
+                                    imageUrl: red['avatarUrl']?.toString(),
+                                    initial: red['avatar']?.toString() ?? (red['name']?.toString().isNotEmpty == true ? red['name']![0] : 'R'),
+                                    size: 52,
+                                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                    semanticLabel: 'Red corner competitor avatar for ${red['name']}. Tap to view athlete passport.',
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -618,26 +744,44 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                             _buildCornerPill('BLUE CORNER', const Color(0xFF38BDF8)),
                             const SizedBox(height: 12),
 
-                            // Avatar with Blue Ring
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFF38BDF8), width: 2.2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
-                                    blurRadius: 12,
+                            // Clickable Avatar with Blue Ring (ISSUE-P3-01: Direct passport navigation)
+                            TactilePressWrapper(
+                              onTap: () {
+                                final athleteId = blue['id']?.toString() ?? widget.athleteId2;
+                                if (athleteId != null && athleteId.isNotEmpty) {
+                                  context.push('/athlete/$athleteId');
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Athlete passport unavailable in preview mode.'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Tooltip(
+                                message: 'View ${blue['name']} Passport',
+                                child: Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: const Color(0xFF38BDF8), width: 2.2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
+                                        blurRadius: 12,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: ArmSphereImage.avatar(
-                                imageUrl: blue['avatarUrl']?.toString(),
-                                initial: blue['avatar']?.toString() ?? (blue['name']?.toString().isNotEmpty == true ? blue['name']![0] : 'B'),
-                                size: 52,
-                                fallbackAsset: ArmSphereAssets.defaultAvatar,
-                                semanticLabel: 'Blue corner competitor avatar for ${blue['name']}',
+                                  child: ArmSphereImage.avatar(
+                                    imageUrl: blue['avatarUrl']?.toString(),
+                                    initial: blue['avatar']?.toString() ?? (blue['name']?.toString().isNotEmpty == true ? blue['name']![0] : 'B'),
+                                    size: 52,
+                                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                    semanticLabel: 'Blue corner competitor avatar for ${blue['name']}. Tap to view athlete passport.',
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 10),

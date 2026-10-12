@@ -874,64 +874,82 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                   ),
                 ),
 
-                // Right Translucent Action Dock
+                // Right Translucent Action Dock (ISSUE-P3-02: 20dp margin to avoid Android back gestures + touch-absorbing backing container)
                 Positioned(
-                  right: 14,
+                  right: 20,
                   bottom: MainShellScope.bottomClearance(context, additionalPadding: 86),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Like Scale Bounce
-                      _ScaleBounceLikeButton(postId: postId, isVertical: true),
-                      const SizedBox(height: 20),
-                      // Comments
-                      IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 28),
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          context.push('/community/posts/$postId/comments');
-                        },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF070A11).withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        width: 1.0,
                       ),
-                      const Text(
-                        'CHAT',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textMuted,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Share
-                      IconButton(
-                        icon: const Icon(Icons.share_outlined, color: Colors.white, size: 26),
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Clip link copied to clipboard'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                      ),
-                      const Text(
-                        'SHARE',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textMuted,
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Like Scale Bounce
+                        _ScaleBounceLikeButton(postId: postId, isVertical: true),
+                        const SizedBox(height: 16),
+                        // Comments
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 28),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/community/posts/$postId/comments');
+                          },
                         ),
-                      ),
-                    ],
+                        const Text(
+                          'CHAT',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Share
+                        IconButton(
+                          icon: const Icon(Icons.share_outlined, color: Colors.white, size: 26),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Clip link copied to clipboard'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        ),
+                        const Text(
+                          'SHARE',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
                 // Bottom Athlete & Technical HUD Overlay
                 Positioned(
                   left: 16,
-                  right: 80,
+                  right: 86,
                   bottom: MainShellScope.bottomClearance(context, additionalPadding: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

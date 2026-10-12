@@ -422,6 +422,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/athletes/:athleteId',
+        redirect: (context, state) {
+          final athleteId = state.pathParameters['athleteId'] ?? '';
+          return '/athlete/$athleteId';
+        },
+      ),
+      GoRoute(
         path: '/athlete/:athleteId/followers',
         name: 'athlete_followers',
         pageBuilder: (context, state) {
