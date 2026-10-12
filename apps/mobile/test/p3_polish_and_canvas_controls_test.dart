@@ -108,7 +108,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: BracketTreeWidget(matches: matches),
+            body: BracketTreeWidget(
+              matches: matches,
+              titlePrefix: 'WINNERS',
+            ),
           ),
         ),
       );
