@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/dispute_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
@@ -120,12 +122,12 @@ class _GovernanceDashboardScreenState
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load disputes',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(disputeProvider),
+          onRetry: () => ref.invalidate(disputeProvider),
+          onSecondaryAction: () => context.go('/'),
+          secondaryActionLabel: 'Return to Home',
         ),
         data: (disputes) {
           if (disputes.isEmpty) {
@@ -581,6 +583,15 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
           ),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppErrorFormatter.format(e)),
+          backgroundColor: AppTheme.error,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -869,12 +880,12 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppTheme.goldPrimary),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
-          title: 'Could not load dispute',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(disputeProvider),
+        error: (error, _) => AppErrorView(
+          error: error,
+          title: 'Could not load dispute dossier',
+          onRetry: () => ref.invalidate(disputeProvider),
+          onSecondaryAction: () => context.go('/governance'),
+          secondaryActionLabel: 'Back to Disputes',
         ),
         data: (disputes) {
           final d = _findDispute(disputes);

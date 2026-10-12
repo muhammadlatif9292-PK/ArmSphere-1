@@ -8,7 +8,9 @@ import '../../../core/api/dio_client.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -62,12 +64,12 @@ class TeamsListScreen extends ConsumerWidget {
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load teams',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(myTeamsProvider),
+          onRetry: () => ref.invalidate(myTeamsProvider),
+          onSecondaryAction: () => context.go('/'),
+          secondaryActionLabel: 'Return to Home',
         ),
         data: (teams) {
           if (teams.isEmpty) {
@@ -424,12 +426,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
             SkeletonPlaceholder(height: 64, borderRadius: AppTheme.radiusMedium),
           ],
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load team',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(teamProvider(widget.teamId)),
+          onRetry: () => ref.invalidate(teamProvider(widget.teamId)),
+          onSecondaryAction: () => context.pop(),
+          secondaryActionLabel: 'Back to Teams',
         ),
         data: (team) {
           final members = (team['members'] as List?) ?? const [];
@@ -1108,14 +1110,20 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          SnackBar(
+            content: Text(AppErrorFormatter.format(e)),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not create team: $e'), backgroundColor: AppTheme.error),
+          SnackBar(
+            content: Text(AppErrorFormatter.format(e)),
+            backgroundColor: AppTheme.error,
+          ),
         );
       }
     } finally {
@@ -1243,9 +1251,29 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                     minHeight: 2,
                     color: AppTheme.goldPrimary,
                   ),
-                  error: (error, _) => Text(
-                    'Clubs could not be loaded: $error',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.error),
+                  error: (error, _) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.elevatedSurface,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 16, color: AppTheme.textMuted),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            AppErrorFormatter.format(error),
+                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => ref.invalidate(clubsProvider),
+                          child: const Text('Retry', style: TextStyle(color: AppTheme.goldPrimary, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
                   ),
                   data: (clubs) => DropdownButtonFormField<String>(
                     initialValue: _clubId,

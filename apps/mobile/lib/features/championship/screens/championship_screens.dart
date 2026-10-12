@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/championship_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -52,12 +53,12 @@ class ChampionshipsListScreen extends ConsumerWidget {
               borderRadius: AppTheme.radiusMedium,
             ),
           ),
-          error: (e, _) => AppEmptyState(
-            icon: Icons.error_outline,
+          error: (e, _) => AppErrorView(
+            error: e,
             title: 'Could not load championship titles',
-            subtitle: e.toString(),
-            ctaLabel: 'Retry',
-            onCtaTap: () => ref.invalidate(championshipProvider),
+            onRetry: () => ref.invalidate(championshipProvider),
+            onSecondaryAction: () => context.go('/'),
+            secondaryActionLabel: 'Return to Home',
           ),
           data: (championships) {
             if (championships.isEmpty) {
@@ -323,12 +324,12 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                   SkeletonPlaceholder(height: 80, borderRadius: AppTheme.radiusMedium),
                 ],
               ),
-              error: (e, _) => AppEmptyState(
-                icon: Icons.error_outline,
+              error: (e, _) => AppErrorView(
+                error: e,
                 title: 'Could not load lineage',
-                subtitle: e.toString(),
-                ctaLabel: 'Retry',
-                onCtaTap: () => ref.invalidate(beltLineageProvider(championshipId)),
+                onRetry: () => ref.invalidate(beltLineageProvider(championshipId)),
+                onSecondaryAction: () => context.pop(),
+                secondaryActionLabel: 'Back to Championships',
               ),
               data: (lineage) {
                 if (lineage.isEmpty) {
