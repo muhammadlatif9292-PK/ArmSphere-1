@@ -15,6 +15,8 @@ class AppEmptyState extends StatefulWidget {
   final String subtitle;
   final String? ctaLabel;
   final VoidCallback? onCtaTap;
+  final String? secondaryCtaLabel;
+  final VoidCallback? onSecondaryCtaTap;
 
   const AppEmptyState({
     super.key,
@@ -23,6 +25,8 @@ class AppEmptyState extends StatefulWidget {
     required this.subtitle,
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   });
 
   const AppEmptyState.noCompetitions({
@@ -165,39 +169,76 @@ class _AppEmptyStateState extends State<AppEmptyState>
                   ),
                 ),
               ),
-              if (widget.ctaLabel != null && widget.onCtaTap != null) ...[
+              if ((widget.ctaLabel != null && widget.onCtaTap != null) ||
+                  (widget.secondaryCtaLabel != null && widget.onSecondaryCtaTap != null)) ...[
                 const SizedBox(height: 20),
-                TactilePressWrapper(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onCtaTap!();
-                  },
-                  semanticLabel: widget.ctaLabel,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.elevatedSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.ctaLabel!,
-                          style: const TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            color: AppTheme.goldPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    if (widget.ctaLabel != null && widget.onCtaTap != null)
+                      TactilePressWrapper(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          widget.onCtaTap!();
+                        },
+                        semanticLabel: widget.ctaLabel,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.elevatedSurface,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.ctaLabel!,
+                                style: const TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  color: AppTheme.goldPrimary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    if (widget.secondaryCtaLabel != null && widget.onSecondaryCtaTap != null)
+                      TactilePressWrapper(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          widget.onSecondaryCtaTap!();
+                        },
+                        semanticLabel: widget.secondaryCtaLabel,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.borderSubtle),
+                          ),
+                          child: Text(
+                            widget.secondaryCtaLabel!,
+                            style: const TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ],

@@ -1575,45 +1575,125 @@ class _TournamentAwardsCeremonyScreenState
                             ),
                           ),
                           const SizedBox(height: 24),
-                          TactilePressWrapper(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              if (effectiveTournamentId.isNotEmpty) {
-                                ref.invalidate(eventAwardsProvider(effectiveTournamentId));
-                                ref.invalidate(eventDetailProvider(effectiveTournamentId));
-                              }
-                              if (widget.tournamentId.isEmpty) {
-                                ref.invalidate(tournamentProvider);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                                  width: 1.0,
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.refresh_rounded, color: AppTheme.goldPrimary, size: 16),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'REFRESH RESULTS',
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11.5,
-                                      color: AppTheme.goldPrimary,
-                                      letterSpacing: 0.6,
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 10,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              TactilePressWrapper(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  if (effectiveTournamentId.isNotEmpty) {
+                                    ref.invalidate(eventAwardsProvider(effectiveTournamentId));
+                                    ref.invalidate(eventDetailProvider(effectiveTournamentId));
+                                  }
+                                  if (widget.tournamentId.isEmpty) {
+                                    ref.invalidate(tournamentProvider);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1E293B),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                                      width: 1.0,
                                     ),
                                   ),
-                                ],
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.refresh_rounded, color: AppTheme.goldPrimary, size: 16),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'REFRESH RESULTS',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11.5,
+                                          color: AppTheme.goldPrimary,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (effectiveTournamentId.isNotEmpty)
+                                TactilePressWrapper(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    context.push('/tournaments/$effectiveTournamentId/brackets');
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: AppTheme.borderSubtle,
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.account_tree_outlined, color: AppTheme.textSecondary, size: 16),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'VIEW BRACKETS',
+                                          style: TextStyle(
+                                            fontFamily: 'Space Grotesk',
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11.5,
+                                            color: AppTheme.textSecondary,
+                                            letterSpacing: 0.6,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              TactilePressWrapper(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  if (context.canPop()) {
+                                    context.pop();
+                                  } else {
+                                    context.go('/tournaments');
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.borderSubtle,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.arrow_back_rounded, color: AppTheme.textSecondary, size: 16),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'RETURN TO TOURNAMENTS',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11.5,
+                                          color: AppTheme.textSecondary,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

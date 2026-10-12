@@ -60,11 +60,15 @@ class ConversationsListScreen extends ConsumerWidget {
         ),
         data: (conversations) {
           if (conversations.isEmpty) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.forum_outlined,
               title: 'No conversations yet',
               subtitle:
                   'Open an athlete\'s profile and tap Message to coordinate sparring or discuss matchups.',
+              ctaLabel: 'Find Sparring Partners',
+              onCtaTap: () => context.push('/search'),
+              secondaryCtaLabel: 'Return to Home',
+              onSecondaryCtaTap: () => context.go('/'),
             );
           }
           return RefreshIndicator(

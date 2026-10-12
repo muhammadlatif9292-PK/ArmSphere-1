@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -336,24 +337,18 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       error: (error, _) => Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(title: const Text('Tournament Details')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load tournament',
-                style: theme.textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+        body: AppErrorView(
+          error: error,
+          title: 'Tournament Unavailable',
+          onRetry: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
+          secondaryActionLabel: 'Return to Tournaments',
+          onSecondaryAction: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/tournaments');
+            }
+          },
         ),
       ),
       data: (event) {
