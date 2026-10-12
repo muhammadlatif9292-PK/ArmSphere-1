@@ -213,12 +213,12 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
+    final isEventLoading = eventAsync.isLoading;
     final rawFee = eventAsync.valueOrNull?['registrationFeeCents'];
     final baseFeeCents = (rawFee is num)
         ? rawFee.toInt()
         : int.tryParse('${rawFee ?? ''}') ?? 0;
-    final isDoubleBracket = _armChoice.toUpperCase() == 'BOTH';
-    final totalFeeCents = isDoubleBracket ? baseFeeCents * 2 : baseFeeCents;
+    final totalFeeCents = baseFeeCents;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -426,6 +426,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                         arm: _armChoice,
                         baseFeeCents: baseFeeCents,
                         totalFeeCents: totalFeeCents,
+                        isLoading: isEventLoading,
                       ),
                     ],
                   ),
@@ -435,13 +436,15 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
 
             // Persistent Sticky Bottom Action Bar with Dynamic Pricing CTA & Keyboard Avoidance
             StickyBottomActionBar(
-              primaryActionLabel: totalFeeCents > 0
-                  ? 'Complete Registration — ${formatEventFee(totalFeeCents)}'
-                  : 'Complete Registration — Free Entry',
+              primaryActionLabel: isEventLoading
+                  ? 'Loading Event Details...'
+                  : (totalFeeCents > 0
+                      ? 'Complete Registration — ${formatEventFee(totalFeeCents)}'
+                      : 'Complete Registration — Free Entry'),
               primaryActionIcon: Icons.how_to_reg_outlined,
-              isLoading: _isLoading,
+              isLoading: _isLoading || isEventLoading,
               disclaimerText: 'Official sanctioned entry • Bracket seeded upon check-in',
-              onPrimaryAction: _isLoading ? null : _submit,
+              onPrimaryAction: (_isLoading || isEventLoading) ? null : _submit,
             ),
           ],
         ),
@@ -461,6 +464,7 @@ class _RegistrationSummaryCard extends StatelessWidget {
   final String arm;
   final int baseFeeCents;
   final int totalFeeCents;
+  final bool isLoading;
 
   const _RegistrationSummaryCard({
     required this.division,
@@ -468,6 +472,7 @@ class _RegistrationSummaryCard extends StatelessWidget {
     required this.arm,
     required this.baseFeeCents,
     required this.totalFeeCents,
+    this.isLoading = false,
   });
 
   String _formatDivision(String d) {
@@ -501,7 +506,6 @@ class _RegistrationSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDoubleBracket = arm.toUpperCase() == 'BOTH';
-    final armSurchargeCents = isDoubleBracket ? baseFeeCents : 0;
 
     return Container(
       key: const ValueKey('registration_summary_card'),
@@ -596,16 +600,16 @@ class _RegistrationSummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isDoubleBracket ? 'Base Division Fee (Right Arm)' : 'Division Entry Fee',
-                style: const TextStyle(
+              const Text(
+                'Division Entry Fee',
+                style: TextStyle(
                   fontFamily: AppTheme.fontBody,
                   fontSize: 12.5,
                   color: AppTheme.textSecondary,
                 ),
               ),
               Text(
-                formatEventFee(baseFeeCents),
+                isLoading ? 'Loading...' : formatEventFee(baseFeeCents),
                 style: const TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontSize: 12.5,
@@ -628,9 +632,9 @@ class _RegistrationSummaryCard extends StatelessWidget {
                     color: AppTheme.textSecondary,
                   ),
                 ),
-                Text(
-                  '+ ${formatEventFee(armSurchargeCents)}',
-                  style: const TextStyle(
+                const Text(
+                  'Included',
+                  style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
@@ -659,7 +663,7 @@ class _RegistrationSummaryCard extends StatelessWidget {
                 ),
               ),
               Text(
-                formatEventFee(totalFeeCents),
+                isLoading ? 'Loading...' : formatEventFee(totalFeeCents),
                 key: const ValueKey('registration_total_fee_text'),
                 style: const TextStyle(
                   fontFamily: AppTheme.fontDisplay,
