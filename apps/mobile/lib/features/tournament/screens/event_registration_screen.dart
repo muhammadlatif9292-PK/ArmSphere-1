@@ -557,7 +557,7 @@ class _RegistrationSummaryCard extends StatelessWidget {
               ),
               const StatusChip(
                 label: 'SANCTIONED ENTRY',
-                type: StatusType.gold,
+                type: StatusType.success,
               ),
             ],
           ),
