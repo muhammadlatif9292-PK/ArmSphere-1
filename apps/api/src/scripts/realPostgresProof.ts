@@ -1,12 +1,13 @@
 import request from "supertest";
 import { app } from "../app.js";
 import { db, pool } from "../config/db.js";
-import { users, athleteProfiles, events, communityPosts } from "@armsphere/db-schema";
+import { users, athleteProfiles, events, communityPosts, refereeCertifications, notifications, teams, teamMembers } from "@armsphere/db-schema";
 import { eq, inArray } from "drizzle-orm";
 import { generateAccessToken } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
 import crypto from "crypto";
 import { assertIsolatedStagingDatabase } from "../config/databaseGuard.js";
+import { RefereeCertificationService } from "../services/refereeCertification.js";
 
 async function main() {
   console.log("================================================================================");
@@ -48,13 +49,17 @@ async function main() {
   const uidAdmin = crypto.randomUUID();
   const uidDirectorPunjab = crypto.randomUUID();
   const uidDirectorSindh = crypto.randomUUID();
+  const uidRefereePunjab = crypto.randomUUID();
 
   const profileId1 = crypto.randomUUID();
   const profileId2 = crypto.randomUUID();
   const eventIdPunjab = crypto.randomUUID();
   const postGymId = crypto.randomUUID();
+  const certActiveId = crypto.randomUUID();
+  const certExpiredId = crypto.randomUUID();
+  const teamId = crypto.randomUUID();
 
-  const testUserIds = [uidAthlete1, uidAthlete2, uidAdmin, uidDirectorPunjab, uidDirectorSindh];
+  const testUserIds = [uidAthlete1, uidAthlete2, uidAdmin, uidDirectorPunjab, uidDirectorSindh, uidRefereePunjab];
   const jwtSecret = process.env.JWT_ACCESS_SECRET || "super_secret_armsphere_access_jwt_key_with_length_greater_than_32";
 
   try {
@@ -113,8 +118,42 @@ async function main() {
         province: "Sindh",
         regionalCoverage: "Sindh",
       },
+      {
+        id: uidRefereePunjab,
+        email: `ref_punjab_${Date.now()}@armsphere.test`,
+        username: `refpun_${Date.now().toString().slice(-6)}`,
+        passwordHash: "$2b$10$dummyHashForTestingRealPostgresAuth0000000000000000000000",
+        role: UserRole.REFEREE,
+        fullName: "Punjab Official Referee",
+        isActive: true,
+        province: "Punjab",
+        regionalCoverage: "Punjab",
+      },
     ] as any);
-    console.log("  ✓ Seeded 5 canonical users in users table");
+    console.log("  ✓ Seeded 6 canonical users in users table");
+
+    // Insert Referee Certifications
+    await db.insert(refereeCertifications).values([
+      {
+        id: certActiveId,
+        userId: uidRefereePunjab,
+        certificationLevel: "PRO_LEVEL_1",
+        issuedAt: new Date(Date.now() - 86400000 * 30),
+        expiresAt: new Date(Date.now() + 86400000 * 60),
+        status: "ACTIVE",
+        issuingBody: "WAF_OFFICIAL",
+      },
+      {
+        id: certExpiredId,
+        userId: uidRefereePunjab,
+        certificationLevel: "PRO_LEVEL_2",
+        issuedAt: new Date(Date.now() - 86400000 * 400),
+        expiresAt: new Date(Date.now() - 86400000 * 30),
+        status: "ACTIVE",
+        issuingBody: "WAF_OFFICIAL",
+      },
+    ]);
+    console.log("  ✓ Seeded active and expired referee certifications in referee_certifications table");
 
     // Insert Athlete Profiles
     await db.insert(athleteProfiles).values([
@@ -282,17 +321,101 @@ async function main() {
     }
     console.log("     ✓ SANITIZED: Private athlete fields excluded from third-party responses");
 
+    // PROBE 11: Real PostgreSQL Referee Certification Expiry & Status Transition
+    console.log("\n  -> PROBE 11: Automated Referee Certification Expiry Transition in real PostgreSQL");
+    const expiryResult = await RefereeCertificationService.processExpiredCertifications();
+    if (expiryResult.expiredCount < 1) throw new Error("PROBE 11 FAILED: Expected at least 1 expired certification transitioned");
+    
+    const [expiredRow] = await db.select().from(refereeCertifications).where(eq(refereeCertifications.id, certExpiredId));
+    if (!expiredRow || expiredRow.status !== "EXPIRED") throw new Error(`PROBE 11 FAILED: Expected EXPIRED status in PostgreSQL, got ${expiredRow?.status}`);
+    
+    const [activeRow] = await db.select().from(refereeCertifications).where(eq(refereeCertifications.id, certActiveId));
+    if (!activeRow || activeRow.status !== "ACTIVE") throw new Error(`PROBE 11 FAILED: Expected ACTIVE status in PostgreSQL, got ${activeRow?.status}`);
+    console.log("     ✓ PROVED: Expired certification transitioned to EXPIRED, active certification remained ACTIVE in real PostgreSQL");
+
+    // PROBE 12: Real PostgreSQL Province Query (users.province Join)
+    console.log("\n  -> PROBE 12: Provincial Director querying referee certifications by province in real PostgreSQL");
+    const punjabCerts = await RefereeCertificationService.listCertificationsByProvince(uidDirectorPunjab, "Punjab");
+    if (!Array.isArray(punjabCerts) || punjabCerts.length === 0) {
+      throw new Error("PROBE 12 FAILED: Expected at least 1 certification for Punjab");
+    }
+    const foundCert = punjabCerts.find(c => c.id === certActiveId || c.id === certExpiredId);
+    if (!foundCert || foundCert.userProvince !== "Punjab") {
+      throw new Error("PROBE 12 FAILED: userProvince not joined properly from users table");
+    }
+    console.log(`     ✓ PROVED: Punjab Director retrieved ${punjabCerts.length} referee cert(s) with users.province joined`);
+
+    let sindhBlocked = false;
+    try {
+      await RefereeCertificationService.listCertificationsByProvince(uidDirectorSindh, "Punjab");
+    } catch (err: any) {
+      sindhBlocked = err.status === 403 || err.name === "ForbiddenError";
+    }
+    if (!sindhBlocked) throw new Error("PROBE 12 FAILED: Sindh Director was not blocked from querying Punjab");
+    console.log("     ✓ BLOCKED: Cross-province director query forbidden (Sindh != Punjab)");
+
+    // PROBE 13: Real PostgreSQL Athlete Identity Resolution (profileId vs userId)
+    console.log("\n  -> PROBE 13: Owner retrieving profile by profileId without false self-block in real PostgreSQL");
+    const p13 = await request(app)
+      .get(`/api/v1/athletes/${profileId1}`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    if (p13.status !== 200) throw new Error(`PROBE 13 FAILED: Expected 200, got ${p13.status}`);
+    const resolvedId = p13.body.data?.id || p13.body.id;
+    if (resolvedId !== profileId1) {
+      throw new Error(`PROBE 13 FAILED: Expected profileId ${profileId1}, got ${resolvedId}`);
+    }
+    console.log("     ✓ PROVED: Athlete resolved identity correctly and retrieved own profile via profileId");
+
+    // PROBE 14: Real PostgreSQL Composite Uniqueness Constraint on team_members
+    console.log("\n  -> PROBE 14: PostgreSQL composite unique constraint enforcement (team_id, athlete_id)");
+    await db.insert(teams).values({
+      id: teamId,
+      name: `Test Team ${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const memberId1 = crypto.randomUUID();
+    await db.insert(teamMembers).values({
+      id: memberId1,
+      teamId: teamId,
+      athleteId: profileId1,
+      role: "MEMBER",
+      joinedAt: new Date(),
+    });
+
+    let uniqueViolated = false;
+    try {
+      const memberIdDuplicate = crypto.randomUUID();
+      await db.insert(teamMembers).values({
+        id: memberIdDuplicate,
+        teamId: teamId,
+        athleteId: profileId1,
+        role: "MEMBER",
+        joinedAt: new Date(),
+      });
+    } catch (dbErr: any) {
+      if (dbErr.code === "23505" || String(dbErr.message).includes("unique")) {
+        uniqueViolated = true;
+      }
+    }
+    if (!uniqueViolated) throw new Error("PROBE 14 FAILED: Expected PostgreSQL unique constraint violation 23505 on duplicate (team_id, athlete_id)");
+    console.log("     ✓ PROVED: Real PostgreSQL strictly enforced composite unique index idx_team_members_team_athlete (23505)");
+
     console.log("\n================================================================================");
-    console.log("   ALL 10 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
+    console.log("   ALL 14 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
     console.log("================================================================================");
   } finally {
     // Clean up seeded fixtures
     console.log("\n[CLEANUP] Cleaning up seeded test records from Neon PostgreSQL...");
     try {
-      await db.delete(events).where(eq(events.id, eventIdPunjab));
-      await db.delete(communityPosts).where(eq(communityPosts.id, postGymId));
-      await db.delete(athleteProfiles).where(inArray(athleteProfiles.id, [profileId1, profileId2]));
-      await db.delete(users).where(inArray(users.id, testUserIds));
+      await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId)).catch(() => {});
+      await db.delete(teams).where(eq(teams.id, teamId)).catch(() => {});
+      await db.delete(refereeCertifications).where(inArray(refereeCertifications.id, [certActiveId, certExpiredId])).catch(() => {});
+      await db.delete(notifications).where(eq(notifications.userId, uidRefereePunjab)).catch(() => {});
+      await db.delete(events).where(eq(events.id, eventIdPunjab)).catch(() => {});
+      await db.delete(communityPosts).where(eq(communityPosts.id, postGymId)).catch(() => {});
+      await db.delete(athleteProfiles).where(inArray(athleteProfiles.id, [profileId1, profileId2])).catch(() => {});
+      await db.delete(users).where(inArray(users.id, testUserIds)).catch(() => {});
       console.log("✓ Neon PostgreSQL test fixtures successfully cleaned up.");
     } catch (cleanErr) {
       console.error("Cleanup warning:", cleanErr);

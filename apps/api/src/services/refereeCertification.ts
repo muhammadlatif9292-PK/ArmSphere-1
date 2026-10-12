@@ -225,6 +225,7 @@ export class RefereeCertificationService {
           title: "Referee Certification Expired",
           content: `Your ${cert.certificationLevel} referee certification expired on ${cert.expiresAt ? new Date(cert.expiresAt).toLocaleDateString() : "today"}. Please complete recertification to continue officiating.`,
           priority: "HIGH",
+          category: "SYSTEM",
           metadata: {
             certificationId: cert.id,
             certificationLevel: cert.certificationLevel,

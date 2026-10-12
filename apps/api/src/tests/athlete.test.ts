@@ -421,6 +421,64 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       const stored = testDbStore.athleteProfiles.find((p) => p.id === profileId);
       expect(stored?.displayName).toBe("Original Owner");
     });
+
+    it("should allow Provincial Director to update athlete in their province, but reject cross-province updates with 403", async () => {
+      const profileId = "22222222-2222-2222-2222-222222222222";
+      testDbStore.athleteProfiles[0].id = profileId;
+      testDbStore.athleteProfiles[0].province = "Punjab";
+      testDbStore.athleteProfiles[0].displayName = "Punjab Athlete";
+
+      const dirPunjabId = "44444444-4444-4444-4444-444444444441";
+      testDbStore.users.push({
+        id: dirPunjabId,
+        email: "dir_punjab@armsphere.com",
+        username: "dir_punjab",
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        fullName: "Punjab Director",
+        isActive: true,
+        province: "Punjab",
+        regionalCoverage: "Punjab",
+      });
+      const dirPunjabToken = `Bearer ${generateAccessToken(
+        dirPunjabId,
+        "dir_punjab@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      const dirSindhId = "44444444-4444-4444-4444-444444444442";
+      testDbStore.users.push({
+        id: dirSindhId,
+        email: "dir_sindh@armsphere.com",
+        username: "dir_sindh",
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        fullName: "Sindh Director",
+        isActive: true,
+        province: "Sindh",
+        regionalCoverage: "Sindh",
+      });
+      const dirSindhToken = `Bearer ${generateAccessToken(
+        dirSindhId,
+        "dir_sindh@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      // Sindh director attempts cross-province update -> 403 Forbidden
+      const resCross = await request(app)
+        .patch(`/athletes/${profileId}`)
+        .set("Authorization", dirSindhToken)
+        .send({ displayName: "Cross-Province Edit" });
+      expect(resCross.status).toBe(403);
+
+      // Punjab director updates same-province athlete -> 200 OK
+      const resSame = await request(app)
+        .patch(`/athletes/${profileId}`)
+        .set("Authorization", dirPunjabToken)
+        .send({ displayName: "Punjab Director Approved Edit" });
+      expect(resSame.status).toBe(200);
+      expect(resSame.body.data.displayName).toBe("Punjab Director Approved Edit");
+    });
   });
 
   describe("GET /athletes/search - Search & Filters", () => {
@@ -598,6 +656,51 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
         .get("/athletes/me")
         .set("Authorization", athleteToken);
       expect(profileRes.body.data.verificationStatus).toBe("VERIFIED");
+    });
+
+    it("should allow verification review by profileId and enforce provincial director jurisdiction", async () => {
+      const profileId = "22222222-2222-2222-2222-222222222222";
+      testDbStore.athleteProfiles[0].id = profileId;
+      testDbStore.athleteProfiles[0].province = "Punjab";
+
+      const dirSindhId = "44444444-4444-4444-4444-444444444442";
+      testDbStore.users.push({
+        id: dirSindhId,
+        email: "dir_sindh_verif@armsphere.com",
+        username: "dir_sindh_verif",
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        fullName: "Sindh Director",
+        isActive: true,
+        province: "Sindh",
+        regionalCoverage: "Sindh",
+      });
+      const dirSindhToken = `Bearer ${generateAccessToken(
+        dirSindhId,
+        "dir_sindh_verif@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      // Cross-province review attempt -> 403 Forbidden
+      const resSindh = await request(app)
+        .post("/athletes/verification/review")
+        .set("Authorization", dirSindhToken)
+        .send({
+          athleteId: profileId,
+          status: "VERIFIED",
+        });
+      expect(resSindh.status).toBe(403);
+
+      // Admin review by profileId -> 200 OK
+      const resAdmin = await request(app)
+        .post("/athletes/verification/review")
+        .set("Authorization", adminToken)
+        .send({
+          athleteId: profileId,
+          status: "VERIFIED",
+        });
+      expect(resAdmin.status).toBe(200);
+      expect(resAdmin.body.data.status).toBe("VERIFIED");
     });
 
     it("should prevent non-admin/non-reviewers from reviewing documents", async () => {

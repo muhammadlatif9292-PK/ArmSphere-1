@@ -21,6 +21,7 @@ import {
   ConflictError, 
   logger 
 } from "@armsphere/core";
+import { UserRole } from "@armsphere/types";
 
 export interface CreateProfileInput {
   displayName: string;
@@ -318,6 +319,15 @@ export class AthleteService {
       throw new NotFoundError("Athlete profile not found");
     }
 
+    // For PROVINCIAL_DIRECTOR updating another user's profile, enforce provincial jurisdiction
+    if (userId !== resolvedUserId && role.toLowerCase() === "provincial_director") {
+      const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const actorProvince = (actor as any)?.province || (actor as any)?.regionalCoverage;
+      if (!actorProvince || existingProfile.province.trim().toUpperCase() !== actorProvince.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only update athlete profiles within your provincial jurisdiction.");
+      }
+    }
+
     // 3. Compile update data
     const updatePayload: any = {};
     if (input.displayName !== undefined) updatePayload.displayName = input.displayName;
@@ -602,21 +612,45 @@ export class AthleteService {
     ipAddress?: string,
     userAgent?: string
   ) {
-    // Verify athlete profile exists
-    const [profile] = await db
+    // 1. Verify reviewer exists
+    const [reviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (!reviewer) {
+      throw new NotFoundError("Reviewer user not found");
+    }
+
+    // 2. Resolve athlete profile by either userId or profileId
+    let [profile] = await db
       .select()
       .from(athleteProfiles)
-      .where(eq(athleteProfiles.userId, athleteId))
+      .where(and(eq(athleteProfiles.userId, athleteId), eq(athleteProfiles.isDeleted, false)))
       .limit(1);
+
+    if (!profile) {
+      [profile] = await db
+        .select()
+        .from(athleteProfiles)
+        .where(and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)))
+        .limit(1);
+    }
 
     if (!profile) {
       throw new NotFoundError("Athlete profile not found");
     }
 
-    // Ensure verification record exists
-    await this.ensureVerificationRecord(athleteId);
+    // 3. For PROVINCIAL_DIRECTOR, enforce provincial jurisdiction
+    if (reviewer.role === UserRole.PROVINCIAL_DIRECTOR) {
+      const reviewerProvince = (reviewer as any).province || (reviewer as any).regionalCoverage;
+      if (!reviewerProvince || profile.province.trim().toUpperCase() !== reviewerProvince.trim().toUpperCase()) {
+        throw new ForbiddenError("You can only review profiles within your provincial jurisdiction.");
+      }
+    }
 
-    // Update status
+    const targetUserId = profile.userId;
+
+    // 4. Ensure verification record exists
+    await this.ensureVerificationRecord(targetUserId);
+
+    // 5. Update status
     const [updatedVerification] = await db
       .update(athleteVerifications)
       .set({
@@ -625,14 +659,14 @@ export class AthleteService {
         rejectionReason: status === "REJECTED" ? rejectionReason || "Incomplete documentation" : null,
         updatedAt: new Date(),
       })
-      .where(eq(athleteVerifications.athleteId, athleteId))
+      .where(eq(athleteVerifications.athleteId, targetUserId))
       .returning();
 
-    // Audit trail
+    // 6. Audit trail
     await db.insert(auditLogs).values({
       userId: reviewerId,
       action: `ATHLETE_VERIFICATION_${status}`,
-      details: { athleteId, reviewerId, rejectionReason },
+      details: { athleteId: targetUserId, profileId: profile.id, reviewerId, rejectionReason },
       ipAddress,
       userAgent,
     });
