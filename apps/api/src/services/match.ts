@@ -26,6 +26,7 @@ export interface CreateMatchInput {
   winnerId: string;
   scoreLine: string;
   evidenceUrl?: string;
+  province?: string;
 }
 
 export class MatchService {
@@ -124,6 +125,13 @@ export class MatchService {
       );
     }
 
+    // Active certification check: referees submitting official match records must hold active certification
+    if (refereeUser.role === UserRole.REFEREE) {
+      await RefereeCertificationService.assertActiveCertification(refereeId);
+    }
+
+    const matchProvince = input.province || challengerProfile.province || (refereeUser as any).province || null;
+
     // 8. Insert match record with PENDING_VERIFICATION status by default
     const [match] = await db
       .insert(matches)
@@ -137,6 +145,7 @@ export class MatchService {
         status: "PENDING_VERIFICATION",
         evidenceUrl: input.evidenceUrl || null,
         idempotencyKey: idempotencyKey || null,
+        province: matchProvince,
       })
       .returning();
 
@@ -209,18 +218,20 @@ export class MatchService {
 
       // Verification authority policy:
       // - REFEREE may verify only the match assigned to them (the match's
-      //   own refereeId — set at submission time, Step C).
-      // - PROVINCIAL_DIRECTOR / NATIONAL_DIRECTOR / SYSTEM_ADMIN may
-      //   override and verify any match. NOTE: the policy calls for
-      //   PROVINCIAL_DIRECTOR to be scoped to "their provincial
-      //   jurisdiction, subject to existing jurisdiction rules" — but no
-      //   such jurisdiction system exists anywhere in this repository (no
-      //   field links a director to a province, no enforcement logic
-      //   exists). Implementing that would be a genuine new feature, not a
-      //   P0 fix, so it is intentionally NOT implemented here. Provincial
-      //   directors currently have the same unrestricted override as
-      //   national directors — flagged as an open gap, not silently
-      //   invented or silently left undocumented.
+      //   own refereeId — set at submission time).
+      // - PROVINCIAL_DIRECTOR may verify only matches within their provincial
+      //   jurisdiction (matching users.province or users.regionalCoverage).
+      // - NATIONAL_DIRECTOR / SYSTEM_ADMIN retain universal federation authority.
+      const AUTHORIZED_VERIFIER_ROLES = [
+        UserRole.REFEREE,
+        UserRole.PROVINCIAL_DIRECTOR,
+        UserRole.NATIONAL_DIRECTOR,
+        UserRole.SYSTEM_ADMIN,
+      ];
+      if (!AUTHORIZED_VERIFIER_ROLES.includes(reviewerUser.role as UserRole)) {
+        throw new ForbiddenError("Only referees, directors, or system administrators may verify match outcomes.");
+      }
+
       if (reviewerUser.role === UserRole.REFEREE && match.refereeId !== reviewerId) {
         throw new ForbiddenError(
           "Only the referee assigned to this match may verify it. Directors or system administrators may override."
@@ -229,6 +240,9 @@ export class MatchService {
 
       if (match.status === "VERIFIED") {
         throw new ConflictError("Match has already been verified.");
+      }
+      if (match.status === "VOID") {
+        throw new ConflictError("Voided matches cannot be verified.");
       }
 
       // 2. Perform pessimistic locking of athlete rows in alphabetical ID
@@ -253,6 +267,19 @@ export class MatchService {
 
       if (!challenger || !opponent) {
         throw new NotFoundError("Competitor profile not found");
+      }
+
+      if (reviewerUser.role === UserRole.PROVINCIAL_DIRECTOR) {
+        const actorJurisdiction =
+          ((reviewerUser as any).province as string | null | undefined) ??
+          ((reviewerUser as any).regionalCoverage as string | null | undefined) ??
+          null;
+        const matchProvince = match.province ?? challenger.province ?? null;
+        if (!actorJurisdiction || !matchProvince || actorJurisdiction.trim().toLowerCase() !== matchProvince.trim().toLowerCase()) {
+          throw new ForbiddenError(
+            `Provincial directors can only verify matches within their assigned province (${actorJurisdiction || "unassigned"}).`
+          );
+        }
       }
 
       // 3. Update match status to VERIFIED
@@ -459,6 +486,24 @@ export class MatchService {
       );
     }
 
+    if (isOverrideRole && actorUser.role === UserRole.PROVINCIAL_DIRECTOR) {
+      const actorJurisdiction =
+        ((actorUser as any).province as string | null | undefined) ??
+        ((actorUser as any).regionalCoverage as string | null | undefined) ??
+        null;
+      const [challenger] = await db
+        .select({ province: athleteProfiles.province })
+        .from(athleteProfiles)
+        .where(eq(athleteProfiles.id, match.challengerId))
+        .limit(1);
+      const matchProvince = match.province ?? challenger?.province ?? null;
+      if (!actorJurisdiction || !matchProvince || actorJurisdiction.trim().toLowerCase() !== matchProvince.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial directors can only dispute matches within their assigned province (${actorJurisdiction || "unassigned"}).`
+        );
+      }
+    }
+
     const [updatedMatch] = await db
       .update(matches)
       .set({ status: "DISPUTED", updatedAt: new Date() })
@@ -497,6 +542,29 @@ export class MatchService {
 
       if (match.status === "VOID") {
         throw new ConflictError("Match is already voided.");
+      }
+
+      const [actorUser] = await tx.select().from(users).where(eq(users.id, actorId)).limit(1);
+      if (!actorUser) {
+        throw new NotFoundError("Actor user not found");
+      }
+
+      if (actorUser.role === UserRole.PROVINCIAL_DIRECTOR) {
+        const actorJurisdiction =
+          ((actorUser as any).province as string | null | undefined) ??
+          ((actorUser as any).regionalCoverage as string | null | undefined) ??
+          null;
+        const [challenger] = await tx
+          .select({ province: athleteProfiles.province })
+          .from(athleteProfiles)
+          .where(eq(athleteProfiles.id, match.challengerId))
+          .limit(1);
+        const matchProvince = match.province ?? challenger?.province ?? null;
+        if (!actorJurisdiction || !matchProvince || actorJurisdiction.trim().toLowerCase() !== matchProvince.trim().toLowerCase()) {
+          throw new ForbiddenError(
+            `Provincial directors can only void matches within their assigned province (${actorJurisdiction || "unassigned"}).`
+          );
+        }
       }
 
       const wasVerified = match.status === "VERIFIED";
