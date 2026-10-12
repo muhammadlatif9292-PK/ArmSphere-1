@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/embed_url_builder.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/sticky_form_scaffold.dart';
 
 /// Compose screen — submits a real video-link post via POST /community/links.
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
@@ -131,7 +132,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return StickyFormScaffold(
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -148,227 +149,213 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Form(
-          key: _formKey,
-          child: ElevatedActionCard(
-            padding: const EdgeInsets.all(AppTheme.space20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      primaryActionLabel: 'Submit Video Link',
+      primaryActionIcon: Icons.upload_file_outlined,
+      onPrimaryAction: _submitting ? null : _submit,
+      isLoading: _submitting,
+      disclaimerText:
+          'Community links are reviewed by federation moderators before appearing in public feeds.',
+      child: Form(
+        key: _formKey,
+        child: ElevatedActionCard(
+          padding: const EdgeInsets.all(AppTheme.space20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.space10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryRed.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const ArmSphereImage(
+                      assetPath: ArmSphereAssets.sealFed,
+                      width: 22,
+                      height: 22,
+                      semanticLabel: 'Federation Submission Seal',
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.space12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Combat Sports Feed Submission',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: AppTheme.space2),
+                        Text(
+                          'Supported platforms: YouTube, TikTok, Facebook Reel',
+                          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.space20),
+              TextFormField(
+                controller: _urlController,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  labelText: 'Video URL',
+                  hintText: 'https://youtube.com/shorts/...',
+                  prefixIcon: Icon(Icons.link, color: AppTheme.textSecondary),
+                ),
+                validator: (value) {
+                  final v = value?.trim() ?? '';
+                  if (v.isEmpty) return 'URL is required';
+                  final lower = v.toLowerCase();
+                  final supported = lower.contains('youtube.com') ||
+                      lower.contains('youtu.be') ||
+                      lower.contains('tiktok.com') ||
+                      lower.contains('facebook.com') ||
+                      lower.contains('fb.watch');
+                  if (!supported) {
+                    return 'Only YouTube, TikTok or Facebook links are supported';
+                  }
+                  return null;
+                },
+              ),
+              if (_previewThumbnailUrl != null) ...[
+                const SizedBox(height: AppTheme.space12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ArmSphereImage(
+                          imageUrl: _previewThumbnailUrl,
+                          fallbackAsset: ArmSphereAssets.heroGrip,
+                          fit: BoxFit.cover,
+                          cacheWidth: 480,
+                          cacheHeight: 270,
+                          semanticLabel: 'Video Preview Thumbnail',
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                AppTheme.voidBackground.withValues(alpha: 0.75),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          left: 12,
+                          child: Row(
+                            children: const [
+                              Icon(Icons.check_circle_outline, size: 14, color: AppTheme.goldPrimary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Federation Preview Verified',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.goldPrimary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppTheme.space16),
+              DropdownButtonFormField<String>(
+                initialValue: _category,
+                decoration: const InputDecoration(
+                  labelText: 'Content Category',
+                  prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textSecondary),
+                ),
+                dropdownColor: AppTheme.cardSurface,
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (value) {
+                  HapticFeedback.lightImpact();
+                  setState(() => _category = value);
+                },
+              ),
+              const SizedBox(height: AppTheme.space16),
+              TextFormField(
+                controller: _captionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Caption (optional)',
+                  hintText: 'Describe technique, workout notes, or match contest...',
+                ),
+              ),
+              if (_isGym) ...[
+                const SizedBox(height: AppTheme.space16),
+                TextFormField(
+                  controller: _exerciseTypeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Armwrestling Exercise Specifics',
+                    hintText: 'e.g. Cupping, Pronation, Rising, Strap Pull',
+                    prefixIcon: Icon(Icons.fitness_center, color: AppTheme.textSecondary),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space12),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppTheme.space10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryRed.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                        border: Border.all(
-                          color: AppTheme.primaryRed.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: const ArmSphereImage(
-                        assetPath: ArmSphereAssets.sealFed,
-                        width: 22,
-                        height: 22,
-                        semanticLabel: 'Federation Submission Seal',
+                    Expanded(
+                      child: TextFormField(
+                        controller: _weightController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return null;
+                          if (double.tryParse(value.trim()) == null) return 'Invalid';
+                          return null;
+                        },
                       ),
                     ),
                     const SizedBox(width: AppTheme.space12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Combat Sports Feed Submission',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          SizedBox(height: AppTheme.space2),
-                          Text(
-                            'Supported platforms: YouTube, TikTok, Facebook Reel',
-                            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                          ),
-                        ],
+                    Expanded(
+                      child: TextFormField(
+                        controller: _repsController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Reps'),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return null;
+                          if (int.tryParse(value.trim()) == null) return 'Invalid';
+                          return null;
+                        },
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppTheme.space20),
-                TextFormField(
-                  controller: _urlController,
-                  keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
-                    labelText: 'Video URL',
-                    hintText: 'https://youtube.com/shorts/...',
-                    prefixIcon: Icon(Icons.link, color: AppTheme.textSecondary),
-                  ),
-                  validator: (value) {
-                    final v = value?.trim() ?? '';
-                    if (v.isEmpty) return 'URL is required';
-                    final lower = v.toLowerCase();
-                    final supported = lower.contains('youtube.com') ||
-                        lower.contains('youtu.be') ||
-                        lower.contains('tiktok.com') ||
-                        lower.contains('facebook.com') ||
-                        lower.contains('fb.watch');
-                    if (!supported) {
-                      return 'Only YouTube, TikTok or Facebook links are supported';
-                    }
-                    return null;
-                  },
-                ),
-                if (_previewThumbnailUrl != null) ...[
-                  const SizedBox(height: AppTheme.space12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppTheme.primaryRed.withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ArmSphereImage(
-                            imageUrl: _previewThumbnailUrl,
-                            fallbackAsset: ArmSphereAssets.heroGrip,
-                            fit: BoxFit.cover,
-                            cacheWidth: 480,
-                            cacheHeight: 270,
-                            semanticLabel: 'Video Preview Thumbnail',
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  AppTheme.voidBackground.withValues(alpha: 0.75),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 8,
-                            left: 12,
-                            child: Row(
-                              children: const [
-                                Icon(Icons.check_circle_outline, size: 14, color: AppTheme.goldPrimary),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Federation Preview Verified',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.goldPrimary,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppTheme.space16),
-                DropdownButtonFormField<String>(
-                  initialValue: _category,
-                  decoration: const InputDecoration(
-                    labelText: 'Content Category',
-                    prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textSecondary),
-                  ),
-                  dropdownColor: AppTheme.cardSurface,
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged: (value) {
-                    HapticFeedback.lightImpact();
-                    setState(() => _category = value);
-                  },
-                ),
-                const SizedBox(height: AppTheme.space16),
-                TextFormField(
-                  controller: _captionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Caption (optional)',
-                    hintText: 'Describe technique, workout notes, or match contest...',
-                  ),
-                ),
-                if (_isGym) ...[
-                  const SizedBox(height: AppTheme.space16),
-                  TextFormField(
-                    controller: _exerciseTypeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Armwrestling Exercise Specifics',
-                      hintText: 'e.g. Cupping, Pronation, Rising, Strap Pull',
-                      prefixIcon: Icon(Icons.fitness_center, color: AppTheme.textSecondary),
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.space12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _weightController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) return null;
-                            if (double.tryParse(value.trim()) == null) return 'Invalid';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: AppTheme.space12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _repsController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Reps'),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) return null;
-                            if (int.tryParse(value.trim()) == null) return 'Invalid';
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: AppTheme.space24),
-                ElevatedButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Submit Video Link'),
-                ),
-                const SizedBox(height: AppTheme.space12),
-                const Text(
-                  'Community links are reviewed by federation moderators before appearing in public feeds.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.3),
-                ),
               ],
-            ),
+            ],
           ),
         ),
       ),

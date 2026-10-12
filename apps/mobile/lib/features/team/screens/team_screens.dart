@@ -12,6 +12,7 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/sticky_form_scaffold.dart';
 
 /// Domain 10 / Stage 6 Convergence: Teams List Screen
 ///
@@ -1126,7 +1127,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   Widget build(BuildContext context) {
     final clubsAsync = ref.watch(clubsProvider);
 
-    return Scaffold(
+    return StickyFormScaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.cardSurface,
@@ -1140,213 +1141,184 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Directive Guidance Card
-              ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      primaryActionLabel: 'REGISTER SQUAD & CLAIM CAPTAINCY',
+      primaryActionIcon: Icons.shield_outlined,
+      isLoading: _isLoading,
+      onPrimaryAction: _isLoading ? null : _submit,
+      formKey: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Directive Guidance Card
+          ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.shield_outlined, color: AppTheme.goldPrimary, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'FEDERATION TEAM REGISTRY',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                            color: AppTheme.goldLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Create a competitive squad for federation inter-club brackets and sparring rosters. As founder, you will be designated Team Captain.',
-                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.5),
+                    Icon(Icons.shield_outlined, color: AppTheme.goldPrimary, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'FEDERATION TEAM REGISTRY',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: AppTheme.goldLight,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: AppTheme.space16),
+                const SizedBox(height: 8),
+                const Text(
+                  'Create a competitive squad for federation inter-club brackets and sparring rosters. As founder, you will be designated Team Captain.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppTheme.space16),
 
-              // Form Details Card
-              ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Team Name',
-                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                        hintText: 'e.g. Lahore Iron Grip',
-                        hintStyle: const TextStyle(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.elevatedSurface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.goldPrimary),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().length < 2) {
-                          return 'Name must be at least 2 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 3,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Description & Creed (optional)',
-                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                        hintText: 'Training philosophy, club goals...',
-                        hintStyle: const TextStyle(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.elevatedSurface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.goldPrimary),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    clubsAsync.when(
-                      loading: () => const LinearProgressIndicator(
-                        minHeight: 2,
-                        color: AppTheme.goldPrimary,
-                      ),
-                      error: (error, _) => Text(
-                        'Clubs could not be loaded: $error',
-                        style: const TextStyle(fontSize: 12, color: AppTheme.error),
-                      ),
-                      data: (clubs) => DropdownButtonFormField<String>(
-                        initialValue: _clubId,
-                        dropdownColor: AppTheme.elevatedSurface,
-                        style: const TextStyle(color: AppTheme.textPrimary),
-                        decoration: InputDecoration(
-                          labelText: 'Affiliated Club (optional)',
-                          labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                          filled: true,
-                          fillColor: AppTheme.elevatedSurface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            borderSide: const BorderSide(color: AppTheme.border),
-                          ),
-                        ),
-                        items: clubs
-                            .map((c) => DropdownMenuItem(
-                                  value: c['id']?.toString(),
-                                  child: Text(c['name']?.toString() ?? 'Club'),
-                                ))
-                            .toList(),
-                        onChanged: (value) => setState(() => _clubId = value),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    InkWell(
-                      onTap: _pickFoundedDate,
+          // Form Details Card
+          ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Team Name',
+                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                    hintText: 'e.g. Lahore Iron Grip',
+                    hintStyle: const TextStyle(color: AppTheme.textMuted),
+                    filled: true,
+                    fillColor: AppTheme.elevatedSurface,
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: AppTheme.elevatedSurface,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'FOUNDED DATE',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.8,
-                                    color: AppTheme.textMuted,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _foundedAt == null
-                                      ? 'Select date (optional)'
-                                      : _foundedAt!.toIso8601String().split('T').first,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: _foundedAt == null ? AppTheme.textMuted : AppTheme.textPrimary,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Icon(Icons.calendar_today_outlined, size: 18, color: AppTheme.goldPrimary),
-                          ],
-                        ),
-                      ),
+                      borderSide: const BorderSide(color: AppTheme.border),
                     ),
-                  ],
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.goldPrimary),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().length < 2) {
+                      return 'Name must be at least 2 characters';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: AppTheme.space24),
+                const SizedBox(height: AppTheme.space16),
 
-              // Submit Action
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.goldPrimary,
-                  foregroundColor: AppTheme.voidBackground,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Description & Creed (optional)',
+                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                    hintText: 'Training philosophy, club goals...',
+                    hintStyle: const TextStyle(color: AppTheme.textMuted),
+                    filled: true,
+                    fillColor: AppTheme.elevatedSurface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.goldPrimary),
+                    ),
                   ),
                 ),
-                onPressed: _isLoading ? null : _submit,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.voidBackground),
-                      )
-                    : const Text(
-                        'REGISTER SQUAD & CLAIM CAPTAINCY',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                        ),
+                const SizedBox(height: AppTheme.space16),
+
+                clubsAsync.when(
+                  loading: () => const LinearProgressIndicator(
+                    minHeight: 2,
+                    color: AppTheme.goldPrimary,
+                  ),
+                  error: (error, _) => Text(
+                    'Clubs could not be loaded: $error',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.error),
+                  ),
+                  data: (clubs) => DropdownButtonFormField<String>(
+                    initialValue: _clubId,
+                    dropdownColor: AppTheme.elevatedSurface,
+                    style: const TextStyle(color: AppTheme.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Affiliated Club (optional)',
+                      labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                      filled: true,
+                      fillColor: AppTheme.elevatedSurface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        borderSide: const BorderSide(color: AppTheme.border),
                       ),
-              ),
-            ],
+                    ),
+                    items: clubs
+                        .map((c) => DropdownMenuItem(
+                              value: c['id']?.toString(),
+                              child: Text(c['name']?.toString() ?? 'Club'),
+                            ))
+                        .toList(),
+                    onChanged: (value) => setState(() => _clubId = value),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space16),
+
+                InkWell(
+                  onTap: _pickFoundedDate,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.elevatedSurface,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'FOUNDED DATE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.8,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _foundedAt == null
+                                  ? 'Select date (optional)'
+                                  : _foundedAt!.toIso8601String().split('T').first,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: _foundedAt == null ? AppTheme.textMuted : AppTheme.textPrimary,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Icon(Icons.calendar_today_outlined, size: 18, color: AppTheme.goldPrimary),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
+import 'main_shell_screen.dart';
 import 'tactile_press_wrapper.dart';
 
 /// Sticky Bottom Action Bar with Responsive Constraints & Keyboard Avoidance
@@ -10,6 +11,7 @@ import 'tactile_press_wrapper.dart';
 /// - Backdrop filter blur (sigma 16) with heavy smoked glass substrate.
 /// - Machined titanium top rim border with upper specular highlight line.
 /// - Tactile CTA button with championship gradient.
+/// - Safe area & MainShell dynamic dock clearance.
 class StickyBottomActionBar extends StatelessWidget {
   final Widget? child;
   final String? primaryActionLabel;
@@ -50,6 +52,10 @@ class StickyBottomActionBar extends StatelessWidget {
 
     Widget content = child ?? _buildDefaultContent(context);
 
+    final isInsideShell = MainShellScope.isInsideShell(context);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final shellClearance = (isInsideShell && !keyboardOpen) ? kFloatingDockTotalHeight : 0.0;
+
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
@@ -79,14 +85,17 @@ class StickyBottomActionBar extends StatelessWidget {
           ),
           child: SafeArea(
             top: false,
-            child: Align(
-              alignment: Alignment.center,
-              heightFactor: 1.0,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: Padding(
-                  padding: padding,
-                  child: content,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: shellClearance),
+              child: Align(
+                alignment: Alignment.center,
+                heightFactor: 1.0,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Padding(
+                    padding: padding,
+                    child: content,
+                  ),
                 ),
               ),
             ),
