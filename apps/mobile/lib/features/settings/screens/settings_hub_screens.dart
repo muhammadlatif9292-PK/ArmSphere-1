@@ -309,6 +309,57 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   bool _acknowledged = false;
   bool _deleting = false;
 
+  Future<void> _confirmAndDeleteAccount() async {
+    HapticFeedback.mediumImpact();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 24),
+            SizedBox(width: AppTheme.space8),
+            Expanded(
+              child: Text(
+                'Confirm Account Deletion',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: AppTheme.fontDisplay,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you absolutely sure you want to permanently delete your ArmSphere account? '
+          'All athlete passport data, rankings, and active sessions will be permanently purged. '
+          'This action cannot be undone.',
+          style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep Account'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Permanently Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _deleteAccount();
+    }
+  }
+
   Future<void> _deleteAccount() async {
     HapticFeedback.heavyImpact();
     setState(() => _deleting = true);
@@ -407,7 +458,7 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
                 backgroundColor: AppTheme.error,
                 foregroundColor: Colors.white,
               ),
-              onPressed: (_acknowledged && !_deleting) ? _deleteAccount : null,
+              onPressed: (_acknowledged && !_deleting) ? _confirmAndDeleteAccount : null,
               child: _deleting
                   ? const SizedBox(
                       width: 18,
