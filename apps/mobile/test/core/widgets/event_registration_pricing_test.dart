@@ -94,7 +94,7 @@ void main() {
       // 3. Initial state: Senior, -85kg, Right Arm (1 Bracket)
       expect(find.textContaining('Senior (Open) • -85kg • Right Arm (1 Bracket)'), findsOneWidget);
       expect(find.text('Division Entry Fee'), findsOneWidget);
-      expect(find.text('CAD \$50'), findsNWidgets(2)); // Card header pill and breakdown
+      expect(find.text('CAD \$50'), findsNWidgets(3)); // Event header overview, division row, and total row
 
       // 4. Verify Total Due in summary card
       final totalFeeFinder = find.byKey(const ValueKey('registration_total_fee_text'));
