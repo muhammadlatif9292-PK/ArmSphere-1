@@ -326,7 +326,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
 
     return eventAsync.when(

@@ -31,7 +31,8 @@ class _FakeAnnouncementsNotifier extends AnnouncementsNotifier {
 
   @override
   Future<List<Map<String, dynamic>>> build() async {
-    if (_error != null) throw _error!;
+    final err = _error;
+    if (err != null) throw err;
     return _data;
   }
 }
@@ -45,7 +46,8 @@ class _FakeNominationsNotifier extends NominationListNotifier {
 
   @override
   Future<List<Map<String, dynamic>>> build() async {
-    if (_error != null) throw _error!;
+    final err = _error;
+    if (err != null) throw err;
     return _data;
   }
 }

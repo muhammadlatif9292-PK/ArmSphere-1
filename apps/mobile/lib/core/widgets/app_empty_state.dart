@@ -35,6 +35,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'There are no sanctioned tournaments matching your current criteria.',
     this.ctaLabel = 'Refresh Events',
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.emoji_events_outlined;
 
   const AppEmptyState.noMatches({
@@ -43,6 +45,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'Compete in sanctioned tournaments or record table bouts to establish your rating.',
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.sports_kabaddi;
 
   const AppEmptyState.noSearchResults({
@@ -51,6 +55,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'Try refining your search terms or clearing active filters.',
     this.ctaLabel = 'Clear Search',
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.search_off_rounded;
 
   const AppEmptyState.offline({
@@ -59,6 +65,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'Cached data is accessible. Actions will sync automatically when connection restores.',
     this.ctaLabel = 'Retry Connection',
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.wifi_off_rounded;
 
   const AppEmptyState.noNotifications({
@@ -67,6 +75,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'You have no new alerts, match calls, or federation announcements.',
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.notifications_none_outlined;
 
   @override
