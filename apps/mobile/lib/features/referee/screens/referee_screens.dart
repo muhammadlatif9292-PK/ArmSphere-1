@@ -291,33 +291,34 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               ),
             ),
             const SizedBox(height: AppTheme.space12),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: AppTheme.space12,
-              crossAxisSpacing: AppTheme.space12,
-              childAspectRatio: 1.45,
+            _RefereeScorepadHeroCard(
+              onTap: () => context.push('/referee/submit-scorepad'),
+            ),
+            const SizedBox(height: AppTheme.space12),
+            Row(
               children: [
-                _RefCard(
-                  icon: Icons.assignment_outlined,
-                  label: 'Submit Scorepad',
-                  onTap: () => context.push('/referee/submit-scorepad'),
+                Expanded(
+                  child: _RefCard(
+                    icon: Icons.verified_outlined,
+                    label: 'Certifications',
+                    onTap: () => context.push('/referee/certifications'),
+                  ),
                 ),
-                _RefCard(
-                  icon: Icons.verified_outlined,
-                  label: 'Certifications',
-                  onTap: () => context.push('/referee/certifications'),
+                const SizedBox(width: AppTheme.space8),
+                Expanded(
+                  child: _RefCard(
+                    icon: Icons.search,
+                    label: 'Search Athletes',
+                    onTap: () => context.push('/referee/search-athletes'),
+                  ),
                 ),
-                _RefCard(
-                  icon: Icons.search,
-                  label: 'Search Athletes',
-                  onTap: () => context.push('/referee/search-athletes'),
-                ),
-                _RefCard(
-                  icon: Icons.cloud_upload_outlined,
-                  label: 'Upload Evidence',
-                  onTap: () => context.push('/referee/upload-evidence'),
+                const SizedBox(width: AppTheme.space8),
+                Expanded(
+                  child: _RefCard(
+                    icon: Icons.cloud_upload_outlined,
+                    label: 'Upload Evidence',
+                    onTap: () => context.push('/referee/upload-evidence'),
+                  ),
                 ),
               ],
             ),
@@ -685,6 +686,117 @@ class _AssignmentCard extends StatelessWidget {
 
 typedef _MatchItemCard = _AssignmentCard;
 
+class _RefereeScorepadHeroCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _RefereeScorepadHeroCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedActionCard(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      backgroundColor: AppTheme.cardSurface,
+      borderColor: AppTheme.primaryRed.withValues(alpha: 0.35),
+      padding: const EdgeInsets.all(AppTheme.space16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryRed,
+                  Color(0xFF8A0000),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryRed.withValues(alpha: 0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.sports_score_rounded,
+              size: 26,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: AppTheme.space16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Flexible(
+                      child: Text(
+                        'Live Table Scorepad',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: 0.2,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.space8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryRed.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: AppTheme.primaryRed.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'LIVE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryRed,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Launch table-side scoring & foul console',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: AppTheme.textSecondary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RefCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -703,12 +815,12 @@ class _RefCard extends StatelessWidget {
       gradient: AppTheme.machinedTitaniumGradient,
       borderColor: AppTheme.borderTitanium,
       customShadow: [AppTheme.titaniumShadow()],
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space14),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space8, vertical: AppTheme.space12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(AppTheme.space10),
+            padding: const EdgeInsets.all(AppTheme.space8),
             decoration: BoxDecoration(
               color: AppTheme.primaryRed.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -717,15 +829,15 @@ class _RefCard extends StatelessWidget {
                 width: 1,
               ),
             ),
-            child: Icon(icon, size: 24, color: AppTheme.primaryRed),
+            child: Icon(icon, size: 22, color: AppTheme.primaryRed),
           ),
-          const SizedBox(height: AppTheme.space10),
+          const SizedBox(height: AppTheme.space8),
           Text(
             label,
             style: const TextStyle(
               fontFamily: AppTheme.fontDisplay,
               fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: 11,
               color: AppTheme.textPrimary,
             ),
             textAlign: TextAlign.center,
