@@ -25,6 +25,7 @@ class StickyBottomActionBar extends StatelessWidget {
   final Color? backgroundColor;
   final Color? borderColor;
   final double maxWidth;
+  final bool? isKeyboardOpen;
 
   const StickyBottomActionBar({
     super.key,
@@ -43,6 +44,7 @@ class StickyBottomActionBar extends StatelessWidget {
     this.backgroundColor,
     this.borderColor,
     this.maxWidth = 640.0,
+    this.isKeyboardOpen,
   });
 
   @override
@@ -53,7 +55,9 @@ class StickyBottomActionBar extends StatelessWidget {
     Widget content = child ?? _buildDefaultContent(context);
 
     final isInsideShell = MainShellScope.isInsideShell(context);
-    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final keyboardOpen = isKeyboardOpen ??
+        (MediaQuery.viewInsetsOf(context).bottom > 0 ||
+            ((View.maybeOf(context)?.viewInsets.bottom ?? 0) > 0));
     final shellClearance = (isInsideShell && !keyboardOpen) ? kFloatingDockTotalHeight : 0.0;
 
     return ClipRect(

@@ -98,6 +98,8 @@ class StickyFormScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     Widget? effectiveFooter = bottomActionBar;
     if (effectiveFooter == null && primaryActionLabel != null) {
       effectiveFooter = StickyBottomActionBar(
@@ -110,6 +112,23 @@ class StickyFormScaffold extends StatelessWidget {
         disclaimerText: disclaimerText,
         backgroundColor: bottomBarBackgroundColor,
         borderColor: bottomBarBorderColor,
+        isKeyboardOpen: isKeyboardOpen,
+      );
+    } else if (effectiveFooter is StickyBottomActionBar && effectiveFooter.isKeyboardOpen == null) {
+      effectiveFooter = StickyBottomActionBar(
+        primaryActionLabel: effectiveFooter.primaryActionLabel,
+        onPrimaryAction: effectiveFooter.onPrimaryAction,
+        isLoading: effectiveFooter.isLoading,
+        primaryActionIcon: effectiveFooter.primaryActionIcon,
+        primarySemanticLabel: effectiveFooter.primarySemanticLabel,
+        secondaryAction: effectiveFooter.secondaryAction,
+        disclaimerText: effectiveFooter.disclaimerText,
+        padding: effectiveFooter.padding,
+        backgroundColor: effectiveFooter.backgroundColor,
+        borderColor: effectiveFooter.borderColor,
+        maxWidth: effectiveFooter.maxWidth,
+        isKeyboardOpen: isKeyboardOpen,
+        child: effectiveFooter.child,
       );
     }
 
