@@ -114,7 +114,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AppErrorView), findsOneWidget);
-      expect(find.text('Tournament Unavailable'), findsOneWidget);
+      expect(find.text('Could not load tournament'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
       expect(find.text('Return to Tournaments'), findsOneWidget);
 
@@ -268,10 +268,12 @@ void main() {
       await tester.tap(find.text('Return to Home'));
       await tester.pumpAndSettle();
       expect(find.text('TARGET: /home'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
 
-    testWidgets('MyNominationsScreen (S-052) provides two-way recovery on both error and empty states', (tester) async {
-      // 1. Error state
+    testWidgets('MyNominationsScreen (S-052) error state provides retry and home escape', (tester) async {
       final errorRouter = GoRouter(
         initialLocation: '/nominations',
         routes: [
@@ -301,7 +303,15 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
       expect(find.text('Return to Home'), findsOneWidget);
 
-      // 2. Empty state
+      await tester.tap(find.text('Return to Home'));
+      await tester.pumpAndSettle();
+      expect(find.text('TARGET: /home'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+
+    testWidgets('MyNominationsScreen (S-052) empty state provides submit and home escape', (tester) async {
       final emptyRouter = GoRouter(
         initialLocation: '/nominations',
         routes: [
@@ -323,7 +333,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            nominationListProvider.overrideWith(() => _FakeNominationsNotifier(data: [])),
+            nominationListProvider.overrideWith(() => _FakeNominationsNotifier(data: const [])),
           ],
           child: MaterialApp.router(routerConfig: emptyRouter),
         ),
@@ -337,6 +347,9 @@ void main() {
       await tester.tap(find.text('Submit a Nomination'));
       await tester.pumpAndSettle();
       expect(find.text('TARGET: /nominate'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
     });
   });
 }

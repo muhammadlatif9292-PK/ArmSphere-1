@@ -338,7 +338,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         appBar: AppBar(title: const Text('Tournament Details')),
         body: AppErrorView(
           error: error,
-          title: 'Tournament Unavailable',
+          title: 'Could not load tournament',
           onRetry: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
           secondaryActionLabel: 'Return to Tournaments',
           onSecondaryAction: () {
