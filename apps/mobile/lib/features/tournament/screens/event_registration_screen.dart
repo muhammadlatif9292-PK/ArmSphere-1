@@ -213,6 +213,12 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
+    final rawFee = eventAsync.valueOrNull?['registrationFeeCents'];
+    final baseFeeCents = (rawFee is num)
+        ? rawFee.toInt()
+        : int.tryParse('${rawFee ?? ''}') ?? 0;
+    final isDoubleBracket = _armChoice.toUpperCase() == 'BOTH';
+    final totalFeeCents = isDoubleBracket ? baseFeeCents * 2 : baseFeeCents;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -411,15 +417,27 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                           ],
                         ),
                       ),
+                      const SizedBox(height: AppTheme.space16),
+
+                      // Anchored Registration & Pricing Summary Card
+                      _RegistrationSummaryCard(
+                        division: _selectedDivision,
+                        weightClass: _selectedWeightClass,
+                        arm: _armChoice,
+                        baseFeeCents: baseFeeCents,
+                        totalFeeCents: totalFeeCents,
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // Persistent Sticky Bottom Action Bar with Keyboard Avoidance
+            // Persistent Sticky Bottom Action Bar with Dynamic Pricing CTA & Keyboard Avoidance
             StickyBottomActionBar(
-              primaryActionLabel: 'Complete Registration',
+              primaryActionLabel: totalFeeCents > 0
+                  ? 'Complete Registration — ${formatEventFee(totalFeeCents)}'
+                  : 'Complete Registration — Free Entry',
               primaryActionIcon: Icons.how_to_reg_outlined,
               isLoading: _isLoading,
               disclaimerText: 'Official sanctioned entry • Bracket seeded upon check-in',
@@ -427,6 +445,232 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Dynamic Registration & Pricing Summary Card
+///
+/// Anchors selected competition tier and live fee calculations directly
+/// above the persistent sticky submission CTA, eliminating visual voids
+/// and ensuring transparent financial breakdown for single and double brackets.
+class _RegistrationSummaryCard extends StatelessWidget {
+  final String division;
+  final String weightClass;
+  final String arm;
+  final int baseFeeCents;
+  final int totalFeeCents;
+
+  const _RegistrationSummaryCard({
+    required this.division,
+    required this.weightClass,
+    required this.arm,
+    required this.baseFeeCents,
+    required this.totalFeeCents,
+  });
+
+  String _formatDivision(String d) {
+    switch (d.toUpperCase()) {
+      case 'SENIOR':
+        return 'Senior (Open)';
+      case 'JUNIOR':
+        return 'Junior (U21)';
+      case 'MASTERS':
+        return 'Masters (40+)';
+      case 'FEMALE':
+        return 'Women\'s Division';
+      default:
+        return d;
+    }
+  }
+
+  String _formatArm(String a) {
+    switch (a.toUpperCase()) {
+      case 'RIGHT':
+        return 'Right Arm (1 Bracket)';
+      case 'LEFT':
+        return 'Left Arm (1 Bracket)';
+      case 'BOTH':
+        return 'Both Arms (Double Bracket)';
+      default:
+        return a;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDoubleBracket = arm.toUpperCase() == 'BOTH';
+    final armSurchargeCents = isDoubleBracket ? baseFeeCents : 0;
+
+    return Container(
+      key: const ValueKey('registration_summary_card'),
+      padding: const EdgeInsets.all(AppTheme.space16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardSurface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(
+          color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    ),
+                    child: const Icon(
+                      Icons.receipt_long_outlined,
+                      size: 16,
+                      color: AppTheme.goldPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'REGISTRATION SUMMARY',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      letterSpacing: 0.8,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const StatusChip(
+                label: 'SANCTIONED ENTRY',
+                type: StatusType.gold,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.space12),
+
+          // Division & Bracket Configuration Pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.elevatedSurface,
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              border: Border.all(color: AppTheme.borderSubtle, width: 0.8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.sports_kabaddi, size: 16, color: AppTheme.goldPrimary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${_formatDivision(division)} • $weightClass • ${_formatArm(arm)}',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5,
+                      color: AppTheme.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppTheme.space12),
+
+          // Itemized Pricing Breakdown
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isDoubleBracket ? 'Base Division Fee (Right Arm)' : 'Division Entry Fee',
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontBody,
+                  fontSize: 12.5,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              Text(
+                formatEventFee(baseFeeCents),
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          if (isDoubleBracket) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Second Arm Entry (Left Arm)',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    fontSize: 12.5,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                Text(
+                  '+ ${formatEventFee(armSurchargeCents)}',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.goldPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 10),
+          Divider(color: AppTheme.borderSubtle, height: 1),
+          const SizedBox(height: 10),
+
+          // Total Due Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total Entry Fee Due',
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  letterSpacing: 0.5,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              Text(
+                formatEventFee(totalFeeCents),
+                key: const ValueKey('registration_total_fee_text'),
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.goldPrimary,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
