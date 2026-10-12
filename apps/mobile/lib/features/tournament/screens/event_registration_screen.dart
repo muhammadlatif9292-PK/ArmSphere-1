@@ -442,7 +442,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                       ? 'Complete Registration — ${formatEventFee(totalFeeCents)}'
                       : 'Complete Registration — Free Entry'),
               primaryActionIcon: Icons.how_to_reg_outlined,
-              isLoading: _isLoading || isEventLoading,
+              isLoading: _isLoading,
               disclaimerText: 'Official sanctioned entry • Bracket seeded upon check-in',
               onPrimaryAction: (_isLoading || isEventLoading) ? null : _submit,
             ),

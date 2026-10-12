@@ -275,6 +275,7 @@ void main() {
 
       // CTA indicates loading and is disabled
       expect(find.text('Loading Event Details...'), findsOneWidget);
+      expect(find.text('Loading...'), findsWidgets);
 
       // Now resolve event data
       completer.complete(standardEvent);
