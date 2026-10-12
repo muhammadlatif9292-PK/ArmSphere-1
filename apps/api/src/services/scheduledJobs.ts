@@ -26,6 +26,7 @@ export const processedJobsTracker = {
   historicalRecalcs: [] as any[],
   auditScans: [] as any[],
   sanctionExpiries: [] as any[],
+  certificationExpiries: [] as any[],
   notificationDispatched: [] as any[],
   messageCleanups: [] as any[],
   scheduledAnnouncements: [] as any[],
@@ -44,6 +45,7 @@ export function resetJobTrackers() {
   processedJobsTracker.historicalRecalcs = [];
   processedJobsTracker.auditScans = [];
   processedJobsTracker.sanctionExpiries = [];
+  processedJobsTracker.certificationExpiries = [];
   processedJobsTracker.notificationDispatched = [];
   processedJobsTracker.messageCleanups = [];
   processedJobsTracker.scheduledAnnouncements = [];
@@ -57,6 +59,7 @@ export const SCHEDULED_JOB_TYPES = {
   ELO_RECALCULATION_NEW: "elo.recalculation",
   AUDIT_INTEGRITY_SCAN: "audit.integrity.scan",
   SANCTION_EXPIRY: "sanction.expiry",
+  CERTIFICATION_EXPIRY: "certification.expiry",
   MESSAGE_CLEANUP: "message.cleanup",
   ANNOUNCEMENT_SCHEDULER: "announcement.scheduler",
   PUSH_RETRY: "push.retry.queue",
@@ -69,6 +72,7 @@ export const RECURRENCE_INTERVALS: Record<string, number | null> = {
   [SCHEDULED_JOB_TYPES.ELO_RECALCULATION_NEW]: null,                   // On demand / custom trigger
   [SCHEDULED_JOB_TYPES.AUDIT_INTEGRITY_SCAN]: 24 * 60 * 60 * 1000,   // 24 hours
   [SCHEDULED_JOB_TYPES.SANCTION_EXPIRY]: 60 * 60 * 1000,              // 1 hour
+  [SCHEDULED_JOB_TYPES.CERTIFICATION_EXPIRY]: 24 * 60 * 60 * 1000,   // 24 hours
   [SCHEDULED_JOB_TYPES.MESSAGE_CLEANUP]: 24 * 60 * 60 * 1000,         // 24 hours
   [SCHEDULED_JOB_TYPES.ANNOUNCEMENT_SCHEDULER]: 15 * 60 * 1000,       // 15 minutes
   [SCHEDULED_JOB_TYPES.PUSH_RETRY]: null,                              // Handled via backoff logic
@@ -263,6 +267,14 @@ export async function runDueScheduledJobs() {
         processedJobsTracker.sanctionExpiries.push({ timestamp: new Date().toISOString(), expiredCount });
         jobOutput = { status: "processed", expiredCount };
       } else if (
+        job.jobType === SCHEDULED_JOB_TYPES.CERTIFICATION_EXPIRY ||
+        job.jobType === "CERTIFICATION_EXPIRY"
+      ) {
+        const { RefereeCertificationService } = await import("./refereeCertification.js");
+        const result = await RefereeCertificationService.processExpiredCertifications();
+        processedJobsTracker.certificationExpiries.push({ timestamp: new Date().toISOString(), result });
+        jobOutput = { status: "processed", expiredCount: result.expiredCount };
+      } else if (
         job.jobType === SCHEDULED_JOB_TYPES.MESSAGE_CLEANUP ||
         job.jobType === "MESSAGE_CLEANUP"
       ) {
@@ -359,6 +371,7 @@ export async function ensureDefaultScheduledJobsExist() {
     SCHEDULED_JOB_TYPES.TITLE_INTEGRITY_AUDIT,
     SCHEDULED_JOB_TYPES.AUDIT_INTEGRITY_SCAN,
     SCHEDULED_JOB_TYPES.SANCTION_EXPIRY,
+    SCHEDULED_JOB_TYPES.CERTIFICATION_EXPIRY,
     SCHEDULED_JOB_TYPES.MESSAGE_CLEANUP,
     SCHEDULED_JOB_TYPES.ANNOUNCEMENT_SCHEDULER,
   ];

@@ -229,6 +229,27 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(res.body.data.displayName).toBe("Johnny Doe");
     });
 
+    it("should retrieve profile by profileId without false block denial when caller is the owner", async () => {
+      const profileUuid = "33333333-3333-3333-3333-333333333333";
+      testDbStore.athleteProfiles.push({
+        id: profileUuid,
+        userId: athleteUserId,
+        displayName: "Johnny Doe",
+        province: "Punjab",
+        city: "Lahore",
+        isDeleted: false,
+      });
+
+      const res = await request(app)
+        .get(`/athletes/${profileUuid}`)
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.id).toBe(profileUuid);
+      expect(res.body.data.userId).toBe(athleteUserId);
+    });
+
     it("should return a 404 NotFound if profile does not exist", async () => {
       const res = await request(app)
         .get("/athletes/22222222-2222-2222-2222-222222222222") // non-existent UUID

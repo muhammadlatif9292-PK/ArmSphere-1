@@ -1,7 +1,7 @@
-import { eq, and, desc, isNull, or, gt } from "drizzle-orm";
+import { eq, and, desc, isNull, or, gt, lte, inArray } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { refereeCertifications, users } from "@armsphere/db-schema";
-import { NotFoundError, BadRequestError, ForbiddenError } from "@armsphere/core";
+import { NotFoundError, BadRequestError, ForbiddenError, logger } from "@armsphere/core";
 
 export interface IssueCertificationInput {
   certificationLevel: string;
@@ -175,5 +175,138 @@ export class RefereeCertificationService {
       .returning();
 
     return updated;
+  }
+
+  /**
+   * Process expired referee certifications:
+   * 1. Finds all ACTIVE certifications with expiresAt <= now.
+   * 2. Sets their status to "EXPIRED" and updatedAt to now.
+   * 3. Dispatches notifications to affected referees.
+   *
+   * Note on province: The `referee_certifications` table does not contain a `province`
+   * column. When filtering or grouping by province (e.g. for provincial directors),
+   * join through `users` table where `users.province` is stored.
+   */
+  static async processExpiredCertifications(now: Date = new Date()): Promise<{ expiredCount: number; expiredIds: string[] }> {
+    const expiredCerts = await db
+      .select({
+        id: refereeCertifications.id,
+        userId: refereeCertifications.userId,
+        certificationLevel: refereeCertifications.certificationLevel,
+        expiresAt: refereeCertifications.expiresAt,
+      })
+      .from(refereeCertifications)
+      .where(
+        and(
+          eq(refereeCertifications.status, "ACTIVE"),
+          lte(refereeCertifications.expiresAt, now)
+        )
+      );
+
+    if (expiredCerts.length === 0) {
+      return { expiredCount: 0, expiredIds: [] };
+    }
+
+    const expiredIds = expiredCerts.map((c) => c.id);
+
+    await db
+      .update(refereeCertifications)
+      .set({
+        status: "EXPIRED",
+        updatedAt: now,
+      })
+      .where(inArray(refereeCertifications.id, expiredIds));
+
+    const { NotificationService } = await import("./notification.js");
+    for (const cert of expiredCerts) {
+      try {
+        await NotificationService.createNotification({
+          userId: cert.userId,
+          title: "Referee Certification Expired",
+          content: `Your ${cert.certificationLevel} referee certification expired on ${cert.expiresAt ? new Date(cert.expiresAt).toLocaleDateString() : "today"}. Please complete recertification to continue officiating.`,
+          priority: "HIGH",
+          metadata: {
+            certificationId: cert.id,
+            certificationLevel: cert.certificationLevel,
+            expiredAt: cert.expiresAt,
+          },
+        });
+      } catch (notifyErr) {
+        logger.error({ notifyErr, certId: cert.id }, "Failed to send certification expiry notification");
+      }
+    }
+
+    logger.info({ count: expiredIds.length }, "Successfully transitioned expired referee certifications to EXPIRED");
+    return { expiredCount: expiredIds.length, expiredIds };
+  }
+
+  /**
+   * List certifications by province with proper users table join.
+   * Resolves the schema invariant that `referee_certifications` has no province column;
+   * province is stored on the canonical `users` table.
+   */
+  static async listCertificationsByProvince(
+    actorUserId: string,
+    targetProvince: string
+  ) {
+    const [actorUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, actorUserId))
+      .limit(1);
+
+    if (!actorUser) {
+      throw new NotFoundError("Actor user not found");
+    }
+
+    const actorRole = (actorUser.role || "").toLowerCase();
+    const isAdmin = ["system_admin", "national_director"].includes(actorRole);
+    const isProvincialDirector = actorRole === "provincial_director";
+
+    if (!isAdmin && !isProvincialDirector) {
+      throw new ForbiddenError("You are not authorized to view certifications by province");
+    }
+
+    if (isProvincialDirector) {
+      const actorProvince = actorUser.province || (actorUser as any).regionalCoverage;
+      if (!actorProvince || actorProvince.trim().toLowerCase() !== targetProvince.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial directors can only view certifications for their own province (${actorProvince || "none"})`
+        );
+      }
+    }
+
+    // Find users belonging to the requested province
+    const provinceUsers = await db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        email: users.email,
+        province: users.province,
+      })
+      .from(users)
+      .where(eq(users.province, targetProvince));
+
+    if (provinceUsers.length === 0) {
+      return [];
+    }
+
+    const userMap = new Map(provinceUsers.map((u) => [u.id, u]));
+    const userIds = provinceUsers.map((u) => u.id);
+
+    const certs = await db
+      .select()
+      .from(refereeCertifications)
+      .where(inArray(refereeCertifications.userId, userIds))
+      .orderBy(desc(refereeCertifications.issuedAt));
+
+    return certs
+      .filter((c) => userMap.has(c.userId))
+      .map((c) => ({
+        ...c,
+        userFullName: userMap.get(c.userId)?.fullName,
+        userEmail: userMap.get(c.userId)?.email,
+        userProvince: userMap.get(c.userId)?.province,
+      }));
   }
 }

@@ -270,6 +270,23 @@ export class AthleteService {
   }
 
   /**
+   * Resolve an identifier that may be an auth userId or an athlete profileId to the canonical userId
+   */
+  static async resolveUserId(athleteIdOrUserId: string): Promise<string> {
+    const [profile] = await db
+      .select({ userId: athleteProfiles.userId })
+      .from(athleteProfiles)
+      .where(
+        and(
+          or(eq(athleteProfiles.id, athleteIdOrUserId), eq(athleteProfiles.userId, athleteIdOrUserId)),
+          eq(athleteProfiles.isDeleted, false)
+        )
+      )
+      .limit(1);
+    return profile?.userId ?? athleteIdOrUserId;
+  }
+
+  /**
    * Update profile with historical audit trail and conflict resolution support
    */
   static async updateProfile(
@@ -283,12 +300,7 @@ export class AthleteService {
     // :id may be an auth user id (legacy/self flows) or an athlete profile id
     // (search / leaderboard / social rows carry profile ids). Resolve to the
     // owner's auth user id first so owner edits via profileId succeed.
-    const [byProfileId] = await db
-      .select({ userId: athleteProfiles.userId })
-      .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.id, targetUserId), eq(athleteProfiles.isDeleted, false)))
-      .limit(1);
-    const resolvedUserId = byProfileId?.userId ?? targetUserId;
+    const resolvedUserId = await this.resolveUserId(targetUserId);
 
     // 1. Ownership & Role check: Only profile owner or an Admin/Director can update it
     if (userId !== resolvedUserId && !["system_admin", "national_director", "provincial_director"].includes(role.toLowerCase())) {

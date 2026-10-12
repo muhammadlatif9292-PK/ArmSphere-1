@@ -14,8 +14,13 @@ export const users = pgTable("users", {
   googleId: varchar("google_id", { length: 255 }),
   appleId: varchar("apple_id", { length: 255 }),
   regionalCoverage: varchar("regional_coverage", { length: 100 }),
+  province: varchar("province", { length: 100 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    provinceIdx: index("idx_users_province").on(table.province),
+  };
 });
 
 export const userSessions = pgTable("user_sessions", {
@@ -298,9 +303,14 @@ export const matches = pgTable("matches", {
   status: varchar("status", { length: 50 }).notNull().default("DRAFT"),
   evidenceUrl: varchar("evidence_url", { length: 1024 }),
   idempotencyKey: varchar("idempotency_key", { length: 255 }).unique(),
+  province: varchar("province", { length: 100 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   verifiedAt: timestamp("verified_at"),
+}, (table) => {
+  return {
+    provinceIdx: index("idx_matches_province").on(table.province),
+  };
 });
 
 export const disputes = pgTable("disputes", {
@@ -436,8 +446,13 @@ export const tournamentMatches = pgTable("tournament_matches", {
   nextMatchId: uuid("next_match_id"),
   nextMatchPlayerPosition: varchar("next_match_player_position", { length: 1 }),
   losersNextMatchId: uuid("losers_next_match_id"),
+  province: varchar("province", { length: 100 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    provinceIdx: index("idx_tournament_matches_province").on(table.province),
+  };
 });
 
 export const tournamentTableQueue = pgTable("tournament_table_queue", {
