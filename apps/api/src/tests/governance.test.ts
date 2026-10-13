@@ -138,11 +138,26 @@ describe("Sprint 6 — Governance, Disputes, Sanctions & ELO Replay System", () 
 
   describe("Dispute Management API Flow", () => {
     it("should allow a competitor to file a dispute on a match", async () => {
+      const matchId = uuidv4();
+      testDbStore.tournamentMatches.push({
+        id: matchId,
+        bracketId: uuidv4(),
+        round: 1,
+        matchIndex: 0,
+        athleteAId,
+        athleteBId,
+        refereeId: refereeUserId,
+        winnerId: athleteBId,
+        status: "COMPLETED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       const response = await request(app)
         .post("/governance/disputes")
         .set("Authorization", `Bearer ${competitorToken}`)
         .send({
-          matchId: uuidv4(),
+          matchId,
           title: "False start at regional championships round 2",
           description: "Athlete B pulled before referee signaled START. Footage shows clear infraction.",
         });
@@ -152,6 +167,53 @@ describe("Sprint 6 — Governance, Disputes, Sanctions & ELO Replay System", () 
       expect(response.body.dispute.status).toBe("OPEN");
       expect(response.body.dispute.title).toContain("False start");
       expect(testDbStore.disputes.length).toBe(1);
+    });
+
+    it("should reject filing a dispute with a nonexistent matchId (404) or duplicate active dispute (409)", async () => {
+      const ghostMatchRes = await request(app)
+        .post("/governance/disputes")
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({
+          matchId: uuidv4(),
+          title: "Nonexistent match dispute",
+          description: "Attempting to reference a match that does not exist.",
+        });
+      expect(ghostMatchRes.status).toBe(404);
+
+      const matchId = uuidv4();
+      testDbStore.tournamentMatches.push({
+        id: matchId,
+        bracketId: uuidv4(),
+        round: 1,
+        matchIndex: 0,
+        athleteAId,
+        athleteBId,
+        refereeId: refereeUserId,
+        winnerId: athleteBId,
+        status: "COMPLETED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const firstRes = await request(app)
+        .post("/governance/disputes")
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({
+          matchId,
+          title: "First legitimate dispute on match",
+          description: "Referee missed a clear elbow foul during the pin.",
+        });
+      expect(firstRes.status).toBe(201);
+
+      const dupRes = await request(app)
+        .post("/governance/disputes")
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({
+          matchId,
+          title: "Duplicate active dispute on same match",
+          description: "Filing a second open dispute on the exact same match.",
+        });
+      expect(dupRes.status).toBe(409);
     });
 
     it("should allow a director to assign a reviewer to the dispute", async () => {
@@ -636,6 +698,53 @@ describe("Sprint 6 — Governance, Disputes, Sanctions & ELO Replay System", () 
 
       expect(response.status).toBe(403);
       expect(response.body.detail || response.body.message).toMatch(/authorized federation official|provincial jurisdiction/i);
+    });
+
+    it("should enforce terminal CLOSED dispute transition and block mutations after closure", async () => {
+      const dispute = await GovernanceService.createDispute(
+        "user-a-uuid",
+        null,
+        "Dispute for Closure Lifecycle",
+        "Testing OPEN -> REJECTED -> CLOSED and terminal guards."
+      );
+
+      // Cannot close an OPEN dispute directly
+      const prematureClose = await request(app)
+        .post(`/governance/disputes/${dispute.id}/close`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ closureNotes: "Premature closure attempt" });
+      expect(prematureClose.status).toBe(409);
+
+      // Resolve as REJECTED
+      await GovernanceService.resolveDispute(dispute.id, "Dismissed for lack of evidence", "REJECTED", adminUserId);
+
+      // Cannot re-resolve a REJECTED dispute without appeal
+      const reResolve = await request(app)
+        .post(`/governance/disputes/${dispute.id}/resolve`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ resolutionDetails: "Trying to overwrite rejection", decision: "RESOLVED" });
+      expect(reResolve.status).toBe(409);
+
+      // Close the REJECTED dispute
+      const closeRes = await request(app)
+        .post(`/governance/disputes/${dispute.id}/close`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ closureNotes: "Appeal window elapsed; case closed." });
+      expect(closeRes.status).toBe(200);
+      expect(closeRes.body.dispute.status).toBe("CLOSED");
+
+      // Cannot appeal, comment, or submit evidence on a CLOSED dispute
+      const appealClosed = await request(app)
+        .post(`/governance/disputes/${dispute.id}/appeal`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ appealReason: "Late appeal after closure" });
+      expect(appealClosed.status).toBe(400);
+
+      const commentClosed = await request(app)
+        .post(`/governance/disputes/${dispute.id}/comments`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ comment: "Trying to comment on closed case" });
+      expect(commentClosed.status).toBe(409);
     });
   });
 });

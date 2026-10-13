@@ -284,6 +284,9 @@ export class MatchService {
         if (match.status === "VERIFIED") {
           throw new ConflictError("Match has already been verified.");
         }
+        if (match.status === "VOID" || match.status === "VOIDED") {
+          throw new ConflictError("Cannot verify a voided match.");
+        }
 
         // 2. Perform pessimistic locking of athlete rows in alphabetical ID
         // order to prevent deadlocks — a real `FOR UPDATE` lock this time, not

@@ -334,6 +334,9 @@ export class TournamentService {
     if (event.status === "CANCELLED") {
       throw new BadRequestError("Cannot edit a cancelled event.");
     }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Cannot edit a completed event.");
+    }
 
     // Date bounds checks if updated
     const finalRegStart = data.registrationStart || event.registrationStart;
@@ -375,6 +378,13 @@ export class TournamentService {
       await this.authorizeEventModification(event, actorId, "cancel");
     }
 
+    if (event.status === "CANCELLED") {
+      throw new ConflictError("Event is already cancelled.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Cannot cancel a completed event.");
+    }
+
     const [cancelledEvent] = await db
       .update(events)
       .set({ status: "CANCELLED", updatedAt: new Date() })
@@ -396,6 +406,16 @@ export class TournamentService {
       await this.authorizeEventModification(event, actorId, "publish");
     }
 
+    if (event.status === "CANCELLED") {
+      throw new ConflictError("Cannot publish a cancelled event.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Cannot publish a completed event.");
+    }
+    if (event.status === "PUBLISHED") {
+      throw new ConflictError("Event is already published.");
+    }
+
     const [publishedEvent] = await db
       .update(events)
       .set({ status: "PUBLISHED", updatedAt: new Date() })
@@ -403,6 +423,55 @@ export class TournamentService {
       .returning();
 
     return publishedEvent;
+  }
+
+  static async completeEvent(id: string, actorId?: string) {
+    logger.info({ id, actorId }, "Completing tournament event");
+
+    const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
+    if (actorId) {
+      await this.authorizeEventModification(event, actorId, "complete");
+    }
+
+    if (event.status === "CANCELLED") {
+      throw new ConflictError("Cannot complete a cancelled event.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Event is already completed.");
+    }
+    if (event.status === "DRAFT") {
+      throw new BadRequestError("Cannot complete an unpublished draft event.");
+    }
+
+    const eventBrackets = await db.select().from(brackets).where(eq(brackets.eventId, id));
+    const uncompletedBrackets = eventBrackets.filter((b) => b.status !== "COMPLETED");
+    if (uncompletedBrackets.length > 0) {
+      throw new ConflictError("Cannot complete event while one or more brackets are incomplete.");
+    }
+
+    const [completedEvent] = await db
+      .update(events)
+      .set({ status: "COMPLETED", updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+
+    await auditLedgerService.logEvent({
+      actorId: actorId || event.organizerId || "SYSTEM",
+      entityType: "events",
+      entityId: id,
+      action: "EVENT_COMPLETED",
+      payload: {
+        previousStatus: event.status,
+        completedAt: new Date().toISOString(),
+        bracketsCount: eventBrackets.length,
+      },
+    });
+
+    return completedEvent;
   }
 
   // ==========================================
@@ -421,6 +490,13 @@ export class TournamentService {
       const [event] = await tx.select().from(events).where(eq(events.id, eventId)).limit(1);
       if (!event) {
         throw new NotFoundError("Tournament event not found.");
+      }
+
+      if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+        throw new ConflictError(`Cannot register for a ${event.status.toLowerCase()} event.`);
+      }
+      if (event.status === "DRAFT") {
+        throw new BadRequestError("Cannot register for an unpublished draft event.");
       }
 
       // Registration window check
@@ -546,6 +622,14 @@ export class TournamentService {
       await this.authorizeEventModification(event, approvedBy, "approve registrations for");
     }
 
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot approve registrations for a ${event.status.toLowerCase()} event.`);
+    }
+
+    if (reg.status === "REJECTED" || reg.status === "CANCELLED") {
+      throw new ConflictError(`Cannot approve a registration with status ${reg.status}.`);
+    }
+
     // F1 guard: a paid registration in PENDING_PAYMENT must complete payment
     // confirmation first (MANUAL_QR confirm-manual-payment or Stripe webhook
     // PENDING_PAYMENT -> PENDING). Approving unpaid registrations would let
@@ -599,6 +683,14 @@ export class TournamentService {
 
     const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
     await this.authorizeEventOfficialOrReferee(event, certifiedBy, "record weigh-ins for");
+
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot record weigh-ins for a ${event.status.toLowerCase()} event.`);
+    }
+
+    if (reg.status === "REJECTED" || reg.status === "CANCELLED" || reg.status === "PENDING_PAYMENT") {
+      throw new BadRequestError(`Cannot record weigh-in for a registration in ${reg.status} status.`);
+    }
 
     // Lock safety checks
     const priorWeighins = await db
@@ -658,6 +750,10 @@ export class TournamentService {
     const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
     await this.authorizeEventOfficialOrReferee(event, actorId, "reassign registrations for");
 
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot reassign registrations for a ${event.status.toLowerCase()} event.`);
+    }
+
     // Verify weigh-in isn't locked
     const priorWeighins = await db
       .select()
@@ -704,6 +800,21 @@ export class TournamentService {
     const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
     await this.authorizeEventOfficialOrReferee(event, actorId, "certify weigh-ins for");
 
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot certify weigh-ins for a ${event.status.toLowerCase()} event.`);
+    }
+
+    const priorWeighins = await db
+      .select()
+      .from(officialWeighins)
+      .where(eq(officialWeighins.registrationId, registrationId));
+    if (priorWeighins.length === 0) {
+      throw new BadRequestError("Cannot certify weigh-in before at least one official weigh-in attempt is recorded.");
+    }
+    if (priorWeighins.every((w) => w.isLocked)) {
+      throw new ConflictError("Weigh-in record is already certified and locked.");
+    }
+
     await db
       .update(officialWeighins)
       .set({ isLocked: true, updatedAt: new Date() })
@@ -717,12 +828,16 @@ export class TournamentService {
   // ==========================================
 
   static async createBracket(eventId: string, name: string, format: string, division: string, weightClass: string, arm: string, actorId?: string) {
-    if (actorId) {
-      const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-      if (!event) {
-        throw new NotFoundError("Tournament event not found.");
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (event) {
+      if (actorId) {
+        await this.authorizeEventModification(event, actorId, "create brackets for");
       }
-      await this.authorizeEventModification(event, actorId, "create brackets for");
+      if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+        throw new ConflictError(`Cannot create brackets for a ${event.status.toLowerCase()} event.`);
+      }
+    } else if (actorId) {
+      throw new NotFoundError("Tournament event not found.");
     }
 
     const [newBracket] = await db
@@ -750,11 +865,20 @@ export class TournamentService {
       throw new NotFoundError("Bracket not found.");
     }
 
-    if (actorId && bracket.eventId) {
+    if (bracket.eventId) {
       const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
       if (event) {
-        await this.authorizeEventModification(event, actorId, "generate seeds for");
+        if (actorId) {
+          await this.authorizeEventModification(event, actorId, "generate seeds for");
+        }
+        if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+          throw new ConflictError(`Cannot generate seeds for a ${event.status.toLowerCase()} event.`);
+        }
       }
+    }
+
+    if (bracket.seedingLocked || bracket.status === "ACTIVE" || bracket.status === "COMPLETED") {
+      throw new ConflictError("Cannot regenerate seeds when seeding is locked or bracket is active/completed.");
     }
 
     // Retrieve approved, weighed-in passed athletes registered for this category
@@ -890,11 +1014,23 @@ export class TournamentService {
       throw new NotFoundError("Bracket not found.");
     }
 
-    if (actorId && bracket.eventId) {
+    if (bracket.eventId) {
       const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
       if (event) {
-        await this.authorizeEventModification(event, actorId, "lock seeds for");
+        if (actorId) {
+          await this.authorizeEventModification(event, actorId, "lock seeds for");
+        }
+        if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+          throw new ConflictError(`Cannot lock seeds for a ${event.status.toLowerCase()} event.`);
+        }
       }
+    }
+
+    if (bracket.status === "ACTIVE" || bracket.status === "COMPLETED") {
+      throw new ConflictError("Bracket is already active or completed.");
+    }
+    if (bracket.seedingLocked) {
+      throw new ConflictError("Seeding is already locked for this bracket.");
     }
 
     await db
@@ -917,10 +1053,15 @@ export class TournamentService {
       throw new NotFoundError("Bracket not found.");
     }
 
-    if (actorId && bracket.eventId) {
+    if (bracket.eventId) {
       const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
       if (event) {
-        await this.authorizeEventModification(event, actorId, "generate bracket matches for");
+        if (actorId) {
+          await this.authorizeEventModification(event, actorId, "generate bracket matches for");
+        }
+        if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+          throw new ConflictError(`Cannot generate bracket matches for a ${event.status.toLowerCase()} event.`);
+        }
       }
     }
 
@@ -1401,6 +1542,9 @@ export class TournamentService {
     if (!refereeUser) {
       throw new NotFoundError("Referee user not found.");
     }
+    if ((refereeUser as any).isActive === false) {
+      throw new BadRequestError("Referee user account is inactive.");
+    }
 
     const assignableRoles: string[] = [UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN];
     const hasAssignableRole =
@@ -1419,12 +1563,21 @@ export class TournamentService {
       throw new NotFoundError("Match not found.");
     }
 
-    if (actorId && match.bracketId) {
+    if (match.status === "COMPLETED" || match.status === "BYE") {
+      throw new ConflictError("Cannot assign a referee to a completed or walkover match.");
+    }
+
+    if (match.bracketId) {
       const [bracket] = await db.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
       if (bracket?.eventId) {
         const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
         if (event) {
-          await this.authorizeEventModification(event, actorId, "assign referees for");
+          if (actorId) {
+            await this.authorizeEventModification(event, actorId, "assign referees for");
+          }
+          if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+            throw new ConflictError(`Cannot assign referees for a ${event.status.toLowerCase()} event.`);
+          }
         }
       }
     }
@@ -1460,9 +1613,14 @@ export class TournamentService {
         throw new NotFoundError("Bracket for match not found.");
       }
 
-      if (actorId && bracket.eventId) {
+      if (bracket.eventId) {
         const [event] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
-        await this.authorizeEventOfficialOrReferee(event, actorId, "call matches to tables for");
+        if (actorId) {
+          await this.authorizeEventOfficialOrReferee(event, actorId, "call matches to tables for");
+        }
+        if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+          throw new ConflictError(`Cannot call matches to tables for a ${event.status.toLowerCase()} event.`);
+        }
       }
 
       if (match.status === "COMPLETED" || match.status === "BYE") {
@@ -1596,9 +1754,14 @@ export class TournamentService {
         throw new NotFoundError("Bracket not found.");
       }
 
-      if (actorId && bracket.eventId) {
+      if (bracket.eventId) {
         const [event] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
-        await this.authorizeEventOfficialOrReferee(event, actorId, "queue matches for");
+        if (actorId) {
+          await this.authorizeEventOfficialOrReferee(event, actorId, "queue matches for");
+        }
+        if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+          throw new ConflictError(`Cannot queue matches for a ${event.status.toLowerCase()} event.`);
+        }
       }
 
       const [table] = await tx
@@ -1961,85 +2124,116 @@ export class TournamentService {
     }
     logger.info({ matchId, winnerId, scoreLine }, "Submitting official match result");
 
-    const [match] = await (db as any).select().from(tournamentMatches).where(eq(tournamentMatches.id as any, matchId as any)).limit(1);
-    if (!match) {
-      throw new NotFoundError("Tournament match not found.");
-    }
-
-    if (actorId) {
-      const [actorUser] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
-      if (!actorUser) {
-        throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+    const { completedMatch, bracketId } = await db.transaction(async (tx) => {
+      const [match] = await (tx as any)
+        .select()
+        .from(tournamentMatches)
+        .where(eq(tournamentMatches.id as any, matchId as any))
+        .for("update")
+        .limit(1);
+      if (!match) {
+        throw new NotFoundError("Tournament match not found.");
       }
 
-      if (actorUser.role === UserRole.REFEREE) {
-        if (match.refereeId !== actorId) {
+      const [bracket] = await (tx as any).select().from(brackets).where(eq(brackets.id as any, (match as any).bracketId as any)).limit(1);
+      const [event] = bracket?.eventId
+        ? await (tx as any).select().from(events).where(eq(events.id as any, (bracket as any).eventId as any)).limit(1)
+        : [null];
+
+      if (event && event.status === "CANCELLED") {
+        throw new ConflictError("Cannot submit match results for a cancelled event.");
+      }
+
+      if (actorId) {
+        const [actorUser] = await tx.select().from(users).where(eq(users.id, actorId)).limit(1);
+        if (!actorUser || (actorUser as any).isActive === false) {
           throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
         }
-      } else {
-        const [bracket] = await (db as any).select().from(brackets).where(eq(brackets.id as any, (match as any).bracketId as any)).limit(1);
-        const [event] = bracket
-          ? await (db as any).select().from(events).where(eq(events.id as any, (bracket as any).eventId as any)).limit(1)
-          : [null];
 
-        if (event) {
-          await this.authorizeEventModification(event, actorId, "submit match results for");
-        } else {
-          const isSupervisor = [
-            UserRole.TOURNAMENT_OPERATOR,
-            UserRole.PROVINCIAL_DIRECTOR,
-            UserRole.NATIONAL_DIRECTOR,
-            UserRole.SYSTEM_ADMIN,
-          ].includes(actorUser.role as UserRole);
-          if (!isSupervisor) {
+        if (actorUser.role === UserRole.REFEREE) {
+          if (match.refereeId !== actorId) {
             throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+          }
+        } else {
+          if (event) {
+            await this.authorizeEventModification(event, actorId, "submit match results for");
+          } else {
+            const supervisorRoles = [
+              UserRole.TOURNAMENT_OPERATOR,
+              UserRole.PROVINCIAL_DIRECTOR,
+              UserRole.NATIONAL_DIRECTOR,
+              UserRole.SYSTEM_ADMIN,
+            ];
+            const isSupervisor =
+              supervisorRoles.includes(actorUser.role as UserRole) ||
+              (await UserRoleService.hasActiveRole(actorId, supervisorRoles));
+            if (!isSupervisor) {
+              throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+            }
           }
         }
       }
-    }
 
-    if (match.status === "COMPLETED" || match.status === "BYE") {
-      return match;
-    }
+      if (match.status === "BYE") {
+        throw new ConflictError("Cannot submit a competitive result for a walkover (BYE) match.");
+      }
 
-    if (winnerId !== match.athleteAId && winnerId !== match.athleteBId) {
-      throw new BadRequestError("Winner must be one of the match participants.");
-    }
+      if (match.status === "COMPLETED") {
+        if (match.winnerId === winnerId && (!scoreLine || match.scoreLine === scoreLine)) {
+          return { completedMatch: match, bracketId: null as string | null };
+        }
+        throw new ConflictError("Match result has already been completed and locked. Use official match correction to alter a completed result.");
+      }
 
-    const tableId = (match as any).tableId;
+      if (match.status === "PENDING" || !match.athleteAId || !match.athleteBId) {
+        throw new BadRequestError("Match is not ready for result submission; both competitors must be determined.");
+      }
 
-    // Save winner result
-    const [completedMatch] = await (db as any)
-      .update(tournamentMatches)
-      .set({
-        winnerId,
-        scoreLine,
-        status: "COMPLETED",
-        updatedAt: new Date()
-      })
-      .where(eq(tournamentMatches.id as any, matchId as any))
-      .returning();
+      if (winnerId !== match.athleteAId && winnerId !== match.athleteBId) {
+        throw new BadRequestError("Winner must be one of the match participants.");
+      }
 
-    // Release table referencing this match (handles tableId or any table where currentMatchId was set)
-    await (db as any)
-      .update(matchTables)
-      .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
-      .where(eq(matchTables.currentMatchId as any, matchId as any));
+      const tableId = (match as any).tableId;
 
-    if (tableId) {
-      await (db as any)
+      // Save winner result
+      const [updated] = await (tx as any)
+        .update(tournamentMatches)
+        .set({
+          winnerId,
+          scoreLine,
+          status: "COMPLETED",
+          updatedAt: new Date()
+        })
+        .where(eq(tournamentMatches.id as any, matchId as any))
+        .returning();
+
+      // Release table referencing this match (handles tableId or any table where currentMatchId was set)
+      await (tx as any)
         .update(matchTables)
         .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
-        .where(eq(matchTables.id as any, tableId as any));
+        .where(eq(matchTables.currentMatchId as any, matchId as any));
+
+      if (tableId) {
+        await (tx as any)
+          .update(matchTables)
+          .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+          .where(eq(matchTables.id as any, tableId as any));
+      }
+
+      // Clean queue entry for this match if it was queued
+      await (tx as any)
+        .delete(tournamentTableQueue)
+        .where(eq(tournamentTableQueue.matchId as any, matchId as any));
+
+      return { completedMatch: updated, bracketId: (match as any).bracketId as string };
+    });
+
+    if (!bracketId) {
+      return completedMatch;
     }
 
-    // Clean queue entry for this match if it was queued
-    await (db as any)
-      .delete(tournamentTableQueue)
-      .where(eq(tournamentTableQueue.matchId as any, matchId as any));
-
     // Run recursive, comprehensive progression & reconciliation engine
-    await TournamentService.reconcileBracketMatches((match as any).bracketId);
+    await TournamentService.reconcileBracketMatches(bracketId);
 
     // Check bracket completion status
     const uncompleted = await (db as any)
@@ -2047,7 +2241,7 @@ export class TournamentService {
       .from(tournamentMatches)
       .where(
         and(
-          eq(tournamentMatches.bracketId as any, (match as any).bracketId as any),
+          eq(tournamentMatches.bracketId as any, bracketId as any),
           not(eq(tournamentMatches.status as any, "COMPLETED" as any)),
           not(eq(tournamentMatches.status as any, "BYE" as any))
         )
@@ -2057,7 +2251,7 @@ export class TournamentService {
       await (db as any)
         .update(brackets)
         .set({ status: "COMPLETED", updatedAt: new Date() })
-        .where(eq(brackets.id as any, (match as any).bracketId as any));
+        .where(eq(brackets.id as any, bracketId as any));
     }
 
     return completedMatch;

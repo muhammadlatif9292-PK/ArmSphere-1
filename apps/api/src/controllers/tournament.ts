@@ -187,6 +187,16 @@ export class TournamentController {
     }
   }
 
+  static async completeEvent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const event = await TournamentService.completeEvent(id, req.user!.id);
+      res.json(event);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Athlete Registration
   static async registerAthlete(req: Request, res: Response, next: NextFunction) {
     try {

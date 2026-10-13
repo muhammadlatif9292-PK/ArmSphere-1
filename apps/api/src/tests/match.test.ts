@@ -1433,6 +1433,12 @@ describe("Match Submission, Competitive Scoring & ELO Engine", () => {
       expect(apA.rightArmElo).toBe(1500);
       expect(apB.rightArmElo).toBe(1500);
       expect(testDbStore.eloLedger.filter((l) => l.matchId === verifiedMatchId)).toHaveLength(0);
+
+      // Attempting to re-verify a VOID match must fail with 409 Conflict
+      const verifyVoidRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/verify`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(verifyVoidRes.status).toBe(409);
     });
   });
 });

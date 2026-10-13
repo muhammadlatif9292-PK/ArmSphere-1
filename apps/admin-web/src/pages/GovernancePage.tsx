@@ -300,7 +300,7 @@ export default function GovernancePage() {
                 </div>
 
                 {/* Resolution History if Resolved */}
-                {(selectedDispute.status === 'RESOLVED' || selectedDispute.status === 'CLOSED') && selectedDispute.resolutionDetails && (
+                {(selectedDispute.status === 'RESOLVED' || selectedDispute.status === 'REJECTED' || selectedDispute.status === 'CLOSED') && selectedDispute.resolutionDetails && (
                   <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg space-y-2">
                     <h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
                       <ShieldCheck className="w-4 h-4" /> Official Resolution Decided
@@ -312,7 +312,7 @@ export default function GovernancePage() {
                 )}
 
                 {/* Official Compliance Resolution Form (Gated) */}
-                {selectedDispute.status !== 'RESOLVED' && selectedDispute.status !== 'CLOSED' && (
+                {selectedDispute.status !== 'RESOLVED' && selectedDispute.status !== 'REJECTED' && selectedDispute.status !== 'CLOSED' && (
                   <div className="border-t border-slate-800 pt-6 space-y-4">
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-5 h-5 text-amber-500" />

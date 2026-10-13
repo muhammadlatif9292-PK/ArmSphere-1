@@ -59,6 +59,13 @@ tournamentRouter.post(
   TournamentController.publishEvent
 );
 
+tournamentRouter.post(
+  "/events/:id/complete",
+  authenticate,
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.completeEvent
+);
+
 // --- Athlete Registration ---
 tournamentRouter.post(
   "/registrations",

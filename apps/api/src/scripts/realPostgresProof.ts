@@ -1035,13 +1035,339 @@ async function main() {
     }
     console.log("     ✓ PROVED: Repeated certification expiry execution is strictly idempotent (0 re-expired, 1 deduplicated notification) in real PostgreSQL");
 
+    // PROBE 31: P2-1 Tournament Lifecycle State-Machine & Completion Prerequisites in Real PostgreSQL
+    console.log("\n  -> PROBE 31: P2-1 Tournament lifecycle state-machine & completion prerequisites in real PostgreSQL");
+    const p31EventRes = await request(app)
+      .post("/tournaments/events")
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({
+        name: "Punjab Lifecycle Verification Cup",
+        startDate: new Date(Date.now() + 86400000 * 10).toISOString(),
+        endDate: new Date(Date.now() + 86400000 * 12).toISOString(),
+        registrationStart: new Date(Date.now() - 86400000).toISOString(),
+        registrationEnd: new Date(Date.now() + 86400000 * 9).toISOString(),
+        province: "Punjab",
+        city: "Lahore",
+        venue: "Fortress Arena",
+        capacity: 32,
+      });
+    const eventIdP31 = p31EventRes.body.id;
+    const p31DraftReg = await request(app)
+      .post("/tournaments/registrations")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        eventId: eventIdP31,
+        athleteId: profileId1,
+        division: "SENIOR",
+        weightClass: "80KG",
+        arm: "RIGHT",
+      });
+    const p31DraftComplete = await request(app)
+      .post(`/tournaments/events/${eventIdP31}/complete`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+    const p31Publish = await request(app)
+      .post(`/tournaments/events/${eventIdP31}/publish`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+    const p31DupPublish = await request(app)
+      .post(`/tournaments/events/${eventIdP31}/publish`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+
+    const p31BracketRes = await request(app)
+      .post("/tournaments/brackets")
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({
+        eventId: eventIdP31,
+        name: "Senior 80KG Right",
+        format: "SINGLE_ELIMINATION",
+        division: "SENIOR",
+        weightClass: "80KG",
+        arm: "RIGHT",
+      });
+    const bracketIdP31 = p31BracketRes.body.id;
+
+    // Completing event while bracket is PENDING/ACTIVE must fail with 409
+    const p31PrematureComplete = await request(app)
+      .post(`/tournaments/events/${eventIdP31}/complete`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+
+    // PROBE 32: P2-2 Tournament Match Lifecycle & Row-Locked Result Idempotency in Real PostgreSQL
+    console.log("\n  -> PROBE 32: P2-2 Tournament match lifecycle & row-locked result idempotency in real PostgreSQL");
+    const tMatchIdP32 = crypto.randomUUID();
+    await db.insert(tournamentMatches).values({
+      id: tMatchIdP32,
+      bracketId: bracketIdP31,
+      round: 1,
+      matchIndex: 1,
+      bracketType: "PRIMARY",
+      athleteAId: profileId1,
+      athleteBId: profileId2,
+      status: "READY",
+      province: "Punjab",
+    } as any);
+    await db.update(brackets).set({ status: "ACTIVE" }).where(eq(brackets.id, bracketIdP31));
+
+    const p32AssignRef = await request(app)
+      .post("/tournaments/matches/referee")
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ matchId: tMatchIdP32, refereeId: uidRefereePunjab });
+    const p32SubmitResult = await request(app)
+      .post("/tournaments/matches/result")
+      .set("Authorization", `Bearer ${tokenRefereePunjab}`)
+      .send({ matchId: tMatchIdP32, winnerId: profileId1, scoreLine: "3-1" });
+    const p32IdempotentRetry = await request(app)
+      .post("/tournaments/matches/result")
+      .set("Authorization", `Bearer ${tokenRefereePunjab}`)
+      .send({ matchId: tMatchIdP32, winnerId: profileId1, scoreLine: "3-1" });
+    const p32ConflictingResult = await request(app)
+      .post("/tournaments/matches/result")
+      .set("Authorization", `Bearer ${tokenRefereePunjab}`)
+      .send({ matchId: tMatchIdP32, winnerId: profileId2, scoreLine: "3-2" });
+    const p32ReassignCompleted = await request(app)
+      .post("/tournaments/matches/referee")
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ matchId: tMatchIdP32, refereeId: uidRefereePunjab });
+
+    // Now that the only match in bracketIdP31 is COMPLETED, reconcileBracketMatches marked bracketIdP31 COMPLETED!
+    // Verify completing the event now succeeds (200) and post-completion cancel/edit fail (409)
+    const p31ValidComplete = await request(app)
+      .post(`/tournaments/events/${eventIdP31}/complete`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+    const p31CancelCompleted = await request(app)
+      .post(`/tournaments/events/${eventIdP31}/cancel`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+    const p31EditCompleted = await request(app)
+      .put(`/tournaments/events/${eventIdP31}`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ name: "Mutating completed event" });
+
+    console.log(
+      `     P31 HTTP statuses: DraftReg=${p31DraftReg.status}, DraftComplete=${p31DraftComplete.status}, Publish=${p31Publish.status}, DupPublish=${p31DupPublish.status}, PrematureComplete=${p31PrematureComplete.status}, ValidComplete=${p31ValidComplete.status}, CancelAfterComplete=${p31CancelCompleted.status}, EditAfterComplete=${p31EditCompleted.status}`
+    );
+    console.log(
+      `     P32 HTTP statuses: AssignRef=${p32AssignRef.status}, Submit=${p32SubmitResult.status}, IdempotentRetry=${p32IdempotentRetry.status}, ConflictOverwrite=${p32ConflictingResult.status}, ReassignCompleted=${p32ReassignCompleted.status}`
+    );
+    if (
+      p31DraftReg.status !== 400 ||
+      p31DraftComplete.status !== 400 ||
+      p31Publish.status !== 200 ||
+      p31DupPublish.status !== 409 ||
+      p31PrematureComplete.status !== 409 ||
+      p31ValidComplete.status !== 200 ||
+      p31CancelCompleted.status !== 409 ||
+      p31EditCompleted.status !== 409
+    ) {
+      throw new Error("PROBE 31 FAILED: Tournament lifecycle state-machine check failed in real PostgreSQL");
+    }
+    if (
+      p32AssignRef.status !== 200 ||
+      p32SubmitResult.status !== 200 ||
+      p32IdempotentRetry.status !== 200 ||
+      p32ConflictingResult.status !== 409 ||
+      p32ReassignCompleted.status !== 409
+    ) {
+      throw new Error("PROBE 32 FAILED: Tournament match lifecycle check failed in real PostgreSQL");
+    }
+    console.log("     ✓ PROVED: Tournament & tournament match lifecycles, bracket auto-completion, and row-locked result idempotency in real PostgreSQL");
+
+    // PROBE 33: P2-3 Informal Event Transactional Deletion & Voided Match Verification Guard in Real PostgreSQL
+    console.log("\n  -> PROBE 33: P2-3 Informal event transactional deletion & voided match verification guard in real PostgreSQL");
+    const p33CreateInformal = await request(app)
+      .post("/informal-events")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        title: "Lahore Open Table Session",
+        description: "Informal sparring session with participant FK rows.",
+        city: "Lahore",
+        province: "Punjab",
+        scheduledAt: new Date(Date.now() + 86400000 * 3).toISOString(),
+        maxParticipants: 10,
+        isPublic: true,
+      });
+    const informalEventIdP33 = p33CreateInformal.body.data?.id;
+    const p33JoinInformal = await request(app)
+      .post(`/informal-events/${informalEventIdP33}/join`)
+      .set("Authorization", `Bearer ${tokenAthlete2}`);
+    const p33StrangerDelete = await request(app)
+      .delete(`/informal-events/${informalEventIdP33}`)
+      .set("Authorization", `Bearer ${tokenAthlete2}`);
+    const p33CreatorDelete = await request(app)
+      .delete(`/informal-events/${informalEventIdP33}`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    const p33VerifyVoidedMatch = await request(app)
+      .post(`/matches/${matchIdRace}/verify`)
+      .set("Authorization", `Bearer ${tokenRefereePunjab}`);
+
+    console.log(
+      `     HTTP statuses: CreateInformal=${p33CreateInformal.status}, Join=${p33JoinInformal.status}, UnauthDelete=${p33StrangerDelete.status}, CreatorDelete=${p33CreatorDelete.status}, VerifyVoided=${p33VerifyVoidedMatch.status}`
+    );
+    if (
+      p33CreateInformal.status !== 201 ||
+      p33JoinInformal.status !== 201 ||
+      p33StrangerDelete.status !== 403 ||
+      p33CreatorDelete.status !== 200 ||
+      p33VerifyVoidedMatch.status !== 409
+    ) {
+      throw new Error("PROBE 33 FAILED: Informal event lifecycle or voided-match verification guard failed in real PostgreSQL");
+    }
+    console.log("     ✓ PROVED: Informal event creation, join, transactional FK-safe deletion (200), and voided-match verification block (409) in real PostgreSQL");
+
+    // PROBE 34: P2-4 Dispute Lifecycle & Terminal CLOSED State-Machine in Real PostgreSQL
+    console.log("\n  -> PROBE 34: P2-4 Dispute lifecycle, referential integrity, and terminal CLOSED state-machine in real PostgreSQL");
+    const p34GhostMatch = await request(app)
+      .post("/governance/disputes")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        matchId: crypto.randomUUID(),
+        title: "Nonexistent match dispute",
+        description: "Must be rejected with 404 NotFoundError.",
+      });
+    const p34Create = await request(app)
+      .post("/governance/disputes")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        matchId: tMatchIdP32,
+        title: "Tournament match strap dispute",
+        description: "Filing dispute on P32 tournament match to test full lifecycle.",
+      });
+    const disputeIdP34 = p34Create.body.dispute?.id;
+    const p34DupActive = await request(app)
+      .post("/governance/disputes")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        matchId: tMatchIdP32,
+        title: "Duplicate active dispute",
+        description: "Filing duplicate active dispute on same tournament match.",
+      });
+    const p34PrematureClose = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/close`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ closureNotes: "Cannot close OPEN dispute" });
+    const p34ResolveReject = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/resolve`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ resolutionDetails: "Initial rejection pending video angle", decision: "REJECTED" });
+    const p34ReResolveWithoutAppeal = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/resolve`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ resolutionDetails: "Overwrite attempt without appeal", decision: "RESOLVED" });
+    const p34Appeal = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/appeal`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({ appealReason: "Submitting high-speed camera angle." });
+    const p34ResolveAfterAppeal = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/resolve`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ resolutionDetails: "Appeal upheld after video review.", decision: "RESOLVED" });
+    const p34Close = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/close`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`)
+      .send({ closureNotes: "Final closure recorded." });
+    const p34CommentClosed = await request(app)
+      .post(`/governance/disputes/${disputeIdP34}/comments`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({ comment: "Comment after closure must be blocked." });
+
+    console.log(
+      `     HTTP statuses: GhostMatch=${p34GhostMatch.status}, Create=${p34Create.status}, DupActive=${p34DupActive.status}, PrematureClose=${p34PrematureClose.status}, Reject=${p34ResolveReject.status}, ReResolveBlock=${p34ReResolveWithoutAppeal.status}, Appeal=${p34Appeal.status}, ResolveAppeal=${p34ResolveAfterAppeal.status}, Close=${p34Close.status}, CommentClosed=${p34CommentClosed.status}`
+    );
+    if (
+      p34GhostMatch.status !== 404 ||
+      p34Create.status !== 201 ||
+      p34DupActive.status !== 409 ||
+      p34PrematureClose.status !== 409 ||
+      p34ResolveReject.status !== 200 ||
+      p34ReResolveWithoutAppeal.status !== 409 ||
+      p34Appeal.status !== 200 ||
+      p34ResolveAfterAppeal.status !== 200 ||
+      p34Close.status !== 200 ||
+      p34Close.body.dispute?.status !== "CLOSED" ||
+      p34CommentClosed.status !== 409
+    ) {
+      throw new Error("PROBE 34 FAILED: Dispute lifecycle state-machine check failed in real PostgreSQL");
+    }
+    console.log("     ✓ PROVED: Dispute referential integrity (404), duplicate block (409), REJECTED -> APPEAL -> RESOLVED -> CLOSED lifecycle, and post-closure immutability (409) in real PostgreSQL");
+
+    // PROBE 35: P2-5 Championship / Belt Lineage & Challenge Lifecycle in Real PostgreSQL
+    console.log("\n  -> PROBE 35: P2-5 Championship belt lineage & challenge lifecycle in real PostgreSQL");
+    const p35CreateTitle = await request(app)
+      .post("/championships/titles")
+      .set("Authorization", `Bearer ${tokenAdmin}`)
+      .send({
+        name: `National 80KG Right Belt ${Date.now().toString().slice(-4)}`,
+        arm: "RIGHT",
+        division: "SENIOR",
+        weightClass: "80KG",
+      });
+    const titleIdP35 = p35CreateTitle.body.data?.id;
+    const p35AssignChamp = await request(app)
+      .post(`/admin/championships/titles/${titleIdP35}`)
+      .set("Authorization", `Bearer ${tokenAdmin}`)
+      .send({ action: "ASSIGN", athleteId: profileId1 });
+    const p35SelfChallenge = await request(app)
+      .post("/championships/challenges")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({ titleId: titleIdP35, challengerId: profileId1 });
+    const p35SubmitChallenge = await request(app)
+      .post("/championships/challenges")
+      .set("Authorization", `Bearer ${tokenAthlete2}`)
+      .send({ titleId: titleIdP35, challengerId: profileId2 });
+    const challengeIdP35 = p35SubmitChallenge.body.data?.id;
+    const p35DupChallenge = await request(app)
+      .post("/championships/challenges")
+      .set("Authorization", `Bearer ${tokenAthlete2}`)
+      .send({ titleId: titleIdP35, challengerId: profileId2 });
+    const p35UnauthAccept = await request(app)
+      .post(`/championships/challenges/${challengeIdP35}/accept`)
+      .set("Authorization", `Bearer ${tokenAthlete2}`);
+    const p35ChampAccept = await request(app)
+      .post(`/championships/challenges/${challengeIdP35}/accept`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    const p35RepeatAccept = await request(app)
+      .post(`/championships/challenges/${challengeIdP35}/accept`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    const p35DefendTransfer = await request(app)
+      .post("/championships/defend")
+      .set("Authorization", `Bearer ${tokenRefereePunjab}`)
+      .send({ titleId: titleIdP35, winnerId: profileId2, matchId: tMatchIdP32 });
+    const p35LineageRes = await request(app)
+      .get(`/championships/titles/${titleIdP35}/lineage`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    const openReigns = (p35LineageRes.body.data || []).filter((r: any) => !r.vacatedAt);
+
+    console.log(
+      `     HTTP statuses: CreateTitle=${p35CreateTitle.status}, Assign=${p35AssignChamp.status}, SelfChal=${p35SelfChallenge.status}, SubmitChal=${p35SubmitChallenge.status}, DupChal=${p35DupChallenge.status}, UnauthAccept=${p35UnauthAccept.status}, ChampAccept=${p35ChampAccept.status}, RepeatAccept=${p35RepeatAccept.status}, Defend=${p35DefendTransfer.status}, LineageCount=${p35LineageRes.body.data?.length}, OpenReigns=${openReigns.length}`
+    );
+    if (
+      p35CreateTitle.status !== 201 ||
+      p35AssignChamp.status !== 200 ||
+      p35SelfChallenge.status !== 400 ||
+      p35SubmitChallenge.status !== 201 ||
+      p35DupChallenge.status !== 409 ||
+      p35UnauthAccept.status !== 403 ||
+      p35ChampAccept.status !== 200 ||
+      p35RepeatAccept.status !== 409 ||
+      p35DefendTransfer.status !== 200 ||
+      p35LineageRes.body.data?.length !== 2 ||
+      openReigns.length !== 1 ||
+      openReigns[0].athleteId !== profileId2
+    ) {
+      throw new Error("PROBE 35 FAILED: Championship / belt lineage lifecycle check failed in real PostgreSQL");
+    }
+    await pool.query(`DELETE FROM championship_challenges WHERE title_id = $1`, [titleIdP35]).catch(() => {});
+    await pool.query(`DELETE FROM belt_lineage WHERE title_id = $1`, [titleIdP35]).catch(() => {});
+    await pool.query(`DELETE FROM championship_titles WHERE id = $1`, [titleIdP35]).catch(() => {});
+    console.log("     ✓ PROVED: Championship title creation, assignment, challenge guards (400/409/403), champion acceptance (200), title transfer defense (200), and single-open-reign lineage invariant in real PostgreSQL");
+
     console.log("\n================================================================================");
-    console.log("   ALL 30 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
+    console.log("   ALL 35 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
     console.log("================================================================================");
   } finally {
     // Clean up seeded fixtures
     console.log("\n[CLEANUP] Cleaning up seeded test records from Neon PostgreSQL...");
     try {
+      await pool.query(`DELETE FROM championship_challenges WHERE title_id IN (SELECT id FROM championship_titles WHERE name LIKE 'National 80KG Right Belt%')`).catch(() => {});
+      await pool.query(`DELETE FROM belt_lineage WHERE title_id IN (SELECT id FROM championship_titles WHERE name LIKE 'National 80KG Right Belt%')`).catch(() => {});
+      await pool.query(`DELETE FROM championship_titles WHERE name LIKE 'National 80KG Right Belt%'`).catch(() => {});
       await db.delete(supportTicketMessages).where(inArray(supportTicketMessages.senderId, testUserIds)).catch(() => {});
       await db.delete(supportTickets).where(inArray(supportTickets.userId, testUserIds)).catch(() => {});
       await db.delete(sparringInvites).where(inArray(sparringInvites.creatorId, testUserIds)).catch(() => {});
@@ -1052,16 +1378,17 @@ async function main() {
       await db.delete(auditEvents).where(inArray(auditEvents.actorId, testUserIds)).catch(() => {});
       await db.delete(eloLedger).where(inArray(eloLedger.athleteId, [profileId1, profileId2])).catch(() => {});
       await db.delete(matches).where(inArray(matches.challengerId, [profileId1, profileId2])).catch(() => {});
-      await pool.query(`DELETE FROM tournament_matches WHERE bracket_id IN (SELECT id FROM brackets WHERE event_id = $1)`, [eventIdPunjab]).catch(() => {});
-      await db.delete(brackets).where(eq(brackets.eventId, eventIdPunjab)).catch(() => {});
+      await pool.query(`DELETE FROM tournament_matches WHERE bracket_id IN (SELECT id FROM brackets WHERE event_id IN ($1, (SELECT id FROM events WHERE name = 'Punjab Lifecycle Verification Cup' LIMIT 1)))`, [eventIdPunjab]).catch(() => {});
+      await pool.query(`DELETE FROM brackets WHERE event_id = $1 OR name = 'Senior 80KG Right'`, [eventIdPunjab]).catch(() => {});
       await db.delete(eventRegistrations).where(eq(eventRegistrations.eventId, eventIdPunjab)).catch(() => {});
       await db.delete(matchTables).where(eq(matchTables.eventId, eventIdPunjab)).catch(() => {});
       await pool.query(`DELETE FROM team_members WHERE athlete_id = ANY($1::uuid[])`, [[profileId1, profileId2]]).catch(() => {});
       await pool.query(`DELETE FROM teams WHERE id = $1 OR name = 'Sindh Vanguard Pullers'`, [teamId]).catch(() => {});
       await db.delete(refereeCertifications).where(inArray(refereeCertifications.id, [certActiveId, certExpiredId, certExpiredOnlyId, certOtherId])).catch(() => {});
       await db.delete(notifications).where(inArray(notifications.userId, testUserIds)).catch(() => {});
-      await db.delete(events).where(eq(events.id, eventIdPunjab)).catch(() => {});
+      await pool.query(`DELETE FROM events WHERE id = $1 OR name = 'Punjab Lifecycle Verification Cup'`, [eventIdPunjab]).catch(() => {});
       await db.delete(communityPosts).where(eq(communityPosts.id, postGymId)).catch(() => {});
+      await pool.query(`DELETE FROM prestige_metrics WHERE athlete_id = ANY($1::uuid[])`, [[profileId1, profileId2]]).catch(() => {});
       await pool.query(`DELETE FROM athlete_profiles WHERE user_id = ANY($1::uuid[])`, [testUserIds]).catch(() => {});
       await db.delete(users).where(inArray(users.id, testUserIds)).catch(() => {});
       console.log("✓ Neon PostgreSQL test fixtures successfully cleaned up.");
