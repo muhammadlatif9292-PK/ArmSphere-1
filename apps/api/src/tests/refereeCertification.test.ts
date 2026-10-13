@@ -335,6 +335,38 @@ describe("Referee Certification and Action Gating API Suite", () => {
       const cert = testDbStore.refereeCertifications.find((c) => c.id === activeExpiredId);
       expect(cert?.status).toBe("EXPIRED");
     });
+
+    it("should be strictly idempotent across repeated runs and never create duplicate expiry notifications", async () => {
+      const certId = "cert-idempotent-1";
+      testDbStore.refereeCertifications.push({
+        id: certId,
+        userId: refereeId,
+        certificationLevel: "NATIONAL_LEVEL_1",
+        issuedAt: new Date(Date.now() - 86400000 * 400),
+        expiresAt: new Date(Date.now() - 86400000 * 2),
+        status: "ACTIVE",
+        issuingBody: "WAF_OFFICIAL",
+      });
+
+      const firstRun = await RefereeCertificationService.processExpiredCertifications();
+      expect(firstRun.expiredCount).toBe(1);
+      expect(firstRun.expiredIds).toEqual([certId]);
+
+      const secondRun = await RefereeCertificationService.processExpiredCertifications();
+      expect(secondRun.expiredCount).toBe(0);
+      expect(secondRun.expiredIds).toEqual([]);
+
+      // Even if status were momentarily flipped back to ACTIVE before a retry, groupId deduplication prevents duplicate notifications
+      const certRow = testDbStore.refereeCertifications.find((c) => c.id === certId);
+      certRow.status = "ACTIVE";
+      const thirdRun = await RefereeCertificationService.processExpiredCertifications();
+      expect(thirdRun.expiredCount).toBe(1);
+
+      const expiryNotifications = testDbStore.notifications.filter(
+        (n) => n.userId === refereeId && n.groupId === `cert-expiry-${certId}`
+      );
+      expect(expiryNotifications).toHaveLength(1);
+    });
   });
 
   describe("Referee Certification Listing by Province (users.province join)", () => {

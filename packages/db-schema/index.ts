@@ -315,7 +315,7 @@ export const matches = pgTable("matches", {
 
 export const disputes = pgTable("disputes", {
   id: uuid("id").primaryKey().defaultRandom(),
-  matchId: uuid("match_id").references(() => tournamentMatches.id),
+  matchId: uuid("match_id"),
   creatorId: uuid("creator_id").references(() => users.id).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),

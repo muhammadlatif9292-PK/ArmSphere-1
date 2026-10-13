@@ -92,7 +92,7 @@ class SettingsHubScreen extends ConsumerWidget {
                   icon: Icons.contact_support_outlined,
                   title: 'Support Requests',
                   subtitle: 'Contact Helpdesk & track inquiries',
-                  onTap: () => _showSupportModal(context),
+                  onTap: () => context.push('/support'),
                 ),
                 const Divider(height: 1, color: AppTheme.cardBorder),
                 _SettingsTile(

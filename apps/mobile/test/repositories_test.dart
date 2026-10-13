@@ -239,4 +239,153 @@ void main() {
       verify(() => mockHiveStorage.evictCache('auth_role_intent')).called(1);
     });
   });
+
+  group('SocialRepository Organization Leader & Sparring Invites Unit Tests', () {
+    test('updateTeamMemberRole patches /social/teams/:teamId/members/:athleteId/role', () async {
+      final repository = SocialRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      final responsePayload = {
+        'data': {
+          'teamId': 'team_1',
+          'athleteId': 'athlete_2',
+          'role': 'CAPTAIN',
+        }
+      };
+
+      when(() => mockDio.patch(
+            '/social/teams/team_1/members/athlete_2/role',
+            data: {'role': 'CAPTAIN'},
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/social/teams/team_1/members/athlete_2/role'),
+            statusCode: 200,
+            data: responsePayload,
+          ));
+
+      final result = await repository.updateTeamMemberRole('team_1', 'athlete_2', 'CAPTAIN');
+
+      expect(result['role'], equals('CAPTAIN'));
+      verify(() => mockDio.patch(
+            '/social/teams/team_1/members/athlete_2/role',
+            data: {'role': 'CAPTAIN'},
+            cancelToken: any(named: 'cancelToken'),
+          )).called(1);
+    });
+
+    test('createSparringInvite and respondSparringInvite call canonical /sparring-invites endpoints', () async {
+      final repository = SocialRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      when(() => mockDio.post(
+            '/sparring-invites',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/sparring-invites'),
+            statusCode: 201,
+            data: {
+              'data': {
+                'id': 'invite_99',
+                'senderTeamId': 'team_1',
+                'recipientTeamId': 'team_2',
+                'status': 'PENDING',
+              }
+            },
+          ));
+
+      final created = await repository.createSparringInvite(
+        senderTeamId: 'team_1',
+        recipientTeamId: 'team_2',
+        location: 'Lahore Table 1',
+        message: '5v5 squad practice',
+      );
+      expect(created['id'], equals('invite_99'));
+      expect(created['status'], equals('PENDING'));
+
+      when(() => mockDio.post(
+            '/sparring-invites/invite_99/respond',
+            data: {'action': 'ACCEPT'},
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/sparring-invites/invite_99/respond'),
+            statusCode: 200,
+            data: {
+              'data': {
+                'invite': {'id': 'invite_99', 'status': 'ACCEPTED'},
+                'conversationId': 'conv_sparring_99',
+              }
+            },
+          ));
+
+      final responded = await repository.respondSparringInvite('invite_99', 'ACCEPT');
+      expect(responded['conversationId'], equals('conv_sparring_99'));
+    });
+  });
+
+  group('SupportRepository Helpdesk Unit Tests', () {
+    test('createTicket, getTicket, addTicketMessage, and updateTicketStatus call /support/tickets', () async {
+      final repository = SupportRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      when(() => mockDio.post(
+            '/support/tickets',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/support/tickets'),
+            statusCode: 201,
+            data: {
+              'data': {
+                'id': 'ticket_1',
+                'subject': 'Bracket seeding inquiry',
+                'category': 'EVENT',
+                'priority': 'HIGH',
+                'status': 'OPEN',
+              }
+            },
+          ));
+
+      final created = await repository.createTicket(
+        subject: 'Bracket seeding inquiry',
+        description: 'Need clarification on weight class bracket placement.',
+        category: 'EVENT',
+        priority: 'HIGH',
+      );
+      expect(created['id'], equals('ticket_1'));
+      expect(created['status'], equals('OPEN'));
+
+      when(() => mockDio.patch(
+            '/support/tickets/ticket_1/status',
+            data: {
+              'status': 'RESOLVED',
+              'resolutionNotes': 'Confirmed seeding order with director.',
+            },
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/support/tickets/ticket_1/status'),
+            statusCode: 200,
+            data: {
+              'data': {
+                'id': 'ticket_1',
+                'status': 'RESOLVED',
+                'resolutionNotes': 'Confirmed seeding order with director.',
+              }
+            },
+          ));
+
+      final updated = await repository.updateTicketStatus(
+        'ticket_1',
+        status: 'RESOLVED',
+        resolutionNotes: 'Confirmed seeding order with director.',
+      );
+      expect(updated['status'], equals('RESOLVED'));
+    });
+  });
 }

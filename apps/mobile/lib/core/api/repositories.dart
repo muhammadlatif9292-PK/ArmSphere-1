@@ -1678,6 +1678,171 @@ class SocialRepository extends BaseRepository {
     );
   }
 
+  Future<List<Map<String, dynamic>>> listTeams({String? search, String? clubId, CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'list_teams_${search ?? ''}_${clubId ?? ''}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/social/teams',
+        queryParameters: {
+          if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+          if (clubId != null && clubId.trim().isNotEmpty) 'clubId': clubId.trim(),
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTeam(String teamId, Map<String, dynamic> payload, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'update_team_${teamId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.patch(
+        '/social/teams/$teamId',
+        data: payload,
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> deleteTeam(String teamId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'delete_team_${teamId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.delete(
+        '/social/teams/$teamId',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payloadData is Map) {
+          return Map<String, dynamic>.from(payloadData);
+        }
+        return <String, dynamic>{'id': teamId};
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTeamMemberRole(String teamId, String athleteId, String role, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'update_team_member_role_${teamId}_${athleteId}_$role',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.patch(
+        '/social/teams/$teamId/members/$athleteId/role',
+        data: {'role': role},
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> leaveTeam(String teamId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'leave_team_${teamId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/social/teams/$teamId/leave',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payloadData is Map) {
+          return Map<String, dynamic>.from(payloadData);
+        }
+        return <String, dynamic>{'teamId': teamId};
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listSparringInvites({
+    String? teamId,
+    String? direction,
+    String? status,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'sparring_invites_${teamId ?? 'all'}_${direction ?? 'all'}_${status ?? 'all'}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/sparring-invites',
+        queryParameters: {
+          if (teamId != null && teamId.isNotEmpty) 'teamId': teamId,
+          if (direction != null && direction.isNotEmpty) 'direction': direction,
+          if (status != null && status.isNotEmpty) 'status': status,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createSparringInvite(Map<String, dynamic> payload, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'create_sparring_invite_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/sparring-invites',
+        data: payload,
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> respondSparringInvite(String inviteId, String action, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'respond_sparring_invite_${inviteId}_$action',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/sparring-invites/$inviteId/respond',
+        data: {'action': action},
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelSparringInvite(String inviteId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'cancel_sparring_invite_$inviteId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/sparring-invites/$inviteId/cancel',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
   Future<bool> checkFollowStatus(String followingId, {CancelToken? cancelToken}) async {
     return executeRequest(
       cacheKey: 'follow_status_$followingId',
@@ -2127,6 +2292,147 @@ class InformalEventRepository extends BaseRepository {
     await dioClient.dio.delete(
       '/informal-events/$id',
       cancelToken: cancelToken,
+    );
+  }
+}
+
+class SupportRepository extends BaseRepository {
+  SupportRepository({required super.dioClient, required super.hiveStorage});
+
+  Future<List<Map<String, dynamic>>> listTickets({
+    String? status,
+    String? category,
+    String? priority,
+    String? assignedAgentId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'support_tickets_${status ?? 'all'}_${category ?? 'all'}_${priority ?? 'all'}_${assignedAgentId ?? 'all'}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/support/tickets',
+        queryParameters: {
+          if (status != null && status.isNotEmpty) 'status': status,
+          if (category != null && category.isNotEmpty) 'category': category,
+          if (priority != null && priority.isNotEmpty) 'priority': priority,
+          if (assignedAgentId != null && assignedAgentId.isNotEmpty) 'assignedAgentId': assignedAgentId,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> getTicket(String ticketId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'support_ticket_$ticketId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/support/tickets/$ticketId',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createTicket({
+    required String subject,
+    required String description,
+    String category = 'GENERAL',
+    String priority = 'MEDIUM',
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'create_support_ticket_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/support/tickets',
+        data: {
+          'subject': subject,
+          'description': description,
+          'category': category,
+          'priority': priority,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> assignTicket(String ticketId, String assignedAgentId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'assign_support_ticket_${ticketId}_$assignedAgentId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/support/tickets/$ticketId/assign',
+        data: {'assignedAgentId': assignedAgentId},
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTicketStatus(
+    String ticketId,
+    String status, {
+    String? resolutionNotes,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'update_support_ticket_status_${ticketId}_$status',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.patch(
+        '/support/tickets/$ticketId/status',
+        data: {
+          'status': status,
+          if (resolutionNotes != null && resolutionNotes.trim().isNotEmpty)
+            'resolutionNotes': resolutionNotes.trim(),
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> addTicketMessage(
+    String ticketId,
+    String content, {
+    bool isInternal = false,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'add_support_ticket_msg_${ticketId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/support/tickets/$ticketId/messages',
+        data: {
+          'content': content,
+          'isInternal': isInternal,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
     );
   }
 }

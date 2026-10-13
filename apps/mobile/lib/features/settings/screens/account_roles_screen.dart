@@ -34,6 +34,10 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         return 'Certified Referee';
       case 'TOURNAMENT_OPERATOR':
         return 'Tournament Operator';
+      case 'ORGANIZATION_LEADER':
+        return 'Organization / Club Leader';
+      case 'SUPPORT_AGENT':
+        return 'Support Agent';
       case 'SYSTEM_ADMIN':
         return 'System Administrator';
       default:
@@ -49,6 +53,10 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         return 'Switches your workspace to the certified referee console, live table scorepads, and match evidence management.';
       case 'TOURNAMENT_OPERATOR':
         return 'Switches your workspace to tournament operations, double-elimination brackets, weigh-in desk, and podium ceremonies.';
+      case 'ORGANIZATION_LEADER':
+        return 'Switches your workspace to club and team leadership, roster administration, and inter-team sparring invites.';
+      case 'SUPPORT_AGENT':
+        return 'Switches your workspace to the ArmSphere Helpdesk queue, support ticket triage, and member resolution threads.';
       case 'SYSTEM_ADMIN':
         return 'Switches your workspace to federation governance, disciplinary dockets, and arbitration administration.';
       default:
@@ -168,6 +176,10 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         return Icons.sports;
       case 'TOURNAMENT_OPERATOR':
         return Icons.table_chart;
+      case 'ORGANIZATION_LEADER':
+        return Icons.groups_outlined;
+      case 'SUPPORT_AGENT':
+        return Icons.support_agent;
       case 'SYSTEM_ADMIN':
         return Icons.security;
       default:

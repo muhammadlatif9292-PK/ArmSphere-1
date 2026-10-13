@@ -1393,5 +1393,46 @@ describe("Match Submission, Competitive Scoring & ELO Engine", () => {
       expect(ledgerB.previousElo).toBe(1500);
       expect(ledgerB.newElo).toBe(1532);
     });
+
+    it("should allow a participant to challenge a VERIFIED match result and still roll back ELO if later voided", async () => {
+      const sub = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-2",
+        });
+      const verifiedMatchId = sub.body.matchId;
+
+      const verifyRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/verify`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(verifyRes.status).toBe(200);
+
+      // Participant challenges verified match result
+      const disputeRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/dispute`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ reason: "Post-verification video evidence shows missed elbow foul on winning pin." });
+      expect(disputeRes.status).toBe(200);
+      expect(disputeRes.body.data.status).toBe("DISPUTED");
+
+      // Admin voids the disputed (previously verified) match -> must roll back ELO!
+      const voidRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/void`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ reason: "Video review confirmed missed elbow foul; voiding verified match." });
+      expect(voidRes.status).toBe(200);
+      expect(voidRes.body.data.status).toBe("VOID");
+
+      const apA = testDbStore.athleteProfiles.find((ap) => ap.id === athleteAId);
+      const apB = testDbStore.athleteProfiles.find((ap) => ap.id === athleteBId);
+      expect(apA.rightArmElo).toBe(1500);
+      expect(apB.rightArmElo).toBe(1500);
+      expect(testDbStore.eloLedger.filter((l) => l.matchId === verifiedMatchId)).toHaveLength(0);
+    });
   });
 });

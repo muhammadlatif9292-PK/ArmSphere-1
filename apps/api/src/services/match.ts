@@ -489,9 +489,6 @@ export class MatchService {
       throw new NotFoundError("Match not found");
     }
 
-    if (match.status === "VERIFIED") {
-      throw new BadRequestError("Verified matches cannot be placed in dispute directly. Admin must void first.");
-    }
     if (match.status === "DISPUTED") {
       throw new ConflictError("Match is already in dispute.");
     }
@@ -551,7 +548,7 @@ export class MatchService {
     await db.insert(auditLogs).values({
       userId: actorId,
       action: "MATCH_DISPUTED",
-      details: { matchId, reason },
+      details: { matchId, reason, previousStatus: match.status },
     });
 
     logger.warn({ matchId, actorId }, `Match has been marked as DISPUTED: ${reason}`);
@@ -610,7 +607,11 @@ export class MatchService {
         }
       }
 
-      const wasVerified = match.status === "VERIFIED";
+      const existingMatchLedger = await tx
+        .select()
+        .from(eloLedger)
+        .where(eq(eloLedger.matchId, matchId));
+      const wasVerified = match.status === "VERIFIED" || existingMatchLedger.length > 0;
 
       // 2. Transition status to VOID
       const [voidedMatch] = await tx

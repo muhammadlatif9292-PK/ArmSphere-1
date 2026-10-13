@@ -397,6 +397,84 @@ describe("Social, Follows & Teams API Suite", () => {
       expect(removeRes.status).toBe(200);
       expect(removeRes.body.success).toBe(true);
     });
+
+    it("should support listing teams, updating team metadata, promoting/demoting captains, leaving teams, and deleting teams with strict captain/admin authorization", async () => {
+      // 1. Create team as Athlete 1 (becomes CAPTAIN)
+      const createRes = await request(app)
+        .post("/social/teams")
+        .set("Authorization", athleteToken1)
+        .send({
+          name: "Punjab Titans",
+          description: "Elite sparring squad",
+          clubId,
+        });
+      expect(createRes.status).toBe(201);
+      const createdTeamId = createRes.body.data.id;
+
+      // 2. List teams directory with search filter
+      const listRes = await request(app)
+        .get("/social/teams?search=Titans")
+        .set("Authorization", athleteToken2);
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.data.some((t: any) => t.id === createdTeamId)).toBe(true);
+
+      // 3. Non-captain Athlete 2 cannot update team
+      const forbiddenUpdate = await request(app)
+        .patch(`/social/teams/${createdTeamId}`)
+        .set("Authorization", athleteToken2)
+        .send({ name: "Hijacked Team Name" });
+      expect(forbiddenUpdate.status).toBe(403);
+
+      // 4. Captain Athlete 1 can update team metadata
+      const validUpdate = await request(app)
+        .patch(`/social/teams/${createdTeamId}`)
+        .set("Authorization", athleteToken1)
+        .send({ name: "Punjab Iron Titans", description: "Updated championship roster" });
+      expect(validUpdate.status).toBe(200);
+      expect(validUpdate.body.data.name).toBe("Punjab Iron Titans");
+
+      // 5. Sole captain cannot leave or demote themselves without promoting another captain
+      const soleLeave = await request(app)
+        .post(`/social/teams/${createdTeamId}/leave`)
+        .set("Authorization", athleteToken1);
+      expect(soleLeave.status).toBe(400);
+
+      const soleDemote = await request(app)
+        .patch(`/social/teams/${createdTeamId}/members/${athleteProfileId1}/role`)
+        .set("Authorization", athleteToken1)
+        .send({ role: "MEMBER" });
+      expect(soleDemote.status).toBe(400);
+
+      // 6. Add Athlete 2 as MEMBER, then promote Athlete 2 to CAPTAIN
+      await request(app)
+        .post(`/social/teams/${createdTeamId}/members`)
+        .set("Authorization", athleteToken1)
+        .send({ athleteId: athleteProfileId2, role: "MEMBER" });
+
+      const promoteRes = await request(app)
+        .patch(`/social/teams/${createdTeamId}/members/${athleteProfileId2}/role`)
+        .set("Authorization", athleteToken1)
+        .send({ role: "CAPTAIN" });
+      expect(promoteRes.status).toBe(200);
+      expect(promoteRes.body.data.role).toBe("CAPTAIN");
+
+      // 7. Now Athlete 1 can leave the team since Athlete 2 is also CAPTAIN
+      const leaveRes = await request(app)
+        .post(`/social/teams/${createdTeamId}/leave`)
+        .set("Authorization", athleteToken1);
+      expect(leaveRes.status).toBe(200);
+
+      // 8. Athlete 1 (no longer a captain/member) cannot delete the team, but Captain Athlete 2 can
+      const forbiddenDelete = await request(app)
+        .delete(`/social/teams/${createdTeamId}`)
+        .set("Authorization", athleteToken1);
+      expect(forbiddenDelete.status).toBe(403);
+
+      const validDelete = await request(app)
+        .delete(`/social/teams/${createdTeamId}`)
+        .set("Authorization", athleteToken2);
+      expect(validDelete.status).toBe(200);
+    });
   });
 
   describe("Blocking API & Enforcement", () => {

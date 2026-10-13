@@ -1,6 +1,6 @@
 import { eq, and, desc, isNull, or, gt, lte, inArray } from "drizzle-orm";
 import { db } from "../config/db.js";
-import { refereeCertifications, users } from "@armsphere/db-schema";
+import { refereeCertifications, users, notifications } from "@armsphere/db-schema";
 import { NotFoundError, BadRequestError, ForbiddenError, logger } from "@armsphere/core";
 
 export interface IssueCertificationInput {
@@ -215,17 +215,39 @@ export class RefereeCertificationService {
         status: "EXPIRED",
         updatedAt: now,
       })
-      .where(inArray(refereeCertifications.id, expiredIds));
+      .where(
+        and(
+          inArray(refereeCertifications.id, expiredIds),
+          eq(refereeCertifications.status, "ACTIVE")
+        )
+      );
 
     const { NotificationService } = await import("./notification.js");
     for (const cert of expiredCerts) {
       try {
+        const dedupeGroupId = `cert-expiry-${cert.id}`;
+        const existingNotification = await db
+          .select({ id: notifications.id })
+          .from(notifications)
+          .where(
+            and(
+              eq(notifications.userId, cert.userId),
+              eq(notifications.groupId, dedupeGroupId)
+            )
+          )
+          .limit(1);
+
+        if (existingNotification.length > 0) {
+          continue;
+        }
+
         await NotificationService.createNotification({
           userId: cert.userId,
           title: "Referee Certification Expired",
           content: `Your ${cert.certificationLevel} referee certification expired on ${cert.expiresAt ? new Date(cert.expiresAt).toLocaleDateString() : "today"}. Please complete recertification to continue officiating.`,
           priority: "HIGH",
           category: "SYSTEM",
+          groupId: dedupeGroupId,
           metadata: {
             certificationId: cert.id,
             certificationLevel: cert.certificationLevel,

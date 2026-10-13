@@ -33,6 +33,16 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
       'label': 'Tournament / Club Operator',
       'description': 'Manage weigh-ins, table assignments, bracket operations, and club rosters.',
     },
+    {
+      'key': 'ORGANIZATION_LEADER',
+      'label': 'Organization / Club Leader',
+      'description': 'Register official clubs, lead team rosters, and coordinate inter-team sparring invites.',
+    },
+    {
+      'key': 'SUPPORT_AGENT',
+      'label': 'Support Agent',
+      'description': 'Assist federation athletes and officials via the ArmSphere Helpdesk ticket system.',
+    },
   ];
 
   @override

@@ -1,8 +1,8 @@
 import request from "supertest";
 import { app } from "../app.js";
 import { db, pool } from "../config/db.js";
-import { users, athleteProfiles, events, communityPosts, refereeCertifications, notifications, teams, teamMembers, matches, eloLedger, brackets, tournamentMatches, disputes, eventRegistrations, matchTables, auditEvents } from "@armsphere/db-schema";
-import { eq, inArray } from "drizzle-orm";
+import { users, athleteProfiles, events, communityPosts, refereeCertifications, notifications, teams, teamMembers, matches, eloLedger, brackets, tournamentMatches, disputes, eventRegistrations, matchTables, auditEvents, sparringInvites, supportTickets, supportTicketMessages, userRoleGrants, conversations, conversationParticipants, messages } from "@armsphere/db-schema";
+import { eq, inArray, and } from "drizzle-orm";
 import { generateAccessToken } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
 import crypto from "crypto";
@@ -840,13 +840,214 @@ async function main() {
       `     ✓ PROVED: Verified ${foundIndexNames.size} canonical indexes and ${fkCheck.rows.length} foreign key constraints (including CASCADE rules) in live PostgreSQL`
     );
 
+    // PROBE 27: Stage 1 Verified Match Result Challenge & Post-Dispute Void ELO Rollback in Real PostgreSQL
+    console.log("\n  -> PROBE 27: Legitimate result challenge on VERIFIED match & post-dispute void ELO rollback in real PostgreSQL");
+    const p27DisputeVerified = await request(app)
+      .post(`/matches/${matchIdRace}/dispute`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({ reason: "Challenging verified match result based on slow-motion elbow pad video review." });
+    const p27GovDispute = await request(app)
+      .post("/governance/disputes")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        matchId: matchIdRace,
+        title: "Regular verified match formal dispute",
+        description: "Formal governance dispute referencing regular matches.id in real PostgreSQL.",
+      });
+    const p27VoidAfterDispute = await request(app)
+      .post(`/matches/${matchIdRace}/void`)
+      .set("Authorization", `Bearer ${tokenAdmin}`)
+      .send({ reason: "Video evidence confirmed foul; voiding verified-then-disputed match and rolling back ELO." });
+
+    const [ath1AfterP27] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, profileId1));
+    const [ath2AfterP27] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, profileId2));
+    console.log(
+      `     HTTP statuses: DisputeVerified=${p27DisputeVerified.status}, GovDispute=${p27GovDispute.status}, VoidAfterDispute=${p27VoidAfterDispute.status}, ELOs=[${ath1AfterP27.rightArmElo}, ${ath2AfterP27.rightArmElo}]`
+    );
+    if (
+      p27DisputeVerified.status !== 200 ||
+      p27GovDispute.status !== 201 ||
+      p27VoidAfterDispute.status !== 200 ||
+      ath1AfterP27.rightArmElo !== 1500 ||
+      ath2AfterP27.rightArmElo !== 1500
+    ) {
+      throw new Error("PROBE 27 FAILED: Verified match dispute or post-dispute void ELO rollback failed in real PostgreSQL");
+    }
+    console.log("     ✓ PROVED: Verified match result challenge (200), polymorphic formal dispute (201), and post-dispute void ELO rollback (1500/1500) succeeded in real PostgreSQL");
+
+    // PROBE 28: P1-1 Organization Leader Team Lifecycle & Sparring Invites in Real PostgreSQL
+    console.log("\n  -> PROBE 28: Organization Leader team lifecycle & sparring invites in real PostgreSQL");
+    const p28Team2Res = await request(app)
+      .post("/social/teams")
+      .set("Authorization", `Bearer ${tokenAthlete2}`)
+      .send({ name: "Sindh Vanguard Pullers", description: "Karachi premier sparring squad" });
+    if (p28Team2Res.status !== 201) {
+      throw new Error(`PROBE 28 FAILED: Expected 201 creating second team, got ${p28Team2Res.status}`);
+    }
+    const team2Id = p28Team2Res.body.data.id;
+
+    // 28a. Regular MEMBER (Athlete 1 on teamId from Probe 14) must be blocked (403) from sending sparring invite
+    const p28MemberBlocked = await request(app)
+      .post("/sparring-invites")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        senderTeamId: teamId,
+        recipientTeamId: team2Id,
+        message: "Member attempting unauthorized sparring challenge.",
+      });
+
+    // 28b. Promote Athlete 1 to CAPTAIN of teamId via PATCH /social/teams/:teamId/members/:athleteId/role
+    const p28PromoteCaptain = await request(app)
+      .patch(`/social/teams/${teamId}/members/${profileId1}/role`)
+      .set("Authorization", `Bearer ${tokenAdmin}`)
+      .send({ role: "CAPTAIN" });
+
+    const p28DirSearch = await request(app)
+      .get("/social/teams?search=Vanguard")
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    const p28InviteCreate = await request(app)
+      .post("/sparring-invites")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        senderTeamId: teamId,
+        recipientTeamId: team2Id,
+        scheduledDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+        location: "Lahore High Performance Table 1",
+        message: "Inter-provincial 5v5 sparring challenge.",
+      });
+    const p28DuplicateInvite = await request(app)
+      .post("/sparring-invites")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        senderTeamId: teamId,
+        recipientTeamId: team2Id,
+        message: "Duplicate pending invite.",
+      });
+    const inviteIdP28 = p28InviteCreate.body.data?.id;
+    const p28UnauthorizedRespond = await request(app)
+      .post(`/sparring-invites/${inviteIdP28}/respond`)
+      .set("Authorization", `Bearer ${tokenStranger}`)
+      .send({ action: "ACCEPT" });
+    const p28ValidAccept = await request(app)
+      .post(`/sparring-invites/${inviteIdP28}/respond`)
+      .set("Authorization", `Bearer ${tokenAthlete2}`)
+      .send({ action: "ACCEPT" });
+
+    console.log(
+      `     HTTP statuses: MemberBlock=${p28MemberBlocked.status}, Promote=${p28PromoteCaptain.status}, Search=${p28DirSearch.status}, CreateInvite=${p28InviteCreate.status}, DupInvite=${p28DuplicateInvite.status}, UnauthRespond=${p28UnauthorizedRespond.status}, Accept=${p28ValidAccept.status}`
+    );
+    if (
+      p28MemberBlocked.status !== 403 ||
+      p28PromoteCaptain.status !== 200 ||
+      p28DirSearch.status !== 200 ||
+      p28InviteCreate.status !== 201 ||
+      p28DuplicateInvite.status !== 409 ||
+      p28UnauthorizedRespond.status !== 403 ||
+      p28ValidAccept.status !== 200 ||
+      !p28ValidAccept.body.data?.conversationId
+    ) {
+      throw new Error("PROBE 28 FAILED: Unexpected Organization Leader / Sparring Invite status in real PostgreSQL");
+    }
+    console.log("     ✓ PROVED: Non-captain block (403), captain promotion (200), team directory search (200), sparring invite creation (201), duplicate prevention (409), non-leader respond block (403), and accept with Direct Chat creation (200) in real PostgreSQL");
+
+    // PROBE 29: P1-3 Support Agent Helpdesk Ticketing & Canonical DB Role Verification in Real PostgreSQL
+    console.log("\n  -> PROBE 29: Support Agent helpdesk ticketing & canonical DB role verification in real PostgreSQL");
+    const uidSupportAgent = crypto.randomUUID();
+    testUserIds.push(uidSupportAgent);
+    await db.insert(users).values({
+      id: uidSupportAgent,
+      email: `support_p29_${Date.now()}@armsphere.test`,
+      username: `sup29_${Date.now().toString().slice(-6)}`,
+      passwordHash: "$2b$10$dummyHashForTestingRealPostgresAuth0000000000000000000000",
+      role: UserRole.ATHLETE, // Primary role is ATHLETE, granted SUPPORT_AGENT via user_role_grants
+      fullName: "Canonical Support Agent",
+      isActive: true,
+    } as any);
+    await db.insert(userRoleGrants).values({
+      userId: uidSupportAgent,
+      role: UserRole.SUPPORT_AGENT,
+      grantedBy: uidAdmin,
+      status: "ACTIVE",
+    });
+    const tokenGrantedSupport = generateAccessToken(uidSupportAgent, "support_p29@test.com", UserRole.SUPPORT_AGENT, jwtSecret);
+
+    const p29CreateTicket = await request(app)
+      .post("/support/tickets")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        subject: "Weight class verification inquiry",
+        description: "Need confirmation on official weigh-in window for Punjab Open.",
+        category: "EVENT",
+        priority: "HIGH",
+      });
+    const ticketIdP29 = p29CreateTicket.body.data?.id;
+    const p29OtherAthleteView = await request(app)
+      .get(`/support/tickets/${ticketIdP29}`)
+      .set("Authorization", `Bearer ${tokenAthlete2}`);
+    const p29AgentAssign = await request(app)
+      .post(`/support/tickets/${ticketIdP29}/assign`)
+      .set("Authorization", `Bearer ${tokenGrantedSupport}`)
+      .send({ agentId: uidSupportAgent });
+    const p29InternalNote = await request(app)
+      .post(`/support/tickets/${ticketIdP29}/messages`)
+      .set("Authorization", `Bearer ${tokenGrantedSupport}`)
+      .send({ message: "INTERNAL: Checked with Punjab director.", isInternal: true });
+    const p29PublicReply = await request(app)
+      .post(`/support/tickets/${ticketIdP29}/messages`)
+      .set("Authorization", `Bearer ${tokenGrantedSupport}`)
+      .send({ message: "Weigh-in opens at 09:00 PKT.", isInternal: false });
+    const p29AthleteView = await request(app)
+      .get(`/support/tickets/${ticketIdP29}`)
+      .set("Authorization", `Bearer ${tokenAthlete1}`);
+    const p29Resolve = await request(app)
+      .patch(`/support/tickets/${ticketIdP29}/status`)
+      .set("Authorization", `Bearer ${tokenGrantedSupport}`)
+      .send({ status: "RESOLVED", resolutionNotes: "Confirmed weigh-in schedule with athlete." });
+
+    console.log(
+      `     HTTP statuses: Create=${p29CreateTicket.status}, OtherAthView=${p29OtherAthleteView.status}, Assign=${p29AgentAssign.status}, IntNote=${p29InternalNote.status}, PubReply=${p29PublicReply.status}, AthVisibleMsgs=${p29AthleteView.body.data?.messages?.length}, Resolve=${p29Resolve.status}`
+    );
+    if (
+      p29CreateTicket.status !== 201 ||
+      p29OtherAthleteView.status !== 403 ||
+      p29AgentAssign.status !== 200 ||
+      p29InternalNote.status !== 201 ||
+      p29PublicReply.status !== 201 ||
+      p29AthleteView.body.data?.messages?.length !== 1 ||
+      p29Resolve.status !== 200
+    ) {
+      throw new Error("PROBE 29 FAILED: Support ticket lifecycle or confidentiality check failed in real PostgreSQL");
+    }
+    console.log("     ✓ PROVED: Support ticket creation (201), confidentiality (403), canonical grant assignment (200), internal note privacy (1 public msg visible to athlete), and resolution (200) in real PostgreSQL");
+
+    // PROBE 30: P1-5 Referee Certification Expiry Idempotency & Notification Deduplication in Real PostgreSQL
+    console.log("\n  -> PROBE 30: Referee certification expiry idempotency & notification deduplication in real PostgreSQL");
+    const secondExpiryRun = await RefereeCertificationService.processExpiredCertifications(new Date());
+    const expiredNotifs = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, uidRefereePunjab));
+    console.log(
+      `     Second expiry run expiredCount: ${secondExpiryRun.expiredCount} (expected: 0), total notifications for referee: ${expiredNotifs.length} (expected: 1)`
+    );
+    if (secondExpiryRun.expiredCount !== 0 || expiredNotifs.length !== 1) {
+      throw new Error(`PROBE 30 FAILED: Expected 0 newly expired and 1 notification, got expiredCount=${secondExpiryRun.expiredCount}, notifs=${expiredNotifs.length}`);
+    }
+    console.log("     ✓ PROVED: Repeated certification expiry execution is strictly idempotent (0 re-expired, 1 deduplicated notification) in real PostgreSQL");
+
     console.log("\n================================================================================");
-    console.log("   ALL 26 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
+    console.log("   ALL 30 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
     console.log("================================================================================");
   } finally {
     // Clean up seeded fixtures
     console.log("\n[CLEANUP] Cleaning up seeded test records from Neon PostgreSQL...");
     try {
+      await db.delete(supportTicketMessages).where(inArray(supportTicketMessages.senderId, testUserIds)).catch(() => {});
+      await db.delete(supportTickets).where(inArray(supportTickets.userId, testUserIds)).catch(() => {});
+      await db.delete(sparringInvites).where(inArray(sparringInvites.creatorId, testUserIds)).catch(() => {});
+      await pool.query(`DELETE FROM messages WHERE sender_id = ANY($1::uuid[])`, [testUserIds]).catch(() => {});
+      await pool.query(`DELETE FROM conversation_participants WHERE user_id = ANY($1::uuid[])`, [testUserIds]).catch(() => {});
+      await db.delete(userRoleGrants).where(inArray(userRoleGrants.userId, testUserIds)).catch(() => {});
       await db.delete(disputes).where(inArray(disputes.creatorId, testUserIds)).catch(() => {});
       await db.delete(auditEvents).where(inArray(auditEvents.actorId, testUserIds)).catch(() => {});
       await db.delete(eloLedger).where(inArray(eloLedger.athleteId, [profileId1, profileId2])).catch(() => {});
@@ -855,8 +1056,8 @@ async function main() {
       await db.delete(brackets).where(eq(brackets.eventId, eventIdPunjab)).catch(() => {});
       await db.delete(eventRegistrations).where(eq(eventRegistrations.eventId, eventIdPunjab)).catch(() => {});
       await db.delete(matchTables).where(eq(matchTables.eventId, eventIdPunjab)).catch(() => {});
-      await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId)).catch(() => {});
-      await db.delete(teams).where(eq(teams.id, teamId)).catch(() => {});
+      await pool.query(`DELETE FROM team_members WHERE athlete_id = ANY($1::uuid[])`, [[profileId1, profileId2]]).catch(() => {});
+      await pool.query(`DELETE FROM teams WHERE id = $1 OR name = 'Sindh Vanguard Pullers'`, [teamId]).catch(() => {});
       await db.delete(refereeCertifications).where(inArray(refereeCertifications.id, [certActiveId, certExpiredId, certExpiredOnlyId, certOtherId])).catch(() => {});
       await db.delete(notifications).where(inArray(notifications.userId, testUserIds)).catch(() => {});
       await db.delete(events).where(eq(events.id, eventIdPunjab)).catch(() => {});

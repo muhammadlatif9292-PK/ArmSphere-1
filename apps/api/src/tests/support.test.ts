@@ -431,5 +431,40 @@ describe("Customer Support & Helpdesk Ticketing System", () => {
 
       expect(res.status).toBe(403);
     });
+
+    it("enforces canonical DB role/grant verification and blocks stale JWT claims or suspended accounts", async () => {
+      // 1. Revoke supportAgent2's primary role in DB while their JWT still says SUPPORT_AGENT
+      const agent2InDb = testDbStore.users.find((u: any) => u.id === supportAgent2Id);
+      agent2InDb.role = UserRole.ATHLETE;
+
+      const staleAgentView = await request(app)
+        .get(`/support/tickets/${ticketId}`)
+        .set("Authorization", support2Token);
+      expect(staleAgentView.status).toBe(403);
+
+      // 2. Grant SUPPORT_AGENT via canonical user_role_grants table to athlete2
+      testDbStore.userRoleGrants.push({
+        id: uuidv4(),
+        userId: athlete2Id,
+        role: UserRole.SUPPORT_AGENT,
+        status: "ACTIVE",
+        grantedBy: adminId,
+        grantedAt: new Date(),
+      });
+
+      const grantedAgentView = await request(app)
+        .get(`/support/tickets/${ticketId}`)
+        .set("Authorization", athlete2Token);
+      expect(grantedAgentView.status).toBe(200);
+
+      // 3. Suspend supportAgent1 in DB -> blocked with 403 Forbidden
+      const agent1InDb = testDbStore.users.find((u: any) => u.id === supportAgentId);
+      agent1InDb.isActive = false;
+
+      const suspendedRes = await request(app)
+        .get("/support/tickets")
+        .set("Authorization", supportToken);
+      expect(suspendedRes.status).toBe(403);
+    });
   });
 });

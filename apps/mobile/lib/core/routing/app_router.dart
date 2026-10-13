@@ -54,6 +54,7 @@ import '../../features/nomination/screens/nominate_talent_screen.dart';
 import '../../features/informal_event/screens/informal_event_directory_screen.dart';
 import '../../features/informal_event/screens/informal_event_detail_screen.dart';
 import '../../features/informal_event/screens/create_informal_event_screen.dart';
+import '../../features/support/screens/support_screens.dart';
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
 
@@ -1213,6 +1214,33 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AppTransitionPage(
             key: state.pageKey,
             child: AthleteAchievementsScreen(athleteId: athleteId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/support',
+        name: 'support_tickets',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const SupportTicketsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/support/create',
+        name: 'create_support_ticket',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const CreateSupportTicketScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/support/:ticketId',
+        name: 'support_ticket_detail',
+        pageBuilder: (context, state) {
+          final ticketId = state.pathParameters['ticketId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: SupportTicketDetailScreen(ticketId: ticketId),
           );
         },
       ),
