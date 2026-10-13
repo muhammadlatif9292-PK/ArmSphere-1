@@ -158,6 +158,7 @@ export interface DisputeEvidence {
   sha256Hash: string;
   virusScanned: boolean;
   virusScanResult: "PENDING" | "CLEAN" | "INFECTED";
+  description?: string;
   createdAt: string;
 }
 

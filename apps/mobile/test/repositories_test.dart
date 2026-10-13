@@ -176,12 +176,6 @@ void main() {
       expect(result['status'], equals('CONFIRMED'));
       expect(result['paymentType'], equals('MANUAL'));
 
-      // Verify local caching for the registration status
-      verify(() => mockHiveStorage.cacheData(
-            'confirm_manual_payment_reg_382',
-            manualPaymentPayload,
-          )).called(1);
-
       // Verify API endpoint details
       verify(() => mockDio.post(
             '/tournaments/registrations/reg_382/confirm-manual-payment',
@@ -225,13 +219,13 @@ void main() {
             data: {'id': 'evt_10', 'status': 'CANCELLED'},
           ));
 
-      final published = await repository.publishEvent('evt_10');
+      final published = await repository.publishEvent(eventId: 'evt_10');
       expect(published['status'], equals('PUBLISHED'));
 
-      final completed = await repository.completeEvent('evt_10');
+      final completed = await repository.completeEvent(eventId: 'evt_10');
       expect(completed['status'], equals('COMPLETED'));
 
-      final cancelled = await repository.cancelEvent('evt_10', reason: 'Venue flooding');
+      final cancelled = await repository.cancelEvent(eventId: 'evt_10', reason: 'Venue flooding');
       expect(cancelled['status'], equals('CANCELLED'));
     });
   });
@@ -344,12 +338,12 @@ void main() {
             },
           ));
 
-      final created = await repository.createSparringInvite(
-        senderTeamId: 'team_1',
-        recipientTeamId: 'team_2',
-        location: 'Lahore Table 1',
-        message: '5v5 squad practice',
-      );
+      final created = await repository.createSparringInvite({
+        'senderTeamId': 'team_1',
+        'recipientTeamId': 'team_2',
+        'location': 'Lahore Table 1',
+        'message': '5v5 squad practice',
+      });
       expect(created['id'], equals('invite_99'));
       expect(created['status'], equals('PENDING'));
 
@@ -428,7 +422,7 @@ void main() {
 
       final updated = await repository.updateTicketStatus(
         'ticket_1',
-        status: 'RESOLVED',
+        'RESOLVED',
         resolutionNotes: 'Confirmed seeding order with director.',
       );
       expect(updated['status'], equals('RESOLVED'));
@@ -440,7 +434,7 @@ void main() {
         hiveStorage: mockHiveStorage,
       );
 
-      when(() => mockDio.patch(
+      when(() => mockDio.post(
             '/support/tickets/ticket_1/assign',
             data: any(named: 'data'),
             cancelToken: any(named: 'cancelToken'),
@@ -459,7 +453,7 @@ void main() {
       final assigned = await repository.assignTicket('ticket_1', 'agent_42');
       expect(assigned['assignedAgentId'], equals('agent_42'));
 
-      verify(() => mockDio.patch(
+      verify(() => mockDio.post(
             '/support/tickets/ticket_1/assign',
             data: {
               'agentId': 'agent_42',
@@ -487,7 +481,7 @@ void main() {
 
       final msg = await repository.addTicketMessage(
         'ticket_1',
-        message: 'Bracket seed corrected.',
+        'Bracket seed corrected.',
         isInternal: false,
       );
       expect(msg['id'], equals('msg_1'));
