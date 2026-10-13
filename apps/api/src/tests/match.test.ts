@@ -1274,5 +1274,124 @@ describe("Match Submission, Competitive Scoring & ELO Engine", () => {
       const match = testDbStore.matches.find((m) => m.id === testMatchId);
       expect(match.status).toBe("VERIFIED");
     });
+
+    it("should reject client-supplied province spoofing on POST /matches when it conflicts with authoritative athlete province", async () => {
+      const response = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-1",
+          province: "Sindh", // Spoofed! Athletes are in Punjab
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/authoritative match province/i);
+    });
+
+    it("should reject match submission from an out-of-jurisdiction PROVINCIAL_DIRECTOR", async () => {
+      const response = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${sindhDirectorToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-1",
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/assigned province/i);
+    });
+
+    it("should reject duplicate dispute attempts on an already DISPUTED match with 409 Conflict", async () => {
+      const subRes = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-2",
+        });
+      const targetMatchId = subRes.body.matchId;
+
+      const firstDispute = await request(app)
+        .post(`/matches/${targetMatchId}/dispute`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ reason: "Initial dispute reason for board review." });
+      expect(firstDispute.status).toBe(200);
+
+      const secondDispute = await request(app)
+        .post(`/matches/${targetMatchId}/dispute`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ reason: "Repeated dispute attempt." });
+      expect(secondDispute.status).toBe(409);
+    });
+
+    it("should chronologically replay subsequent verified matches on the same arm when an earlier match is voided", async () => {
+      // Match 1: A (1500) beats B (1500) -> A becomes 1532, B becomes 1468
+      const sub1 = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-0",
+        });
+      const m1Id = sub1.body.matchId;
+      await request(app).post(`/matches/${m1Id}/verify`).set("Authorization", `Bearer ${refereeToken}`);
+
+      // Ensure m2 has a strictly later timestamp
+      const sub2 = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteBId,
+          scoreLine: "3-1",
+        });
+      const m2Id = sub2.body.matchId;
+      await request(app).post(`/matches/${m2Id}/verify`).set("Authorization", `Bearer ${refereeToken}`);
+
+      // Force distinct verifiedAt order if needed
+      const m1Row = testDbStore.matches.find((m) => m.id === m1Id);
+      const m2Row = testDbStore.matches.find((m) => m.id === m2Id);
+      m1Row.verifiedAt = new Date("2026-07-01T10:00:00Z");
+      m2Row.verifiedAt = new Date("2026-07-01T11:00:00Z");
+
+      // Void Match 1: Match 1's +32/-32 is rolled back, and Match 2 (where B beat A) is replayed from 1500 vs 1500!
+      // When B (1500) beats A (1500) from scratch, B becomes 1532 and A becomes 1468.
+      const voidRes = await request(app)
+        .post(`/matches/${m1Id}/void`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ reason: "Voiding Match 1 to test chronological replay of Match 2." });
+
+      expect(voidRes.status).toBe(200);
+
+      const apA = testDbStore.athleteProfiles.find((ap) => ap.id === athleteAId);
+      const apB = testDbStore.athleteProfiles.find((ap) => ap.id === athleteBId);
+      expect(apA.rightArmElo).toBe(1468);
+      expect(apB.rightArmElo).toBe(1532);
+
+      // Verify Match 2's elo_ledger rows were updated to reflect starting at 1500
+      const m2Ledgers = testDbStore.eloLedger.filter((l) => l.matchId === m2Id);
+      expect(m2Ledgers).toHaveLength(2);
+      const ledgerA = m2Ledgers.find((l) => l.athleteId === athleteAId);
+      const ledgerB = m2Ledgers.find((l) => l.athleteId === athleteBId);
+      expect(ledgerA.previousElo).toBe(1500);
+      expect(ledgerA.newElo).toBe(1468);
+      expect(ledgerB.previousElo).toBe(1500);
+      expect(ledgerB.newElo).toBe(1532);
+    });
   });
 });

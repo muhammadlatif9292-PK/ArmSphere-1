@@ -450,5 +450,192 @@ describe("Sprint 6 — Governance, Disputes, Sanctions & ELO Replay System", () 
       expect(updatedA.leftArmElo).toBeGreaterThan(1500);
       expect(updatedB.leftArmElo).toBeLessThan(1500);
     });
+
+    it("should reject match result correction if actualWinnerId is not one of the match participants", async () => {
+      const bracketId = uuidv4();
+      const matchId = uuidv4();
+      testDbStore.brackets = [{
+        id: bracketId,
+        eventId: uuidv4(),
+        name: "Pro Right Hand Open",
+        format: "SINGLE_ELIMINATION",
+        division: "PRO_MEN",
+        weightClass: "OPEN",
+        arm: "RIGHT",
+        status: "ACTIVE",
+      }];
+      testDbStore.tournamentMatches = [{
+        id: matchId,
+        bracketId,
+        round: 1,
+        matchIndex: 0,
+        athleteAId,
+        athleteBId,
+        winnerId: athleteBId,
+        status: "VERIFIED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }];
+
+      const outsiderId = uuidv4();
+      const response = await request(app)
+        .post(`/governance/matches/${matchId}/correct`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          actualWinnerId: outsiderId,
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.detail || response.body.message).toMatch(/competitor|participant/i);
+    });
+  });
+
+  describe("P0-7 Dispute Authorization & Provincial Jurisdiction Hardening", () => {
+    it("should reject dispute creation on a tournament match from an unrelated non-participant athlete", async () => {
+      const strangerUserId = "stranger-user-uuid";
+      const strangerProfileId = "stranger-profile-uuid";
+      testDbStore.users.push({
+        id: strangerUserId,
+        email: "stranger@armsphere.com",
+        username: "stranger_ath",
+        role: UserRole.ATHLETE,
+        fullName: "Stranger Athlete",
+        isActive: true,
+        province: "Punjab",
+      });
+      testDbStore.athleteProfiles.push({
+        id: strangerProfileId,
+        userId: strangerUserId,
+        displayName: "Stranger",
+        province: "Punjab",
+        leftArmElo: 1500,
+        rightArmElo: 1500,
+      });
+
+      const matchId = uuidv4();
+      const bracketId = uuidv4();
+      testDbStore.brackets.push({
+        id: bracketId,
+        eventId: uuidv4(),
+        name: "Test Bracket",
+        format: "SINGLE_ELIMINATION",
+        division: "MEN",
+        weightClass: "80KG",
+        arm: "RIGHT",
+        status: "ACTIVE",
+      });
+      testDbStore.tournamentMatches.push({
+        id: matchId,
+        bracketId,
+        round: 1,
+        matchIndex: 0,
+        athleteAId,
+        athleteBId,
+        refereeId: refereeUserId,
+        winnerId: athleteAId,
+        status: "COMPLETED",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const strangerToken = generateAccessToken(
+        strangerUserId,
+        "stranger@armsphere.com",
+        UserRole.ATHLETE,
+        env.JWT_ACCESS_SECRET
+      );
+
+      const response = await request(app)
+        .post("/governance/disputes")
+        .set("Authorization", `Bearer ${strangerToken}`)
+        .send({
+          matchId,
+          title: "Unauthorized dispute",
+          description: "I was not in this match at all, trying to file a dispute.",
+        });
+
+      expect(response.status).toBe(403);
+      expect(testDbStore.disputes.length).toBe(0);
+    });
+
+    it("should allow a match participant to file a dispute and populate dispute.province authoritatively", async () => {
+      athleteProfileA.province = "Punjab";
+      athleteProfileB.province = "Punjab";
+
+      const matchId = uuidv4();
+      const bracketId = uuidv4();
+      testDbStore.brackets.push({
+        id: bracketId,
+        eventId: uuidv4(),
+        name: "Test Bracket",
+        format: "SINGLE_ELIMINATION",
+        division: "MEN",
+        weightClass: "80KG",
+        arm: "RIGHT",
+        status: "ACTIVE",
+      });
+      testDbStore.tournamentMatches.push({
+        id: matchId,
+        bracketId,
+        round: 1,
+        matchIndex: 0,
+        athleteAId,
+        athleteBId,
+        refereeId: refereeUserId,
+        winnerId: athleteBId,
+        status: "COMPLETED",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post("/governance/disputes")
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({
+          matchId,
+          title: "Participant legitimate dispute",
+          description: "Opponent committed an uncalled elbow foul before pin.",
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.dispute.province).toBe("Punjab");
+    });
+
+    it("should reject dispute creation on a match from an out-of-jurisdiction PROVINCIAL_DIRECTOR", async () => {
+      directorUser.province = "Sindh";
+      directorUser.regionalCoverage = "Sindh";
+      athleteProfileA.province = "Punjab";
+      athleteProfileB.province = "Punjab";
+
+      const matchId = uuidv4();
+      testDbStore.tournamentMatches.push({
+        id: matchId,
+        bracketId: uuidv4(),
+        round: 1,
+        matchIndex: 0,
+        athleteAId,
+        athleteBId,
+        refereeId: refereeUserId,
+        winnerId: athleteAId,
+        status: "COMPLETED",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post("/governance/disputes")
+        .set("Authorization", `Bearer ${directorToken}`)
+        .send({
+          matchId,
+          title: "Cross-province director dispute",
+          description: "Sindh director attempting to open a dispute on a Punjab match.",
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/authorized federation official|provincial jurisdiction/i);
+    });
   });
 });

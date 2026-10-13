@@ -1,7 +1,7 @@
 import request from "supertest";
 import { app } from "../app.js";
 import { db, pool } from "../config/db.js";
-import { users, athleteProfiles, events, communityPosts, refereeCertifications, notifications, teams, teamMembers, matches, eloLedger } from "@armsphere/db-schema";
+import { users, athleteProfiles, events, communityPosts, refereeCertifications, notifications, teams, teamMembers, matches, eloLedger, brackets, tournamentMatches, disputes, eventRegistrations, matchTables, auditEvents } from "@armsphere/db-schema";
 import { eq, inArray } from "drizzle-orm";
 import { generateAccessToken } from "@armsphere/cryptography";
 import { UserRole } from "@armsphere/types";
@@ -562,22 +562,306 @@ async function main() {
     if (!eloUniqueViolated) throw new Error("PROBE 20 FAILED: Expected PostgreSQL unique constraint violation 23505 on duplicate (match_id, athlete_id)");
     console.log("     ✓ PROVED: Real PostgreSQL strictly enforced composite unique index idx_elo_ledger_match_athlete (23505)");
 
+    // PROBE 21: Client Province Spoofing & Out-of-Jurisdiction Director Match Submission in Real PostgreSQL
+    console.log("\n  -> PROBE 21: Forged client province rejection & Provincial Director submission jurisdiction in real PostgreSQL");
+    const p21Spoof = await request(app)
+      .post("/matches")
+      .set("Authorization", `Bearer ${tokenRefereePunjab}`)
+      .send({
+        challengerId: profileId1,
+        opponentId: profileId2,
+        arm: "RIGHT",
+        winnerId: profileId1,
+        scoreLine: "3-0",
+        province: "Balochistan", // Spoofed! Challenger is in Punjab
+      });
+    console.log(`     Forged province HTTP status: ${p21Spoof.status} (expected: 403)`);
+    if (p21Spoof.status !== 403) throw new Error(`PROBE 21 FAILED: Expected 403 on spoofed province, got ${p21Spoof.status}`);
+
+    const p21OutDir = await request(app)
+      .post("/matches")
+      .set("Authorization", `Bearer ${tokenDirSindh}`)
+      .send({
+        challengerId: profileId1,
+        opponentId: profileId2,
+        arm: "RIGHT",
+        winnerId: profileId1,
+        scoreLine: "3-0",
+      });
+    console.log(`     Out-of-province director HTTP status: ${p21OutDir.status} (expected: 403)`);
+    if (p21OutDir.status !== 403) throw new Error(`PROBE 21 FAILED: Expected 403 on out-of-province director submission, got ${p21OutDir.status}`);
+    console.log("     ✓ BLOCKED: Client province spoofing and cross-province director match submission blocked in real PostgreSQL");
+
+    // PROBE 22: Concurrent Promise.all Match Verification Race Condition Proof in Real PostgreSQL
+    console.log("\n  -> PROBE 22: Concurrent Promise.all match verification race condition proof in real PostgreSQL");
+    const matchIdRace = crypto.randomUUID();
+    await db.insert(matches).values({
+      id: matchIdRace,
+      challengerId: profileId1,
+      opponentId: profileId2,
+      arm: "RIGHT",
+      refereeId: uidRefereePunjab,
+      winnerId: profileId2,
+      scoreLine: "3-1",
+      status: "PENDING_VERIFICATION",
+      province: "Punjab",
+      createdAt: new Date(Date.now() + 1000),
+      updatedAt: new Date(Date.now() + 1000),
+    });
+
+    const [raceRes1, raceRes2] = await Promise.all([
+      request(app).post(`/matches/${matchIdRace}/verify`).set("Authorization", `Bearer ${tokenRefereePunjab}`),
+      request(app).post(`/matches/${matchIdRace}/verify`).set("Authorization", `Bearer ${tokenRefereePunjab}`),
+    ]);
+    const statuses22 = [raceRes1.status, raceRes2.status].sort((a, b) => a - b);
+    console.log(`     Concurrent HTTP statuses: [${statuses22.join(", ")}] (expected: [200, 409])`);
+    if (statuses22[0] !== 200 || statuses22[1] !== 409) {
+      throw new Error(`PROBE 22 FAILED: Expected [200, 409], got [${statuses22.join(", ")}]`);
+    }
+    const raceLedgers = await db.select().from(eloLedger).where(eq(eloLedger.matchId, matchIdRace));
+    if (raceLedgers.length !== 2) {
+      throw new Error(`PROBE 22 FAILED: Expected exactly 2 elo_ledger rows for race match, got ${raceLedgers.length}`);
+    }
+    console.log("     ✓ PROVED: Concurrent verification serialized via SELECT ... FOR UPDATE; 1x 200, 1x 409, zero double-applied ELO");
+
+    // PROBE 23: Chronological ELO Replay on voidMatch Across 2-Match Sequence in Real PostgreSQL
+    console.log("\n  -> PROBE 23: Chronological ELO replay on voidMatch across 2-match sequence in real PostgreSQL");
+    // Ensure matchIdPunjab has an earlier verifiedAt than matchIdRace
+    await db.update(matches).set({ verifiedAt: new Date(Date.now() - 60000) }).where(eq(matches.id, matchIdPunjab));
+    await db.update(matches).set({ verifiedAt: new Date(Date.now() - 10000) }).where(eq(matches.id, matchIdRace));
+
+    // Void matchIdPunjab (Match 1 where Athlete 1 beat Athlete 2).
+    // Match 2 (matchIdRace where Athlete 2 beat Athlete 1) must be replayed from 1500 vs 1500 -> Athlete 2 = 1532, Athlete 1 = 1468!
+    const p23Void = await request(app)
+      .post(`/matches/${matchIdPunjab}/void`)
+      .set("Authorization", `Bearer ${tokenAdmin}`)
+      .send({ reason: "Real PostgreSQL chronological ELO replay verification test." });
+    console.log(`     POST /matches/${matchIdPunjab}/void HTTP status: ${p23Void.status} (expected: 200)`);
+    if (p23Void.status !== 200) throw new Error(`PROBE 23 FAILED: Expected 200 on voidMatch, got ${p23Void.status}`);
+
+    const [ath1_replayed] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, profileId1));
+    const [ath2_replayed] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, profileId2));
+    const replayedLedgers = await db.select().from(eloLedger).where(eq(eloLedger.matchId, matchIdRace));
+    const ledgerAth1 = replayedLedgers.find((l) => l.athleteId === profileId1);
+    const ledgerAth2 = replayedLedgers.find((l) => l.athleteId === profileId2);
+    if (
+      ath1_replayed.rightArmElo !== 1468 ||
+      ath2_replayed.rightArmElo !== 1532 ||
+      ledgerAth1?.previousElo !== 1500 ||
+      ledgerAth1?.newElo !== 1468 ||
+      ledgerAth2?.previousElo !== 1500 ||
+      ledgerAth2?.newElo !== 1532
+    ) {
+      throw new Error(
+        `PROBE 23 FAILED: Unexpected replayed ELO state: ath1=${ath1_replayed.rightArmElo}, ath2=${ath2_replayed.rightArmElo}`
+      );
+    }
+    console.log(
+      `     ✓ PROVED: Voiding Match 1 replayed Match 2 in real PostgreSQL (Athlete 1: 1500->1468, Athlete 2: 1500->1532)`
+    );
+
+    // PROBE 24: P0-7 Dispute Authorization & Provincial Jurisdiction in Real PostgreSQL
+    console.log("\n  -> PROBE 24: Dispute authorization & authoritative province population in real PostgreSQL");
+    const uidStrangerAthlete = crypto.randomUUID();
+    const profileStrangerId = crypto.randomUUID();
+    const bracketIdPunjab = crypto.randomUUID();
+    const tMatchIdPunjab = crypto.randomUUID();
+    testUserIds.push(uidStrangerAthlete);
+
+    await db.insert(users).values({
+      id: uidStrangerAthlete,
+      email: `stranger_${Date.now()}@armsphere.test`,
+      username: `str_${Date.now().toString().slice(-6)}`,
+      passwordHash: "$2b$10$dummyHashForTestingRealPostgresAuth0000000000000000000000",
+      role: UserRole.ATHLETE,
+      fullName: "Unrelated Stranger Athlete",
+      isActive: true,
+      province: "Punjab",
+    } as any);
+    await db.insert(athleteProfiles).values({
+      id: profileStrangerId,
+      userId: uidStrangerAthlete,
+      displayName: "Stranger Puller",
+      province: "Punjab",
+      city: "Multan",
+      handedness: "RIGHT",
+      dominantArm: "RIGHT",
+      dateOfBirth: new Date("1998-01-01"),
+      gender: "MALE",
+      weightClass: "80KG",
+      profileVisibility: "PUBLIC",
+      leftArmElo: 1500,
+      rightArmElo: 1500,
+    });
+    await db.insert(brackets).values({
+      id: bracketIdPunjab,
+      eventId: eventIdPunjab,
+      name: "Senior Men 80kg Right",
+      format: "SINGLE_ELIMINATION",
+      division: "SENIOR_MEN",
+      weightClass: "80KG",
+      arm: "RIGHT",
+      status: "ACTIVE",
+    });
+    await db.insert(tournamentMatches).values({
+      id: tMatchIdPunjab,
+      bracketId: bracketIdPunjab,
+      round: 1,
+      matchIndex: 0,
+      bracketType: "PRIMARY",
+      athleteAId: profileId1,
+      athleteBId: profileId2,
+      refereeId: uidRefereePunjab,
+      winnerId: profileId1,
+      scoreLine: "3-0",
+      status: "COMPLETED",
+      province: "Punjab",
+    });
+
+    const tokenStranger = generateAccessToken(uidStrangerAthlete, "stranger@test.com", UserRole.ATHLETE, jwtSecret);
+    const p24Stranger = await request(app)
+      .post("/governance/disputes")
+      .set("Authorization", `Bearer ${tokenStranger}`)
+      .send({
+        matchId: tMatchIdPunjab,
+        title: "Stranger unauthorized dispute",
+        description: "Attempting to file a dispute on a tournament match I did not participate in.",
+      });
+    console.log(`     Unrelated athlete dispute HTTP status: ${p24Stranger.status} (expected: 403)`);
+    if (p24Stranger.status !== 403) throw new Error(`PROBE 24 FAILED: Expected 403 for unrelated athlete, got ${p24Stranger.status}`);
+
+    const p24Participant = await request(app)
+      .post("/governance/disputes")
+      .set("Authorization", `Bearer ${tokenAthlete1}`)
+      .send({
+        matchId: tMatchIdPunjab,
+        title: "Participant legitimate dispute",
+        description: "Filing legitimate participant dispute on tournament match in real PostgreSQL.",
+      });
+    console.log(`     Participant dispute HTTP status: ${p24Participant.status} (expected: 201), province: ${p24Participant.body.dispute?.province}`);
+    if (p24Participant.status !== 201 || p24Participant.body.dispute?.province !== "Punjab") {
+      throw new Error(`PROBE 24 FAILED: Expected 201 with province Punjab, got ${p24Participant.status}`);
+    }
+    console.log("     ✓ PROVED: Unrelated dispute blocked (403); participant dispute created (201) with authoritative province='Punjab'");
+
+    // PROBE 25: P0-8 Tournament Operator Ownership & Provincial Jurisdiction in Real PostgreSQL
+    console.log("\n  -> PROBE 25: Tournament operator ownership & provincial director jurisdiction in real PostgreSQL");
+    const uidOtherOperator = crypto.randomUUID();
+    const regIdPunjab = crypto.randomUUID();
+    testUserIds.push(uidOtherOperator);
+
+    await db.insert(users).values({
+      id: uidOtherOperator,
+      email: `op_other_${Date.now()}@armsphere.test`,
+      username: `opoth_${Date.now().toString().slice(-6)}`,
+      passwordHash: "$2b$10$dummyHashForTestingRealPostgresAuth0000000000000000000000",
+      role: UserRole.TOURNAMENT_OPERATOR,
+      fullName: "Unrelated Tournament Operator",
+      isActive: true,
+      province: "Punjab",
+    } as any);
+    await db.insert(eventRegistrations).values({
+      id: regIdPunjab,
+      eventId: eventIdPunjab,
+      athleteId: profileId1,
+      division: "SENIOR_MEN",
+      weightClass: "80KG",
+      arm: "RIGHT",
+      status: "PENDING",
+    });
+
+    const tokenOtherOp = generateAccessToken(uidOtherOperator, "op_other@test.com", UserRole.TOURNAMENT_OPERATOR, jwtSecret);
+
+    const p25OtherOpApprove = await request(app)
+      .post(`/tournaments/registrations/${regIdPunjab}/approve`)
+      .set("Authorization", `Bearer ${tokenOtherOp}`);
+    const p25SindhDirApprove = await request(app)
+      .post(`/tournaments/registrations/${regIdPunjab}/approve`)
+      .set("Authorization", `Bearer ${tokenDirSindh}`);
+    const p25OtherOpTable = await request(app)
+      .post(`/tournaments/events/${eventIdPunjab}/tables`)
+      .set("Authorization", `Bearer ${tokenOtherOp}`)
+      .send({ name: "Unauthorized Table" });
+    const p25PunjabDirApprove = await request(app)
+      .post(`/tournaments/registrations/${regIdPunjab}/approve`)
+      .set("Authorization", `Bearer ${tokenDirPunjab}`);
+
+    console.log(
+      `     HTTP statuses: OtherOpApprove=${p25OtherOpApprove.status}, SindhDirApprove=${p25SindhDirApprove.status}, OtherOpTable=${p25OtherOpTable.status}, PunjabDirApprove=${p25PunjabDirApprove.status}`
+    );
+    if (
+      p25OtherOpApprove.status !== 403 ||
+      p25SindhDirApprove.status !== 403 ||
+      p25OtherOpTable.status !== 403 ||
+      p25PunjabDirApprove.status !== 200
+    ) {
+      throw new Error("PROBE 25 FAILED: Unexpected tournament ownership/jurisdiction statuses");
+    }
+    console.log("     ✓ PROVED: Cross-operator and cross-province tournament mutations blocked (403); owning organizer allowed (200)");
+
+    // PROBE 26: P0-9 Live PostgreSQL Schema, Foreign Key, Delete Rule & Unique Index Verification
+    console.log("\n  -> PROBE 26: Live PostgreSQL pg_constraint & pg_index integrity verification (P0-9)");
+    const requiredIndexes = [
+      "idx_elo_ledger_match_athlete",
+      "idx_team_members_team_athlete",
+      "idx_tournament_table_queue_match_id",
+      "idx_tournament_table_queue_table_position",
+      "idx_user_role_grants_user_role",
+      "idx_users_province",
+      "idx_matches_province",
+    ];
+    const indexCheck = await pool.query(
+      `SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = ANY($1::text[])`,
+      [requiredIndexes]
+    );
+    const foundIndexNames = new Set(indexCheck.rows.map((r: any) => r.indexname));
+    for (const reqIdx of requiredIndexes) {
+      if (!foundIndexNames.has(reqIdx)) {
+        throw new Error(`PROBE 26 FAILED: Missing required index ${reqIdx} in live PostgreSQL`);
+      }
+    }
+
+    const fkCheck = await pool.query(`
+      SELECT tc.table_name, tc.constraint_name, rc.delete_rule
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.referential_constraints rc
+        ON tc.constraint_name = rc.constraint_name
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_name IN ('matches', 'elo_ledger', 'team_members', 'match_tables', 'tournament_table_queue', 'disputes')
+    `);
+    if (fkCheck.rows.length < 8) {
+      throw new Error(`PROBE 26 FAILED: Expected foreign key constraints on domain tables, found ${fkCheck.rows.length}`);
+    }
+    const cascadeTables = fkCheck.rows.filter((r: any) => r.delete_rule === "CASCADE").map((r: any) => r.table_name);
+    if (!cascadeTables.includes("match_tables") || !cascadeTables.includes("tournament_table_queue")) {
+      throw new Error(`PROBE 26 FAILED: Expected CASCADE delete rule on match_tables and tournament_table_queue`);
+    }
+    console.log(
+      `     ✓ PROVED: Verified ${foundIndexNames.size} canonical indexes and ${fkCheck.rows.length} foreign key constraints (including CASCADE rules) in live PostgreSQL`
+    );
+
     console.log("\n================================================================================");
-    console.log("   ALL 20 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
+    console.log("   ALL 26 REAL POSTGRESQL RUNTIME PROBES PASSED WITH 100% SUCCESS!");
     console.log("================================================================================");
   } finally {
     // Clean up seeded fixtures
     console.log("\n[CLEANUP] Cleaning up seeded test records from Neon PostgreSQL...");
     try {
-      await db.delete(eloLedger).where(eq(eloLedger.matchId, matchIdPunjab)).catch(() => {});
-      await db.delete(matches).where(eq(matches.id, matchIdPunjab)).catch(() => {});
+      await db.delete(disputes).where(inArray(disputes.creatorId, testUserIds)).catch(() => {});
+      await db.delete(auditEvents).where(inArray(auditEvents.actorId, testUserIds)).catch(() => {});
+      await db.delete(eloLedger).where(inArray(eloLedger.athleteId, [profileId1, profileId2])).catch(() => {});
+      await db.delete(matches).where(inArray(matches.challengerId, [profileId1, profileId2])).catch(() => {});
+      await pool.query(`DELETE FROM tournament_matches WHERE bracket_id IN (SELECT id FROM brackets WHERE event_id = $1)`, [eventIdPunjab]).catch(() => {});
+      await db.delete(brackets).where(eq(brackets.eventId, eventIdPunjab)).catch(() => {});
+      await db.delete(eventRegistrations).where(eq(eventRegistrations.eventId, eventIdPunjab)).catch(() => {});
+      await db.delete(matchTables).where(eq(matchTables.eventId, eventIdPunjab)).catch(() => {});
       await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId)).catch(() => {});
       await db.delete(teams).where(eq(teams.id, teamId)).catch(() => {});
       await db.delete(refereeCertifications).where(inArray(refereeCertifications.id, [certActiveId, certExpiredId, certExpiredOnlyId, certOtherId])).catch(() => {});
-      await db.delete(notifications).where(eq(notifications.userId, uidRefereePunjab)).catch(() => {});
+      await db.delete(notifications).where(inArray(notifications.userId, testUserIds)).catch(() => {});
       await db.delete(events).where(eq(events.id, eventIdPunjab)).catch(() => {});
       await db.delete(communityPosts).where(eq(communityPosts.id, postGymId)).catch(() => {});
-      await db.delete(athleteProfiles).where(inArray(athleteProfiles.id, [profileId1, profileId2])).catch(() => {});
+      await pool.query(`DELETE FROM athlete_profiles WHERE user_id = ANY($1::uuid[])`, [testUserIds]).catch(() => {});
       await db.delete(users).where(inArray(users.id, testUserIds)).catch(() => {});
       console.log("✓ Neon PostgreSQL test fixtures successfully cleaned up.");
     } catch (cleanErr) {
