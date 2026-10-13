@@ -951,7 +951,7 @@ class _SupportTicketDetailScreenState
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    msg['content']?.toString() ?? '',
+                                    (msg['message'] ?? msg['content'])?.toString() ?? '',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: AppTheme.textPrimary,

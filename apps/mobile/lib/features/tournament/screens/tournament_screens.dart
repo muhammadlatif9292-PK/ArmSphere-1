@@ -354,9 +354,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         final status = (event['status']?.toString() ?? '').toUpperCase();
         final canRegister = status == 'PUBLISHED';
         final auth = ref.watch(authProvider);
-        final role = auth.userProfile?['role']?.toString().toUpperCase();
-        const operatorRoles = {'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+        final role = (auth.activeRole ?? auth.userProfile?['role']?.toString() ?? '').toUpperCase();
+        const operatorRoles = {
+          'TOURNAMENT_OPERATOR',
+          'PROVINCIAL_DIRECTOR',
+          'NATIONAL_DIRECTOR',
+          'SYSTEM_ADMIN',
+        };
         final canOperate = operatorRoles.contains(role) ||
+            auth.hasAnyRole(operatorRoles) ||
             (event['organizerId'] != null &&
                 event['organizerId'].toString() == auth.userProfile?['id']?.toString());
         final location = [

@@ -9,7 +9,8 @@ import {
   AlertTriangle, 
   Loader2,
   Award,
-  Plus
+  Plus,
+  History
 } from 'lucide-react';
 import { 
   useActiveTitles, 
@@ -17,10 +18,11 @@ import {
   useAcceptChallenge, 
   useDeclineChallenge, 
   useVacateTitle,
-  useCreateTitle
+  useCreateTitle,
+  useTitleLineage
 } from '../lib/championshipApi';
 import { useAuth } from '../context/AuthContext';
-import { CreateTitlePayload } from '../types';
+import { CreateTitlePayload, ChampionshipTitle } from '../types';
 import { canPerformAction } from '../lib/authorizationPolicy';
 
 export default function ChampionshipsPage() {
@@ -52,6 +54,13 @@ export default function ChampionshipsPage() {
   const [vacateReason, setVacateReason] = useState<'VACATED' | 'STRIPPED'>('VACATED');
   const [vacateError, setVacateError] = useState<string | null>(null);
 
+  // State for Lineage modal
+  const [lineageTitle, setLineageTitle] = useState<ChampionshipTitle | null>(null);
+  const { data: lineageRecords, isLoading: isLineageLoading } = useTitleLineage(lineageTitle?.id ?? null);
+
+  // State for Challenge mutation feedback
+  const [challengeActionError, setChallengeActionError] = useState<string | null>(null);
+
   // State for Create Title modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState<CreateTitlePayload>({
@@ -62,13 +71,24 @@ export default function ChampionshipsPage() {
   });
   const [createError, setCreateError] = useState<string | null>(null);
 
-  // Verification of role accessibility based on backend routes:
-  // - Vacate: POST /championships/vacate requires requireRole(UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN)
-  // - Accept: POST /championships/challenges/:id/accept requires only authenticate (accessible to logged-in admins)
-  // - Decline: POST /championships/challenges/:id/decline requires only authenticate (accessible to logged-in admins)
+  // Role accessibility aligned with backend service authorization:
+  // - Vacate/Create/Challenge override require National Director or System Admin
   const canVacate = canPerformAction(user, 'MANAGE_CHAMPIONSHIPS');
   const canCreateTitle = canPerformAction(user, 'MANAGE_CHAMPIONSHIPS');
-  const canManageChallenges = true; // No requireRole constraints exist on challenges endpoints
+  const canManageChallenges = canPerformAction(user, 'MANAGE_CHAMPIONSHIPS');
+
+  const handleChallengeDecision = async (challengeId: string, action: 'ACCEPT' | 'DECLINE') => {
+    try {
+      setChallengeActionError(null);
+      if (action === 'ACCEPT') {
+        await acceptMutation.mutateAsync(challengeId);
+      } else {
+        await declineMutation.mutateAsync(challengeId);
+      }
+    } catch (err: any) {
+      setChallengeActionError(err?.message || `Failed to ${action.toLowerCase()} title challenge.`);
+    }
+  };
 
   const handleRetry = () => {
     refetchTitles();
@@ -251,24 +271,35 @@ export default function ChampionshipsPage() {
                       )}
                     </td>
                     <td className="p-4 text-right">
-                      {canVacate ? (
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => setVacateTargetId(title.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 text-xs font-medium rounded-lg transition-colors"
-                          title="Vacate and strip title belt"
+                          onClick={() => setLineageTitle(title)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors"
+                          title="Inspect belt reign lineage"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Vacate Title
+                          <History className="w-3.5 h-3.5 text-amber-400" />
+                          Lineage
                         </button>
-                      ) : (
-                        <button
-                          disabled
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-500 border border-slate-700/50 text-xs font-medium rounded-lg opacity-50 cursor-not-allowed"
-                          title="Requires Director or Admin role"
-                        >
-                          Gated (National/SysAdmin)
-                        </button>
-                      )}
+                        {canVacate ? (
+                          <button
+                            onClick={() => setVacateTargetId(title.id)}
+                            disabled={!title.activeChampionId}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 text-xs font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={title.activeChampionId ? 'Vacate and strip title belt' : 'Title is already vacant'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            {title.activeChampionId ? 'Vacate Title' : 'Already Vacant'}
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-500 border border-slate-700/50 text-xs font-medium rounded-lg opacity-50 cursor-not-allowed"
+                            title="Requires Director or Admin role"
+                          >
+                            Gated (National/SysAdmin)
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -297,6 +328,15 @@ export default function ChampionshipsPage() {
             </div>
           </div>
         </div>
+
+        {challengeActionError && (
+          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 flex items-center justify-between">
+            <span>{challengeActionError}</span>
+            <button onClick={() => setChallengeActionError(null)} className="text-red-300 hover:text-white">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           {challenges && challenges.length > 0 ? (
@@ -345,7 +385,7 @@ export default function ChampionshipsPage() {
                       {canManageChallenges ? (
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => acceptMutation.mutate(challenge.id)}
+                            onClick={() => handleChallengeDecision(challenge.id, 'ACCEPT')}
                             disabled={acceptMutation.isPending || declineMutation.isPending}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 hover:border-green-500/30 text-green-400 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                             title="Accept and validate title challenge"
@@ -358,7 +398,7 @@ export default function ChampionshipsPage() {
                             Accept
                           </button>
                           <button
-                            onClick={() => declineMutation.mutate(challenge.id)}
+                            onClick={() => handleChallengeDecision(challenge.id, 'DECLINE')}
                             disabled={acceptMutation.isPending || declineMutation.isPending}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                             title="Decline and drop challenge request"
@@ -375,8 +415,9 @@ export default function ChampionshipsPage() {
                         <button
                           disabled
                           className="px-3 py-1.5 bg-slate-800 text-slate-500 border border-slate-700/50 text-xs font-medium rounded-lg opacity-50 cursor-not-allowed"
+                          title="Requires National Director or System Admin role"
                         >
-                          Gated
+                          Gated (National/SysAdmin)
                         </button>
                       )}
                     </td>
@@ -558,6 +599,91 @@ export default function ChampionshipsPage() {
           </div>
         </div>
       )}
+
+      {/* Championship Belt Lineage Modal */}
+      {lineageTitle && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1E293B] border border-slate-800 rounded-xl p-6 max-w-xl w-full shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg border border-amber-500/20">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-100">{lineageTitle.name} — Belt Lineage</h3>
+                  <p className="text-xs text-slate-400 font-mono">{lineageTitle.arm} • {lineageTitle.division} • {lineageTitle.weightClass}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setLineageTitle(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto space-y-3">
+              {isLineageLoading ? (
+                <div className="p-8 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                  Loading historical belt lineage...
+                </div>
+              ) : lineageRecords && lineageRecords.length > 0 ? (
+                lineageRecords.map((reign, idx) => {
+                  const isActiveReign = idx === 0 && !reign.vacatedAt;
+                  return (
+                    <div
+                      key={reign.id}
+                      className={`p-4 rounded-lg border ${
+                        isActiveReign
+                          ? 'bg-amber-500/5 border-amber-500/30'
+                          : 'bg-slate-900/40 border-slate-800'
+                      } flex items-center justify-between gap-4`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            isActiveReign
+                              ? 'bg-amber-500 text-slate-950'
+                              : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {isActiveReign ? 'Reigning Champion' : 'Former Champion'}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-200">
+                            {reign.displayName || `Athlete ${reign.athleteId.slice(0, 8)}`}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-mono">
+                          Acquired: {new Date(reign.acquiredAt).toLocaleDateString()}
+                          {reign.vacatedAt ? ` • Vacated: ${new Date(reign.vacatedAt).toLocaleDateString()} (${reign.reason})` : ''}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-amber-400 font-mono">{reign.defensesCount}</p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider">Defenses</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center border border-dashed border-slate-800 rounded-lg">
+                  <p className="text-xs text-slate-400">No historical championship reigns recorded for this belt yet.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setLineageTitle(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors"
+              >
+                Close Lineage
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

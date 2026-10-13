@@ -802,7 +802,18 @@ export class AdministrationService {
    * 7. Disputes & Sanctions Center
    */
   static async getDisputesTimeline() {
-    return db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    const rows = await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    const allEvidence = await db.select().from(disputeEvidence);
+    const evidenceByDisputeId = new Map<string, any[]>();
+    for (const ev of allEvidence) {
+      const list = evidenceByDisputeId.get(ev.disputeId) ?? [];
+      list.push(ev);
+      evidenceByDisputeId.set(ev.disputeId, list);
+    }
+    return rows.map((row: any) => ({
+      ...row,
+      evidence: evidenceByDisputeId.get(row.id) ?? [],
+    }));
   }
 
   static async resolveDisputeCase(disputeId: string, resolutionDetails: string, decision: "RESOLVED" | "REJECTED", reviewerId: string) {
@@ -817,10 +828,23 @@ export class AdministrationService {
       throw new ConflictError("Dispute has already been resolved");
     }
 
+    const [reviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (reviewer && (reviewer as any).role === "PROVINCIAL_DIRECTOR" && dispute.province) {
+      const reviewerJurisdiction =
+        ((reviewer as any).province as string | null | undefined) ??
+        ((reviewer as any).regionalCoverage as string | null | undefined) ??
+        null;
+      if (!reviewerJurisdiction || dispute.province.trim().toLowerCase() !== reviewerJurisdiction.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial Director can only resolve disputes in their assigned province (${reviewerJurisdiction || "unassigned"})`
+        );
+      }
+    }
+
     await db
       .update(disputes)
       .set({
-        status: decision === "RESOLVED" ? "RESOLVED" : "CLOSED",
+        status: decision,
         resolutionDetails,
         assignedReviewerId: reviewerId,
         updatedAt: new Date(),

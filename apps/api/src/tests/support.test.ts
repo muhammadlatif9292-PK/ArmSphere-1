@@ -466,5 +466,48 @@ describe("Customer Support & Helpdesk Ticketing System", () => {
         .set("Authorization", supportToken);
       expect(suspendedRes.status).toBe(403);
     });
+
+    it("accepts mobile-style assignedAgentId and content fields and returns both message and content", async () => {
+      const assignRes = await request(app)
+        .post(`/support/tickets/${ticketId}/assign`)
+        .set("Authorization", supportToken)
+        .send({ assignedAgentId: supportAgentId });
+
+      expect(assignRes.status).toBe(200);
+      expect(assignRes.body.data.assignedAgentId).toBe(supportAgentId);
+
+      const msgRes = await request(app)
+        .post(`/support/tickets/${ticketId}/messages`)
+        .set("Authorization", supportToken)
+        .send({ content: "Mobile client reply via content field", isInternal: false });
+
+      expect(msgRes.status).toBe(201);
+      expect(msgRes.body.data.message).toBe("Mobile client reply via content field");
+      expect(msgRes.body.data.content).toBe("Mobile client reply via content field");
+
+      const detailRes = await request(app)
+        .get(`/support/tickets/${ticketId}`)
+        .set("Authorization", athlete1Token);
+
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.data.messages[0].message).toBe("Mobile client reply via content field");
+      expect(detailRes.body.data.messages[0].content).toBe("Mobile client reply via content field");
+    });
+
+    it("blocks posting messages to a CLOSED support ticket (400 Bad Request)", async () => {
+      await request(app)
+        .patch(`/support/tickets/${ticketId}/status`)
+        .set("Authorization", athlete1Token)
+        .send({ status: SupportTicketStatus.CLOSED });
+
+      const msgRes = await request(app)
+        .post(`/support/tickets/${ticketId}/messages`)
+        .set("Authorization", athlete1Token)
+        .send({ message: "Trying to reply to closed ticket" });
+
+      expect(msgRes.status).toBe(400);
+      expect(msgRes.body.detail || msgRes.body.message).toMatch(/closed support ticket/i);
+    });
   });
 });
+

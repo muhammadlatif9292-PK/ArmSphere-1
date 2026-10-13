@@ -188,6 +188,52 @@ void main() {
             cancelToken: cancelToken,
           )).called(1);
     });
+
+    test('publishEvent, completeEvent, and cancelEvent post to canonical event lifecycle endpoints', () async {
+      final repository = TournamentRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      when(() => mockDio.post(
+            '/tournaments/events/evt_10/publish',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/tournaments/events/evt_10/publish'),
+            statusCode: 200,
+            data: {'id': 'evt_10', 'status': 'PUBLISHED'},
+          ));
+
+      when(() => mockDio.post(
+            '/tournaments/events/evt_10/complete',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/tournaments/events/evt_10/complete'),
+            statusCode: 200,
+            data: {'id': 'evt_10', 'status': 'COMPLETED'},
+          ));
+
+      when(() => mockDio.post(
+            '/tournaments/events/evt_10/cancel',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/tournaments/events/evt_10/cancel'),
+            statusCode: 200,
+            data: {'id': 'evt_10', 'status': 'CANCELLED'},
+          ));
+
+      final published = await repository.publishEvent('evt_10');
+      expect(published['status'], equals('PUBLISHED'));
+
+      final completed = await repository.completeEvent('evt_10');
+      expect(completed['status'], equals('COMPLETED'));
+
+      final cancelled = await repository.cancelEvent('evt_10', reason: 'Venue flooding');
+      expect(cancelled['status'], equals('CANCELLED'));
+    });
   });
 
   group('AuthRepository Unit Tests', () {
@@ -386,6 +432,75 @@ void main() {
         resolutionNotes: 'Confirmed seeding order with director.',
       );
       expect(updated['status'], equals('RESOLVED'));
+    });
+
+    test('assignTicket and addTicketMessage send both field aliases for API contract resilience', () async {
+      final repository = SupportRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      when(() => mockDio.patch(
+            '/support/tickets/ticket_1/assign',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/support/tickets/ticket_1/assign'),
+            statusCode: 200,
+            data: {
+              'data': {
+                'id': 'ticket_1',
+                'assignedAgentId': 'agent_42',
+                'status': 'IN_PROGRESS',
+              }
+            },
+          ));
+
+      final assigned = await repository.assignTicket('ticket_1', 'agent_42');
+      expect(assigned['assignedAgentId'], equals('agent_42'));
+
+      verify(() => mockDio.patch(
+            '/support/tickets/ticket_1/assign',
+            data: {
+              'agentId': 'agent_42',
+              'assignedAgentId': 'agent_42',
+            },
+            cancelToken: any(named: 'cancelToken'),
+          )).called(1);
+
+      when(() => mockDio.post(
+            '/support/tickets/ticket_1/messages',
+            data: any(named: 'data'),
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/support/tickets/ticket_1/messages'),
+            statusCode: 201,
+            data: {
+              'data': {
+                'id': 'msg_1',
+                'message': 'Bracket seed corrected.',
+                'content': 'Bracket seed corrected.',
+                'isInternal': false,
+              }
+            },
+          ));
+
+      final msg = await repository.addTicketMessage(
+        'ticket_1',
+        message: 'Bracket seed corrected.',
+        isInternal: false,
+      );
+      expect(msg['id'], equals('msg_1'));
+
+      verify(() => mockDio.post(
+            '/support/tickets/ticket_1/messages',
+            data: {
+              'message': 'Bracket seed corrected.',
+              'content': 'Bracket seed corrected.',
+              'isInternal': false,
+            },
+            cancelToken: any(named: 'cancelToken'),
+          )).called(1);
     });
   });
 }

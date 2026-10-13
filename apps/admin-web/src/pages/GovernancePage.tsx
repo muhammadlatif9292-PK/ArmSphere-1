@@ -11,9 +11,11 @@ import {
   Video, 
   User, 
   Layers,
-  Loader2
+  Loader2,
+  Lock,
+  ExternalLink
 } from 'lucide-react';
-import { useDisputes, useResolveDispute } from '../lib/governanceApi';
+import { useDisputes, useResolveDispute, useCloseDispute } from '../lib/governanceApi';
 import { useAuth } from '../context/AuthContext';
 import { UserRole, Dispute } from '../types';
 import { canPerformAction } from '../lib/authorizationPolicy';
@@ -29,12 +31,14 @@ export default function GovernancePage() {
   } = useDisputes();
 
   const resolveMutation = useResolveDispute();
+  const closeMutation = useCloseDispute();
 
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
   
   // Resolution form state
   const [resolutionDetails, setResolutionDetails] = useState('');
   const [decision, setDecision] = useState<'RESOLVED' | 'REJECTED'>('RESOLVED');
+  const [closureNotes, setClosureNotes] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Provincial Director jurisdiction scoping
@@ -52,6 +56,7 @@ export default function GovernancePage() {
   const handleSelectDispute = (dispute: Dispute) => {
     setSelectedDispute(dispute);
     setResolutionDetails(dispute.resolutionDetails || '');
+    setClosureNotes('');
     setSubmitError(null);
   };
 
@@ -75,16 +80,44 @@ export default function GovernancePage() {
         decision
       });
       
-      // Update local selection to reflect resolved state
+      // Update local selection to reflect resolved/rejected state accurately
       const updatedDispute = {
         ...selectedDispute,
-        status: decision === 'RESOLVED' ? 'RESOLVED' : 'CLOSED',
+        status: decision,
         resolutionDetails
       };
       setSelectedDispute(updatedDispute);
       refetch();
     } catch (err: any) {
       setSubmitError(err?.message || 'Failed to resolve dispute.');
+    }
+  };
+
+  const handleCloseDispute = async () => {
+    if (!selectedDispute) return;
+    if (isCrossProvinceDispute) {
+      setSubmitError(`Provincial Directors can only close disputes originating in their jurisdiction (${jurisdiction}).`);
+      return;
+    }
+    try {
+      setSubmitError(null);
+      const trimmedNotes = closureNotes.trim() || undefined;
+      await closeMutation.mutateAsync({
+        id: selectedDispute.id,
+        closureNotes: trimmedNotes,
+      });
+      const nextDetails = trimmedNotes
+        ? `${selectedDispute.resolutionDetails ? `${selectedDispute.resolutionDetails} | ` : ''}Closed: ${trimmedNotes}`
+        : selectedDispute.resolutionDetails;
+      setSelectedDispute({
+        ...selectedDispute,
+        status: 'CLOSED',
+        resolutionDetails: nextDetails,
+      });
+      setClosureNotes('');
+      refetch();
+    } catch (err: any) {
+      setSubmitError(err?.message || 'Failed to close dispute.');
     }
   };
 
@@ -150,12 +183,18 @@ export default function GovernancePage() {
     );
   }
 
-  // Auto-select first dispute once data arrives (effect, not render-phase side effect)
+  // Auto-select first dispute once data arrives, and keep selectedDispute synced on refetch
   useEffect(() => {
-    if (disputes && disputes.length > 0 && !selectedDispute) {
+    if (!disputes || disputes.length === 0) return;
+    if (!selectedDispute) {
       handleSelectDispute(disputes[0]);
+    } else {
+      const latest = disputes.find((d) => d.id === selectedDispute.id);
+      if (latest && (latest.status !== selectedDispute.status || latest.resolutionDetails !== selectedDispute.resolutionDetails || (latest.evidence?.length ?? 0) !== (selectedDispute.evidence?.length ?? 0))) {
+        setSelectedDispute(latest);
+      }
     }
-  }, [disputes, selectedDispute, handleSelectDispute]);
+  }, [disputes, selectedDispute]);
 
   return (
     <div className="space-y-8">
@@ -272,31 +311,42 @@ export default function GovernancePage() {
                   </div>
                 </div>
 
-                {/* Conceptual Evidence Slot - Mirroring Mobile Client design contract */}
+                {/* Case Evidence Artifacts */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Case Evidence Artifacts</h4>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 border border-dashed border-slate-800 hover:border-slate-700 bg-slate-900/20 rounded-lg flex items-center gap-3.5 transition-colors">
-                      <div className="p-2.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-lg">
-                        <Video className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-300">Incident_Video_Clip_01.mp4</p>
-                        <p className="text-[10px] text-slate-500 font-mono">15.2 MB • Virus Scan Cleaned</p>
-                      </div>
+                  {selectedDispute.evidence && selectedDispute.evidence.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedDispute.evidence.map((ev) => (
+                        <a
+                          key={ev.id}
+                          href={ev.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-4 border border-slate-800 hover:border-amber-500/40 bg-slate-900/30 rounded-lg flex items-center justify-between gap-3.5 transition-colors group"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="p-2.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-lg flex-shrink-0">
+                              {ev.fileType === 'VIDEO' ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-300 truncate group-hover:text-amber-400 transition-colors">
+                                {ev.description || ev.fileUrl}
+                              </p>
+                              <p className="text-[10px] text-slate-500 font-mono truncate">
+                                {ev.fileUrl} • {ev.fileType} • Virus Scan: {ev.virusScanResult || 'CLEAN'}
+                              </p>
+                            </div>
+                          </div>
+                          <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-amber-400 flex-shrink-0" />
+                        </a>
+                      ))}
                     </div>
-
-                    <div className="p-4 border border-dashed border-slate-800 hover:border-slate-700 bg-slate-900/20 rounded-lg flex items-center gap-3.5 transition-colors">
-                      <div className="p-2.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-lg">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-300">Referee_Statement_Signed.pdf</p>
-                        <p className="text-[10px] text-slate-500 font-mono">342 KB • Virus Scan Cleaned</p>
-                      </div>
+                  ) : (
+                    <div className="p-4 border border-dashed border-slate-800 bg-slate-900/20 rounded-lg text-center">
+                      <p className="text-xs text-slate-400 font-medium">No evidence files attached to this dispute dossier.</p>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Resolution History if Resolved */}
@@ -308,6 +358,46 @@ export default function GovernancePage() {
                     <p className="text-sm text-slate-300 leading-relaxed">
                       {selectedDispute.resolutionDetails}
                     </p>
+                  </div>
+                )}
+
+                {/* Terminal Closure Action for Resolved or Rejected Disputes */}
+                {(selectedDispute.status === 'RESOLVED' || selectedDispute.status === 'REJECTED') && canResolve && (
+                  <div className="border-t border-slate-800 pt-5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-slate-400" />
+                      <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Finalize &amp; Close Dispute Dossier</h4>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Once the appeal window has concluded or final remedies have been verified, seal this dispute into terminal <span className="font-mono text-slate-300">CLOSED</span> state.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input
+                        type="text"
+                        value={closureNotes}
+                        onChange={(e) => setClosureNotes(e.target.value)}
+                        placeholder="Optional closure archival note..."
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCloseDispute}
+                        disabled={closeMutation.isPending}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {closeMutation.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5" />
+                        )}
+                        Close Dispute Dossier
+                      </button>
+                    </div>
+                    {submitError && (
+                      <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded border border-red-500/20">
+                        {submitError}
+                      </p>
+                    )}
                   </div>
                 )}
 

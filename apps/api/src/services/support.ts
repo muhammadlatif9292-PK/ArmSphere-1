@@ -231,6 +231,7 @@ export class SupportService {
       const sender = userMap.get(m.senderId);
       return {
         ...m,
+        content: m.message,
         sender: sender
           ? {
               id: sender.id,
@@ -444,6 +445,10 @@ export class SupportService {
       throw new NotFoundError("Support ticket not found.");
     }
 
+    if (ticket.status === SupportTicketStatus.CLOSED) {
+      throw new BadRequestError("Cannot add a message to a closed support ticket. Reopen the ticket first.");
+    }
+
     const isStaff = await SupportService.resolveStaffAuthority(actorId, role);
 
     if (!isStaff && ticket.userId !== actorId) {
@@ -471,6 +476,9 @@ export class SupportService {
 
     logger.info({ ticketId, messageId: message.id, isInternal: effectiveIsInternal }, "Added ticket message");
 
-    return message;
+    return {
+      ...message,
+      content: message.message,
+    };
   }
 }

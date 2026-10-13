@@ -144,6 +144,7 @@ export interface Dispute {
   resolutionDetails: string | null;
   assignedReviewerId: string | null;
   province?: string | null;
+  evidence?: DisputeEvidence[];
   createdAt: string;
   updatedAt: string;
 }

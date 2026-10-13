@@ -59,7 +59,12 @@ governanceRouter.post(
 governanceRouter.post(
   "/disputes/:id/close",
   authenticate,
-  requireRole(UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  requireRole(
+    UserRole.PROVINCIAL_DIRECTOR,
+    UserRole.NATIONAL_DIRECTOR,
+    UserRole.COMPLIANCE_OFFICER,
+    UserRole.SYSTEM_ADMIN
+  ),
   GovernanceController.closeDispute
 );
 

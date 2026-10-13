@@ -59,6 +59,7 @@ export class GovernanceService {
       "SUPPORT_AGENT",
       "REFEREE",
     ];
+    let rows: any[];
     if (
       requester &&
       requester.role &&
@@ -66,23 +67,38 @@ export class GovernanceService {
     ) {
       // PROVINCIAL_DIRECTOR only sees disputes from their province
       if (requester.role === "PROVINCIAL_DIRECTOR" && requester.province) {
-        return await db
+        rows = await db
           .select()
           .from(disputes)
           .where(eq(disputes.province, requester.province))
           .orderBy(desc(disputes.createdAt));
+      } else {
+        // Other privileged roles see all disputes
+        rows = await db.select().from(disputes).orderBy(desc(disputes.createdAt));
       }
-      // Other privileged roles see all disputes
-      return await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    } else {
+      if (!requester) {
+        throw new ForbiddenError("Requester context is required to list disputes.");
+      }
+      rows = await db
+        .select()
+        .from(disputes)
+        .where(eq(disputes.creatorId, requester.id))
+        .orderBy(desc(disputes.createdAt));
     }
-    if (!requester) {
-      throw new ForbiddenError("Requester context is required to list disputes.");
+
+    const allEvidence = (await db.select().from(disputeEvidence)) as any[];
+    const evidenceByDisputeId = new Map<string, any[]>();
+    for (const ev of allEvidence) {
+      const list = evidenceByDisputeId.get(ev.disputeId) ?? [];
+      list.push(ev);
+      evidenceByDisputeId.set(ev.disputeId, list);
     }
-    return await db
-      .select()
-      .from(disputes)
-      .where(eq(disputes.creatorId, requester.id))
-      .orderBy(desc(disputes.createdAt));
+
+    return rows.map((row: any) => ({
+      ...row,
+      evidence: evidenceByDisputeId.get(row.id) ?? [],
+    }));
   }
 
   /**
@@ -723,9 +739,14 @@ export class GovernanceService {
     }
 
     const canonicalRole = (dbActor as any).role as string;
-    const ALLOWED_CLOSER_ROLES = ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"];
+    const ALLOWED_CLOSER_ROLES = [
+      "SYSTEM_ADMIN",
+      "NATIONAL_DIRECTOR",
+      "PROVINCIAL_DIRECTOR",
+      "COMPLIANCE_OFFICER",
+    ];
     if (!ALLOWED_CLOSER_ROLES.includes(canonicalRole)) {
-      throw new ForbiddenError("Only federation directors or system administrators may close disputes");
+      throw new ForbiddenError("Only federation directors, compliance officers, or system administrators may close disputes");
     }
 
     if (canonicalRole === "PROVINCIAL_DIRECTOR" && dispute.province) {

@@ -72,7 +72,7 @@ class _GovernanceDashboardScreenState
         return status == 'ESCALATED' || status == 'AWAITING_EVIDENCE';
       }
       if (_selectedFilter == 'RESOLVED') {
-        return status == 'RESOLVED' || status == 'REJECTED';
+        return status == 'RESOLVED' || status == 'REJECTED' || status == 'CLOSED';
       }
       return true;
     }).toList();
@@ -156,7 +156,8 @@ class _GovernanceDashboardScreenState
           final resolvedCount = disputes
               .where((d) =>
                   (d['status']?.toString().toUpperCase()) == 'RESOLVED' ||
-                  (d['status']?.toString().toUpperCase()) == 'REJECTED')
+                  (d['status']?.toString().toUpperCase()) == 'REJECTED' ||
+                  (d['status']?.toString().toUpperCase()) == 'CLOSED')
               .length;
 
           final filtered = _filterDisputes(disputes);
@@ -901,7 +902,9 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
           }
 
           final status = d['status']?.toString().toUpperCase() ?? 'OPEN';
-          final isTerminal = status == 'RESOLVED' || status == 'REJECTED';
+          final isResolvedOrRejected = status == 'RESOLVED' || status == 'REJECTED';
+          final isClosed = status == 'CLOSED';
+          final isActiveDispute = !isResolvedOrRejected && !isClosed;
           final idStr = d['id']?.toString() ?? '';
           final shortId = idStr.length >= 8
               ? idStr.substring(0, 8).toUpperCase()
@@ -1080,63 +1083,65 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                 const SizedBox(height: AppTheme.space24),
 
                 // 4. Action Console
-                ElevatedButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => _promptText(
-                            'Escalate dispute to Executive Panel',
-                            'Provide explicit grounds why table officiating requires higher federation review...',
-                            (reason) => ref
-                                .read(disputeProvider.notifier)
-                                .escalateDispute(
-                                    widget.disputeId, reason),
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryAccent,
-                    foregroundColor: AppTheme.voidBackground,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
+                if (isActiveDispute) ...[
+                  ElevatedButton.icon(
+                    onPressed: _busy
+                        ? null
+                        : () => _promptText(
+                              'Escalate dispute to Executive Panel',
+                              'Provide explicit grounds why table officiating requires higher federation review...',
+                              (reason) => ref
+                                  .read(disputeProvider.notifier)
+                                  .escalateDispute(
+                                      widget.disputeId, reason),
+                            ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryAccent,
+                      foregroundColor: AppTheme.voidBackground,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                    ),
+                    icon: const Icon(Icons.trending_up, size: 18),
+                    label: const Text(
+                      'ESCALATE DISPUTE',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.trending_up, size: 18),
-                  label: const Text(
-                    'ESCALATE DISPUTE',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space12),
+                  const SizedBox(height: AppTheme.space12),
 
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _addEvidence,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.textPrimary,
-                    side: const BorderSide(color: AppTheme.border, width: 1.0),
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _addEvidence,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.textPrimary,
+                      side: const BorderSide(color: AppTheme.border, width: 1.0),
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                    ),
+                    icon: const Icon(Icons.attach_file,
+                        size: 18, color: AppTheme.goldPrimary),
+                    label: const Text(
+                      'ATTACH EVIDENCE LINK',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.attach_file,
-                      size: 18, color: AppTheme.goldPrimary),
-                  label: const Text(
-                    'ATTACH EVIDENCE LINK',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space12),
+                  const SizedBox(height: AppTheme.space12),
+                ],
 
-                if (isTerminal)
+                if (isResolvedOrRejected)
                   OutlinedButton.icon(
                     onPressed: _busy
                         ? null
@@ -1165,6 +1170,19 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                         fontFamily: AppTheme.fontDisplay,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
+                      ),
+                    ),
+                  )
+                else if (isClosed)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.space16, vertical: AppTheme.space8),
+                    child: Text(
+                      'This dispute dossier is permanently closed and sealed.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textMuted,
                       ),
                     ),
                   )

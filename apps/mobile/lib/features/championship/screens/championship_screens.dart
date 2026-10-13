@@ -86,7 +86,7 @@ class ChampionshipsListScreen extends ConsumerWidget {
                 final name = c['name']?.toString() ?? 'Championship Title';
                 final arm = (c['arm']?.toString() ?? 'RIGHT').toUpperCase();
                 final weightClass = c['weightClass']?.toString() ?? '';
-                final ageGroup = c['ageGroup']?.toString() ?? '';
+                final ageGroup = (c['division'] ?? c['ageGroup'])?.toString() ?? '';
 
                 return RepaintBoundary(
                   child: ElevatedActionCard(
@@ -197,7 +197,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
     final titleName = title?['name']?.toString() ?? 'Championship Title';
     final arm = (title?['arm']?.toString() ?? 'RIGHT').toUpperCase();
     final weightClass = title?['weightClass']?.toString() ?? '';
-    final ageGroup = title?['ageGroup']?.toString() ?? '';
+    final ageGroup = (title?['division'] ?? title?['ageGroup'])?.toString() ?? '';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -364,7 +364,10 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                 return Column(
                   children: [
                     for (int i = 0; i < lineage.length; i++)
-                      _ReignCard(reign: lineage[i], isCurrent: i == 0),
+                      _ReignCard(
+                        reign: lineage[i],
+                        isCurrent: i == 0 && lineage[i]['vacatedAt'] == null,
+                      ),
                   ],
                 );
               },
@@ -382,13 +385,28 @@ class _ReignCard extends StatelessWidget {
 
   const _ReignCard({required this.reign, required this.isCurrent});
 
+  int _computeReignDays() {
+    final explicitDays = reign['reignDays'];
+    if (explicitDays is num) return explicitDays.toInt();
+    final acquiredStr = reign['acquiredAt']?.toString();
+    if (acquiredStr == null) return 0;
+    final acquired = DateTime.tryParse(acquiredStr);
+    if (acquired == null) return 0;
+    final vacatedStr = reign['vacatedAt']?.toString();
+    final end = (vacatedStr != null ? DateTime.tryParse(vacatedStr) : null) ?? DateTime.now();
+    final diff = end.difference(acquired).inDays;
+    return diff < 0 ? 0 : diff;
+  }
+
   @override
   Widget build(BuildContext context) {
     final defenses = reign['defensesCount'] ?? 0;
-    final days = (reign['reignDays'] ?? 0).toString();
+    final days = _computeReignDays().toString();
     final reason = reign['reason']?.toString() ?? '';
+    final displayName = reign['displayName']?.toString() ?? '';
     final athleteId = reign['athleteId']?.toString() ?? '—';
     final shortAthleteId = athleteId.length >= 8 ? athleteId.substring(0, 8).toUpperCase() : athleteId;
+    final championLabel = displayName.isNotEmpty ? displayName : 'Champion #$shortAthleteId';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.space8),
@@ -425,14 +443,17 @@ class _ReignCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Champion #$shortAthleteId',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: isCurrent ? AppTheme.goldLight : AppTheme.textPrimary,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                        Flexible(
+                          child: Text(
+                            championLabel,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: isCurrent ? AppTheme.goldLight : AppTheme.textPrimary,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
                           ),
                         ),
                         if (isCurrent)
