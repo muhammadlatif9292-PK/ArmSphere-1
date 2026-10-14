@@ -111,27 +111,14 @@ class TournamentsListScreen extends ConsumerWidget {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(16, 20, 16, MainShellScope.bottomClearance(context)),
-                children: const [
-                  SizedBox(height: 120),
-                  Icon(Icons.emoji_events_outlined, size: 56, color: AppTheme.textMuted),
-                  SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'No competitions published yet',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Check back soon for upcoming sanctioned events',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                    ),
+                children: [
+                  const SizedBox(height: 64),
+                  AppEmptyState(
+                    icon: Icons.emoji_events_outlined,
+                    title: 'No competitions published yet',
+                    subtitle: 'Check back soon for upcoming sanctioned events',
+                    ctaLabel: 'Refresh Events',
+                    onCtaTap: () => ref.invalidate(tournamentProvider),
                   ),
                 ],
               ),
