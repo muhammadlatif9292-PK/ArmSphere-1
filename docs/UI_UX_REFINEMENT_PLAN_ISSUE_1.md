@@ -1,6 +1,6 @@
 # ArmSphere UI/UX Refinement: Inspection Report and Plan (Issue #1)
 
-Status: DRAFT. Documentation only. No application code was modified.
+Status: DRAFT, revision 2 (owner decisions recorded, token source verified). Documentation only.
 Base inspected: branch `design/titanium-luxe` at `47d57bc7` (2026-10-13), read through the GitLab API.
 
 ## 0. Method and limits (read first)
@@ -130,10 +130,39 @@ Mobile (only when a mobile slice is chosen): `flutter analyze`, `flutter test`, 
 - No test, lint, or build was run.
 - Flutter and Node toolchains are not available to this session.
 - Which token set is approved (`#121826 / #334155` in `UI_UX_DESIGN_STATE.md` and on `main`, versus titanium `#151B24` with translucent silver borders on `design/titanium-luxe`) needs an owner decision. This plan assumes the branch is authoritative as the issue states.
-- Please confirm that `design/titanium-luxe` is the intended release-candidate branch and base for refinement MRs.
+- RESOLVED by owner: `design/titanium-luxe` is the base and target for refinement MRs.
 - `docs/design/*` (72 files) were not opened; the plan should be checked against `06`, `07`, `22`, `24`, `37`, `72` before coding.
 - Model confirmation: cannot verify Claude Sonnet 5.5 usage from this session.
 
 ## 10. Guardrails honoured
 
 No deploys, publishes, merges, production config edits, force-pushes, or changes to the existing release-candidate branch. This MR adds one markdown file on a separate branch.
+
+## 11. Revision 2: decisions, token verification, branch-verified findings
+
+Owner decisions: (1) base and target `design/titanium-luxe`; (2) follow the implemented Titanium Luxe direction after verifying the canonical source, no guessing; (3) login pill text `ARM WRESTLING COMPETITION PLATFORM`.
+
+### Token source verification (read on `design/titanium-luxe`)
+- Docs `07` (v1.0.0, "locked") and `56` (2026-09-26) list card `#121826`, elevated `#1E293B`, border `#334155`, crimson `#EF4444`, text `#F8FAFC / #94A3B8 / #8493A5`. Doc `63` (2026-09-27) names `app_theme.dart` plus doc `56` as token truth.
+- Branch `app_theme.dart` has card `#151B24`, elevated `#1E2836`, border `0x1FD6DCE3` (translucent silver), crimson `#E23B3B`, text `#F4F7FA / #AAB3BE / #7E8996`.
+- Timeline: last commit touching `docs/design` and `UI_UX_DESIGN_STATE.md` is `6a532206` (2026-09-27). The titanium change is `77687af9` (2026-10-09, +2994/-848, parent `255b1080`, titled "implement Titanium Glass Elite Championship Edition design system"). No documentation commit followed it, so the docs predate the implemented direction.
+- Doc `00` conflict rule ranks actual source above documented tokens. Issue #1 asks for graphite/titanium surfaces with restrained crimson and gold.
+- Slice 1 touches admin-web only, aligned to `index.css` and the shell, which are already titanium. No theme file or doc is modified.
+- Resolution: retain branch tokens. Follow-up for the owner: update docs `07`, `56` and `UI_UX_DESIGN_STATE.md`, and re-verify the contrast ledger against titanium values.
+
+### Additional branch-verified drift (previously main-only)
+- `AuditPage.tsx`: `border-slate-800`, `bg-slate-900/60`, amber icon and verify button and action pill, `green-*` / `red-*` result panel.
+- `VenuesPage.tsx`: `border-slate-800`, `bg-slate-900` inputs, `focus:border-amber-500/60`, amber approve button, `teal-400` / `blue-500` stat icons.
+- Decision: both are slice 2, not slice 1. Their tests assert `locked-jurisdiction-badge`, `JURISDICTION: PUNJAB`, venue names and the `verify chain integrity` button name.
+
+### Test constraints (full `admin_web_rbac.test.tsx` read)
+- No test imports `LoginPage` or the `App` error boundary.
+- `AdminShell` test: `getByText('Punjab Director')` must match one element. The mobile drawer is closed by default, so do not add the user name to the mobile top bar.
+- `ForbiddenPage` tests need single occurrences of `PROVINCIAL DIRECTOR` and `Sindh`, plus `HTTP 403 Forbidden`, `Restricted Operational Area` and a button named `Switch to PROVINCIAL...`.
+- `RefereesPage` test uses `.closest('.bg-brand-panel')`, so keep that class.
+
+### Slice 1 rules applied
+- Same values as the desktop shell and `ui.tsx`: panels `#111722` / `#151B24` / `#0E131C`, hairline `rgba(214,220,227,0.12)`, gold `#D4AF37`, crimson `#E23B3B`.
+- Brand and primary-action amber becomes gold. Input focus becomes cyan `#38BDF8` per docs `07` and `56`. Small error text keeps a lighter red tint as `ui.tsx` does (contrast not tool-verified).
+- Noted, not changed: shell active link uses gold while doc `56` assigns active navigation to cyan. Pre-existing.
+- Doc `72` post-coding steps (diff review, `npm run lint`, `npm run test`, `npm run build`) are NOT yet run.
