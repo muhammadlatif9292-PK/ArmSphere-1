@@ -1,6 +1,10 @@
 # ArmSphere UI/UX Refinement: Inspection Report and Plan (Issue #1)
 
-Status: DRAFT, revision 2 (owner decisions recorded, token source verified). Documentation only.
+Status: DRAFT, revision 3. Documentation only.
+
+> **PRIORITY (rev 3, owner directive): the primary workstream is the Flutter Android app in `apps/mobile`. Admin web is secondary and paused.** Sections 4 to 7 below describe the admin-web inspection and slice 1. They are retained for reference and are NOT the current plan. Draft MR !3 (admin-web slice 1) stays unmerged and untouched. The active audit and implementation order are in `docs/UI_UX_FLUTTER_AUDIT_ISSUE_1.md`.
+>
+> Flutter plan summary: (1) fix the `Space Grotesk` versus `SpaceGrotesk` font-family mismatch; (2) align the shell and the tab chrome; (3) unify loading, empty and error surfaces on the five tabs. Accent hierarchy per owner: crimson = primary emphasis and active navigation, gold = championship and achievement, titanium = structure, cyan only where semantically established. No global theme change until the contrast check and owner approval. Nothing in this revision has been run, rendered or tested.
 Base inspected: branch `design/titanium-luxe` at `47d57bc7` (2026-10-13), read through the GitLab API.
 
 ## 0. Method and limits (read first)
