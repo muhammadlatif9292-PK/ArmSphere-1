@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, KeyRound, Mail, AlertTriangle, Lock, Cpu, Globe2, ShieldCheck } from 'lucide-react';
+import { Shield, KeyRound, Mail, AlertTriangle, Lock, Trophy, Globe2, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -41,8 +41,8 @@ export default function LoginPage() {
       {/* Background Graphic & Competition Table Silhouette Grid */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Championship Ambient Glow Field */}
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[140px]" />
-        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[160px]" />
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#D4AF37]/5 rounded-full blur-[140px]" />
+        <div className="absolute top-1/2 right-0 w-[500px] h-[500px] bg-[#38BDF8]/5 rounded-full blur-[160px]" />
 
         {/* Tactical Grid Overlay */}
         <div 
@@ -63,14 +63,14 @@ export default function LoginPage() {
       </div>
 
       {/* Top Header Bar */}
-      <header className="relative z-10 p-6 border-b border-slate-800/80 bg-[#0B0F19]/60 backdrop-blur-md flex items-center justify-between">
+      <header className="relative z-10 p-6 border-b border-[rgba(214,220,227,0.12)] bg-[#0B0F19]/60 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded-lg text-amber-400 border border-amber-500/30 shadow-lg shadow-amber-500/5">
+          <div className="p-2 bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 rounded-lg text-[#D4AF37] border border-[#D4AF37]/30 shadow-[0_0_14px_rgba(212,175,55,0.2)]">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <span className="font-display font-bold text-base text-slate-100 tracking-tight">ARMSPHERE</span>
-            <span className="ml-2 text-xs font-mono font-semibold text-amber-400 uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+            <span className="ml-2 text-xs font-mono font-semibold text-[#D4AF37] uppercase tracking-widest px-2 py-0.5 rounded bg-[#D4AF37]/10 border border-[#D4AF37]/25">
               Federation Control
             </span>
           </div>
@@ -91,9 +91,9 @@ export default function LoginPage() {
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-6 py-12 flex flex-col lg:flex-row items-center justify-between gap-12">
         {/* Left Side: Brand Narrative & Federation Authority */}
         <div className="flex-1 space-y-6 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-amber-400">
-            <Cpu className="w-3.5 h-3.5" />
-            <span>F1 RACE-CONTROL INFORMATION DENSITY</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#151B24] border border-[rgba(214,220,227,0.12)] text-xs font-mono text-[#D4AF37]">
+            <Trophy className="w-3.5 h-3.5" />
+            <span>ARM WRESTLING COMPETITION PLATFORM</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-display font-extrabold text-slate-100 tracking-tight leading-tight">
@@ -104,29 +104,29 @@ export default function LoginPage() {
             Centralized competition intelligence, dispute resolution, referee score verification, and championship title registry for official national arm wrestling operations.
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800/80 max-w-lg">
-            <div className="p-3 bg-[#0F172A]/80 border border-slate-800 rounded-lg">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-[rgba(214,220,227,0.12)] max-w-lg">
+            <div className="p-3 bg-[#151B24]/80 border border-[rgba(214,220,227,0.12)] rounded-lg">
               <p className="text-xs font-mono text-slate-400 uppercase">Authority</p>
               <p className="text-sm font-bold text-slate-200 mt-0.5">National Council</p>
             </div>
-            <div className="p-3 bg-[#0F172A]/80 border border-slate-800 rounded-lg">
+            <div className="p-3 bg-[#151B24]/80 border border-[rgba(214,220,227,0.12)] rounded-lg">
               <p className="text-xs font-mono text-slate-400 uppercase">Audit Trail</p>
               <p className="text-sm font-bold text-emerald-400 mt-0.5">Immutable Log</p>
             </div>
-            <div className="p-3 bg-[#0F172A]/80 border border-slate-800 rounded-lg">
+            <div className="p-3 bg-[#151B24]/80 border border-[rgba(214,220,227,0.12)] rounded-lg">
               <p className="text-xs font-mono text-slate-400 uppercase">Security</p>
-              <p className="text-sm font-bold text-amber-400 mt-0.5">Role Enforcement</p>
+              <p className="text-sm font-bold text-[#D4AF37] mt-0.5">Role Enforcement</p>
             </div>
           </div>
         </div>
 
         {/* Right Side: Compact Premium Authentication Panel */}
-        <div className="w-full max-w-md bg-[#0F172A]/90 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative">
+        <div className="w-full max-w-md bg-[#111722]/90 border border-[rgba(214,220,227,0.14)] rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative">
           {/* Restrained Championship Accent Line */}
-          <div className="absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+          <div className="absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent" />
 
           <div className="mb-6 text-left">
-            <div className="flex items-center gap-2 text-xs font-mono text-amber-400 uppercase tracking-widest mb-1">
+            <div className="flex items-center gap-2 text-xs font-mono text-[#D4AF37] uppercase tracking-widest mb-1">
               <Lock className="w-3.5 h-3.5" /> Secure Authentication
             </div>
             <h2 className="text-2xl font-display font-bold text-slate-100">Administrator Access</h2>
@@ -134,8 +134,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 text-red-200 p-3.5 rounded-lg mb-6 text-xs leading-relaxed">
-              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 bg-[#E23B3B]/10 border border-[#E23B3B]/25 text-red-200 p-3.5 rounded-lg mb-6 text-xs leading-relaxed">
+              <AlertTriangle className="w-4 h-4 text-[#E23B3B] shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold text-red-300">Access Denied</p>
                 <p className="text-red-400/90 mt-0.5">{error}</p>
@@ -157,7 +157,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="executive@armsphere.org"
-                  className="w-full bg-[#070A11] border border-slate-700/80 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-colors font-sans"
+                  className="w-full bg-[#0E131C] border border-[rgba(214,220,227,0.14)] rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8]/50 transition-colors font-sans"
                   disabled={isSubmitting}
                   required
                 />
@@ -177,7 +177,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-[#070A11] border border-slate-700/80 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-colors font-sans"
+                  className="w-full bg-[#0E131C] border border-[rgba(214,220,227,0.14)] rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8]/50 transition-colors font-sans"
                   disabled={isSubmitting}
                   required
                 />
@@ -187,7 +187,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm py-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/50 shadow-lg shadow-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-2"
+              className="w-full bg-[#D4AF37] hover:bg-[#F5E096] text-slate-950 font-bold text-sm py-3 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 shadow-[0_0_16px_rgba(212,175,55,0.18)] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-2"
             >
               {isSubmitting ? (
                 <>
@@ -203,7 +203,7 @@ export default function LoginPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 p-6 border-t border-slate-800/80 bg-[#0B0F19]/60 backdrop-blur-md text-center text-xs text-slate-500 font-mono">
+      <footer className="relative z-10 p-6 border-t border-[rgba(214,220,227,0.12)] bg-[#0B0F19]/60 backdrop-blur-md text-center text-xs text-slate-500 font-mono">
         ArmSphere Competitive Arm Wrestling Federation • Executive Operations Console v1.0
       </footer>
     </div>
