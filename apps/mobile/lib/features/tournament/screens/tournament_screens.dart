@@ -98,6 +98,8 @@ class TournamentsListScreen extends ConsumerWidget {
           error: error,
           title: 'Could not load competitions',
           onRetry: () => ref.invalidate(tournamentProvider),
+          showSecondaryAction: false,
+          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
         ),
         data: (events) {
           // Drafts are not public product surfaces; hide them here.

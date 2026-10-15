@@ -13,6 +13,7 @@ import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
 
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
@@ -229,6 +230,8 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           error: error,
           title: 'Could not load feed',
           onRetry: () => ref.invalidate(communityFeedProvider),
+          showSecondaryAction: false,
+          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
         ),
         data: (allPosts) {
           final posts = _selectedCategory == 'ALL'
