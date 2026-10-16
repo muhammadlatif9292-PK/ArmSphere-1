@@ -80,3 +80,18 @@ flutter:
           weight: 600
         - asset: assets/fonts/SpaceGrotesk-Bold.ttf
           weight: 700
+    # Alias of SpaceGrotesk above, same asset files and weights. Many screens and
+    # shared widgets reference the literal 'Space Grotesk' (with a space), which
+    # does not match the 'SpaceGrotesk' family name and would fall back to the
+    # platform default font. Keep both entries until those literals are migrated
+    # to AppTheme.fontDisplay.
+    - family: Space Grotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk.ttf
+          weight: 400
+        - asset: assets/fonts/SpaceGrotesk-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/SpaceGrotesk-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/SpaceGrotesk-Bold.ttf
+          weight: 700
