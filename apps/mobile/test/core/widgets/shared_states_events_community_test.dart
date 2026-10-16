@@ -175,10 +175,10 @@ void main() {
         GoRoute(path: '/login', builder: (c, s) => const Scaffold(body: Text('TARGET: /login'))),
       ]);
       await t.pumpWidget(MaterialApp.router(routerConfig: router));
-      await t.pump(const Duration(milliseconds: 600));
+      await t.pumpAndSettle();
       expect(find.text('Return to Home'), findsOneWidget);
       await t.tap(find.text('Sign In Again'));
-      await t.pump(const Duration(milliseconds: 600));
+      await t.pumpAndSettle();
       expect(find.text('TARGET: /login'), findsOneWidget);
     });
 
