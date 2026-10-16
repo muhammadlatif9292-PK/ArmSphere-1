@@ -28,15 +28,15 @@ export default function ForbiddenPage({
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-4">
-      <div className="max-w-lg w-full bg-brand-panel border border-slate-800 rounded-2xl p-6 sm:p-8 text-center space-y-6 shadow-2xl">
+      <div className="max-w-lg w-full bg-brand-panel border border-[rgba(214,220,227,0.14)] rounded-2xl p-6 sm:p-8 text-center space-y-6 shadow-2xl">
         {/* Shield Icon */}
-        <div className="w-16 h-16 bg-red-500/10 text-red-400 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+        <div className="w-16 h-16 bg-[#E23B3B]/10 text-[#E23B3B] border border-[#E23B3B]/25 rounded-2xl flex items-center justify-center mx-auto shadow-[0_0_16px_rgba(226,59,59,0.2)]">
           <ShieldAlert className="w-8 h-8" />
         </div>
 
         {/* Header */}
         <div className="space-y-2">
-          <span className="inline-block px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-mono font-bold uppercase tracking-widest text-red-400">
+          <span className="inline-block px-2.5 py-1 bg-[#E23B3B]/10 border border-[#E23B3B]/25 rounded text-[10px] font-mono font-bold uppercase tracking-widest text-red-300">
             HTTP 403 Forbidden
           </span>
           <h2 className="text-xl sm:text-2xl font-display font-bold text-slate-100 uppercase tracking-tight">
@@ -49,21 +49,21 @@ export default function ForbiddenPage({
         </div>
 
         {/* Security Diagnostics Box */}
-        <div className="p-4 bg-brand-bg border border-slate-800/90 rounded-xl text-left space-y-2.5 font-mono text-[11px]">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+        <div className="p-4 bg-brand-bg border border-[rgba(214,220,227,0.12)] rounded-xl text-left space-y-2.5 font-mono text-[11px]">
+          <div className="flex items-center justify-between pb-2 border-b border-[rgba(214,220,227,0.10)]">
             <span className="text-slate-500 uppercase">Attempted Route</span>
             <span className="text-slate-300 font-bold truncate max-w-[220px]">
               {attemptedPath || location.pathname}
             </span>
           </div>
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+          <div className="flex items-center justify-between pb-2 border-b border-[rgba(214,220,227,0.10)]">
             <span className="text-slate-500 uppercase">Active Role</span>
-            <span className="text-amber-400 font-bold">
+            <span className="text-[#D4AF37] font-bold">
               {effectiveRole?.replace(/_/g, ' ') || 'NONE'}
             </span>
           </div>
           {jurisdiction && (
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+            <div className="flex items-center justify-between pb-2 border-b border-[rgba(214,220,227,0.10)]">
               <span className="text-slate-500 uppercase">Jurisdiction</span>
               <span className="text-emerald-400 font-bold">{jurisdiction}</span>
             </div>
@@ -75,7 +75,7 @@ export default function ForbiddenPage({
                 {requiredRoles.map((r) => (
                   <span
                     key={r}
-                    className="px-2 py-0.5 bg-slate-800/80 border border-slate-700/80 rounded text-[10px] text-slate-300"
+                    className="px-2 py-0.5 bg-[#1A2330] border border-[rgba(214,220,227,0.14)] rounded text-[10px] text-slate-300"
                   >
                     {r.replace(/_/g, ' ')}
                   </span>
@@ -87,8 +87,8 @@ export default function ForbiddenPage({
 
         {/* Role Switcher if multi-role user has eligible role */}
         {canSwitchToEligibleRole && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2 text-left">
-            <div className="flex items-center gap-2 text-amber-400 text-xs font-bold font-mono">
+          <div className="p-3 bg-[#D4AF37]/10 border border-[#D4AF37]/25 rounded-xl space-y-2 text-left">
+            <div className="flex items-center gap-2 text-[#D4AF37] text-xs font-bold font-mono">
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Switch to Authorized Role</span>
             </div>
@@ -102,7 +102,7 @@ export default function ForbiddenPage({
                   <button
                     key={r}
                     onClick={() => switchActiveRole(r)}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-colors font-mono uppercase flex items-center gap-1.5"
+                    className="px-3 py-1.5 bg-[#D4AF37] hover:bg-[#F5E096] text-slate-950 font-bold text-xs rounded-lg transition-colors font-mono uppercase flex items-center gap-1.5"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>Switch to {r.replace(/_/g, ' ')}</span>
@@ -116,7 +116,7 @@ export default function ForbiddenPage({
         <div className="pt-2 flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => navigate('/')}
-            className="flex-1 py-2.5 px-4 bg-brand-raised hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold rounded-lg transition-colors font-mono uppercase flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 px-4 bg-brand-raised hover:bg-[#202832] border border-[rgba(214,220,227,0.14)] text-slate-200 text-xs font-bold rounded-lg transition-colors font-mono uppercase flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Return to Operations Center</span>

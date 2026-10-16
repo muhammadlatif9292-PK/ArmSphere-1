@@ -250,11 +250,11 @@ export default function AdminShell({ children }: AdminShellProps) {
       {/* MOBILE DRAWER OVERLAY */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex">
-          <div className="w-72 bg-brand-panel h-full border-r border-slate-800 flex flex-col justify-between p-4 overflow-y-auto">
+          <div className="w-72 bg-[#0B0F19] h-full border-r border-[rgba(214,220,227,0.12)] shadow-[4px_0_24px_rgba(0,0,0,0.5)] flex flex-col justify-between p-4 overflow-y-auto">
             <div>
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+              <div className="flex items-center justify-between pb-4 border-b border-[rgba(214,220,227,0.12)] mb-4">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-amber-400" />
+                  <Shield className="w-5 h-5 text-[#D4AF37]" />
                   <span className="font-display font-bold text-sm tracking-tight text-slate-100 uppercase">
                     ArmSphere Admin
                   </span>
@@ -271,8 +271,8 @@ export default function AdminShell({ children }: AdminShellProps) {
               <div className="space-y-4">{renderNavSections(() => setMobileMenuOpen(false))}</div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 mt-4 space-y-3">
-              <div className="p-2.5 bg-brand-raised rounded-lg space-y-1.5">
+            <div className="pt-4 border-t border-[rgba(214,220,227,0.12)] mt-4 space-y-3">
+              <div className="p-3 bg-[#151B24] border border-[rgba(214,220,227,0.14)] rounded-xl space-y-1.5">
                 <p className="text-xs font-bold text-slate-200 truncate">
                   {user?.fullName || user?.email || 'Signed-in admin'}
                 </p>
@@ -292,7 +292,7 @@ export default function AdminShell({ children }: AdminShellProps) {
                   </div>
                 )}
                 {hasMultipleRoles && (
-                  <div className="pt-1.5 border-t border-slate-800/80">
+                  <div className="pt-1.5 border-t border-[rgba(214,220,227,0.10)]">
                     <p className="text-[10px] font-mono text-slate-500 uppercase mb-1">Switch Role:</p>
                     <div className="flex flex-wrap gap-1">
                       {availableRoles.map((role) => (
@@ -304,8 +304,8 @@ export default function AdminShell({ children }: AdminShellProps) {
                           }}
                           className={`px-2 py-1 rounded text-[10px] font-mono ${
                             role === effectiveRole
-                              ? 'bg-amber-500 text-slate-950 font-bold'
-                              : 'bg-slate-800 text-slate-300'
+                              ? 'bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/30'
+                              : 'bg-[#1A2330] text-slate-300 border border-transparent'
                           }`}
                         >
                           {role.replace(/_/g, ' ')}
@@ -317,7 +317,7 @@ export default function AdminShell({ children }: AdminShellProps) {
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-800 text-slate-400 text-xs font-semibold hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-[rgba(214,220,227,0.12)] text-slate-400 text-xs font-semibold hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out</span>
