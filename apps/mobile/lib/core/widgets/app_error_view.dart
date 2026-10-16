@@ -25,6 +25,15 @@ class AppErrorView extends StatefulWidget {
   final VoidCallback? onSecondaryAction;
   final VoidCallback? onRetry;
 
+  /// When false, the automatic escape action (Go Back / Return to Home) is not
+  /// added. Use on screens that already sit inside a navigation shell. An
+  /// explicit [secondaryActionLabel] and [onSecondaryAction] are still honoured.
+  final bool showSecondaryAction;
+
+  /// Replaces the default Sign In Again action (`context.go('/login')`) for
+  /// authentication errors. Leave null to keep the default.
+  final VoidCallback? onSessionExpired;
+
   const AppErrorView({
     super.key,
     this.error,
@@ -36,6 +45,8 @@ class AppErrorView extends StatefulWidget {
     this.secondaryActionLabel,
     this.onSecondaryAction,
     this.onRetry,
+    this.showSecondaryAction = true,
+    this.onSessionExpired,
   });
 
   @override
@@ -113,11 +124,12 @@ class _AppErrorViewState extends State<AppErrorView>
     if (primaryLabel == null && primaryAction == null) {
       if (isAuth) {
         primaryLabel = 'Sign In Again';
-        primaryAction = () {
-          if (context.mounted) {
-            context.go('/login');
-          }
-        };
+        primaryAction = widget.onSessionExpired ??
+            () {
+              if (context.mounted) {
+                context.go('/login');
+              }
+            };
       } else if (widget.onRetry != null) {
         primaryLabel = 'Retry';
         primaryAction = widget.onRetry;
@@ -128,7 +140,9 @@ class _AppErrorViewState extends State<AppErrorView>
     String? secondaryLabel = widget.secondaryActionLabel;
     VoidCallback? secondaryAction = widget.onSecondaryAction;
 
-    if (secondaryLabel == null && secondaryAction == null) {
+    if (secondaryLabel == null &&
+        secondaryAction == null &&
+        widget.showSecondaryAction) {
       if (Navigator.of(context).canPop()) {
         secondaryLabel = 'Go Back';
         secondaryAction = () => Navigator.of(context).maybePop();

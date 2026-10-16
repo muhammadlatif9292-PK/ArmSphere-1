@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -71,7 +72,6 @@ class TournamentsListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final tournamentsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
@@ -94,33 +94,12 @@ class TournamentsListScreen extends ConsumerWidget {
       ),
       body: tournamentsAsync.when(
         loading: () => const TournamentSkeletonLoadingWidget(),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load competitions',
-                style: theme.textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
-              ),
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  '$error',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => ref.invalidate(tournamentProvider),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+        error: (error, _) => AppErrorView(
+          error: error,
+          title: 'Could not load competitions',
+          onRetry: () => ref.invalidate(tournamentProvider),
+          showSecondaryAction: false,
+          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
         ),
         data: (events) {
           // Drafts are not public product surfaces; hide them here.
@@ -134,27 +113,14 @@ class TournamentsListScreen extends ConsumerWidget {
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(16, 20, 16, MainShellScope.bottomClearance(context)),
-                children: const [
-                  SizedBox(height: 120),
-                  Icon(Icons.emoji_events_outlined, size: 56, color: AppTheme.textMuted),
-                  SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'No competitions published yet',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Check back soon for upcoming sanctioned events',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                    ),
+                children: [
+                  const SizedBox(height: 64),
+                  AppEmptyState(
+                    icon: Icons.emoji_events_outlined,
+                    title: 'No competitions published yet',
+                    subtitle: 'Check back soon for upcoming sanctioned events',
+                    ctaLabel: 'Refresh Events',
+                    onCtaTap: () => ref.invalidate(tournamentProvider),
                   ),
                 ],
               ),

@@ -9,9 +9,11 @@ import '../../../core/providers/community_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/embed_url_builder.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
 
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
@@ -224,12 +226,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
             child: SkeletonPlaceholder(height: 280),
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load feed',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(communityFeedProvider),
+          onRetry: () => ref.invalidate(communityFeedProvider),
+          showSecondaryAction: false,
+          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
         ),
         data: (allPosts) {
           final posts = _selectedCategory == 'ALL'
