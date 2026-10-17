@@ -217,48 +217,70 @@ class MainShellScreen extends StatelessWidget {
     required String label,
   }) {
     final isSelected = navigationShell.currentIndex == index;
-    final activeColor = index == 0 ? AppTheme.crimson : AppTheme.goldPrimary;
+    // Owner directive: crimson is the single active-navigation accent for all
+    // five tabs. Gold stays reserved for championship/achievement cues.
+    const activeColor = AppTheme.crimson;
 
     return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      child: Semantics(
+        container: true,
+        button: true,
+        selected: isSelected,
+        label: '$label tab',
+        tooltip: label,
         onTap: () => _onTap(context, index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: isSelected
-                  ? BoxDecoration(
-                      color: activeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: activeColor.withValues(alpha: 0.35),
-                        width: 1.0,
-                      ),
-                    )
-                  : null,
-              child: Icon(
-                isSelected ? activeIcon : icon,
-                size: 20,
-                color: isSelected ? activeColor : AppTheme.textMuted,
+        // The visible icon/label are replaced by the single label above so
+        // screen readers do not announce the tab twice.
+        excludeSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _onTap(context, index),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                // Border is always present (transparent when idle) so the
+                // label does not shift 2dp down when a tab becomes active.
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? activeColor.withValues(alpha: 0.12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected
+                        ? activeColor.withValues(alpha: 0.35)
+                        : Colors.transparent,
+                    width: 1.0,
+                  ),
+                ),
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 20,
+                  color: isSelected ? activeColor : AppTheme.textMuted,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 9.5,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                letterSpacing: 0.3,
-                color: isSelected ? activeColor : AppTheme.textMuted,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 9.5,
+                  // SpaceGrotesk bundles w400-w700 only; w800 would be synthesized.
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  letterSpacing: 0.3,
+                  // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
+                  // active label uses titanium white; crimson stays on icon + pill.
+                  color: isSelected ? AppTheme.textPrimary : AppTheme.textMuted,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-              maxLines: 1,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
