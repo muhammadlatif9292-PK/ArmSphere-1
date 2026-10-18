@@ -19,8 +19,18 @@ import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
 
 const Map<int, String> _months = {
-  1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
-  7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec',
+  1: 'Jan',
+  2: 'Feb',
+  3: 'Mar',
+  4: 'Apr',
+  5: 'May',
+  6: 'Jun',
+  7: 'Jul',
+  8: 'Aug',
+  9: 'Sep',
+  10: 'Oct',
+  11: 'Nov',
+  12: 'Dec',
 };
 
 String _fmtDate(dynamic iso) {
@@ -31,11 +41,14 @@ String _fmtDate(dynamic iso) {
 
 String _getDivisionBadge(dynamic weightVal, dynamic weightClassStr) {
   final cls = weightClassStr?.toString().toLowerCase() ?? '';
-  if (cls.contains('heavy') || cls.contains('open') || cls.contains('+')) return ArmSphereAssets.badgeHeavy;
+  if (cls.contains('heavy') || cls.contains('open') || cls.contains('+'))
+    return ArmSphereAssets.badgeHeavy;
   if (cls.contains('light')) return ArmSphereAssets.badgeLight;
   if (cls.contains('junior')) return ArmSphereAssets.badgeJunior;
   if (cls.contains('master')) return ArmSphereAssets.badgeMasters;
-  final w = (weightVal is num) ? weightVal.toDouble() : double.tryParse(weightVal?.toString() ?? '') ?? 85.0;
+  final w = (weightVal is num)
+      ? weightVal.toDouble()
+      : double.tryParse(weightVal?.toString() ?? '') ?? 85.0;
   if (w >= 95) return ArmSphereAssets.badgeHeavy;
   if (w >= 75) return ArmSphereAssets.badgeMiddle;
   return ArmSphereAssets.badgeLight;
@@ -52,10 +65,12 @@ class AthleteDashboardScreen extends ConsumerStatefulWidget {
   const AthleteDashboardScreen({super.key});
 
   @override
-  ConsumerState<AthleteDashboardScreen> createState() => _AthleteDashboardScreenState();
+  ConsumerState<AthleteDashboardScreen> createState() =>
+      _AthleteDashboardScreenState();
 }
 
-class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen> {
+class _AthleteDashboardScreenState
+    extends ConsumerState<AthleteDashboardScreen> {
   bool _isRightArm = true;
   int _intelDeckTab = 0; // 0: Recent Bouts, 1: Tournaments, 2: Global Top 3
 
@@ -63,14 +78,26 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final profile = authState.userProfile ?? {};
-    final rawName = profile['displayName'] ?? profile['name'] ?? profile['fullName'] ?? profile['email']?.toString().split('@').first;
-    final displayName = (rawName != null && rawName.toString().trim().isNotEmpty) ? rawName.toString().trim() : 'Athlete';
+    final rawName = profile['displayName'] ??
+        profile['name'] ??
+        profile['fullName'] ??
+        profile['email']?.toString().split('@').first;
+    final displayName =
+        (rawName != null && rawName.toString().trim().isNotEmpty)
+            ? rawName.toString().trim()
+            : 'Athlete';
     final role = profile['role']?.toString().toUpperCase();
-    const officialRoles = {'REFEREE', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+    const officialRoles = {
+      'REFEREE',
+      'PROVINCIAL_DIRECTOR',
+      'NATIONAL_DIRECTOR',
+      'SYSTEM_ADMIN'
+    };
     final isOfficial = role != null && officialRoles.contains(role);
     final profileAsync = ref.watch(athleteProfileProvider);
     final p = profileAsync.value ?? profile;
-    final myProfileId = profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
+    final myProfileId =
+        profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
     final matchesAsync = ref.watch(liveMatchesProvider);
     final tournamentsAsync = ref.watch(tournamentProvider);
     final rankingsAsync = ref.watch(rankingsProvider);
@@ -86,7 +113,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     final hasRank = rawRank != null && rawRank.isNotEmpty;
     final rank = hasRank ? '#$rawRank' : 'Unranked';
     final rawDelta = p['rankDelta']?.toString().trim();
-    final rankDelta = (rawDelta != null && rawDelta.isNotEmpty) ? '↑ $rawDelta' : null;
+    final rankDelta =
+        (rawDelta != null && rawDelta.isNotEmpty) ? '↑ $rawDelta' : null;
 
     final weightVal = p['weightKg'] ?? p['weight'];
     final weightKg = (weightVal is num) ? weightVal.toStringAsFixed(1) : null;
@@ -94,17 +122,24 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     final winRateVal = p['winRate'];
     final winRate = (winRateVal is num) ? winRateVal.toStringAsFixed(1) : null;
 
-    final rawArm = p['armDominance']?.toString().trim() ?? p['dominantArm']?.toString().trim();
+    final rawArm = p['armDominance']?.toString().trim() ??
+        p['dominantArm']?.toString().trim();
     final dominantArm = (rawArm != null && rawArm.isNotEmpty) ? rawArm : null;
 
-    final rawClub = p['club']?.toString().trim() ?? p['clubName']?.toString().trim();
-    final clubName = (rawClub != null && rawClub.isNotEmpty) ? rawClub : 'No club registered';
+    final rawClub =
+        p['club']?.toString().trim() ?? p['clubName']?.toString().trim();
+    final clubName = (rawClub != null && rawClub.isNotEmpty)
+        ? rawClub
+        : 'No club registered';
 
     final rawCountry = p['country']?.toString().trim();
-    final country = (rawCountry != null && rawCountry.isNotEmpty) ? rawCountry : null;
+    final country =
+        (rawCountry != null && rawCountry.isNotEmpty) ? rawCountry : null;
 
-    final rawRightElo = (p['rightArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt();
-    final rawLeftElo = (p['leftArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt();
+    final rawRightElo = (p['rightArmElo'] as num?)?.toInt() ??
+        (p['eloRating'] as num?)?.toInt();
+    final rawLeftElo =
+        (p['leftArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt();
     final currentElo = _isRightArm ? rawRightElo : rawLeftElo;
     final eloDelta = (p['eloDelta'] as num?)?.toInt();
 
@@ -139,13 +174,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               // TOP MINIMAL BRAND HEADER (TITANIUM LUXE)
               // ========================================================
               _buildBrandHeader(context, profile, displayName),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppTheme.space16),
 
               // ========================================================
               // SANCTIONED ARENA RADAR (ENVIRONMENTAL ANCHOR)
               // ========================================================
               _buildSanctionedArenaRadar(context),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppTheme.space16),
 
               // ========================================================
               // 1. IMMERSIVE ATHLETE CINEMATIC STAGE BANNER
@@ -161,9 +196,12 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 dominantArm: dominantArm,
                 clubName: clubName,
                 country: country,
-                avatarUrl: (p['profilePhoto'] ?? p['avatarUrl'] ?? profile['avatarUrl'])?.toString(),
+                avatarUrl: (p['profilePhoto'] ??
+                        p['avatarUrl'] ??
+                        profile['avatarUrl'])
+                    ?.toString(),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppTheme.space16),
 
               // ========================================================
               // 2. DUAL-ARM ELO & COMBAT READINESS TELEMETRY RAIL
@@ -186,7 +224,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 trainingLogsAsync: trainingLogsAsync,
                 myProfileId: myProfileId,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppTheme.space16),
 
               // ========================================================
               // 3. BROADCAST FIGHT CARD (UPCOMING SUPERMATCH)
@@ -197,7 +235,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 athleteName: displayName,
                 athleteElo: currentElo,
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppTheme.space16),
 
               // ========================================================
               // 4. UNIFIED INTELLIGENCE DECK (RECENT BOUTS & INTEL)
@@ -209,7 +247,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 rankingsAsync: rankingsAsync,
                 myProfileId: myProfileId,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.space24),
 
               // ========================================================
               // 5. QUICK COMMAND ACTIONS (TACTILE TITANIUM GRID)
@@ -226,7 +264,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               ),
               const SizedBox(height: 10),
               _buildQuickCommandsGrid(context, isOfficial, myProfileId),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppTheme.space24),
 
               // ========================================================
               // 6. PERSONAL RECORDS & LIFTS (TABULAR NUMBERS)
@@ -254,7 +292,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                         children: [
                           for (final pr in prs)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               decoration: AppTheme.machinedTitaniumDecoration(
                                 radius: 10,
                                 borderColor: AppTheme.borderTitanium,
@@ -263,7 +302,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    _prettyExercise(pr['exerciseType']?.toString()),
+                                    _prettyExercise(
+                                        pr['exerciseType']?.toString()),
                                     style: const TextStyle(
                                       fontFamily: AppTheme.fontBody,
                                       fontSize: 12,
@@ -279,7 +319,9 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
                                       color: AppTheme.goldPrimary,
-                                      fontFeatures: [FontFeature.tabularFigures()],
+                                      fontFeatures: [
+                                        FontFeature.tabularFigures()
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -303,67 +345,83 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   // ---------------------------------------------------------------------------
   // Top Brand Header
   // ---------------------------------------------------------------------------
-  Widget _buildBrandHeader(BuildContext context, Map<String, dynamic> profile, String displayName) {
+  Widget _buildBrandHeader(
+      BuildContext context, Map<String, dynamic> profile, String displayName) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              // Crest Insignia
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+          Expanded(
+            child: Row(
+              children: [
+                // Crest Insignia
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                    ),
+                    border:
+                        Border.all(color: AppTheme.borderHighlight, width: 1.0),
                   ),
-                  border: Border.all(color: AppTheme.borderHighlight, width: 1.0),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.sports_kabaddi,
-                    size: 19,
-                    color: AppTheme.crimson,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'ARMSPHERE',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.4,
-                      color: AppTheme.textPure,
-                      height: 1.0,
+                  child: const Center(
+                    child: Icon(
+                      Icons.sports_kabaddi,
+                      size: 19,
+                      color: AppTheme.crimson,
                     ),
                   ),
-                  SizedBox(height: 3),
-                  Text(
-                    'PRO COMBAT OPERATING SYSTEM',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 7.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0,
-                      color: AppTheme.textMuted,
-                      height: 1.0,
-                    ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'ARMSPHERE',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.4,
+                            color: AppTheme.textPure,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'PRO COMBAT OPERATING SYSTEM',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.0,
+                            color: AppTheme.textMuted,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               _buildGlassIconChip(
                 icon: Icons.notifications_none_rounded,
@@ -397,41 +455,56 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     required String tooltip,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    // Visual chip stays 34dp; the hit area is 40dp and the control is exposed
+    // to assistive tech (the tooltip text was previously unused).
+    return Semantics(
+      button: true,
+      label: tooltip,
       onTap: onTap,
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xB3151B24),
-          border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(icon, size: 17, color: AppTheme.textPrimary),
-            if (hasBadge)
-              Positioned(
-                top: 7,
-                right: 7,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.crimson,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Center(
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xB3151B24),
+                border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
+                ],
               ),
-          ],
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(icon, size: 17, color: AppTheme.textPrimary),
+                  if (hasBadge)
+                    Positioned(
+                      top: 7,
+                      right: 7,
+                      child: Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.crimson,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -441,8 +514,43 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   // Sanctioned Arena Environmental Anchor (Titanium Luxe Glass)
   // ---------------------------------------------------------------------------
   Widget _buildSanctionedArenaRadar(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
+    final isStacked = textScale >= 1.45;
+
+    final exploreButton = TactilePressWrapper(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.push('/tournaments');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: AppTheme.machinedTitaniumDecoration(
+          radius: 10,
+          borderColor: AppTheme.borderTitanium,
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Explore',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                color: AppTheme.goldPrimary,
+              ),
+            ),
+            SizedBox(width: 4),
+            Icon(Icons.arrow_forward_ios, size: 9, color: AppTheme.goldPrimary),
+          ],
+        ),
+      ),
+    );
+
     return Container(
-      height: 96,
+      // minHeight (not a fixed height) so the card grows with text scale
+      // instead of overflowing at 1.4x.
+      constraints: const BoxConstraints(minHeight: 96),
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -461,14 +569,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
         child: Stack(
+          alignment: Alignment.center,
           children: [
-            // Arena Background
+            // Arena Background fills the full dynamic bounds of the expanded card
             Positioned.fill(
               child: ArmSphereImage(
                 assetPath: ArmSphereAssets.heroArena,
                 fit: BoxFit.cover,
-                width: double.infinity,
-                height: 96,
                 excludeFromSemantics: true,
               ),
             ),
@@ -489,18 +596,19 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 ),
               ),
             ),
-            // Content overlay
-            Positioned.fill(
+            // Content overlay (non-positioned: it sizes the card)
+            Align(
+              alignment: Alignment.center,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: isStacked
+                    ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
                                 width: 6,
@@ -511,14 +619,16 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              const Text(
-                                'SANCTIONED ARENA RADAR',
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  letterSpacing: 0.8,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 9.5,
-                                  color: AppTheme.goldPrimary,
+                              const Flexible(
+                                child: Text(
+                                  'SANCTIONED ARENA RADAR',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    letterSpacing: 0.8,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 9.5,
+                                    color: AppTheme.goldPrimary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -542,40 +652,72 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                               color: AppTheme.textSecondary,
                             ),
                           ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: exploreButton,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppTheme.goldPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Flexible(
+                                      child: Text(
+                                        'SANCTIONED ARENA RADAR',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          letterSpacing: 0.8,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 9.5,
+                                          color: AppTheme.goldPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                const Text(
+                                  'Championship Arena Active',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.textPure,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'Official tournament brackets & table calls',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          exploreButton,
                         ],
                       ),
-                    ),
-                    TactilePressWrapper(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/tournaments');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        decoration: AppTheme.machinedTitaniumDecoration(
-                          radius: 10,
-                          borderColor: AppTheme.borderTitanium,
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Explore',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                                color: AppTheme.goldPrimary,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios, size: 9, color: AppTheme.goldPrimary),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
@@ -637,58 +779,73 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Badges Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Top Badges Row (wraps instead of overflowing at large text)
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppTheme.emerald.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.45), width: 1.0),
+                        border: Border.all(
+                            color: AppTheme.emerald.withValues(alpha: 0.45),
+                            width: 1.0),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check, size: 10, color: AppTheme.emerald),
-                          SizedBox(width: 4),
-                          Text(
-                            'VERIFIED',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                              color: AppTheme.emerald,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check, size: 10, color: AppTheme.emerald),
+                            SizedBox(width: 4),
+                            Text(
+                              'VERIFIED',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.6,
+                                color: AppTheme.emerald,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppTheme.goldPrimary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45), width: 1.0),
+                        border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                            width: 1.0),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.workspace_premium_rounded, size: 11, color: AppTheme.goldPrimary),
-                          SizedBox(width: 4),
-                          Text(
-                            'PAFF COMPETITOR',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                              color: AppTheme.goldPrimary,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.workspace_premium_rounded,
+                                size: 11, color: AppTheme.goldPrimary),
+                            SizedBox(width: 4),
+                            Text(
+                              'PAFF COMPETITOR',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.6,
+                                color: AppTheme.goldPrimary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -713,7 +870,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                             center: Alignment(-0.2, -0.4),
                             colors: [Color(0xFF223046), Color(0xFF080D15)],
                           ),
-                          border: Border.all(color: AppTheme.borderHighlight, width: 1.5),
+                          border: Border.all(
+                              color: AppTheme.borderHighlight, width: 1.5),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.6),
@@ -749,7 +907,7 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                               color: AppTheme.textPure,
                               height: 1.1,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
@@ -766,7 +924,9 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                                 ),
                                 const Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 5),
-                                  child: Text('•', style: TextStyle(color: AppTheme.textMuted)),
+                                  child: Text('•',
+                                      style:
+                                          TextStyle(color: AppTheme.textMuted)),
                                 ),
                               ],
                               Flexible(
@@ -797,13 +957,22 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                       top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 16,
+                    runSpacing: 10,
                     children: [
                       _buildBioStat('WORLD RANK', rank, delta: rankDelta),
-                      _buildBioStat('WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
-                      _buildBioStat('WIN RATE', winRate != null ? '$winRate%' : '--', isEmerald: winRate != null),
-                      _buildBioStat('DISCIPLINE', dominantArm != null ? '$dominantArm Arm' : '--'),
+                      _buildBioStat(
+                          'WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
+                      _buildBioStat(
+                          'WIN RATE', winRate != null ? '$winRate%' : '--',
+                          isEmerald: winRate != null),
+                      _buildBioStat(
+                          'DISCIPLINE',
+                          dominantArm != null
+                              ? _disciplineLabel(dominantArm)
+                              : '--'),
                     ],
                   ),
                 ),
@@ -815,7 +984,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     );
   }
 
-  Widget _buildBioStat(String label, String value, {String? delta, bool isEmerald = false}) {
+  Widget _buildBioStat(String label, String value,
+      {String? delta, bool isEmerald = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -823,38 +993,43 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
           label,
           style: const TextStyle(
             fontFamily: AppTheme.fontDisplay,
-            fontSize: 7.5,
+            fontSize: 8.5,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.6,
             color: AppTheme.textMuted,
           ),
         ),
         const SizedBox(height: 3),
-        Row(
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800,
-                color: isEmerald ? AppTheme.emerald : AppTheme.textPrimary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            if (delta != null) ...[
-              const SizedBox(width: 3),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Text(
-                delta,
-                style: const TextStyle(
+                value,
+                style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.emerald,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: isEmerald ? AppTheme.emerald : AppTheme.textPrimary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
+              if (delta != null) ...[
+                const SizedBox(width: 3),
+                Text(
+                  delta,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.emerald,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ],
     );
@@ -870,142 +1045,15 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     required AsyncValue<List<Map<String, dynamic>>> trainingLogsAsync,
     required String? myProfileId,
   }) {
-    return Row(
-      children: [
-        // Dynamic ELO Card (1.2fr)
-        Expanded(
-          flex: 6,
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: AppTheme.machinedTitaniumDecoration(
-              radius: 16,
-              borderColor: AppTheme.borderTitanium,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'DYNAMIC ELO',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    // Arm Switch Selector Pills
-                    Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.40),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildArmPill('RIGHT', _isRightArm, () {
-                            if (!_isRightArm) {
-                              HapticFeedback.selectionClick();
-                              setState(() => _isRightArm = true);
-                            }
-                          }),
-                          _buildArmPill('LEFT', !_isRightArm, () {
-                            if (_isRightArm) {
-                              HapticFeedback.selectionClick();
-                              setState(() => _isRightArm = false);
-                            }
-                          }),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      currentElo != null ? '$currentElo' : '--',
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 29,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.6,
-                        color: AppTheme.textPure,
-                        height: 1.0,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    if (eloDelta != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: (eloDelta >= 0 ? AppTheme.emerald : AppTheme.crimson).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${eloDelta >= 0 ? '▲ +' : '▼ '}$eloDelta',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: eloDelta >= 0 ? AppTheme.emerald : AppTheme.crimson,
-                          ),
-                        ),
-                      ),
-                    ] else ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'PROVISIONAL',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textMuted,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Electric Cyan Sparkline Wire
-                SizedBox(
-                  width: double.infinity,
-                  height: 22,
-                  child: CustomPaint(
-                    painter: _SparklineWirePainter(color: AppTheme.cyan),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-
-        // Truthful Readiness / Training Recovery Card (0.8fr)
-        Expanded(
-          flex: 4,
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              if (myProfileId != null) {
-                context.push('/athlete/$myProfileId/training-log');
-              } else {
-                context.push('/athlete/profile');
-              }
-            },
+    // IntrinsicHeight + stretch keeps both cards the same height now that the
+    // arm selector lives inside the ELO card.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Dynamic ELO Card (1.2fr)
+          Expanded(
+            flex: 6,
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: AppTheme.machinedTitaniumDecoration(
@@ -1015,179 +1063,387 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                  const Text(
+                    'DYNAMIC ELO',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Arm selector: full-width segmented control with 34dp segments
+                  // (was ~17dp tall pills in the header row).
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.40),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildArmPill(
+                              'RIGHT', 'Right arm', _isRightArm, () {
+                            if (!_isRightArm) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _isRightArm = true);
+                            }
+                          }),
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: _buildArmPill('LEFT', 'Left arm', !_isRightArm,
+                              () {
+                            if (_isRightArm) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _isRightArm = false);
+                            }
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Wrap (not Row) so the delta badge drops below the rating at
+                  // very large text scales instead of overflowing.
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
                       Text(
-                        'RECOVERY STATUS',
-                        style: TextStyle(
+                        currentElo != null ? '$currentElo' : '--',
+                        style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 8,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          color: AppTheme.textMuted,
+                          fontSize: 29,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.6,
+                          color: AppTheme.textPure,
+                          height: 1.0,
+                          fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
-                      Icon(
-                        Icons.fitness_center_outlined,
-                        size: 11,
-                        color: AppTheme.textMuted,
-                      ),
+                      if (eloDelta != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: (eloDelta >= 0
+                                    ? AppTheme.emerald
+                                    : AppTheme.crimson)
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${eloDelta >= 0 ? '▲ +' : '▼ '}$eloDelta',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: eloDelta >= 0
+                                  ? AppTheme.emerald
+                                  : AppTheme.crimson,
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'PROVISIONAL',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),
-                  trainingLogsAsync.when(
-                    loading: () => const SizedBox(
-                      height: 44,
-                      child: Center(
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.cyan),
-                        ),
-                      ),
+                  // Electric Cyan Sparkline Wire
+                  SizedBox(
+                    width: double.infinity,
+                    height: 22,
+                    child: CustomPaint(
+                      painter: _SparklineWirePainter(color: AppTheme.cyan),
                     ),
-                    error: (_, __) => _buildNeutralRecoveryView(),
-                    data: (logs) {
-                      if (logs.isEmpty) {
-                        return _buildNeutralRecoveryView();
-                      }
-                      final latest = logs.first;
-                      final dateStr = latest['date'] ?? latest['createdAt'];
-                      final parsedDate = DateTime.tryParse(dateStr?.toString() ?? '');
-                      final daysAgo = parsedDate != null
-                          ? DateTime.now().difference(parsedDate).inDays
-                          : null;
-                      final sessionsCount = logs.length;
-
-                      return Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.emerald.withValues(alpha: 0.12),
-                              border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.4), width: 1.0),
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.fitness_center, size: 18, color: AppTheme.emerald),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '$sessionsCount Logged',
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppTheme.textPure,
-                                    height: 1.1,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  daysAgo != null
-                                      ? (daysAgo == 0 ? 'Last: Today' : 'Last: ${daysAgo}d ago')
-                                      : 'Activity tracked',
-                                  style: const TextStyle(
-                                    fontSize: 8,
-                                    color: AppTheme.textMuted,
-                                    height: 1.1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
                   ),
-                  const SizedBox(height: 6),
                 ],
               ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+
+          // Truthful Readiness / Training Recovery Card (0.8fr)
+          Expanded(
+            flex: 4,
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                if (myProfileId != null) {
+                  context.push('/athlete/$myProfileId/training-log');
+                } else {
+                  context.push('/athlete/profile');
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: AppTheme.machinedTitaniumDecoration(
+                  radius: 16,
+                  borderColor: AppTheme.borderTitanium,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: const Text(
+                              'RECOVERY STATUS',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(
+                            Icons.fitness_center_outlined,
+                            size: 12,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: trainingLogsAsync.when(
+                          loading: () => const SizedBox(
+                            height: 44,
+                            child: Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: AppTheme.cyan),
+                              ),
+                            ),
+                          ),
+                          error: (_, __) => _buildNeutralRecoveryView(),
+                          data: (logs) {
+                            if (logs.isEmpty) {
+                              return _buildNeutralRecoveryView();
+                            }
+                            final latest = logs.first;
+                            final dateStr =
+                                latest['date'] ?? latest['createdAt'];
+                            final parsedDate =
+                                DateTime.tryParse(dateStr?.toString() ?? '');
+                            final daysAgo = parsedDate != null
+                                ? DateTime.now().difference(parsedDate).inDays
+                                : null;
+                            final sessionsCount = logs.length;
+
+                            return Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppTheme.emerald
+                                        .withValues(alpha: 0.12),
+                                    border: Border.all(
+                                        color: AppTheme.emerald
+                                            .withValues(alpha: 0.4),
+                                        width: 1.0),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.fitness_center,
+                                        size: 18, color: AppTheme.emerald),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '$sessionsCount Logged',
+                                        style: const TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppTheme.textPure,
+                                          height: 1.1,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        daysAgo != null
+                                            ? (daysAgo == 0
+                                                ? 'Last: Today'
+                                                : 'Last: ${daysAgo}d ago')
+                                            : 'Activity tracked',
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          color: AppTheme.textMuted,
+                                          height: 1.1,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildNeutralRecoveryView() {
-    return Row(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.04),
-            border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+    return Semantics(
+      container: true,
+      button: true,
+      label: 'Recovery data unavailable. Tap to log training.',
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.04),
+              border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+            ),
+            child: const Center(
+              child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
+            ),
           ),
-          child: const Center(
-            child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Data Unavailable',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textSecondary,
-                  height: 1.1,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Text(
+                  'No Data',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textSecondary,
+                    height: 1.1,
+                  ),
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Tap to log training',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: AppTheme.textMuted,
-                  height: 1.1,
+                SizedBox(height: 2),
+                Text(
+                  'Tap to log',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: AppTheme.textMuted,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildArmPill(String label, bool isActive, VoidCallback onTap) {
-    return GestureDetector(
+  Widget _buildArmPill(
+      String label, String semanticsLabel, bool isActive, VoidCallback onTap) {
+    // Active state mirrors the verified dock/deck standard: crimson tint +
+    // crimson hairline, titanium-white label (cyan text is no longer used for
+    // selection).
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: semanticsLabel,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        decoration: BoxDecoration(
-          color: isActive ? AppTheme.titanium : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: AppTheme.fontDisplay,
-            fontSize: 8,
-            fontWeight: FontWeight.w800,
-            color: isActive ? AppTheme.cyan : AppTheme.textMuted,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minHeight: 34),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppTheme.crimson.withValues(alpha: 0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive
+                  ? AppTheme.crimson.withValues(alpha: 0.35)
+                  : Colors.transparent,
+              width: 1.0,
+            ),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+                color: isActive ? AppTheme.textPrimary : AppTheme.textMuted,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. Broadcast Fight Card (Real upcoming match or truthful standby card)
-  // ---------------------------------------------------------------------------
   Widget _buildUpcomingSupermatchCard({
     required BuildContext context,
     required AsyncValue<List<Map<String, dynamic>>> matchesAsync,
@@ -1203,14 +1459,18 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
           border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
         ),
         child: const Center(
-          child: CircularProgressIndicator(color: AppTheme.crimson, strokeWidth: 2),
+          child: CircularProgressIndicator(
+              color: AppTheme.crimson, strokeWidth: 2),
         ),
       ),
       error: (_, __) => _buildNoUpcomingBoutsCard(context),
       data: (matches) {
         final upcomingMatches = matches.where((m) {
           final s = m['status']?.toString().toUpperCase() ?? '';
-          return s == 'IN_PROGRESS' || s == 'CALLED' || s == 'READY' || s == 'SCHEDULED';
+          return s == 'IN_PROGRESS' ||
+              s == 'CALLED' ||
+              s == 'READY' ||
+              s == 'SCHEDULED';
         }).toList();
 
         if (upcomingMatches.isEmpty) {
@@ -1220,16 +1480,21 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
         final match = upcomingMatches.first;
         final aName = match['athleteAName']?.toString() ?? athleteName;
         final bName = match['athleteBName']?.toString() ?? 'Opponent';
-        final tableNum = match['tableNumber']?.toString() ?? match['tableName']?.toString() ?? '1';
-        final tournamentTitle = match['tournamentName']?.toString() ?? 'Sanctioned Tournament';
-        final statusText = (match['status']?.toString() ?? 'SCHEDULED').toUpperCase();
+        final tableNum = match['tableNumber']?.toString() ??
+            match['tableName']?.toString() ??
+            '1';
+        final tournamentTitle =
+            match['tournamentName']?.toString() ?? 'Sanctioned Tournament';
+        final statusText =
+            (match['status']?.toString() ?? 'SCHEDULED').toUpperCase();
 
         return Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             gradient: AppTheme.upcomingMatchGradient,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.crimson.withValues(alpha: 0.28), width: 1.0),
+            border: Border.all(
+                color: AppTheme.crimson.withValues(alpha: 0.28), width: 1.0),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.32),
@@ -1240,10 +1505,14 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
           ),
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         width: 6,
@@ -1267,11 +1536,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                      border: Border.all(
+                          color: AppTheme.borderTitanium, width: 1.0),
                     ),
                     child: Text(
                       statusText,
@@ -1290,11 +1561,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 children: [
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: const Color(0x66070A11),
                         borderRadius: BorderRadius.circular(11),
-                        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                        border: Border.all(
+                            color: AppTheme.borderTitanium, width: 1.0),
                       ),
                       child: Row(
                         children: [
@@ -1326,11 +1599,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppTheme.silverPlane,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppTheme.borderHighlight, width: 1.0),
+                      border: Border.all(
+                          color: AppTheme.borderHighlight, width: 1.0),
                     ),
                     child: const Text(
                       'VS',
@@ -1345,11 +1620,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: const Color(0x66070A11),
                         borderRadius: BorderRadius.circular(11),
-                        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                        border: Border.all(
+                            color: AppTheme.borderTitanium, width: 1.0),
                       ),
                       child: Row(
                         children: [
@@ -1386,27 +1663,34 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               Container(
                 padding: const EdgeInsets.only(top: 10),
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0)),
+                  border: Border(
+                      top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Table $tableNum • $tournamentTitle',
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textSecondary,
+                    Expanded(
+                      child: Text(
+                        'Table $tableNum • $tournamentTitle',
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
                         HapticFeedback.mediumImpact();
                         context.push('/tournaments');
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppTheme.crimson,
                           borderRadius: BorderRadius.circular(10),
@@ -1451,31 +1735,40 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.calendar_today_outlined, size: 14, color: AppTheme.goldPrimary),
-                  SizedBox(width: 6),
-                  Text(
-                    'ARENA SCHEDULE',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                      color: AppTheme.goldPrimary,
+              const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.calendar_today_outlined,
+                        size: 14, color: AppTheme.goldPrimary),
+                    SizedBox(width: 6),
+                    Text(
+                      'ARENA SCHEDULE',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: AppTheme.goldPrimary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                  border:
+                      Border.all(color: AppTheme.borderTitanium, width: 1.0),
                 ),
                 child: const Text(
                   'STANDBY',
@@ -1517,7 +1810,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 HapticFeedback.lightImpact();
                 context.push('/tournaments');
               },
-              icon: const Icon(Icons.emoji_events_outlined, size: 16, color: Colors.black),
+              icon: const Icon(Icons.emoji_events_outlined,
+                  size: 16, color: Colors.black),
               label: const Text(
                 'BROWSE TOURNAMENTS',
                 style: TextStyle(
@@ -1530,43 +1824,14 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.goldPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 elevation: 0,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDeckPill(String title, int index) {
-    final isSelected = _intelDeckTab == index;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _intelDeckTab = index);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.crimson.withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? AppTheme.crimson : const Color(0x1FFFFFFF),
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontFamily: AppTheme.fontDisplay,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
-          ),
-        ),
       ),
     );
   }
@@ -1590,15 +1855,14 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Deck Navigation Tabs
-          Row(
-            children: [
-              _buildDeckPill('Recent Bouts', 0),
-              const SizedBox(width: 14),
-              _buildDeckPill('Tournaments', 1),
-              const SizedBox(width: 14),
-              _buildDeckPill('Global Top 3', 2),
-            ],
+          // Deck Navigation Tabs (adaptive: single row when it fits, wraps otherwise)
+          IntelligenceDeckTabBar(
+            labels: const ['Recent Bouts', 'Tournaments', 'Global Top 3'],
+            selectedIndex: _intelDeckTab,
+            onSelected: (index) {
+              HapticFeedback.selectionClick();
+              setState(() => _intelDeckTab = index);
+            },
           ),
           const SizedBox(height: 12),
           const Divider(height: 1, color: Color(0x14FFFFFF)),
@@ -1610,12 +1874,15 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: AppTheme.crimson, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                      color: AppTheme.crimson, strokeWidth: 2),
                 ),
               ),
               error: (err, _) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Could not load bouts: $err', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                child: Text('Could not load bouts: $err',
+                    style: const TextStyle(
+                        color: AppTheme.textMuted, fontSize: 11)),
               ),
               data: (matches) {
                 if (matches.isEmpty) {
@@ -1624,11 +1891,20 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                     child: Center(
                       child: Column(
                         children: const [
-                          Icon(Icons.sports_kabaddi_outlined, color: AppTheme.textMuted, size: 24),
+                          Icon(Icons.sports_kabaddi_outlined,
+                              color: AppTheme.textMuted, size: 24),
                           SizedBox(height: 6),
-                          Text('No verified bouts yet', style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, fontSize: 12)),
+                          Text('No verified bouts yet',
+                              style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12)),
                           SizedBox(height: 2),
-                          Text('Compete in sanctioned bouts to build verified records.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                          Text(
+                              'Compete in sanctioned bouts to build verified records.',
+                              style: TextStyle(
+                                  color: AppTheme.textMuted, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -1638,7 +1914,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 return Column(
                   children: [
                     for (int i = 0; i < recent.length; i++) ...[
-                      if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                      if (i > 0)
+                        const Divider(height: 1, color: Color(0x0FFFFFFF)),
                       _buildDynamicIntelRow(recent[i], myProfileId),
                     ],
                   ],
@@ -1650,26 +1927,41 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: AppTheme.goldPrimary, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                      color: AppTheme.goldPrimary, strokeWidth: 2),
                 ),
               ),
               error: (err, _) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Could not load tournaments: $err', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                child: Text('Could not load tournaments: $err',
+                    style: const TextStyle(
+                        color: AppTheme.textMuted, fontSize: 11)),
               ),
               data: (tournaments) {
-                final list = tournaments.where((t) => t['status']?.toString().toUpperCase() != 'CANCELLED').take(3).toList();
+                final list = tournaments
+                    .where((t) =>
+                        t['status']?.toString().toUpperCase() != 'CANCELLED')
+                    .take(3)
+                    .toList();
                 if (list.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Center(
                       child: Column(
                         children: const [
-                          Icon(Icons.emoji_events_outlined, color: AppTheme.textMuted, size: 24),
+                          Icon(Icons.emoji_events_outlined,
+                              color: AppTheme.textMuted, size: 24),
                           SizedBox(height: 6),
-                          Text('No tournaments scheduled', style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, fontSize: 12)),
+                          Text('No tournaments scheduled',
+                              style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12)),
                           SizedBox(height: 2),
-                          Text('Upcoming sanctioned events will appear here.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                          Text('Upcoming sanctioned events will appear here.',
+                              style: TextStyle(
+                                  color: AppTheme.textMuted, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -1678,7 +1970,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 return Column(
                   children: [
                     for (int i = 0; i < list.length; i++) ...[
-                      if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                      if (i > 0)
+                        const Divider(height: 1, color: Color(0x0FFFFFFF)),
                       _buildTournamentRowItem(context, list[i]),
                     ],
                   ],
@@ -1690,12 +1983,15 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: AppTheme.cyan, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                      color: AppTheme.cyan, strokeWidth: 2),
                 ),
               ),
               error: (err, _) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Could not load rankings: $err', style: const TextStyle(color: AppTheme.textMuted, fontSize: 11)),
+                child: Text('Could not load rankings: $err',
+                    style: const TextStyle(
+                        color: AppTheme.textMuted, fontSize: 11)),
               ),
               data: (rankings) {
                 final top3 = rankings.take(3).toList();
@@ -1705,11 +2001,20 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                     child: Center(
                       child: Column(
                         children: const [
-                          Icon(Icons.leaderboard_outlined, color: AppTheme.textMuted, size: 24),
+                          Icon(Icons.leaderboard_outlined,
+                              color: AppTheme.textMuted, size: 24),
                           SizedBox(height: 6),
-                          Text('Rankings data unavailable', style: TextStyle(fontFamily: AppTheme.fontDisplay, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, fontSize: 12)),
+                          Text('Rankings data unavailable',
+                              style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12)),
                           SizedBox(height: 2),
-                          Text('Standings update as sanctioned events conclude.', style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                          Text(
+                              'Standings update as sanctioned events conclude.',
+                              style: TextStyle(
+                                  color: AppTheme.textMuted, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -1718,7 +2023,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                 return Column(
                   children: [
                     for (int i = 0; i < top3.length; i++) ...[
-                      if (i > 0) const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                      if (i > 0)
+                        const Divider(height: 1, color: Color(0x0FFFFFFF)),
                       _buildRankingRowItem(top3[i], i + 1),
                     ],
                   ],
@@ -1734,7 +2040,9 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   Widget _buildTournamentRowItem(BuildContext context, Map<String, dynamic> t) {
     final name = t['name']?.toString() ?? 'Sanctioned Tournament';
     final date = _fmtDate(t['startDate'] ?? t['date']);
-    final location = [t['city'], t['venue']].where((v) => v != null && v.toString().isNotEmpty).join(' • ');
+    final location = [t['city'], t['venue']]
+        .where((v) => v != null && v.toString().isNotEmpty)
+        .join(' • ');
 
     return InkWell(
       onTap: () {
@@ -1763,15 +2071,19 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    [date, if (location.isNotEmpty) location].where((s) => s.isNotEmpty).join(' • '),
-                    style: const TextStyle(fontSize: 9, color: AppTheme.textMuted),
+                    [date, if (location.isNotEmpty) location]
+                        .where((s) => s.isNotEmpty)
+                        .join(' • '),
+                    style:
+                        const TextStyle(fontSize: 9, color: AppTheme.textMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 16, color: AppTheme.textMuted),
+            const Icon(Icons.chevron_right,
+                size: 16, color: AppTheme.textMuted),
           ],
         ),
       ),
@@ -1779,7 +2091,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   }
 
   Widget _buildRankingRowItem(Map<String, dynamic> r, int position) {
-    final name = r['athleteName'] ?? r['displayName'] ?? r['fullName'] ?? 'Competitor';
+    final name =
+        r['athleteName'] ?? r['displayName'] ?? r['fullName'] ?? 'Competitor';
     final club = r['clubName'] ?? r['province'] ?? 'Independent';
     final elo = r['eloRating'] ?? r['points'] ?? '--';
     final Color badgeColor = position == 1
@@ -1791,50 +2104,61 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: badgeColor.withValues(alpha: 0.15),
-                  border: Border.all(color: badgeColor.withValues(alpha: 0.4), width: 1.0),
-                ),
-                child: Center(
-                  child: Text(
-                    '#$position',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: badgeColor,
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: badgeColor.withValues(alpha: 0.15),
+                    border: Border.all(
+                        color: badgeColor.withValues(alpha: 0.4), width: 1.0),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '#$position',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: badgeColor,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name.toString(),
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name.toString(),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        club.toString(),
+                        style: const TextStyle(
+                            fontSize: 9, color: AppTheme.textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 1),
-                  Text(
-                    club.toString(),
-                    style: const TextStyle(fontSize: 9, color: AppTheme.textMuted),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Text(
             '$elo ELO',
             style: const TextStyle(
@@ -1850,7 +2174,8 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     );
   }
 
-  Widget _buildDynamicIntelRow(Map<String, dynamic> match, String? myProfileId) {
+  Widget _buildDynamicIntelRow(
+      Map<String, dynamic> match, String? myProfileId) {
     final winnerId = match['winnerId']?.toString();
     final isWin = myProfileId != null && winnerId == myProfileId;
     final opponent = match['opponentName'] ??
@@ -1886,52 +2211,61 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    symbol,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: accentColor,
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      symbol,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: accentColor,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AppTheme.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 1),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Text(
             tag,
             style: TextStyle(
@@ -1950,14 +2284,28 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
   // ---------------------------------------------------------------------------
   // 5. Quick Commands Grid
   // ---------------------------------------------------------------------------
-  Widget _buildQuickCommandsGrid(BuildContext context, bool isOfficial, String? myProfileId) {
-    return GridView.count(
-      crossAxisCount: 2,
+  Widget _buildQuickCommandsGrid(
+      BuildContext context, bool isOfficial, String? myProfileId) {
+    // When text scaling is >= 1.35x, adapt to a deliberate single-column layout
+    // so command labels have ample horizontal space without clipping or hyphenation.
+    // At nominal text scales (< 1.35x), retain the 2-column tactical grid.
+    final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
+    final isSingleColumn = textScale >= 1.35;
+    final crossAxisCount = isSingleColumn ? 1 : 2;
+    // Remove the artificial 2.0x ceiling; height scales smoothly with content.
+    final tileExtent = isSingleColumn
+        ? (56.0 + 16.0 * (textScale - 1.0))
+        : (68.0 + 22.0 * (textScale - 1.0));
+
+    return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 2.3,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        mainAxisExtent: tileExtent,
+      ),
       children: [
         if (isOfficial)
           _ShortcutButton(
@@ -1993,7 +2341,9 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
           color: AppTheme.emerald,
           onTap: () {
             HapticFeedback.selectionClick();
-            context.push(myProfileId != null ? '/athlete/$myProfileId/training-log' : '/athlete/profile');
+            context.push(myProfileId != null
+                ? '/athlete/$myProfileId/training-log'
+                : '/athlete/profile');
           },
         ),
         _ShortcutButton(
@@ -2018,6 +2368,13 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
     );
   }
 
+  /// "Right" -> "Right Arm"; values that already say "arm" are left alone
+  /// (previously rendered "Right Arm Arm").
+  static String _disciplineLabel(String arm) {
+    final trimmed = arm.trim();
+    return trimmed.toLowerCase().endsWith('arm') ? trimmed : '$trimmed Arm';
+  }
+
   static String _prettyExercise(String? raw) {
     if (raw == null || raw.isEmpty) return 'Exercise';
     return raw
@@ -2025,6 +2382,141 @@ class _AthleteDashboardScreenState extends ConsumerState<AthleteDashboardScreen>
         .split('_')
         .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
         .join(' ');
+  }
+}
+
+/// Tab switcher for the athlete intelligence deck.
+///
+/// The baseline put three content-sized pills (14dp side padding, 14dp gaps)
+/// in one `Row`, which needs ~347dp inside the 296dp available at 360dp phone
+/// width and grows with text scale. This widget measures the real labels with
+/// the active [TextScaler] and picks a layout that cannot overflow:
+///
+/// * labels fit in equal thirds -> one row of equal-width segments;
+/// * otherwise -> a [Wrap] of content-sized pills, so every tab stays visible,
+///   at full size, honoring system text scaling (no clipping, scrolling,
+///   shrinking or ellipsis). A pill wider than the row wraps its own text.
+///
+/// Label weight is the same for every state so selecting a tab never changes
+/// widths (and therefore never re-flows the wrap).
+class IntelligenceDeckTabBar extends StatelessWidget {
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  const IntelligenceDeckTabBar({
+    super.key,
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  static const double _segmentGap = 6.0;
+  static const double _wrapGap = 8.0;
+  static const double _segmentPadding = 6.0; // minimum per side, one-row mode
+  static const double _pillPadding = 14.0; // per side, wrap mode
+  static const double _borderWidth = 1.0;
+  static const double _minTouchHeight = 40.0;
+
+  static const TextStyle _labelStyle = TextStyle(
+    fontFamily: AppTheme.fontDisplay,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScaler = MediaQuery.textScalerOf(context);
+        final direction = Directionality.of(context);
+
+        var widestLabel = 0.0;
+        for (final label in labels) {
+          final painter = TextPainter(
+            text: TextSpan(text: label, style: _labelStyle),
+            textDirection: direction,
+            textScaler: textScaler,
+            maxLines: 1,
+          )..layout();
+          widestLabel = math.max(widestLabel, painter.width);
+          painter.dispose();
+        }
+
+        final count = labels.length;
+        final segmentWidth =
+            (constraints.maxWidth - _segmentGap * (count - 1)) / count;
+        final fitsInOneRow = constraints.hasBoundedWidth &&
+            widestLabel + 2 * (_segmentPadding + _borderWidth) <= segmentWidth;
+
+        if (fitsInOneRow) {
+          return Row(
+            children: [
+              for (var i = 0; i < count; i++) ...[
+                if (i > 0) const SizedBox(width: _segmentGap),
+                Expanded(child: _buildTab(i, expand: true)),
+              ],
+            ],
+          );
+        }
+        return Wrap(
+          spacing: _wrapGap,
+          runSpacing: _wrapGap,
+          children: [
+            for (var i = 0; i < count; i++) _buildTab(i, expand: false),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTab(int index, {required bool expand}) {
+    final label = labels[index];
+    final isSelected = index == selectedIndex;
+    final text = Text(
+      label,
+      textAlign: TextAlign.center,
+      style: _labelStyle.copyWith(
+        color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
+      ),
+    );
+
+    return Semantics(
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: label,
+      onTap: () => onSelected(index),
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onSelected(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minHeight: _minTouchHeight),
+          alignment: expand ? Alignment.center : null,
+          padding: EdgeInsets.symmetric(
+            horizontal: expand ? _segmentPadding : _pillPadding,
+            vertical: 6,
+          ),
+          // Same active treatment as the verified navigation dock.
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.crimson.withValues(alpha: 0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected
+                  ? AppTheme.crimson.withValues(alpha: 0.35)
+                  : const Color(0x1FFFFFFF),
+              width: _borderWidth,
+            ),
+          ),
+          child: expand ? text : Center(widthFactor: 1.0, child: text),
+        ),
+      ),
+    );
   }
 }
 
@@ -2043,15 +2535,19 @@ class _SparklineWirePainter extends CustomPainter {
 
     final path = Path();
     path.moveTo(0, size.height * 0.75);
-    path.quadraticBezierTo(size.width * 0.25, size.height * 0.65, size.width * 0.40, size.height * 0.35);
-    path.quadraticBezierTo(size.width * 0.65, size.height * 0.52, size.width * 0.85, size.height * 0.30);
-    path.quadraticBezierTo(size.width * 0.95, size.height * 0.18, size.width, size.height * 0.12);
+    path.quadraticBezierTo(size.width * 0.25, size.height * 0.65,
+        size.width * 0.40, size.height * 0.35);
+    path.quadraticBezierTo(size.width * 0.65, size.height * 0.52,
+        size.width * 0.85, size.height * 0.30);
+    path.quadraticBezierTo(
+        size.width * 0.95, size.height * 0.18, size.width, size.height * 0.12);
 
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _SparklineWirePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _SparklineWirePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 /// Unbundled Editorial Match Row for Dashboard
@@ -2173,7 +2669,7 @@ class _ShortcutButton extends StatelessWidget {
                 fontSize: 12,
                 color: AppTheme.textPrimary,
               ),
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -2223,7 +2719,8 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                 color: AppTheme.goldPrimary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.verified_user_outlined, size: 16, color: AppTheme.goldPrimary),
+              child: const Icon(Icons.verified_user_outlined,
+                  size: 16, color: AppTheme.goldPrimary),
             ),
             const SizedBox(width: 10),
             const Expanded(
@@ -2258,7 +2755,10 @@ class DualRolePersonaSwitcher extends StatelessWidget {
               ),
               child: const Text(
                 'Get Certified',
-                style: TextStyle(fontSize: 11, color: AppTheme.goldPrimary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.goldPrimary,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -2287,10 +2787,14 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                 curve: Curves.easeInOutCubic,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: !isOfficialActive ? AppTheme.elevatedSurface : Colors.transparent,
+                  color: !isOfficialActive
+                      ? AppTheme.elevatedSurface
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: !isOfficialActive
-                      ? Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5), width: 1)
+                      ? Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                          width: 1)
                       : null,
                   boxShadow: !isOfficialActive
                       ? [
@@ -2308,7 +2812,9 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                     Icon(
                       Icons.fitness_center,
                       size: 15,
-                      color: !isOfficialActive ? AppTheme.goldPrimary : AppTheme.textMuted,
+                      color: !isOfficialActive
+                          ? AppTheme.goldPrimary
+                          : AppTheme.textMuted,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -2316,8 +2822,12 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'Space Grotesk',
                         fontSize: 12,
-                        fontWeight: !isOfficialActive ? FontWeight.w700 : FontWeight.w500,
-                        color: !isOfficialActive ? AppTheme.goldPrimary : AppTheme.textMuted,
+                        fontWeight: !isOfficialActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: !isOfficialActive
+                            ? AppTheme.goldPrimary
+                            : AppTheme.textMuted,
                       ),
                     ),
                   ],
@@ -2339,10 +2849,13 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                 curve: Curves.easeInOutCubic,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: isOfficialActive ? AppTheme.elevatedSurface : Colors.transparent,
+                  color: isOfficialActive
+                      ? AppTheme.elevatedSurface
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: isOfficialActive
-                      ? Border.all(color: AppTheme.info.withValues(alpha: 0.5), width: 1)
+                      ? Border.all(
+                          color: AppTheme.info.withValues(alpha: 0.5), width: 1)
                       : null,
                   boxShadow: isOfficialActive
                       ? [
@@ -2360,7 +2873,8 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                     Icon(
                       Icons.gavel_rounded,
                       size: 15,
-                      color: isOfficialActive ? AppTheme.info : AppTheme.textMuted,
+                      color:
+                          isOfficialActive ? AppTheme.info : AppTheme.textMuted,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -2368,8 +2882,12 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'Space Grotesk',
                         fontSize: 12,
-                        fontWeight: isOfficialActive ? FontWeight.w700 : FontWeight.w500,
-                        color: isOfficialActive ? AppTheme.info : AppTheme.textMuted,
+                        fontWeight: isOfficialActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: isOfficialActive
+                            ? AppTheme.info
+                            : AppTheme.textMuted,
                       ),
                     ),
                   ],
@@ -2400,11 +2918,17 @@ class AthleteProfileScreen extends ConsumerWidget {
     final displayName = profile['displayName'] ?? 'Athlete';
     final email = profile['email'] ?? '';
     final role = profile['role']?.toString().toUpperCase() ?? 'ATHLETE';
-    const officialRoles = {'REFEREE', 'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+    const officialRoles = {
+      'REFEREE',
+      'PROVINCIAL_DIRECTOR',
+      'NATIONAL_DIRECTOR',
+      'SYSTEM_ADMIN'
+    };
     final isOfficial = officialRoles.contains(role);
 
     final profileAsync = ref.watch(athleteProfileProvider);
-    final myProfileId = profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
+    final myProfileId =
+        profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -2422,7 +2946,8 @@ class AthleteProfileScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppTheme.textSecondary),
+            icon: const Icon(Icons.settings_outlined,
+                color: AppTheme.textSecondary),
             tooltip: 'Settings',
             onPressed: () {
               HapticFeedback.selectionClick();
@@ -2470,19 +2995,25 @@ class AthleteProfileScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isOfficial ? AppTheme.cyan : AppTheme.goldPrimary,
+                        color:
+                            isOfficial ? AppTheme.cyan : AppTheme.goldPrimary,
                         width: 2.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (isOfficial ? AppTheme.cyan : AppTheme.goldPrimary).withValues(alpha: 0.25),
+                          color: (isOfficial
+                                  ? AppTheme.cyan
+                                  : AppTheme.goldPrimary)
+                              .withValues(alpha: 0.25),
                           blurRadius: 12,
                           spreadRadius: 1,
                         ),
                       ],
                     ),
                     child: ArmSphereImage.avatar(
-                      imageUrl: (profile['profilePhoto'] ?? profile['avatarUrl'])?.toString(),
+                      imageUrl:
+                          (profile['profilePhoto'] ?? profile['avatarUrl'])
+                              ?.toString(),
                       initial: displayName,
                       size: 72,
                       fallbackAsset: ArmSphereAssets.defaultAvatar,
@@ -2516,7 +3047,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                         const SizedBox(height: 3),
                         Text(
                           email.isEmpty ? 'Federation Member' : email,
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          style: const TextStyle(
+                              fontSize: 12, color: AppTheme.textMuted),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -2526,18 +3058,26 @@ class AthleteProfileScreen extends ConsumerWidget {
                             ArmSphereImage(
                               assetPath: isOfficial
                                   ? ArmSphereAssets.refNat
-                                  : _getDivisionBadge(profile['weightKg'] ?? profile['weight'], profile['weightClass']),
+                                  : _getDivisionBadge(
+                                      profile['weightKg'] ?? profile['weight'],
+                                      profile['weightClass']),
                               width: 20,
                               height: 20,
-                              semanticLabel: isOfficial ? 'Certified Referee Insignia' : 'Division Category Badge',
+                              semanticLabel: isOfficial
+                                  ? 'Certified Referee Insignia'
+                                  : 'Division Category Badge',
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              isOfficial ? 'Certified Federation Official' : 'Official PAFF Competitor',
+                              isOfficial
+                                  ? 'Certified Federation Official'
+                                  : 'Official PAFF Competitor',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: isOfficial ? AppTheme.cyan : AppTheme.goldPrimary,
+                                color: isOfficial
+                                    ? AppTheme.cyan
+                                    : AppTheme.goldPrimary,
                               ),
                             ),
                           ],
@@ -2570,7 +3110,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     title: const Row(
                       children: [
-                        Icon(Icons.gavel_rounded, color: AppTheme.info, size: 24),
+                        Icon(Icons.gavel_rounded,
+                            color: AppTheme.info, size: 24),
                         SizedBox(width: AppTheme.space8),
                         Text(
                           'Switch to Official Mode?',
@@ -2584,7 +3125,10 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     content: const Text(
                       'This will switch your active operational view to the Referee Console and table officiating tools.',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.textSecondary,
+                          height: 1.4),
                     ),
                     actions: [
                       TextButton(
@@ -2626,7 +3170,9 @@ class AthleteProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.all(20),
                 child: SizedBox(
                   height: 120,
-                  child: Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
+                  child: Center(
+                      child: CircularProgressIndicator(
+                          color: AppTheme.goldPrimary)),
                 ),
               ),
               error: (_, __) => ArmSwitchEloCard(profileData: profile),
@@ -2649,7 +3195,11 @@ class AthleteProfileScreen extends ConsumerWidget {
             profileAsync.when(
               loading: () => const ElevatedActionCard(
                 padding: EdgeInsets.all(16),
-                child: SizedBox(height: 50, child: Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary))),
+                child: SizedBox(
+                    height: 50,
+                    child: Center(
+                        child: CircularProgressIndicator(
+                            color: AppTheme.goldPrimary))),
               ),
               error: (_, __) => _buildBiometricsCard(profile),
               data: (p) => _buildBiometricsCard(p),
@@ -2679,7 +3229,9 @@ class AthleteProfileScreen extends ConsumerWidget {
                     subtitle: 'Cupping, pronation & rising personal records',
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      context.push(myProfileId != null ? '/athlete/$myProfileId/training-log' : '/settings');
+                      context.push(myProfileId != null
+                          ? '/athlete/$myProfileId/training-log'
+                          : '/settings');
                     },
                   ),
                   const Divider(height: 1, color: AppTheme.borderSubtle),
@@ -2746,17 +3298,24 @@ class AthleteProfileScreen extends ConsumerWidget {
     final weight = profile['weightKg'] ?? profile['weight'];
     final height = profile['heightCm'] ?? profile['height'];
     final reach = profile['reachCm'] ?? profile['reach'];
-    final dominance = profile['armDominance']?.toString() ?? profile['dominantArm']?.toString();
+    final dominance = profile['armDominance']?.toString() ??
+        profile['dominantArm']?.toString();
 
     return ElevatedActionCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _SpecItem(label: 'Weight', value: weight != null ? '${weight}kg' : '--'),
-          _SpecItem(label: 'Height', value: height != null ? '${height}cm' : '--'),
+          _SpecItem(
+              label: 'Weight', value: weight != null ? '${weight}kg' : '--'),
+          _SpecItem(
+              label: 'Height', value: height != null ? '${height}cm' : '--'),
           _SpecItem(label: 'Reach', value: reach != null ? '${reach}cm' : '--'),
-          _SpecItem(label: 'Dominance', value: dominance != null && dominance.isNotEmpty ? dominance.toUpperCase() : '--'),
+          _SpecItem(
+              label: 'Dominance',
+              value: dominance != null && dominance.isNotEmpty
+                  ? dominance.toUpperCase()
+                  : '--'),
         ],
       ),
     );
@@ -2789,9 +3348,10 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
   void initState() {
     super.initState();
     // Default to right arm or dominant arm
-    final dominant = widget.profileData['armDominance']?.toString().toUpperCase() ??
-        widget.profileData['dominantArm']?.toString().toUpperCase() ??
-        'RIGHT';
+    final dominant =
+        widget.profileData['armDominance']?.toString().toUpperCase() ??
+            widget.profileData['dominantArm']?.toString().toUpperCase() ??
+            'RIGHT';
     _isRightArm = !dominant.contains('LEFT');
 
     _flipController = AnimationController(
@@ -2832,8 +3392,12 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
   @override
   Widget build(BuildContext context) {
     final p = widget.profileData;
-    final rightElo = (p['rightArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt() ?? 1200;
-    final leftElo = (p['leftArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt() ?? 1200;
+    final rightElo = (p['rightArmElo'] as num?)?.toInt() ??
+        (p['eloRating'] as num?)?.toInt() ??
+        1200;
+    final leftElo = (p['leftArmElo'] as num?)?.toInt() ??
+        (p['eloRating'] as num?)?.toInt() ??
+        1200;
     final weightClass = p['weightClass']?.toString();
     final division = p['division']?.toString() ?? 'Senior';
 
@@ -2841,7 +3405,8 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
     final alternateElo = _isRightArm ? leftElo : rightElo;
     final activeArmLabel = _isRightArm ? 'RIGHT ARM' : 'LEFT ARM';
     final alternateArmLabel = _isRightArm ? 'LEFT ARM' : 'RIGHT ARM';
-    final activeAccentColor = _isRightArm ? AppTheme.goldPrimary : AppTheme.info;
+    final activeAccentColor =
+        _isRightArm ? AppTheme.goldPrimary : AppTheme.info;
 
     return RepaintBoundary(
       child: ElevatedActionCard(
@@ -2854,7 +3419,8 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppTheme.elevatedSurface,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -2949,7 +3515,8 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
                       Icon(
                         Icons.swap_horiz,
                         size: 15,
-                        color: _isRightArm ? AppTheme.info : AppTheme.goldPrimary,
+                        color:
+                            _isRightArm ? AppTheme.info : AppTheme.goldPrimary,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -2957,7 +3524,9 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _isRightArm ? AppTheme.info : AppTheme.goldPrimary,
+                          color: _isRightArm
+                              ? AppTheme.info
+                              : AppTheme.goldPrimary,
                         ),
                       ),
                     ],
@@ -3063,9 +3632,13 @@ class _ArmSelectorTab extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected
+              ? activeColor.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
-          border: isSelected ? Border.all(color: activeColor.withValues(alpha: 0.5), width: 1) : null,
+          border: isSelected
+              ? Border.all(color: activeColor.withValues(alpha: 0.5), width: 1)
+              : null,
         ),
         child: Text(
           label,
@@ -3139,7 +3712,9 @@ class _WorkspaceTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDestructive ? AppTheme.error.withValues(alpha: 0.1) : AppTheme.elevatedSurface,
+                color: isDestructive
+                    ? AppTheme.error.withValues(alpha: 0.1)
+                    : AppTheme.elevatedSurface,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 20, color: iconColor),
@@ -3155,14 +3730,16 @@ class _WorkspaceTile extends StatelessWidget {
                       fontFamily: AppTheme.fontDisplay,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: isDestructive ? AppTheme.error : AppTheme.textPrimary,
+                      color:
+                          isDestructive ? AppTheme.error : AppTheme.textPrimary,
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle!,
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppTheme.textMuted),
                     ),
                   ],
                 ],
@@ -3170,7 +3747,9 @@ class _WorkspaceTile extends StatelessWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: isDestructive ? AppTheme.error.withValues(alpha: 0.6) : AppTheme.textMuted,
+              color: isDestructive
+                  ? AppTheme.error.withValues(alpha: 0.6)
+                  : AppTheme.textMuted,
               size: 20,
             ),
           ],
@@ -3193,7 +3772,8 @@ class AthleteAchievementsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Athletic Honors',
-          style: TextStyle(fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
+          style: TextStyle(
+              fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
         ),
       ),
       body: SingleChildScrollView(
@@ -3209,7 +3789,8 @@ class AthleteAchievementsScreen extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.verified_outlined, size: 18, color: AppTheme.goldPrimary),
+                      Icon(Icons.verified_outlined,
+                          size: 18, color: AppTheme.goldPrimary),
                       SizedBox(width: 8),
                       Text(
                         'Certified Honors Verification',
@@ -3225,7 +3806,10 @@ class AthleteAchievementsScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   const Text(
                     'Achievements in ArmSphere are conferred automatically based on certified tournament reports, referee scorepads, and official ELO rating recalculations. Medals are secured cryptographically using SHA-256 state hashing to prevent tampering.',
-                    style: TextStyle(height: 1.5, fontSize: 13, color: AppTheme.textSecondary),
+                    style: TextStyle(
+                        height: 1.5,
+                        fontSize: 13,
+                        color: AppTheme.textSecondary),
                   ),
                 ],
               ),
