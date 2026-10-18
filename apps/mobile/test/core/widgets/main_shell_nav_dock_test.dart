@@ -163,6 +163,31 @@ void main() {
       }
     });
 
+    testWidgets('labels stay readable: >=10sp, text scale capped, no truncation',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 740);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await _pumpShell(tester, textScale: 1.5);
+      for (final tab in _tabs) {
+        final finder = find.text(tab.label);
+        expect(_labelFor(tester, tab.label).style!.fontSize,
+            greaterThanOrEqualTo(10.0));
+        // Dock caps label scaling at 1.3x even when the system asks for 1.5x.
+        final scaled =
+            MediaQuery.textScalerOf(tester.element(finder)).scale(10);
+        expect(scaled, closeTo(13.0, 0.01), reason: '${tab.label} scale');
+        // Too-wide labels shrink to fit instead of ellipsizing.
+        expect(
+          find.ancestor(of: finder, matching: find.byType(FittedBox)),
+          findsWidgets,
+          reason: '${tab.label} fits via FittedBox',
+        );
+      }
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('exposes button + selected semantics for every tab',
         (tester) async {
       final handle = tester.ensureSemantics();

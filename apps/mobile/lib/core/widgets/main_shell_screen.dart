@@ -149,11 +149,14 @@ class MainShellScreen extends StatelessWidget {
                       width: 1.0,
                     ),
                     gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      stops: [0.0, 0.45, 1.0],
+                      // Vertical (left/right symmetric) sheen: a diagonal one
+                      // lightened only the first two tabs and cut their
+                      // inactive-label contrast to ~2.6:1.
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.0, 0.30, 1.0],
                       colors: [
-                        Color(0x24FFFFFF), // Specular reflection sheen
+                        Color(0x1AFFFFFF), // Specular reflection sheen
                         Color(0xB3151B24),
                         Color(0x0A000000),
                       ],
@@ -241,7 +244,7 @@ class MainShellScreen extends StatelessWidget {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 // Border is always present (transparent when idle) so the
                 // label does not shift 2dp down when a tab becomes active.
                 decoration: BoxDecoration(
@@ -258,26 +261,37 @@ class MainShellScreen extends StatelessWidget {
                 ),
                 child: Icon(
                   isSelected ? activeIcon : icon,
-                  size: 20,
+                  size: 22,
                   color: isSelected ? activeColor : AppTheme.textMuted,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 9.5,
-                  // SpaceGrotesk bundles w400-w700 only; w800 would be synthesized.
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  letterSpacing: 0.3,
-                  // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
-                  // active label uses titanium white; crimson stays on icon + pill.
-                  color: isSelected ? AppTheme.textPrimary : AppTheme.textMuted,
+              const SizedBox(height: 3),
+              // Fixed-height dock: cap label scaling at 1.3x and shrink a
+              // too-wide label to fit rather than showing "Communi...".
+              // The tab's semantics label/tooltip carry the full name.
+              MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.3,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10.5,
+                      // SpaceGrotesk bundles w400-w700 only; w800 would be synthesized.
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w600,
+                      letterSpacing: 0.3,
+                      // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
+                      // active label uses titanium white; crimson stays on icon + pill.
+                      color:
+                          isSelected ? AppTheme.textPrimary : AppTheme.textMuted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
               ),
             ],
           ),
