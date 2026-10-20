@@ -743,6 +743,7 @@ class _AthleteDashboardScreenState
     String? avatarUrl,
   }) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         gradient: AppTheme.cinematicBannerGradient,
         borderRadius: BorderRadius.circular(20),
@@ -756,6 +757,7 @@ class _AthleteDashboardScreenState
         ],
       ),
       child: Stack(
+        fit: StackFit.passthrough,
         children: [
           // Background Rank Watermark (only if athlete has verified ranking)
           if (hasRank)
@@ -777,78 +779,83 @@ class _AthleteDashboardScreenState
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Top Badges Row (wraps instead of overflowing at large text)
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.emerald.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: AppTheme.emerald.withValues(alpha: 0.45),
-                            width: 1.0),
-                      ),
-                      child: const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.check, size: 10, color: AppTheme.emerald),
-                            SizedBox(width: 4),
-                            Text(
-                              'VERIFIED',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                                color: AppTheme.emerald,
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.emerald.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: AppTheme.emerald.withValues(alpha: 0.45),
+                              width: 1.0),
+                        ),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check,
+                                  size: 10, color: AppTheme.emerald),
+                              SizedBox(width: 4),
+                              Text(
+                                'VERIFIED',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                  color: AppTheme.emerald,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: AppTheme.goldPrimary.withValues(alpha: 0.45),
-                            width: 1.0),
-                      ),
-                      child: const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.workspace_premium_rounded,
-                                size: 11, color: AppTheme.goldPrimary),
-                            SizedBox(width: 4),
-                            Text(
-                              'PAFF COMPETITOR',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                                color: AppTheme.goldPrimary,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color:
+                                  AppTheme.goldPrimary.withValues(alpha: 0.45),
+                              width: 1.0),
+                        ),
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.workspace_premium_rounded,
+                                  size: 11, color: AppTheme.goldPrimary),
+                              SizedBox(width: 4),
+                              Text(
+                                'PAFF COMPETITOR',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                  color: AppTheme.goldPrimary,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
 
@@ -907,11 +914,14 @@ class _AthleteDashboardScreenState
                               color: AppTheme.textPure,
                               height: 1.1,
                             ),
-                            maxLines: 2,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          Row(
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 5,
+                            runSpacing: 2,
                             children: [
                               if (country != null && country.isNotEmpty) ...[
                                 Text(
@@ -922,23 +932,19 @@ class _AthleteDashboardScreenState
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 5),
-                                  child: Text('•',
-                                      style:
-                                          TextStyle(color: AppTheme.textMuted)),
-                                ),
+                                const Text('•',
+                                    style:
+                                        TextStyle(color: AppTheme.textMuted)),
                               ],
-                              Flexible(
-                                child: Text(
-                                  clubName,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.crimson,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              Text(
+                                clubName,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.crimson,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -951,29 +957,33 @@ class _AthleteDashboardScreenState
 
                 // Biometric Horizontal Quick Ribbon
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.only(top: 12),
                   decoration: const BoxDecoration(
                     border: Border(
                       top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0),
                     ),
                   ),
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 16,
-                    runSpacing: 10,
-                    children: [
-                      _buildBioStat('WORLD RANK', rank, delta: rankDelta),
-                      _buildBioStat(
-                          'WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
-                      _buildBioStat(
-                          'WIN RATE', winRate != null ? '$winRate%' : '--',
-                          isEmerald: winRate != null),
-                      _buildBioStat(
-                          'DISCIPLINE',
-                          dominantArm != null
-                              ? _disciplineLabel(dominantArm)
-                              : '--'),
-                    ],
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 16,
+                      runSpacing: 10,
+                      children: [
+                        _buildBioStat('WORLD RANK', rank, delta: rankDelta),
+                        _buildBioStat(
+                            'WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
+                        _buildBioStat(
+                            'WIN RATE', winRate != null ? '$winRate%' : '--',
+                            isEmerald: winRate != null),
+                        _buildBioStat(
+                            'DISCIPLINE',
+                            dominantArm != null
+                                ? _disciplineLabel(dominantArm)
+                                : '--'),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1045,6 +1055,35 @@ class _AthleteDashboardScreenState
     required AsyncValue<List<Map<String, dynamic>>> trainingLogsAsync,
     required String? myProfileId,
   }) {
+    void onRecoveryTap() {
+      HapticFeedback.selectionClick();
+      if (myProfileId != null) {
+        context.push('/athlete/$myProfileId/training-log');
+      } else {
+        context.push('/athlete/profile');
+      }
+    }
+
+    final String recoverySemanticsLabel = trainingLogsAsync.maybeWhen(
+      data: (logs) {
+        if (logs.isEmpty) {
+          return 'Recovery data unavailable. Tap to log training.';
+        }
+        final latest = logs.first;
+        final dateStr = latest['date'] ?? latest['createdAt'];
+        final parsedDate = DateTime.tryParse(dateStr?.toString() ?? '');
+        final daysAgo = parsedDate != null
+            ? DateTime.now().difference(parsedDate).inDays
+            : null;
+        final sessionsCount = logs.length;
+        final lastActivity = daysAgo == null
+            ? 'Activity tracked.'
+            : (daysAgo == 0 ? 'Today.' : '${daysAgo}d ago.');
+        return 'Recovery status: $sessionsCount Logged. Last activity: $lastActivity Tap to view training log.';
+      },
+      orElse: () => 'Recovery data unavailable. Tap to log training.',
+    );
+
     // IntrinsicHeight + stretch keeps both cards the same height now that the
     // arm selector lives inside the ELO card.
     return IntrinsicHeight(
@@ -1109,71 +1148,74 @@ class _AthleteDashboardScreenState
                   const SizedBox(height: 10),
                   // Wrap (not Row) so the delta badge drops below the rating at
                   // very large text scales instead of overflowing.
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.end,
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      Text(
-                        currentElo != null ? '$currentElo' : '--',
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 29,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.6,
-                          color: AppTheme.textPure,
-                          height: 1.0,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        Text(
+                          currentElo != null ? '$currentElo' : '--',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 29,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.6,
+                            color: AppTheme.textPure,
+                            height: 1.0,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
                         ),
-                      ),
-                      if (eloDelta != null) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: (eloDelta >= 0
+                        if (eloDelta != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: (eloDelta >= 0
+                                      ? AppTheme.emerald
+                                      : AppTheme.crimson)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${eloDelta >= 0 ? '▲ +' : '▼ '}$eloDelta',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: eloDelta >= 0
                                     ? AppTheme.emerald
-                                    : AppTheme.crimson)
-                                .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${eloDelta >= 0 ? '▲ +' : '▼ '}$eloDelta',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: eloDelta >= 0
-                                  ? AppTheme.emerald
-                                  : AppTheme.crimson,
+                                    : AppTheme.crimson,
+                              ),
                             ),
                           ),
-                        ),
-                      ] else ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'PROVISIONAL',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textMuted,
+                        ] else ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'PROVISIONAL',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textMuted,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   // Electric Cyan Sparkline Wire
-                  SizedBox(
+                  const SizedBox(
                     width: double.infinity,
                     height: 22,
                     child: CustomPaint(
@@ -1189,34 +1231,32 @@ class _AthleteDashboardScreenState
           // Truthful Readiness / Training Recovery Card (0.8fr)
           Expanded(
             flex: 4,
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                if (myProfileId != null) {
-                  context.push('/athlete/$myProfileId/training-log');
-                } else {
-                  context.push('/athlete/profile');
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: AppTheme.machinedTitaniumDecoration(
-                  radius: 16,
-                  borderColor: AppTheme.borderTitanium,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Expanded(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: const Text(
+            child: Semantics(
+              container: true,
+              button: true,
+              label: recoverySemanticsLabel,
+              onTap: onRecoveryTap,
+              excludeSemantics: true,
+              child: GestureDetector(
+                onTap: onRecoveryTap,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: AppTheme.machinedTitaniumDecoration(
+                    radius: 16,
+                    borderColor: AppTheme.borderTitanium,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
                               'RECOVERY STATUS',
-                              style: TextStyle(
+                              textScaler: MediaQuery.textScalerOf(context)
+                                  .clamp(maxScaleFactor: 1.4),
+                              style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w800,
@@ -1225,110 +1265,111 @@ class _AthleteDashboardScreenState
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Padding(
-                          padding: EdgeInsets.only(top: 1),
-                          child: Icon(
-                            Icons.fitness_center_outlined,
-                            size: 12,
-                            color: AppTheme.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: trainingLogsAsync.when(
-                          loading: () => const SizedBox(
-                            height: 44,
-                            child: Center(
-                              child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppTheme.cyan),
-                              ),
+                          const SizedBox(width: 4),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 1),
+                            child: Icon(
+                              Icons.fitness_center_outlined,
+                              size: 12,
+                              color: AppTheme.textMuted,
                             ),
                           ),
-                          error: (_, __) => _buildNeutralRecoveryView(),
-                          data: (logs) {
-                            if (logs.isEmpty) {
-                              return _buildNeutralRecoveryView();
-                            }
-                            final latest = logs.first;
-                            final dateStr =
-                                latest['date'] ?? latest['createdAt'];
-                            final parsedDate =
-                                DateTime.tryParse(dateStr?.toString() ?? '');
-                            final daysAgo = parsedDate != null
-                                ? DateTime.now().difference(parsedDate).inDays
-                                : null;
-                            final sessionsCount = logs.length;
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: trainingLogsAsync.when(
+                            loading: () => const SizedBox(
+                              height: 44,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: AppTheme.cyan),
+                                ),
+                              ),
+                            ),
+                            error: (_, __) => _buildNeutralRecoveryView(),
+                            data: (logs) {
+                              if (logs.isEmpty) {
+                                return _buildNeutralRecoveryView();
+                              }
+                              final latest = logs.first;
+                              final dateStr =
+                                  latest['date'] ?? latest['createdAt'];
+                              final parsedDate =
+                                  DateTime.tryParse(dateStr?.toString() ?? '');
+                              final daysAgo = parsedDate != null
+                                  ? DateTime.now().difference(parsedDate).inDays
+                                  : null;
+                              final sessionsCount = logs.length;
 
-                            return Row(
-                              children: [
-                                Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppTheme.emerald
-                                        .withValues(alpha: 0.12),
-                                    border: Border.all(
-                                        color: AppTheme.emerald
-                                            .withValues(alpha: 0.4),
-                                        width: 1.0),
+                              return Row(
+                                children: [
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppTheme.emerald
+                                          .withValues(alpha: 0.12),
+                                      border: Border.all(
+                                          color: AppTheme.emerald
+                                              .withValues(alpha: 0.4),
+                                          width: 1.0),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(Icons.fitness_center,
+                                          size: 18, color: AppTheme.emerald),
+                                    ),
                                   ),
-                                  child: const Center(
-                                    child: Icon(Icons.fitness_center,
-                                        size: 18, color: AppTheme.emerald),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '$sessionsCount Logged',
-                                        style: const TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppTheme.textPure,
-                                          height: 1.1,
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '$sessionsCount Logged',
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppTheme.textPure,
+                                            height: 1.1,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        daysAgo != null
-                                            ? (daysAgo == 0
-                                                ? 'Last: Today'
-                                                : 'Last: ${daysAgo}d ago')
-                                            : 'Activity tracked',
-                                        style: const TextStyle(
-                                          fontSize: 9,
-                                          color: AppTheme.textMuted,
-                                          height: 1.1,
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          daysAgo != null
+                                              ? (daysAgo == 0
+                                                  ? 'Last: Today'
+                                                  : 'Last: ${daysAgo}d ago')
+                                              : 'Activity tracked',
+                                          style: const TextStyle(
+                                            fontSize: 9,
+                                            color: AppTheme.textMuted,
+                                            height: 1.1,
+                                          ),
+                                          maxLines: 2,
+                                          softWrap: true,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
+                                ],
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1339,57 +1380,51 @@ class _AthleteDashboardScreenState
   }
 
   Widget _buildNeutralRecoveryView() {
-    return Semantics(
-      container: true,
-      button: true,
-      label: 'Recovery data unavailable. Tap to log training.',
-      excludeSemantics: true,
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.04),
-              border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-            ),
-            child: const Center(
-              child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
-            ),
+    return Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.04),
+            border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Text(
-                  'No Data',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textSecondary,
-                    height: 1.1,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Tap to log',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: AppTheme.textMuted,
-                    height: 1.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+          child: const Center(
+            child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'No Data',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textSecondary,
+                  height: 1.1,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Tap to log',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: AppTheme.textMuted,
+                  height: 1.1,
+                ),
+                maxLines: 2,
+                softWrap: true,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1735,52 +1770,56 @@ class _AthleteDashboardScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              const FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.calendar_today_outlined,
-                        size: 14, color: AppTheme.goldPrimary),
-                    SizedBox(width: 6),
-                    Text(
-                      'ARENA SCHEDULE',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: AppTheme.goldPrimary,
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today_outlined,
+                          size: 14, color: AppTheme.goldPrimary),
+                      SizedBox(width: 6),
+                      Text(
+                        'ARENA SCHEDULE',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: AppTheme.goldPrimary,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(6),
-                  border:
-                      Border.all(color: AppTheme.borderTitanium, width: 1.0),
-                ),
-                child: const Text(
-                  'STANDBY',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textMuted,
+                    ],
                   ),
                 ),
-              ),
-            ],
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(6),
+                    border:
+                        Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                  ),
+                  child: const Text(
+                    'STANDBY',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -2177,35 +2216,58 @@ class _AthleteDashboardScreenState
   Widget _buildDynamicIntelRow(
       Map<String, dynamic> match, String? myProfileId) {
     final winnerId = match['winnerId']?.toString();
-    final isWin = myProfileId != null && winnerId == myProfileId;
+    final status = match['status']?.toString().toUpperCase() ?? '';
+    final isPendingOrActive = status == 'SCHEDULED' ||
+        status == 'CONFIRMED' ||
+        status == 'CALLED' ||
+        status == 'READY' ||
+        status == 'IN_PROGRESS';
+    final isDecided =
+        !isPendingOrActive && winnerId != null && winnerId.isNotEmpty;
+    final isWin = isDecided && myProfileId != null && winnerId == myProfileId;
+    final isLoss = isDecided && myProfileId != null && winnerId != myProfileId;
+    final symbol = isWin ? 'W' : (isLoss ? 'L' : '–');
+    final accentColor = isWin
+        ? AppTheme.emerald
+        : (isLoss ? AppTheme.crimson : AppTheme.textMuted);
+
     final opponent = match['opponentName'] ??
         (myProfileId != null && match['athleteAId']?.toString() == myProfileId
             ? match['athleteBName']
             : match['athleteAName']) ??
         'Competitor';
-    final arm = match['arm']?.toString().toUpperCase() ?? 'R';
-    final method = match['winMethod'] ?? match['scoreLine'] ?? 'MATCH';
-    final eloDelta = (match['eloDelta'] as num?)?.toInt() ?? (isWin ? 24 : -12);
+
+    final rawArm = match['arm']?.toString();
+    final armLabel = _normalizeArmDiscipline(rawArm);
+    final method = match['winMethod']?.toString() ??
+        match['scoreLine']?.toString() ??
+        'MATCH';
+    final subtitle = armLabel != null ? '$method • $armLabel' : method;
+
+    final num? rawDelta = match['eloDelta'] as num?;
+    final int? eloDelta = rawDelta?.toInt();
+    final String? tag =
+        eloDelta != null ? '${eloDelta >= 0 ? '+' : ''}$eloDelta ELO' : null;
 
     return _buildIntelRowItem(
-      symbol: isWin ? 'W' : 'L',
-      isWin: isWin,
+      symbol: symbol,
+      accentColor: accentColor,
       title: 'vs $opponent',
-      subtitle: '$method • $arm.Arm',
-      tag: '${eloDelta >= 0 ? '+' : ''}$eloDelta ELO',
-      isTagPositive: eloDelta >= 0,
+      subtitle: subtitle,
+      tag: tag,
+      isTagPositive: (eloDelta ?? 0) >= 0,
     );
   }
 
   Widget _buildIntelRowItem({
     required String symbol,
-    required bool isWin,
+    Color? accentColor,
     required String title,
     required String subtitle,
-    required String tag,
-    required bool isTagPositive,
+    String? tag,
+    bool isTagPositive = true,
   }) {
-    final accentColor = isWin ? AppTheme.emerald : AppTheme.crimson;
+    final effectiveAccent = accentColor ?? AppTheme.textMuted;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -2218,7 +2280,7 @@ class _AthleteDashboardScreenState
                   width: 26,
                   height: 26,
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.15),
+                    color: effectiveAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
@@ -2228,7 +2290,7 @@ class _AthleteDashboardScreenState
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
-                        color: accentColor,
+                        color: effectiveAccent,
                       ),
                     ),
                   ),
@@ -2265,17 +2327,19 @@ class _AthleteDashboardScreenState
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            tag,
-            style: TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: isTagPositive ? AppTheme.emerald : AppTheme.crimson,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          if (tag != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              tag,
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: isTagPositive ? AppTheme.emerald : AppTheme.crimson,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -2300,6 +2364,7 @@ class _AthleteDashboardScreenState
     return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: 10,
@@ -2368,11 +2433,33 @@ class _AthleteDashboardScreenState
     );
   }
 
-  /// "Right" -> "Right Arm"; values that already say "arm" are left alone
-  /// (previously rendered "Right Arm Arm").
+  /// Normalizes raw arm discipline representations to Title Case ('Right Arm' / 'Left Arm').
+  /// Returns null if the discipline is null or empty, preventing fabricated disciplines.
+  static String? _normalizeArmDiscipline(String? raw) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final lower = trimmed.toLowerCase();
+    if (lower == 'r' || lower == 'right' || lower == 'right arm') {
+      return 'Right Arm';
+    }
+    if (lower == 'l' || lower == 'left' || lower == 'left arm') {
+      return 'Left Arm';
+    }
+    if (lower.endsWith('arm')) {
+      final prefix = trimmed.substring(0, trimmed.length - 3).trim();
+      if (prefix.isEmpty) return 'Arm';
+      final capitalizedPrefix =
+          prefix[0].toUpperCase() + prefix.substring(1).toLowerCase();
+      return '$capitalizedPrefix Arm';
+    }
+    final capitalized =
+        trimmed[0].toUpperCase() + trimmed.substring(1).toLowerCase();
+    return '$capitalized Arm';
+  }
+
   static String _disciplineLabel(String arm) {
-    final trimmed = arm.trim();
-    return trimmed.toLowerCase().endsWith('arm') ? trimmed : '$trimmed Arm';
+    return _normalizeArmDiscipline(arm) ?? arm;
   }
 
   static String _prettyExercise(String? raw) {
