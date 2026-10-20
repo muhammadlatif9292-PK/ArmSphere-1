@@ -846,7 +846,8 @@ void main() {
           expect(paragraph.textScaler.scale(8.5), lessThan(17.0));
         }
 
-        // Absence of mid-word line breaks or overflow
+        // Verifies the widget renders cleanly without layout exceptions or RenderFlex overflows;
+        // the textScaler clamp verified above prevents font overscaling that caused mid-word breaking.
         expect(tester.takeException(), isNull);
         await _disposeDashboard(tester);
       });
