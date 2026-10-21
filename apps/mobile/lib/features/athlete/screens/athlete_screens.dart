@@ -745,14 +745,28 @@ class _AthleteDashboardScreenState
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppTheme.cinematicBannerGradient,
+        gradient: const LinearGradient(
+          begin: Alignment(-0.8, -1.0),
+          end: Alignment(0.8, 1.0),
+          colors: [
+            Color(0xFF1B232F),
+            Color(0xFF141A24),
+            Color(0xFF0D121A),
+          ],
+          stops: [0.0, 0.45, 1.0],
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.30),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
+          ),
+          const BoxShadow(
+            color: Color(0x1ADAE2EB),
+            blurRadius: 1,
+            offset: Offset(0, 1),
           ),
         ],
       ),
@@ -762,16 +776,17 @@ class _AthleteDashboardScreenState
           // Background Rank Watermark (only if athlete has verified ranking)
           if (hasRank)
             Positioned(
-              right: -6,
-              bottom: -24,
+              right: -4,
+              bottom: -20,
               child: Text(
                 rank,
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
-                  fontSize: 120,
+                  fontSize: 115,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white.withValues(alpha: 0.035),
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.04),
                   height: 1.0,
+                  letterSpacing: -4.0,
                 ),
               ),
             ),
@@ -791,12 +806,12 @@ class _AthleteDashboardScreenState
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                            horizontal: 9, vertical: 4.5),
                         decoration: BoxDecoration(
-                          color: AppTheme.emerald.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
+                          color: AppTheme.emerald.withValues(alpha: 0.09),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                              color: AppTheme.emerald.withValues(alpha: 0.45),
+                              color: AppTheme.emerald.withValues(alpha: 0.35),
                               width: 1.0),
                         ),
                         child: const FittedBox(
@@ -804,16 +819,16 @@ class _AthleteDashboardScreenState
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check,
-                                  size: 10, color: AppTheme.emerald),
-                              SizedBox(width: 4),
+                              Icon(Icons.check_circle_outline_rounded,
+                                  size: 11, color: AppTheme.emerald),
+                              SizedBox(width: 4.5),
                               Text(
                                 'VERIFIED',
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 9,
+                                  fontSize: 8.5,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.6,
+                                  letterSpacing: 0.8,
                                   color: AppTheme.emerald,
                                 ),
                               ),
@@ -823,13 +838,13 @@ class _AthleteDashboardScreenState
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                            horizontal: 9, vertical: 4.5),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.09),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                               color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.45),
+                                  AppTheme.goldPrimary.withValues(alpha: 0.40),
                               width: 1.0),
                         ),
                         child: const FittedBox(
@@ -838,15 +853,15 @@ class _AthleteDashboardScreenState
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.workspace_premium_rounded,
-                                  size: 11, color: AppTheme.goldPrimary),
-                              SizedBox(width: 4),
+                                  size: 12, color: AppTheme.goldPrimary),
+                              SizedBox(width: 4.5),
                               Text(
                                 'PAFF COMPETITOR',
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 9,
+                                  fontSize: 8.5,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.6,
+                                  letterSpacing: 0.8,
                                   color: AppTheme.goldPrimary,
                                 ),
                               ),
@@ -872,23 +887,30 @@ class _AthleteDashboardScreenState
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(18),
                           gradient: const RadialGradient(
-                            center: Alignment(-0.2, -0.4),
-                            colors: [Color(0xFF223046), Color(0xFF080D15)],
+                            center: Alignment(-0.25, -0.35),
+                            radius: 0.9,
+                            colors: [Color(0xFF283850), Color(0xFF0B1018)],
                           ),
                           border: Border.all(
                               color: AppTheme.borderHighlight, width: 1.5),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
+                              color: Colors.black.withValues(alpha: 0.55),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                            BoxShadow(
+                              color:
+                                  AppTheme.goldPrimary.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              spreadRadius: -2,
                             ),
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(19),
+                          borderRadius: BorderRadius.circular(16.5),
                           child: ArmSphereImage.avatar(
                             imageUrl: avatarUrl,
                             initial: displayName,
@@ -910,38 +932,69 @@ class _AthleteDashboardScreenState
                               fontFamily: AppTheme.fontDisplay,
                               fontSize: 21,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: -0.3,
+                              letterSpacing: -0.4,
                               color: AppTheme.textPure,
-                              height: 1.1,
+                              height: 1.12,
                             ),
-                            maxLines: 3,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 5),
                           Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 5,
-                            runSpacing: 2,
+                            spacing: 6,
+                            runSpacing: 3,
                             children: [
                               if (country != null && country.isNotEmpty) ...[
-                                Text(
-                                  country,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.textSecondary,
-                                    fontWeight: FontWeight.w500,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: AppTheme.borderSubtle,
+                                        width: 1.0),
+                                  ),
+                                  child: Text(
+                                    country,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 10,
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.4,
+                                    ),
                                   ),
                                 ),
-                                const Text('•',
-                                    style:
-                                        TextStyle(color: AppTheme.textMuted)),
                               ],
-                              Text(
-                                clubName,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.crimson,
+                              Text.rich(
+                                TextSpan(
+                                  children: [
+                                    WidgetSpan(
+                                      alignment: PlaceholderAlignment.middle,
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 3.5),
+                                        child: Icon(
+                                          Icons.shield_outlined,
+                                          size: 11,
+                                          color: AppTheme.crimson
+                                              .withValues(alpha: 0.85),
+                                        ),
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: clubName,
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontBody,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.2,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -958,10 +1011,10 @@ class _AthleteDashboardScreenState
                 // Biometric Horizontal Quick Ribbon
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.only(top: 13),
                   decoration: const BoxDecoration(
                     border: Border(
-                      top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0),
+                      top: BorderSide(color: Color(0x24D6DCE3), width: 1.0),
                     ),
                   ),
                   child: SizedBox(
@@ -971,7 +1024,8 @@ class _AthleteDashboardScreenState
                       spacing: 16,
                       runSpacing: 10,
                       children: [
-                        _buildBioStat('WORLD RANK', rank, delta: rankDelta),
+                        _buildBioStat('WORLD RANK', rank,
+                            delta: rankDelta, hasRank: hasRank),
                         _buildBioStat(
                             'WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
                         _buildBioStat(
@@ -995,7 +1049,8 @@ class _AthleteDashboardScreenState
   }
 
   Widget _buildBioStat(String label, String value,
-      {String? delta, bool isEmerald = false}) {
+      {String? delta, bool isEmerald = false, bool hasRank = false}) {
+    final isRankStat = label == 'WORLD RANK';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1005,11 +1060,11 @@ class _AthleteDashboardScreenState
             fontFamily: AppTheme.fontDisplay,
             fontSize: 8.5,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
+            letterSpacing: 0.8,
             color: AppTheme.textMuted,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 3.5),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
@@ -1020,21 +1075,33 @@ class _AthleteDashboardScreenState
                 value,
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
-                  fontSize: 13.5,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: isEmerald ? AppTheme.emerald : AppTheme.textPrimary,
+                  color: isEmerald
+                      ? AppTheme.emerald
+                      : (isRankStat && hasRank
+                          ? AppTheme.goldLight
+                          : AppTheme.textPrimary),
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
               if (delta != null) ...[
-                const SizedBox(width: 3),
-                Text(
-                  delta,
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.emerald,
+                const SizedBox(width: 3.5),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppTheme.emerald.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    delta,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.emerald,
+                    ),
                   ),
                 ),
               ],
