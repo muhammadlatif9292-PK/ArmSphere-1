@@ -6,6 +6,7 @@ import 'package:mobile/core/providers/athlete_provider.dart';
 import 'package:mobile/core/providers/live_matches_provider.dart';
 import 'package:mobile/core/providers/rankings_provider.dart';
 import 'package:mobile/core/providers/tournament_provider.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/widgets/elevated_action_card.dart';
 import 'package:mobile/features/athlete/screens/athlete_screens.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
@@ -104,6 +105,8 @@ Future<void> _pumpDashboard(
   double width = 360,
   double height = 740,
   EdgeInsets mediaQueryPadding = EdgeInsets.zero,
+  Map<String, dynamic>? userProfile,
+  Map<String, dynamic>? athleteProfile,
   List<Map<String, dynamic>>? matches,
   List<Map<String, dynamic>>? trainingLogs,
   List<Map<String, dynamic>>? prs,
@@ -111,25 +114,28 @@ Future<void> _pumpDashboard(
   tester.view.physicalSize = Size(width * 2.0, height * 2.0);
   tester.view.devicePixelRatio = 2.0;
 
+  final effectiveUserProfile = userProfile ??
+      {'id': 'profile_1', 'displayName': 'Ali Khan', 'role': 'ATHLETE'};
+
+  final effectiveAthleteProfile = athleteProfile ??
+      {
+        'id': 'profile_1',
+        'rightArmElo': 1500,
+        'leftArmElo': 1480,
+        'armDominance': 'Right Arm',
+      };
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         authProvider.overrideWith((ref) => _TestAuthNotifier(
               AuthState(
                 status: AuthStatus.authenticated,
-                userProfile: {
-                  'id': 'profile_1',
-                  'displayName': 'Ali Khan',
-                  'role': 'ATHLETE'
-                },
+                userProfile: effectiveUserProfile,
               ),
             )),
-        athleteProfileProvider.overrideWith(() => _FakeAthleteProfileNotifier({
-              'id': 'profile_1',
-              'rightArmElo': 1500,
-              'leftArmElo': 1480,
-              'armDominance': 'Right Arm',
-            })),
+        athleteProfileProvider.overrideWith(
+            () => _FakeAthleteProfileNotifier(effectiveAthleteProfile)),
         liveMatchesProvider
             .overrideWith(() => _FakeLiveMatchesNotifier(matches ?? [])),
         tournamentProvider.overrideWith(() => _FakeTournamentNotifier()),
@@ -140,6 +146,7 @@ Future<void> _pumpDashboard(
             .overrideWith((ref) async => prs ?? <Map<String, dynamic>>[]),
       ],
       child: MaterialApp(
+        theme: AppTheme.darkTheme,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(textScale),
@@ -963,6 +970,141 @@ void main() {
       // Also verify GridView boundary alignment
       expect(prsRect.top - gridRect.bottom, closeTo(24.0, 1.0));
       expect(gridRect.bottom - lastTileRect.bottom, closeTo(0.0, 1.0));
+
+      expect(tester.takeException(), isNull);
+      await _disposeDashboard(tester);
+    });
+  });
+
+  group('Titanium Luxe Stage 1 Athlete Identity Banner Refinements', () {
+    testWidgets(
+        'Athlete displayName supports up to 3 lines and renders cleanly at 2.0x text scale on 360dp width',
+        (tester) async {
+      await _pumpDashboard(
+        tester,
+        width: 360,
+        height: 740,
+        textScale: 2.0,
+        userProfile: {
+          'id': 'profile_1',
+          'displayName': 'Tariq "The Titan" Malik',
+          'role': 'ATHLETE',
+        },
+      );
+
+      final nameFinder = find.text('Tariq "The Titan" Malik');
+      expect(nameFinder, findsOneWidget);
+
+      final Text textWidget = tester.widget<Text>(nameFinder);
+      expect(textWidget.maxLines, 3,
+          reason: 'displayName must allow up to 3 lines for accessibility');
+
+      final RenderParagraph paragraph =
+          tester.renderObject<RenderParagraph>(nameFinder);
+      expect(paragraph.size.height, greaterThan(0.0));
+      expect(paragraph.size.width, greaterThan(0.0));
+      expect(paragraph.size.width, lessThanOrEqualTo(360.0));
+
+      expect(tester.takeException(), isNull,
+          reason: 'No flex overflow at 2.0x font scale');
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'Podium rank (Rank 1) receives prestigious gold styling for watermark and rank stat',
+        (tester) async {
+      await _pumpDashboard(
+        tester,
+        athleteProfile: {
+          'id': 'profile_1',
+          'rank': '1',
+          'rightArmElo': 2150,
+          'leftArmElo': 1980,
+          'armDominance': 'Right Arm',
+        },
+      );
+
+      // Verify WORLD RANK stat value has gold styling
+      final rankStatValueFinder = find.text('#1');
+      expect(rankStatValueFinder, findsAtLeastNWidgets(1));
+
+      // The watermark also has text '#1'
+      final texts = tester.widgetList<Text>(rankStatValueFinder).toList();
+      final ribbonText = texts.firstWhere(
+        (t) => t.style?.fontSize == 14,
+        orElse: () => texts.first,
+      );
+      expect(ribbonText.style?.color, AppTheme.goldLight);
+
+      final watermarkText = texts.firstWhere(
+        (t) => t.style?.fontSize == 115,
+        orElse: () => texts.last,
+      );
+      expect(watermarkText.style?.color,
+          AppTheme.goldPrimary.withValues(alpha: 0.04));
+
+      expect(tester.takeException(), isNull);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'Non-podium rank (Rank 14) receives standard textPrimary and white watermark styling',
+        (tester) async {
+      await _pumpDashboard(
+        tester,
+        athleteProfile: {
+          'id': 'profile_1',
+          'rank': '14',
+          'rightArmElo': 1850,
+          'leftArmElo': 1720,
+          'armDominance': 'Right Arm',
+        },
+      );
+
+      final rankStatValueFinder = find.text('#14');
+      expect(rankStatValueFinder, findsAtLeastNWidgets(1));
+
+      final texts = tester.widgetList<Text>(rankStatValueFinder).toList();
+      final ribbonText = texts.firstWhere(
+        (t) => t.style?.fontSize == 14,
+        orElse: () => texts.first,
+      );
+      expect(ribbonText.style?.color, AppTheme.textPrimary);
+
+      final watermarkText = texts.firstWhere(
+        (t) => t.style?.fontSize == 115,
+        orElse: () => texts.last,
+      );
+      expect(watermarkText.style?.color, Colors.white.withValues(alpha: 0.035));
+
+      expect(tester.takeException(), isNull);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'Badges use BeveledRectangleBorder shape decoration while preserving Container ancestry',
+        (tester) async {
+      await _pumpDashboard(tester, width: 412);
+
+      final verifiedFinder = find.text('VERIFIED');
+      final paffFinder = find.text('PAFF COMPETITOR');
+
+      final verifiedContainer = tester.widget<Container>(
+        find
+            .ancestor(of: verifiedFinder, matching: find.byType(Container))
+            .first,
+      );
+      final paffContainer = tester.widget<Container>(
+        find.ancestor(of: paffFinder, matching: find.byType(Container)).first,
+      );
+
+      expect(verifiedContainer.decoration, isA<ShapeDecoration>());
+      final verifiedDec = verifiedContainer.decoration as ShapeDecoration;
+      expect(verifiedDec.shape, isA<BeveledRectangleBorder>());
+
+      expect(paffContainer.decoration, isA<ShapeDecoration>());
+      final paffDec = paffContainer.decoration as ShapeDecoration;
+      expect(paffDec.shape, isA<BeveledRectangleBorder>());
 
       expect(tester.takeException(), isNull);
       await _disposeDashboard(tester);

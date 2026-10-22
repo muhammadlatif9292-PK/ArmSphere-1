@@ -347,12 +347,14 @@ class AppTheme {
 
   /// Immersive cinematic athlete stage banner gradient.
   static const LinearGradient cinematicBannerGradient = LinearGradient(
-    begin: Alignment(-0.7, -1.0),
-    end: Alignment(0.7, 1.0),
+    begin: Alignment(-0.8, -1.0),
+    end: Alignment(0.8, 1.0),
     colors: [
-      Color(0xFF171D27),
-      Color(0xFF111721),
+      Color(0xFF1B232F),
+      Color(0xFF141A24),
+      Color(0xFF0D121A),
     ],
+    stops: [0.0, 0.45, 1.0],
   );
 
   /// Broadcast fight card / Supermatch stage gradient.
@@ -640,7 +642,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: recessedSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
           borderSide: const BorderSide(color: borderTitanium, width: 1.0),

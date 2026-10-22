@@ -1,8 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -21,8 +21,8 @@ bool _fontsLoaded = false;
 Future<void> _ensureProductionFontsLoaded(WidgetTester tester) async {
   if (_fontsLoaded) return;
   await tester.runAsync(() async {
-    final materialIconsFile =
-        File(r'E:\flutter\bin\cache\artifacts\material_fonts\materialicons-regular.otf');
+    final materialIconsFile = File(
+        r'E:\flutter\bin\cache\artifacts\material_fonts\materialicons-regular.otf');
     if (materialIconsFile.existsSync()) {
       final bytes = materialIconsFile.readAsBytesSync();
       await ui.loadFontFromList(bytes, fontFamily: 'MaterialIcons');
@@ -44,7 +44,35 @@ Future<void> _ensureProductionFontsLoaded(WidgetTester tester) async {
   _fontsLoaded = true;
 }
 
-class TestAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+class _DiskAssetBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    final file = File(key);
+    if (file.existsSync()) {
+      final bytes = await file.readAsBytes();
+      return ByteData.sublistView(Uint8List.fromList(bytes));
+    }
+    // Also check relative to apps/mobile if key starts with assets/
+    final mobileFile = File('apps/mobile/$key');
+    if (mobileFile.existsSync()) {
+      final bytes = await mobileFile.readAsBytes();
+      return ByteData.sublistView(Uint8List.fromList(bytes));
+    }
+    final unitTestFile = File('apps/mobile/build/unit_test_assets/$key');
+    if (unitTestFile.existsSync()) {
+      final bytes = await unitTestFile.readAsBytes();
+      return ByteData.sublistView(Uint8List.fromList(bytes));
+    }
+    try {
+      return await rootBundle.load(key);
+    } catch (_) {
+      throw FlutterError('Unable to load asset from disk or rootBundle: $key');
+    }
+  }
+}
+
+class TestAuthNotifier extends StateNotifier<AuthState>
+    implements AuthNotifier {
   TestAuthNotifier(super.state);
 
   @override
@@ -92,7 +120,12 @@ class FakeRankingsNotifier extends RankingsNotifier {
   @override
   Future<List<Map<String, dynamic>>> build() async => [
         {'rank': 1, 'name': 'John Brzenk', 'elo': 2150, 'country': 'USA'},
-        {'rank': 2, 'name': 'Levan Saginashvili', 'elo': 2145, 'country': 'GEO'},
+        {
+          'rank': 2,
+          'name': 'Levan Saginashvili',
+          'elo': 2145,
+          'country': 'GEO'
+        },
         {'rank': 3, 'name': 'Devon Larratt', 'elo': 2120, 'country': 'CAN'},
       ];
 }
@@ -116,6 +149,7 @@ Widget _buildHarnessApp({
     'leftArmElo': 1980,
     'eloDelta': 18,
     'role': 'ATHLETE',
+    'avatarUrl': 'assets/images/brand/m0_icon_gold.webp',
   };
 
   final prsData = [
@@ -198,17 +232,20 @@ Widget _buildHarnessApp({
       trainingLogPRsProvider('athlete_test_01')
           .overrideWith((ref) async => prsData),
     ],
-    child: MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      routerConfig: router,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(textScale),
-        ),
-        child: RepaintBoundary(
-          key: repaintKey,
-          child: child!,
+    child: DefaultAssetBundle(
+      bundle: _DiskAssetBundle(),
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        routerConfig: router,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+          ),
+          child: RepaintBoundary(
+            key: repaintKey,
+            child: child!,
+          ),
         ),
       ),
     ),
@@ -248,12 +285,13 @@ Future<void> _capture({
 
   try {
     await tester.pumpWidget(app);
-    // Use short pump durations to accommodate active animated widgets
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    // Use short pump durations to accommodate active animated widgets and decode assets
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 60));
+    }
 
-    final boundary = repaintKey.currentContext!.findRenderObject()
-        as RenderRepaintBoundary;
+    final boundary =
+        repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     await tester.runAsync(() async {
       final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
       final ByteData? byteData =
@@ -293,7 +331,8 @@ void main() {
           reason: 'No RenderFlex overflow on 360dp nominal');
     });
 
-    testWidgets('Capture 412x915 Large Phone - Candidate Nominal', (tester) async {
+    testWidgets('Capture 412x915 Large Phone - Candidate Nominal',
+        (tester) async {
       await _capture(
         tester: tester,
         width: 412,
@@ -306,7 +345,8 @@ void main() {
           reason: 'No RenderFlex overflow on 412dp nominal');
     });
 
-    testWidgets('Capture 360x740 Phone @ 1.4x Text Scale - Candidate', (tester) async {
+    testWidgets('Capture 360x740 Phone @ 1.4x Text Scale - Candidate',
+        (tester) async {
       await _capture(
         tester: tester,
         width: 360,
@@ -317,6 +357,20 @@ void main() {
       );
       expect(recordedOverflowErrors, isEmpty,
           reason: 'No RenderFlex overflow on 360dp at 1.4x text scale');
+    });
+
+    testWidgets('Capture 360x740 Phone @ 2.0x Text Scale - Candidate',
+        (tester) async {
+      await _capture(
+        tester: tester,
+        width: 360,
+        height: 740,
+        textScale: 2.0,
+        pixelRatio: 2.0,
+        outputPath: '$outDir/candidate_360x740_scale2.0x.png',
+      );
+      expect(recordedOverflowErrors, isEmpty,
+          reason: 'No RenderFlex overflow on 360dp at 2.0x text scale');
     });
   });
 }

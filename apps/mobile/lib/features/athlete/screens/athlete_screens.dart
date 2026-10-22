@@ -742,19 +742,14 @@ class _AthleteDashboardScreenState
     required String? country,
     String? avatarUrl,
   }) {
+    final rankDigits = rank.replaceAll(RegExp(r'[^0-9]'), '');
+    final rankInt = int.tryParse(rankDigits);
+    final isPodium = hasRank && rankInt != null && rankInt >= 1 && rankInt <= 3;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment(-0.8, -1.0),
-          end: Alignment(0.8, 1.0),
-          colors: [
-            Color(0xFF1B232F),
-            Color(0xFF141A24),
-            Color(0xFF0D121A),
-          ],
-          stops: [0.0, 0.45, 1.0],
-        ),
+        gradient: AppTheme.cinematicBannerGradient,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
         boxShadow: [
@@ -763,16 +758,31 @@ class _AthleteDashboardScreenState
             blurRadius: 28,
             offset: const Offset(0, 10),
           ),
-          const BoxShadow(
-            color: Color(0x1ADAE2EB),
-            blurRadius: 1,
-            offset: Offset(0, 1),
-          ),
         ],
       ),
       child: Stack(
         fit: StackFit.passthrough,
         children: [
+          // Specular top hairline rim highlight
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0x00DAE2EB),
+                    Color(0x40DAE2EB),
+                    Color(0x00DAE2EB),
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+
           // Background Rank Watermark (only if athlete has verified ranking)
           if (hasRank)
             Positioned(
@@ -784,7 +794,9 @@ class _AthleteDashboardScreenState
                   fontFamily: AppTheme.fontDisplay,
                   fontSize: 115,
                   fontWeight: FontWeight.w900,
-                  color: AppTheme.goldPrimary.withValues(alpha: 0.04),
+                  color: isPodium
+                      ? AppTheme.goldPrimary.withValues(alpha: 0.04)
+                      : Colors.white.withValues(alpha: 0.035),
                   height: 1.0,
                   letterSpacing: -4.0,
                 ),
@@ -807,12 +819,15 @@ class _AthleteDashboardScreenState
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 9, vertical: 4.5),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: AppTheme.emerald.withValues(alpha: 0.09),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
+                          shape: BeveledRectangleBorder(
+                            side: BorderSide(
                               color: AppTheme.emerald.withValues(alpha: 0.35),
-                              width: 1.0),
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
                         ),
                         child: const FittedBox(
                           fit: BoxFit.scaleDown,
@@ -839,13 +854,16 @@ class _AthleteDashboardScreenState
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 9, vertical: 4.5),
-                        decoration: BoxDecoration(
+                        decoration: ShapeDecoration(
                           color: AppTheme.goldPrimary.withValues(alpha: 0.09),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
+                          shape: BeveledRectangleBorder(
+                            side: BorderSide(
                               color:
                                   AppTheme.goldPrimary.withValues(alpha: 0.40),
-                              width: 1.0),
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
                         ),
                         child: const FittedBox(
                           fit: BoxFit.scaleDown,
@@ -901,18 +919,26 @@ class _AthleteDashboardScreenState
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
-                            BoxShadow(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              spreadRadius: -2,
-                            ),
+                            if (isPodium)
+                              BoxShadow(
+                                color: AppTheme.goldPrimary
+                                    .withValues(alpha: 0.12),
+                                blurRadius: 10,
+                                spreadRadius: -2,
+                              ),
                           ],
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16.5),
                           child: ArmSphereImage.avatar(
-                            imageUrl: avatarUrl,
+                            imageUrl: (avatarUrl != null &&
+                                    !avatarUrl.startsWith('assets/'))
+                                ? avatarUrl
+                                : null,
+                            assetPath: (avatarUrl != null &&
+                                    avatarUrl.startsWith('assets/'))
+                                ? avatarUrl
+                                : null,
                             initial: displayName,
                             size: 72,
                             fallbackAsset: ArmSphereAssets.defaultAvatar,
@@ -936,7 +962,7 @@ class _AthleteDashboardScreenState
                               color: AppTheme.textPure,
                               height: 1.12,
                             ),
-                            maxLines: 2,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 5),
@@ -1025,7 +1051,9 @@ class _AthleteDashboardScreenState
                       runSpacing: 10,
                       children: [
                         _buildBioStat('WORLD RANK', rank,
-                            delta: rankDelta, hasRank: hasRank),
+                            delta: rankDelta,
+                            hasRank: hasRank,
+                            isPodium: isPodium),
                         _buildBioStat(
                             'WEIGHT', weightKg != null ? '$weightKg kg' : '--'),
                         _buildBioStat(
@@ -1049,7 +1077,10 @@ class _AthleteDashboardScreenState
   }
 
   Widget _buildBioStat(String label, String value,
-      {String? delta, bool isEmerald = false, bool hasRank = false}) {
+      {String? delta,
+      bool isEmerald = false,
+      bool hasRank = false,
+      bool isPodium = false}) {
     final isRankStat = label == 'WORLD RANK';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1080,7 +1111,9 @@ class _AthleteDashboardScreenState
                   color: isEmerald
                       ? AppTheme.emerald
                       : (isRankStat && hasRank
-                          ? AppTheme.goldLight
+                          ? (isPodium
+                              ? AppTheme.goldLight
+                              : AppTheme.textPrimary)
                           : AppTheme.textPrimary),
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
