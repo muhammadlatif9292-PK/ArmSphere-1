@@ -49,25 +49,21 @@ class _DiskAssetBundle extends CachingAssetBundle {
   Future<ByteData> load(String key) async {
     final file = File(key);
     if (file.existsSync()) {
-      final bytes = await file.readAsBytes();
+      final bytes = file.readAsBytesSync();
       return ByteData.sublistView(Uint8List.fromList(bytes));
     }
     // Also check relative to apps/mobile if key starts with assets/
     final mobileFile = File('apps/mobile/$key');
     if (mobileFile.existsSync()) {
-      final bytes = await mobileFile.readAsBytes();
+      final bytes = mobileFile.readAsBytesSync();
       return ByteData.sublistView(Uint8List.fromList(bytes));
     }
     final unitTestFile = File('apps/mobile/build/unit_test_assets/$key');
     if (unitTestFile.existsSync()) {
-      final bytes = await unitTestFile.readAsBytes();
+      final bytes = unitTestFile.readAsBytesSync();
       return ByteData.sublistView(Uint8List.fromList(bytes));
     }
-    try {
-      return await rootBundle.load(key);
-    } catch (_) {
-      throw FlutterError('Unable to load asset from disk or rootBundle: $key');
-    }
+    return rootBundle.load(key);
   }
 }
 
@@ -149,7 +145,7 @@ Widget _buildHarnessApp({
     'leftArmElo': 1980,
     'eloDelta': 18,
     'role': 'ATHLETE',
-    'avatarUrl': 'assets/images/brand/m0_icon_gold.webp',
+    'avatarUrl': 'assets/images/defaults/avatar_neutral_dark.webp',
   };
 
   final prsData = [
@@ -285,9 +281,19 @@ Future<void> _capture({
 
   try {
     await tester.pumpWidget(app);
-    // Use short pump durations to accommodate active animated widgets and decode assets
-    for (int i = 0; i < 5; i++) {
-      await tester.pump(const Duration(milliseconds: 60));
+
+    // 1. Pump to let Riverpod async notifiers resolve to AsyncData and mount ArmSphereImage
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // 2. Yield to real event loop so engine image decoder decodes the WebP asset bytes
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 800));
+    });
+
+    // 3. Pump frames so the decoded image paints onto the render boundary
+    for (int i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
     }
 
     final boundary =
