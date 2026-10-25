@@ -39,13 +39,19 @@ class _FakeLiveMatchesNotifier extends LiveMatchesNotifier {
 }
 
 class _FakeTournamentNotifier extends TournamentNotifier {
+  final List<Map<String, dynamic>> _items;
+  _FakeTournamentNotifier([this._items = const []]);
+
   @override
-  Future<List<Map<String, dynamic>>> build() async => [];
+  Future<List<Map<String, dynamic>>> build() async => _items;
 }
 
 class _FakeRankingsNotifier extends RankingsNotifier {
+  final List<Map<String, dynamic>> _items;
+  _FakeRankingsNotifier([this._items = const []]);
+
   @override
-  Future<List<Map<String, dynamic>>> build() async => [];
+  Future<List<Map<String, dynamic>>> build() async => _items;
 }
 
 const _labels = ['Recent Bouts', 'Tournaments', 'Global Top 3'];
@@ -110,6 +116,8 @@ Future<void> _pumpDashboard(
   List<Map<String, dynamic>>? matches,
   List<Map<String, dynamic>>? trainingLogs,
   List<Map<String, dynamic>>? prs,
+  List<Map<String, dynamic>>? tournaments,
+  List<Map<String, dynamic>>? rankings,
 }) async {
   tester.view.physicalSize = Size(width * 2.0, height * 2.0);
   tester.view.devicePixelRatio = 2.0;
@@ -138,8 +146,10 @@ Future<void> _pumpDashboard(
             () => _FakeAthleteProfileNotifier(effectiveAthleteProfile)),
         liveMatchesProvider
             .overrideWith(() => _FakeLiveMatchesNotifier(matches ?? [])),
-        tournamentProvider.overrideWith(() => _FakeTournamentNotifier()),
-        rankingsProvider.overrideWith(() => _FakeRankingsNotifier()),
+        tournamentProvider
+            .overrideWith(() => _FakeTournamentNotifier(tournaments ?? [])),
+        rankingsProvider
+            .overrideWith(() => _FakeRankingsNotifier(rankings ?? [])),
         trainingLogProvider('profile_1').overrideWith(
             (ref) async => trainingLogs ?? <Map<String, dynamic>>[]),
         trainingLogPRsProvider('profile_1')
@@ -495,8 +505,10 @@ void main() {
           find.ancestor(of: rowFinder, matching: find.byType(Row)).first;
       expect(find.descendant(of: boutRow, matching: find.textContaining('ELO')),
           findsNothing);
-      // Subtitle formats discipline cleanly without .Arm duplication
-      expect(find.text('MATCH • Right Arm'), findsOneWidget);
+      // Subtitle shows the real status (not a generic "MATCH" placeholder)
+      // and formats discipline cleanly without .Arm duplication
+      expect(find.text('CONFIRMED • Right Arm'), findsOneWidget);
+      expect(find.text('MATCH • Right Arm'), findsNothing);
 
       expect(tester.takeException(), isNull);
       await _disposeDashboard(tester);
@@ -1108,6 +1120,497 @@ void main() {
 
       expect(tester.takeException(), isNull);
       await _disposeDashboard(tester);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Stage 2: live fight card + dual-arm ELO rail
+  // ---------------------------------------------------------------------------
+  group('Stage 2 live fight card + dual-arm ELO rail', () {
+    const aName = 'Tariq "The Titan" Malik';
+    const bName = 'Denis Cyplenkov';
+
+    Map<String, dynamic> liveMatch({
+      String status = 'SCHEDULED',
+      Map<String, dynamic> extra = const {},
+    }) =>
+        {
+          'id': 'match_live',
+          'status': status,
+          'athleteAId': 'profile_1',
+          'athleteAName': aName,
+          'athleteBName': bName,
+          ...extra,
+        };
+
+    testWidgets('header chips spread to the edges instead of shrink-wrapping',
+        (tester) async {
+      await _pumpDashboard(tester, width: 412, matches: [
+        liveMatch(extra: {
+          'tableName': 'Table 1',
+          'tournamentName': 'East vs West 12'
+        }),
+      ]);
+
+      final headline = find.text('UPCOMING BOUT');
+      final fightCard =
+          find.ancestor(of: headline, matching: find.byType(Container));
+      final chip =
+          find.descendant(of: fightCard, matching: find.text('SCHEDULED'));
+      expect(headline, findsOneWidget);
+      expect(chip, findsOneWidget);
+      await tester.ensureVisible(headline);
+      await tester.pump();
+
+      final headlineRect = tester.getRect(
+          find.ancestor(of: headline, matching: find.byType(Row)).first);
+      final chipRect = tester.getRect(
+          find.ancestor(of: chip, matching: find.byType(Container)).first);
+      // A shrink-wrapped Wrap leaves exactly the 8dp spacing between them.
+      expect(chipRect.left - headlineRect.right, greaterThan(8.5));
+
+      expect(tester.takeException(), isNull);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'headline follows the real status; no "LIVE" claim for scheduled bouts',
+        (tester) async {
+      const cases = <String, List<String>>{
+        'SCHEDULED': ['UPCOMING BOUT', 'SCHEDULED'],
+        'IN_PROGRESS': ['LIVE NOW', 'IN PROGRESS'],
+        'CALLED': ['CALLED TO TABLE', 'CALLED'],
+        'READY': ['READY', 'READY'],
+      };
+      for (final entry in cases.entries) {
+        await _pumpDashboard(tester, matches: [liveMatch(status: entry.key)]);
+        expect(find.text('LIVE ARENA BOUT'), findsNothing, reason: entry.key);
+        expect(find.text(entry.value[0]), findsWidgets, reason: entry.key);
+        expect(find.text(entry.value[1]), findsWidgets, reason: entry.key);
+        expect(find.text(entry.key),
+            entry.key.contains('_') ? findsNothing : findsWidgets,
+            reason: 'raw status with underscore must not be shown');
+        await _disposeDashboard(tester);
+      }
+    });
+
+    testWidgets(
+        'table line is real data only: no doubled "Table", no invented table or tournament',
+        (tester) async {
+      await _pumpDashboard(tester, matches: [
+        liveMatch(extra: {
+          'tableName': 'Table 1',
+          'tournamentName': 'East vs West 12'
+        }),
+      ]);
+      expect(find.text('Table 1 • East vs West 12'), findsOneWidget);
+      expect(find.textContaining('Table Table'), findsNothing);
+      await _disposeDashboard(tester);
+
+      await _pumpDashboard(tester, matches: [
+        liveMatch(extra: {'tableNumber': 7})
+      ]);
+      expect(find.text('Table 7'), findsOneWidget);
+      await _disposeDashboard(tester);
+
+      // No table and no tournament in the data -> nothing is invented.
+      await _pumpDashboard(tester, matches: [liveMatch()]);
+      expect(find.textContaining('Table '), findsNothing);
+      expect(find.text('Sanctioned Tournament'), findsNothing);
+      expect(find.text('VIEW BRACKET'), findsOneWidget);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets('fighter names allow two lines and stack at large text scales',
+        (tester) async {
+      await _pumpDashboard(tester, matches: [liveMatch()]);
+      expect(tester.widget<Text>(find.text(aName)).maxLines, 2);
+      expect(tester.widget<Text>(find.text(bName)).maxLines, 2);
+      await tester.ensureVisible(find.text(aName));
+      await tester.pump();
+      var a = tester.getRect(find.text(aName));
+      var b = tester.getRect(find.text(bName));
+      expect(a.bottom > b.top && b.bottom > a.top, isTrue,
+          reason: 'side by side at 1.0x (vertical ranges overlap)');
+      await _disposeDashboard(tester);
+
+      for (final scale in [1.4, 2.0]) {
+        await _pumpDashboard(tester, textScale: scale, matches: [liveMatch()]);
+        await tester.ensureVisible(find.text(aName));
+        await tester.pump();
+        a = tester.getRect(find.text(aName));
+        b = tester.getRect(find.text(bName));
+        expect(a.bottom <= b.top, isTrue, reason: 'stacked at ${scale}x');
+        expect(tester.takeException(), isNull,
+            reason: 'no overflow at ${scale}x');
+        await _disposeDashboard(tester);
+      }
+    });
+
+    testWidgets(
+        'VIEW BRACKET keeps a >=36dp target and exposes button semantics',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pumpDashboard(tester, matches: [liveMatch()]);
+
+      final cta = find.text('VIEW BRACKET');
+      await tester.ensureVisible(cta);
+      await tester.pump();
+      final box =
+          find.ancestor(of: cta, matching: find.byType(Container)).first;
+      expect(tester.getSize(box).height, greaterThanOrEqualTo(36.0));
+      expect(_semanticsFor(tester, 'View bracket').properties.button, isTrue);
+      expect(tester.takeException(), isNull);
+
+      handle.dispose();
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets('ELO rail no longer draws a fake trend line', (tester) async {
+      await _pumpDashboard(tester);
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is CustomPaint &&
+            w.painter != null &&
+            w.painter.runtimeType.toString() == '_SparklineWirePainter'),
+        findsNothing,
+      );
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets('delta chip uses an icon, not a font glyph', (tester) async {
+      await _pumpDashboard(tester, athleteProfile: {
+        'id': 'profile_1',
+        'rightArmElo': 2150,
+        'leftArmElo': 1980,
+        'eloDelta': 18,
+      });
+      expect(find.text('▲ +18'), findsNothing);
+      expect(find.text('+18'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_drop_up_rounded), findsOneWidget);
+      await _disposeDashboard(tester);
+
+      await _pumpDashboard(tester, athleteProfile: {
+        'id': 'profile_1',
+        'rightArmElo': 2150,
+        'leftArmElo': 1980,
+        'eloDelta': -12,
+      });
+      expect(find.text('-12'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_drop_down_rounded), findsOneWidget);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'shows the other arm\'s real rating, and never a fallback rating',
+        (tester) async {
+      await _pumpDashboard(tester, athleteProfile: {
+        'id': 'profile_1',
+        'rightArmElo': 2150,
+        'leftArmElo': 1980,
+      });
+      expect(find.text('LEFT  1980', findRichText: true), findsOneWidget);
+
+      await tester.ensureVisible(find.text('LEFT'));
+      await tester.pump();
+      await tester.tap(find.text('LEFT'));
+      await tester.pump();
+      expect(find.text('RIGHT  2150', findRichText: true), findsOneWidget);
+      expect(find.text('LEFT  1980', findRichText: true), findsNothing);
+      await _disposeDashboard(tester);
+
+      // Only the right-arm rating exists; the generic rating must not be
+      // presented as the left arm's.
+      await _pumpDashboard(tester, athleteProfile: {
+        'id': 'profile_1',
+        'rightArmElo': 2150,
+        'eloRating': 1400,
+      });
+      expect(find.textContaining('1400', findRichText: true), findsNothing);
+      expect(find.textContaining('LEFT  ', findRichText: true), findsNothing);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets('populated Recovery card stacks icon over text at large scales',
+        (tester) async {
+      final logs = [
+        {'date': DateTime.now().toIso8601String(), 'exercise': 'curl'},
+        {'date': DateTime.now().toIso8601String(), 'exercise': 'wrist'},
+      ];
+      Finder badge() => find
+          .ancestor(
+            of: find.byIcon(Icons.fitness_center),
+            matching: find.byType(Container),
+          )
+          .first;
+
+      await _pumpDashboard(tester, trainingLogs: logs);
+      await tester.ensureVisible(find.text('2 Logged'));
+      await tester.pump();
+      var icon = tester.getRect(badge());
+      var text = tester.getRect(find.text('2 Logged'));
+      expect(icon.right <= text.left, isTrue,
+          reason: 'icon beside text at 1.0x');
+      await _disposeDashboard(tester);
+
+      for (final scale in [1.4, 2.0]) {
+        await _pumpDashboard(tester, textScale: scale, trainingLogs: logs);
+        await tester.ensureVisible(find.text('2 Logged'));
+        await tester.pump();
+        icon = tester.getRect(badge());
+        text = tester.getRect(find.text('2 Logged'));
+        expect(icon.bottom <= text.top, isTrue,
+            reason: 'icon above text at ${scale}x');
+        expect(tester.takeException(), isNull, reason: '${scale}x');
+        await _disposeDashboard(tester);
+      }
+    });
+
+    testWidgets(
+        'fight card and ELO rail survive 1.0x / 1.4x / 2.0x on a 360dp phone',
+        (tester) async {
+      for (final scale in [1.0, 1.4, 2.0]) {
+        await _pumpDashboard(tester, textScale: scale, matches: [
+          liveMatch(status: 'IN_PROGRESS', extra: {
+            'tableName': 'Table 1',
+            'tournamentName': 'East vs West 12',
+          }),
+        ]);
+        await tester.ensureVisible(find.text('VIEW BRACKET'));
+        await tester.pump();
+        expect(tester.takeException(), isNull, reason: '${scale}x');
+        await _disposeDashboard(tester);
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Stage 3: Intelligence Deck + match history presentation
+  // ---------------------------------------------------------------------------
+  group('Stage 3 intelligence deck + match history', () {
+    final history = <Map<String, dynamic>>[
+      {
+        'id': 'h1',
+        'status': 'COMPLETED',
+        'winnerId': 'profile_1',
+        'athleteAId': 'profile_1',
+        'athleteBName': 'Denis Cyplenkov',
+        'winMethod': 'TOPROLL',
+        'arm': 'Right Arm',
+        'eloDelta': 24,
+      },
+      {
+        'id': 'h2',
+        'status': 'COMPLETED',
+        'winnerId': 'rival_1',
+        'athleteAId': 'profile_1',
+        'athleteBName': 'Devon Larratt',
+        'winMethod': 'HOOK',
+        'arm': 'Left Arm',
+        'eloDelta': -14,
+      },
+      {
+        'id': 'h3',
+        'status': 'SCHEDULED',
+        'athleteAId': 'profile_1',
+        'athleteBName': 'John Brzenk',
+        'arm': 'Right Arm',
+      },
+    ];
+
+    Finder semanticsStartingWith(String prefix) => find.byWidgetPredicate(
+        (w) => w is Semantics && (w.properties.label ?? '').startsWith(prefix));
+
+    testWidgets('deck tabs use the bevelled plate shape', (tester) async {
+      await _pumpDashboard(tester);
+      final tabs = find.descendant(
+        of: find.byType(IntelligenceDeckTabBar),
+        matching: find.byType(AnimatedContainer),
+      );
+      expect(tabs, findsNWidgets(3));
+      for (var i = 0; i < 3; i++) {
+        final decoration =
+            tester.widget<AnimatedContainer>(tabs.at(i)).decoration;
+        expect(decoration, isA<ShapeDecoration>());
+        expect((decoration as ShapeDecoration).shape,
+            isA<BeveledRectangleBorder>());
+      }
+      // The deck sits in a Stack so it can carry the specular top rim.
+      expect(
+        find.ancestor(
+            of: find.byType(IntelligenceDeckTabBar),
+            matching: find.byType(Stack)),
+        findsWidgets,
+      );
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'bout rows show real outcome, method and status; nothing invented',
+        (tester) async {
+      await _pumpDashboard(tester, matches: history);
+      await tester.ensureVisible(find.text('vs Denis Cyplenkov'));
+      await tester.pump();
+
+      expect(find.text('TOPROLL • Right Arm'), findsOneWidget);
+      expect(find.text('HOOK • Left Arm'), findsOneWidget);
+      expect(find.text('SCHEDULED • Right Arm'), findsOneWidget);
+      expect(find.text('MATCH'), findsNothing);
+      expect(find.text('+24 ELO'), findsOneWidget);
+      expect(find.text('-14 ELO'), findsOneWidget);
+
+      expect(semanticsStartingWith('Win versus Denis Cyplenkov, +24 ELO'),
+          findsOneWidget);
+      expect(semanticsStartingWith('Loss versus Devon Larratt, -14 ELO'),
+          findsOneWidget);
+      expect(semanticsStartingWith('Upcoming bout versus John Brzenk'),
+          findsOneWidget);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'a decided bout without method or arm shows no placeholder subtitle',
+        (tester) async {
+      await _pumpDashboard(tester, matches: [
+        {
+          'id': 'bare',
+          'status': 'COMPLETED',
+          'winnerId': 'profile_1',
+          'athleteAId': 'profile_1',
+          'athleteBName': 'Solo Rival',
+        },
+      ]);
+      await tester.ensureVisible(find.text('vs Solo Rival'));
+      await tester.pump();
+      expect(find.text('MATCH'), findsNothing);
+      final row = find
+          .ancestor(of: find.text('vs Solo Rival'), matching: find.byType(Row))
+          .first;
+      expect(find.descendant(of: row, matching: find.textContaining('•')),
+          findsNothing);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'ELO tag sits beside the name normally and drops below it at large text',
+        (tester) async {
+      await _pumpDashboard(tester, matches: history);
+      await tester.ensureVisible(find.text('vs Denis Cyplenkov'));
+      await tester.pump();
+      var title = tester.getRect(find.text('vs Denis Cyplenkov'));
+      var tag = tester.getRect(find.text('+24 ELO'));
+      expect(tag.left >= title.right, isTrue,
+          reason: 'beside the name at 1.0x');
+      await _disposeDashboard(tester);
+
+      await _pumpDashboard(tester, textScale: 2.0, matches: history);
+      await tester.ensureVisible(find.text('vs Denis Cyplenkov'));
+      await tester.pump();
+      title = tester.getRect(find.text('vs Denis Cyplenkov'));
+      tag = tester.getRect(find.text('+24 ELO'));
+      expect(tag.top >= title.bottom, isTrue, reason: 'under the name at 2.0x');
+      expect(tester.takeException(), isNull);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'tournament rows show a date plate only when a real date exists',
+        (tester) async {
+      await _pumpDashboard(tester, tournaments: [
+        {
+          'name': 'National Armwrestling Championship 2026',
+          'startDate': '2026-11-14T00:00:00Z',
+          'city': 'Lahore',
+          'venue': 'Expo Center Hall 2',
+        },
+        {'name': 'No Date Open', 'city': 'Dubai'},
+      ]);
+      await tester.ensureVisible(_deckTab('Tournaments'));
+      await tester.pump();
+      await tester.tap(_deckTab('Tournaments'));
+      await tester.pump();
+
+      expect(find.text('NOV'), findsOneWidget);
+      expect(find.text('14'), findsOneWidget);
+      expect(find.text('Lahore • Expo Center Hall 2'), findsOneWidget);
+      expect(find.text('Dubai'), findsOneWidget);
+      expect(
+        semanticsStartingWith(
+            'National Armwrestling Championship 2026, 14 Nov 2026, Lahore'),
+        findsOneWidget,
+      );
+      expect(semanticsStartingWith('No Date Open, Dubai'), findsOneWidget);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets(
+        'ranking rows show real ELO and club only; no "-- ELO" or "Independent"',
+        (tester) async {
+      await _pumpDashboard(tester, rankings: [
+        {
+          'athleteName': 'John Brzenk',
+          'eloRating': 2150,
+          'clubName': 'Salt Lake Arm'
+        },
+        {'athleteName': 'Levan Saginashvili'},
+        {'athleteName': 'Devon Larratt', 'points': 2120},
+      ]);
+      await tester.ensureVisible(_deckTab('Global Top 3'));
+      await tester.pump();
+      await tester.tap(_deckTab('Global Top 3'));
+      await tester.pump();
+
+      expect(find.text('2150'), findsOneWidget);
+      expect(find.text('2120'), findsOneWidget);
+      expect(find.text('ELO'), findsNWidgets(2),
+          reason: 'only rows that have a rating');
+      expect(find.text('-- ELO'), findsNothing);
+      expect(find.text('Independent'), findsNothing);
+      expect(find.text('Salt Lake Arm'), findsOneWidget);
+      expect(
+          semanticsStartingWith('Rank 1, John Brzenk, Salt Lake Arm, 2150 Elo'),
+          findsOneWidget);
+      expect(
+          find.byWidgetPredicate((w) =>
+              w is Semantics &&
+              w.properties.label == 'Rank 2, Levan Saginashvili'),
+          findsOneWidget);
+      await _disposeDashboard(tester);
+    });
+
+    testWidgets('all three tabs survive 1.0x / 1.4x / 2.0x on a 360dp phone',
+        (tester) async {
+      for (final scale in [1.0, 1.4, 2.0]) {
+        for (final tab in _labels) {
+          await _pumpDashboard(
+            tester,
+            textScale: scale,
+            matches: history,
+            tournaments: [
+              {
+                'name': 'National Armwrestling Championship 2026',
+                'startDate': '2026-11-14T00:00:00Z',
+                'city': 'Lahore',
+                'venue': 'Expo Center Hall 2',
+              },
+            ],
+            rankings: [
+              {
+                'athleteName': 'John Brzenk',
+                'eloRating': 2150,
+                'clubName': 'Salt Lake Arm'
+              },
+              {'athleteName': 'Levan Saginashvili'},
+            ],
+          );
+          await tester.ensureVisible(_deckTab(tab));
+          await tester.pump();
+          await tester.tap(_deckTab(tab));
+          await tester.pump();
+          expect(tester.takeException(), isNull, reason: '$tab @ ${scale}x');
+          await _disposeDashboard(tester);
+        }
+      }
     });
   });
 }

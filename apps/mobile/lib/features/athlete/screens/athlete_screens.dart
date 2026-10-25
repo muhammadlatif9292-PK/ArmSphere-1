@@ -142,6 +142,12 @@ class _AthleteDashboardScreenState
         (p['leftArmElo'] as num?)?.toInt() ?? (p['eloRating'] as num?)?.toInt();
     final currentElo = _isRightArm ? rawRightElo : rawLeftElo;
     final eloDelta = (p['eloDelta'] as num?)?.toInt();
+    // Other arm's rating, shown only from the arm-specific field (never from
+    // the generic eloRating fallback, which would read as arm-specific).
+    final specificRightElo = (p['rightArmElo'] as num?)?.toInt();
+    final specificLeftElo = (p['leftArmElo'] as num?)?.toInt();
+    final otherArmElo = _isRightArm ? specificLeftElo : specificRightElo;
+    final otherArmLabel = _isRightArm ? 'LEFT' : 'RIGHT';
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -221,6 +227,8 @@ class _AthleteDashboardScreenState
                 context: context,
                 currentElo: currentElo,
                 eloDelta: eloDelta,
+                otherArmElo: otherArmElo,
+                otherArmLabel: otherArmLabel,
                 trainingLogsAsync: trainingLogsAsync,
                 myProfileId: myProfileId,
               ),
@@ -1154,6 +1162,8 @@ class _AthleteDashboardScreenState
     required int? eloDelta,
     required AsyncValue<List<Map<String, dynamic>>> trainingLogsAsync,
     required String? myProfileId,
+    int? otherArmElo,
+    String otherArmLabel = 'LEFT',
   }) {
     void onRecoveryTap() {
       HapticFeedback.selectionClick();
@@ -1217,9 +1227,11 @@ class _AthleteDashboardScreenState
                   // (was ~17dp tall pills in the header row).
                   Container(
                     padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: Colors.black.withValues(alpha: 0.40),
-                      borderRadius: BorderRadius.circular(11),
+                      shape: BeveledRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -1271,33 +1283,53 @@ class _AthleteDashboardScreenState
                         if (eloDelta != null) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
+                                horizontal: 5, vertical: 3),
+                            decoration: ShapeDecoration(
                               color: (eloDelta >= 0
                                       ? AppTheme.emerald
                                       : AppTheme.crimson)
                                   .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${eloDelta >= 0 ? '▲ +' : '▼ '}$eloDelta',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                color: eloDelta >= 0
-                                    ? AppTheme.emerald
-                                    : AppTheme.crimson,
+                              shape: BeveledRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
                               ),
+                            ),
+                            // Icon (not a "▲" text glyph): renders identically
+                            // on every device font.
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  eloDelta >= 0
+                                      ? Icons.arrow_drop_up_rounded
+                                      : Icons.arrow_drop_down_rounded,
+                                  size: 14,
+                                  color: eloDelta >= 0
+                                      ? AppTheme.emerald
+                                      : AppTheme.crimson,
+                                ),
+                                Text(
+                                  '${eloDelta >= 0 ? '+' : ''}$eloDelta',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: eloDelta >= 0
+                                        ? AppTheme.emerald
+                                        : AppTheme.crimson,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ] else ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
+                            decoration: ShapeDecoration(
                               color: Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(6),
+                              shape: BeveledRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
                             ),
                             child: const Text(
                               'PROVISIONAL',
@@ -1313,15 +1345,47 @@ class _AthleteDashboardScreenState
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  // Electric Cyan Sparkline Wire
-                  const SizedBox(
-                    width: double.infinity,
-                    height: 22,
-                    child: CustomPaint(
-                      painter: _SparklineWirePainter(color: AppTheme.cyan),
+                  // The former cyan "sparkline" was a hard-coded rising curve
+                  // with no data behind it (it showed an upward trend for every
+                  // athlete). Replaced with the other arm's real rating.
+                  if (otherArmElo != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: 8),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0),
+                        ),
+                      ),
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: otherArmLabel,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '  $otherArmElo',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textSecondary,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -1406,8 +1470,22 @@ class _AthleteDashboardScreenState
                                   ? DateTime.now().difference(parsedDate).inDays
                                   : null;
                               final sessionsCount = logs.length;
+                              // At large text scales the ~50dp text column made
+                              // "2 Logged" break mid-word ("Logge/d"); stack the
+                              // icon above the text instead.
+                              final stackRecovery =
+                                  MediaQuery.textScalerOf(context).scale(12) /
+                                          12 >=
+                                      1.3;
 
-                              return Row(
+                              return Flex(
+                                direction: stackRecovery
+                                    ? Axis.vertical
+                                    : Axis.horizontal,
+                                crossAxisAlignment: stackRecovery
+                                    ? CrossAxisAlignment.start
+                                    : CrossAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
                                     width: 38,
@@ -1426,8 +1504,9 @@ class _AthleteDashboardScreenState
                                           size: 18, color: AppTheme.emerald),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
+                                  const SizedBox(width: 8, height: 8),
+                                  Flexible(
+                                    fit: FlexFit.loose,
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -1548,16 +1627,18 @@ class _AthleteDashboardScreenState
           constraints: const BoxConstraints(minHeight: 34),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: isActive
                 ? AppTheme.crimson.withValues(alpha: 0.12)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isActive
-                  ? AppTheme.crimson.withValues(alpha: 0.35)
-                  : Colors.transparent,
-              width: 1.0,
+            shape: BeveledRectangleBorder(
+              side: BorderSide(
+                color: isActive
+                    ? AppTheme.crimson.withValues(alpha: 0.35)
+                    : Colors.transparent,
+                width: 1.0,
+              ),
+              borderRadius: BorderRadius.circular(6),
             ),
           ),
           child: FittedBox(
@@ -1615,13 +1696,143 @@ class _AthleteDashboardScreenState
         final match = upcomingMatches.first;
         final aName = match['athleteAName']?.toString() ?? athleteName;
         final bName = match['athleteBName']?.toString() ?? 'Opponent';
-        final tableNum = match['tableNumber']?.toString() ??
-            match['tableName']?.toString() ??
-            '1';
-        final tournamentTitle =
-            match['tournamentName']?.toString() ?? 'Sanctioned Tournament';
-        final statusText =
+        final statusKey =
             (match['status']?.toString() ?? 'SCHEDULED').toUpperCase();
+        final statusText = statusKey.replaceAll('_', ' ');
+
+        // The headline reflects the real status instead of claiming "LIVE" for
+        // a scheduled bout. Only in-progress / called bouts get the crimson
+        // live treatment.
+        final bool isHot = statusKey == 'IN_PROGRESS' || statusKey == 'CALLED';
+        final String headline = switch (statusKey) {
+          'IN_PROGRESS' => 'LIVE NOW',
+          'CALLED' => 'CALLED TO TABLE',
+          'READY' => 'READY',
+          _ => 'UPCOMING BOUT',
+        };
+        final Color headlineColor =
+            isHot ? AppTheme.crimson : AppTheme.textSecondary;
+
+        // Table / tournament line: real values only. No fabricated "Table 1"
+        // default, and no doubled "Table Table 1" when the value already says
+        // "Table".
+        String? tableLabel(Object? raw) {
+          final text = raw?.toString().trim() ?? '';
+          final number = text
+              .replaceFirst(RegExp(r'^table\s*', caseSensitive: false), '')
+              .trim();
+          return number.isEmpty ? null : 'Table $number';
+        }
+
+        final table = tableLabel(match['tableNumber'] ?? match['tableName']);
+        final tournamentRaw = match['tournamentName']?.toString().trim();
+        final tournament = (tournamentRaw == null || tournamentRaw.isEmpty)
+            ? null
+            : tournamentRaw;
+        final metaLine = [table, tournament].whereType<String>().join(' • ');
+
+        void openBracket() {
+          HapticFeedback.mediumImpact();
+          context.push('/tournaments');
+        }
+
+        // Two fighter plates side by side; stacked at large text scales so
+        // names stay fully readable instead of truncating.
+        final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
+        final stackFighters = textScale >= 1.3;
+
+        Widget fighterPlate(String name, Color accent,
+            {required bool alignEnd}) {
+          final bar = Container(
+            width: 3,
+            height: 32,
+            decoration: BoxDecoration(
+              color: accent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          );
+          final label = Expanded(
+            child: Text(
+              name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPure,
+                height: 1.15,
+              ),
+            ),
+          );
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: ShapeDecoration(
+              color: const Color(0x66070A11),
+              shape: BeveledRectangleBorder(
+                side: const BorderSide(
+                    color: AppTheme.borderTitanium, width: 1.0),
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+            child: Row(
+              children: alignEnd
+                  ? [label, const SizedBox(width: 8), bar]
+                  : [bar, const SizedBox(width: 8), label],
+            ),
+          );
+        }
+
+        final vsBadge = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: ShapeDecoration(
+            color: AppTheme.silverPlane,
+            shape: BeveledRectangleBorder(
+              side:
+                  const BorderSide(color: AppTheme.borderHighlight, width: 1.0),
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          child: const Text(
+            'VS',
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.textPure,
+            ),
+          ),
+        );
+
+        final Widget fighters = stackFighters
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  fighterPlate(aName, AppTheme.crimson, alignEnd: false),
+                  const SizedBox(height: 6),
+                  Center(child: vsBadge),
+                  const SizedBox(height: 6),
+                  fighterPlate(bName, AppTheme.cyan, alignEnd: false),
+                ],
+              )
+            : IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: fighterPlate(aName, AppTheme.crimson,
+                          alignEnd: false),
+                    ),
+                    const SizedBox(width: 8),
+                    Center(child: vsBadge),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: fighterPlate(bName, AppTheme.cyan, alignEnd: true),
+                    ),
+                  ],
+                ),
+              );
 
         return Container(
           padding: const EdgeInsets.all(15),
@@ -1638,212 +1849,160 @@ class _AthleteDashboardScreenState
               ),
             ],
           ),
-          child: Column(
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.crimson,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'LIVE ARENA BOUT',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          color: AppTheme.crimson,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color: AppTheme.borderTitanium, width: 1.0),
+              // Specular top rim: same lighting language as the athlete banner.
+              const Positioned(
+                top: -15,
+                left: -3,
+                right: -3,
+                height: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x00DAE2EB),
+                        Color(0x40DAE2EB),
+                        Color(0x00DAE2EB),
+                      ],
+                      stops: [0.0, 0.5, 1.0],
                     ),
-                    child: Text(
-                      statusText,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textPure,
+                  ),
+                ),
+              ),
+              // stretch + a full-width Wrap: without these the header chips
+              // shrink-wrap and centre together instead of spreading to the
+              // edges (confirmed in the Stage 2 baseline capture).
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isHot
+                                    ? AppTheme.crimson
+                                    : AppTheme.textMuted,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              headline,
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: headlineColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: ShapeDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BeveledRectangleBorder(
+                              side: const BorderSide(
+                                  color: AppTheme.borderTitanium, width: 1.0),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          child: Text(
+                            statusText,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPure,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  fighters,
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.only(top: 10),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0),
                       ),
+                    ),
+                    child: Wrap(
+                      alignment: metaLine.isEmpty
+                          ? WrapAlignment.end
+                          : WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (metaLine.isNotEmpty)
+                          Text(
+                            metaLine,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        Semantics(
+                          button: true,
+                          label: 'View bracket',
+                          onTap: openBracket,
+                          excludeSemantics: true,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: openBracket,
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 36),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: ShapeDecoration(
+                                color: AppTheme.crimson,
+                                shape: BeveledRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                              child: const Center(
+                                widthFactor: 1.0,
+                                child: Text(
+                                  'VIEW BRACKET',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0x66070A11),
-                        borderRadius: BorderRadius.circular(11),
-                        border: Border.all(
-                            color: AppTheme.borderTitanium, width: 1.0),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 3,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: AppTheme.crimson,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              aName,
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPure,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.silverPlane,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: AppTheme.borderHighlight, width: 1.0),
-                    ),
-                    child: const Text(
-                      'VS',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.textPure,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0x66070A11),
-                        borderRadius: BorderRadius.circular(11),
-                        border: Border.all(
-                            color: AppTheme.borderTitanium, width: 1.0),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              bName,
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPure,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 3,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: AppTheme.cyan,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.only(top: 10),
-                decoration: const BoxDecoration(
-                  border: Border(
-                      top: BorderSide(color: Color(0x1AFFFFFF), width: 1.0)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Table $tableNum • $tournamentTitle',
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        context.push('/tournaments');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.crimson,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'VIEW BRACKET',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
@@ -1991,186 +2150,212 @@ class _AthleteDashboardScreenState
         radius: 18,
         borderColor: AppTheme.borderTitanium,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // Deck Navigation Tabs (adaptive: single row when it fits, wraps otherwise)
-          IntelligenceDeckTabBar(
-            labels: const ['Recent Bouts', 'Tournaments', 'Global Top 3'],
-            selectedIndex: _intelDeckTab,
-            onSelected: (index) {
-              HapticFeedback.selectionClick();
-              setState(() => _intelDeckTab = index);
-            },
+          // Specular top rim: same lighting language as the banner and fight card.
+          const Positioned(
+            top: -16,
+            left: -3,
+            right: -3,
+            height: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0x00DAE2EB),
+                    Color(0x40DAE2EB),
+                    Color(0x00DAE2EB),
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0x14FFFFFF)),
-          const SizedBox(height: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Deck Navigation Tabs (adaptive: single row when it fits, wraps otherwise)
+              IntelligenceDeckTabBar(
+                labels: const ['Recent Bouts', 'Tournaments', 'Global Top 3'],
+                selectedIndex: _intelDeckTab,
+                onSelected: (index) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _intelDeckTab = index);
+                },
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: Color(0x14FFFFFF)),
+              const SizedBox(height: 8),
 
-          // Deck Tab Content
-          if (_intelDeckTab == 0) ...[
-            matchesAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(
-                      color: AppTheme.crimson, strokeWidth: 2),
-                ),
-              ),
-              error: (err, _) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Could not load bouts: $err',
-                    style: const TextStyle(
-                        color: AppTheme.textMuted, fontSize: 11)),
-              ),
-              data: (matches) {
-                if (matches.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: Column(
-                        children: const [
-                          Icon(Icons.sports_kabaddi_outlined,
-                              color: AppTheme.textMuted, size: 24),
-                          SizedBox(height: 6),
-                          Text('No verified bouts yet',
-                              style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12)),
-                          SizedBox(height: 2),
-                          Text(
-                              'Compete in sanctioned bouts to build verified records.',
-                              style: TextStyle(
-                                  color: AppTheme.textMuted, fontSize: 10)),
-                        ],
-                      ),
+              // Deck Tab Content
+              if (_intelDeckTab == 0) ...[
+                matchesAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(
+                          color: AppTheme.crimson, strokeWidth: 2),
                     ),
-                  );
-                }
-                final recent = matches.take(3).toList();
-                return Column(
-                  children: [
-                    for (int i = 0; i < recent.length; i++) ...[
-                      if (i > 0)
-                        const Divider(height: 1, color: Color(0x0FFFFFFF)),
-                      _buildDynamicIntelRow(recent[i], myProfileId),
-                    ],
-                  ],
-                );
-              },
-            ),
-          ] else if (_intelDeckTab == 1) ...[
-            tournamentsAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(
-                      color: AppTheme.goldPrimary, strokeWidth: 2),
-                ),
-              ),
-              error: (err, _) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Could not load tournaments: $err',
-                    style: const TextStyle(
-                        color: AppTheme.textMuted, fontSize: 11)),
-              ),
-              data: (tournaments) {
-                final list = tournaments
-                    .where((t) =>
-                        t['status']?.toString().toUpperCase() != 'CANCELLED')
-                    .take(3)
-                    .toList();
-                if (list.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: Column(
-                        children: const [
-                          Icon(Icons.emoji_events_outlined,
-                              color: AppTheme.textMuted, size: 24),
-                          SizedBox(height: 6),
-                          Text('No tournaments scheduled',
-                              style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12)),
-                          SizedBox(height: 2),
-                          Text('Upcoming sanctioned events will appear here.',
-                              style: TextStyle(
-                                  color: AppTheme.textMuted, fontSize: 10)),
+                  ),
+                  error: (err, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Could not load bouts: $err',
+                        style: const TextStyle(
+                            color: AppTheme.textMuted, fontSize: 11)),
+                  ),
+                  data: (matches) {
+                    if (matches.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Column(
+                            children: const [
+                              Icon(Icons.sports_kabaddi_outlined,
+                                  color: AppTheme.textMuted, size: 24),
+                              SizedBox(height: 6),
+                              Text('No verified bouts yet',
+                                  style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12)),
+                              SizedBox(height: 2),
+                              Text(
+                                  'Compete in sanctioned bouts to build verified records.',
+                                  style: TextStyle(
+                                      color: AppTheme.textMuted, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    final recent = matches.take(3).toList();
+                    return Column(
+                      children: [
+                        for (int i = 0; i < recent.length; i++) ...[
+                          if (i > 0)
+                            const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                          _buildDynamicIntelRow(recent[i], myProfileId),
                         ],
-                      ),
-                    ),
-                  );
-                }
-                return Column(
-                  children: [
-                    for (int i = 0; i < list.length; i++) ...[
-                      if (i > 0)
-                        const Divider(height: 1, color: Color(0x0FFFFFFF)),
-                      _buildTournamentRowItem(context, list[i]),
-                    ],
-                  ],
-                );
-              },
-            ),
-          ] else if (_intelDeckTab == 2) ...[
-            rankingsAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(
-                      color: AppTheme.cyan, strokeWidth: 2),
+                      ],
+                    );
+                  },
                 ),
-              ),
-              error: (err, _) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Could not load rankings: $err',
-                    style: const TextStyle(
-                        color: AppTheme.textMuted, fontSize: 11)),
-              ),
-              data: (rankings) {
-                final top3 = rankings.take(3).toList();
-                if (top3.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: Column(
-                        children: const [
-                          Icon(Icons.leaderboard_outlined,
-                              color: AppTheme.textMuted, size: 24),
-                          SizedBox(height: 6),
-                          Text('Rankings data unavailable',
-                              style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12)),
-                          SizedBox(height: 2),
-                          Text(
-                              'Standings update as sanctioned events conclude.',
-                              style: TextStyle(
-                                  color: AppTheme.textMuted, fontSize: 10)),
-                        ],
-                      ),
+              ] else if (_intelDeckTab == 1) ...[
+                tournamentsAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(
+                          color: AppTheme.goldPrimary, strokeWidth: 2),
                     ),
-                  );
-                }
-                return Column(
-                  children: [
-                    for (int i = 0; i < top3.length; i++) ...[
-                      if (i > 0)
-                        const Divider(height: 1, color: Color(0x0FFFFFFF)),
-                      _buildRankingRowItem(top3[i], i + 1),
-                    ],
-                  ],
-                );
-              },
-            ),
-          ],
+                  ),
+                  error: (err, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Could not load tournaments: $err',
+                        style: const TextStyle(
+                            color: AppTheme.textMuted, fontSize: 11)),
+                  ),
+                  data: (tournaments) {
+                    final list = tournaments
+                        .where((t) =>
+                            t['status']?.toString().toUpperCase() !=
+                            'CANCELLED')
+                        .take(3)
+                        .toList();
+                    if (list.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Column(
+                            children: const [
+                              Icon(Icons.emoji_events_outlined,
+                                  color: AppTheme.textMuted, size: 24),
+                              SizedBox(height: 6),
+                              Text('No tournaments scheduled',
+                                  style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12)),
+                              SizedBox(height: 2),
+                              Text(
+                                  'Upcoming sanctioned events will appear here.',
+                                  style: TextStyle(
+                                      color: AppTheme.textMuted, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (int i = 0; i < list.length; i++) ...[
+                          if (i > 0)
+                            const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                          _buildTournamentRowItem(context, list[i]),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ] else if (_intelDeckTab == 2) ...[
+                rankingsAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(
+                          color: AppTheme.cyan, strokeWidth: 2),
+                    ),
+                  ),
+                  error: (err, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Could not load rankings: $err',
+                        style: const TextStyle(
+                            color: AppTheme.textMuted, fontSize: 11)),
+                  ),
+                  data: (rankings) {
+                    final top3 = rankings.take(3).toList();
+                    if (top3.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Column(
+                            children: const [
+                              Icon(Icons.leaderboard_outlined,
+                                  color: AppTheme.textMuted, size: 24),
+                              SizedBox(height: 6),
+                              Text('Rankings data unavailable',
+                                  style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12)),
+                              SizedBox(height: 2),
+                              Text(
+                                  'Standings update as sanctioned events conclude.',
+                                  style: TextStyle(
+                                      color: AppTheme.textMuted, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (int i = 0; i < top3.length; i++) ...[
+                          if (i > 0)
+                            const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                          _buildRankingRowItem(top3[i], i + 1),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -2178,52 +2363,118 @@ class _AthleteDashboardScreenState
 
   Widget _buildTournamentRowItem(BuildContext context, Map<String, dynamic> t) {
     final name = t['name']?.toString() ?? 'Sanctioned Tournament';
-    final date = _fmtDate(t['startDate'] ?? t['date']);
+    final rawDate = t['startDate'] ?? t['date'];
+    final parsed = DateTime.tryParse(rawDate?.toString() ?? '');
+    final date = _fmtDate(rawDate);
     final location = [t['city'], t['venue']]
         .where((v) => v != null && v.toString().isNotEmpty)
         .join(' • ');
+    // With a real date the plate carries it; without one nothing is invented
+    // and the subtitle falls back to the location alone.
+    final subtitle = parsed != null
+        ? location
+        : [date, if (location.isNotEmpty) location]
+            .where((s) => s.isNotEmpty)
+            .join(' • ');
 
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        context.push('/tournaments');
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    [date, if (location.isNotEmpty) location]
-                        .where((s) => s.isNotEmpty)
-                        .join(' • '),
-                    style:
-                        const TextStyle(fontSize: 9, color: AppTheme.textMuted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+    void open() {
+      HapticFeedback.selectionClick();
+      context.push('/tournaments');
+    }
+
+    final datePlate = parsed == null
+        ? null
+        : Container(
+            constraints: const BoxConstraints(minWidth: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            decoration: ShapeDecoration(
+              color: Colors.black.withValues(alpha: 0.30),
+              shape: BeveledRectangleBorder(
+                side: const BorderSide(
+                    color: AppTheme.borderTitanium, width: 1.0),
+                borderRadius: BorderRadius.circular(6),
               ),
             ),
-            const Icon(Icons.chevron_right,
-                size: 16, color: AppTheme.textMuted),
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  (_months[parsed.month] ?? '').toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+                Text(
+                  '${parsed.day}',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                    color: AppTheme.textPrimary,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          );
+
+    return Semantics(
+      button: true,
+      label: [
+        name,
+        if (date.isNotEmpty) date,
+        if (location.isNotEmpty) location
+      ].join(', '),
+      onTap: open,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: open,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              if (datePlate != null) ...[
+                datePlate,
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                            fontSize: 9, color: AppTheme.textMuted),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right,
+                  size: 16, color: AppTheme.textMuted),
+            ],
+          ),
         ),
       ),
     );
@@ -2232,84 +2483,118 @@ class _AthleteDashboardScreenState
   Widget _buildRankingRowItem(Map<String, dynamic> r, int position) {
     final name =
         r['athleteName'] ?? r['displayName'] ?? r['fullName'] ?? 'Competitor';
-    final club = r['clubName'] ?? r['province'] ?? 'Independent';
-    final elo = r['eloRating'] ?? r['points'] ?? '--';
+    // Only real values are shown: no invented "Independent" club and no
+    // "-- ELO" placeholder when the rating is missing.
+    final clubRaw = (r['clubName'] ?? r['province'])?.toString().trim();
+    final club = (clubRaw == null || clubRaw.isEmpty) ? null : clubRaw;
+    final eloRaw = (r['eloRating'] ?? r['points'])?.toString().trim();
+    final elo = (eloRaw == null || eloRaw.isEmpty) ? null : eloRaw;
     final Color badgeColor = position == 1
         ? AppTheme.goldPrimary
         : (position == 2 ? const Color(0xFF94A3B8) : const Color(0xFFB45309));
+    final stackElo = MediaQuery.textScalerOf(context).scale(12) / 12 >= 1.3;
 
-    return Padding(
+    Widget eloBlock(CrossAxisAlignment align) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: align,
+          children: [
+            Text(
+              elo!,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: AppTheme.textPrimary,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+            const Text(
+              'ELO',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 8,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+                color: AppTheme.textMuted,
+              ),
+            ),
+          ],
+        );
+
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: badgeColor.withValues(alpha: 0.18),
+              border: Border.all(
+                  color: badgeColor.withValues(alpha: 0.5), width: 1.0),
+            ),
+            child: Center(
+              child: Text(
+                '#$position',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: badgeColor,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: badgeColor.withValues(alpha: 0.15),
-                    border: Border.all(
-                        color: badgeColor.withValues(alpha: 0.4), width: 1.0),
+                Text(
+                  name.toString(),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
                   ),
-                  child: Center(
-                    child: Text(
-                      '#$position',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: badgeColor,
-                      ),
-                    ),
-                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name.toString(),
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        club.toString(),
-                        style: const TextStyle(
-                            fontSize: 9, color: AppTheme.textMuted),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                if (club != null) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    club,
+                    style:
+                        const TextStyle(fontSize: 9, color: AppTheme.textMuted),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                ],
+                if (stackElo && elo != null) ...[
+                  const SizedBox(height: 3),
+                  eloBlock(CrossAxisAlignment.start),
+                ],
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            '$elo ELO',
-            style: const TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
-          ),
+          if (!stackElo && elo != null) ...[
+            const SizedBox(width: 8),
+            eloBlock(CrossAxisAlignment.end),
+          ],
         ],
       ),
+    );
+    return Semantics(
+      container: true,
+      label: [
+        'Rank $position',
+        name.toString(),
+        if (club != null) club,
+        if (elo != null) '$elo Elo',
+      ].join(', '),
+      child: ExcludeSemantics(child: row),
     );
   }
 
@@ -2339,16 +2624,24 @@ class _AthleteDashboardScreenState
 
     final rawArm = match['arm']?.toString();
     final armLabel = _normalizeArmDiscipline(rawArm);
-    final method = match['winMethod']?.toString() ??
-        match['scoreLine']?.toString() ??
-        'MATCH';
-    final subtitle = armLabel != null ? '$method • $armLabel' : method;
+    // Decided bouts show how they ended; pending ones show their real status
+    // (instead of a generic "MATCH" placeholder). Nothing is invented.
+    final method =
+        match['winMethod']?.toString() ?? match['scoreLine']?.toString();
+    final lead = isPendingOrActive ? status.replaceAll('_', ' ') : method;
+    final subtitle = [lead, armLabel]
+        .whereType<String>()
+        .where((part) => part.trim().isNotEmpty)
+        .join(' • ');
 
     final num? rawDelta = match['eloDelta'] as num?;
     final int? eloDelta = rawDelta?.toInt();
     final String? tag =
         eloDelta != null ? '${eloDelta >= 0 ? '+' : ''}$eloDelta ELO' : null;
 
+    final outcome = isWin
+        ? 'Win'
+        : (isLoss ? 'Loss' : (isPendingOrActive ? 'Upcoming bout' : 'Bout'));
     return _buildIntelRowItem(
       symbol: symbol,
       accentColor: accentColor,
@@ -2356,6 +2649,11 @@ class _AthleteDashboardScreenState
       subtitle: subtitle,
       tag: tag,
       isTagPositive: (eloDelta ?? 0) >= 0,
+      semanticsLabel: [
+        '$outcome versus $opponent',
+        if (tag != null) tag,
+        if (subtitle.isNotEmpty) subtitle,
+      ].join(', '),
     );
   }
 
@@ -2366,82 +2664,101 @@ class _AthleteDashboardScreenState
     required String subtitle,
     String? tag,
     bool isTagPositive = true,
+    String? semanticsLabel,
   }) {
     final effectiveAccent = accentColor ?? AppTheme.textMuted;
-    return Padding(
+    // At large text sizes the right-hand ELO tag used to steal the width the
+    // opponent name needs ("vs Denis Cypl..."): drop it under the subtitle.
+    final stackTag = MediaQuery.textScalerOf(context).scale(12) / 12 >= 1.3;
+    final Widget? tagText = tag == null
+        ? null
+        : Text(
+            tag,
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+              color: isTagPositive ? AppTheme.emerald : AppTheme.crimson,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          );
+
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: ShapeDecoration(
+              color: effectiveAccent.withValues(alpha: 0.16),
+              shape: BeveledRectangleBorder(
+                side: BorderSide(
+                  color: effectiveAccent.withValues(alpha: 0.35),
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                symbol,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: effectiveAccent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: effectiveAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
                   ),
-                  child: Center(
-                    child: Text(
-                      symbol,
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: effectiveAccent,
-                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: AppTheme.textMuted,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: AppTheme.textMuted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
+                ],
+                if (stackTag && tagText != null) ...[
+                  const SizedBox(height: 3),
+                  tagText,
+                ],
               ],
             ),
           ),
-          if (tag != null) ...[
+          if (!stackTag && tagText != null) ...[
             const SizedBox(width: 8),
-            Text(
-              tag,
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: isTagPositive ? AppTheme.emerald : AppTheme.crimson,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
+            tagText,
           ],
         ],
       ),
+    );
+    if (semanticsLabel == null) return row;
+    return Semantics(
+      container: true,
+      label: semanticsLabel,
+      child: ExcludeSemantics(child: row),
     );
   }
 
@@ -2687,17 +3004,20 @@ class IntelligenceDeckTabBar extends StatelessWidget {
             horizontal: expand ? _segmentPadding : _pillPadding,
             vertical: 6,
           ),
-          // Same active treatment as the verified navigation dock.
-          decoration: BoxDecoration(
+          // Same active treatment as the verified navigation dock, now with the
+          // bevelled plate shape used by the badges and the arm selector.
+          decoration: ShapeDecoration(
             color: isSelected
                 ? AppTheme.crimson.withValues(alpha: 0.12)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected
-                  ? AppTheme.crimson.withValues(alpha: 0.35)
-                  : const Color(0x1FFFFFFF),
-              width: _borderWidth,
+            shape: BeveledRectangleBorder(
+              side: BorderSide(
+                color: isSelected
+                    ? AppTheme.crimson.withValues(alpha: 0.35)
+                    : const Color(0x1FFFFFFF),
+                width: _borderWidth,
+              ),
+              borderRadius: BorderRadius.circular(9),
             ),
           ),
           child: expand ? text : Center(widthFactor: 1.0, child: text),
@@ -2705,36 +3025,6 @@ class IntelligenceDeckTabBar extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Custom Electric Cyan Sparkline Wire Painter
-class _SparklineWirePainter extends CustomPainter {
-  final Color color;
-  const _SparklineWirePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    path.moveTo(0, size.height * 0.75);
-    path.quadraticBezierTo(size.width * 0.25, size.height * 0.65,
-        size.width * 0.40, size.height * 0.35);
-    path.quadraticBezierTo(size.width * 0.65, size.height * 0.52,
-        size.width * 0.85, size.height * 0.30);
-    path.quadraticBezierTo(
-        size.width * 0.95, size.height * 0.18, size.width, size.height * 0.12);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SparklineWirePainter oldDelegate) =>
-      oldDelegate.color != color;
 }
 
 /// Helper Shortcut Button with ElevatedActionCard styling & Tactile Feedback
