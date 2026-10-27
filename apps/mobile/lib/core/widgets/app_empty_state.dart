@@ -15,6 +15,8 @@ class AppEmptyState extends StatefulWidget {
   final String subtitle;
   final String? ctaLabel;
   final VoidCallback? onCtaTap;
+  final String? secondaryCtaLabel;
+  final VoidCallback? onSecondaryCtaTap;
 
   const AppEmptyState({
     super.key,
@@ -23,6 +25,8 @@ class AppEmptyState extends StatefulWidget {
     required this.subtitle,
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   });
 
   const AppEmptyState.noCompetitions({
@@ -31,6 +35,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'There are no sanctioned tournaments matching your current criteria.',
     this.ctaLabel = 'Refresh Events',
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.emoji_events_outlined;
 
   const AppEmptyState.noMatches({
@@ -39,6 +45,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'Compete in sanctioned tournaments or record table bouts to establish your rating.',
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.sports_kabaddi;
 
   const AppEmptyState.noSearchResults({
@@ -47,6 +55,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'Try refining your search terms or clearing active filters.',
     this.ctaLabel = 'Clear Search',
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.search_off_rounded;
 
   const AppEmptyState.offline({
@@ -55,6 +65,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'Cached data is accessible. Actions will sync automatically when connection restores.',
     this.ctaLabel = 'Retry Connection',
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.wifi_off_rounded;
 
   const AppEmptyState.noNotifications({
@@ -63,6 +75,8 @@ class AppEmptyState extends StatefulWidget {
     this.subtitle = 'You have no new alerts, match calls, or federation announcements.',
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
   }) : icon = Icons.notifications_none_outlined;
 
   @override
@@ -165,39 +179,76 @@ class _AppEmptyStateState extends State<AppEmptyState>
                   ),
                 ),
               ),
-              if (widget.ctaLabel != null && widget.onCtaTap != null) ...[
+              if ((widget.ctaLabel != null && widget.onCtaTap != null) ||
+                  (widget.secondaryCtaLabel != null && widget.onSecondaryCtaTap != null)) ...[
                 const SizedBox(height: 20),
-                TactilePressWrapper(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onCtaTap!();
-                  },
-                  semanticLabel: widget.ctaLabel,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.elevatedSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.ctaLabel!,
-                          style: const TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            color: AppTheme.goldPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    if (widget.ctaLabel != null && widget.onCtaTap != null)
+                      TactilePressWrapper(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          widget.onCtaTap!();
+                        },
+                        semanticLabel: widget.ctaLabel,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.elevatedSurface,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.ctaLabel!,
+                                style: const TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  color: AppTheme.goldPrimary,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    if (widget.secondaryCtaLabel != null && widget.onSecondaryCtaTap != null)
+                      TactilePressWrapper(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          widget.onSecondaryCtaTap!();
+                        },
+                        semanticLabel: widget.secondaryCtaLabel,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.borderSubtle),
+                          ),
+                          child: Text(
+                            widget.secondaryCtaLabel!,
+                            style: const TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ],

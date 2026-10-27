@@ -12,8 +12,15 @@ const maxConnections = env.IS_SERVERLESS
   ? 10
   : 5;
 
+const normalizedConnectionString =
+  env.DATABASE_URL &&
+  env.DATABASE_URL.includes("sslmode=require") &&
+  !env.DATABASE_URL.includes("uselibpqcompat=")
+    ? `${env.DATABASE_URL}${env.DATABASE_URL.includes("?") ? "&" : "?"}uselibpqcompat=true`
+    : env.DATABASE_URL;
+
 export const pool = new pg.Pool({
-  connectionString: env.DATABASE_URL,
+  connectionString: normalizedConnectionString,
   ssl:
     (env.NODE_ENV === "production" &&
       env.DATABASE_URL &&

@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/messaging_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -49,20 +51,24 @@ class ConversationsListScreen extends ConsumerWidget {
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load inbox',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(conversationsProvider),
+          onRetry: () => ref.invalidate(conversationsProvider),
+          onSecondaryAction: () => context.go('/'),
+          secondaryActionLabel: 'Return to Home',
         ),
         data: (conversations) {
           if (conversations.isEmpty) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.forum_outlined,
               title: 'No conversations yet',
               subtitle:
                   'Open an athlete\'s profile and tap Message to coordinate sparring or discuss matchups.',
+              ctaLabel: 'Find Sparring Partners',
+              onCtaTap: () => context.push('/search'),
+              secondaryCtaLabel: 'Return to Home',
+              onSecondaryCtaTap: () => context.go('/'),
             );
           }
           return RefreshIndicator(
@@ -235,6 +241,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       } else if (mounted) {
         _messageController.clear();
       }
+    } catch (e) {
+      if (mounted) {
+        HapticFeedback.heavyImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppErrorFormatter.format(e)),
+            backgroundColor: AppTheme.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -246,6 +262,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ref.watch(messageThreadProvider(widget.conversationId));
     final myUserId =
         ref.watch(authProvider).userProfile?['id']?.toString();
+    final isDisconnected = messagesAsync.hasError;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -268,13 +285,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppTheme.goldPrimary),
               ),
-              error: (error, _) => AppEmptyState(
-                icon: Icons.error_outline,
+              error: (error, _) => AppErrorView(
+                error: error,
                 title: 'Could not load messages',
-                subtitle: error.toString(),
-                ctaLabel: 'Retry',
-                onCtaTap: () =>
+                onRetry: () =>
                     ref.invalidate(messageThreadProvider(widget.conversationId)),
+                onSecondaryAction: () => context.pop(),
+                secondaryActionLabel: 'Leave Chat',
               ),
               data: (messages) {
                 if (messages.isEmpty) {
@@ -382,9 +399,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
+                      enabled: !isDisconnected && !_sending,
                       style: const TextStyle(color: AppTheme.textPrimary),
                       decoration: InputDecoration(
-                        hintText: 'Type your message...',
+                        hintText: isDisconnected
+                            ? 'Messaging unavailable while disconnected'
+                            : 'Type your message...',
                         hintStyle: const TextStyle(color: AppTheme.textMuted),
                         filled: true,
                         fillColor: AppTheme.elevatedSurface,
@@ -399,14 +419,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           borderSide: const BorderSide(color: AppTheme.goldPrimary),
                         ),
                       ),
-                      onSubmitted: (_) => _send(),
+                      onSubmitted: isDisconnected ? null : (_) => _send(),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.goldPrimary,
+                      color: isDisconnected
+                          ? AppTheme.cardSurface
+                          : AppTheme.goldPrimary,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: isDisconnected
+                          ? Border.all(color: AppTheme.borderSubtle)
+                          : null,
                     ),
                     child: IconButton(
                       icon: _sending
@@ -418,8 +443,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 color: AppTheme.voidBackground,
                               ),
                             )
-                          : const Icon(Icons.send, color: AppTheme.voidBackground, size: 20),
-                      onPressed: _sending ? null : _send,
+                          : Icon(
+                              Icons.send,
+                              color: isDisconnected
+                                  ? AppTheme.textMuted
+                                  : AppTheme.voidBackground,
+                              size: 20,
+                            ),
+                      onPressed: (isDisconnected || _sending) ? null : _send,
                     ),
                   ),
                 ],

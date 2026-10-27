@@ -9,6 +9,8 @@ import 'package:mobile/features/athlete/screens/athlete_screens.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/providers/athlete_provider.dart';
 import 'package:mobile/core/providers/live_matches_provider.dart';
+import 'package:mobile/core/providers/tournament_provider.dart';
+import 'package:mobile/core/providers/rankings_provider.dart';
 
 class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   _FakeAuthNotifier(super.state);
@@ -26,6 +28,16 @@ class _FakeAthleteProfileNotifier extends AthleteProfileNotifier {
 }
 
 class _FakeLiveMatchesNotifier extends LiveMatchesNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
+class _FakeTournamentNotifier extends TournamentNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
+class _FakeRankingsNotifier extends RankingsNotifier {
   @override
   Future<List<Map<String, dynamic>>> build() async => [];
 }
@@ -112,6 +124,9 @@ void main() {
                   'leftArmElo': 1690,
                 })),
             liveMatchesProvider.overrideWith(() => _FakeLiveMatchesNotifier()),
+            tournamentProvider.overrideWith(() => _FakeTournamentNotifier()),
+            rankingsProvider.overrideWith(() => _FakeRankingsNotifier()),
+            trainingLogProvider('test_ath_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
             trainingLogPRsProvider('test_ath_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(

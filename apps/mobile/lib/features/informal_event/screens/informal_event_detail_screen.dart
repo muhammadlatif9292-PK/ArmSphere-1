@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/providers/athlete_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -129,11 +130,18 @@ class _InformalEventDetailScreenState
                     participants.length;
 
             final currentProfile = ref.watch(athleteProfileProvider).valueOrNull;
-            final currentUserId = currentProfile?['id']?.toString();
+            final authUser = ref.watch(authProvider).userProfile;
+            final candidateIds = <String>{
+              if (authUser?['id'] != null) authUser!['id'].toString(),
+              if (currentProfile?['userId'] != null) currentProfile!['userId'].toString(),
+              if (currentProfile?['id'] != null) currentProfile!['id'].toString(),
+            }.where((s) => s.isNotEmpty).toSet();
             final isCreator =
-                currentUserId != null && currentUserId == createdByUserId;
-            final isParticipant = currentUserId != null &&
-                participants.any((p) => p['id']?.toString() == currentUserId);
+                createdByUserId.isNotEmpty && candidateIds.contains(createdByUserId);
+            final isParticipant = candidateIds.isNotEmpty &&
+                participants.any((p) =>
+                    candidateIds.contains(p['id']?.toString() ?? '') ||
+                    candidateIds.contains(p['userId']?.toString() ?? ''));
             final isFull = maxParticipants != null &&
                 participantCount >= maxParticipants.toInt();
 

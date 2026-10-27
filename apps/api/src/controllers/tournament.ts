@@ -143,10 +143,13 @@ export class TournamentController {
     try {
       const validated = createEventSchema.parse(req.body);
       const organizerId = validated.organizerId || req.user!.id;
-      const event = await TournamentService.createEvent({
-        ...validated,
-        organizerId
-      } as any);
+      const event = await TournamentService.createEvent(
+        {
+          ...validated,
+          organizerId
+        } as any,
+        req.user!.id
+      );
       res.status(201).json(event);
     } catch (error) {
       next(error);
@@ -178,6 +181,16 @@ export class TournamentController {
     try {
       const { id } = req.params;
       const event = await TournamentService.publishEvent(id, req.user!.id);
+      res.json(event);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async completeEvent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const event = await TournamentService.completeEvent(id, req.user!.id);
       res.json(event);
     } catch (error) {
       next(error);
@@ -265,7 +278,8 @@ export class TournamentController {
         validated.format,
         validated.division,
         validated.weightClass,
-        validated.arm
+        validated.arm,
+        req.user!.id
       );
       res.status(201).json(bracket);
     } catch (error) {
@@ -276,7 +290,7 @@ export class TournamentController {
   static async generateSeeds(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const seeds = await TournamentService.generateSeeds(id);
+      const seeds = await TournamentService.generateSeeds(id, req.user!.id);
       res.json(seeds);
     } catch (error) {
       next(error);
@@ -289,7 +303,8 @@ export class TournamentController {
       const result = await TournamentService.overrideSeed(
         validated.bracketId,
         validated.athleteId,
-        validated.newPosition
+        validated.newPosition,
+        req.user!.id
       );
       res.json(result);
     } catch (error) {
@@ -300,7 +315,7 @@ export class TournamentController {
   static async lockSeeds(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await TournamentService.lockSeeds(id);
+      const result = await TournamentService.lockSeeds(id, req.user!.id);
       res.json(result);
     } catch (error) {
       next(error);
@@ -310,7 +325,7 @@ export class TournamentController {
   static async generateBracketMatches(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await TournamentService.generateBracketMatches(id);
+      const result = await TournamentService.generateBracketMatches(id, req.user!.id);
       res.json(result);
     } catch (error) {
       next(error);
@@ -325,7 +340,7 @@ export class TournamentController {
       if (!eventId) {
         throw new BadRequestError("Event ID is required to create a table.");
       }
-      const table = await TournamentService.createTable(eventId, validated.name);
+      const table = await TournamentService.createTable(eventId, validated.name, req.user!.id);
       res.status(201).json(table);
     } catch (error) {
       next(error);
@@ -335,7 +350,7 @@ export class TournamentController {
   static async assignReferee(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = assignRefereeSchema.parse(req.body);
-      const updated = await TournamentService.assignReferee(validated.matchId, validated.refereeId);
+      const updated = await TournamentService.assignReferee(validated.matchId, validated.refereeId, req.user!.id);
       res.json(updated);
     } catch (error) {
       next(error);
@@ -484,13 +499,6 @@ export class TournamentController {
         throw new NotFoundError("Tournament event not found.");
       }
 
-      const isOrganizer = event.organizerId && req.user!.id === event.organizerId;
-      const isAdmin = req.user!.role === UserRole.SYSTEM_ADMIN || req.user!.role === UserRole.NATIONAL_DIRECTOR;
-
-      if (!isOrganizer && !isAdmin) {
-        throw new ForbiddenError("Only the event's organizer or an admin can modify this event.");
-      }
-
       const validated = editEventSchema.partial().parse(req.body);
       const updatedEvent = await TournamentService.editEvent(id, validated as any, req.user!.id);
       res.json(updatedEvent);
@@ -520,12 +528,7 @@ export class TournamentController {
         throw new NotFoundError("Tournament event not found.");
       }
 
-      const isOrganizer = event.organizerId && req.user!.id === event.organizerId;
-      const isAdminOrDirector = req.user!.role === UserRole.SYSTEM_ADMIN || req.user!.role === UserRole.NATIONAL_DIRECTOR || req.user!.role === UserRole.PROVINCIAL_DIRECTOR;
-
-      if (!isOrganizer && !isAdminOrDirector) {
-        throw new ForbiddenError("Only the event's organizer, a director, or an admin can view registrations.");
-      }
+      await TournamentService.authorizeEventModification(event, req.user!.id, "view registrations for");
 
       const list = await TournamentService.getEventRegistrations(id);
       res.json(list);

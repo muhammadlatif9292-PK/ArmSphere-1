@@ -8,6 +8,7 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/sensory_feedback_service.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 
 /// Athlete Training Log & Personal Records (PR) Screen
 ///
@@ -34,7 +35,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
 
   Widget _errorView(BuildContext context, WidgetRef ref, Object e) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MainShellScope.bottomClearance(context)),
       children: [
         const SizedBox(height: 80),
         const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
@@ -83,7 +84,12 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
           ),
           error: (e, _) => _errorView(context, ref, e),
           data: (logs) => ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              20,
+              16,
+              MainShellScope.bottomClearance(context, additionalPadding: 80),
+            ),
             children: [
               // Personal records — computed server-side from post history
               prsAsync.when(
@@ -289,6 +295,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
           ),
         ),
       ),
+      floatingActionButtonLocation: MainShellScope.fabLocation(context),
       floatingActionButton: FloatingActionButton(
         heroTag: 'training_log_add',
         tooltip: 'Log a session',

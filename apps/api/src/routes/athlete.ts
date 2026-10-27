@@ -18,7 +18,12 @@ athleteRouter.get("/clubs", authenticate, AthleteController.getClubs);
 athleteRouter.post(
   "/clubs", 
   authenticate, 
-  requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR, UserRole.PROVINCIAL_DIRECTOR), 
+  requireRole(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.NATIONAL_DIRECTOR,
+    UserRole.PROVINCIAL_DIRECTOR,
+    UserRole.ORGANIZATION_LEADER
+  ), 
   AthleteController.createClub
 );
 

@@ -1,9 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/providers/announcement_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -46,20 +48,38 @@ class AnnouncementsListScreen extends ConsumerWidget {
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load bulletins',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(announcementsProvider),
+          onRetry: () => ref.invalidate(announcementsProvider),
+          secondaryActionLabel: 'Return to Home',
+          onSecondaryAction: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.campaign_outlined,
               title: 'No active bulletins',
               subtitle:
                   'Official executive circulars, rule changes, and federation schedules will appear here once published.',
+              ctaLabel: 'Refresh Bulletins',
+              onCtaTap: () async {
+                await ref.read(announcementsProvider.notifier).refresh();
+              },
+              secondaryCtaLabel: 'Return to Home',
+              onSecondaryCtaTap: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/');
+                }
+              },
             );
           }
           return RefreshIndicator(

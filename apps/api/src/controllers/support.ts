@@ -10,19 +10,29 @@ const createTicketSchema = z.object({
   priority: z.string().optional(),
 });
 
-const assignTicketSchema = z.object({
-  agentId: z.string().uuid("Invalid agent user ID").nullable(),
-});
+const assignTicketSchema = z
+  .object({
+    agentId: z.string().uuid("Invalid agent user ID").nullable().optional(),
+    assignedAgentId: z.string().uuid("Invalid agent user ID").nullable().optional(),
+  })
+  .refine((data) => "agentId" in data || "assignedAgentId" in data, {
+    message: "Invalid agent user ID",
+  });
 
 const updateStatusSchema = z.object({
   status: z.string().min(1, "Status is required"),
   resolutionNotes: z.string().optional(),
 });
 
-const addMessageSchema = z.object({
-  message: z.string().min(1, "Message content is required"),
-  isInternal: z.boolean().optional(),
-});
+const addMessageSchema = z
+  .object({
+    message: z.string().min(1, "Message content is required").optional(),
+    content: z.string().min(1, "Message content is required").optional(),
+    isInternal: z.boolean().optional(),
+  })
+  .refine((data) => Boolean((data.message && data.message.trim()) || (data.content && data.content.trim())), {
+    message: "Message content is required",
+  });
 
 export class SupportController {
   static async createTicket(req: Request, res: Response, next: NextFunction) {
@@ -79,12 +89,16 @@ export class SupportController {
 
       const user = (req as any).user;
       const ticketId = req.params.id;
+      const resolvedAgentId =
+        "agentId" in parseResult.data && parseResult.data.agentId !== undefined
+          ? parseResult.data.agentId
+          : (parseResult.data.assignedAgentId ?? null);
 
       const ticket = await SupportService.assignTicket(
         user.id,
         user.role,
         ticketId,
-        parseResult.data.agentId
+        resolvedAgentId
       );
 
       res.status(200).json({ success: true, data: ticket });
@@ -126,12 +140,13 @@ export class SupportController {
 
       const user = (req as any).user;
       const ticketId = req.params.id;
+      const resolvedMessage = (parseResult.data.message ?? parseResult.data.content)!;
 
       const message = await SupportService.addMessage(
         user.id,
         user.role,
         ticketId,
-        parseResult.data.message,
+        resolvedMessage,
         parseResult.data.isInternal
       );
 

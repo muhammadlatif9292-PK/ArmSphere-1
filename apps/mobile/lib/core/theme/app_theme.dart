@@ -14,130 +14,164 @@ import '../routing/page_transitions.dart';
 /// - Centralized Material 3 ThemeData with form, button, and card decorators
 class AppTheme {
   // ---------------------------------------------------------------------------
-  // 1. Foundational Canvas & Surface Tiers
+  // 1. Foundational Canvas & Surface Tiers (Titanium Glass Elite Championship)
   // ---------------------------------------------------------------------------
-  /// Ultimate dark canvas void background (#070A11) - 18.2:1 contrast against textPrimary.
+  /// Ultimate dark canvas void background (#070A11) - Deepest architectural foundation.
   static const Color voidBackground = Color(0xFF070A11);
 
-  /// Viewport base background (#0B0F19) - Elevated substrate.
+  /// Viewport base background (#0B0F19) - Midnight graphite substrate.
   static const Color background = Color(0xFF0B0F19);
 
-  /// Base solid card container (#121826) - For rankings, feed items, and forms.
-  static const Color cardSurface = Color(0xFF121826);
+  /// Midnight Graphite (#0B0F19)
+  static const Color graphite = Color(0xFF0B0F19);
 
-  /// Primary surface token (mapped to cardSurface #121826 for consistency).
-  static const Color surface = Color(0xFF121826);
+  /// Precision Machined Titanium container (#151B24) - For primary cards and panels.
+  static const Color titanium = Color(0xFF151B24);
 
-  /// Elevated action cell / secondary interactive container (#1E293B).
-  static const Color elevatedSurface = Color(0xFF1E293B);
+  /// Solid card container (#151B24) - Polished titanium surface.
+  static const Color cardSurface = Color(0xFF151B24);
+
+  /// Primary surface token (mapped to cardSurface #151B24).
+  static const Color surface = Color(0xFF151B24);
+
+  /// Elevated action cell / secondary interactive container (#1E2836).
+  static const Color elevatedSurface = Color(0xFF1E2836);
 
   /// Backward-compatible alias for elevatedSurface.
-  static const Color surfaceElevated = Color(0xFF1E293B);
+  static const Color surfaceElevated = Color(0xFF1E2836);
 
-  /// Structural card and divider border (#334155 at 1.0px).
-  static const Color border = Color(0xFF334155);
+  /// Silver Plane structural substrate (#202832).
+  static const Color silverPlane = Color(0xFF202832);
 
-  /// Muted structural divider for subtle separators (#1E293B).
-  static const Color borderMuted = Color(0xFF1E293B);
+  /// Dark brushed steel surface (#1A2330).
+  static const Color brushedSteel = Color(0xFF1A2330);
 
-  /// Subtle structural divider for secondary separators (#1E293B).
-  static const Color borderSubtle = Color(0xFF1E293B);
+  /// Recessed graphite container (#0E131C) for inputs and inactive surfaces.
+  static const Color recessedSurface = Color(0xFF0E131C);
 
-  /// Elevated bright divider for focused states (#475569).
-  static const Color borderLight = Color(0xFF475569);
+  /// Structural precision titanium card border (rgba(214, 220, 227, 0.12) = 0x1FD6DCE3).
+  static const Color borderTitanium = Color(0x1FD6DCE3);
 
-  /// Backward-compatible alias for structural card border (#334155).
+  /// Metallic specular upper-edge highlight border (rgba(218, 226, 235, 0.15) = 0x26DAE2EB).
+  static const Color borderHighlight = Color(0x26DAE2EB);
+
+  /// Structural card and divider border.
+  static const Color border = Color(0x1FD6DCE3);
+
+  /// Muted structural divider for subtle separators.
+  static const Color borderMuted = Color(0x10D6DCE3);
+
+  /// Subtle structural divider for secondary separators.
+  static const Color borderSubtle = Color(0x14D6DCE3);
+
+  /// Elevated bright divider for focused states.
+  static const Color borderLight = Color(0x33DAE2EB);
+
+  /// Backward-compatible alias for structural card border.
   static const Color cardBorder = border;
 
-  /// Backward-compatible alias for cardSurface (#121826).
+  /// Backward-compatible alias for cardSurface (#151B24).
   static const Color cardBackground = cardSurface;
 
   /// Backward-compatible alias for background (#0B0F19).
   static const Color surfaceDark = background;
 
   // ---------------------------------------------------------------------------
-  // 2. Accents & Semantics (WCAG AA/AAA Compliant)
+  // 2. Accents & Semantics (Championship Illumination)
   // ---------------------------------------------------------------------------
-  /// Coral Crimson (#EF4444) - Table fouls, match losses, forfeits, and live alerts.
-  static const Color primaryAccent = Color(0xFFEF4444);
+  /// Competition Crimson (#E23B3B) - Competitive intensity, red-corner identity, live bouts.
+  static const Color crimson = Color(0xFFE23B3B);
+  static const Color primaryAccent = crimson;
+  static const Color primaryRed = crimson;
+  static const Color combatCrimson = crimson;
+  static const Color competitionCrimson = crimson;
 
-  /// Backward-compatible alias for primaryAccent (#EF4444).
-  static const Color primaryRed = primaryAccent;
+  /// Restrained 12% Crimson glow.
+  static const Color crimsonGlow = Color(0x1FE23B3B);
 
-  /// Backward-compatible alias for primaryAccent (#EF4444).
-  static const Color combatCrimson = primaryAccent;
+  /// Championship Champagne Gold (#D4AF37) - Medals, rankings, achievements, prestige.
+  static const Color goldPrimary = Color(0xFFD4AF37);
+  static const Color goldLight = Color(0xFFF5E096);
+  static const Color goldDark = Color(0xFF997A15);
+  static const Color championshipGold = goldPrimary;
 
-  /// Amber Gold (#F59E0B) - Warnings, pending sanctions, and in-straps status.
-  static const Color secondaryAccent = Color(0xFFF59E0B);
+  /// Restrained 10% Gold Halo glow.
+  static const Color goldGlow = Color(0x1AD4AF37);
 
-  /// High-contrast Orange (#F97316) - Distinguishable operational warnings.
+  /// Electric Cyan (#38BDF8) - Live telemetry, active controls, focus states, blue corner.
+  static const Color cyan = Color(0xFF38BDF8);
+  static const Color cyanAccent = cyan;
+  static const Color activeCyan = cyan;
+  static const Color cyanLight = Color(0xFF7DD3FC);
+  static const Color info = cyan;
+  static const Color electricCyan = cyan;
+
+  /// Restrained 12% Cyan glow.
+  static const Color cyanGlow = Color(0x1F38BDF8);
+
+  /// Verified Emerald (#10B981) - Official verification, cleared weigh-ins, match victories.
+  static const Color emerald = Color(0xFF10B981);
+  static const Color success = emerald;
+  static const Color verifiedEmerald = emerald;
+
+  /// Restrained 12% Emerald glow.
+  static const Color emeraldGlow = Color(0x1F10B981);
+
+  /// High-contrast Warning Amber (#F59E0B).
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color secondaryAccent = warning;
+
+  /// High-contrast Orange (#F97316).
   static const Color accentOrange = Color(0xFFF97316);
-
-  /// Backward-compatible alias for accentOrange (#F97316).
   static const Color primaryOrange = accentOrange;
 
-  /// Champagne Gold (#D4AF37) - Medals, championship belts, and high-prestige CTAs.
-  static const Color goldPrimary = Color(0xFFD4AF37);
-
-  /// Soft Gold Sheen (#F5E096) - Subtle gold highlight.
-  static const Color goldLight = Color(0xFFF5E096);
-
-  /// Burnished Gold (#997A15) - Deep gold shadow tone.
-  static const Color goldDark = Color(0xFF997A15);
-
-  /// 20% Gold Halo glow (0x33D4AF37).
-  static const Color goldGlow = Color(0x33D4AF37);
-
-  /// Deep Glass Surface (#121622 at 0.85 opacity).
-  static const Color glassSurface = Color(0xDD121622);
-
-  /// 15% Gold Border (#D4AF37 at 0.15 opacity).
-  static const Color glassBorder = Color(0x26D4AF37);
-
-  /// Emerald Mint (#10B981) - Match wins, cleared weigh-ins, valid certifications.
-  static const Color success = Color(0xFF10B981);
-
-  /// High-contrast Coral Red (#FF5252) - Explicit errors, field rejections.
-  static const Color error = Color(0xFFFF5252);
-
-  /// High-contrast Warning Orange (#F97316).
-  static const Color warning = Color(0xFFF97316);
-
-  /// Luminous Sky Blue / Cyan (#38BDF8) - Live telemetry, active table calls, 8.94:1 contrast.
-  static const Color info = Color(0xFF38BDF8);
-
-  /// Cool Cyan Accent (#38BDF8) - Table telemetry and structural lines.
-  static const Color cyanAccent = Color(0xFF38BDF8);
-
-  /// Backward-compatible alias for cyanAccent (#38BDF8).
-  static const Color activeCyan = cyanAccent;
-
-  /// Soft Ice Blue (#7DD3FC) - Highlights and active chip fills.
-  static const Color cyanLight = Color(0xFF7DD3FC);
+  /// High-contrast Coral Red (#FF4D4D) - Explicit errors, field rejections.
+  static const Color error = Color(0xFFFF4D4D);
 
   /// Distinct Purple (#C084FC) - Public event and grassroots indicator.
   static const Color highlightPurple = Color(0xFFC084FC);
 
   // ---------------------------------------------------------------------------
-  // 3. Neutral Typography & Readability (WCAG AAA >= 7.0:1 / AA >= 4.5:1)
+  // 3. Smoked Optical Glass Tokens
   // ---------------------------------------------------------------------------
-  /// High-emphasis primary text (#F8FAFC) - 18.2:1 contrast against canvas.
-  static const Color textPrimary = Color(0xFFF8FAFC);
+  /// Semi-translucent dark-tinted surface (70% opacity titanium).
+  static const Color glassSurface = Color(0xB3151B24);
 
-  /// Medium-emphasis secondary text (#94A3B8) - 7.8:1 contrast.
-  static const Color textSecondary = Color(0xFF94A3B8);
+  /// Heavy smoked optical glass (80% opacity obsidian).
+  static const Color glassSurfaceHeavy = Color(0xCC111721);
 
-  /// Muted metadata & caption text (#8493A5) - 4.8:1 contrast (passes WCAG AA 4.5:1).
-  static const Color textMuted = Color(0xFF8493A5);
+  /// Light floating glass (50% opacity).
+  static const Color glassSurfaceLight = Color(0x801A2434);
+
+  /// Crisp titanium glass-rim border (12% silver reflection).
+  static const Color glassBorder = Color(0x1FD6DCE3);
+
+  /// Specular glass highlight line (20% white reflection).
+  static const Color glassBorderSpecular = Color(0x33FFFFFF);
 
   // ---------------------------------------------------------------------------
-  // 4. Shimmer & Atmospheric Background Constants
+  // 4. Neutral Typography & Readability (WCAG AAA >= 7.0:1 / AA >= 4.5:1)
   // ---------------------------------------------------------------------------
-  /// Base placeholder skeleton color (#121826).
-  static const Color shimmerBase = Color(0xFF121826);
+  /// Pure white (#FFFFFF) - Ultra-high emphasis numeric displays & headings.
+  static const Color textPure = Color(0xFFFFFFFF);
 
-  /// Shimmer highlight wave color (#1E293B).
-  static const Color shimmerHighlight = Color(0xFF1E293B);
+  /// High-emphasis primary text (#F4F7FA) - 17.5:1 contrast against void.
+  static const Color textPrimary = Color(0xFFF4F7FA);
+
+  /// Medium-emphasis secondary text (#AAB3BE) - Cool silver-grey.
+  static const Color textSecondary = Color(0xFFAAB3BE);
+
+  /// Muted metadata & caption text (#7E8996) - Desaturated steel-grey.
+  static const Color textMuted = Color(0xFF7E8996);
+
+  // ---------------------------------------------------------------------------
+  // 5. Shimmer & Atmospheric Background Constants
+  // ---------------------------------------------------------------------------
+  /// Base placeholder skeleton color (#151B24).
+  static const Color shimmerBase = Color(0xFF151B24);
+
+  /// Shimmer highlight wave color (#1E2836).
+  static const Color shimmerHighlight = Color(0xFF1E2836);
 
   /// Ambient background particle glow (shell-level decoration, 0x0F1B2A4A).
   static const Color ambientGlow = Color(0x0F1B2A4A);
@@ -243,17 +277,200 @@ class AppTheme {
     );
   }
 
-  /// Standard card elevation shadow.
+  /// Competition Crimson halo for active bouts and critical actions.
+  static BoxShadow crimsonHalo() {
+    return BoxShadow(
+      color: crimson.withValues(alpha: 0.28),
+      blurRadius: 14.0,
+      spreadRadius: 1.0,
+    );
+  }
+
+  /// Verified Emerald halo for cleared states and certifications.
+  static BoxShadow emeraldHalo() {
+    return BoxShadow(
+      color: emerald.withValues(alpha: 0.25),
+      blurRadius: 12.0,
+      spreadRadius: 1.0,
+    );
+  }
+
+  /// Standard card elevation shadow with soft contact ambient occlusion.
   static BoxShadow cardShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.4),
-      blurRadius: 10.0,
-      offset: const Offset(0, 4),
+      color: Colors.black.withValues(alpha: 0.45),
+      blurRadius: 16.0,
+      offset: const Offset(0, 6),
+    );
+  }
+
+  /// Titanium architectural card shadow.
+  static BoxShadow titaniumShadow() {
+    return BoxShadow(
+      color: Colors.black.withValues(alpha: 0.50),
+      blurRadius: 20.0,
+      offset: const Offset(0, 8),
+    );
+  }
+
+  /// Deep floating glass dock elevation shadow.
+  static BoxShadow glassDockShadow() {
+    return BoxShadow(
+      color: Colors.black.withValues(alpha: 0.60),
+      blurRadius: 28.0,
+      offset: const Offset(0, 10),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // 10. Gradient Scrims (docs/design/35_MEDIA_ART_DIRECTION.md)
+  // 10. Titanium & Glass Materials (Gradients & Architectural Shaders)
+  // ---------------------------------------------------------------------------
+  /// Directional brushed machined titanium gradient (145deg #171D27 -> #111721).
+  static const LinearGradient machinedTitaniumGradient = LinearGradient(
+    begin: Alignment(-0.6, -1.0),
+    end: Alignment(0.6, 1.0),
+    colors: [
+      Color(0xFF171D27),
+      Color(0xFF111721),
+    ],
+  );
+
+  /// Secondary dark brushed steel gradient.
+  static const LinearGradient brushedSteelGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF202832),
+      Color(0xFF151B24),
+    ],
+  );
+
+  /// Immersive cinematic athlete stage banner gradient.
+  static const LinearGradient cinematicBannerGradient = LinearGradient(
+    begin: Alignment(-0.8, -1.0),
+    end: Alignment(0.8, 1.0),
+    colors: [
+      Color(0xFF1B232F),
+      Color(0xFF141A24),
+      Color(0xFF0D121A),
+    ],
+    stops: [0.0, 0.45, 1.0],
+  );
+
+  /// Broadcast fight card / Supermatch stage gradient.
+  static const LinearGradient upcomingMatchGradient = LinearGradient(
+    begin: Alignment(-0.6, -1.0),
+    end: Alignment(0.6, 1.0),
+    colors: [
+      Color(0xFF191D26),
+      Color(0xFF121821),
+    ],
+  );
+
+  /// Smoked optical glass sheen gradient with top-left specular highlight.
+  static const LinearGradient glassSheenGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.45, 1.0],
+    colors: [
+      Color(0x22FFFFFF), // 13% specular reflection at top-left
+      Color(0x06FFFFFF),
+      Color(0x00000000),
+    ],
+  );
+
+  /// Competition Crimson directional gradient.
+  static const LinearGradient competitionCrimsonGradient = LinearGradient(
+    colors: [
+      Color(0xFFFF5252),
+      Color(0xFFE23B3B),
+      Color(0xFF9E1F1F),
+    ],
+  );
+
+  /// Championship Champagne Gold directional gradient.
+  static const LinearGradient championshipGoldGradient = LinearGradient(
+    colors: [
+      Color(0xFFF5E096),
+      Color(0xFFD4AF37),
+      Color(0xFF997A15),
+    ],
+  );
+
+  /// Electric Cyan telemetry gradient.
+  static const LinearGradient electricCyanGradient = LinearGradient(
+    colors: [
+      Color(0xFF7DD3FC),
+      Color(0xFF38BDF8),
+      Color(0xFF0284C7),
+    ],
+  );
+
+  /// Verified Emerald status gradient.
+  static const LinearGradient verifiedEmeraldGradient = LinearGradient(
+    colors: [
+      Color(0xFF34D399),
+      Color(0xFF10B981),
+      Color(0xFF047857),
+    ],
+  );
+
+  /// Standard Machined Titanium Box Decoration with crisp metallic border.
+  static BoxDecoration machinedTitaniumDecoration({
+    double radius = radiusMedium,
+    Color? borderColor,
+    Color? customBackground,
+    List<BoxShadow>? customShadow,
+  }) {
+    return BoxDecoration(
+      gradient: customBackground != null ? null : machinedTitaniumGradient,
+      color: customBackground,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor ?? borderTitanium,
+        width: 1.0,
+      ),
+      boxShadow: customShadow ?? [titaniumShadow()],
+    );
+  }
+
+  /// Dark Brushed Steel Box Decoration for compact cards & controls.
+  static BoxDecoration brushedSteelDecoration({
+    double radius = radiusSmall,
+    Color? borderColor,
+    List<BoxShadow>? customShadow,
+  }) {
+    return BoxDecoration(
+      gradient: brushedSteelGradient,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor ?? borderTitanium,
+        width: 1.0,
+      ),
+      boxShadow: customShadow ?? [cardShadow()],
+    );
+  }
+
+  /// Smoked Optical Glass Box Decoration.
+  static BoxDecoration smokedGlassDecoration({
+    double radius = radiusLarge,
+    Color? borderColor,
+    Color? surfaceColor,
+    List<BoxShadow>? customShadow,
+  }) {
+    return BoxDecoration(
+      color: surfaceColor ?? glassSurface,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor ?? glassBorder,
+        width: 1.0,
+      ),
+      boxShadow: customShadow ?? [glassDockShadow()],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 11. Gradient Scrims (docs/design/35_MEDIA_ART_DIRECTION.md)
   // ---------------------------------------------------------------------------
   /// Directional 4-stop hero gradient scrim for guaranteed text legibility over photography.
   static BoxDecoration heroScrim() {
@@ -289,7 +506,7 @@ class AppTheme {
   }
 
   // ---------------------------------------------------------------------------
-  // 11. Material 3 ThemeData Specification
+  // 12. Material 3 ThemeData Specification
   // ---------------------------------------------------------------------------
   static ThemeData get darkTheme {
     return ThemeData(
@@ -414,29 +631,30 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: cardSurface,
-        shadowColor: Colors.black.withValues(alpha: 0.5),
-        elevation: 2.0,
+        shadowColor: Colors.black.withValues(alpha: 0.55),
+        elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-          side: const BorderSide(color: border, width: 1.0),
+          borderRadius: BorderRadius.circular(radiusLarge),
+          side: const BorderSide(color: borderTitanium, width: 1.0),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cardSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        fillColor: recessedSurface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: border, width: 1.0),
+          borderSide: const BorderSide(color: borderTitanium, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: border, width: 1.0),
+          borderSide: const BorderSide(color: borderTitanium, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: info, width: 1.5),
+          borderSide: const BorderSide(color: cyan, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMedium),

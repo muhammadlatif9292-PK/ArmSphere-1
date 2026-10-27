@@ -431,5 +431,83 @@ describe("Customer Support & Helpdesk Ticketing System", () => {
 
       expect(res.status).toBe(403);
     });
+
+    it("enforces canonical DB role/grant verification and blocks stale JWT claims or suspended accounts", async () => {
+      // 1. Revoke supportAgent2's primary role in DB while their JWT still says SUPPORT_AGENT
+      const agent2InDb = testDbStore.users.find((u: any) => u.id === supportAgent2Id);
+      agent2InDb.role = UserRole.ATHLETE;
+
+      const staleAgentView = await request(app)
+        .get(`/support/tickets/${ticketId}`)
+        .set("Authorization", support2Token);
+      expect(staleAgentView.status).toBe(403);
+
+      // 2. Grant SUPPORT_AGENT via canonical user_role_grants table to athlete2
+      testDbStore.userRoleGrants.push({
+        id: uuidv4(),
+        userId: athlete2Id,
+        role: UserRole.SUPPORT_AGENT,
+        status: "ACTIVE",
+        grantedBy: adminId,
+        grantedAt: new Date(),
+      });
+
+      const grantedAgentView = await request(app)
+        .get(`/support/tickets/${ticketId}`)
+        .set("Authorization", athlete2Token);
+      expect(grantedAgentView.status).toBe(200);
+
+      // 3. Suspend supportAgent1 in DB -> blocked with 403 Forbidden
+      const agent1InDb = testDbStore.users.find((u: any) => u.id === supportAgentId);
+      agent1InDb.isActive = false;
+
+      const suspendedRes = await request(app)
+        .get("/support/tickets")
+        .set("Authorization", supportToken);
+      expect(suspendedRes.status).toBe(403);
+    });
+
+    it("accepts mobile-style assignedAgentId and content fields and returns both message and content", async () => {
+      const assignRes = await request(app)
+        .post(`/support/tickets/${ticketId}/assign`)
+        .set("Authorization", supportToken)
+        .send({ assignedAgentId: supportAgentId });
+
+      expect(assignRes.status).toBe(200);
+      expect(assignRes.body.data.assignedAgentId).toBe(supportAgentId);
+
+      const msgRes = await request(app)
+        .post(`/support/tickets/${ticketId}/messages`)
+        .set("Authorization", supportToken)
+        .send({ content: "Mobile client reply via content field", isInternal: false });
+
+      expect(msgRes.status).toBe(201);
+      expect(msgRes.body.data.message).toBe("Mobile client reply via content field");
+      expect(msgRes.body.data.content).toBe("Mobile client reply via content field");
+
+      const detailRes = await request(app)
+        .get(`/support/tickets/${ticketId}`)
+        .set("Authorization", athlete1Token);
+
+      expect(detailRes.status).toBe(200);
+      expect(detailRes.body.data.messages[0].message).toBe("Mobile client reply via content field");
+      expect(detailRes.body.data.messages[0].content).toBe("Mobile client reply via content field");
+    });
+
+    it("blocks posting messages to a CLOSED support ticket (400 Bad Request)", async () => {
+      await request(app)
+        .patch(`/support/tickets/${ticketId}/status`)
+        .set("Authorization", athlete1Token)
+        .send({ status: SupportTicketStatus.CLOSED });
+
+      const msgRes = await request(app)
+        .post(`/support/tickets/${ticketId}/messages`)
+        .set("Authorization", athlete1Token)
+        .send({ message: "Trying to reply to closed ticket" });
+
+      expect(msgRes.status).toBe(400);
+      expect(msgRes.body.detail || msgRes.body.message).toMatch(/closed support ticket/i);
+    });
   });
 });
+
