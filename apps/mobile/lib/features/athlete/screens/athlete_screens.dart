@@ -4157,13 +4157,17 @@ class _WorkspaceTile extends StatelessWidget {
 }
 
 /// Athlete Achievements Details Screen
-class AthleteAchievementsScreen extends StatelessWidget {
+class AthleteAchievementsScreen extends ConsumerWidget {
   final String? athleteId;
 
   const AthleteAchievementsScreen({super.key, this.athleteId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profileAsync = athleteId != null
+        ? ref.watch(publicAthleteProfileProvider(athleteId!))
+        : ref.watch(athleteProfileProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -4177,7 +4181,7 @@ class AthleteAchievementsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           children: [
-            const AchievementsSection(),
+            AchievementsSection(athleteData: profileAsync.value),
             const SizedBox(height: 24),
             ElevatedActionCard(
               padding: const EdgeInsets.all(18),

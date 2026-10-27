@@ -13,7 +13,12 @@ function isDbConnectionError(err: any): boolean {
     msg.includes("connection refused") ||
     msg.includes("connect") ||
     msg.includes("timeout") ||
-    code.includes("econnrefused")
+    msg.includes("password authentication failed") ||
+    msg.includes("enotfound") ||
+    msg.includes("getaddrinfo") ||
+    code.includes("econnrefused") ||
+    code === "28p01" ||
+    code === "3d000" 
   );
 }
 

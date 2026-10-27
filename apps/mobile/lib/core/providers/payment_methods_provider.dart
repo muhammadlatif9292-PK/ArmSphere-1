@@ -1,12 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dependency_providers.dart';
 
+final paymentConfiguredProvider = StateProvider<bool>((ref) => true);
+
 class PaymentMethodsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
     final dioClient = ref.watch(dioClientProvider);
     final response = await dioClient.dio.get('/payments/methods');
     if (response.statusCode == 200 && response.data != null) {
+      final meta = response.data['meta'];
+      if (meta is Map && meta['paymentConfigured'] is bool) {
+        ref.read(paymentConfiguredProvider.notifier).state = meta['paymentConfigured'] as bool;
+      }
       final success = response.data['success'] == true;
       if (success && response.data['data'] != null) {
         final list = response.data['data'] as List<dynamic>;

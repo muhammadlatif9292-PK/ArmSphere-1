@@ -48,6 +48,24 @@ const PLACEHOLDER_SECRET_PATTERNS = [
   "your_secret",
 ];
 
+const PLACEHOLDER_DATABASE_URL_PATTERNS = [
+  "staging_password_here",
+  "ep-staging-sample-12345678",
+  "ep-staging-xxxx",
+  "username:password@localhost",
+  ":password@",
+];
+
+export function isPlaceholderDatabaseUrl(value?: string): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase();
+  return PLACEHOLDER_DATABASE_URL_PATTERNS.some((pattern) => normalized.includes(pattern));
+}
+
+if (!isProduction && isPlaceholderDatabaseUrl(process.env.DATABASE_URL)) {
+  delete process.env.DATABASE_URL;
+}
+
 function hasUnsafeSecret(value?: string) {
   if (!value) return true;
   const normalized = value.toLowerCase();

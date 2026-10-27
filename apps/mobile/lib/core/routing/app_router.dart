@@ -74,12 +74,16 @@ bool _isOperatorLandingRole(String? role) {
 bool _isGovernanceLandingRole(String? role) {
   const govRoles = {
     'COMPLIANCE_OFFICER',
-    'SUPPORT_AGENT',
     'PROVINCIAL_DIRECTOR',
     'NATIONAL_DIRECTOR',
     'SYSTEM_ADMIN',
   };
   return role != null && govRoles.contains(role);
+}
+
+/// Roles that route to the support requests hub.
+bool _isSupportLandingRole(String? role) {
+  return role == 'SUPPORT_AGENT';
 }
 
 /// Roles that have permission to access Referee routes.
@@ -126,6 +130,9 @@ class RoleAwareHomeScreen extends ConsumerWidget {
     }
     if (_isOperatorLandingRole(userRole)) {
       return const TournamentOperatorDashboardScreen();
+    }
+    if (_isSupportLandingRole(userRole)) {
+      return const SupportRequestsScreen();
     }
     if (_isGovernanceLandingRole(userRole)) {
       return const GovernanceDashboardScreen();

@@ -260,7 +260,10 @@ class AthleteRepository extends BaseRepository {
       cacheKey: 'athlete_profile_$athleteId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/athletes/$athleteId', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: (data) {
+        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload as Map);
+      },
     );
   }
 
