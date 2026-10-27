@@ -132,7 +132,7 @@ class RoleAwareHomeScreen extends ConsumerWidget {
       return const TournamentOperatorDashboardScreen();
     }
     if (_isSupportLandingRole(userRole)) {
-      return const SupportRequestsScreen();
+      return const SupportTicketsScreen();
     }
     if (_isGovernanceLandingRole(userRole)) {
       return const GovernanceDashboardScreen();
