@@ -3311,10 +3311,20 @@ class AthleteProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final profile = authState.userProfile ?? {};
-    final displayName = profile['displayName'] ?? 'Athlete';
-    final email = profile['email'] ?? '';
-    final role = profile['role']?.toString().toUpperCase() ?? 'ATHLETE';
+    final authProfile = authState.userProfile ?? {};
+    final profileAsync = ref.watch(athleteProfileProvider);
+    final mergedProfile = <String, dynamic>{
+      ...authProfile,
+      if (profileAsync.value != null) ...profileAsync.value!,
+    };
+
+    final displayName = (mergedProfile['displayName']?.toString().isNotEmpty == true)
+        ? mergedProfile['displayName'].toString()
+        : (authProfile['fullName']?.toString() ?? 'Athlete');
+    final email = authProfile['email']?.toString() ?? mergedProfile['email']?.toString() ?? '';
+    final role = (authProfile['role'] ?? mergedProfile['role'] ?? 'ATHLETE')
+        .toString()
+        .toUpperCase();
     const officialRoles = {
       'REFEREE',
       'PROVINCIAL_DIRECTOR',
@@ -3323,9 +3333,15 @@ class AthleteProfileScreen extends ConsumerWidget {
     };
     final isOfficial = officialRoles.contains(role);
 
-    final profileAsync = ref.watch(athleteProfileProvider);
     final myProfileId =
-        profileAsync.value?['id']?.toString() ?? profile['id']?.toString();
+        profileAsync.value?['id']?.toString() ?? authProfile['id']?.toString();
+    final clubName = mergedProfile['club'] is Map
+        ? mergedProfile['club']['name']?.toString()
+        : mergedProfile['clubName']?.toString();
+    final location = [
+      mergedProfile['city']?.toString(),
+      mergedProfile['province']?.toString(),
+    ].where((v) => v != null && v.isNotEmpty).join(', ');
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -3342,6 +3358,15 @@ class AthleteProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          if (myProfileId != null && myProfileId.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: AppTheme.goldPrimary),
+              tooltip: 'Edit Profile & Biometrics',
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                _showEditProfileSheet(context, ref, mergedProfile, myProfileId);
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.settings_outlined,
                 color: AppTheme.textSecondary),
@@ -3409,7 +3434,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     child: ArmSphereImage.avatar(
                       imageUrl:
-                          (profile['profilePhoto'] ?? profile['avatarUrl'])
+                          (mergedProfile['profilePhoto'] ?? mergedProfile['avatarUrl'])
                               ?.toString(),
                       initial: displayName,
                       size: 72,
@@ -3443,7 +3468,12 @@ class AthleteProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          email.isEmpty ? 'Federation Member' : email,
+                          [
+                            if (clubName != null && clubName.isNotEmpty) clubName,
+                            if (location.isNotEmpty) location,
+                            if ((clubName == null || clubName.isEmpty) && location.isEmpty)
+                              (email.isEmpty ? 'Federation Member' : email),
+                          ].join(' • '),
                           style: const TextStyle(
                               fontSize: 12, color: AppTheme.textMuted),
                           maxLines: 1,
@@ -3456,8 +3486,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                               assetPath: isOfficial
                                   ? ArmSphereAssets.refNat
                                   : _getDivisionBadge(
-                                      profile['weightKg'] ?? profile['weight'],
-                                      profile['weightClass']),
+                                      mergedProfile['weightKg'] ?? mergedProfile['weight'],
+                                      mergedProfile['weightClass']?.toString()),
                               width: 20,
                               height: 20,
                               semanticLabel: isOfficial
@@ -3468,7 +3498,10 @@ class AthleteProfileScreen extends ConsumerWidget {
                             Text(
                               isOfficial
                                   ? 'Certified Federation Official'
-                                  : 'Official PAFF Competitor',
+                                  : (mergedProfile['weightClass'] != null &&
+                                          mergedProfile['weightClass'].toString().isNotEmpty
+                                      ? 'Official PAFF • ${mergedProfile['weightClass']}'
+                                      : 'Official PAFF Competitor'),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -3572,21 +3605,43 @@ class AthleteProfileScreen extends ConsumerWidget {
                           color: AppTheme.goldPrimary)),
                 ),
               ),
-              error: (_, __) => ArmSwitchEloCard(profileData: profile),
+              error: (_, __) => ArmSwitchEloCard(profileData: mergedProfile),
               data: (p) => ArmSwitchEloCard(profileData: p),
             ),
             const SizedBox(height: 22),
 
             // 4. Biometrics & Specifications (Unbundled Plane)
-            const Text(
-              'BIOMETRICS & SPECIFICATIONS',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                letterSpacing: 0.8,
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-                color: AppTheme.textMuted,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'BIOMETRICS & SPECIFICATIONS',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+                if (myProfileId != null && myProfileId.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      _showEditProfileSheet(context, ref, mergedProfile, myProfileId);
+                    },
+                    child: const Text(
+                      'EDIT METRICS',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.goldPrimary,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 10),
             profileAsync.when(
@@ -3598,7 +3653,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                         child: CircularProgressIndicator(
                             color: AppTheme.goldPrimary))),
               ),
-              error: (_, __) => _buildBiometricsCard(profile),
+              error: (_, __) => _buildBiometricsCard(mergedProfile),
               data: (p) => _buildBiometricsCard(p),
             ),
             const SizedBox(height: 22),
@@ -3640,6 +3695,28 @@ class AthleteProfileScreen extends ConsumerWidget {
                     onTap: () {
                       HapticFeedback.selectionClick();
                       context.push('/athlete/achievements');
+                    },
+                  ),
+                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  _WorkspaceTile(
+                    icon: Icons.groups_outlined,
+                    iconColor: AppTheme.cyan,
+                    title: 'Teams & Club Affiliations',
+                    subtitle: 'Federation clubs, rosters and team standings',
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/teams');
+                    },
+                  ),
+                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  _WorkspaceTile(
+                    icon: Icons.emoji_events_outlined,
+                    iconColor: AppTheme.goldPrimary,
+                    title: 'National Championship Titles',
+                    subtitle: 'Official division title holders and lineage',
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/championship/titles');
                     },
                   ),
                   if (isOfficial) ...[
@@ -3692,29 +3769,352 @@ class AthleteProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildBiometricsCard(Map<String, dynamic> profile) {
-    final weight = profile['weightKg'] ?? profile['weight'];
-    final height = profile['heightCm'] ?? profile['height'];
-    final reach = profile['reachCm'] ?? profile['reach'];
+    final measurements = profile['measurements'] as Map<String, dynamic>?;
+    final biometrics = profile['biometrics'] as Map<String, dynamic>?;
+    final weight = profile['weightKg'] ?? profile['weight'] ?? measurements?['weight'];
+    final height = profile['heightCm'] ?? profile['height'] ?? measurements?['height'];
+    final reach = profile['reachCm'] ?? profile['reach'] ?? measurements?['reach'];
     final dominance = profile['armDominance']?.toString() ??
         profile['dominantArm']?.toString();
 
+    final forearm = biometrics?['forearmCircumference'];
+    final bicep = biometrics?['bicepCircumference'];
+    final handLength = biometrics?['handLength'] ?? biometrics?['handWidth'];
+    final hasArmBiometrics = forearm != null || bicep != null || handLength != null;
+
     return ElevatedActionCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _SpecItem(
-              label: 'Weight', value: weight != null ? '${weight}kg' : '--'),
-          _SpecItem(
-              label: 'Height', value: height != null ? '${height}cm' : '--'),
-          _SpecItem(label: 'Reach', value: reach != null ? '${reach}cm' : '--'),
-          _SpecItem(
-              label: 'Dominance',
-              value: dominance != null && dominance.isNotEmpty
-                  ? dominance.toUpperCase()
-                  : '--'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _SpecItem(
+                  label: 'Weight', value: weight != null ? '${weight}kg' : '--'),
+              _SpecItem(
+                  label: 'Height', value: height != null ? '${height}cm' : '--'),
+              _SpecItem(label: 'Reach', value: reach != null ? '${reach}cm' : '--'),
+              _SpecItem(
+                  label: 'Dominance',
+                  value: dominance != null && dominance.isNotEmpty
+                      ? dominance.toUpperCase()
+                      : '--'),
+            ],
+          ),
+          if (hasArmBiometrics) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Divider(height: 1, color: AppTheme.borderSubtle),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _SpecItem(
+                    label: 'Forearm',
+                    value: forearm != null ? '${forearm}cm' : '--'),
+                _SpecItem(
+                    label: 'Bicep',
+                    value: bicep != null ? '${bicep}cm' : '--'),
+                _SpecItem(
+                    label: 'Hand Span',
+                    value: handLength != null ? '${handLength}cm' : '--'),
+              ],
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Future<void> _showEditProfileSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> profile,
+    String athleteId,
+  ) async {
+    final measurements = profile['measurements'] as Map<String, dynamic>?;
+    final biometrics = profile['biometrics'] as Map<String, dynamic>?;
+
+    final nameCtrl = TextEditingController(
+      text: profile['displayName']?.toString() ?? '',
+    );
+    final bioCtrl = TextEditingController(
+      text: profile['biography']?.toString() ?? '',
+    );
+    final weightCtrl = TextEditingController(
+      text: (profile['weight'] ?? profile['weightKg'] ?? measurements?['weight'])?.toString() ?? '',
+    );
+    final heightCtrl = TextEditingController(
+      text: (profile['height'] ?? profile['heightCm'] ?? measurements?['height'])?.toString() ?? '',
+    );
+    final reachCtrl = TextEditingController(
+      text: (profile['reach'] ?? profile['reachCm'] ?? measurements?['reach'])?.toString() ?? '',
+    );
+    final forearmCtrl = TextEditingController(
+      text: biometrics?['forearmCircumference']?.toString() ?? '',
+    );
+    final bicepCtrl = TextEditingController(
+      text: biometrics?['bicepCircumference']?.toString() ?? '',
+    );
+    final handCtrl = TextEditingController(
+      text: (biometrics?['handLength'] ?? biometrics?['handWidth'])?.toString() ?? '',
+    );
+
+    const weightClasses = ['65kg', '75kg', '85kg', '95kg', '105kg', '105kg+'];
+    String selectedWeightClass = profile['weightClass']?.toString() ?? '85kg';
+    if (!weightClasses.contains(selectedWeightClass)) {
+      selectedWeightClass = '85kg';
+    }
+
+    const arms = ['RIGHT', 'LEFT', 'AMBIDEXTROUS'];
+    String selectedArm = (profile['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
+    if (!arms.contains(selectedArm)) {
+      selectedArm = 'RIGHT';
+    }
+
+    bool saving = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'EDIT PROFILE & BIOMETRICS',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            color: AppTheme.goldPrimary,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Display Name',
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: selectedWeightClass,
+                            dropdownColor: AppTheme.cardSurface,
+                            decoration: const InputDecoration(
+                              labelText: 'Weight Class',
+                              isDense: true,
+                            ),
+                            items: weightClasses
+                                .map((wc) => DropdownMenuItem(value: wc, child: Text(wc)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) setSheetState(() => selectedWeightClass = v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: selectedArm,
+                            dropdownColor: AppTheme.cardSurface,
+                            decoration: const InputDecoration(
+                              labelText: 'Dominant Arm',
+                              isDense: true,
+                            ),
+                            items: arms
+                                .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) setSheetState(() => selectedArm = v);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: weightCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Weight (kg)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: heightCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Height (cm)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: reachCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Reach (cm)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: forearmCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Forearm (cm)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: bicepCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Bicep (cm)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: handCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Hand Span (cm)',
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: bioCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Athletic Bio',
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 46,
+                      child: ElevatedButton(
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                HapticFeedback.mediumImpact();
+                                setSheetState(() => saving = true);
+                                final profilePayload = <String, dynamic>{
+                                  if (nameCtrl.text.trim().length >= 2)
+                                    'displayName': nameCtrl.text.trim(),
+                                  'weightClass': selectedWeightClass,
+                                  'dominantArm': selectedArm,
+                                  'handedness': selectedArm,
+                                  'biography': bioCtrl.text.trim(),
+                                };
+                                final w = double.tryParse(weightCtrl.text.trim());
+                                final h = double.tryParse(heightCtrl.text.trim());
+                                final r = double.tryParse(reachCtrl.text.trim());
+                                if (w != null && w > 0) profilePayload['weight'] = w;
+                                if (h != null && h > 0) profilePayload['height'] = h;
+                                if (r != null && r > 0) profilePayload['reach'] = r;
+
+                                final bioPayload = <String, dynamic>{};
+                                final fa = double.tryParse(forearmCtrl.text.trim());
+                                final bi = double.tryParse(bicepCtrl.text.trim());
+                                final hl = double.tryParse(handCtrl.text.trim());
+                                if (fa != null && fa > 0) bioPayload['forearmCircumference'] = fa;
+                                if (bi != null && bi > 0) bioPayload['bicepCircumference'] = bi;
+                                if (hl != null && hl > 0) bioPayload['handLength'] = hl;
+
+                                final ok = await ref
+                                    .read(athleteProfileProvider.notifier)
+                                    .updateProfileAndBiometrics(
+                                      athleteId: athleteId,
+                                      profileData: profilePayload,
+                                      biometricsData: bioPayload,
+                                    );
+                                if (ctx.mounted) {
+                                  Navigator.of(ctx).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ok
+                                            ? 'Profile & biometrics updated.'
+                                            : 'Could not update profile.',
+                                      ),
+                                      backgroundColor:
+                                          ok ? AppTheme.success : AppTheme.error,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
+                              },
+                        child: saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Save Changes'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

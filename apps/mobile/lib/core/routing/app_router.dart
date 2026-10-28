@@ -1045,7 +1045,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'create_post',
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
-          child: const CreatePostScreen(),
+          child: CreatePostScreen(
+            initialCategory: state.uri.queryParameters['category'],
+          ),
         ),
       ),
       GoRoute(
@@ -1053,7 +1055,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'create_post_alternate',
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
-          child: const CreatePostScreen(),
+          child: CreatePostScreen(
+            initialCategory: state.uri.queryParameters['category'],
+          ),
         ),
       ),
       GoRoute(
@@ -1206,7 +1210,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/achievements',
         name: 'achievements',
         pageBuilder: (context, state) {
-          final athleteId = state.extra as String?;
+          final athleteId = (state.extra is String ? state.extra as String? : null) ??
+              state.uri.queryParameters['athleteId'];
           return AppTransitionPage(
             key: state.pageKey,
             child: AthleteAchievementsScreen(athleteId: athleteId),
@@ -1217,7 +1222,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/athlete/achievements',
         name: 'athlete_achievements',
         pageBuilder: (context, state) {
-          final athleteId = state.extra as String?;
+          final athleteId = (state.extra is String ? state.extra as String? : null) ??
+              state.uri.queryParameters['athleteId'];
           return AppTransitionPage(
             key: state.pageKey,
             child: AthleteAchievementsScreen(athleteId: athleteId),

@@ -1203,7 +1203,30 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(res.status).toBe(400);
     });
 
-    it("GET /athletes/compare: returns head-to-head comparison payload for two athletes", async () => {
+    it("GET /athletes/compare: returns head-to-head comparison payload for two athletes with dual-arm ELO and per-arm win rates", async () => {
+      testDbStore.matches.push(
+        {
+          id: "match-cmp-1",
+          challengerId: athlete1ProfileId,
+          opponentId: athlete2ProfileId,
+          arm: "RIGHT",
+          winnerId: athlete1ProfileId,
+          scoreLine: "3-0",
+          status: "VERIFIED",
+          verifiedAt: new Date(),
+        },
+        {
+          id: "match-cmp-2",
+          challengerId: athlete1ProfileId,
+          opponentId: athlete2ProfileId,
+          arm: "LEFT",
+          winnerId: athlete2ProfileId,
+          scoreLine: "2-3",
+          status: "VERIFIED",
+          verifiedAt: new Date(),
+        }
+      );
+
       const res = await request(app)
         .get(`/athletes/compare?athlete1Id=${athlete1ProfileId}&athlete2Id=${athlete2ProfileId}`)
         .set("Authorization", athleteToken);
@@ -1216,6 +1239,12 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(res.body.data).toHaveProperty("winProbability");
       expect(res.body.data.athlete1.id).toBe(athlete1ProfileId);
       expect(res.body.data.athlete2.id).toBe(athlete2ProfileId);
+      expect(typeof res.body.data.athlete1.rightArmElo).toBe("number");
+      expect(typeof res.body.data.athlete1.leftArmElo).toBe("number");
+      expect(res.body.data.athlete1.winRateRight).toBe(100);
+      expect(res.body.data.athlete1.winRateLeft).toBe(0);
+      expect(res.body.data.athlete2.winRateRight).toBe(0);
+      expect(res.body.data.athlete2.winRateLeft).toBe(100);
     });
 
     it("GET /athletes/compare: supports id1 and id2 query aliases", async () => {

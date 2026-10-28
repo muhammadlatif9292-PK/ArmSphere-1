@@ -33,6 +33,27 @@ class AthleteProfileNotifier extends AutoDisposeAsyncNotifier<Map<String, dynami
       return false;
     }
   }
+
+  Future<bool> updateProfileAndBiometrics({
+    required String athleteId,
+    required Map<String, dynamic> profileData,
+    Map<String, dynamic>? biometricsData,
+  }) async {
+    try {
+      final repo = ref.read(athleteRepositoryProvider);
+      if (profileData.isNotEmpty) {
+        await repo.updateProfile(athleteId, profileData);
+      }
+      if (biometricsData != null && biometricsData.isNotEmpty) {
+        await repo.updateBiometricsDetails(biometricsData);
+      }
+      final refreshed = await repo.getProfile(athleteId);
+      state = AsyncData(refreshed);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 final athleteProfileProvider = AsyncNotifierProvider.autoDispose<AthleteProfileNotifier, Map<String, dynamic>>(() {

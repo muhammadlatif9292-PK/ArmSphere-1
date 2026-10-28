@@ -139,6 +139,45 @@ void main() {
             cancelToken: cancelToken,
           )).called(1);
     });
+
+    test('getProfile unwraps { success, data } envelope and caches inner profile map', () async {
+      final repository = AthleteRepository(
+        dioClient: mockDioClient,
+        hiveStorage: mockHiveStorage,
+      );
+
+      final innerProfile = {
+        'id': 'athlete_84',
+        'displayName': 'Lachlan Adair',
+        'rightArmElo': 1620,
+        'leftArmElo': 1540,
+        'weightClass': '95kg',
+      };
+      final apiEnvelope = {
+        'success': true,
+        'data': innerProfile,
+      };
+
+      when(() => mockDio.get(
+            '/athletes/me',
+            cancelToken: any(named: 'cancelToken'),
+          )).thenAnswer((_) async => Response(
+            requestOptions: RequestOptions(path: '/athletes/me'),
+            statusCode: 200,
+            data: apiEnvelope,
+          ));
+
+      final cancelToken = MockCancelToken();
+      final result = await repository.getProfile('self', cancelToken: cancelToken);
+
+      expect(result['id'], equals('athlete_84'));
+      expect(result['rightArmElo'], equals(1620));
+      expect(result['leftArmElo'], equals(1540));
+      expect(result['weightClass'], equals('95kg'));
+      expect(result.containsKey('data'), isFalse);
+
+      verify(() => mockHiveStorage.cacheData('athlete_profile_self', apiEnvelope)).called(1);
+    });
   });
 
   group('TournamentRepository Unit Tests', () {

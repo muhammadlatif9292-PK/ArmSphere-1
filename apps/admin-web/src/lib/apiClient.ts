@@ -4,13 +4,25 @@ const getInitialBaseUrl = () => {
   // Most admin/governance/venue/etc. routes are mounted at API root, not under /api/v1.
   // Only a few routers (auth, matches, analytics, notifications) are additionally
   // double-mounted under /api/v1 for REST-convention compatibility. Default to root.
+  const configuredUrl = ((import.meta as any).env?.VITE_API_BASE_URL || '').trim();
+  const isSampleGatewayUrl =
+    configuredUrl.includes('armsphere-api-gateway.armsphere.workers.dev') ||
+    configuredUrl.includes('example.com');
+
   if (typeof window !== 'undefined' && window.location) {
-    return window.location.origin;
+    const host = window.location.hostname;
+    const isLocalOrIntegratedPreview =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.endsWith('.run.app');
+    if (!configuredUrl || isSampleGatewayUrl || isLocalOrIntegratedPreview) {
+      return window.location.origin;
+    }
   }
-  return '';
+  return isSampleGatewayUrl ? '' : configuredUrl;
 };
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || getInitialBaseUrl();
+const API_BASE_URL = getInitialBaseUrl();
 
 let inMemoryToken: string | null = null;
 

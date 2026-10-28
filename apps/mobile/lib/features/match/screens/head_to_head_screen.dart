@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -56,10 +57,14 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
   late Animation<double> _flipRotationAnim;
 
   bool _isRightArm = true;
+  String? _selectedAthleteId1;
+  String? _selectedAthleteId2;
 
   @override
   void initState() {
     super.initState();
+    _selectedAthleteId1 = widget.athleteId1;
+    _selectedAthleteId2 = widget.athleteId2;
 
     // 1. SIG-1 Walkout Entrance Sequence (500ms)
     _walkoutController = AnimationController(
@@ -132,6 +137,17 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
   }
 
   @override
+  void didUpdateWidget(covariant HeadToHeadScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.athleteId1 != oldWidget.athleteId1 && widget.athleteId1 != null) {
+      _selectedAthleteId1 = widget.athleteId1;
+    }
+    if (widget.athleteId2 != oldWidget.athleteId2 && widget.athleteId2 != null) {
+      _selectedAthleteId2 = widget.athleteId2;
+    }
+  }
+
+  @override
   void dispose() {
     _walkoutController.dispose();
     _armFlipController.dispose();
@@ -153,49 +169,118 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     }
   }
 
-  // --- Mockable & Dynamic Athlete Profiles ---
-  Map<String, dynamic> _resolveRedAthlete([Map<String, dynamic>? comparisonData]) {
+  Map<String, dynamic> _extractAthleteMetrics(
+    Map<String, dynamic> a, {
+    required String? fallbackId,
+    required String defaultName,
+    required String defaultNickname,
+    required String defaultRank,
+    required String defaultInitial,
+  }) {
+    final measurements = a['measurements'] as Map<String, dynamic>?;
+    final biometrics = a['biometrics'] as Map<String, dynamic>?;
+    final baseElo = (a['eloRating'] as num?)?.toInt() ?? 1200;
+    final eloRight = (a['rightArmElo'] as num?)?.toInt() ?? baseElo;
+    final eloLeft = (a['leftArmElo'] as num?)?.toInt() ?? baseElo;
+
+    final wins = (a['wins'] as num?)?.toInt() ?? 0;
+    final losses = (a['losses'] as num?)?.toInt() ?? 0;
+    final careerRate = (wins + losses) > 0 ? (wins / (wins + losses)) * 100.0 : 0.0;
+    final winRateRight = (a['winRateRight'] as num?)?.toDouble() ?? careerRate;
+    final winRateLeft = (a['winRateLeft'] as num?)?.toDouble() ?? careerRate;
+
+    final forearmCm = (biometrics?['forearmCircumference'] as num?)?.toDouble() ??
+        (measurements?['forearmCircumference'] as num?)?.toDouble() ??
+        0.0;
+    final bicepCm = (biometrics?['bicepCircumference'] as num?)?.toDouble() ??
+        (measurements?['bicepCircumference'] as num?)?.toDouble() ??
+        0.0;
+    final handSpanCm = (biometrics?['handLength'] as num?)?.toDouble() ??
+        (biometrics?['handWidth'] as num?)?.toDouble() ??
+        (measurements?['handSpan'] as num?)?.toDouble() ??
+        0.0;
+    final reachCm = (a['reachCm'] as num?)?.toDouble() ??
+        (a['reach'] as num?)?.toDouble() ??
+        (measurements?['reach'] as num?)?.toDouble() ??
+        (biometrics?['armSpan'] as num?)?.toDouble() ??
+        0.0;
+    final weightKg = (a['weightKg'] as num?)?.toDouble() ??
+        (a['weight'] as num?)?.toDouble() ??
+        (measurements?['weight'] as num?)?.toDouble() ??
+        0.0;
+
+    final name = a['displayName']?.toString() ?? defaultName;
+    final dominant = (a['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
+
+    return {
+      'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? fallbackId,
+      'userId': a['userId']?.toString(),
+      'name': name,
+      'nickname': defaultNickname,
+      'club': a['clubName']?.toString() ??
+          (a['club'] is Map ? a['club']['name']?.toString() : null) ??
+          'Independent',
+      'province': a['province']?.toString() ?? 'Pakistan',
+      'countryCode': 'PK',
+      'rank': defaultRank,
+      'weightClass': a['weightClass']?.toString() ?? 'OPEN',
+      'avatar': (a['avatarUrl']?.toString().isNotEmpty == true)
+          ? a['avatarUrl']
+          : (name.isNotEmpty ? name[0].toUpperCase() : defaultInitial),
+      'avatarUrl': (a['avatarUrl'] ?? a['profilePhoto'])?.toString(),
+      'eloRight': eloRight,
+      'eloLeft': eloLeft,
+      'winRateRight': winRateRight,
+      'winRateLeft': winRateLeft,
+      'forearmCm': forearmCm,
+      'bicepCm': bicepCm,
+      'handSpanCm': handSpanCm,
+      'reachCm': reachCm,
+      'weightKg': weightKg,
+      'pullStyle': dominant == 'LEFT'
+          ? 'OUTSIDE TOP-ROLL (LEFT)'
+          : (dominant == 'AMBIDEXTROUS' ? 'VERSATILE DUAL-ARM' : 'INSIDE HOOK & TOP-ROLL'),
+    };
+  }
+
+  // --- Dynamic Athlete Profiles ---
+  Map<String, dynamic> _resolveRedAthlete([
+    Map<String, dynamic>? comparisonData,
+    Map<String, dynamic>? selfProfile,
+  ]) {
     if (comparisonData != null && comparisonData['athlete1'] is Map) {
-      final a = comparisonData['athlete1'] as Map<String, dynamic>;
-      final measurements = a['measurements'] as Map<String, dynamic>?;
-      final elo = (a['eloRating'] as num?)?.toInt() ?? 1500;
-      final name = a['displayName']?.toString() ?? 'Athlete 1';
-      return {
-        'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? widget.athleteId1,
-        'name': name,
-        'nickname': 'CONTENDER',
-        'club': a['clubName']?.toString() ?? 'Independent',
-        'province': a['province']?.toString() ?? 'Pakistan',
-        'countryCode': 'PK',
-        'rank': '#1 MATCHUP',
-        'weightClass': a['weightClass']?.toString() ?? '-85 KG',
-        'avatar': (a['avatarUrl']?.toString().isNotEmpty == true) ? a['avatarUrl'] : (name.isNotEmpty ? name[0].toUpperCase() : 'A'),
-        'avatarUrl': (a['avatarUrl'] ?? a['profilePhoto'])?.toString(),
-        'eloRight': elo,
-        'eloLeft': elo,
-        'winRateRight': 75.0,
-        'winRateLeft': 70.0,
-        'forearmCm': (measurements?['forearmCircumference'] as num?)?.toDouble() ?? 40.0,
-        'bicepCm': (measurements?['bicepCircumference'] as num?)?.toDouble() ?? 42.0,
-        'handSpanCm': (measurements?['handSpan'] as num?)?.toDouble() ?? 21.0,
-        'reachCm': (a['reachCm'] as num?)?.toDouble() ?? 180.0,
-        'weightKg': (a['weightKg'] as num?)?.toDouble() ?? 80.0,
-        'pullStyle': a['dominantArm']?.toString() == 'LEFT' ? 'OUTSIDE TOP-ROLL' : 'INSIDE HOOK',
-      };
+      return _extractAthleteMetrics(
+        Map<String, dynamic>.from(comparisonData['athlete1'] as Map),
+        fallbackId: _selectedAthleteId1 ?? widget.athleteId1,
+        defaultName: 'Athlete 1',
+        defaultNickname: 'CONTENDER',
+        defaultRank: 'RED CORNER',
+        defaultInitial: 'R',
+      );
+    }
+    if (selfProfile != null && selfProfile.isNotEmpty) {
+      return _extractAthleteMetrics(
+        selfProfile,
+        fallbackId: selfProfile['id']?.toString() ?? _selectedAthleteId1,
+        defaultName: 'Red Corner Contender',
+        defaultNickname: 'RED CORNER',
+        defaultRank: 'RED CORNER',
+        defaultInitial: 'R',
+      );
     }
     return {
-      'id': widget.athleteId1,
-      'name': 'Red Corner Contender',
+      'id': _selectedAthleteId1 ?? widget.athleteId1,
+      'name': 'Select Red Corner',
       'nickname': 'RED CORNER',
-      'club': 'Pending Selection',
+      'club': 'Tap to Select Athlete',
       'province': 'Pakistan',
       'countryCode': 'PK',
       'rank': 'CONTENDER',
       'weightClass': 'OPEN',
       'avatar': 'R',
       'avatarUrl': null,
-      'eloRight': 1500,
-      'eloLeft': 1500,
+      'eloRight': 1200,
+      'eloLeft': 1200,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
       'forearmCm': 0.0,
@@ -209,46 +294,28 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
 
   Map<String, dynamic> _resolveBlueAthlete([Map<String, dynamic>? comparisonData]) {
     if (comparisonData != null && comparisonData['athlete2'] is Map) {
-      final a = comparisonData['athlete2'] as Map<String, dynamic>;
-      final measurements = a['measurements'] as Map<String, dynamic>?;
-      final elo = (a['eloRating'] as num?)?.toInt() ?? 1500;
-      final name = a['displayName']?.toString() ?? 'Athlete 2';
-      return {
-        'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? widget.athleteId2,
-        'name': name,
-        'nickname': 'RIVAL',
-        'club': a['clubName']?.toString() ?? 'Independent',
-        'province': a['province']?.toString() ?? 'Pakistan',
-        'countryCode': 'PK',
-        'rank': '#2 MATCHUP',
-        'weightClass': a['weightClass']?.toString() ?? '-85 KG',
-        'avatar': (a['avatarUrl']?.toString().isNotEmpty == true) ? a['avatarUrl'] : (name.isNotEmpty ? name[0].toUpperCase() : 'T'),
-        'avatarUrl': (a['avatarUrl'] ?? a['profilePhoto'])?.toString(),
-        'eloRight': elo,
-        'eloLeft': elo,
-        'winRateRight': 72.0,
-        'winRateLeft': 68.0,
-        'forearmCm': (measurements?['forearmCircumference'] as num?)?.toDouble() ?? 41.0,
-        'bicepCm': (measurements?['bicepCircumference'] as num?)?.toDouble() ?? 43.0,
-        'handSpanCm': (measurements?['handSpan'] as num?)?.toDouble() ?? 21.5,
-        'reachCm': (a['reachCm'] as num?)?.toDouble() ?? 182.0,
-        'weightKg': (a['weightKg'] as num?)?.toDouble() ?? 82.0,
-        'pullStyle': a['dominantArm']?.toString() == 'LEFT' ? 'INSIDE DEEP HOOK' : 'HIGH TOP-ROLL',
-      };
+      return _extractAthleteMetrics(
+        Map<String, dynamic>.from(comparisonData['athlete2'] as Map),
+        fallbackId: _selectedAthleteId2 ?? widget.athleteId2,
+        defaultName: 'Athlete 2',
+        defaultNickname: 'RIVAL',
+        defaultRank: 'BLUE CORNER',
+        defaultInitial: 'B',
+      );
     }
     return {
-      'id': widget.athleteId2,
-      'name': 'Blue Corner Contender',
+      'id': _selectedAthleteId2 ?? widget.athleteId2,
+      'name': 'Select Blue Corner',
       'nickname': 'BLUE CORNER',
-      'club': 'Pending Selection',
+      'club': 'Tap to Select Opponent',
       'province': 'Pakistan',
       'countryCode': 'PK',
       'rank': 'CONTENDER',
       'weightClass': 'OPEN',
       'avatar': 'B',
       'avatarUrl': null,
-      'eloRight': 1500,
-      'eloLeft': 1500,
+      'eloRight': 1200,
+      'eloLeft': 1200,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
       'forearmCm': 0.0,
@@ -262,16 +329,27 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
 
   @override
   Widget build(BuildContext context) {
-    final comparisonAsync = (widget.athleteId1 != null && widget.athleteId2 != null)
-        ? ref.watch(athleteComparisonProvider((athlete1Id: widget.athleteId1!, athlete2Id: widget.athleteId2!)))
-        : null;
-    final red = _resolveRedAthlete(comparisonAsync?.value);
-    final blue = _resolveBlueAthlete(comparisonAsync?.value);
+    final selfProfile = ref.watch(athleteProfileProvider).value;
+    final effectiveId1 = _selectedAthleteId1 ??
+        widget.athleteId1 ??
+        selfProfile?['id']?.toString();
+    final effectiveId2 = _selectedAthleteId2 ?? widget.athleteId2;
 
-    final redElo = _isRightArm ? red['eloRight'] : red['eloLeft'];
-    final blueElo = _isRightArm ? blue['eloRight'] : blue['eloLeft'];
-    final redWinRate = _isRightArm ? red['winRateRight'] : red['winRateLeft'];
-    final blueWinRate = _isRightArm ? blue['winRateRight'] : blue['winRateLeft'];
+    final comparisonAsync = (effectiveId1 != null &&
+            effectiveId1.isNotEmpty &&
+            effectiveId2 != null &&
+            effectiveId2.isNotEmpty)
+        ? ref.watch(athleteComparisonProvider(
+            (athlete1Id: effectiveId1, athlete2Id: effectiveId2)))
+        : null;
+    final red = _resolveRedAthlete(comparisonAsync?.value, selfProfile);
+    final blue = _resolveBlueAthlete(comparisonAsync?.value);
+    final headToHead = comparisonAsync?.value?['headToHead'] as Map<String, dynamic>?;
+
+    final redElo = (_isRightArm ? red['eloRight'] : red['eloLeft']) as int;
+    final blueElo = (_isRightArm ? blue['eloRight'] : blue['eloLeft']) as int;
+    final redWinRate = (_isRightArm ? red['winRateRight'] : red['winRateLeft']) as double;
+    final blueWinRate = (_isRightArm ? blue['winRateRight'] : blue['winRateLeft']) as double;
     final eloDiff = (redElo - blueElo).abs();
     final redFavored = redElo >= blueElo;
 
@@ -523,23 +601,40 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                   child: ListView(
                     padding: EdgeInsets.zero,
                     children: [
-                      if (widget.athleteId1 == null || widget.athleteId2 == null)
+                      if (effectiveId1 == null || effectiveId2 == null)
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          color: Colors.amber.shade900.withValues(alpha: 0.35),
-                          child: const Row(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          color: const Color(0xFF141824),
+                          child: Row(
                             children: [
-                              Icon(Icons.info_outline_rounded, size: 16, color: Colors.amber),
-                              SizedBox(width: 8),
-                              Expanded(
+                              const Icon(Icons.sports_mma_outlined, size: 16, color: AppTheme.goldPrimary),
+                              const SizedBox(width: 8),
+                              const Expanded(
                                 child: Text(
-                                  'DEMO PREVIEW: Select two athletes from the National Rankings ladder to load real-time Tale of the Tape data.',
+                                  'Select contenders to load live federation Tale of the Tape metrics.',
+                                  style: TextStyle(
+                                    fontFamily: 'Space Grotesk',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppTheme.goldPrimary,
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () => _showAthletePickerSheet(isRedCorner: effectiveId1 == null),
+                                icon: const Icon(Icons.person_search_outlined, size: 15),
+                                label: const Text(
+                                  'PICK OPPONENT',
                                   style: TextStyle(
                                     fontFamily: 'Space Grotesk',
                                     fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.amber,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
@@ -552,33 +647,41 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                       // 2. Tactical Arm Toggle & Favorability Banner
                       _buildTacticalMatchBanner(red, blue, redFavored, eloDiff),
 
-            const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-            // 3. Center Axis Comparative Biometric Bars
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildBiometricsComparisonPlane(
-                red: red,
-                blue: blue,
-                redWinRate: redWinRate,
-                blueWinRate: blueWinRate,
-                redElo: redElo,
-                blueElo: blueElo,
-              ),
-            ),
+                      // 3. Center Axis Comparative Biometric Bars
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildBiometricsComparisonPlane(
+                          red: red,
+                          blue: blue,
+                          redWinRate: redWinRate,
+                          blueWinRate: blueWinRate,
+                          redElo: redElo,
+                          blueElo: blueElo,
+                        ),
+                      ),
 
-            const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-            // 4. Tactical Pulling Styles Comparison
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildTacticalStyleCard(red, blue),
-            ),
+                      // 4. Tactical Pulling Styles Comparison
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildTacticalStyleCard(red, blue),
+                      ),
 
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
+                      const SizedBox(height: 16),
+
+                      // 5. Head-to-Head Series & Matchup Actions
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildSeriesAndActionsCard(red, blue, headToHead),
+                      ),
+
+                      const SizedBox(height: 28),
+                    ],
+                  ),
+                ),
     );
   }
 
@@ -1128,9 +1231,14 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     final redRatio = (redVal / maxExpected).clamp(0.0, 1.0);
     final blueRatio = (blueVal / maxExpected).clamp(0.0, 1.0);
     final redLeads = redVal >= blueVal;
+    final isPhysical = unit == 'cm' || unit == 'kg';
 
-    final redStr = isInteger ? '${redVal.toInt()} $unit' : '${redVal.toStringAsFixed(1)} $unit';
-    final blueStr = isInteger ? '${blueVal.toInt()} $unit' : '${blueVal.toStringAsFixed(1)} $unit';
+    final redStr = (isPhysical && redVal <= 0.0)
+        ? '—'
+        : (isInteger ? '${redVal.toInt()} $unit' : '${redVal.toStringAsFixed(1)} $unit');
+    final blueStr = (isPhysical && blueVal <= 0.0)
+        ? '—'
+        : (isInteger ? '${blueVal.toInt()} $unit' : '${blueVal.toStringAsFixed(1)} $unit');
 
     return AnimatedBuilder(
       animation: _barsGrowthAnim,
@@ -1341,6 +1449,323 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // --- 5. Head-to-Head Official Series & Matchup Actions ---
+  Widget _buildSeriesAndActionsCard(
+    Map<String, dynamic> red,
+    Map<String, dynamic> blue,
+    Map<String, dynamic>? headToHead,
+  ) {
+    final totalEncounters = (headToHead?['totalEncounters'] as num?)?.toInt() ?? 0;
+    final redWins = (headToHead?['athlete1Wins'] as num?)?.toInt() ?? 0;
+    final blueWins = (headToHead?['athlete2Wins'] as num?)?.toInt() ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.titanium,
+        gradient: AppTheme.machinedTitaniumGradient,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.history_edu_outlined, size: 16, color: AppTheme.goldPrimary),
+                  SizedBox(width: 8),
+                  Text(
+                    'OFFICIAL SERIES LEDGER',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      color: AppTheme.goldPrimary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '$totalEncounters ENCOUNTER${totalEncounters == 1 ? '' : 'S'}',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textMuted,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$redWins WINS',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFEF4444),
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                totalEncounters == 0 ? 'FIRST ENCOUNTER' : 'SERIES RECORD',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textSecondary,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              Text(
+                '$blueWins WINS',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF38BDF8),
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(color: Color(0xFF334155), height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFEF4444),
+                    side: BorderSide(color: const Color(0xFFEF4444).withValues(alpha: 0.45)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onPressed: () => _showAthletePickerSheet(isRedCorner: true),
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 15),
+                  label: const Text(
+                    'SWAP RED',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF38BDF8),
+                    side: BorderSide(color: const Color(0xFF38BDF8).withValues(alpha: 0.45)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onPressed: () => _showAthletePickerSheet(isRedCorner: false),
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 15),
+                  label: const Text(
+                    'SWAP BLUE',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAthletePickerSheet({required bool isRedCorner}) async {
+    HapticFeedback.selectionClick();
+    final searchCtrl = TextEditingController();
+    List<Map<String, dynamic>> results = [];
+    bool loading = true;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF111318),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            Future<void> runSearch(String query) async {
+              setSheetState(() => loading = true);
+              try {
+                final list = await ref
+                    .read(athleteRepositoryProvider)
+                    .searchAthletes(query.trim());
+                if (ctx.mounted) {
+                  setSheetState(() {
+                    results = list;
+                    loading = false;
+                  });
+                }
+              } catch (_) {
+                if (ctx.mounted) {
+                  setSheetState(() => loading = false);
+                }
+              }
+            }
+
+            if (loading && results.isEmpty && searchCtrl.text.isEmpty) {
+              Future.microtask(() => runSearch(''));
+            }
+
+            final cornerLabel = isRedCorner ? 'RED CORNER' : 'BLUE CORNER';
+            final cornerColor = isRedCorner
+                ? const Color(0xFFEF4444)
+                : const Color(0xFF38BDF8);
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              ),
+              child: SizedBox(
+                height: 420,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'SELECT $cornerLabel CONTENDER',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                            color: cornerColor,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: searchCtrl,
+                      onChanged: (v) => runSearch(v),
+                      decoration: const InputDecoration(
+                        hintText: 'Search federation athletes by name...',
+                        prefixIcon: Icon(Icons.search, size: 18),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: loading
+                          ? const Center(
+                              child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+                            )
+                          : results.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No matching athletes found',
+                                    style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  itemCount: results.length,
+                                  separatorBuilder: (_, __) => const Divider(
+                                    height: 1,
+                                    color: AppTheme.borderSubtle,
+                                  ),
+                                  itemBuilder: (_, idx) {
+                                    final item = results[idx];
+                                    final id = item['id']?.toString() ??
+                                        item['athleteId']?.toString() ??
+                                        '';
+                                    final name = item['displayName']?.toString() ?? 'Athlete';
+                                    final wc = item['weightClass']?.toString() ?? 'Open';
+                                    final prov = item['province']?.toString() ?? '';
+                                    final rElo = (item['rightArmElo'] as num?)?.toInt() ??
+                                        (item['eloRating'] as num?)?.toInt() ??
+                                        1200;
+                                    return ListTile(
+                                      dense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 6),
+                                      leading: ArmSphereImage.avatar(
+                                        imageUrl: (item['profilePhoto'] ?? item['avatarUrl'])?.toString(),
+                                        initial: name,
+                                        size: 36,
+                                        fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                        semanticLabel: name,
+                                      ),
+                                      title: Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13.5,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        [wc, if (prov.isNotEmpty) prov].join(' • '),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                      trailing: Text(
+                                        '$rElo ELO',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          color: cornerColor,
+                                          fontFeatures: const [FontFeature.tabularFigures()],
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        if (id.isEmpty) return;
+                                        HapticFeedback.mediumImpact();
+                                        setState(() {
+                                          if (isRedCorner) {
+                                            _selectedAthleteId1 = id;
+                                          } else {
+                                            _selectedAthleteId2 = id;
+                                          }
+                                        });
+                                        Navigator.of(ctx).pop();
+                                      },
+                                    );
+                                  },
+                                ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

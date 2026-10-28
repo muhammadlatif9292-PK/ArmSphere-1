@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -27,6 +28,16 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
     'Gilgit-Baltistan',
     'Azad Kashmir',
     'Islamabad Capital Territory',
+  ];
+
+  static const _weightClasses = <String>[
+    '',
+    '65kg',
+    '75kg',
+    '85kg',
+    '95kg',
+    '105kg',
+    '105kg+',
   ];
 
   final _searchController = TextEditingController();
@@ -71,6 +82,9 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
     final rankingsAsync = ref.watch(rankingsProvider);
     final arm = ref.watch(rankingsArmProvider);
     final province = ref.watch(rankingsProvinceProvider);
+    final selectedWeightClass = ref.watch(rankingsWeightClassProvider);
+    final myProfileId =
+        ref.watch(athleteProfileProvider).value?['id']?.toString();
 
     return Scaffold(
       appBar: AppBar(
@@ -87,6 +101,16 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
             const Text('Leaderboard & Rankings'),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Tale of the Tape (Compare)',
+            icon: const Icon(Icons.compare_arrows_rounded, color: AppTheme.goldPrimary),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.push('/matches/head-to-head');
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -143,6 +167,51 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               ],
             ),
           ),
+          // Weight Class Filter Strip
+          SizedBox(
+            height: 36,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
+              scrollDirection: Axis.horizontal,
+              itemCount: _weightClasses.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppTheme.space8),
+              itemBuilder: (context, idx) {
+                final wc = _weightClasses[idx];
+                final isSelected = selectedWeightClass == wc;
+                final label = wc.isEmpty ? 'ALL DIVISIONS' : wc.toUpperCase();
+                return ChoiceChip(
+                  label: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      color: isSelected ? Colors.black : AppTheme.textSecondary,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: AppTheme.goldPrimary,
+                  backgroundColor: AppTheme.cardSurface,
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppTheme.goldPrimary
+                          : AppTheme.cardBorder,
+                    ),
+                  ),
+                  onSelected: (_) {
+                    HapticFeedback.selectionClick();
+                    ref.read(rankingsWeightClassProvider.notifier).state = wc;
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppTheme.space8),
           Padding(
             padding: const EdgeInsets.fromLTRB(AppTheme.space16, 0, AppTheme.space16, AppTheme.space8),
             child: Row(
@@ -236,13 +305,13 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                       final eloRating = athlete['eloRating'] as int? ?? 0;
                       final provinceValue = athlete['province'] as String?;
                       final weightClass = athlete['weightClass'] as String?;
+                      final athleteId = (athlete['athleteId'] ?? athlete['id'])?.toString() ?? '';
                       final color = _rankColor(rank);
 
                       return RepaintBoundary(
                         child: ElevatedActionCard(
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            final athleteId = athlete['athleteId'] as String? ?? '';
                             if (athleteId.isNotEmpty) {
                               context.push('/athlete/$athleteId');
                             }
@@ -337,6 +406,25 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                   ),
                                 ],
                               ),
+                              if (athleteId.isNotEmpty && athleteId != myProfileId) ...[
+                                const SizedBox(width: AppTheme.space8),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Compare with $name',
+                                  icon: const Icon(
+                                    Icons.compare_arrows_rounded,
+                                    size: 18,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    final query = myProfileId != null && myProfileId.isNotEmpty
+                                        ? 'athleteId1=$myProfileId&athleteId2=$athleteId'
+                                        : 'athleteId2=$athleteId';
+                                    context.push('/matches/head-to-head?$query');
+                                  },
+                                ),
+                              ],
                             ],
                           ),
                         ),

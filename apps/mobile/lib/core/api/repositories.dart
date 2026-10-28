@@ -256,12 +256,57 @@ class AthleteRepository extends BaseRepository {
   AthleteRepository({required super.dioClient, required super.hiveStorage});
 
   Future<Map<String, dynamic>> getProfile(String athleteId, {CancelToken? cancelToken}) async {
+    final isSelf = athleteId.isEmpty || athleteId == 'self' || athleteId == 'me';
+    final endpoint = isSelf ? '/athletes/me' : '/athletes/$athleteId';
+    final key = isSelf ? 'athlete_profile_self' : 'athlete_profile_$athleteId';
+
+    return executeRequest(
+      cacheKey: key,
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(endpoint, cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload as Map);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateProfile(
+    String athleteId,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     return executeRequest(
       cacheKey: 'athlete_profile_$athleteId',
       cancelToken: cancelToken,
-      request: (token) => dioClient.dio.get('/athletes/$athleteId', cancelToken: token),
-      parse: (data) {
-        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+      isMutation: true,
+      request: (token) => dioClient.dio.patch(
+        '/athletes/$athleteId',
+        data: data,
+        cancelToken: token,
+      ),
+      parse: (res) {
+        final payload = (res is Map && res['data'] is Map) ? res['data'] : res;
+        return Map<String, dynamic>.from(payload as Map);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateBiometricsDetails(
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'athlete_biometrics_self',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/athletes/biometrics',
+        data: data,
+        cancelToken: token,
+      ),
+      parse: (res) {
+        final payload = (res is Map && res['data'] is Map) ? res['data'] : res;
         return Map<String, dynamic>.from(payload as Map);
       },
     );
