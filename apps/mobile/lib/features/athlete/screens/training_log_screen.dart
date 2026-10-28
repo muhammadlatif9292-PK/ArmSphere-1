@@ -69,6 +69,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
     final myUserId = myProfile?['userId']?.toString();
     final isSelf = athleteId.isEmpty ||
         athleteId == 'self' ||
+        myProfile == null ||
         (myProfileId != null && myProfileId == athleteId) ||
         (myUserId != null && myUserId == athleteId);
 

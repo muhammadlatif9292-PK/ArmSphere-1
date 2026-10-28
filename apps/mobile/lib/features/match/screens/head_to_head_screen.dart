@@ -270,7 +270,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     }
     return {
       'id': _selectedAthleteId1 ?? widget.athleteId1,
-      'name': 'Select Red Corner',
+      'name': 'Red Corner Contender',
       'nickname': 'RED CORNER',
       'club': 'Tap to Select Athlete',
       'province': 'Pakistan',
@@ -279,8 +279,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'weightClass': 'OPEN',
       'avatar': 'R',
       'avatarUrl': null,
-      'eloRight': 1200,
-      'eloLeft': 1200,
+      'eloRight': 1500,
+      'eloLeft': 1500,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
       'forearmCm': 0.0,
@@ -305,7 +305,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     }
     return {
       'id': _selectedAthleteId2 ?? widget.athleteId2,
-      'name': 'Select Blue Corner',
+      'name': 'Blue Corner Contender',
       'nickname': 'BLUE CORNER',
       'club': 'Tap to Select Opponent',
       'province': 'Pakistan',
@@ -314,8 +314,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'weightClass': 'OPEN',
       'avatar': 'B',
       'avatarUrl': null,
-      'eloRight': 1200,
-      'eloLeft': 1200,
+      'eloRight': 1500,
+      'eloLeft': 1500,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
       'forearmCm': 0.0,
