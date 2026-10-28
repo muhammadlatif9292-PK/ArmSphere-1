@@ -14,6 +14,7 @@ import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 
 /// Federation Discovery Segment Categories
 enum DiscoverCategory {
@@ -171,7 +172,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 16),
+              ),
               sliver: SliverToBoxAdapter(
                 child: _activeQuery.isNotEmpty
                     ? _buildSearchResults(

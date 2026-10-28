@@ -19,10 +19,15 @@ socialRouter.delete("/block/:athleteId", authenticate, SocialController.unblock)
 socialRouter.get("/blocked", authenticate, SocialController.getBlocked);
 
 // Team actions (requires authentication)
+socialRouter.get("/teams", authenticate, SocialController.listTeams);
 socialRouter.post("/teams", authenticate, SocialController.createTeam);
-socialRouter.post("/teams/:teamId/members", authenticate, SocialController.addTeamMember);
-socialRouter.delete("/teams/:teamId/members/:athleteId", authenticate, SocialController.removeTeamMember);
 socialRouter.get("/teams/:teamId", authenticate, SocialController.getTeam);
+socialRouter.patch("/teams/:teamId", authenticate, SocialController.updateTeam);
+socialRouter.delete("/teams/:teamId", authenticate, SocialController.deleteTeam);
+socialRouter.post("/teams/:teamId/members", authenticate, SocialController.addTeamMember);
+socialRouter.patch("/teams/:teamId/members/:athleteId/role", authenticate, SocialController.updateTeamMemberRole);
+socialRouter.delete("/teams/:teamId/members/:athleteId", authenticate, SocialController.removeTeamMember);
+socialRouter.post("/teams/:teamId/leave", authenticate, SocialController.leaveTeam);
 socialRouter.get("/my-teams", authenticate, SocialController.getMyTeams);
 
 export default socialRouter;

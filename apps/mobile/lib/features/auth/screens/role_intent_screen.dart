@@ -149,7 +149,7 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         title: const Text(
           'Set Up Your Experience',
@@ -274,21 +274,23 @@ class _IntentCard extends StatelessWidget {
         duration: AppTheme.animationNormal,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0x1AD4AF37) : AppTheme.cardSurface,
+          color: selected ? const Color(0x1AD4AF37) : AppTheme.titanium,
+          gradient: selected ? null : AppTheme.machinedTitaniumGradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           border: Border.all(
-            color: selected ? AppTheme.goldPrimary : AppTheme.border,
+            color: selected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
             width: selected ? 1.6 : 1.0,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.16),
-                    blurRadius: 12,
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                    blurRadius: 14,
                     spreadRadius: 0,
                   ),
+                  AppTheme.titaniumShadow(),
                 ]
-              : null,
+              : [AppTheme.titaniumShadow()],
         ),
         child: Row(
           children: [
@@ -298,11 +300,11 @@ class _IntentCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: selected
                     ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.elevatedSurface,
+                    : AppTheme.silverPlane,
                 border: Border.all(
                   color: selected
                       ? AppTheme.goldPrimary
-                      : AppTheme.goldPrimary.withValues(alpha: 0.3),
+                      : AppTheme.borderTitanium,
                 ),
               ),
               child: Icon(

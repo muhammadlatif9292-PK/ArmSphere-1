@@ -79,4 +79,26 @@ export class RefereeCertificationController {
       next(error);
     }
   }
+
+  /**
+   * List certifications of referees within a province (admin or assigned provincial director)
+   */
+  static async listCertificationsByProvince(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { province } = req.params;
+      const actorUserId = req.user!.id;
+
+      const certifications = await RefereeCertificationService.listCertificationsByProvince(
+        actorUserId,
+        province
+      );
+
+      res.status(200).json({
+        success: true,
+        data: certifications,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

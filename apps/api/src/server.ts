@@ -8,8 +8,8 @@ async function bootstrap() {
   logger.info("Initializing ArmSphere backend service bootstrapping sequence...");
 
   try {
-    // 2. Initialize PostgreSQL-backed Scheduled Jobs Runner (Only when NOT running in serverless mode)
-    if (env.NODE_ENV !== "test" && !env.IS_SERVERLESS) {
+    // 2. Initialize PostgreSQL-backed Scheduled Jobs Runner (Only when NOT running in serverless mode and DATABASE_URL is configured)
+    if (env.NODE_ENV !== "test" && !env.IS_SERVERLESS && Boolean(env.DATABASE_URL)) {
       startScheduledJobsRunner();
     }
 

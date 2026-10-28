@@ -102,8 +102,43 @@ export class TournamentService {
     organizerId?: string;
     paymentMethod?: string;
     paymentQrImageUrl?: string;
-  }) {
-    logger.info({ name: data.name }, "Creating new tournament event");
+  }, actorId?: string) {
+    logger.info({ name: data.name, actorId }, "Creating new tournament event");
+
+    const effectiveActorId = actorId || data.organizerId;
+    if (effectiveActorId) {
+      const [dbActor] = await db.select().from(users).where(eq(users.id, effectiveActorId)).limit(1);
+      if (!dbActor || (dbActor as any).isActive === false) {
+        throw new ForbiddenError("You do not have permission to create a tournament event.");
+      }
+      const canonicalRole = (dbActor as any).role as string;
+      const allowedCreatorRoles: string[] = [
+        UserRole.TOURNAMENT_OPERATOR,
+        UserRole.PROVINCIAL_DIRECTOR,
+        UserRole.NATIONAL_DIRECTOR,
+        UserRole.SYSTEM_ADMIN,
+      ];
+      if (!allowedCreatorRoles.includes(canonicalRole)) {
+        throw new ForbiddenError("Only tournament operators, directors, or system administrators may create events.");
+      }
+      if (canonicalRole === UserRole.TOURNAMENT_OPERATOR && data.organizerId && actorId && data.organizerId !== actorId) {
+        throw new ForbiddenError("Tournament operators cannot create events on behalf of another organizer.");
+      }
+      if (canonicalRole === UserRole.PROVINCIAL_DIRECTOR) {
+        const actorJurisdiction =
+          (((dbActor as any).province as string | null | undefined) ??
+            ((dbActor as any).regionalCoverage as string | null | undefined) ??
+            null);
+        if (!actorJurisdiction) {
+          throw new ForbiddenError("Provincial director jurisdiction is missing.");
+        }
+        if (actorJurisdiction.trim().toLowerCase() !== data.province.trim().toLowerCase()) {
+          throw new ForbiddenError(
+            `Provincial directors can only create events within their assigned province (${actorJurisdiction}).`
+          );
+        }
+      }
+    }
 
     // Boundary validations
     if (data.registrationStart >= data.registrationEnd) {
@@ -130,7 +165,7 @@ export class TournamentService {
         capacity: data.capacity,
         registrationFeeCents: data.registrationFeeCents ?? null,
         status: "DRAFT",
-        organizerId: data.organizerId || null,
+        organizerId: data.organizerId || actorId || null,
         paymentMethod: data.paymentMethod || "STRIPE",
         paymentQrImageUrl: data.paymentQrImageUrl || null
       })
@@ -140,21 +175,21 @@ export class TournamentService {
   }
 
   /**
-   * Authorizes modification/lifecycle actions on a tournament event (edit, cancel, publish).
+   * Authorizes modification/lifecycle actions on a tournament event (edit, cancel, publish, brackets, approvals, etc.).
    *
    * Authorization rules:
    * 1. The event organizer: dbActor.id === event.organizerId -> ALLOW
    * 2. SYSTEM_ADMIN or NATIONAL_DIRECTOR -> ALLOW
    * 3. PROVINCIAL_DIRECTOR -> ALLOW ONLY when the director's canonical jurisdiction
    *    (province / regionalCoverage) matches event.province (case-insensitive trim).
-   * 4. All other callers or cross-province directors -> FORBID with 403.
+   * 4. All other callers (including non-owning TOURNAMENT_OPERATOR or cross-province directors) -> FORBID with 403.
    *
    * Canonical database identity (users table) is enforced to prevent JWT role/province spoofing.
    */
   static async authorizeEventModification(
     event: typeof events.$inferSelect,
     actorId?: string,
-    action: "modify" | "cancel" | "publish" = "modify"
+    action: string = "modify"
   ): Promise<void> {
     if (!actorId) {
       throw new ForbiddenError(`Authentication required to ${action} this event.`);
@@ -212,6 +247,51 @@ export class TournamentService {
     );
   }
 
+  /**
+   * Authorizes floor/table/weigh-in operations where an actively certified REFEREE
+   * is permitted alongside the event's authorized operator/director/admin.
+   */
+  static async authorizeEventOfficialOrReferee(
+    event: typeof events.$inferSelect | null | undefined,
+    actorId?: string,
+    action: string = "operate on"
+  ): Promise<typeof users.$inferSelect | null> {
+    if (!actorId) {
+      return null;
+    }
+
+    const [dbActor] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, actorId))
+      .limit(1);
+
+    if (!dbActor || (dbActor as any).isActive === false) {
+      throw new ForbiddenError(`You do not have permission to ${action} this event.`);
+    }
+
+    if ((dbActor as any).role === UserRole.REFEREE) {
+      await RefereeCertificationService.assertActiveCertification(actorId);
+      return dbActor;
+    }
+
+    if (event) {
+      await this.authorizeEventModification(event, actorId, action);
+    } else {
+      const allowedRoles: string[] = [
+        UserRole.TOURNAMENT_OPERATOR,
+        UserRole.PROVINCIAL_DIRECTOR,
+        UserRole.NATIONAL_DIRECTOR,
+        UserRole.SYSTEM_ADMIN,
+      ];
+      if (!allowedRoles.includes((dbActor as any).role as string)) {
+        throw new ForbiddenError(`You do not have permission to ${action} this tournament resource.`);
+      }
+    }
+
+    return dbActor;
+  }
+
   static async editEvent(id: string, data: Partial<{
     name: string;
     startDate: Date;
@@ -235,10 +315,27 @@ export class TournamentService {
 
     if (actorId) {
       await this.authorizeEventModification(event, actorId, "modify");
+      if (data.province && data.province.trim().toLowerCase() !== (event.province ?? "").trim().toLowerCase()) {
+        const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+        if (dbActor && (dbActor as any).role === UserRole.PROVINCIAL_DIRECTOR) {
+          const actorJurisdiction =
+            (((dbActor as any).province as string | null | undefined) ??
+              ((dbActor as any).regionalCoverage as string | null | undefined) ??
+              null);
+          if (!actorJurisdiction || actorJurisdiction.trim().toLowerCase() !== data.province.trim().toLowerCase()) {
+            throw new ForbiddenError(
+              `Provincial directors cannot reassign an event to a province outside their jurisdiction (${actorJurisdiction || "unassigned"}).`
+            );
+          }
+        }
+      }
     }
 
     if (event.status === "CANCELLED") {
       throw new BadRequestError("Cannot edit a cancelled event.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Cannot edit a completed event.");
     }
 
     // Date bounds checks if updated
@@ -281,6 +378,13 @@ export class TournamentService {
       await this.authorizeEventModification(event, actorId, "cancel");
     }
 
+    if (event.status === "CANCELLED") {
+      throw new ConflictError("Event is already cancelled.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Cannot cancel a completed event.");
+    }
+
     const [cancelledEvent] = await db
       .update(events)
       .set({ status: "CANCELLED", updatedAt: new Date() })
@@ -302,6 +406,16 @@ export class TournamentService {
       await this.authorizeEventModification(event, actorId, "publish");
     }
 
+    if (event.status === "CANCELLED") {
+      throw new ConflictError("Cannot publish a cancelled event.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Cannot publish a completed event.");
+    }
+    if (event.status === "PUBLISHED") {
+      throw new ConflictError("Event is already published.");
+    }
+
     const [publishedEvent] = await db
       .update(events)
       .set({ status: "PUBLISHED", updatedAt: new Date() })
@@ -309,6 +423,55 @@ export class TournamentService {
       .returning();
 
     return publishedEvent;
+  }
+
+  static async completeEvent(id: string, actorId?: string) {
+    logger.info({ id, actorId }, "Completing tournament event");
+
+    const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
+    if (actorId) {
+      await this.authorizeEventModification(event, actorId, "complete");
+    }
+
+    if (event.status === "CANCELLED") {
+      throw new ConflictError("Cannot complete a cancelled event.");
+    }
+    if (event.status === "COMPLETED") {
+      throw new ConflictError("Event is already completed.");
+    }
+    if (event.status === "DRAFT") {
+      throw new BadRequestError("Cannot complete an unpublished draft event.");
+    }
+
+    const eventBrackets = await db.select().from(brackets).where(eq(brackets.eventId, id));
+    const uncompletedBrackets = eventBrackets.filter((b) => b.status !== "COMPLETED");
+    if (uncompletedBrackets.length > 0) {
+      throw new ConflictError("Cannot complete event while one or more brackets are incomplete.");
+    }
+
+    const [completedEvent] = await db
+      .update(events)
+      .set({ status: "COMPLETED", updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+
+    await auditLedgerService.logEvent({
+      actorId: actorId || event.organizerId || "SYSTEM",
+      entityType: "events",
+      entityId: id,
+      action: "EVENT_COMPLETED",
+      payload: {
+        previousStatus: event.status,
+        completedAt: new Date().toISOString(),
+        bracketsCount: eventBrackets.length,
+      },
+    });
+
+    return completedEvent;
   }
 
   // ==========================================
@@ -327,6 +490,13 @@ export class TournamentService {
       const [event] = await tx.select().from(events).where(eq(events.id, eventId)).limit(1);
       if (!event) {
         throw new NotFoundError("Tournament event not found.");
+      }
+
+      if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+        throw new ConflictError(`Cannot register for a ${event.status.toLowerCase()} event.`);
+      }
+      if (event.status === "DRAFT") {
+        throw new BadRequestError("Cannot register for an unpublished draft event.");
       }
 
       // Registration window check
@@ -447,6 +617,19 @@ export class TournamentService {
       throw new NotFoundError("Registration record not found.");
     }
 
+    const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
+    if (event && approvedBy) {
+      await this.authorizeEventModification(event, approvedBy, "approve registrations for");
+    }
+
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot approve registrations for a ${event.status.toLowerCase()} event.`);
+    }
+
+    if (reg.status === "REJECTED" || reg.status === "CANCELLED") {
+      throw new ConflictError(`Cannot approve a registration with status ${reg.status}.`);
+    }
+
     // F1 guard: a paid registration in PENDING_PAYMENT must complete payment
     // confirmation first (MANUAL_QR confirm-manual-payment or Stripe webhook
     // PENDING_PAYMENT -> PENDING). Approving unpaid registrations would let
@@ -491,12 +674,22 @@ export class TournamentService {
   // ==========================================
 
   static async recordWeighIn(registrationId: string, weight: number, certifiedBy: string) {
-    await RefereeCertificationService.assertActiveCertification(certifiedBy);
     logger.info({ registrationId, weight }, "Recording official athlete weigh-in attempt");
 
     const [reg] = await db.select().from(eventRegistrations).where(eq(eventRegistrations.id, registrationId)).limit(1);
     if (!reg) {
       throw new NotFoundError("Athlete registration not found.");
+    }
+
+    const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
+    await this.authorizeEventOfficialOrReferee(event, certifiedBy, "record weigh-ins for");
+
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot record weigh-ins for a ${event.status.toLowerCase()} event.`);
+    }
+
+    if (reg.status === "REJECTED" || reg.status === "CANCELLED" || reg.status === "PENDING_PAYMENT") {
+      throw new BadRequestError(`Cannot record weigh-in for a registration in ${reg.status} status.`);
     }
 
     // Lock safety checks
@@ -547,14 +740,18 @@ export class TournamentService {
   }
 
   static async reassignRegistration(registrationId: string, newDivision: string, newWeightClass: string, actorId?: string) {
-    if (actorId) {
-      await RefereeCertificationService.assertActiveCertification(actorId);
-    }
     logger.info({ registrationId, newDivision, newWeightClass }, "Reassigning registration division/weight class");
 
     const [reg] = await db.select().from(eventRegistrations).where(eq(eventRegistrations.id, registrationId)).limit(1);
     if (!reg) {
       throw new NotFoundError("Registration not found.");
+    }
+
+    const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
+    await this.authorizeEventOfficialOrReferee(event, actorId, "reassign registrations for");
+
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot reassign registrations for a ${event.status.toLowerCase()} event.`);
     }
 
     // Verify weigh-in isn't locked
@@ -593,14 +790,29 @@ export class TournamentService {
   }
 
   static async certifyWeighIn(registrationId: string, actorId?: string) {
-    if (actorId) {
-      await RefereeCertificationService.assertActiveCertification(actorId);
-    }
     logger.info({ registrationId }, "Certifying and locking weigh-ins");
 
     const [reg] = await db.select().from(eventRegistrations).where(eq(eventRegistrations.id, registrationId)).limit(1);
     if (!reg) {
       throw new NotFoundError("Registration not found.");
+    }
+
+    const [event] = await db.select().from(events).where(eq(events.id, reg.eventId)).limit(1);
+    await this.authorizeEventOfficialOrReferee(event, actorId, "certify weigh-ins for");
+
+    if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+      throw new ConflictError(`Cannot certify weigh-ins for a ${event.status.toLowerCase()} event.`);
+    }
+
+    const priorWeighins = await db
+      .select()
+      .from(officialWeighins)
+      .where(eq(officialWeighins.registrationId, registrationId));
+    if (priorWeighins.length === 0) {
+      throw new BadRequestError("Cannot certify weigh-in before at least one official weigh-in attempt is recorded.");
+    }
+    if (priorWeighins.every((w) => w.isLocked)) {
+      throw new ConflictError("Weigh-in record is already certified and locked.");
     }
 
     await db
@@ -615,7 +827,19 @@ export class TournamentService {
   // 4. Seeding Engine
   // ==========================================
 
-  static async createBracket(eventId: string, name: string, format: string, division: string, weightClass: string, arm: string) {
+  static async createBracket(eventId: string, name: string, format: string, division: string, weightClass: string, arm: string, actorId?: string) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (event) {
+      if (actorId) {
+        await this.authorizeEventModification(event, actorId, "create brackets for");
+      }
+      if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+        throw new ConflictError(`Cannot create brackets for a ${event.status.toLowerCase()} event.`);
+      }
+    } else if (actorId) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
     const [newBracket] = await db
       .insert(brackets)
       .values({
@@ -633,12 +857,28 @@ export class TournamentService {
     return newBracket;
   }
 
-  static async generateSeeds(bracketId: string) {
+  static async generateSeeds(bracketId: string, actorId?: string) {
     logger.info({ bracketId }, "Running ELO-based seeding generation");
 
     const [bracket] = await db.select().from(brackets).where(eq(brackets.id, bracketId)).limit(1);
     if (!bracket) {
       throw new NotFoundError("Bracket not found.");
+    }
+
+    if (bracket.eventId) {
+      const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+      if (event) {
+        if (actorId) {
+          await this.authorizeEventModification(event, actorId, "generate seeds for");
+        }
+        if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+          throw new ConflictError(`Cannot generate seeds for a ${event.status.toLowerCase()} event.`);
+        }
+      }
+    }
+
+    if (bracket.seedingLocked || bracket.status === "ACTIVE" || bracket.status === "COMPLETED") {
+      throw new ConflictError("Cannot regenerate seeds when seeding is locked or bracket is active/completed.");
     }
 
     // Retrieve approved, weighed-in passed athletes registered for this category
@@ -709,12 +949,18 @@ export class TournamentService {
     return seedsToInsert;
   }
 
-  static async overrideSeed(bracketId: string, athleteId: string, newPosition: number) {
+  static async overrideSeed(bracketId: string, athleteId: string, newPosition: number, actorId?: string) {
     logger.info({ bracketId, athleteId, newPosition }, "Applying manual seed override");
 
     const [bracket] = await db.select().from(brackets).where(eq(brackets.id, bracketId)).limit(1);
     if (!bracket) {
       throw new NotFoundError("Bracket not found.");
+    }
+    if (actorId && bracket.eventId) {
+      const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+      if (event) {
+        await this.authorizeEventModification(event, actorId, "override seeds for");
+      }
     }
     if (bracket.seedingLocked) {
       throw new BadRequestError("Seeding is locked and cannot be overridden.");
@@ -760,12 +1006,31 @@ export class TournamentService {
     return { success: true };
   }
 
-  static async lockSeeds(bracketId: string) {
+  static async lockSeeds(bracketId: string, actorId?: string) {
     logger.info({ bracketId }, "Locking seeding configuration");
 
     const [bracket] = await db.select().from(brackets).where(eq(brackets.id, bracketId)).limit(1);
     if (!bracket) {
       throw new NotFoundError("Bracket not found.");
+    }
+
+    if (bracket.eventId) {
+      const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+      if (event) {
+        if (actorId) {
+          await this.authorizeEventModification(event, actorId, "lock seeds for");
+        }
+        if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+          throw new ConflictError(`Cannot lock seeds for a ${event.status.toLowerCase()} event.`);
+        }
+      }
+    }
+
+    if (bracket.status === "ACTIVE" || bracket.status === "COMPLETED") {
+      throw new ConflictError("Bracket is already active or completed.");
+    }
+    if (bracket.seedingLocked) {
+      throw new ConflictError("Seeding is already locked for this bracket.");
     }
 
     await db
@@ -780,12 +1045,24 @@ export class TournamentService {
   // 5. Bracket Generation & Safe Safeguards
   // ==========================================
 
-  static async generateBracketMatches(bracketId: string) {
+  static async generateBracketMatches(bracketId: string, actorId?: string) {
     logger.info({ bracketId }, "Generating tournament matches");
 
     const [bracket] = await db.select().from(brackets).where(eq(brackets.id, bracketId)).limit(1);
     if (!bracket) {
       throw new NotFoundError("Bracket not found.");
+    }
+
+    if (bracket.eventId) {
+      const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+      if (event) {
+        if (actorId) {
+          await this.authorizeEventModification(event, actorId, "generate bracket matches for");
+        }
+        if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+          throw new ConflictError(`Cannot generate bracket matches for a ${event.status.toLowerCase()} event.`);
+        }
+      }
     }
 
     if (!bracket.seedingLocked) {
@@ -1162,7 +1439,7 @@ export class TournamentService {
   // 6. Match Queue & Table Management
   // ==========================================
 
-  static async createTable(eventId: string, name: string) {
+  static async createTable(eventId: string, name: string, actorId?: string) {
     if (!eventId) {
       throw new BadRequestError("Event ID is required to create a match table.");
     }
@@ -1170,6 +1447,9 @@ export class TournamentService {
     const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
     if (!event) {
       throw new NotFoundError("Tournament event not found.");
+    }
+    if (actorId) {
+      await this.authorizeEventModification(event, actorId, "create tables for");
     }
     const [table] = await db.insert(matchTables).values({ eventId, name, status: "IDLE" }).returning();
     return table;
@@ -1255,12 +1535,15 @@ export class TournamentService {
     }));
   }
 
-  static async assignReferee(matchId: string, refereeId: string) {
+  static async assignReferee(matchId: string, refereeId: string, actorId?: string) {
     logger.info({ matchId, refereeId }, "Assigning referee to tournament match");
 
     const [refereeUser] = await db.select().from(users).where(eq(users.id, refereeId)).limit(1);
     if (!refereeUser) {
       throw new NotFoundError("Referee user not found.");
+    }
+    if ((refereeUser as any).isActive === false) {
+      throw new BadRequestError("Referee user account is inactive.");
     }
 
     const assignableRoles: string[] = [UserRole.REFEREE, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN];
@@ -1271,9 +1554,32 @@ export class TournamentService {
       throw new BadRequestError("Referee must hold a referee or director role.");
     }
 
+    if (refereeUser.role === UserRole.REFEREE) {
+      await RefereeCertificationService.assertActiveCertification(refereeId);
+    }
+
     const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId)).limit(1);
     if (!match) {
       throw new NotFoundError("Match not found.");
+    }
+
+    if (match.status === "COMPLETED" || match.status === "BYE") {
+      throw new ConflictError("Cannot assign a referee to a completed or walkover match.");
+    }
+
+    if (match.bracketId) {
+      const [bracket] = await db.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
+      if (bracket?.eventId) {
+        const [event] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+        if (event) {
+          if (actorId) {
+            await this.authorizeEventModification(event, actorId, "assign referees for");
+          }
+          if (event.status === "CANCELLED" || event.status === "COMPLETED") {
+            throw new ConflictError(`Cannot assign referees for a ${event.status.toLowerCase()} event.`);
+          }
+        }
+      }
     }
 
     const [updated] = await db
@@ -1305,6 +1611,16 @@ export class TournamentService {
       const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
       if (!bracket) {
         throw new NotFoundError("Bracket for match not found.");
+      }
+
+      if (bracket.eventId) {
+        const [event] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+        if (actorId) {
+          await this.authorizeEventOfficialOrReferee(event, actorId, "call matches to tables for");
+        }
+        if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+          throw new ConflictError(`Cannot call matches to tables for a ${event.status.toLowerCase()} event.`);
+        }
       }
 
       if (match.status === "COMPLETED" || match.status === "BYE") {
@@ -1377,6 +1693,14 @@ export class TournamentService {
         throw new NotFoundError("Match not found.");
       }
 
+      if (actorId && match.bracketId) {
+        const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
+        if (bracket?.eventId) {
+          const [event] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+          await this.authorizeEventOfficialOrReferee(event, actorId, "unassign matches for");
+        }
+      }
+
       if (match.status === "COMPLETED" || match.status === "BYE") {
         throw new BadRequestError("Cannot unassign a completed or walkover match.");
       }
@@ -1428,6 +1752,16 @@ export class TournamentService {
       const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
       if (!bracket) {
         throw new NotFoundError("Bracket not found.");
+      }
+
+      if (bracket.eventId) {
+        const [event] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+        if (actorId) {
+          await this.authorizeEventOfficialOrReferee(event, actorId, "queue matches for");
+        }
+        if (event && (event.status === "CANCELLED" || event.status === "COMPLETED")) {
+          throw new ConflictError(`Cannot queue matches for a ${event.status.toLowerCase()} event.`);
+        }
       }
 
       const [table] = await tx
@@ -1513,6 +1847,11 @@ export class TournamentService {
       if (!match) throw new NotFoundError("Match not found.");
       const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
       if (!bracket) throw new NotFoundError("Bracket not found.");
+
+      if (actorId && bracket.eventId) {
+        const [event] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+        await this.authorizeEventOfficialOrReferee(event, actorId, "rebalance queues for");
+      }
 
       const [targetTable] = await tx
         .select()
@@ -1785,65 +2124,116 @@ export class TournamentService {
     }
     logger.info({ matchId, winnerId, scoreLine }, "Submitting official match result");
 
-    const [match] = await (db as any).select().from(tournamentMatches).where(eq(tournamentMatches.id as any, matchId as any)).limit(1);
-    if (!match) {
-      throw new NotFoundError("Tournament match not found.");
-    }
-
-    if (actorId) {
-      const [actorUser] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
-      const isSupervisor =
-        actorUser &&
-        [UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN].includes(
-          actorUser.role as UserRole
-        );
-      if (!isSupervisor && match.refereeId !== actorId) {
-        throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+    const { completedMatch, bracketId } = await db.transaction(async (tx) => {
+      const [match] = await (tx as any)
+        .select()
+        .from(tournamentMatches)
+        .where(eq(tournamentMatches.id as any, matchId as any))
+        .for("update")
+        .limit(1);
+      if (!match) {
+        throw new NotFoundError("Tournament match not found.");
       }
-    }
 
-    if (match.status === "COMPLETED" || match.status === "BYE") {
-      return match;
-    }
+      const [bracket] = await (tx as any).select().from(brackets).where(eq(brackets.id as any, (match as any).bracketId as any)).limit(1);
+      const [event] = bracket?.eventId
+        ? await (tx as any).select().from(events).where(eq(events.id as any, (bracket as any).eventId as any)).limit(1)
+        : [null];
 
-    if (winnerId !== match.athleteAId && winnerId !== match.athleteBId) {
-      throw new BadRequestError("Winner must be one of the match participants.");
-    }
+      if (event && event.status === "CANCELLED") {
+        throw new ConflictError("Cannot submit match results for a cancelled event.");
+      }
 
-    const tableId = (match as any).tableId;
+      if (actorId) {
+        const [actorUser] = await tx.select().from(users).where(eq(users.id, actorId)).limit(1);
+        if (!actorUser || (actorUser as any).isActive === false) {
+          throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+        }
 
-    // Save winner result
-    const [completedMatch] = await (db as any)
-      .update(tournamentMatches)
-      .set({
-        winnerId,
-        scoreLine,
-        status: "COMPLETED",
-        updatedAt: new Date()
-      })
-      .where(eq(tournamentMatches.id as any, matchId as any))
-      .returning();
+        if (actorUser.role === UserRole.REFEREE) {
+          if (match.refereeId !== actorId) {
+            throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+          }
+        } else {
+          if (event) {
+            await this.authorizeEventModification(event, actorId, "submit match results for");
+          } else {
+            const supervisorRoles = [
+              UserRole.TOURNAMENT_OPERATOR,
+              UserRole.PROVINCIAL_DIRECTOR,
+              UserRole.NATIONAL_DIRECTOR,
+              UserRole.SYSTEM_ADMIN,
+            ];
+            const isSupervisor =
+              supervisorRoles.includes(actorUser.role as UserRole) ||
+              (await UserRoleService.hasActiveRole(actorId, supervisorRoles));
+            if (!isSupervisor) {
+              throw new ForbiddenError("Only the assigned referee, tournament operator, or tournament director can submit this match result.");
+            }
+          }
+        }
+      }
 
-    // Release table referencing this match (handles tableId or any table where currentMatchId was set)
-    await (db as any)
-      .update(matchTables)
-      .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
-      .where(eq(matchTables.currentMatchId as any, matchId as any));
+      if (match.status === "BYE") {
+        throw new ConflictError("Cannot submit a competitive result for a walkover (BYE) match.");
+      }
 
-    if (tableId) {
-      await (db as any)
+      if (match.status === "COMPLETED") {
+        if (match.winnerId === winnerId && (!scoreLine || match.scoreLine === scoreLine)) {
+          return { completedMatch: match, bracketId: null as string | null };
+        }
+        throw new ConflictError("Match result has already been completed and locked. Use official match correction to alter a completed result.");
+      }
+
+      if (match.status === "PENDING" || !match.athleteAId || !match.athleteBId) {
+        throw new BadRequestError("Match is not ready for result submission; both competitors must be determined.");
+      }
+
+      if (winnerId !== match.athleteAId && winnerId !== match.athleteBId) {
+        throw new BadRequestError("Winner must be one of the match participants.");
+      }
+
+      const tableId = (match as any).tableId;
+
+      // Save winner result
+      const [updated] = await (tx as any)
+        .update(tournamentMatches)
+        .set({
+          winnerId,
+          scoreLine,
+          status: "COMPLETED",
+          updatedAt: new Date()
+        })
+        .where(eq(tournamentMatches.id as any, matchId as any))
+        .returning();
+
+      // Release table referencing this match (handles tableId or any table where currentMatchId was set)
+      await (tx as any)
         .update(matchTables)
         .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
-        .where(eq(matchTables.id as any, tableId as any));
+        .where(eq(matchTables.currentMatchId as any, matchId as any));
+
+      if (tableId) {
+        await (tx as any)
+          .update(matchTables)
+          .set({ status: "IDLE", currentMatchId: null, updatedAt: new Date() })
+          .where(eq(matchTables.id as any, tableId as any));
+      }
+
+      // Clean queue entry for this match if it was queued
+      await (tx as any)
+        .delete(tournamentTableQueue)
+        .where(eq(tournamentTableQueue.matchId as any, matchId as any));
+
+      return { completedMatch: updated, bracketId: (match as any).bracketId as string };
+    });
+
+    if (!bracketId) {
+      return completedMatch;
     }
 
-    // Clean queue entry for this match if it was queued
-    await (db as any)
-      .delete(tournamentTableQueue)
-      .where(eq(tournamentTableQueue.matchId as any, matchId as any));
-
     // Run recursive, comprehensive progression & reconciliation engine
-    await TournamentService.reconcileBracketMatches((match as any).bracketId);
+    await TournamentService.reconcileBracketMatches(bracketId);
 
     // Check bracket completion status
     const uncompleted = await (db as any)
@@ -1851,7 +2241,7 @@ export class TournamentService {
       .from(tournamentMatches)
       .where(
         and(
-          eq(tournamentMatches.bracketId as any, (match as any).bracketId as any),
+          eq(tournamentMatches.bracketId as any, bracketId as any),
           not(eq(tournamentMatches.status as any, "COMPLETED" as any)),
           not(eq(tournamentMatches.status as any, "BYE" as any))
         )
@@ -1861,7 +2251,7 @@ export class TournamentService {
       await (db as any)
         .update(brackets)
         .set({ status: "COMPLETED", updatedAt: new Date() })
-        .where(eq(brackets.id as any, (match as any).bracketId as any));
+        .where(eq(brackets.id as any, bracketId as any));
     }
 
     return completedMatch;
@@ -2250,11 +2640,16 @@ export class TournamentService {
       throw new NotFoundError("Tournament event not found.");
     }
 
-    const isOrganizer = event.organizerId && actorId === event.organizerId;
-    const isAdmin = actorRole === "SYSTEM_ADMIN" || actorRole === "NATIONAL_DIRECTOR";
+    const [actorUser] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (actorUser) {
+      await this.authorizeEventModification(event, actorId, "confirm manual payments for");
+    } else {
+      const isOrganizer = event.organizerId && actorId === event.organizerId;
+      const isAdmin = actorRole === "SYSTEM_ADMIN" || actorRole === "NATIONAL_DIRECTOR";
 
-    if (!isOrganizer && !isAdmin) {
-      throw new ForbiddenError("Only the event's organizer or an admin can confirm manual payments.");
+      if (!isOrganizer && !isAdmin) {
+        throw new ForbiddenError("Only the event's organizer or an admin can confirm manual payments.");
+      }
     }
 
     if (!event.registrationFeeCents || event.registrationFeeCents <= 0) {

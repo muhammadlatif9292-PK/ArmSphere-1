@@ -18,6 +18,7 @@ import { UserRole, SparringInviteStatus } from "@armsphere/types";
 import { auditLedgerService } from "./auditLedger.js";
 import { NotificationService } from "./notification.js";
 import { MessagingService } from "./messaging.js";
+import { UserRoleService } from "./userRole.js";
 
 export interface CreateSparringInviteInput {
   senderTeamId: string;
@@ -39,21 +40,32 @@ export class SparringInviteService {
    */
   static async verifyTeamLeadership(userId: string, teamId: string): Promise<boolean> {
     const [user] = await db
-      .select({ id: users.id, role: users.role })
+      .select({ id: users.id, role: users.role, isActive: users.isActive })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
-    if (!user) return false;
+    if (!user || user.isActive === false) return false;
 
-    // System Admin has universal administrative authority
-    if (user.role === UserRole.SYSTEM_ADMIN) return true;
+    // System Admin and National Director have universal administrative authority
+    const isUniversalAdmin =
+      user.role === UserRole.SYSTEM_ADMIN ||
+      user.role === UserRole.NATIONAL_DIRECTOR ||
+      (await UserRoleService.hasActiveRole(userId, [
+        UserRole.SYSTEM_ADMIN,
+        UserRole.NATIONAL_DIRECTOR,
+      ]));
+    if (isUniversalAdmin) return true;
 
-    // Check if user is associated as a CAPTAIN on this team's roster
+    const isOrgLeader =
+      user.role === UserRole.ORGANIZATION_LEADER ||
+      (await UserRoleService.hasActiveRole(userId, [UserRole.ORGANIZATION_LEADER]));
+
+    // Check if user is associated as a CAPTAIN (or ORGANIZATION_LEADER member) on this team's roster
     const [profile] = await db
       .select({ id: athleteProfiles.id })
       .from(athleteProfiles)
-      .where(eq(athleteProfiles.userId, userId))
+      .where(and(eq(athleteProfiles.userId, userId), eq(athleteProfiles.isDeleted, false)))
       .limit(1);
 
     if (profile) {
@@ -68,7 +80,7 @@ export class SparringInviteService {
         )
         .limit(1);
 
-      if (membership && (membership.role === "CAPTAIN" || user.role === UserRole.ORGANIZATION_LEADER)) {
+      if (membership && (membership.role === "CAPTAIN" || isOrgLeader)) {
         return true;
       }
     }
@@ -230,12 +242,22 @@ export class SparringInviteService {
    */
   static async listInvites(userId: string, filters: ListSparringInvitesFilters = {}) {
     const [user] = await db
-      .select({ id: users.id, role: users.role })
+      .select({ id: users.id, role: users.role, isActive: users.isActive })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
-    const isAdmin = user?.role === UserRole.SYSTEM_ADMIN;
+    if (user && user.isActive === false) {
+      throw new ForbiddenError("Account is inactive");
+    }
+
+    const isAdmin =
+      user?.role === UserRole.SYSTEM_ADMIN ||
+      user?.role === UserRole.NATIONAL_DIRECTOR ||
+      (await UserRoleService.hasActiveRole(userId, [
+        UserRole.SYSTEM_ADMIN,
+        UserRole.NATIONAL_DIRECTOR,
+      ]));
 
     let targetTeamIds: string[] = [];
 
@@ -309,12 +331,22 @@ export class SparringInviteService {
     }
 
     const [user] = await db
-      .select({ id: users.id, role: users.role })
+      .select({ id: users.id, role: users.role, isActive: users.isActive })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
-    const isAdmin = user?.role === UserRole.SYSTEM_ADMIN;
+    if (user && user.isActive === false) {
+      throw new ForbiddenError("Account is inactive");
+    }
+
+    const isAdmin =
+      user?.role === UserRole.SYSTEM_ADMIN ||
+      user?.role === UserRole.NATIONAL_DIRECTOR ||
+      (await UserRoleService.hasActiveRole(userId, [
+        UserRole.SYSTEM_ADMIN,
+        UserRole.NATIONAL_DIRECTOR,
+      ]));
 
     if (!isAdmin) {
       const userTeams = await this.getUserTeamIds(userId);
@@ -482,14 +514,24 @@ export class SparringInviteService {
 
     // Verify sender authority
     const [user] = await db
-      .select({ id: users.id, role: users.role })
+      .select({ id: users.id, role: users.role, isActive: users.isActive })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
+    if (!user || user.isActive === false) {
+      throw new ForbiddenError("Account is inactive or not found");
+    }
+
     const isCreator = invite.creatorId === userId;
     const isSenderLeader = await this.verifyTeamLeadership(userId, invite.senderTeamId);
-    const isAdmin = user?.role === UserRole.SYSTEM_ADMIN;
+    const isAdmin =
+      user.role === UserRole.SYSTEM_ADMIN ||
+      user.role === UserRole.NATIONAL_DIRECTOR ||
+      (await UserRoleService.hasActiveRole(userId, [
+        UserRole.SYSTEM_ADMIN,
+        UserRole.NATIONAL_DIRECTOR,
+      ]));
 
     if (!isCreator && !isSenderLeader && !isAdmin) {
       throw new ForbiddenError("Only authorized leaders of the sending organization can cancel this invite");

@@ -6,10 +6,12 @@ import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/features/athlete/screens/athlete_screens.dart';
 import 'package:mobile/features/referee/screens/referee_screens.dart';
 import 'package:mobile/features/governance/screens/governance_screens.dart';
+import 'package:mobile/features/tournament/screens/tournament_operator_dashboard_screen.dart';
 import 'package:mobile/features/home/screens/discover_screen.dart';
 import 'package:mobile/core/providers/athlete_provider.dart';
 import 'package:mobile/core/providers/live_matches_provider.dart';
 import 'package:mobile/core/providers/tournament_provider.dart';
+import 'package:mobile/core/providers/rankings_provider.dart';
 import 'package:mobile/core/providers/dispute_provider.dart';
 import 'package:mobile/core/providers/referee_provider.dart';
 
@@ -43,6 +45,11 @@ class FakeTournamentNotifier extends TournamentNotifier {
   Future<List<Map<String, dynamic>>> build() async => [];
 }
 
+class FakeRankingsNotifier extends RankingsNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
 void main() {
   group('RoleAwareHomeScreen Personalized Dashboard Routing Tests', () {
     testWidgets('Renders AthleteDashboardScreen for ATHLETE role', (WidgetTester tester) async {
@@ -62,6 +69,9 @@ void main() {
                   'weightClass': '78kg',
                 })),
             liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
+            tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
+            rankingsProvider.overrideWith(() => FakeRankingsNotifier()),
+            trainingLogProvider('profile_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
             trainingLogPRsProvider('profile_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
             trainingLogPRsProvider('user_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
@@ -74,6 +84,7 @@ void main() {
       await tester.pump();
       expect(find.byType(AthleteDashboardScreen), findsOneWidget);
       expect(find.byType(RefereeDashboardScreen), findsNothing);
+      expect(find.byType(TournamentOperatorDashboardScreen), findsNothing);
       expect(find.byType(GovernanceDashboardScreen), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
@@ -101,12 +112,13 @@ void main() {
       await tester.pump();
       expect(find.byType(RefereeDashboardScreen), findsOneWidget);
       expect(find.byType(AthleteDashboardScreen), findsNothing);
+      expect(find.byType(TournamentOperatorDashboardScreen), findsNothing);
       expect(find.byType(GovernanceDashboardScreen), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
 
-    testWidgets('Renders GovernanceDashboardScreen for TOURNAMENT_OPERATOR role', (WidgetTester tester) async {
+    testWidgets('Renders TournamentOperatorDashboardScreen for TOURNAMENT_OPERATOR role', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -116,6 +128,7 @@ void main() {
                     userProfile: {'id': 'user_3', 'displayName': 'Director Usman', 'role': 'TOURNAMENT_OPERATOR'},
                   ),
                 )),
+            tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
             disputeProvider.overrideWith(() => FakeDisputeNotifier()),
           ],
           child: const MaterialApp(
@@ -125,7 +138,7 @@ void main() {
       );
 
       await tester.pump();
-      expect(find.byType(GovernanceDashboardScreen), findsOneWidget);
+      expect(find.byType(TournamentOperatorDashboardScreen), findsOneWidget);
       expect(find.byType(AthleteDashboardScreen), findsNothing);
       expect(find.byType(RefereeDashboardScreen), findsNothing);
       await tester.pumpWidget(const SizedBox());
@@ -148,6 +161,9 @@ void main() {
                   'leftArmElo': 1200,
                 })),
             liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
+            tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
+            rankingsProvider.overrideWith(() => FakeRankingsNotifier()),
+            trainingLogProvider('profile_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
             trainingLogPRsProvider('profile_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
             trainingLogPRsProvider('user_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],

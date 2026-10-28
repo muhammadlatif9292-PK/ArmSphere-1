@@ -55,19 +55,20 @@ class _StaticAtmosphereSubstrate extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Top-right subtle gold ambient glow
+          // 1. Central overhead arena glow mesh (as specified in master art direction)
           Positioned(
-            top: -100,
-            right: -80,
-            width: 380,
-            height: 380,
+            top: -120,
+            left: 0,
+            right: 0,
+            height: 480,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
                 gradient: RadialGradient(
+                  center: Alignment.topCenter,
+                  radius: 0.85,
                   colors: [
-                    Color(0x14D4AF37), // 8% Gold
-                    Color(0x05D4AF37), // 2% Gold
+                    Color(0x1494A3B8), // 8% Cool silver studio overhead spotlight
+                    Color(0x0594A3B8),
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.45, 1.0],
@@ -76,18 +77,39 @@ class _StaticAtmosphereSubstrate extends StatelessWidget {
             ),
           ),
 
-          // Mid-left subtle crimson arena glow
+          // 2. Top-right subtle championship gold ambient highlight
           Positioned(
-            top: 280,
-            left: -120,
-            width: 420,
-            height: 420,
+            top: -80,
+            right: -60,
+            width: 360,
+            height: 360,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Color(0x0DEF4444), // 5% Crimson
+                    Color(0x12D4AF37), // 7% Gold illumination
+                    Color(0x04D4AF37),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.45, 1.0],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Mid-left subtle competition crimson arena glow
+          Positioned(
+            top: 260,
+            left: -100,
+            width: 400,
+            height: 400,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0x0DE23B3B), // 5% Crimson battle atmosphere
                     Colors.transparent,
                   ],
                   stops: const [0.0, 0.7],

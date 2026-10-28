@@ -6,11 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/tournament_widgets.dart';
@@ -69,7 +72,6 @@ class TournamentsListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final tournamentsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
@@ -92,33 +94,12 @@ class TournamentsListScreen extends ConsumerWidget {
       ),
       body: tournamentsAsync.when(
         loading: () => const TournamentSkeletonLoadingWidget(),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load competitions',
-                style: theme.textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
-              ),
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  '$error',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => ref.invalidate(tournamentProvider),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+        error: (error, _) => AppErrorView(
+          error: error,
+          title: 'Could not load competitions',
+          onRetry: () => ref.invalidate(tournamentProvider),
+          showSecondaryAction: false,
+          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
         ),
         data: (events) {
           // Drafts are not public product surfaces; hide them here.
@@ -131,27 +112,15 @@ class TournamentsListScreen extends ConsumerWidget {
               onRefresh: () async => ref.refresh(tournamentProvider.future),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 120),
-                  Icon(Icons.emoji_events_outlined, size: 56, color: AppTheme.textMuted),
-                  SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'No competitions published yet',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Check back soon for upcoming sanctioned events',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                    ),
+                padding: EdgeInsets.fromLTRB(16, 20, 16, MainShellScope.bottomClearance(context)),
+                children: [
+                  const SizedBox(height: 64),
+                  AppEmptyState(
+                    icon: Icons.emoji_events_outlined,
+                    title: 'No competitions published yet',
+                    subtitle: 'Check back soon for upcoming sanctioned events',
+                    ctaLabel: 'Refresh Events',
+                    onCtaTap: () => ref.invalidate(tournamentProvider),
                   ),
                 ],
               ),
@@ -162,7 +131,12 @@ class TournamentsListScreen extends ConsumerWidget {
             onRefresh: () async => ref.refresh(tournamentProvider.future),
             child: ListView.separated(
               key: const PageStorageKey<String>('tournaments_list_view'),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                20,
+                16,
+                MainShellScope.bottomClearance(context, additionalPadding: 20),
+              ),
               itemCount: visible.length,
               separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
@@ -318,7 +292,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
 
     return eventAsync.when(
@@ -329,33 +302,33 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       error: (error, _) => Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(title: const Text('Tournament Details')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load tournament',
-                style: theme.textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+        body: AppErrorView(
+          error: error,
+          title: 'Could not load tournament',
+          onRetry: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
+          secondaryActionLabel: 'Return to Tournaments',
+          onSecondaryAction: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/tournaments');
+            }
+          },
         ),
       ),
       data: (event) {
         final status = (event['status']?.toString() ?? '').toUpperCase();
         final canRegister = status == 'PUBLISHED';
         final auth = ref.watch(authProvider);
-        final role = auth.userProfile?['role']?.toString().toUpperCase();
-        const operatorRoles = {'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+        final role = (auth.activeRole ?? auth.userProfile?['role']?.toString() ?? '').toUpperCase();
+        const operatorRoles = {
+          'TOURNAMENT_OPERATOR',
+          'PROVINCIAL_DIRECTOR',
+          'NATIONAL_DIRECTOR',
+          'SYSTEM_ADMIN',
+        };
         final canOperate = operatorRoles.contains(role) ||
+            auth.hasAnyRole(operatorRoles) ||
             (event['organizerId'] != null &&
                 event['organizerId'].toString() == auth.userProfile?['id']?.toString());
         final location = [
@@ -1126,7 +1099,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
   Widget _buildArenaTableHeader({required int? activeCount, bool isLoading = false}) {
     final hasActive = (activeCount ?? 0) > 0;
-    final badgeColor = hasActive ? const Color(0xFF10B981) : AppTheme.textMuted;
+    final badgeColor = hasActive ? AppTheme.verifiedEmerald : AppTheme.textMuted;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1198,7 +1171,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   Color _resolveArenaStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'IN BOUT':
-        return const Color(0xFF10B981); // Emerald
+        return AppTheme.verifiedEmerald;
       case 'ON DECK':
         return const Color(0xFFF59E0B); // Amber
       case 'READY':
@@ -1234,20 +1207,21 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.elevatedSurface,
+          gradient: isLive ? AppTheme.machinedTitaniumGradient : null,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           border: Border.all(
-            color: isLive ? const Color(0xFF10B981).withValues(alpha: 0.6) : AppTheme.borderSubtle,
+            color: isLive ? AppTheme.verifiedEmerald.withValues(alpha: 0.6) : AppTheme.borderTitanium,
             width: isLive ? 1.5 : 1.0,
           ),
           boxShadow: isLive
               ? [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                    blurRadius: 10,
+                    color: AppTheme.verifiedEmerald.withValues(alpha: 0.12),
+                    blurRadius: 12,
                     offset: const Offset(0, 2),
                   ),
                 ]
-              : null,
+              : [AppTheme.titaniumShadow()],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1262,7 +1236,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       decoration: BoxDecoration(
                         color: AppTheme.background,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(color: AppTheme.borderSubtle, width: 1),
+                        border: Border.all(color: AppTheme.borderTitanium, width: 1),
                       ),
                       child: Text(
                         tableNumber,
@@ -1297,7 +1271,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isLive) ...[
-                        const Icon(Icons.circle, size: 6, color: Color(0xFF10B981)),
+                        const Icon(Icons.circle, size: 6, color: AppTheme.verifiedEmerald),
                         const SizedBox(width: 4),
                       ],
                       Text(
@@ -1335,7 +1309,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
+                          color: AppTheme.competitionCrimson,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -1376,7 +1350,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF38BDF8),
+                          color: AppTheme.electricCyan,
                           shape: BoxShape.circle,
                         ),
                       ),

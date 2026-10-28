@@ -19,6 +19,7 @@ import {
   SupportTicketCategory,
 } from "@armsphere/types";
 import { auditLedgerService } from "./auditLedger.js";
+import { UserRoleService } from "./userRole.js";
 
 export interface CreateSupportTicketInput {
   subject: string;
@@ -36,6 +37,41 @@ export interface ListSupportTicketsFilters {
 
 export class SupportService {
   /**
+   * Resolve canonical staff authority (SUPPORT_AGENT or SYSTEM_ADMIN) and active user status from the database.
+   * Ensures suspended accounts or revoked roles cannot act on stale JWT claims.
+   */
+  private static async resolveStaffAuthority(actorId: string, fallbackRole: string): Promise<boolean> {
+    const [dbUser] = await db
+      .select({ isActive: users.isActive, role: users.role })
+      .from(users)
+      .where(eq(users.id, actorId))
+      .limit(1);
+
+    if (dbUser && dbUser.isActive === false) {
+      throw new ForbiddenError("User account is suspended or inactive.");
+    }
+
+    const hasGrantedStaffRole = await UserRoleService.hasActiveRole(actorId, [
+      UserRole.SUPPORT_AGENT,
+      UserRole.SYSTEM_ADMIN,
+    ]);
+
+    if (dbUser) {
+      return (
+        dbUser.role === UserRole.SUPPORT_AGENT ||
+        dbUser.role === UserRole.SYSTEM_ADMIN ||
+        hasGrantedStaffRole
+      );
+    }
+
+    return (
+      fallbackRole === UserRole.SUPPORT_AGENT ||
+      fallbackRole === UserRole.SYSTEM_ADMIN ||
+      hasGrantedStaffRole
+    );
+  }
+
+  /**
    * Create a new customer support ticket
    */
   static async createTicket(userId: string, input: CreateSupportTicketInput) {
@@ -49,6 +85,9 @@ export class SupportService {
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!user) {
       throw new NotFoundError("Requester user not found.");
+    }
+    if (user.isActive === false) {
+      throw new ForbiddenError("User account is suspended or inactive.");
     }
 
     const category = input.category || SupportTicketCategory.GENERAL;
@@ -87,7 +126,7 @@ export class SupportService {
    * List tickets scoped by caller role and filters
    */
   static async listTickets(actorId: string, role: string, filters: ListSupportTicketsFilters = {}) {
-    const isStaff = role === UserRole.SUPPORT_AGENT || role === UserRole.SYSTEM_ADMIN;
+    const isStaff = await SupportService.resolveStaffAuthority(actorId, role);
 
     // Athlete/regular user can ONLY see their own tickets
     const targetUserId = isStaff ? (filters.myTicketsOnly ? actorId : undefined) : actorId;
@@ -162,7 +201,7 @@ export class SupportService {
       throw new NotFoundError("Support ticket not found.");
     }
 
-    const isStaff = role === UserRole.SUPPORT_AGENT || role === UserRole.SYSTEM_ADMIN;
+    const isStaff = await SupportService.resolveStaffAuthority(actorId, role);
 
     if (!isStaff && ticket.userId !== actorId) {
       throw new ForbiddenError("You are not authorized to view this support ticket.");
@@ -192,6 +231,7 @@ export class SupportService {
       const sender = userMap.get(m.senderId);
       return {
         ...m,
+        content: m.message,
         sender: sender
           ? {
               id: sender.id,
@@ -237,7 +277,7 @@ export class SupportService {
    * Assign ticket to a support agent or system admin
    */
   static async assignTicket(actorId: string, role: string, ticketId: string, agentId: string | null) {
-    const isStaff = role === UserRole.SUPPORT_AGENT || role === UserRole.SYSTEM_ADMIN;
+    const isStaff = await SupportService.resolveStaffAuthority(actorId, role);
     if (!isStaff) {
       throw new ForbiddenError("Only support agents and administrators can assign tickets.");
     }
@@ -257,7 +297,17 @@ export class SupportService {
       if (!agentUser) {
         throw new NotFoundError("Target agent user not found.");
       }
-      if (agentUser.role !== UserRole.SUPPORT_AGENT && agentUser.role !== UserRole.SYSTEM_ADMIN) {
+      if (agentUser.isActive === false) {
+        throw new BadRequestError("Target agent account is inactive or suspended.");
+      }
+      const agentHasRole =
+        agentUser.role === UserRole.SUPPORT_AGENT ||
+        agentUser.role === UserRole.SYSTEM_ADMIN ||
+        (await UserRoleService.hasActiveRole(agentId, [
+          UserRole.SUPPORT_AGENT,
+          UserRole.SYSTEM_ADMIN,
+        ]));
+      if (!agentHasRole) {
         throw new BadRequestError("Tickets can only be assigned to support agents or administrators.");
       }
     }
@@ -327,7 +377,7 @@ export class SupportService {
       throw new BadRequestError(`Invalid support ticket status: ${newStatus}`);
     }
 
-    const isStaff = role === UserRole.SUPPORT_AGENT || role === UserRole.SYSTEM_ADMIN;
+    const isStaff = await SupportService.resolveStaffAuthority(actorId, role);
 
     if (!isStaff) {
       // Requesters can only close their own ticket
@@ -395,7 +445,11 @@ export class SupportService {
       throw new NotFoundError("Support ticket not found.");
     }
 
-    const isStaff = role === UserRole.SUPPORT_AGENT || role === UserRole.SYSTEM_ADMIN;
+    if (ticket.status === SupportTicketStatus.CLOSED) {
+      throw new BadRequestError("Cannot add a message to a closed support ticket. Reopen the ticket first.");
+    }
+
+    const isStaff = await SupportService.resolveStaffAuthority(actorId, role);
 
     if (!isStaff && ticket.userId !== actorId) {
       throw new ForbiddenError("Unauthorized to reply to this support ticket.");
@@ -422,6 +476,9 @@ export class SupportService {
 
     logger.info({ ticketId, messageId: message.id, isInternal: effectiveIsInternal }, "Added ticket message");
 
-    return message;
+    return {
+      ...message,
+      content: message.message,
+    };
   }
 }
