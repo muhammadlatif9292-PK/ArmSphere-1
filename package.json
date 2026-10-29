@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=@armsphere/api",
+    "dev": "npm run build --workspace=@armsphere/types && npm run build --workspace=@armsphere/core && npm run build --workspace=@armsphere/cryptography && npm run build --workspace=@armsphere/db-schema && npm run build --workspace=@armsphere/admin-web && npm run dev --workspace=@armsphere/api",
     "build": "npm run build --workspace=@armsphere/types && npm run build --workspace=@armsphere/core && npm run build --workspace=@armsphere/cryptography && npm run build --workspace=@armsphere/db-schema && npm run build --workspace=@armsphere/api && npm run build --workspace=@armsphere/admin-web",
     "start": "node apps/api/dist/server.js",
     "test": "npm run test --workspace=@armsphere/api",

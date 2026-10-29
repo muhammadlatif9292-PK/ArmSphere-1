@@ -7,7 +7,7 @@ import 'state_providers.dart';
 final rankingsArmProvider = StateProvider<String>((ref) => 'RIGHT');
 final rankingsProvinceProvider = StateProvider<String>((ref) => '');
 final rankingsSearchQueryProvider = StateProvider<String>((ref) => '');
-final rankingsWeightClassProvider = StateProvider<String>((ref) => '');
+final rankingsWeightClassProvider = StateProvider<String>((ref) => 'ALL');
 
 class RankingsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
@@ -16,23 +16,12 @@ class RankingsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic
     final arm = ref.watch(rankingsArmProvider);
     final province = ref.watch(rankingsProvinceProvider);
     final search = ref.watch(rankingsSearchQueryProvider);
-    final weightClass = ref.watch(rankingsWeightClassProvider);
-
-    final results = await repo.getLeaderboards(
+    return await repo.getLeaderboards(
       arm: arm,
       province: province.isEmpty ? null : province,
       search: search.isEmpty ? null : search,
       limit: 100,
     );
-
-    if (weightClass.isNotEmpty) {
-      return results.where((a) {
-        final wc = a['weightClass']?.toString().toLowerCase() ?? '';
-        return wc.contains(weightClass.toLowerCase());
-      }).toList();
-    }
-
-    return results;
   }
 }
 

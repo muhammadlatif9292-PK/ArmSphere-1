@@ -548,12 +548,30 @@ class MatchRepository extends BaseRepository {
 class TournamentRepository extends BaseRepository {
   TournamentRepository({required super.dioClient, required super.hiveStorage});
 
+  static Map<String, dynamic> _unwrapMap(dynamic data) {
+    final payload = (data is Map && data.containsKey('data') && data['data'] is Map)
+        ? data['data']
+        : data;
+    if (payload is Map) {
+      return Map<String, dynamic>.from(payload);
+    }
+    return <String, dynamic>{};
+  }
+
+  static List<Map<String, dynamic>> _unwrapList(dynamic data) {
+    final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+    if (payload is List) {
+      return payload.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
+
   Future<List<Map<String, dynamic>>> getTournaments({CancelToken? cancelToken}) async {
     return executeRequest(
       cacheKey: 'tournaments_list',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -565,7 +583,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_detail_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -581,7 +599,7 @@ class TournamentRepository extends BaseRepository {
         '/tournaments/events/$tournamentId/documents/$documentId',
         cancelToken: token,
       ),
-      parse: (data) => Map<String, dynamic>.from(data is Map && data['data'] is Map ? data['data'] : data),
+      parse: _unwrapMap,
     );
   }
 
@@ -605,7 +623,7 @@ class TournamentRepository extends BaseRepository {
         'arm': arm,
         if (notes != null) 'notes': notes,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -614,7 +632,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'bracket_detail_$bracketId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/brackets/$bracketId', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -623,7 +641,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'brackets_list',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/brackets', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -637,7 +655,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.patch('/tournaments/events/$eventId', data: data, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -650,7 +668,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/events/$eventId/publish', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -668,7 +686,7 @@ class TournamentRepository extends BaseRepository {
         data: {if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim()},
         cancelToken: token,
       ),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -681,7 +699,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/events/$eventId/complete', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -694,7 +712,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/confirm-manual-payment', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -706,7 +724,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_regs_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/registrations', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -718,7 +736,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_stats_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/stats', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -730,7 +748,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_awards_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/awards', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -743,7 +761,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/approve', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -760,7 +778,7 @@ class TournamentRepository extends BaseRepository {
         'registrationId': registrationId,
         'weight': weightKg,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -773,7 +791,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/certify', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -792,7 +810,7 @@ class TournamentRepository extends BaseRepository {
         'newDivision': newDivision,
         'newWeightClass': newWeightClass,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -817,7 +835,7 @@ class TournamentRepository extends BaseRepository {
         'weightClass': weightClass,
         'arm': arm,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -831,7 +849,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/seeds', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -844,7 +862,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/seeds/lock', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -857,7 +875,7 @@ class TournamentRepository extends BaseRepository {
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/generate', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -872,7 +890,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_matches_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/matches', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -881,7 +899,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'match_tables',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/tables', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -893,7 +911,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_tables_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/tables', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 

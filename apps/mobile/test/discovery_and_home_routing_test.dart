@@ -14,6 +14,8 @@ import 'package:mobile/core/providers/tournament_provider.dart';
 import 'package:mobile/core/providers/rankings_provider.dart';
 import 'package:mobile/core/providers/dispute_provider.dart';
 import 'package:mobile/core/providers/referee_provider.dart';
+import 'package:mobile/core/providers/discover_provider.dart';
+import 'package:mobile/core/providers/venue_provider.dart';
 
 class TestAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   TestAuthNotifier(super.state);
@@ -46,6 +48,19 @@ class FakeTournamentNotifier extends TournamentNotifier {
 }
 
 class FakeRankingsNotifier extends RankingsNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
+class FakeDiscoverFeedNotifier extends DiscoverFeedNotifier {
+  final Map<String, dynamic> _feed;
+  FakeDiscoverFeedNotifier(this._feed);
+
+  @override
+  Future<Map<String, dynamic>> build() async => _feed;
+}
+
+class FakeVenueListNotifier extends VenueListNotifier {
   @override
   Future<List<Map<String, dynamic>>> build() async => [];
 }
@@ -185,5 +200,53 @@ void main() {
       const screen = DiscoverScreen();
       expect(screen, isA<ConsumerStatefulWidget>());
     });
+
+    testWidgets('Renders 2x2 Federation Hub portals, framed sections, and compact empty states', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            discoverFeedProvider.overrideWith(() => FakeDiscoverFeedNotifier({
+                  'liveMatches': <Map<String, dynamic>>[],
+                  'announcements': <Map<String, dynamic>>[],
+                  'upcomingTournaments': <Map<String, dynamic>>[],
+                  'topAthletes': [
+                    {
+                      'id': 'ath_1',
+                      'rank': 1,
+                      'displayName': 'Muhammad Latif',
+                      'division': 'SENIOR',
+                      'eloRating': 1000,
+                    },
+                  ],
+                  'recentCompletedMatches': <Map<String, dynamic>>[],
+                })),
+            tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
+            venueListProvider.overrideWith(() => FakeVenueListNotifier()),
+          ],
+          child: const MaterialApp(
+            home: DiscoverScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify all 4 Federation Hub portals render simultaneously in the 2x2 bento grid
+      expect(find.text('Federation Hub'), findsOneWidget);
+      expect(find.text('Training Venues'), findsOneWidget);
+      expect(find.text('Pickup Meetups'), findsOneWidget);
+      expect(find.text('Community Feed'), findsOneWidget);
+      expect(find.text('ELO Rankings'), findsOneWidget);
+
+      // Verify active Top Rankings Leaderboard section is prioritized above empty sections
+      expect(find.text('Top Rankings Leaderboard'), findsOneWidget);
+      expect(find.text('Muhammad Latif'), findsOneWidget);
+      expect(find.text('1000 ELO'), findsOneWidget);
+
+      // Verify framed empty state banners render cleanly
+      expect(find.text('Sanctioned Tournaments'), findsOneWidget);
+      expect(find.text('No tournaments scheduled'), findsOneWidget);
+    });
   });
 }
+

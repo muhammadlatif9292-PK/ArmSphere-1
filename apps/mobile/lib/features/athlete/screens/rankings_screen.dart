@@ -31,7 +31,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
   ];
 
   static const _weightClasses = <String>[
-    '',
+    'ALL',
     '65kg',
     '75kg',
     '85kg',
@@ -177,8 +177,11 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: AppTheme.space8),
               itemBuilder: (context, idx) {
                 final wc = _weightClasses[idx];
-                final isSelected = selectedWeightClass == wc;
-                final label = wc.isEmpty ? 'ALL DIVISIONS' : wc.toUpperCase();
+                final isSelected = selectedWeightClass == wc ||
+                    (wc == 'ALL' && selectedWeightClass.isEmpty);
+                final label = (wc.isEmpty || wc == 'ALL')
+                    ? 'ALL DIVISIONS'
+                    : wc.toUpperCase();
                 return ChoiceChip(
                   label: Text(
                     label,
@@ -267,7 +270,15 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(rankingsProvider),
               child: rankingsAsync.when(
-                data: (rankings) {
+                data: (rawRankings) {
+                  final rankings = (selectedWeightClass.isEmpty ||
+                          selectedWeightClass == 'ALL')
+                      ? rawRankings
+                      : rawRankings.where((r) {
+                          final wc =
+                              r['weightClass']?.toString().toLowerCase() ?? '';
+                          return wc == selectedWeightClass.toLowerCase();
+                        }).toList();
                   if (rankings.isEmpty) {
                     return ListView(
                       children: const [

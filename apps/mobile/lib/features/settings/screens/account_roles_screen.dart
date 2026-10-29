@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -214,7 +215,14 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
           await ref.read(authProvider.notifier).refreshUserRoles();
         },
         child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.isInsideShell(context)
+                ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+          ),
           children: [
             // Current Active Persona Callout
             ElevatedActionCard(

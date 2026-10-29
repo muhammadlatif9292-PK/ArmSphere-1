@@ -6,6 +6,7 @@ import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -60,7 +61,12 @@ class BlockedUsersScreen extends ConsumerWidget {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 24),
+              ),
               itemCount: blocked.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
               itemBuilder: (context, index) {
@@ -177,7 +183,12 @@ class MyTicketsScreen extends ConsumerWidget {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 24),
+              ),
               itemCount: tickets.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {

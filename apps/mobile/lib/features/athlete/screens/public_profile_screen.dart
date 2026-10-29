@@ -12,6 +12,7 @@ import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/messaging_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'athlete_screens.dart' show ArmSwitchEloCard;
 
 class PublicAthleteProfileScreen extends ConsumerWidget {
@@ -26,11 +27,21 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
     final followAsync = ref.watch(followStatusProvider(athleteId));
     final followersAsync = ref.watch(followersProvider(athleteId));
     final followingAsync = ref.watch(followingProvider(athleteId));
+    final authState = ref.watch(authProvider);
 
-    // Own profile id (athlete_profiles.id) decides whether to hide Follow.
-    final myProfileId =
-        ref.watch(athleteProfileProvider).value?['id']?.toString();
-    final isSelf = myProfileId != null && myProfileId == athleteId;
+    // Own profile id (athlete_profiles.id or userId) decides whether to hide Follow.
+    final myProfile = ref.watch(athleteProfileProvider).value;
+    final myProfileId = myProfile?['id']?.toString();
+    final myUserId = myProfile?['userId']?.toString() ??
+        authState.userProfile?['id']?.toString();
+    final isSelf = (myProfileId != null && myProfileId == athleteId) ||
+        (myUserId != null && myUserId == athleteId);
+    final canViewTrainingLog = isSelf ||
+        authState.hasAnyRole(const [
+          'SYSTEM_ADMIN',
+          'NATIONAL_DIRECTOR',
+          'PROVINCIAL_DIRECTOR',
+        ]);
 
     return Scaffold(
       appBar: AppBar(
@@ -461,49 +472,54 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppTheme.space10),
-                ElevatedActionCard(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.push('/athlete/$athleteId/training-log');
-                  },
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.space16,
-                    vertical: AppTheme.space14,
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.fitness_center, color: AppTheme.goldPrimary),
-                      SizedBox(width: AppTheme.space12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Training Log & Personal Records',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: AppTheme.textPrimary,
+                if (canViewTrainingLog) ...[
+                  ElevatedActionCard(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      context.push('/athlete/$athleteId/training-log');
+                    },
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.space16,
+                      vertical: AppTheme.space14,
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.fitness_center, color: AppTheme.goldPrimary),
+                        SizedBox(width: AppTheme.space12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Training Log & Personal Records',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimary,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Verified gym lifts, table sessions & peak PRs',
-                              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                            ),
-                          ],
+                              SizedBox(height: 2),
+                              Text(
+                                'Verified gym lifts, table sessions & peak PRs',
+                                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Icon(Icons.chevron_right, color: AppTheme.textMuted),
-                    ],
+                        Icon(Icons.chevron_right, color: AppTheme.textMuted),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppTheme.space10),
+                  const SizedBox(height: AppTheme.space10),
+                ],
                 ElevatedActionCard(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    context.push('/athlete/achievements', extra: athleteId);
+                    context.push(
+                      '/athlete/achievements?athleteId=$athleteId',
+                      extra: athleteId,
+                    );
                   },
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.space16,

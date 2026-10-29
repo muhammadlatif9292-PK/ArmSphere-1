@@ -6,6 +6,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/payment_methods_provider.dart';
 
 class PaymentMethodsScreen extends ConsumerStatefulWidget {
@@ -119,7 +120,12 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Payment Methods')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
+        padding: EdgeInsets.fromLTRB(
+          AppTheme.space16,
+          AppTheme.space16,
+          AppTheme.space16,
+          MainShellScope.bottomClearance(context, additionalPadding: 24),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

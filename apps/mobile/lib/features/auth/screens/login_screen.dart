@@ -156,6 +156,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          tooltip: 'Back',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/welcome');
+            }
+          },
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -388,7 +403,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.push('/register'),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.go('/register');
+                    },
                     child: const Text('Sign Up'),
                   ),
                 ],

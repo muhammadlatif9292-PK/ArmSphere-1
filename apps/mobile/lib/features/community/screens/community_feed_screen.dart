@@ -56,47 +56,54 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.background,
         elevation: 0,
+        titleSpacing: 16,
         title: Row(
           children: [
             const ArmSphereImage(
               assetPath: ArmSphereAssets.sealFed,
-              width: 18,
-              height: 18,
+              width: 24,
+              height: 24,
               semanticLabel: 'Official Federation Community Arena',
             ),
-            const SizedBox(width: 8),
-            const Text(
-              'COMMUNITY ARENA',
-              style: TextStyle(
-                fontFamily: 'Space Grotesk',
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4), width: 0.8),
-              ),
-              child: const Row(
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PulseIndicator(size: 4.0, color: AppTheme.goldPrimary),
-                  SizedBox(width: 4),
-                  Text(
-                    'LIVE FEED',
+                  const Text(
+                    'COMMUNITY ARENA',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Space Grotesk',
-                      color: AppTheme.goldPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 8.5,
-                      letterSpacing: 0.5,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: AppTheme.textPrimary,
                     ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const PulseIndicator(size: 5.0, color: AppTheme.goldPrimary),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'LIVE FEED',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.95),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9.5,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -106,11 +113,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
         actions: [
           // Mode Toggle: Stream vs Vertical Clips
           IconButton(
+            visualDensity: VisualDensity.compact,
             tooltip: _isVerticalClipsMode ? 'Stream Card View' : 'Vertical Clip Reels',
             icon: Icon(
               _isVerticalClipsMode ? Icons.view_agenda_outlined : Icons.play_lesson_outlined,
               color: _isVerticalClipsMode ? AppTheme.goldPrimary : AppTheme.textSecondary,
-              size: 22,
+              size: 21,
             ),
             onPressed: () {
               HapticFeedback.selectionClick();
@@ -121,7 +129,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ),
           // Create Post CTA
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 14, left: 2),
             child: Center(
               child: InkWell(
                 onTap: () {

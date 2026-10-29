@@ -151,36 +151,96 @@ class _AthleteDashboardScreenState
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
-      body: RefreshIndicator(
-        color: AppTheme.crimson,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async {
-          HapticFeedback.mediumImpact();
-          ref.invalidate(athleteProfileProvider);
-          ref.invalidate(liveMatchesProvider);
-          ref.invalidate(tournamentProvider);
-          ref.invalidate(rankingsProvider);
-          if (myProfileId != null) {
-            ref.invalidate(trainingLogProvider(myProfileId));
-            ref.invalidate(trainingLogPRsProvider(myProfileId));
-          }
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-            16,
-            12,
-            16,
-            MainShellScope.bottomClearance(context, additionalPadding: 20),
+      body: Stack(
+        children: [
+          // Top Environmental Arena Backdrop & Stadium Spotlight
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 360,
+            child: IgnorePointer(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Opacity(
+                    opacity: 0.22,
+                    child: ArmSphereImage(
+                      assetPath: ArmSphereAssets.heroArena,
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                  Opacity(
+                    opacity: 0.35,
+                    child: ArmSphereImage(
+                      assetPath: ArmSphereAssets.texChalk,
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                    ),
+                  ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment(0.0, -0.85),
+                        radius: 1.1,
+                        colors: [
+                          Color(0x3338BDF8),
+                          Color(0x1AE23B3B),
+                          Color(0x00070A11),
+                        ],
+                        stops: [0.0, 0.45, 1.0],
+                      ),
+                    ),
+                  ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0x66070A11),
+                          Color(0xCC070A11),
+                          AppTheme.voidBackground,
+                        ],
+                        stops: [0.0, 0.65, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ========================================================
-              // TOP MINIMAL BRAND HEADER (TITANIUM LUXE)
-              // ========================================================
-              _buildBrandHeader(context, profile, displayName),
-              const SizedBox(height: AppTheme.space16),
+          RefreshIndicator(
+            color: AppTheme.crimson,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async {
+              HapticFeedback.mediumImpact();
+              ref.invalidate(athleteProfileProvider);
+              ref.invalidate(liveMatchesProvider);
+              ref.invalidate(tournamentProvider);
+              ref.invalidate(rankingsProvider);
+              if (myProfileId != null) {
+                ref.invalidate(trainingLogProvider(myProfileId));
+                ref.invalidate(trainingLogPRsProvider(myProfileId));
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                MainShellScope.bottomClearance(context, additionalPadding: 20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ========================================================
+                  // TOP MINIMAL BRAND HEADER (TITANIUM LUXE)
+                  // ========================================================
+                  _buildBrandHeader(context, profile, displayName),
+                  const SizedBox(height: AppTheme.space16),
 
               // ========================================================
               // SANCTIONED ARENA RADAR (ENVIRONMENTAL ANCHOR)
@@ -347,6 +407,8 @@ class _AthleteDashboardScreenState
           ),
         ),
       ),
+        ],
+      ),
     );
   }
 
@@ -355,105 +417,153 @@ class _AthleteDashboardScreenState
   // ---------------------------------------------------------------------------
   Widget _buildBrandHeader(
       BuildContext context, Map<String, dynamic> profile, String displayName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                // Crest Insignia
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                    ),
-                    border:
-                        Border.all(color: AppTheme.borderHighlight, width: 1.0),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.sports_kabaddi,
-                      size: 19,
-                      color: AppTheme.crimson,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'ARMSPHERE',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.4,
-                            color: AppTheme.textPure,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'PRO COMBAT OPERATING SYSTEM',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
-                            color: AppTheme.textMuted,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildGlassIconChip(
-                icon: Icons.notifications_none_rounded,
-                hasBadge: true,
-                tooltip: 'Notifications',
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  context.push('/notifications');
-                },
+              Expanded(
+                child: Row(
+                  children: [
+                    // Embossed Gold Crest Insignia
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        ),
+                        border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                            width: 1.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.18),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ArmSphereImage(
+                              assetPath: ArmSphereAssets.iconGold,
+                              fit: BoxFit.cover,
+                              excludeFromSemantics: true,
+                            ),
+                            const Center(
+                              child: Opacity(
+                                opacity: 0.0,
+                                child: Icon(
+                                  Icons.sports_kabaddi,
+                                  size: 19,
+                                  color: AppTheme.crimson,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'ARMSPHERE',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.4,
+                                color: AppTheme.textPure,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'PRO COMBAT OPERATING SYSTEM',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.0,
+                                color: AppTheme.textMuted,
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 8),
-              _buildGlassIconChip(
-                icon: Icons.search_rounded,
-                hasBadge: false,
-                tooltip: 'Discover & Search',
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  context.push('/discover');
-                },
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildGlassIconChip(
+                    icon: Icons.notifications_none_rounded,
+                    hasBadge: true,
+                    tooltip: 'Notifications',
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/notifications');
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildGlassIconChip(
+                    icon: Icons.search_rounded,
+                    hasBadge: false,
+                    tooltip: 'Discover & Search',
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/discover');
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 6),
+        // Optical stadium spotlight flare divider under brand header
+        const SizedBox(
+          height: 1.5,
+          width: double.infinity,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0x00DAE2EB),
+                  Color(0x3338BDF8),
+                  Color(0x99FFFFFF),
+                  Color(0x33E23B3B),
+                  Color(0x00DAE2EB),
+                ],
+                stops: [0.0, 0.3, 0.5, 0.7, 1.0],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -771,6 +881,78 @@ class _AthleteDashboardScreenState
       child: Stack(
         fit: StackFit.passthrough,
         children: [
+          // Per-card internal atmospheric imagery (arena grip clash + chalk dust + crimson/gold corner spotlights)
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(19),
+              child: IgnorePointer(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Opacity(
+                      opacity: 0.16,
+                      child: ArmSphereImage(
+                        assetPath: ArmSphereAssets.heroGrip,
+                        fit: BoxFit.cover,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                    Opacity(
+                      opacity: 0.42,
+                      child: ArmSphereImage(
+                        assetPath: ArmSphereAssets.texChalk,
+                        fit: BoxFit.cover,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(-0.85, -0.25),
+                          radius: 1.05,
+                          colors: [
+                            Color(0x38E23B3B),
+                            Color(0x14E23B3B),
+                            Color(0x000B0F17),
+                          ],
+                          stops: [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(0.85, -0.55),
+                          radius: 0.95,
+                          colors: [
+                            Color(0x2238BDF8),
+                            Color(0x14D4AF37),
+                            Color(0x000B0F17),
+                          ],
+                          stops: [0.0, 0.55, 1.0],
+                        ),
+                      ),
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xB30B0F17),
+                            Color(0xD9101722),
+                            Color(0xE60B0F17),
+                          ],
+                          stops: [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           // Specular top hairline rim highlight
           const Positioned(
             top: 0,
@@ -1852,6 +2034,59 @@ class _AthleteDashboardScreenState
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              // Per-card internal fight-stage imagery (forearm clash + chalk particles + red/blue corner spotlights)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: IgnorePointer(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Opacity(
+                          opacity: 0.20,
+                          child: ArmSphereImage(
+                            assetPath: ArmSphereAssets.heroGrip,
+                            fit: BoxFit.cover,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                        Opacity(
+                          opacity: 0.35,
+                          child: ArmSphereImage(
+                            assetPath: ArmSphereAssets.texChalk,
+                            fit: BoxFit.cover,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: Alignment(-0.85, 0.0),
+                              radius: 0.95,
+                              colors: [
+                                Color(0x36E23B3B),
+                                Color(0x00070A11),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: Alignment(0.85, 0.0),
+                              radius: 0.95,
+                              colors: [
+                                Color(0x3038BDF8),
+                                Color(0x00070A11),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               // Specular top rim: same lighting language as the athlete banner.
               const Positioned(
                 top: -15,
@@ -2026,16 +2261,59 @@ class _AthleteDashboardScreenState
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 6,
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: IgnorePointer(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Opacity(
+                      opacity: 0.18,
+                      child: ArmSphereImage(
+                        assetPath: ArmSphereAssets.defaultTournament,
+                        fit: BoxFit.cover,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                    Opacity(
+                      opacity: 0.32,
+                      child: ArmSphereImage(
+                        assetPath: ArmSphereAssets.texChalk,
+                        fit: BoxFit.cover,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xE60B0F17),
+                            Color(0xBF0B0F17),
+                            Color(0x990B0F17),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
               children: [
                 const FittedBox(
                   fit: BoxFit.scaleDown,
@@ -2131,6 +2409,8 @@ class _AthleteDashboardScreenState
           ),
         ],
       ),
+        ],
+      ),
     );
   }
 
@@ -2153,6 +2433,39 @@ class _AthleteDashboardScreenState
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+          // Per-card internal chalk dust particle bokeh & corner ambient sheen
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: IgnorePointer(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Opacity(
+                      opacity: 0.36,
+                      child: ArmSphereImage(
+                        assetPath: ArmSphereAssets.texChalk,
+                        fit: BoxFit.cover,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment(0.85, 0.85),
+                          radius: 0.9,
+                          colors: [
+                            Color(0x2238BDF8),
+                            Color(0x00151B24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           // Specular top rim: same lighting language as the banner and fight card.
           const Positioned(
             top: -16,
@@ -3383,7 +3696,9 @@ class AthleteProfileScreen extends ConsumerWidget {
           16,
           18,
           16,
-          MainShellScope.bottomClearance(context, additionalPadding: 20),
+          MainShellScope.isInsideShell(context)
+              ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+              : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3520,70 +3835,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // 2. Dual-Role Persona Switcher Toggle
-            DualRolePersonaSwitcher(
-              isOfficial: isOfficial,
-              role: role,
-              isOfficialActive: false,
-              onSelectAthlete: () {
-                // Already in Athlete profile
-              },
-              onSelectOfficial: () async {
-                HapticFeedback.lightImpact();
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    backgroundColor: AppTheme.cardSurface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                      side: const BorderSide(color: AppTheme.cardBorder),
-                    ),
-                    title: const Row(
-                      children: [
-                        Icon(Icons.gavel_rounded,
-                            color: AppTheme.info, size: 24),
-                        SizedBox(width: AppTheme.space8),
-                        Text(
-                          'Switch to Official Mode?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: AppTheme.fontDisplay,
-                          ),
-                        ),
-                      ],
-                    ),
-                    content: const Text(
-                      'This will switch your active operational view to the Referee Console and table officiating tools.',
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
-                          height: 1.4),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.goldPrimary,
-                          foregroundColor: Colors.black,
-                        ),
-                        child: const Text('Switch Role'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true && context.mounted) {
-                  context.push('/referee/dashboard');
-                }
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // 3. Competitive ELO Rating with Arm-Switch Flip (SIG-4 & SIG-3)
+            // 2. Competitive ELO Rating with Arm-Switch Flip (SIG-4 & SIG-3)
             const Text(
               'COMPETITIVE ELO RATING',
               style: TextStyle(
@@ -3719,19 +3971,6 @@ class AthleteProfileScreen extends ConsumerWidget {
                       context.push('/championship/titles');
                     },
                   ),
-                  if (isOfficial) ...[
-                    const Divider(height: 1, color: AppTheme.borderSubtle),
-                    _WorkspaceTile(
-                      icon: Icons.gavel_rounded,
-                      iconColor: AppTheme.info,
-                      title: 'Referee & Operations Console',
-                      subtitle: 'Live table scorepad & event management',
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/referee/dashboard');
-                      },
-                    ),
-                  ],
                   const Divider(height: 1, color: AppTheme.borderSubtle),
                   _WorkspaceTile(
                     icon: Icons.settings_outlined,
@@ -4191,10 +4430,10 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
     final p = widget.profileData;
     final rightElo = (p['rightArmElo'] as num?)?.toInt() ??
         (p['eloRating'] as num?)?.toInt() ??
-        1200;
+        1000;
     final leftElo = (p['leftArmElo'] as num?)?.toInt() ??
         (p['eloRating'] as num?)?.toInt() ??
-        1200;
+        1000;
     final weightClass = p['weightClass']?.toString();
     final division = p['division']?.toString() ?? 'Senior';
 
@@ -4564,16 +4803,22 @@ class AthleteAchievementsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = athleteId != null
-        ? ref.watch(publicAthleteProfileProvider(athleteId!))
+    final targetId = (athleteId != null && athleteId!.trim().isNotEmpty)
+        ? athleteId!.trim()
+        : null;
+    final profileAsync = targetId != null
+        ? ref.watch(publicAthleteProfileProvider(targetId))
         : ref.watch(athleteProfileProvider);
+    final athleteName = profileAsync.value?['displayName']?.toString();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text(
-          'Athletic Honors',
-          style: TextStyle(
+        title: Text(
+          athleteName != null && athleteName.isNotEmpty && targetId != null
+              ? '$athleteName • Athletic Honors'
+              : 'Athletic Honors',
+          style: const TextStyle(
               fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
         ),
       ),

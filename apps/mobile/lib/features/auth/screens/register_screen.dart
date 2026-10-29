@@ -62,7 +62,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ? SnackBarAction(
                     label: 'Sign In',
                     textColor: Colors.white,
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.go('/login'),
                   )
                 : null,
           ),
@@ -84,6 +84,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          tooltip: 'Back',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/welcome');
+            }
+          },
+        ),
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -325,7 +336,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.go('/login');
+                    },
                     child: const Text('Sign In'),
                   ),
                 ],

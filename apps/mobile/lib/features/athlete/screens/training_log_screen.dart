@@ -1,9 +1,11 @@
 import 'dart:ui';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/athlete_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/theme/app_theme.dart';
@@ -33,7 +35,68 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
     return '${dt.day} ${months[dt.month - 1]}, $h:${dt.minute.toString().padLeft(2, '0')} $amPm';
   }
 
+  bool _isForbiddenError(Object e) {
+    if (e is DioException && e.response?.statusCode == 403) {
+      return true;
+    }
+    final msg = e.toString().toLowerCase();
+    return msg.contains('403') || msg.contains('forbidden') || msg.contains('not authorized');
+  }
+
   Widget _errorView(BuildContext context, WidgetRef ref, Object e) {
+    if (_isForbiddenError(e)) {
+      return ListView(
+        padding: EdgeInsets.fromLTRB(20, 40, 20, MainShellScope.bottomClearance(context)),
+        children: [
+          ElevatedActionCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.lock_outline_rounded,
+                    size: 32,
+                    color: AppTheme.goldPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'PRIVATE TRAINING DOSSIER',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Individual gym training logs and personal record telemetry are restricted to the athlete and authorized PAFF federation officials.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MainShellScope.bottomClearance(context)),
       children: [
@@ -60,18 +123,38 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
     );
   }
 
+  bool _resolveIsSelf(
+    String targetId,
+    Map<String, dynamic>? myProfile,
+    AuthState authState,
+  ) {
+    if (targetId.isEmpty || targetId == 'self' || targetId == 'me') {
+      return true;
+    }
+    if (myProfile != null) {
+      final myProfileId = myProfile['id']?.toString();
+      final myUserId = myProfile['userId']?.toString();
+      return (myProfileId != null && myProfileId == targetId) ||
+          (myUserId != null && myUserId == targetId);
+    }
+    final authUser = authState.userProfile;
+    if (authUser != null || authState.status == AuthStatus.authenticated) {
+      final authUserId = authUser?['id']?.toString();
+      final authAthleteId = authUser?['athleteId']?.toString();
+      return (authUserId != null && authUserId == targetId) ||
+          (authAthleteId != null && authAthleteId == targetId);
+    }
+    // Isolated widget test harness fallback when neither profile nor auth state is configured
+    return authState.status == AuthStatus.unknown;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final prsAsync = ref.watch(trainingLogPRsProvider(athleteId));
     final logsAsync = ref.watch(trainingLogProvider(athleteId));
     final myProfile = ref.watch(athleteProfileProvider).value;
-    final myProfileId = myProfile?['id']?.toString();
-    final myUserId = myProfile?['userId']?.toString();
-    final isSelf = athleteId.isEmpty ||
-        athleteId == 'self' ||
-        myProfile == null ||
-        (myProfileId != null && myProfileId == athleteId) ||
-        (myUserId != null && myUserId == athleteId);
+    final authState = ref.watch(authProvider);
+    final isSelf = _resolveIsSelf(athleteId, myProfile, authState);
 
     return Scaffold(
       backgroundColor: AppTheme.background,

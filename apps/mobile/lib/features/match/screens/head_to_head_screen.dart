@@ -179,7 +179,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
   }) {
     final measurements = a['measurements'] as Map<String, dynamic>?;
     final biometrics = a['biometrics'] as Map<String, dynamic>?;
-    final baseElo = (a['eloRating'] as num?)?.toInt() ?? 1200;
+    final baseElo = (a['eloRating'] as num?)?.toInt() ?? 1000;
     final eloRight = (a['rightArmElo'] as num?)?.toInt() ?? baseElo;
     final eloLeft = (a['leftArmElo'] as num?)?.toInt() ?? baseElo;
 
@@ -246,7 +246,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
   // --- Dynamic Athlete Profiles ---
   Map<String, dynamic> _resolveRedAthlete([
     Map<String, dynamic>? comparisonData,
-    Map<String, dynamic>? selfProfile,
+    Map<String, dynamic>? redCornerProfile,
   ]) {
     if (comparisonData != null && comparisonData['athlete1'] is Map) {
       return _extractAthleteMetrics(
@@ -258,10 +258,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         defaultInitial: 'R',
       );
     }
-    if (selfProfile != null && selfProfile.isNotEmpty) {
+    if (redCornerProfile != null && redCornerProfile.isNotEmpty) {
       return _extractAthleteMetrics(
-        selfProfile,
-        fallbackId: selfProfile['id']?.toString() ?? _selectedAthleteId1,
+        redCornerProfile,
+        fallbackId: redCornerProfile['id']?.toString() ?? _selectedAthleteId1,
         defaultName: 'Red Corner Contender',
         defaultNickname: 'RED CORNER',
         defaultRank: 'RED CORNER',
@@ -292,13 +292,26 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     };
   }
 
-  Map<String, dynamic> _resolveBlueAthlete([Map<String, dynamic>? comparisonData]) {
+  Map<String, dynamic> _resolveBlueAthlete([
+    Map<String, dynamic>? comparisonData,
+    Map<String, dynamic>? blueCornerProfile,
+  ]) {
     if (comparisonData != null && comparisonData['athlete2'] is Map) {
       return _extractAthleteMetrics(
         Map<String, dynamic>.from(comparisonData['athlete2'] as Map),
         fallbackId: _selectedAthleteId2 ?? widget.athleteId2,
         defaultName: 'Athlete 2',
         defaultNickname: 'RIVAL',
+        defaultRank: 'BLUE CORNER',
+        defaultInitial: 'B',
+      );
+    }
+    if (blueCornerProfile != null && blueCornerProfile.isNotEmpty) {
+      return _extractAthleteMetrics(
+        blueCornerProfile,
+        fallbackId: blueCornerProfile['id']?.toString() ?? _selectedAthleteId2,
+        defaultName: 'Blue Corner Contender',
+        defaultNickname: 'BLUE CORNER',
         defaultRank: 'BLUE CORNER',
         defaultInitial: 'B',
       );
@@ -342,8 +355,19 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         ? ref.watch(athleteComparisonProvider(
             (athlete1Id: effectiveId1, athlete2Id: effectiveId2)))
         : null;
-    final red = _resolveRedAthlete(comparisonAsync?.value, selfProfile);
-    final blue = _resolveBlueAthlete(comparisonAsync?.value);
+    final singleRedProfile = (comparisonAsync?.value == null &&
+            effectiveId1 != null &&
+            effectiveId1.isNotEmpty &&
+            effectiveId1 != selfProfile?['id']?.toString())
+        ? ref.watch(publicAthleteProfileProvider(effectiveId1)).value
+        : selfProfile;
+    final singleBlueProfile = (comparisonAsync?.value == null &&
+            effectiveId2 != null &&
+            effectiveId2.isNotEmpty)
+        ? ref.watch(publicAthleteProfileProvider(effectiveId2)).value
+        : null;
+    final red = _resolveRedAthlete(comparisonAsync?.value, singleRedProfile);
+    final blue = _resolveBlueAthlete(comparisonAsync?.value, singleBlueProfile);
     final headToHead = comparisonAsync?.value?['headToHead'] as Map<String, dynamic>?;
 
     final redElo = (_isRightArm ? red['eloRight'] : red['eloLeft']) as int;
@@ -1706,7 +1730,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                     final prov = item['province']?.toString() ?? '';
                                     final rElo = (item['rightArmElo'] as num?)?.toInt() ??
                                         (item['eloRating'] as num?)?.toInt() ??
-                                        1200;
+                                        1000;
                                     return ListTile(
                                       dense: true,
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 6),
@@ -1745,6 +1769,20 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                       ),
                                       onTap: () {
                                         if (id.isEmpty) return;
+                                        final selfId = ref.read(athleteProfileProvider).value?['id']?.toString();
+                                        final oppositeCornerId = isRedCorner
+                                            ? (_selectedAthleteId2 ?? widget.athleteId2)
+                                            : (_selectedAthleteId1 ?? widget.athleteId1 ?? selfId);
+                                        if (oppositeCornerId != null && oppositeCornerId == id) {
+                                          HapticFeedback.heavyImpact();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Select a different athlete than the opposite corner contender.'),
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         HapticFeedback.mediumImpact();
                                         setState(() {
                                           if (isRedCorner) {

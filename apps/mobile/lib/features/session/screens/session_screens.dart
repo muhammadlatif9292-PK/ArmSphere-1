@@ -7,6 +7,7 @@ import '../../../core/providers/session_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../settings/widgets/biometric_settings_tile.dart';
 
@@ -86,7 +87,14 @@ class ActiveSessionsListScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(sessionProvider),
         child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.isInsideShell(context)
+                ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+          ),
           children: [
             Text(
               'DEVICE SECURITY',
@@ -344,7 +352,14 @@ class ActiveSessionControlScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(sessionProvider),
         child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.isInsideShell(context)
+                ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+          ),
           children: [
             ElevatedActionCard(
               padding: const EdgeInsets.all(AppTheme.space24),

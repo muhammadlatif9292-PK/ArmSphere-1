@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/armsphere_image.dart';
-import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 
 /// Canary 1: Welcome & Onboarding Screen (`/welcome` & `/onboarding`)
@@ -153,156 +152,113 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
           ),
 
           SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 480),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ── Hero Layer: M0 Icon Gold Master Emblem (0–300ms fade-in) ──
-                      FadeTransition(
-                        opacity: _heroFadeAnimation,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: (constraints.maxHeight - 48).clamp(0.0, double.infinity),
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              width: 96,
-                              height: 96,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppTheme.cardSurface,
-                                border: Border.all(
-                                  color: AppTheme.goldPrimary,
-                                  width: 2.0,
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: AppTheme.goldGlow,
-                                    blurRadius: 36,
-                                    spreadRadius: 4,
+                            // ── Hero Layer: M0 Icon Gold Master Emblem (0–300ms fade-in) ──
+                            FadeTransition(
+                              opacity: _heroFadeAnimation,
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    width: 96,
+                                    height: 96,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppTheme.cardSurface,
+                                      border: Border.all(
+                                        color: AppTheme.goldPrimary,
+                                        width: 2.0,
+                                      ),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: AppTheme.goldGlow,
+                                          blurRadius: 36,
+                                          spreadRadius: 4,
+                                        ),
+                                        BoxShadow(
+                                          color: Colors.black,
+                                          blurRadius: 16,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipOval(
+                                      child: ArmSphereImage(
+                                        assetPath: ArmSphereAssets.iconGold,
+                                        width: 96,
+                                        height: 96,
+                                        fit: BoxFit.cover,
+                                        semanticLabel: 'ArmSphere Official Federation Emblem',
+                                        fallbackIcon: Icons.sports_kabaddi,
+                                      ),
+                                    ),
                                   ),
-                                  BoxShadow(
-                                    color: Colors.black,
-                                    blurRadius: 16,
-                                    offset: Offset(0, 4),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'ARMSPHERE',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'Space Grotesk',
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 34,
+                                      letterSpacing: 1.5,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  const Text(
+                                    'THE INTERNATIONAL ARMWRESTLING FEDERATION SYSTEM',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'Space Grotesk',
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
+                                      color: AppTheme.textMuted,
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: ClipOval(
-                                child: ArmSphereImage(
-                                  assetPath: ArmSphereAssets.iconGold,
-                                  width: 96,
-                                  height: 96,
-                                  fit: BoxFit.cover,
-                                  semanticLabel: 'ArmSphere Official Federation Emblem',
-                                  fallbackIcon: Icons.sports_kabaddi,
-                                ),
-                              ),
                             ),
-                            const SizedBox(height: 20),
-                            const Text(
-                              'ARMSPHERE',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Space Grotesk',
-                                fontWeight: FontWeight.w900,
-                                fontSize: 34,
-                                letterSpacing: 1.5,
-                                color: AppTheme.goldPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'THE INTERNATIONAL ARMWRESTLING FEDERATION SYSTEM',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Space Grotesk',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
-                                color: AppTheme.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                      const SizedBox(height: 28),
+                            const SizedBox(height: 32),
 
-                      // ── Content Slide Ingress (300–550ms) ──────────────────
-                      AnimatedBuilder(
-                        animation: _contentSlideAnimation,
-                        builder: (context, child) {
-                          final dy = (1.0 - _contentSlideAnimation.value) * 24.0;
-                          return Transform.translate(
-                            offset: Offset(0, dy),
-                            child: Opacity(
-                              opacity: _contentSlideAnimation.value,
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // ── Choose Your Federation Role Header ────────────
-                            Row(
-                              children: [
-                                Container(
-                                  width: 3.5,
-                                  height: 14,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.goldPrimary,
-                                    borderRadius: BorderRadius.circular(2),
+                            // ── Content Slide Ingress (300–550ms) ──────────────────
+                            AnimatedBuilder(
+                              animation: _contentSlideAnimation,
+                              builder: (context, child) {
+                                final dy = (1.0 - _contentSlideAnimation.value) * 24.0;
+                                return Transform.translate(
+                                  offset: Offset(0, dy),
+                                  child: Opacity(
+                                    opacity: _contentSlideAnimation.value,
+                                    child: child,
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'SELECT YOUR ROLE IN THE ARENA',
-                                  style: TextStyle(
-                                    fontFamily: 'Space Grotesk',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-
-                            // ── 4 Role Selection Cards (TactileTap Cat A) ─────
-                            ..._roles.map((role) {
-                              final isSelected = _selectedRole == role.id;
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: _RoleSelectCard(
-                                  data: role,
-                                  isSelected: isSelected,
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    setState(() {
-                                      _selectedRole = role.id;
-                                    });
-                                  },
-                                ),
-                              );
-                            }),
-
-                            const SizedBox(height: 20),
-
-                            // ── Inside ArmSphere Institutional Card ───────────
-                            ElevatedActionCard(
-                              padding: const EdgeInsets.all(18),
+                                );
+                              },
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
+                                  // ── Choose Your Federation Role Header ────────────
                                   Row(
                                     children: [
                                       Container(
-                                        width: 4,
+                                        width: 3.5,
                                         height: 14,
                                         decoration: BoxDecoration(
                                           color: AppTheme.goldPrimary,
@@ -311,92 +267,95 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                       ),
                                       const SizedBox(width: 8),
                                       const Text(
-                                        'SANCTIONED COMPETITIVE ECOSYSTEM',
+                                        'SELECT YOUR ROLE IN THE ARENA',
                                         style: TextStyle(
                                           fontFamily: 'Space Grotesk',
-                                          fontSize: 10.5,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 0.8,
-                                          color: AppTheme.goldPrimary,
+                                          color: AppTheme.textPrimary,
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 14),
-                                  const _BenefitRow(
-                                    icon: Icons.emoji_events_outlined,
-                                    title: 'Live Bracket Battles',
-                                    subtitle: 'Real-time table calls, certified weigh-ins & dual-arm records.',
+
+                                  // ── 4 Role Selection Cards (TactileTap Cat A) ─────
+                                  ..._roles.map((role) {
+                                    final isSelected = _selectedRole == role.id;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 10),
+                                      child: _RoleSelectCard(
+                                        data: role,
+                                        isSelected: isSelected,
+                                        onTap: () {
+                                          HapticFeedback.lightImpact();
+                                          setState(() {
+                                            _selectedRole = role.id;
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  }),
+
+                                  const SizedBox(height: 28),
+
+                                  // ── Primary Action: Fixed 52dp "ENTER ARENA" ───────
+                                  _TactileEnterArenaButton(
+                                    onTap: () {
+                                      HapticFeedback.mediumImpact();
+                                      context.go('/register', extra: {'role': _selectedRole});
+                                    },
                                   ),
-                                  const _BenefitRow(
-                                    icon: Icons.leaderboard_outlined,
-                                    title: 'National Federation Rankings',
-                                    subtitle: 'Provincial ELO tracking with dynamic combat rating updates.',
+
+                                  const SizedBox(height: 12),
+
+                                  // ── Secondary Action: Existing Account ────────────
+                                  OutlinedButton(
+                                    onPressed: () {
+                                      HapticFeedback.lightImpact();
+                                      context.go('/login');
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppTheme.textPrimary,
+                                      side: const BorderSide(color: AppTheme.border, width: 1.2),
+                                      minimumSize: const Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                      ),
+                                      textStyle: const TextStyle(
+                                        fontFamily: 'Space Grotesk',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                    child: const Text('I ALREADY HAVE AN ACCOUNT'),
                                   ),
-                                  const _BenefitRow(
-                                    icon: Icons.gavel_outlined,
-                                    title: 'Table-Side Precision Scoring',
-                                    subtitle: 'Sanctioned referee console with 400ms physical pin-hold locks.',
+
+                                  const SizedBox(height: 20),
+
+                                  // Disclaimer Footer
+                                  const Text(
+                                    'By entering you agree to the ArmSphere Federation Charter\nand Anti-Doping Fair Play Code.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 10.5,
+                                      color: AppTheme.textMuted,
+                                      height: 1.45,
+                                    ),
                                   ),
                                 ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // ── Primary Action: Fixed 52dp "ENTER ARENA" ───────
-                            _TactileEnterArenaButton(
-                              onTap: () {
-                                HapticFeedback.mediumImpact();
-                                context.go('/register', extra: {'role': _selectedRole});
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // ── Secondary Action: Existing Account ────────────
-                            OutlinedButton(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                context.go('/login');
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppTheme.textPrimary,
-                                side: const BorderSide(color: AppTheme.border, width: 1.2),
-                                minimumSize: const Size(double.infinity, 50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                ),
-                                textStyle: const TextStyle(
-                                  fontFamily: 'Space Grotesk',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                              child: const Text('I ALREADY HAVE AN ACCOUNT'),
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Disclaimer Footer
-                            const Text(
-                              'By entering you agree to the ArmSphere Federation Charter\nand Anti-Doping Fair Play Code.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 10.5,
-                                color: AppTheme.textMuted,
-                                height: 1.45,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -627,66 +586,6 @@ class _RoleCardData {
     required this.subtitle,
     required this.icon,
   });
-}
-
-class _BenefitRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _BenefitRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.elevatedSurface,
-              border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.35)),
-            ),
-            child: Icon(icon, size: 16, color: AppTheme.goldPrimary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Space Grotesk',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11.5,
-                    color: AppTheme.textSecondary,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Subtle 1.5% opacity magnesium chalk grain painter for L0 Canvas

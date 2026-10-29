@@ -264,13 +264,6 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         title: const Text('Referee Panel'),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.go('/login'),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
