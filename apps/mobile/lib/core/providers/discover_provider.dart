@@ -5,12 +5,56 @@ class DiscoverFeed {
   final List<Map<String, dynamic>> recentMatches;
   final List<Map<String, dynamic>> topRankings;
   final List<Map<String, dynamic>> latestAnnouncements;
+  final List<Map<String, dynamic>> liveMatches;
+  final List<Map<String, dynamic>> upcomingTournaments;
 
   DiscoverFeed({
-    required this.recentMatches,
-    required this.topRankings,
-    required this.latestAnnouncements,
+    this.recentMatches = const [],
+    this.topRankings = const [],
+    this.latestAnnouncements = const [],
+    this.liveMatches = const [],
+    this.upcomingTournaments = const [],
   });
+
+  factory DiscoverFeed.fromMap(Map<String, dynamic> map) {
+    return DiscoverFeed(
+      recentMatches: List<Map<String, dynamic>>.from(
+        (map['recentCompletedMatches'] ?? map['recentMatches'] as List?) ?? const [],
+      ),
+      topRankings: List<Map<String, dynamic>>.from(
+        (map['topAthletes'] ?? map['topRankings'] as List?) ?? const [],
+      ),
+      latestAnnouncements: List<Map<String, dynamic>>.from(
+        (map['announcements'] ?? map['latestAnnouncements'] as List?) ?? const [],
+      ),
+      liveMatches: List<Map<String, dynamic>>.from(
+        (map['liveMatches'] as List?) ?? const [],
+      ),
+      upcomingTournaments: List<Map<String, dynamic>>.from(
+        (map['upcomingTournaments'] as List?) ?? const [],
+      ),
+    );
+  }
+
+  dynamic operator [](String key) {
+    switch (key) {
+      case 'recentMatches':
+      case 'recentCompletedMatches':
+        return recentMatches;
+      case 'topRankings':
+      case 'topAthletes':
+        return topRankings;
+      case 'latestAnnouncements':
+      case 'announcements':
+        return latestAnnouncements;
+      case 'liveMatches':
+        return liveMatches;
+      case 'upcomingTournaments':
+        return upcomingTournaments;
+      default:
+        return null;
+    }
+  }
 }
 
 class DiscoverFeedNotifier extends AutoDisposeAsyncNotifier<DiscoverFeed> {

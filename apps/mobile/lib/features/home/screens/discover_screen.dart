@@ -798,7 +798,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             const SizedBox(width: 8),
             StatusChip(
               label: '$elo ELO',
-              color: AppTheme.secondaryAccent,
+              type: StatusType.info,
             ),
           ],
           const SizedBox(width: 6),
@@ -810,7 +810,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildFeedContent(
     BuildContext context,
-    Map<String, dynamic> feed,
+    dynamic feed,
     AsyncValue<List<Map<String, dynamic>>> tournamentsAsync,
     AsyncValue<List<Map<String, dynamic>>> venuesAsync,
   ) {
@@ -1206,10 +1206,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    StatusChip(
+                    StatusChip.live(
                       label: status.toString(),
-                      color: AppTheme.primaryAccent,
-                      showDot: true,
                     ),
                     if (tableNumber != null)
                       Text(
@@ -1355,9 +1353,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                           ),
                           if (isPinned)
-                            const StatusChip(
+                            const StatusChip.warning(
                               label: 'PINNED',
-                              color: AppTheme.secondaryAccent,
                             ),
                         ],
                       ),
@@ -1551,9 +1548,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           const SizedBox(width: 8),
           StatusChip(
             label: status.toString(),
-            color: status == 'LIVE' || status == 'ACTIVE'
-                ? AppTheme.primaryAccent
-                : AppTheme.secondaryAccent,
+            type: (status == 'LIVE' || status == 'ACTIVE')
+                ? StatusType.live
+                : StatusType.info,
           ),
           const SizedBox(width: 4),
           const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 18),
@@ -1789,9 +1786,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ),
                       ),
                       StatusChip(
-                        label: '$elo ELO',
-                        color: AppTheme.secondaryAccent,
-                      ),
+              label: '$elo ELO',
+              type: StatusType.info,
+            ),
                       const SizedBox(width: 6),
                       const Icon(
                         Icons.chevron_right,
@@ -1860,9 +1857,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const StatusChip(
+                          const StatusChip.success(
                             label: 'FINAL',
-                            color: AppTheme.success,
                           ),
                         ],
                       ),

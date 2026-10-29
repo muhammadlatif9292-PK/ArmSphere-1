@@ -39,6 +39,8 @@ class DockAwareEndFloatLocation extends FloatingActionButtonLocation {
 /// Scope provided by [MainShellScreen] to inform descendant screens and widgets
 /// of the floating navigation dock's dimensions and clearance requirements.
 class MainShellScope extends InheritedWidget {
+  static const double kShellClearance = kFloatingDockTotalHeight;
+
   final double dockHeight;
   final double dockBottomMargin;
 

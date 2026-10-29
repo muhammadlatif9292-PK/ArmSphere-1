@@ -57,7 +57,7 @@ class FakeDiscoverFeedNotifier extends DiscoverFeedNotifier {
   FakeDiscoverFeedNotifier(this._feed);
 
   @override
-  Future<Map<String, dynamic>> build() async => _feed;
+  Future<DiscoverFeed> build() async => DiscoverFeed.fromMap(_feed);
 }
 
 class FakeVenueListNotifier extends VenueListNotifier {
