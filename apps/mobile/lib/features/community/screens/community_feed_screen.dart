@@ -9,8 +9,11 @@ import '../../../core/providers/community_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/embed_url_builder.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
+import '../../../core/widgets/main_shell_screen.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
 
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
@@ -53,6 +56,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.background,
         elevation: 0,
+        titleSpacing: 16,
         title: Row(
           children: [
             const ArmSphereImage(
@@ -61,39 +65,45 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               height: 18,
               semanticLabel: 'Official Federation Community Arena',
             ),
-            const SizedBox(width: 8),
-            const Text(
-              'COMMUNITY ARENA',
-              style: TextStyle(
-                fontFamily: 'Space Grotesk',
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4), width: 0.8),
-              ),
-              child: const Row(
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PulseIndicator(size: 4.0, color: AppTheme.goldPrimary),
-                  SizedBox(width: 4),
-                  Text(
-                    'LIVE FEED',
+                  const Text(
+                    'COMMUNITY ARENA',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Space Grotesk',
-                      color: AppTheme.goldPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 8.5,
-                      letterSpacing: 0.5,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: AppTheme.textPrimary,
                     ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const PulseIndicator(size: 5.0, color: AppTheme.goldPrimary),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'LIVE FEED',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.95),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9.5,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -103,11 +113,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
         actions: [
           // Mode Toggle: Stream vs Vertical Clips
           IconButton(
+            visualDensity: VisualDensity.compact,
             tooltip: _isVerticalClipsMode ? 'Stream Card View' : 'Vertical Clip Reels',
             icon: Icon(
               _isVerticalClipsMode ? Icons.view_agenda_outlined : Icons.play_lesson_outlined,
               color: _isVerticalClipsMode ? AppTheme.goldPrimary : AppTheme.textSecondary,
-              size: 22,
+              size: 21,
             ),
             onPressed: () {
               HapticFeedback.selectionClick();
@@ -118,7 +129,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ),
           // Create Post CTA
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 14, left: 2),
             child: Center(
               child: InkWell(
                 onTap: () {
@@ -211,19 +222,24 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
       ),
       body: feedAsync.when(
         loading: () => ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MainShellScope.bottomClearance(context, additionalPadding: 16),
+          ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (_, __) => const RepaintBoundary(
             child: SkeletonPlaceholder(height: 280),
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load feed',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(communityFeedProvider),
+          onRetry: () => ref.invalidate(communityFeedProvider),
+          showSecondaryAction: false,
+          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
         ),
         data: (allPosts) {
           final posts = _selectedCategory == 'ALL'
@@ -274,7 +290,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               },
               child: ListView.separated(
                 key: const PageStorageKey<String>('community_feed_list_view'),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 16),
+                ),
                 itemCount: posts.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
@@ -863,65 +884,83 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                   ),
                 ),
 
-                // Right Translucent Action Dock
+                // Right Translucent Action Dock (ISSUE-P3-02: 20dp margin to avoid Android back gestures + touch-absorbing backing container)
                 Positioned(
-                  right: 14,
-                  bottom: 100,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Like Scale Bounce
-                      _ScaleBounceLikeButton(postId: postId, isVertical: true),
-                      const SizedBox(height: 20),
-                      // Comments
-                      IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 28),
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          context.push('/community/posts/$postId/comments');
-                        },
+                  right: 20,
+                  bottom: MainShellScope.bottomClearance(context, additionalPadding: 86),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF070A11).withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        width: 1.0,
                       ),
-                      const Text(
-                        'CHAT',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textMuted,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Share
-                      IconButton(
-                        icon: const Icon(Icons.share_outlined, color: Colors.white, size: 26),
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Clip link copied to clipboard'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                      ),
-                      const Text(
-                        'SHARE',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textMuted,
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Like Scale Bounce
+                        _ScaleBounceLikeButton(postId: postId, isVertical: true),
+                        const SizedBox(height: 16),
+                        // Comments
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 28),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/community/posts/$postId/comments');
+                          },
                         ),
-                      ),
-                    ],
+                        const Text(
+                          'CHAT',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Share
+                        IconButton(
+                          icon: const Icon(Icons.share_outlined, color: Colors.white, size: 26),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Clip link copied to clipboard'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        ),
+                        const Text(
+                          'SHARE',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
                 // Bottom Athlete & Technical HUD Overlay
                 Positioned(
                   left: 16,
-                  right: 80,
-                  bottom: 30,
+                  right: 86,
+                  bottom: MainShellScope.bottomClearance(context, additionalPadding: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,

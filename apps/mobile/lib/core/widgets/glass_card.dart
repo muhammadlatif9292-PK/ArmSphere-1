@@ -80,9 +80,9 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderColor = widget.borderColor ?? const Color(0x26D4AF37); // 15% opacity gold
-    final effectiveBgColor = widget.backgroundColor ?? AppTheme.glassSurface; // Deep glass onyx
-    final effectiveGlowColor = widget.glowColor ?? const Color(0x26D4AF37);
+    final effectiveBorderColor = widget.borderColor ?? AppTheme.glassBorder;
+    final effectiveBgColor = widget.backgroundColor ?? AppTheme.glassSurface;
+    final effectiveGlowColor = widget.glowColor ?? AppTheme.cyanGlow;
 
     Widget content = Container(
       margin: widget.margin,
@@ -92,11 +92,12 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
             ? [
                 BoxShadow(
                   color: effectiveGlowColor,
-                  blurRadius: 16.0,
-                  spreadRadius: -2.0,
+                  blurRadius: 18.0,
+                  spreadRadius: 0.0,
                 ),
+                AppTheme.cardShadow(),
               ]
-            : null,
+            : [AppTheme.cardShadow()],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -118,11 +119,11 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0x24FFFFFF), // Subtle top-left highlight sheen
+                  const Color(0x28FFFFFF), // 16% specular light catch at top-left rim
                   effectiveBgColor,
-                  const Color(0x0A000000),
+                  const Color(0x0A000000), // Grounded separation at bottom-right
                 ],
-                stops: const [0.0, 0.4, 1.0],
+                stops: const [0.0, 0.38, 1.0],
               ),
             ),
             child: widget.child,

@@ -25,3 +25,4 @@ keystore.properties
 release-builds/
 *.apk
 build-artifacts/
+*.mp4

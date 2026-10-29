@@ -21,6 +21,9 @@ class ElevatedActionCard extends StatelessWidget {
   final List<BoxShadow>? customShadow;
   final List<BoxShadow>? boxShadow;
 
+  final Gradient? gradient;
+  final bool enableMachinedFinish;
+
   const ElevatedActionCard({
     super.key,
     required this.child,
@@ -29,6 +32,8 @@ class ElevatedActionCard extends StatelessWidget {
     this.borderRadius = AppTheme.radiusMedium,
     this.borderColor,
     this.backgroundColor,
+    this.gradient,
+    this.enableMachinedFinish = true,
     this.onTap,
     this.semanticLabel,
     this.customShadow,
@@ -37,20 +42,22 @@ class ElevatedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderColor = borderColor ?? AppTheme.border;
-    final effectiveBgColor = backgroundColor ?? AppTheme.cardSurface;
+    final effectiveBorderColor = borderColor ?? AppTheme.borderTitanium;
+    final effectiveBgColor = backgroundColor ?? (gradient != null ? null : (enableMachinedFinish ? null : AppTheme.cardSurface));
+    final effectiveGradient = gradient ?? (backgroundColor == null && enableMachinedFinish ? AppTheme.machinedTitaniumGradient : null);
 
     Widget cardContent = Container(
       padding: padding,
       margin: margin,
       decoration: BoxDecoration(
         color: effectiveBgColor,
+        gradient: effectiveGradient,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: effectiveBorderColor,
           width: 1.0,
         ),
-        boxShadow: customShadow ?? boxShadow ?? [AppTheme.cardShadow()],
+        boxShadow: customShadow ?? boxShadow ?? [AppTheme.titaniumShadow()],
       ),
       child: child,
     );

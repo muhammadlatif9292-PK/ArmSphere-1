@@ -307,15 +307,29 @@ export class InformalEventService {
     }
 
     const isCreator = event.createdByUserId === userId;
-    const isAdmin = ["system_admin", "national_director", "provincial_director"].includes(
-      role.toLowerCase()
-    );
+    let isAdmin = false;
+    if (!isCreator) {
+      const [actor] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      const effectiveRole = (actor?.role ?? role ?? "").toString().toLowerCase();
+      isAdmin = ["system_admin", "national_director", "provincial_director"].includes(
+        effectiveRole
+      );
+    }
 
     if (!isCreator && !isAdmin) {
       throw new ForbiddenError("You are not authorized to delete this event");
     }
 
-    await db.delete(informalEvents).where(eq(informalEvents.id, eventId));
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(informalEventParticipants)
+        .where(eq(informalEventParticipants.informalEventId, eventId));
+      await tx.delete(informalEvents).where(eq(informalEvents.id, eventId));
+    });
 
     return { success: true };
   }

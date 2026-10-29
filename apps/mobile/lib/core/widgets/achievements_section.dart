@@ -191,6 +191,17 @@ class _OlympicMedalBadgeState extends State<OlympicMedalBadge>
   }
 
   @override
+  void didUpdateWidget(covariant OlympicMedalBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item.isRecent && !oldWidget.item.isRecent) {
+      _pulseController.repeat(reverse: false);
+    } else if (!widget.item.isRecent && oldWidget.item.isRecent) {
+      _pulseController.stop();
+      _pulseController.reset();
+    }
+  }
+
+  @override
   void dispose() {
     _pulseController.dispose();
     super.dispose();
@@ -326,62 +337,110 @@ class _AchievementsSectionState extends State<AchievementsSection> {
   @override
   void initState() {
     super.initState();
+    _achievements = _buildAchievements(widget.athleteData);
+  }
 
-    _achievements = const [
+  @override
+  void didUpdateWidget(covariant AchievementsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.athleteData != oldWidget.athleteData) {
+      setState(() {
+        _achievements = _buildAchievements(widget.athleteData);
+      });
+    }
+  }
+
+  List<AchievementItemData> _buildAchievements(Map<String, dynamic>? data) {
+    final wins = (data?['wins'] as num?)?.toInt() ??
+        (data?['winCount'] as num?)?.toInt() ??
+        0;
+    final losses = (data?['losses'] as num?)?.toInt() ??
+        (data?['lossCount'] as num?)?.toInt() ??
+        0;
+    final rightElo = (data?['rightArmElo'] as num?)?.toInt() ??
+        (data?['eloRating'] as num?)?.toInt() ??
+        1200;
+    final leftElo = (data?['leftArmElo'] as num?)?.toInt() ??
+        (data?['eloRating'] as num?)?.toInt() ??
+        1200;
+    final maxElo = rightElo >= leftElo ? rightElo : leftElo;
+    final titlesCount = (data?['titlesCount'] as num?)?.toInt() ??
+        (data?['nationalTitles'] as num?)?.toInt() ??
+        0;
+    final streak = (data?['winStreak'] as num?)?.toInt() ??
+        (data?['currentStreak'] as num?)?.toInt() ??
+        (losses == 0 ? wins : 0);
+    final weightClass = data?['weightClass']?.toString() ?? 'Open';
+
+    final supermatchUnlocked = wins >= 25;
+    final supermatchProgress = (wins / 25.0).clamp(0.0, 1.0);
+
+    final eloUnlocked = maxElo >= 2000;
+    final eloProgress = eloUnlocked ? 1.0 : (maxElo / 2000.0).clamp(0.0, 1.0);
+
+    final champUnlocked = titlesCount >= 1;
+    final champProgress = champUnlocked ? 1.0 : 0.0;
+
+    final streakUnlocked = streak >= 10;
+    final streakProgress = (streak / 10.0).clamp(0.0, 1.0);
+
+    return [
       AchievementItemData(
         id: '1',
         title: 'SUPERMATCH MASTER',
-        subtitle: 'Defeated top 10 ranked opponent in official Supermatch circuit',
+        subtitle: 'Win 25 verified official Supermatch bouts',
         description:
-            'Awarded by the World Armwrestling Federation for outstanding victory in a 6-round official Supermatch.',
+            'Awarded by the Pakistan Armwrestling Federation for achieving 25 verified career victories ($wins/25 recorded).',
         category: 'Official Circuit',
         medalTier: 'Gold',
         icon: Icons.emoji_events_rounded,
-        isUnlocked: true,
-        progress: 1.0,
-        dateUnlocked: 'MAY 10, 2026',
-        isRecent: true,
+        isUnlocked: supermatchUnlocked,
+        progress: supermatchProgress,
+        dateUnlocked: supermatchUnlocked ? 'VERIFIED ($wins WINS)' : '$wins / 25 WINS',
+        isRecent: supermatchUnlocked,
       ),
       AchievementItemData(
         id: '2',
         title: '2000 ELO CLUB',
-        subtitle: 'Crossed 2000 official ELO rating milestone',
+        subtitle: 'Cross 2000 official ELO rating milestone',
         description:
-            'Elite rank recognition for maintaining an ELO rating exceeding 2000 points in national division.',
+            'Elite rank recognition for maintaining a peak ELO rating of at least 2000 points (Peak: $maxElo ELO).',
         category: 'Rating Milestone',
         medalTier: 'Diamond',
         icon: Icons.workspace_premium_rounded,
-        isUnlocked: true,
-        progress: 1.0,
-        dateUnlocked: 'APR 24, 2026',
-        isRecent: false,
+        isUnlocked: eloUnlocked,
+        progress: eloProgress,
+        dateUnlocked: eloUnlocked ? 'VERIFIED ($maxElo ELO)' : '$maxElo / 2000 ELO',
+        isRecent: eloUnlocked && !supermatchUnlocked,
       ),
       AchievementItemData(
         id: '3',
         title: 'NATIONAL CHAMPION',
-        subtitle: 'First place in -95kg National Championship',
+        subtitle: 'Hold an active $weightClass Championship Title',
         description:
-            'Gold medal placement in the Pakistan National Armwrestling Championship 2025.',
+            'Gold medal championship status in a sanctioned Pakistan Armwrestling Federation division ($titlesCount active title${titlesCount == 1 ? '' : 's'}).',
         category: 'National Title',
         medalTier: 'Gold',
         icon: Icons.military_tech_rounded,
-        isUnlocked: true,
-        progress: 1.0,
-        dateUnlocked: 'DEC 18, 2025',
-        isRecent: false,
+        isUnlocked: champUnlocked,
+        progress: champProgress,
+        dateUnlocked: champUnlocked
+            ? 'ACTIVE ($titlesCount TITLE${titlesCount == 1 ? '' : 'S'})'
+            : '0 / 1 TITLE',
+        isRecent: champUnlocked,
       ),
       AchievementItemData(
         id: '4',
         title: '10 STREAK VICTOR',
-        subtitle: 'Win 10 consecutive official tournament matches',
+        subtitle: 'Win 10 consecutive official federation matches',
         description:
-            'Undefeated streak in sanctioned federation events. Currently at 7/10 matches.',
+            'Undefeated streak in sanctioned federation events. Currently at $streak/10 consecutive victories.',
         category: 'Match Streak',
         medalTier: 'Silver',
         icon: Icons.local_fire_department_rounded,
-        isUnlocked: false,
-        progress: 0.70,
-        dateUnlocked: 'Locked',
+        isUnlocked: streakUnlocked,
+        progress: streakProgress,
+        dateUnlocked: streakUnlocked ? 'VERIFIED ($streak STREAK)' : '$streak / 10 STREAK',
         isRecent: false,
       ),
     ];
@@ -498,12 +557,12 @@ class _AchievementsSectionState extends State<AchievementsSection> {
 
                 const SizedBox(height: 16),
 
-                // Progress or Unlocked Date Info Row
+                // Progress or Verification Info Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      item.isUnlocked ? 'DATE CONFERRED' : 'PROGRESS',
+                      item.isUnlocked ? 'VERIFICATION STATUS' : 'PROGRESS',
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 11,
@@ -514,7 +573,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
                     Text(
                       item.isUnlocked
                           ? item.dateUnlocked
-                          : '${(item.progress * 100).toInt()}% COMPLETED',
+                          : '${(item.progress * 100).toInt()}% COMPLETED (${item.dateUnlocked})',
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 11,

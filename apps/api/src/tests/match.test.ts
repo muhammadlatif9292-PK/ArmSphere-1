@@ -1055,4 +1055,390 @@ describe("Match Submission, Competitive Scoring & ELO Engine", () => {
       expect(response.body.data[0].id).toBe(matchId);
     });
   });
+
+  describe("P0 Security & Provincial Jurisdiction Hardening", () => {
+    const expiredRefereeId = "5e555555-5555-5555-5555-555555555555";
+    const punjabDirectorId = "6f666666-6666-6666-6666-666666666666";
+    const sindhDirectorId = "7a777777-7777-7777-7777-777777777777";
+    let expiredRefereeToken: string;
+    let punjabDirectorToken: string;
+    let sindhDirectorToken: string;
+
+    beforeEach(() => {
+      athleteProfileA.province = "Punjab";
+      athleteProfileB.province = "Punjab";
+
+      testDbStore.users.push(
+        {
+          id: expiredRefereeId,
+          email: "expired-ref@armsphere.com",
+          username: "expired_ref",
+          role: UserRole.REFEREE,
+          fullName: "Expired Referee",
+          isActive: true,
+          province: "Punjab",
+        },
+        {
+          id: punjabDirectorId,
+          email: "dir-punjab@armsphere.com",
+          username: "dir_punjab",
+          role: UserRole.PROVINCIAL_DIRECTOR,
+          fullName: "Punjab Director",
+          isActive: true,
+          province: "Punjab",
+          regionalCoverage: "Punjab",
+        },
+        {
+          id: sindhDirectorId,
+          email: "dir-sindh@armsphere.com",
+          username: "dir_sindh",
+          role: UserRole.PROVINCIAL_DIRECTOR,
+          fullName: "Sindh Director",
+          isActive: true,
+          province: "Sindh",
+          regionalCoverage: "Sindh",
+        }
+      );
+
+      testDbStore.refereeCertifications.push({
+        id: "cert-expired-ref",
+        userId: expiredRefereeId,
+        certificationLevel: "PRO_LEVEL_1",
+        issuedAt: new Date(Date.now() - 86400000 * 400),
+        expiresAt: new Date(Date.now() - 86400000 * 30), // expired 30 days ago
+        status: "EXPIRED",
+        issuingBody: "WAF_OFFICIAL",
+      });
+
+      expiredRefereeToken = generateAccessToken(
+        expiredRefereeId,
+        "expired-ref@armsphere.com",
+        UserRole.REFEREE,
+        env.JWT_ACCESS_SECRET
+      );
+      punjabDirectorToken = generateAccessToken(
+        punjabDirectorId,
+        "dir-punjab@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      );
+      sindhDirectorToken = generateAccessToken(
+        sindhDirectorId,
+        "dir-sindh@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      );
+    });
+
+    it("should reject match submission if referee's certification is expired", async () => {
+      const response = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${expiredRefereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-1",
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/expired|certification/i);
+    });
+
+    it("should reject verification if assigned referee's certification expired before verification", async () => {
+      // Create a match assigned to expired referee
+      const testMatchId = uuidv4();
+      testDbStore.matches.push({
+        id: testMatchId,
+        challengerId: athleteAId,
+        opponentId: athleteBId,
+        arm: "RIGHT",
+        refereeId: expiredRefereeId,
+        winnerId: athleteAId,
+        scoreLine: "3-0",
+        status: "PENDING_VERIFICATION",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post(`/matches/${testMatchId}/verify`)
+        .set("Authorization", `Bearer ${expiredRefereeToken}`);
+
+      expect(response.status).toBe(403);
+      const match = testDbStore.matches.find((m) => m.id === testMatchId);
+      expect(match.status).toBe("PENDING_VERIFICATION");
+    });
+
+    it("should reject verification from out-of-jurisdiction PROVINCIAL_DIRECTOR (Sindh director verifying Punjab match)", async () => {
+      const testMatchId = uuidv4();
+      testDbStore.matches.push({
+        id: testMatchId,
+        challengerId: athleteAId,
+        opponentId: athleteBId,
+        arm: "RIGHT",
+        refereeId: refereeUserId,
+        winnerId: athleteAId,
+        scoreLine: "3-0",
+        status: "PENDING_VERIFICATION",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post(`/matches/${testMatchId}/verify`)
+        .set("Authorization", `Bearer ${sindhDirectorToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/provincial jurisdiction|province/i);
+      const match = testDbStore.matches.find((m) => m.id === testMatchId);
+      expect(match.status).toBe("PENDING_VERIFICATION");
+    });
+
+    it("should allow in-jurisdiction PROVINCIAL_DIRECTOR to verify match (Punjab director verifying Punjab match)", async () => {
+      const testMatchId = uuidv4();
+      testDbStore.matches.push({
+        id: testMatchId,
+        challengerId: athleteAId,
+        opponentId: athleteBId,
+        arm: "RIGHT",
+        refereeId: refereeUserId,
+        winnerId: athleteAId,
+        scoreLine: "3-0",
+        status: "PENDING_VERIFICATION",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post(`/matches/${testMatchId}/verify`)
+        .set("Authorization", `Bearer ${punjabDirectorToken}`);
+
+      expect(response.status).toBe(200);
+      const match = testDbStore.matches.find((m) => m.id === testMatchId);
+      expect(match.status).toBe("VERIFIED");
+    });
+
+    it("should reject dispute from out-of-jurisdiction PROVINCIAL_DIRECTOR", async () => {
+      const testMatchId = uuidv4();
+      testDbStore.matches.push({
+        id: testMatchId,
+        challengerId: athleteAId,
+        opponentId: athleteBId,
+        arm: "RIGHT",
+        refereeId: refereeUserId,
+        winnerId: athleteAId,
+        scoreLine: "3-0",
+        status: "PENDING_VERIFICATION",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post(`/matches/${testMatchId}/dispute`)
+        .set("Authorization", `Bearer ${sindhDirectorToken}`)
+        .send({ reason: "Out of province director dispute attempt" });
+
+      expect(response.status).toBe(403);
+      const match = testDbStore.matches.find((m) => m.id === testMatchId);
+      expect(match.status).toBe("PENDING_VERIFICATION");
+    });
+
+    it("should reject void from out-of-jurisdiction PROVINCIAL_DIRECTOR", async () => {
+      const testMatchId = uuidv4();
+      testDbStore.matches.push({
+        id: testMatchId,
+        challengerId: athleteAId,
+        opponentId: athleteBId,
+        arm: "RIGHT",
+        refereeId: refereeUserId,
+        winnerId: athleteAId,
+        scoreLine: "3-0",
+        status: "VERIFIED",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const response = await request(app)
+        .post(`/matches/${testMatchId}/void`)
+        .set("Authorization", `Bearer ${sindhDirectorToken}`)
+        .send({ reason: "Out of province director void attempt" });
+
+      expect(response.status).toBe(403);
+      const match = testDbStore.matches.find((m) => m.id === testMatchId);
+      expect(match.status).toBe("VERIFIED");
+    });
+
+    it("should reject client-supplied province spoofing on POST /matches when it conflicts with authoritative athlete province", async () => {
+      const response = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-1",
+          province: "Sindh", // Spoofed! Athletes are in Punjab
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/authoritative match province/i);
+    });
+
+    it("should reject match submission from an out-of-jurisdiction PROVINCIAL_DIRECTOR", async () => {
+      const response = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${sindhDirectorToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-1",
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.message).toMatch(/assigned province/i);
+    });
+
+    it("should reject duplicate dispute attempts on an already DISPUTED match with 409 Conflict", async () => {
+      const subRes = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-2",
+        });
+      const targetMatchId = subRes.body.matchId;
+
+      const firstDispute = await request(app)
+        .post(`/matches/${targetMatchId}/dispute`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ reason: "Initial dispute reason for board review." });
+      expect(firstDispute.status).toBe(200);
+
+      const secondDispute = await request(app)
+        .post(`/matches/${targetMatchId}/dispute`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ reason: "Repeated dispute attempt." });
+      expect(secondDispute.status).toBe(409);
+    });
+
+    it("should chronologically replay subsequent verified matches on the same arm when an earlier match is voided", async () => {
+      // Match 1: A (1500) beats B (1500) -> A becomes 1532, B becomes 1468
+      const sub1 = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-0",
+        });
+      const m1Id = sub1.body.matchId;
+      await request(app).post(`/matches/${m1Id}/verify`).set("Authorization", `Bearer ${refereeToken}`);
+
+      // Ensure m2 has a strictly later timestamp
+      const sub2 = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteBId,
+          scoreLine: "3-1",
+        });
+      const m2Id = sub2.body.matchId;
+      await request(app).post(`/matches/${m2Id}/verify`).set("Authorization", `Bearer ${refereeToken}`);
+
+      // Force distinct verifiedAt order if needed
+      const m1Row = testDbStore.matches.find((m) => m.id === m1Id);
+      const m2Row = testDbStore.matches.find((m) => m.id === m2Id);
+      m1Row.verifiedAt = new Date("2026-07-01T10:00:00Z");
+      m2Row.verifiedAt = new Date("2026-07-01T11:00:00Z");
+
+      // Void Match 1: Match 1's +32/-32 is rolled back, and Match 2 (where B beat A) is replayed from 1500 vs 1500!
+      // When B (1500) beats A (1500) from scratch, B becomes 1532 and A becomes 1468.
+      const voidRes = await request(app)
+        .post(`/matches/${m1Id}/void`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ reason: "Voiding Match 1 to test chronological replay of Match 2." });
+
+      expect(voidRes.status).toBe(200);
+
+      const apA = testDbStore.athleteProfiles.find((ap) => ap.id === athleteAId);
+      const apB = testDbStore.athleteProfiles.find((ap) => ap.id === athleteBId);
+      expect(apA.rightArmElo).toBe(1468);
+      expect(apB.rightArmElo).toBe(1532);
+
+      // Verify Match 2's elo_ledger rows were updated to reflect starting at 1500
+      const m2Ledgers = testDbStore.eloLedger.filter((l) => l.matchId === m2Id);
+      expect(m2Ledgers).toHaveLength(2);
+      const ledgerA = m2Ledgers.find((l) => l.athleteId === athleteAId);
+      const ledgerB = m2Ledgers.find((l) => l.athleteId === athleteBId);
+      expect(ledgerA.previousElo).toBe(1500);
+      expect(ledgerA.newElo).toBe(1468);
+      expect(ledgerB.previousElo).toBe(1500);
+      expect(ledgerB.newElo).toBe(1532);
+    });
+
+    it("should allow a participant to challenge a VERIFIED match result and still roll back ELO if later voided", async () => {
+      const sub = await request(app)
+        .post("/matches")
+        .set("Authorization", `Bearer ${refereeToken}`)
+        .send({
+          challengerId: athleteAId,
+          opponentId: athleteBId,
+          arm: "RIGHT",
+          winnerId: athleteAId,
+          scoreLine: "3-2",
+        });
+      const verifiedMatchId = sub.body.matchId;
+
+      const verifyRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/verify`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(verifyRes.status).toBe(200);
+
+      // Participant challenges verified match result
+      const disputeRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/dispute`)
+        .set("Authorization", `Bearer ${competitorToken}`)
+        .send({ reason: "Post-verification video evidence shows missed elbow foul on winning pin." });
+      expect(disputeRes.status).toBe(200);
+      expect(disputeRes.body.data.status).toBe("DISPUTED");
+
+      // Admin voids the disputed (previously verified) match -> must roll back ELO!
+      const voidRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/void`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ reason: "Video review confirmed missed elbow foul; voiding verified match." });
+      expect(voidRes.status).toBe(200);
+      expect(voidRes.body.data.status).toBe("VOID");
+
+      const apA = testDbStore.athleteProfiles.find((ap) => ap.id === athleteAId);
+      const apB = testDbStore.athleteProfiles.find((ap) => ap.id === athleteBId);
+      expect(apA.rightArmElo).toBe(1500);
+      expect(apB.rightArmElo).toBe(1500);
+      expect(testDbStore.eloLedger.filter((l) => l.matchId === verifiedMatchId)).toHaveLength(0);
+
+      // Attempting to re-verify a VOID match must fail with 409 Conflict
+      const verifyVoidRes = await request(app)
+        .post(`/matches/${verifiedMatchId}/verify`)
+        .set("Authorization", `Bearer ${refereeToken}`);
+      expect(verifyVoidRes.status).toBe(409);
+    });
+  });
 });
