@@ -2237,31 +2237,33 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final isPinnedActive = overlapsContent || shrinkOffset > 0;
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.elevatedSurface,
-        border: const Border(
-          bottom: BorderSide(
-            color: AppTheme.border,
-            width: 1.0,
+    return SizedBox.expand(
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.elevatedSurface,
+          border: const Border(
+            bottom: BorderSide(
+              color: AppTheme.border,
+              width: 1.0,
+            ),
           ),
+          boxShadow: isPinnedActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
-        boxShadow: isPinnedActive
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          searchBar,
-          filterChips,
-        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            searchBar,
+            filterChips,
+          ],
+        ),
       ),
     );
   }
