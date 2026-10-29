@@ -61,8 +61,8 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           children: [
             const ArmSphereImage(
               assetPath: ArmSphereAssets.sealFed,
-              width: 24,
-              height: 24,
+              width: 18,
+              height: 18,
               semanticLabel: 'Official Federation Community Arena',
             ),
             const SizedBox(width: 10),

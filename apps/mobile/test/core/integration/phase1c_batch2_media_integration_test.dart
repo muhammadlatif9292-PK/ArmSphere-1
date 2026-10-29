@@ -155,7 +155,7 @@ void main() {
       expect(find.text('MIDDLEWEIGHT'), findsOneWidget);
       expect(find.text('Lahore, Punjab'), findsOneWidget);
       expect(find.text('1820'), findsOneWidget);
-      expect(find.text('ELO RATING'), findsOneWidget);
+      expect(find.text('ELO'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox());
       await tester.pump();

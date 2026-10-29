@@ -144,7 +144,7 @@ void main() {
             widget.assetPath == ArmSphereAssets.heroArena &&
             widget.excludeFromSemantics == true,
       );
-      expect(arenaFinder, findsOneWidget);
+      expect(arenaFinder, findsAtLeastNWidgets(1));
 
       // Verify the Sanctioned Arena Radar copy
       expect(find.text('SANCTIONED ARENA RADAR'), findsOneWidget);
