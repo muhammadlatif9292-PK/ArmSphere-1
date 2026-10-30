@@ -214,13 +214,16 @@ class VisualPreferencesNotifier extends StateNotifier<VisualPreferencesState> {
     _loadPersisted();
   }
 
-  void _loadPersisted() {
+  Future<void> _loadPersisted() async {
     try {
       if (Hive.isBoxOpen(_boxName)) {
         final box = Hive.box(_boxName);
         _applyFromBox(box);
-      } else {
-        Hive.openBox(_boxName).then(_applyFromBox).catchError((_) {});
+        return;
+      }
+      if (Hive.isBoxOpen('local_data_cache') || Hive.isBoxOpen('offline_sync_queue')) {
+        final box = await Hive.openBox(_boxName);
+        _applyFromBox(box);
       }
     } catch (_) {
       // Safe fallback in unit/widget test environments where Hive is not initialized
