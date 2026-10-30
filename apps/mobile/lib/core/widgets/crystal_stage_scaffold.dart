@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/asset_paths.dart';
 import '../providers/visual_preferences_provider.dart';
+export '../providers/visual_preferences_provider.dart' show VisualCustomizeSlot, ArmSphereStageDomain;
 import '../theme/app_theme.dart';
 import 'armsphere_image.dart';
 import 'crystal_gloss_card.dart';
@@ -139,9 +140,11 @@ class CrystalStageBackdrop extends ConsumerWidget {
 /// Interactive Bottom Sheet for customizing Profile Portrait, Hero Card Background,
 /// and Full-Screen Functional Backdrop (Upload Custom Images + 5 Pro Presets).
 Future<void> showVisualCustomizationSheet(
-  BuildContext context,
-  WidgetRef ref,
-) async {
+  BuildContext context, {
+  WidgetRef? ref,
+  VisualCustomizeSlot? initialSlot,
+  ArmSphereStageDomain? domain,
+}) async {
   HapticFeedback.mediumImpact();
   await showModalBottomSheet<void>(
     context: context,
@@ -152,13 +155,22 @@ Future<void> showVisualCustomizationSheet(
       side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
     ),
     builder: (sheetContext) {
-      return const _VisualCustomizationStudioSheet();
+      return _VisualCustomizationStudioSheet(
+        initialSlot: initialSlot,
+        domain: domain,
+      );
     },
   );
 }
 
 class _VisualCustomizationStudioSheet extends ConsumerWidget {
-  const _VisualCustomizationStudioSheet();
+  final VisualCustomizeSlot? initialSlot;
+  final ArmSphereStageDomain? domain;
+
+  const _VisualCustomizationStudioSheet({
+    this.initialSlot,
+    this.domain,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

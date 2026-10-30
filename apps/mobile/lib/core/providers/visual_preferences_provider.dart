@@ -21,6 +21,13 @@ enum ArmSphereStageDomain {
   referee,
 }
 
+/// Target slot to focus or customize when opening the Visual Studio.
+enum VisualCustomizeSlot {
+  portrait,
+  heroCard,
+  screenBackdrop,
+}
+
 /// Curated High-Class Pro Preset definition for Screen & Card Backgrounds.
 class ArmSphereVisualPreset {
   final String id;
@@ -278,9 +285,8 @@ class VisualPreferencesNotifier extends StateNotifier<VisualPreferencesState> {
         final profile = _ref.read(athleteProfileProvider).value;
         final athleteId = profile?['id']?.toString();
         final repo = _ref.read(athleteRepositoryProvider);
-        final remoteUrl = await repo.uploadImage(base64Str, picked.name);
         if (athleteId != null && athleteId.isNotEmpty) {
-          await repo.updateProfile(athleteId, {'profilePhoto': remoteUrl});
+          await repo.updateProfile(athleteId, {'profilePhoto': dataUri});
           _ref.invalidate(athleteProfileProvider);
         }
       } catch (_) {

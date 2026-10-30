@@ -1102,7 +1102,7 @@ class _AthleteDashboardScreenState
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: () =>
-                                showVisualCustomizationSheet(context, ref),
+                                showVisualCustomizationSheet(context, ref: ref),
                             child: Container(
                               width: 26,
                               height: 26,
@@ -3678,7 +3678,7 @@ class AthleteProfileScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.cyan),
             tooltip: 'Customize Portrait & Card Visuals',
-            onPressed: () => showVisualCustomizationSheet(context, ref),
+            onPressed: () => showVisualCustomizationSheet(context, ref: ref),
           ),
           if (myProfileId != null && myProfileId.isNotEmpty)
             IconButton(
@@ -4182,7 +4182,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     OutlinedButton.icon(
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        showVisualCustomizationSheet(context, ref);
+                        showVisualCustomizationSheet(context, ref: ref);
                       },
                       icon: const Icon(Icons.camera_alt_outlined,
                           size: 16, color: AppTheme.goldPrimary),
