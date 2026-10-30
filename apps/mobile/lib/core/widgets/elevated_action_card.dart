@@ -104,17 +104,20 @@ class ElevatedActionCard extends StatelessWidget {
         ),
         boxShadow: effectiveShadows,
       ),
-      child: DefaultTextStyle.merge(
-        style: const TextStyle(
-          shadows: [
-            Shadow(
-              color: Color(0xB3000000),
-              offset: Offset(0, 1.2),
-              blurRadius: 3.5,
-            ),
-          ],
+      child: Material(
+        type: MaterialType.transparency,
+        child: DefaultTextStyle.merge(
+          style: const TextStyle(
+            shadows: [
+              Shadow(
+                color: Color(0xB3000000),
+                offset: Offset(0, 1.2),
+                blurRadius: 3.5,
+              ),
+            ],
+          ),
+          child: child,
         ),
-        child: child,
       ),
     );
 

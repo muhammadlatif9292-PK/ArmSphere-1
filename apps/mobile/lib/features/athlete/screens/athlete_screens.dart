@@ -3774,7 +3774,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                               ?.toString(),
                       initial: displayName,
                       size: 72,
-                      fallbackAsset: ArmSphereAssets.heroGrip,
+                      fallbackAsset: ArmSphereAssets.defaultAvatar,
                       semanticLabel: 'Athlete Avatar for $displayName',
                     ),
                   ),

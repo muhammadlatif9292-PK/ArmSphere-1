@@ -327,37 +327,40 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                     final role = verifiedRoles[index];
                     final isCurrentActive = role == activeRole;
 
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.space16,
-                        vertical: AppTheme.space4,
-                      ),
-                      onTap: (isCurrentActive || _isLoading)
-                          ? null
-                          : () => _confirmAndSwitchRole(role, activeRole),
-                      leading: Icon(
-                        _roleIcon(role),
-                        color: isCurrentActive ? AppTheme.goldPrimary : AppTheme.textSecondary,
-                      ),
-                      title: Text(
-                        _formatRoleName(role),
-                        style: TextStyle(
-                          fontWeight: isCurrentActive ? FontWeight.bold : FontWeight.w600,
-                          color: isCurrentActive ? AppTheme.textPrimary : AppTheme.textSecondary,
+                    return Material(
+                      type: MaterialType.transparency,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.space16,
+                          vertical: AppTheme.space4,
                         ),
+                        onTap: (isCurrentActive || _isLoading)
+                            ? null
+                            : () => _confirmAndSwitchRole(role, activeRole),
+                        leading: Icon(
+                          _roleIcon(role),
+                          color: isCurrentActive ? AppTheme.goldPrimary : AppTheme.textSecondary,
+                        ),
+                        title: Text(
+                          _formatRoleName(role),
+                          style: TextStyle(
+                            fontWeight: isCurrentActive ? FontWeight.bold : FontWeight.w600,
+                            color: isCurrentActive ? AppTheme.textPrimary : AppTheme.textSecondary,
+                          ),
+                        ),
+                        subtitle: Text(
+                          isCurrentActive ? 'Current Active Persona' : 'Verified federation grant',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                        ),
+                        trailing: isCurrentActive
+                            ? const Icon(Icons.check_circle, color: AppTheme.success, size: 22)
+                            : TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => _confirmAndSwitchRole(role, activeRole),
+                                child: const Text('Switch'),
+                              ),
                       ),
-                      subtitle: Text(
-                        isCurrentActive ? 'Current Active Persona' : 'Verified federation grant',
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                      ),
-                      trailing: isCurrentActive
-                          ? const Icon(Icons.check_circle, color: AppTheme.success, size: 22)
-                          : TextButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => _confirmAndSwitchRole(role, activeRole),
-                              child: const Text('Switch'),
-                            ),
                     );
                   },
                 ),
