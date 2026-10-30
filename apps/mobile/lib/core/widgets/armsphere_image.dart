@@ -201,10 +201,41 @@ class ArmSphereImage extends StatelessWidget {
   }
 
   Widget _buildImagePipeline(BuildContext context) {
-    // Level 1A: Remote Network Image with disk and memory caching
+    // Level 1A: Remote Network Image, Data URI, or Asset path passed in imageUrl
     if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
+      final trimmed = imageUrl!.trim();
+      if (trimmed.startsWith('data:image/')) {
+        final commaIdx = trimmed.indexOf(',');
+        if (commaIdx != -1 && commaIdx + 1 < trimmed.length) {
+          try {
+            final bytes = base64Decode(trimmed.substring(commaIdx + 1));
+            return Image.memory(
+              bytes,
+              width: width,
+              height: height,
+              fit: fit,
+              cacheWidth: _effectiveCacheWidth,
+              cacheHeight: _effectiveCacheHeight,
+              errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
+            );
+          } catch (_) {
+            return _buildLevel2Fallback(context);
+          }
+        }
+      }
+      if (trimmed.startsWith('assets/')) {
+        return Image.asset(
+          trimmed,
+          width: width,
+          height: height,
+          fit: fit,
+          cacheWidth: _effectiveCacheWidth,
+          cacheHeight: _effectiveCacheHeight,
+          errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
+        );
+      }
       return CachedNetworkImage(
-        imageUrl: imageUrl!.trim(),
+        imageUrl: trimmed,
         width: width,
         height: height,
         fit: fit,

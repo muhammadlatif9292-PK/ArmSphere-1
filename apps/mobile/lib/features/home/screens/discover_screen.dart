@@ -17,6 +17,8 @@ import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 
 /// Federation Discovery Segment Categories
 enum DiscoverCategory {
@@ -372,7 +374,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         titleSpacing: AppTheme.space16,
         title: Row(
@@ -426,7 +428,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ],
         ),
-        backgroundColor: AppTheme.elevatedSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
@@ -451,51 +453,60 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.primaryAccent,
-        backgroundColor: AppTheme.elevatedSurface,
-        onRefresh: _handleRefresh,
-        child: CustomScrollView(
-          key: const PageStorageKey<String>('discover_scroll_view'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickySearchHeaderDelegate(
-                searchBar: _buildSearchBar(),
-                filterChips: _buildFilterChips(),
-                height: 108.0,
-              ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+          ),
+          RefreshIndicator(
+            color: AppTheme.primaryAccent,
+            backgroundColor: AppTheme.elevatedSurface,
+            onRefresh: _handleRefresh,
+            child: CustomScrollView(
+              key: const PageStorageKey<String>('discover_scroll_view'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StickySearchHeaderDelegate(
+                    searchBar: _buildSearchBar(),
+                    filterChips: _buildFilterChips(),
+                    height: 108.0,
+                  ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppTheme.space16,
+                    AppTheme.space16,
+                    AppTheme.space16,
+                    bottomClearance,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: _activeQuery.isNotEmpty
+                        ? _buildSearchResults(
+                            context,
+                            athleteSearchResults,
+                            tournamentsAsync,
+                            venuesAsync,
+                          )
+                        : discoverAsync.when(
+                            data: (feed) => _buildFeedContent(
+                              context,
+                              feed,
+                              tournamentsAsync,
+                              venuesAsync,
+                            ),
+                            loading: () => _buildLoadingState(),
+                            error: (err, stack) =>
+                                _buildErrorState(err, _handleRefresh),
+                          ),
+                  ),
+                ),
+              ],
             ),
-            SliverPadding(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.space16,
-                AppTheme.space16,
-                AppTheme.space16,
-                bottomClearance,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: _activeQuery.isNotEmpty
-                    ? _buildSearchResults(
-                        context,
-                        athleteSearchResults,
-                        tournamentsAsync,
-                        venuesAsync,
-                      )
-                    : discoverAsync.when(
-                        data: (feed) => _buildFeedContent(
-                          context,
-                          feed,
-                          tournamentsAsync,
-                          venuesAsync,
-                        ),
-                        loading: () => _buildLoadingState(),
-                        error: (err, stack) => _buildErrorState(err, _handleRefresh),
-                      ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -506,10 +517,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Container(
         height: 44,
         decoration: BoxDecoration(
-          color: AppTheme.background,
+          color: Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: _activeQuery.isNotEmpty ? AppTheme.primaryAccent : AppTheme.border,
+            color: _activeQuery.isNotEmpty
+                ? AppTheme.primaryAccent
+                : Colors.white.withValues(alpha: 0.22),
             width: 1.0,
           ),
         ),
@@ -990,17 +1003,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       semanticLabel: '${item.title}: ${item.subtitle}',
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.elevatedSurface,
+          color: Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           border: Border.all(
-            color: item.color.withValues(alpha: 0.28),
+            color: Colors.white.withValues(alpha: 0.24),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.30),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.44),
+              blurRadius: 22,
+              spreadRadius: -2,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -1015,17 +1029,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     fit: StackFit.expand,
                     children: [
                       Opacity(
-                        opacity: 0.24,
-                        child: ArmSphereImage(
-                          assetPath: item.bgAsset,
-                          fit: BoxFit.cover,
-                          excludeFromSemantics: true,
-                        ),
-                      ),
-                      Opacity(
                         opacity: 0.30,
                         child: ArmSphereImage(
-                          assetPath: ArmSphereAssets.texChalk,
+                          assetPath: item.bgAsset,
                           fit: BoxFit.cover,
                           excludeFromSemantics: true,
                         ),
@@ -1036,7 +1042,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             center: const Alignment(0.85, -0.85),
                             radius: 1.1,
                             colors: [
-                              item.color.withValues(alpha: 0.22),
+                              item.color.withValues(alpha: 0.24),
                               const Color(0x00151B24),
                             ],
                           ),
@@ -1048,9 +1054,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Color(0x99111721),
-                              Color(0xD9111721),
-                              Color(0xF20E131C),
+                              Color(0x380B0F17),
+                              Color(0x590B0F17),
+                              Color(0x730E131C),
                             ],
                             stops: [0.0, 0.55, 1.0],
                           ),
@@ -1786,9 +1792,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ),
                       ),
                       StatusChip(
-              label: '$elo ELO',
-              type: StatusType.info,
-            ),
+                        label: '$elo ELO',
+                        type: StatusType.info,
+                      ),
                       const SizedBox(width: 6),
                       const Icon(
                         Icons.chevron_right,
@@ -1962,12 +1968,20 @@ class _FramedDirectorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.cardSurface,
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         border: Border.all(
-          color: AppTheme.border,
+          color: Colors.white.withValues(alpha: 0.22),
           width: 1.0,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.44),
+            offset: const Offset(0, 10),
+            blurRadius: 24,
+            spreadRadius: -2,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1975,12 +1989,12 @@ class _FramedDirectorySection extends StatelessWidget {
           // Section Header Bar
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 11),
-            decoration: const BoxDecoration(
-              color: AppTheme.elevatedSurface,
-              borderRadius: BorderRadius.vertical(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(AppTheme.radiusLarge - 1),
               ),
-              border: Border(
+              border: const Border(
                 bottom: BorderSide(color: AppTheme.border, width: 1.0),
               ),
             ),
@@ -2044,7 +2058,7 @@ class _FramedDirectorySection extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.background,
+                        color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                         border: Border.all(color: AppTheme.border),
                       ),
@@ -2108,10 +2122,10 @@ class _CompactEmptyBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.background,
+        color: Colors.white.withValues(alpha: 0.035),
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         border: Border.all(
-          color: AppTheme.border,
+          color: Colors.white.withValues(alpha: 0.20),
           width: 1.0,
         ),
       ),
@@ -2240,7 +2254,9 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     return SizedBox.expand(
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.elevatedSurface,
+          color: isPinnedActive
+              ? const Color(0xBD070A11)
+              : Colors.white.withValues(alpha: 0.04),
           border: const Border(
             bottom: BorderSide(
               color: AppTheme.border,
@@ -2250,9 +2266,9 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
           boxShadow: isPinnedActive
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.42),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ]
               : null,

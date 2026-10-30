@@ -9,7 +9,9 @@ import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
@@ -87,7 +89,10 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
         ref.watch(athleteProfileProvider).value?['id']?.toString();
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -103,6 +108,17 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Customize Rankings Wallpaper',
+            icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.goldPrimary, size: 20),
+            onPressed: () {
+              showVisualCustomizationSheet(
+                context,
+                initialSlot: VisualCustomizeSlot.screenBackdrop,
+                domain: ArmSphereStageDomain.rankings,
+              );
+            },
+          ),
+          IconButton(
             tooltip: 'Tale of the Tape (Compare)',
             icon: const Icon(Icons.compare_arrows_rounded, color: AppTheme.goldPrimary),
             onPressed: () {
@@ -112,8 +128,14 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.rankings),
+          ),
+          Column(
+            children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(AppTheme.space16, AppTheme.space12, AppTheme.space16, 0),
             child: TextField(
@@ -470,6 +492,8 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
               ),
             ),
+          ),
+            ],
           ),
         ],
       ),

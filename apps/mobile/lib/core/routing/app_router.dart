@@ -419,6 +419,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/athlete/achievements',
+        name: 'athlete_achievements',
+        pageBuilder: (context, state) {
+          final athleteId = state.uri.queryParameters['athleteId'] ??
+              (state.extra is String ? state.extra as String? : null);
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: AthleteAchievementsScreen(athleteId: athleteId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/athlete/session/:sessionId',
+        name: 'active_session_detail',
+        pageBuilder: (context, state) {
+          final sessionId = state.pathParameters['sessionId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: ActiveSessionControlScreen(sessionId: sessionId),
+          );
+        },
+      ),
+      GoRoute(
         path: '/athlete/:athleteId',
         name: 'public_athlete_profile',
         pageBuilder: (context, state) {
@@ -936,17 +959,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/athlete/session/:sessionId',
-        name: 'active_session_detail',
-        pageBuilder: (context, state) {
-          final sessionId = state.pathParameters['sessionId'] ?? '';
-          return AppTransitionPage(
-            key: state.pageKey,
-            child: ActiveSessionControlScreen(sessionId: sessionId),
-          );
-        },
-      ),
-      GoRoute(
         path: '/settings/payment-methods',
         name: 'payment_methods',
         pageBuilder: (context, state) => AppTransitionPage(
@@ -1210,20 +1222,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/achievements',
         name: 'achievements',
         pageBuilder: (context, state) {
-          final athleteId = (state.extra is String ? state.extra as String? : null) ??
-              state.uri.queryParameters['athleteId'];
-          return AppTransitionPage(
-            key: state.pageKey,
-            child: AthleteAchievementsScreen(athleteId: athleteId),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/athlete/achievements',
-        name: 'athlete_achievements',
-        pageBuilder: (context, state) {
-          final athleteId = (state.extra is String ? state.extra as String? : null) ??
-              state.uri.queryParameters['athleteId'];
+          final athleteId = state.uri.queryParameters['athleteId'] ??
+              (state.extra is String ? state.extra as String? : null);
           return AppTransitionPage(
             key: state.pageKey,
             child: AthleteAchievementsScreen(athleteId: athleteId),

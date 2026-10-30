@@ -15,6 +15,8 @@ import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/tournament_provider.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/tournament_widgets.dart';
 
@@ -75,8 +77,10 @@ class TournamentsListScreen extends ConsumerWidget {
     final tournamentsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text(
           'Competitions',
           style: TextStyle(
@@ -86,22 +90,39 @@ class TournamentsListScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.goldPrimary, size: 20),
+            tooltip: 'Customize Events Wallpaper',
+            onPressed: () {
+              showVisualCustomizationSheet(
+                context,
+                initialSlot: VisualCustomizeSlot.screenBackdrop,
+                domain: ArmSphereStageDomain.events,
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
             tooltip: 'Refresh Tournaments',
             onPressed: () => ref.invalidate(tournamentProvider),
           ),
         ],
       ),
-      body: tournamentsAsync.when(
-        loading: () => const TournamentSkeletonLoadingWidget(),
-        error: (error, _) => AppErrorView(
-          error: error,
-          title: 'Could not load competitions',
-          onRetry: () => ref.invalidate(tournamentProvider),
-          showSecondaryAction: false,
-          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
-        ),
-        data: (events) {
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          ),
+          tournamentsAsync.when(
+            loading: () => const TournamentSkeletonLoadingWidget(),
+            error: (error, _) => AppErrorView(
+              error: error,
+              title: 'Could not load competitions',
+              onRetry: () => ref.invalidate(tournamentProvider),
+              showSecondaryAction: false,
+              onSessionExpired: () => ref.read(authProvider.notifier).logout(),
+            ),
+            data: (events) {
           // Drafts are not public product surfaces; hide them here.
           final visible = events
               .where((e) => (e['status']?.toString().toUpperCase() ?? '') != 'DRAFT')
@@ -226,7 +247,9 @@ class TournamentsListScreen extends ConsumerWidget {
               },
             ),
           );
-        },
+            },
+          ),
+        ],
       ),
     );
   }
@@ -344,13 +367,19 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         final countdownText = _calculateCountdown(event['startDate']);
 
         return Scaffold(
-          backgroundColor: AppTheme.background,
-          body: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 260.0,
-                pinned: true,
-                backgroundColor: AppTheme.background,
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              const Positioned.fill(
+                child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+              ),
+              CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    expandedHeight: 260.0,
+                    pinned: true,
+                    backgroundColor: Colors.transparent,
                 leading: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: CircleAvatar(
@@ -759,6 +788,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   ),
                 ),
               ),
+            ],
+          ),
             ],
           ),
           bottomNavigationBar: StickyBottomActionBar(

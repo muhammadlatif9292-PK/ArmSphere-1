@@ -13,6 +13,8 @@ import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
 
@@ -52,9 +54,9 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
     final feedAsync = ref.watch(communityFeedProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 16,
         title: Row(
@@ -127,6 +129,22 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               });
             },
           ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Customize Community Wallpaper',
+            icon: const Icon(
+              Icons.wallpaper_rounded,
+              color: AppTheme.goldPrimary,
+              size: 19,
+            ),
+            onPressed: () {
+              showVisualCustomizationSheet(
+                context,
+                initialSlot: VisualCustomizeSlot.screenBackdrop,
+                domain: ArmSphereStageDomain.community,
+              );
+            },
+          ),
           // Create Post CTA
           Padding(
             padding: const EdgeInsets.only(right: 14, left: 2),
@@ -194,11 +212,13 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppTheme.goldPrimary.withValues(alpha: 0.15)
-                          : AppTheme.cardSurface,
+                          ? AppTheme.goldPrimary.withValues(alpha: 0.16)
+                          : Colors.white.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: Border.all(
-                        color: isSelected ? AppTheme.goldPrimary : AppTheme.borderSubtle,
+                        color: isSelected
+                            ? AppTheme.goldPrimary.withValues(alpha: 0.65)
+                            : Colors.white.withValues(alpha: 0.22),
                         width: isSelected ? 1.2 : 1.0,
                       ),
                     ),
@@ -209,7 +229,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                         fontFamily: 'Space Grotesk',
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? AppTheme.goldPrimary : AppTheme.textMuted,
+                        color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -220,14 +240,20 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ),
         ),
       ),
-      body: feedAsync.when(
-        loading: () => ListView.separated(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            MainShellScope.bottomClearance(context, additionalPadding: 16),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
           ),
+          feedAsync.when(
+            loading: () => ListView.separated(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MainShellScope.bottomClearance(context, additionalPadding: 16),
+              ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (_, __) => const RepaintBoundary(
@@ -305,7 +331,9 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               ),
             ),
           );
-        },
+            },
+          ),
+        ],
       ),
     );
   }
@@ -340,14 +368,16 @@ class _TacticalFeedCard extends StatelessWidget {
     return RepaintBoundary(
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.cardSurface,
+          color: Colors.white.withValues(alpha: 0.04),
+          gradient: AppTheme.machinedTitaniumGradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 24,
+              spreadRadius: -2,
+              offset: const Offset(0, 10),
             ),
           ],
         ),

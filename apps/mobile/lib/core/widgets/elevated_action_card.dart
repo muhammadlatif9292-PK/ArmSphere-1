@@ -1,14 +1,17 @@
+// lib/core/widgets/elevated_action_card.dart
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'tactile_press_wrapper.dart';
 
-/// High-Performance Athletic Action Card
+/// High-Performance Crystal Glassmorphic / Glossmorphic Action Card
 ///
-/// Solid substrate container designed for high-density vertical lists (Rankings,
-/// Tournaments, Match Queues, Training Logs) where `GlassCard`'s GPU `BackdropFilter`
-/// would cause fill-rate bottlenecking or frame drops.
-///
-/// Grounded in `docs/design/09_COMPONENT_SYSTEM.md` and `docs/design/39_DESIGN_DEBT_MAP.md`.
+/// Upgraded to enforce the 5 Crystal Glassmorphism pillars across all lists,
+/// dashboards, and detail screens in ArmSphere:
+/// 1. NO BLUR: Zero BackdropFilter or ImageFilter.blur — background stays 100% sharp.
+/// 2. HIGH TRANSPARENCY: Faint white surface tint (0.04 alpha) + subtle gloss gradient.
+/// 3. SPECULAR BORDER: Crisp 1.0px semi-transparent white light-catching border.
+/// 4. ELEVATION & FLOATING EFFECT: Y-axis offset BoxShadow for levitating depth.
+/// 5. FOREGROUND CONTRAST: High-contrast text shadow envelope for guaranteed legibility.
 class ElevatedActionCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -42,9 +45,51 @@ class ElevatedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderColor = borderColor ?? AppTheme.borderTitanium;
-    final effectiveBgColor = backgroundColor ?? (gradient != null ? null : (enableMachinedFinish ? null : AppTheme.cardSurface));
-    final effectiveGradient = gradient ?? (backgroundColor == null && enableMachinedFinish ? AppTheme.machinedTitaniumGradient : null);
+    // Pillar 3: Crisp semi-transparent white specular border
+    final effectiveBorderColor =
+        borderColor ?? Colors.white.withValues(alpha: 0.22);
+
+    // Pillar 2: High-transparency faint white surface plane (0.04 alpha)
+    final bool useCrystalDefault =
+        backgroundColor == null ||
+        backgroundColor == AppTheme.cardSurface ||
+        backgroundColor == AppTheme.elevatedSurface ||
+        backgroundColor == AppTheme.background ||
+        backgroundColor == AppTheme.voidBackground;
+
+    final Color effectiveBgColor = useCrystalDefault
+        ? Colors.white.withValues(alpha: 0.04)
+        : backgroundColor!;
+
+    final Gradient effectiveGradient = gradient ??
+        LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.06),
+            Colors.white.withValues(alpha: 0.04),
+            Colors.white.withValues(alpha: 0.02),
+          ],
+          stops: const [0.0, 0.45, 1.0],
+        );
+
+    // Pillar 4: Levitating Y-Axis Floating Shadow
+    final List<BoxShadow> effectiveShadows = customShadow ??
+        boxShadow ??
+        [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.44),
+            offset: const Offset(0, 10),
+            blurRadius: 24,
+            spreadRadius: -2,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.20),
+            offset: const Offset(0, 4),
+            blurRadius: 8,
+            spreadRadius: 0,
+          ),
+        ];
 
     Widget cardContent = Container(
       padding: padding,
@@ -57,9 +102,20 @@ class ElevatedActionCard extends StatelessWidget {
           color: effectiveBorderColor,
           width: 1.0,
         ),
-        boxShadow: customShadow ?? boxShadow ?? [AppTheme.titaniumShadow()],
+        boxShadow: effectiveShadows,
       ),
-      child: child,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: [
+            Shadow(
+              color: Color(0xB3000000),
+              offset: Offset(0, 1.2),
+              blurRadius: 3.5,
+            ),
+          ],
+        ),
+        child: child,
+      ),
     );
 
     if (onTap != null) {

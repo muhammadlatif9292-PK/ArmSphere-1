@@ -12,6 +12,8 @@ import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/messaging_provider.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'athlete_screens.dart' show ArmSwitchEloCard;
 
@@ -44,12 +46,21 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
         ]);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('Athlete Dossier'),
       ),
-      body: profileAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          profileAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.space24),
             child: ElevatedActionCard(
@@ -578,7 +589,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
               ],
             ),
           );
-        },
+            },
+          ),
+        ],
       ),
     );
   }

@@ -840,10 +840,10 @@ export class AthleteService {
       computeArmWinRates(athlete2.id),
     ]);
 
-    const a1RightElo = (athlete1 as any).rightArmElo ?? (athlete1 as any).eloRating ?? 1200;
-    const a1LeftElo = (athlete1 as any).leftArmElo ?? (athlete1 as any).eloRating ?? 1200;
-    const a2RightElo = (athlete2 as any).rightArmElo ?? (athlete2 as any).eloRating ?? 1200;
-    const a2LeftElo = (athlete2 as any).leftArmElo ?? (athlete2 as any).eloRating ?? 1200;
+    const a1RightElo = (athlete1 as any).rightArmElo ?? (athlete1 as any).eloRating ?? 1000;
+    const a1LeftElo = (athlete1 as any).leftArmElo ?? (athlete1 as any).eloRating ?? 1000;
+    const a2RightElo = (athlete2 as any).rightArmElo ?? (athlete2 as any).eloRating ?? 1000;
+    const a2LeftElo = (athlete2 as any).leftArmElo ?? (athlete2 as any).eloRating ?? 1000;
 
     const exponent = (a2RightElo - a1RightElo) / 400;
     const athlete1Prob = 1 / (1 + Math.pow(10, exponent));

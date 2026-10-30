@@ -49,23 +49,23 @@ class AppTheme {
   /// Recessed graphite container (#0E131C) for inputs and inactive surfaces.
   static const Color recessedSurface = Color(0xFF0E131C);
 
-  /// Structural precision titanium card border (rgba(214, 220, 227, 0.12) = 0x1FD6DCE3).
-  static const Color borderTitanium = Color(0x1FD6DCE3);
+  /// Crystal Glassmorphic Specular Card Border (rgba(255, 255, 255, 0.22) = 0x38FFFFFF).
+  static const Color borderTitanium = Color(0x38FFFFFF);
 
-  /// Metallic specular upper-edge highlight border (rgba(218, 226, 235, 0.15) = 0x26DAE2EB).
-  static const Color borderHighlight = Color(0x26DAE2EB);
+  /// Metallic specular upper-edge highlight border (rgba(255, 255, 255, 0.36) = 0x5CFFFFFF).
+  static const Color borderHighlight = Color(0x5CFFFFFF);
 
-  /// Structural card and divider border.
-  static const Color border = Color(0x1FD6DCE3);
+  /// Structural card and divider border (22% crisp white specular edge).
+  static const Color border = Color(0x38FFFFFF);
 
   /// Muted structural divider for subtle separators.
-  static const Color borderMuted = Color(0x10D6DCE3);
+  static const Color borderMuted = Color(0x18FFFFFF);
 
   /// Subtle structural divider for secondary separators.
-  static const Color borderSubtle = Color(0x14D6DCE3);
+  static const Color borderSubtle = Color(0x24FFFFFF);
 
   /// Elevated bright divider for focused states.
-  static const Color borderLight = Color(0x33DAE2EB);
+  static const Color borderLight = Color(0x47FFFFFF);
 
   /// Backward-compatible alias for structural card border.
   static const Color cardBorder = border;
@@ -132,22 +132,22 @@ class AppTheme {
   static const Color highlightPurple = Color(0xFFC084FC);
 
   // ---------------------------------------------------------------------------
-  // 3. Smoked Optical Glass Tokens
+  // 3. Crystal Glassmorphic / Glossmorphic Surface Tokens (Zero Blur, 0.04 White Tint)
   // ---------------------------------------------------------------------------
-  /// Semi-translucent dark-tinted surface (70% opacity titanium).
-  static const Color glassSurface = Color(0xB3151B24);
+  /// Crystal-clear faint white surface plane (4% white opacity = 0x0AFFFFFF).
+  static const Color glassSurface = Color(0x0AFFFFFF);
 
-  /// Heavy smoked optical glass (80% opacity obsidian).
-  static const Color glassSurfaceHeavy = Color(0xCC111721);
+  /// Elevated crystal-clear surface plane (5% white opacity = 0x0DFFFFFF).
+  static const Color glassSurfaceHeavy = Color(0x0DFFFFFF);
 
-  /// Light floating glass (50% opacity).
-  static const Color glassSurfaceLight = Color(0x801A2434);
+  /// Ultra-light floating crystal plane (3.5% white opacity = 0x09FFFFFF).
+  static const Color glassSurfaceLight = Color(0x09FFFFFF);
 
-  /// Crisp titanium glass-rim border (12% silver reflection).
-  static const Color glassBorder = Color(0x1FD6DCE3);
+  /// Crisp light-catching specular border (22% white reflection = 0x38FFFFFF).
+  static const Color glassBorder = Color(0x38FFFFFF);
 
-  /// Specular glass highlight line (20% white reflection).
-  static const Color glassBorderSpecular = Color(0x33FFFFFF);
+  /// Upper-crest specular glass highlight line (38% white reflection = 0x61FFFFFF).
+  static const Color glassBorderSpecular = Color(0x61FFFFFF);
 
   // ---------------------------------------------------------------------------
   // 4. Neutral Typography & Readability (WCAG AAA >= 7.0:1 / AA >= 4.5:1)
@@ -295,75 +295,80 @@ class AppTheme {
     );
   }
 
-  /// Standard card elevation shadow with soft contact ambient occlusion.
+  /// Standard Crystal Glossmorphic levitating Y-axis drop shadow.
   static BoxShadow cardShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.45),
-      blurRadius: 16.0,
-      offset: const Offset(0, 6),
+      color: Colors.black.withValues(alpha: 0.44),
+      blurRadius: 22.0,
+      spreadRadius: -2.0,
+      offset: const Offset(0, 10),
     );
   }
 
-  /// Titanium architectural card shadow.
+  /// Crystal Glossmorphic architectural floating card shadow.
   static BoxShadow titaniumShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.50),
-      blurRadius: 20.0,
-      offset: const Offset(0, 8),
+      color: Colors.black.withValues(alpha: 0.45),
+      blurRadius: 24.0,
+      spreadRadius: -2.0,
+      offset: const Offset(0, 10),
     );
   }
 
-  /// Deep floating glass dock elevation shadow.
+  /// Deep floating crystal dock elevation shadow.
   static BoxShadow glassDockShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.60),
-      blurRadius: 28.0,
+      color: Colors.black.withValues(alpha: 0.52),
+      blurRadius: 26.0,
+      spreadRadius: -2.0,
       offset: const Offset(0, 10),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // 10. Titanium & Glass Materials (Gradients & Architectural Shaders)
+  // 10. Crystal Glassmorphic / Glossmorphic Gradients & Surface Shaders
   // ---------------------------------------------------------------------------
-  /// Directional brushed machined titanium gradient (145deg #171D27 -> #111721).
+  /// Crystal Glossmorphic card surface gradient (0.06 -> 0.03 faint white sheen).
   static const LinearGradient machinedTitaniumGradient = LinearGradient(
-    begin: Alignment(-0.6, -1.0),
-    end: Alignment(0.6, 1.0),
-    colors: [
-      Color(0xFF171D27),
-      Color(0xFF111721),
-    ],
-  );
-
-  /// Secondary dark brushed steel gradient.
-  static const LinearGradient brushedSteelGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF202832),
-      Color(0xFF151B24),
-    ],
-  );
-
-  /// Immersive cinematic athlete stage banner gradient.
-  static const LinearGradient cinematicBannerGradient = LinearGradient(
-    begin: Alignment(-0.8, -1.0),
-    end: Alignment(0.8, 1.0),
-    colors: [
-      Color(0xFF1B232F),
-      Color(0xFF141A24),
-      Color(0xFF0D121A),
+      Color(0x0FFFFFFF),
+      Color(0x0AFFFFFF),
+      Color(0x05FFFFFF),
     ],
     stops: [0.0, 0.45, 1.0],
   );
 
-  /// Broadcast fight card / Supermatch stage gradient.
-  static const LinearGradient upcomingMatchGradient = LinearGradient(
-    begin: Alignment(-0.6, -1.0),
-    end: Alignment(0.6, 1.0),
+  /// Secondary Crystal Glossmorphic gradient for compact controls & sub-cards.
+  static const LinearGradient brushedSteelGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFF191D26),
-      Color(0xFF121821),
+      Color(0x12FFFFFF),
+      Color(0x08FFFFFF),
+    ],
+  );
+
+  /// Immersive Crystal Glossmorphic athlete hero banner gradient.
+  static const LinearGradient cinematicBannerGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0x12FFFFFF),
+      Color(0x0AFFFFFF),
+      Color(0x05FFFFFF),
+    ],
+    stops: [0.0, 0.45, 1.0],
+  );
+
+  /// Broadcast fight card / Supermatch Crystal Glossmorphic stage gradient.
+  static const LinearGradient upcomingMatchGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0x12FFFFFF),
+      Color(0x07FFFFFF),
     ],
   );
 
@@ -630,8 +635,8 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: cardSurface,
-        shadowColor: Colors.black.withValues(alpha: 0.55),
+        color: glassSurface,
+        shadowColor: Colors.black.withValues(alpha: 0.45),
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -754,7 +759,7 @@ class AppTheme {
         ),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,

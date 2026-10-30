@@ -17,6 +17,8 @@ import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 
 const Map<int, String> _months = {
   1: 'Jan',
@@ -149,67 +151,20 @@ class _AthleteDashboardScreenState
     final otherArmElo = _isRightArm ? specificLeftElo : specificRightElo;
     final otherArmLabel = _isRightArm ? 'LEFT' : 'RIGHT';
 
+    VisualPreferencesState visualPrefs;
+    try {
+      visualPrefs = ref.watch(visualPreferencesProvider);
+    } catch (_) {
+      visualPrefs = const VisualPreferencesState();
+    }
+
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Top Environmental Arena Backdrop & Stadium Spotlight
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 360,
-            child: IgnorePointer(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Opacity(
-                    opacity: 0.22,
-                    child: ArmSphereImage(
-                      assetPath: ArmSphereAssets.heroArena,
-                      fit: BoxFit.cover,
-                      excludeFromSemantics: true,
-                    ),
-                  ),
-                  Opacity(
-                    opacity: 0.35,
-                    child: ArmSphereImage(
-                      assetPath: ArmSphereAssets.texChalk,
-                      fit: BoxFit.cover,
-                      excludeFromSemantics: true,
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment(0.0, -0.85),
-                        radius: 1.1,
-                        colors: [
-                          Color(0x3338BDF8),
-                          Color(0x1AE23B3B),
-                          Color(0x00070A11),
-                        ],
-                        stops: [0.0, 0.45, 1.0],
-                      ),
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x66070A11),
-                          Color(0xCC070A11),
-                          AppTheme.voidBackground,
-                        ],
-                        stops: [0.0, 0.65, 1.0],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          // Full-Screen Crystal-Clear Functional Arena Backdrop (Zero Blur, 100% Sharp)
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
           ),
           RefreshIndicator(
             color: AppTheme.crimson,
@@ -262,10 +217,12 @@ class _AthleteDashboardScreenState
                 dominantArm: dominantArm,
                 clubName: clubName,
                 country: country,
-                avatarUrl: (p['profilePhoto'] ??
-                        p['avatarUrl'] ??
-                        profile['avatarUrl'])
-                    ?.toString(),
+                avatarUrl: visualPrefs.customPortraitImage ??
+                    (p['profilePhoto'] ??
+                            p['avatarUrl'] ??
+                            profile['avatarUrl'])
+                        ?.toString(),
+                cardBannerImage: visualPrefs.effectiveCardBannerImage,
               ),
               const SizedBox(height: AppTheme.space16),
 
@@ -592,7 +549,7 @@ class _AthleteDashboardScreenState
               height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xB3151B24),
+                color: Colors.white.withValues(alpha: 0.05),
                 border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
                 boxShadow: [
                   BoxShadow(
@@ -697,7 +654,7 @@ class _AthleteDashboardScreenState
                 excludeFromSemantics: true,
               ),
             ),
-            // Text-protection gradient scrim (Machined Titanium / Obsidian Glass)
+            // Light crystal-clear contrast scrim so heroArena remains vivid
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -705,9 +662,9 @@ class _AthleteDashboardScreenState
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      Color(0xF50B0F17),
-                      Color(0xCC0B0F17),
-                      Color(0x550B0F17),
+                      Color(0x730B0F17),
+                      Color(0x470B0F17),
+                      Color(0x260B0F17),
                     ],
                     stops: [0.0, 0.65, 1.0],
                   ),
@@ -859,21 +816,25 @@ class _AthleteDashboardScreenState
     required String clubName,
     required String? country,
     String? avatarUrl,
+    String? cardBannerImage,
   }) {
     final rankDigits = rank.replaceAll(RegExp(r'[^0-9]'), '');
     final rankInt = int.tryParse(rankDigits);
     final isPodium = hasRank && rankInt != null && rankInt >= 1 && rankInt <= 3;
+    final bannerSource = cardBannerImage ?? ArmSphereAssets.heroGrip;
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
         gradient: AppTheme.cinematicBannerGradient,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 28,
+            blurRadius: 26,
+            spreadRadius: -2,
             offset: const Offset(0, 10),
           ),
         ],
@@ -881,7 +842,7 @@ class _AthleteDashboardScreenState
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          // Per-card internal atmospheric imagery (arena grip clash + chalk dust + crimson/gold corner spotlights)
+          // Per-card internal atmospheric imagery (user custom card banner or pro preset)
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(19),
@@ -890,20 +851,19 @@ class _AthleteDashboardScreenState
                   fit: StackFit.expand,
                   children: [
                     Opacity(
-                      opacity: 0.16,
-                      child: ArmSphereImage(
-                        assetPath: ArmSphereAssets.heroGrip,
-                        fit: BoxFit.cover,
-                        excludeFromSemantics: true,
-                      ),
-                    ),
-                    Opacity(
-                      opacity: 0.42,
-                      child: ArmSphereImage(
-                        assetPath: ArmSphereAssets.texChalk,
-                        fit: BoxFit.cover,
-                        excludeFromSemantics: true,
-                      ),
+                      opacity: 0.34,
+                      child: bannerSource.startsWith('assets/')
+                          ? ArmSphereImage(
+                              assetPath: bannerSource,
+                              fit: BoxFit.cover,
+                              excludeFromSemantics: true,
+                            )
+                          : ArmSphereImage(
+                              imageUrl: bannerSource,
+                              fallbackAsset: ArmSphereAssets.heroGrip,
+                              fit: BoxFit.cover,
+                              excludeFromSemantics: true,
+                            ),
                     ),
                     const DecoratedBox(
                       decoration: BoxDecoration(
@@ -939,9 +899,9 @@ class _AthleteDashboardScreenState
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                           colors: [
-                            Color(0xB30B0F17),
-                            Color(0xD9101722),
-                            Color(0xE60B0F17),
+                            Color(0x470B0F17),
+                            Color(0x52101722),
+                            Color(0x5E0B0F17),
                           ],
                           stops: [0.0, 0.5, 1.0],
                         ),
@@ -1085,57 +1045,93 @@ class _AthleteDashboardScreenState
                 // Athlete Identity Stage
                 Row(
                   children: [
-                    // Avatar Portrait Frame
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/athlete/profile');
-                      },
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: const RadialGradient(
-                            center: Alignment(-0.25, -0.35),
-                            radius: 0.9,
-                            colors: [Color(0xFF283850), Color(0xFF0B1018)],
-                          ),
-                          border: Border.all(
-                              color: AppTheme.borderHighlight, width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.55),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
+                    // Avatar Portrait Frame + Interactive Camera / Card Studio Button
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/athlete/profile');
+                          },
+                          child: Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(18),
+                              color: Colors.white.withValues(alpha: 0.05),
+                              border: Border.all(
+                                  color: AppTheme.borderHighlight, width: 1.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.55),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                                if (isPodium)
+                                  BoxShadow(
+                                    color: AppTheme.goldPrimary
+                                        .withValues(alpha: 0.12),
+                                    blurRadius: 10,
+                                    spreadRadius: -2,
+                                  ),
+                              ],
                             ),
-                            if (isPodium)
-                              BoxShadow(
-                                color: AppTheme.goldPrimary
-                                    .withValues(alpha: 0.12),
-                                blurRadius: 10,
-                                spreadRadius: -2,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16.5),
+                              child: ArmSphereImage.avatar(
+                                imageUrl: (avatarUrl != null &&
+                                        !avatarUrl.startsWith('assets/'))
+                                    ? avatarUrl
+                                    : null,
+                                assetPath: (avatarUrl != null &&
+                                        avatarUrl.startsWith('assets/'))
+                                    ? avatarUrl
+                                    : null,
+                                initial: displayName,
+                                size: 72,
+                                fallbackAsset: ArmSphereAssets.heroGrip,
+                                semanticLabel: 'Athlete Avatar: $displayName',
                               ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16.5),
-                          child: ArmSphereImage.avatar(
-                            imageUrl: (avatarUrl != null &&
-                                    !avatarUrl.startsWith('assets/'))
-                                ? avatarUrl
-                                : null,
-                            assetPath: (avatarUrl != null &&
-                                    avatarUrl.startsWith('assets/'))
-                                ? avatarUrl
-                                : null,
-                            initial: displayName,
-                            size: 72,
-                            fallbackAsset: ArmSphereAssets.defaultAvatar,
-                            semanticLabel: 'Athlete Avatar: $displayName',
+                            ),
                           ),
                         ),
-                      ),
+                        Positioned(
+                          right: -4,
+                          bottom: -4,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () =>
+                                showVisualCustomizationSheet(context, ref),
+                            child: Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                color: AppTheme.voidBackground
+                                    .withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppTheme.goldPrimary
+                                      .withValues(alpha: 0.75),
+                                  width: 1.0,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt_outlined,
+                                size: 13.5,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -3656,10 +3652,18 @@ class AthleteProfileScreen extends ConsumerWidget {
       mergedProfile['province']?.toString(),
     ].where((v) => v != null && v.isNotEmpty).join(', ');
 
+    VisualPreferencesState visualPrefs;
+    try {
+      visualPrefs = ref.watch(visualPreferencesProvider);
+    } catch (_) {
+      visualPrefs = const VisualPreferencesState();
+    }
+
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
           'Athlete Profile',
@@ -3671,6 +3675,11 @@ class AthleteProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.cyan),
+            tooltip: 'Customize Portrait & Card Visuals',
+            onPressed: () => showVisualCustomizationSheet(context, ref),
+          ),
           if (myProfileId != null && myProfileId.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: AppTheme.goldPrimary),
@@ -3691,18 +3700,29 @@ class AthleteProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          18,
-          16,
-          MainShellScope.isInsideShell(context)
-              ? MainShellScope.bottomClearance(context, additionalPadding: 36)
-              : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                18,
+                16,
+                MainShellScope.isInsideShell(context)
+                    ? MainShellScope.bottomClearance(context,
+                        additionalPadding: 36)
+                    : kFloatingDockTotalHeight +
+                        MediaQuery.paddingOf(context).bottom +
+                        36,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
             // 1. Athlete Identity Header with Smoked Titanium Glass Card
             Container(
               padding: const EdgeInsets.all(16),
@@ -3748,12 +3768,13 @@ class AthleteProfileScreen extends ConsumerWidget {
                       ],
                     ),
                     child: ArmSphereImage.avatar(
-                      imageUrl:
-                          (mergedProfile['profilePhoto'] ?? mergedProfile['avatarUrl'])
+                      imageUrl: visualPrefs.customPortraitImage ??
+                          (mergedProfile['profilePhoto'] ??
+                                  mergedProfile['avatarUrl'])
                               ?.toString(),
                       initial: displayName,
                       size: 72,
-                      fallbackAsset: ArmSphereAssets.defaultAvatar,
+                      fallbackAsset: ArmSphereAssets.heroGrip,
                       semanticLabel: 'Athlete Avatar for $displayName',
                     ),
                   ),
@@ -4001,8 +4022,11 @@ class AthleteProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 32),
-          ],
-        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -4155,6 +4179,19 @@ class AthleteProfileScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        showVisualCustomizationSheet(context, ref);
+                      },
+                      icon: const Icon(Icons.camera_alt_outlined,
+                          size: 16, color: AppTheme.goldPrimary),
+                      label: const Text(
+                        'Upload Portrait, Card Art & Screen Wallpaper',
+                        style: TextStyle(color: AppTheme.goldPrimary),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: nameCtrl,
                       decoration: const InputDecoration(

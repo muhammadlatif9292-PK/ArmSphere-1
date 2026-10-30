@@ -119,7 +119,7 @@ class MainShellScreen extends StatelessWidget {
         extendBody: true,
         body: Stack(
           children: [
-            const AmbientParticleBackground(),
+            AmbientParticleBackground(tabIndex: navigationShell.currentIndex),
             SafeArea(
               bottom: false,
               child: navigationShell,
@@ -132,41 +132,37 @@ class MainShellScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, kFloatingDockBottomMargin),
             child: Container(
               height: kFloatingDockHeight,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                AppTheme.glassDockShadow(),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.glassSurfaceHeavy,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppTheme.borderTitanium,
-                      width: 1.0,
-                    ),
-                    gradient: const LinearGradient(
-                      // Vertical (left/right symmetric) sheen: a diagonal one
-                      // lightened only the first two tabs and cut their
-                      // inactive-label contrast to ~2.6:1.
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 0.30, 1.0],
-                      colors: [
-                        Color(0x1AFFFFFF), // Specular reflection sheen
-                        Color(0xB3151B24),
-                        Color(0x0A000000),
-                      ],
-                    ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.24),
+                  width: 1.0,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.45, 1.0],
+                  colors: [
+                    Colors.white.withValues(alpha: 0.08),
+                    Colors.white.withValues(alpha: 0.04),
+                    Colors.white.withValues(alpha: 0.02),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.50),
+                    offset: const Offset(0, 10),
+                    blurRadius: 26,
+                    spreadRadius: -2,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
                       _buildNavItem(
                         context,
                         index: 0,
@@ -209,10 +205,8 @@ class MainShellScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    ),
-  );
-}
+      );
+  }
 
   Widget _buildNavItem(
     BuildContext context, {
