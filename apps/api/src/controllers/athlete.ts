@@ -152,18 +152,18 @@ export class AthleteController {
    */
   static async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
-      // Validate before any database access (including the block check below).
       const id = athleteIdParamSchema.parse(req.params.id);
       const callerUserId = req.user!.id;
 
-      if (callerUserId !== id) {
-        const isBlocked = await MessagingService.checkBlockByUsers(callerUserId, id);
+      const profile = await AthleteService.getProfileByUserId(id, callerUserId, req.user?.role);
+
+      // Block checks must operate between canonical user IDs (profile.userId), not profile ID
+      if (callerUserId !== profile.userId) {
+        const isBlocked = await MessagingService.checkBlockByUsers(callerUserId, profile.userId);
         if (isBlocked) {
           throw new ForbiddenError("You cannot view this profile because this user is blocked or has blocked you.");
         }
       }
-
-      const profile = await AthleteService.getProfileByUserId(id, callerUserId, req.user?.role);
 
       if (profile && profile.profilePhoto) {
         profile.profilePhoto = await StorageService.generatePresignedDownloadUrl(
@@ -439,8 +439,9 @@ export class AthleteController {
       const id = athleteIdParamSchema.parse(req.params.id);
       const callerUserId = req.user!.id;
 
-      if (callerUserId !== id) {
-        const isBlocked = await MessagingService.checkBlockByUsers(callerUserId, id);
+      const targetUserId = await AthleteService.resolveUserId(id);
+      if (callerUserId !== targetUserId) {
+        const isBlocked = await MessagingService.checkBlockByUsers(callerUserId, targetUserId);
         if (isBlocked) {
           throw new ForbiddenError("You cannot view matches for this athlete because this user is blocked or has blocked you.");
         }

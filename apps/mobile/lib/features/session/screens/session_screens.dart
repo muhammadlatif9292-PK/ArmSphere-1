@@ -7,8 +7,59 @@ import '../../../core/providers/session_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../settings/widgets/biometric_settings_tile.dart';
+
+Future<bool> _showRevokeConfirmationDialog({
+  required BuildContext context,
+  required String title,
+  required String content,
+  required String confirmLabel,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppTheme.cardSurface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        side: const BorderSide(color: AppTheme.cardBorder),
+      ),
+      title: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 24),
+          const SizedBox(width: AppTheme.space8),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: AppTheme.fontDisplay,
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: Text(
+        content,
+        style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
+          child: Text(confirmLabel),
+        ),
+      ],
+    ),
+  );
+  return result == true;
+}
 
 /// Active login sessions (account security — spec section 33).
 class ActiveSessionsListScreen extends ConsumerWidget {
@@ -36,7 +87,14 @@ class ActiveSessionsListScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(sessionProvider),
         child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.isInsideShell(context)
+                ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+          ),
           children: [
             Text(
               'DEVICE SECURITY',
@@ -217,6 +275,45 @@ class ActiveSessionsListScreen extends ConsumerWidget {
                         },
                       ),
                     ],
+                    if (sessions.length > 1) ...[
+                      const SizedBox(height: AppTheme.space8),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.phonelink_erase_outlined, color: AppTheme.error),
+                        label: const Text(
+                          'Revoke All Other Sessions',
+                          style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.w600),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppTheme.error),
+                          minimumSize: const Size.fromHeight(44),
+                        ),
+                        onPressed: sessionsAsync.isLoading
+                            ? null
+                            : () async {
+                                HapticFeedback.mediumImpact();
+                                final confirm = await _showRevokeConfirmationDialog(
+                                  context: context,
+                                  title: 'Revoke Other Sessions?',
+                                  content:
+                                      'All active devices except your current session will be logged out immediately. You will need to sign in again on those devices.',
+                                  confirmLabel: 'Revoke Other Sessions',
+                                );
+                                if (!confirm) return;
+
+                                final ok = await ref.read(sessionProvider.notifier).revokeOthers();
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(ok
+                                        ? 'All other sessions revoked.'
+                                        : 'Could not revoke other sessions.'),
+                                    backgroundColor: ok ? AppTheme.success : AppTheme.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                      ),
+                    ],
                   ],
                 );
               },
@@ -255,7 +352,14 @@ class ActiveSessionControlScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(sessionProvider),
         child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.isInsideShell(context)
+                ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+          ),
           children: [
             ElevatedActionCard(
               padding: const EdgeInsets.all(AppTheme.space24),
@@ -306,10 +410,23 @@ class ActiveSessionControlScreen extends ConsumerWidget {
                   ElevatedButton.icon(
                     icon: const Icon(Icons.logout),
                     label: const Text('Revoke This Session'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.error,
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: sessionsAsync.isLoading
                         ? null
                         : () async {
                             HapticFeedback.mediumImpact();
+                            final confirm = await _showRevokeConfirmationDialog(
+                              context: context,
+                              title: 'Revoke This Session?',
+                              content:
+                                  'This device will be immediately signed out and its authentication tokens will be invalidated.',
+                              confirmLabel: 'Revoke Session',
+                            );
+                            if (!confirm) return;
+
                             final ok = await ref
                                 .read(sessionProvider.notifier)
                                 .revokeSession(sessionId);
@@ -328,12 +445,24 @@ class ActiveSessionControlScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppTheme.space12),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.phonelink_erase_outlined),
-                    label: const Text('Revoke All Other Sessions'),
+                    icon: const Icon(Icons.phonelink_erase_outlined, color: AppTheme.error),
+                    label: const Text('Revoke All Other Sessions', style: TextStyle(color: AppTheme.error)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.error),
+                    ),
                     onPressed: sessionsAsync.isLoading
                         ? null
                         : () async {
                             HapticFeedback.mediumImpact();
+                            final confirm = await _showRevokeConfirmationDialog(
+                              context: context,
+                              title: 'Revoke Other Sessions?',
+                              content:
+                                  'All active devices except your current session will be logged out immediately. You will need to sign in again on those devices.',
+                              confirmLabel: 'Revoke Other Sessions',
+                            );
+                            if (!confirm) return;
+
                             final ok = await ref
                                 .read(sessionProvider.notifier)
                                 .revokeOthers();

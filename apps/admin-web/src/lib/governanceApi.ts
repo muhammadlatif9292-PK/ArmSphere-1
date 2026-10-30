@@ -31,3 +31,19 @@ export function useResolveDispute() {
     },
   });
 }
+
+export function useCloseDispute() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, closureNotes }: { id: string; closureNotes?: string }) => {
+      const response = await apiClient.post(`/governance/disputes/${id}/close`, {
+        closureNotes,
+      });
+      return unwrapMutationData(response);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+    },
+  });
+}
+

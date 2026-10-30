@@ -9,6 +9,7 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 
 /// Domain 8 / Stage 6 Convergence: Notifications List Screen
 ///
@@ -181,7 +182,14 @@ class _NotificationsListScreenState
             onRefresh: () async => ref.invalidate(notificationProvider),
             child: ListView.separated(
               key: const PageStorageKey<String>('notifications_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.isInsideShell(context)
+                    ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                    : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+              ),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {

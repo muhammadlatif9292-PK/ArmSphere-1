@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { testDbStore } from "./setup.js";
 import { app } from "../app.js";
@@ -319,6 +319,18 @@ describe("Training Log & PR Access Authorization Hardening (P1 IDOR)", () => {
         expect(JSON.stringify(res.body)).not.toContain("post-gym-1");
         expect(JSON.stringify(res.body)).not.toContain("WRIST_CURL");
         expect(JSON.stringify(res.body)).not.toContain("60");
+      });
+
+      it("M. Self-access using ownerUserId (user.id fallback) -> 200 and returns profile training logs", async () => {
+        const token = tok(ownerUserId, "owner@armsphere.test", UserRole.ATHLETE);
+        const res = await request(app)
+          .get(endpoint.path(ownerUserId))
+          .set("Authorization", `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.data)).toBe(true);
+        expect(res.body.data.length).toBeGreaterThan(0);
       });
     });
   }
