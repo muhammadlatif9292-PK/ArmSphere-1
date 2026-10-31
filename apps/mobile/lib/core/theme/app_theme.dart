@@ -140,6 +140,7 @@ class AppTheme {
 
   /// Elevated crystal-clear surface plane (5% white opacity = 0x0DFFFFFF).
   static const Color glassSurfaceHeavy = Color(0x0DFFFFFF);
+  static const Color glassSurfaceHigh = glassSurfaceHeavy;
 
   /// Ultra-light floating crystal plane (3.5% white opacity = 0x09FFFFFF).
   static const Color glassSurfaceLight = Color(0x09FFFFFF);

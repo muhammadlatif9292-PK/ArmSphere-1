@@ -831,7 +831,7 @@ class _TournamentAwardsCeremonyScreenState
                   end: Alignment.bottomCenter,
                   colors: [
                     accentColor.withValues(alpha: isSelected ? 0.35 : 0.20),
-                    AppTheme.glassSurfaceHigh,
+                    AppTheme.glassSurfaceHeavy,
                   ],
                 ),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
