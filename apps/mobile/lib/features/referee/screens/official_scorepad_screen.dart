@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/state_providers.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/count_up_text.dart';
 import '../../../core/audio/sound_service.dart';
@@ -171,15 +173,20 @@ class _OfficialScorepadScreenState
     return WillPopScope(
       onWillPop: _handleWillPop,
       child: Scaffold(
-        backgroundColor: AppTheme.background,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: AppTheme.glassSurface,
+          backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+          leading: CrystalBackButton(
             onPressed: () async {
               if (await _handleWillPop()) {
-                if (mounted) context.pop();
+                if (!mounted) return;
+                final router = GoRouter.maybeOf(context);
+                if (router != null && router.canPop()) {
+                  router.pop();
+                } else {
+                  Navigator.maybeOf(context)?.maybePop();
+                }
               }
             },
           ),
@@ -239,13 +246,32 @@ class _OfficialScorepadScreenState
                     () => _hasConcurrentConflict = !_hasConcurrentConflict);
               },
             ),
+            CrystalHomeButton(
+              onPressed: () async {
+                if (await _handleWillPop()) {
+                  if (!mounted) return;
+                  final router = GoRouter.maybeOf(context);
+                  if (router != null) {
+                    router.go('/home');
+                  } else {
+                    Navigator.maybeOf(context)?.popUntil((route) => route.isFirst);
+                  }
+                }
+              },
+            ),
           ],
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // OFFLINE & CONCURRENT CONFLICT WARNING STRIPS
-              _buildOperationalStatusBanner(),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const Positioned.fill(
+              child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  // OFFLINE & CONCURRENT CONFLICT WARNING STRIPS
+                  _buildOperationalStatusBanner(),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -330,6 +356,8 @@ class _OfficialScorepadScreenState
             ],
           ),
         ),
+          ],
+        ),
       ),
     );
   }
@@ -341,7 +369,12 @@ class _OfficialScorepadScreenState
     if (!_isOffline && !_hasConcurrentConflict) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        color: AppTheme.surface,
+        decoration: const BoxDecoration(
+          color: AppTheme.glassSurface,
+          border: Border(
+            bottom: BorderSide(color: AppTheme.borderTitanium, width: 1),
+          ),
+        ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -617,13 +650,15 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _isAthletesVerified
-              ? AppTheme.border
+              ? AppTheme.borderTitanium
               : AppTheme.warning.withValues(alpha: 0.6),
         ),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -815,9 +850,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,10 +904,10 @@ class _OfficialScorepadScreenState
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.goldPrimary
-              : AppTheme.elevatedSurface,
+              : AppTheme.glassSurface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.border,
+            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
           ),
         ),
         child: Row(
@@ -902,9 +939,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,9 +1001,9 @@ class _OfficialScorepadScreenState
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: AppTheme.elevatedSurface,
+              color: AppTheme.glassSurface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.border),
+              border: Border.all(color: AppTheme.borderTitanium),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1039,16 +1078,14 @@ class _OfficialScorepadScreenState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: winner != null
-                      ? AppTheme.elevatedSurface
-                      : AppTheme.surface,
+                  color: AppTheme.glassSurface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: winner == 'A'
-                        ? AppTheme.goldPrimary.withValues(alpha: 0.5)
+                        ? AppTheme.goldPrimary.withValues(alpha: 0.65)
                         : winner == 'B'
-                            ? AppTheme.primaryAccent.withValues(alpha: 0.5)
-                            : AppTheme.border,
+                            ? AppTheme.primaryAccent.withValues(alpha: 0.65)
+                            : AppTheme.borderTitanium,
                   ),
                 ),
                 child: Row(
@@ -1177,9 +1214,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1353,9 +1392,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1476,9 +1517,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1552,9 +1595,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1616,13 +1661,15 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: winner != null
-              ? AppTheme.goldPrimary.withValues(alpha: 0.6)
-              : AppTheme.border,
+              ? AppTheme.goldPrimary.withValues(alpha: 0.65)
+              : AppTheme.borderTitanium,
         ),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1698,9 +1745,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1824,13 +1873,15 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: errors.isEmpty
-              ? AppTheme.success.withValues(alpha: 0.5)
-              : AppTheme.warning.withValues(alpha: 0.5),
+              ? AppTheme.success.withValues(alpha: 0.55)
+              : AppTheme.warning.withValues(alpha: 0.55),
         ),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1906,9 +1957,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Row(
         children: [
@@ -1971,9 +2024,11 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderTitanium),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2067,9 +2122,11 @@ class _OfficialScorepadScreenState
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.glassSurface,
-        border: Border(top: BorderSide(color: AppTheme.border)),
+        gradient: AppTheme.machinedTitaniumGradient,
+        border: const Border(top: BorderSide(color: AppTheme.borderTitanium)),
+        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: _isSubmitting
           ? const Center(

@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/sticky_form_scaffold.dart';
 
 /// Domain 9 / Stage 6 Convergence: Create Informal Event Screen
 ///
@@ -135,11 +138,12 @@ class _CreateInformalEventScreenState
   Widget build(BuildContext context) {
     final isSubmitting = ref.watch(informalEventCreationProvider).isLoading;
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
+    return StickyFormScaffold(
+      stageDomain: ArmSphereStageDomain.venues,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/informal-events'),
         title: const Text(
           'Host Practice Meetup',
           style: TextStyle(
@@ -148,261 +152,254 @@ class _CreateInformalEventScreenState
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Directive Guidance Card
-              ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      primaryActionLabel: 'PUBLISH PRACTICE MEETUP',
+      primaryActionIcon: Icons.sports_martial_arts,
+      onPrimaryAction: isSubmitting ? null : _submit,
+      isLoading: isSubmitting,
+      formKey: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Directive Guidance Card
+          ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.sports_martial_arts,
-                            color: AppTheme.goldPrimary, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'GRASSROOTS TABLE SPARRING',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                            color: AppTheme.goldLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Host an open table for technique drills, strap work, and sparring. Fellow athletes can view coordinates and RSVP.',
+                    Icon(Icons.sports_martial_arts,
+                        color: AppTheme.goldPrimary, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'GRASSROOTS TABLE SPARRING',
                       style: TextStyle(
-                          fontSize: 12, color: AppTheme.textSecondary, height: 1.5),
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: AppTheme.goldLight,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: AppTheme.space16),
+                const SizedBox(height: 8),
+                const Text(
+                  'Host an open table for technique drills, strap work, and sparring. Fellow athletes can view coordinates and RSVP.',
+                  style: TextStyle(
+                      fontSize: 12, color: AppTheme.textSecondary, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppTheme.space16),
 
-              // Form Details Card
-              ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      controller: _titleController,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Meetup Title',
-                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                        hintText: 'e.g. Sunday Toproll & Strap Clinic',
-                        hintStyle: const TextStyle(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.elevatedSurface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.goldPrimary),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please provide a meetup title';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 3,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Session Focus & Hardware Specs',
-                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                        hintText: 'Number of tables, beginner-friendly, chalk available...',
-                        hintStyle: const TextStyle(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.elevatedSurface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.goldPrimary),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cityController,
-                            style: const TextStyle(color: AppTheme.textPrimary),
-                            decoration: InputDecoration(
-                              labelText: 'City',
-                              labelStyle:
-                                  const TextStyle(color: AppTheme.textSecondary),
-                              hintText: 'e.g. Lahore',
-                              hintStyle: const TextStyle(color: AppTheme.textMuted),
-                              filled: true,
-                              fillColor: AppTheme.elevatedSurface,
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radiusSmall),
-                                borderSide: const BorderSide(color: AppTheme.border),
-                              ),
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'City required'
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: AppTheme.space12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _provinceController,
-                            style: const TextStyle(color: AppTheme.textPrimary),
-                            decoration: InputDecoration(
-                              labelText: 'Province (optional)',
-                              labelStyle:
-                                  const TextStyle(color: AppTheme.textSecondary),
-                              hintText: 'e.g. Punjab',
-                              hintStyle: const TextStyle(color: AppTheme.textMuted),
-                              filled: true,
-                              fillColor: AppTheme.elevatedSurface,
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppTheme.radiusSmall),
-                                borderSide: const BorderSide(color: AppTheme.border),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    TextFormField(
-                      controller: _maxParticipantsController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Max Puller Capacity (optional)',
-                        labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                        hintText: 'e.g. 12',
-                        hintStyle: const TextStyle(color: AppTheme.textMuted),
-                        filled: true,
-                        fillColor: AppTheme.elevatedSurface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          borderSide: const BorderSide(color: AppTheme.border),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.space16),
-
-                    // Date & Time Picker Tile
-                    InkWell(
-                      onTap: _pickDateTime,
+          // Form Details Card
+          ElevatedActionCard(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Meetup Title',
+                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                    hintText: 'e.g. Sunday Toproll & Strap Clinic',
+                    hintStyle: const TextStyle(color: AppTheme.textMuted),
+                    filled: true,
+                    fillColor: AppTheme.glassSurface,
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: AppTheme.elevatedSurface,
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusSmall),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'SCHEDULED DATE & TIME',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.8,
-                                    color: AppTheme.textMuted,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _scheduledAt == null
-                                      ? 'Tap to select session time'
-                                      : '${_scheduledAt!.day}/${_scheduledAt!.month}/${_scheduledAt!.year} at ${_scheduledAt!.hour.toString().padLeft(2, '0')}:${_scheduledAt!.minute.toString().padLeft(2, '0')}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: _scheduledAt == null
-                                        ? AppTheme.textMuted
-                                        : AppTheme.textPrimary,
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures()
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Icon(Icons.schedule,
-                                size: 20, color: AppTheme.goldPrimary),
-                          ],
-                        ),
-                      ),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
-                  ],
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.goldPrimary),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please provide a meetup title';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: AppTheme.space24),
+                const SizedBox(height: AppTheme.space16),
 
-              // Submit Button
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.goldPrimary,
-                  foregroundColor: AppTheme.voidBackground,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Session Focus & Hardware Specs',
+                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                    hintText: 'Number of tables, beginner-friendly, chalk available...',
+                    hintStyle: const TextStyle(color: AppTheme.textMuted),
+                    filled: true,
+                    fillColor: AppTheme.glassSurface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.goldPrimary),
+                    ),
                   ),
                 ),
-                onPressed: isSubmitting ? null : _submit,
-                child: isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppTheme.voidBackground),
-                      )
-                    : const Text(
-                        'PUBLISH PRACTICE MEETUP',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
+                const SizedBox(height: AppTheme.space16),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _cityController,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'City',
+                          labelStyle:
+                              const TextStyle(color: AppTheme.textSecondary),
+                          hintText: 'e.g. Lahore',
+                          hintStyle: const TextStyle(color: AppTheme.textMuted),
+                          filled: true,
+                          fillColor: AppTheme.glassSurface,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'City required'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.space12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _provinceController,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Province (optional)',
+                          labelStyle:
+                              const TextStyle(color: AppTheme.textSecondary),
+                          hintText: 'e.g. Punjab',
+                          hintStyle: const TextStyle(color: AppTheme.textMuted),
+                          filled: true,
+                          fillColor: AppTheme.glassSurface,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          ),
                         ),
                       ),
-              ),
-            ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.space16),
+
+                TextFormField(
+                  controller: _maxParticipantsController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Max Puller Capacity (optional)',
+                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
+                    hintText: 'e.g. 12',
+                    hintStyle: const TextStyle(color: AppTheme.textMuted),
+                    filled: true,
+                    fillColor: AppTheme.glassSurface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space16),
+
+                // Date & Time Picker Tile
+                InkWell(
+                  onTap: _pickDateTime,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.glassSurface,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(color: AppTheme.borderTitanium),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'SCHEDULED DATE & TIME',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.8,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _scheduledAt == null
+                                  ? 'Tap to select session time'
+                                  : '${_scheduledAt!.day}/${_scheduledAt!.month}/${_scheduledAt!.year} at ${_scheduledAt!.hour.toString().padLeft(2, '0')}:${_scheduledAt!.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: _scheduledAt == null
+                                    ? AppTheme.textMuted
+                                    : AppTheme.textPrimary,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Icon(Icons.schedule,
+                            size: 20, color: AppTheme.goldPrimary),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

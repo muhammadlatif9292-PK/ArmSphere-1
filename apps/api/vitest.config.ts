@@ -14,6 +14,7 @@ export default defineConfig({
     globals: false,
     environment: "node",
     include: ["src/tests/**/*.test.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**", "../../apps/admin-web/**", "../admin-web/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"]

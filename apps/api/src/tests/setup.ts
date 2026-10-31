@@ -430,9 +430,10 @@ function checkMatch(item: any, expr: any): boolean {
     const compareVal = typeof expr.value === "string" || expr.value instanceof Date ? new Date(expr.value) : expr.value;
     return itemValParsed <= compareVal;
   }
-  if (expr.operator === "like" && expr.field === "display_name") {
+  if (expr.operator === "like" || expr.operator === "ilike") {
     const cleanPattern = (expr.value || "").replace(/%/g, "").toLowerCase();
-    return item.displayName && item.displayName.toLowerCase().includes(cleanPattern);
+    const fieldVal = expr.field === "display_name" ? item.displayName : getFieldVal(item, expr.field);
+    return typeof fieldVal === "string" && fieldVal.toLowerCase().includes(cleanPattern);
   }
   if (expr.field) {
     const val = expr.value;
@@ -1496,6 +1497,33 @@ const mockDrizzle = {
             }
             return si;
           });
+        } else if (table === teams) {
+          testDbStore.teams = testDbStore.teams.map((t) => {
+            if (checkMatch(t, expression)) {
+              const updated = { ...t, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return t;
+          });
+        } else if (table === teamMembers) {
+          testDbStore.teamMembers = testDbStore.teamMembers.map((tm) => {
+            if (checkMatch(tm, expression)) {
+              const updated = { ...tm, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return tm;
+          });
+        } else if (table === athleteClubs) {
+          testDbStore.athleteClubs = testDbStore.athleteClubs.map((ac) => {
+            if (checkMatch(ac, expression)) {
+              const updated = { ...ac, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return ac;
+          });
         }
         
         const returnObj = {
@@ -1830,6 +1858,9 @@ vi.mock("drizzle-orm", () => {
     },
     like: (fieldObj: any, val: any) => {
       return { operator: "like", field: fieldObj?.name, value: val };
+    },
+    ilike: (fieldObj: any, val: any) => {
+      return { operator: "ilike", field: fieldObj?.name, value: val };
     },
     and: (...conditions: any[]) => {
       return { type: "and", conditions };

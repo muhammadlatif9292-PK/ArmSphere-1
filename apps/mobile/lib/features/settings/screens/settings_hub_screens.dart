@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/biometric_settings_tile.dart';
 
@@ -14,22 +17,33 @@ class SettingsHubScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppTheme.space16),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Settings'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.isInsideShell(context)
+                  ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                  : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+            ),
         children: [
           _sectionHeader(context, 'ACCOUNT'),
           ElevatedActionCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                _SettingsTile(
-                  icon: Icons.person_outline,
-                  title: 'Profile',
-                  subtitle: 'View and manage your athlete profile',
-                  onTap: () => context.push('/athlete/profile'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
                 _SettingsTile(
                   icon: Icons.badge_outlined,
                   title: 'Account Roles',
@@ -92,7 +106,7 @@ class SettingsHubScreen extends ConsumerWidget {
                   icon: Icons.contact_support_outlined,
                   title: 'Support Requests',
                   subtitle: 'Contact Helpdesk & track inquiries',
-                  onTap: () => _showSupportModal(context),
+                  onTap: () => context.push('/support'),
                 ),
                 const Divider(height: 1, color: AppTheme.cardBorder),
                 _SettingsTile(
@@ -142,6 +156,8 @@ class SettingsHubScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppTheme.space24),
+        ],
+      ),
         ],
       ),
     );
@@ -309,6 +325,57 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   bool _acknowledged = false;
   bool _deleting = false;
 
+  Future<void> _confirmAndDeleteAccount() async {
+    HapticFeedback.mediumImpact();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 24),
+            SizedBox(width: AppTheme.space8),
+            Expanded(
+              child: Text(
+                'Confirm Account Deletion',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: AppTheme.fontDisplay,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you absolutely sure you want to permanently delete your ArmSphere account? '
+          'All athlete passport data, rankings, and active sessions will be permanently purged. '
+          'This action cannot be undone.',
+          style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Keep Account'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
+            child: const Text('Permanently Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _deleteAccount();
+    }
+  }
+
   Future<void> _deleteAccount() async {
     HapticFeedback.heavyImpact();
     setState(() => _deleting = true);
@@ -332,10 +399,26 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Delete Account')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Delete Account'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ElevatedActionCard(
@@ -407,7 +490,7 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
                 backgroundColor: AppTheme.error,
                 foregroundColor: Colors.white,
               ),
-              onPressed: (_acknowledged && !_deleting) ? _deleteAccount : null,
+              onPressed: (_acknowledged && !_deleting) ? _confirmAndDeleteAccount : null,
               child: _deleting
                   ? const SizedBox(
                       width: 18,
@@ -418,6 +501,8 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }
@@ -430,10 +515,26 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Terms of Service')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        children: const [
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Terms of Service'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            children: const [
           ElevatedActionCard(
             padding: EdgeInsets.all(AppTheme.space20),
             child: Column(
@@ -479,6 +580,8 @@ class TermsScreen extends StatelessWidget {
           ),
         ],
       ),
+        ],
+      ),
     );
   }
 }
@@ -490,10 +593,26 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Privacy Policy')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        children: const [
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Privacy Policy'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            children: const [
           ElevatedActionCard(
             padding: EdgeInsets.all(AppTheme.space20),
             child: Column(
@@ -539,6 +658,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
         ],
       ),
     );

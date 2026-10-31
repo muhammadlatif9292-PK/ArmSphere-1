@@ -28,4 +28,12 @@ refereeCertificationRouter.patch(
   RefereeCertificationController.revokeCertification
 );
 
+// List referee certifications by province (Directors / Admin)
+refereeCertificationRouter.get(
+  "/by-province/:province",
+  authenticate,
+  requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR, UserRole.PROVINCIAL_DIRECTOR),
+  RefereeCertificationController.listCertificationsByProvince
+);
+
 export default refereeCertificationRouter;

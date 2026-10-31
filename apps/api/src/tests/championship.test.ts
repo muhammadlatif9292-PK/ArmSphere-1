@@ -192,25 +192,52 @@ describe("Sprint 4: Rankings, Leaderboards & Championship Systems", () => {
       expect(titleRes.status).toBe(201);
       const titleId = titleRes.body.data.id;
 
-      // Challenger submissions
+      // Challenger submissions (authenticated as challenger user-b)
       const challengeRes = await request(app)
         .post("/championships/challenges")
         .send({
           titleId,
           challengerId: athleteBId,
         })
-        .set("Authorization", authHeader());
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-b"));
 
       expect(challengeRes.status).toBe(201);
       expect(challengeRes.body.data.status).toBe("PENDING");
 
-      // Accept challenge
+      // Duplicate active challenge by same challenger is rejected with 409 Conflict
+      const dupChallengeRes = await request(app)
+        .post("/championships/challenges")
+        .send({
+          titleId,
+          challengerId: athleteBId,
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-b"));
+      expect(dupChallengeRes.status).toBe(409);
+
+      // Unrelated athlete cannot accept the challenge (403 Forbidden)
+      const unauthorizedAccept = await request(app)
+        .post(`/championships/challenges/${challengeRes.body.data.id}/accept`)
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-c"));
+      expect(unauthorizedAccept.status).toBe(403);
+
+      // Director can accept the challenge
       const acceptRes = await request(app)
         .post(`/championships/challenges/${challengeRes.body.data.id}/accept`)
-        .set("Authorization", authHeader());
+        .set("Authorization", authHeader(UserRole.NATIONAL_DIRECTOR, "user-director"));
 
       expect(acceptRes.status).toBe(200);
       expect(acceptRes.body.data.status).toBe("ACCEPTED");
+
+      // Accepting an already-ACCEPTED challenge or declining it is rejected with 409 Conflict
+      const repeatAccept = await request(app)
+        .post(`/championships/challenges/${challengeRes.body.data.id}/accept`)
+        .set("Authorization", authHeader(UserRole.NATIONAL_DIRECTOR, "user-director"));
+      expect(repeatAccept.status).toBe(409);
+
+      const declineAfterAccept = await request(app)
+        .post(`/championships/challenges/${challengeRes.body.data.id}/decline`)
+        .set("Authorization", authHeader(UserRole.NATIONAL_DIRECTOR, "user-director"));
+      expect(declineAfterAccept.status).toBe(409);
     });
 
     it("should retrieve active championship titles and challenges", async () => {

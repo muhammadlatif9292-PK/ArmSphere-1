@@ -7,8 +7,13 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
+import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});
@@ -26,6 +31,16 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
     'Gilgit-Baltistan',
     'Azad Kashmir',
     'Islamabad Capital Territory',
+  ];
+
+  static const _weightClasses = <String>[
+    'ALL',
+    '65kg',
+    '75kg',
+    '85kg',
+    '95kg',
+    '105kg',
+    '105kg+',
   ];
 
   final _searchController = TextEditingController();
@@ -70,9 +85,16 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
     final rankingsAsync = ref.watch(rankingsProvider);
     final arm = ref.watch(rankingsArmProvider);
     final province = ref.watch(rankingsProvinceProvider);
+    final selectedWeightClass = ref.watch(rankingsWeightClassProvider);
+    final myProfileId =
+        ref.watch(athleteProfileProvider).value?['id']?.toString();
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const CrystalBackButton(),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -86,9 +108,26 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
             const Text('Leaderboard & Rankings'),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Tale of the Tape (Compare)',
+            icon: const Icon(Icons.compare_arrows_rounded, color: AppTheme.goldPrimary),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.push('/matches/head-to-head');
+            },
+          ),
+          const CrystalHomeButton(),
+        ],
       ),
-      body: Column(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.rankings),
+          ),
+          Column(
+            children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(AppTheme.space16, AppTheme.space12, AppTheme.space16, 0),
             child: TextField(
@@ -142,6 +181,54 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               ],
             ),
           ),
+          // Weight Class Filter Strip
+          SizedBox(
+            height: 36,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
+              scrollDirection: Axis.horizontal,
+              itemCount: _weightClasses.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppTheme.space8),
+              itemBuilder: (context, idx) {
+                final wc = _weightClasses[idx];
+                final isSelected = selectedWeightClass == wc ||
+                    (wc == 'ALL' && selectedWeightClass.isEmpty);
+                final label = (wc.isEmpty || wc == 'ALL')
+                    ? 'ALL DIVISIONS'
+                    : wc.toUpperCase();
+                return ChoiceChip(
+                  label: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      color: isSelected ? Colors.black : AppTheme.textSecondary,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: AppTheme.goldPrimary,
+                  backgroundColor: AppTheme.cardSurface,
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppTheme.goldPrimary
+                          : AppTheme.cardBorder,
+                    ),
+                  ),
+                  onSelected: (_) {
+                    HapticFeedback.selectionClick();
+                    ref.read(rankingsWeightClassProvider.notifier).state = wc;
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: AppTheme.space8),
           Padding(
             padding: const EdgeInsets.fromLTRB(AppTheme.space16, 0, AppTheme.space16, AppTheme.space8),
             child: Row(
@@ -197,7 +284,15 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(rankingsProvider),
               child: rankingsAsync.when(
-                data: (rankings) {
+                data: (rawRankings) {
+                  final rankings = (selectedWeightClass.isEmpty ||
+                          selectedWeightClass == 'ALL')
+                      ? rawRankings
+                      : rawRankings.where((r) {
+                          final wc =
+                              r['weightClass']?.toString().toLowerCase() ?? '';
+                          return wc == selectedWeightClass.toLowerCase();
+                        }).toList();
                   if (rankings.isEmpty) {
                     return ListView(
                       children: const [
@@ -220,7 +315,12 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
 
                   return ListView.separated(
                     key: const PageStorageKey<String>('rankings_list_view'),
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space8),
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      AppTheme.space8,
+                      AppTheme.space16,
+                      MainShellScope.bottomClearance(context, additionalPadding: 16),
+                    ),
                     itemCount: rankings.length,
                     separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
                     itemBuilder: (context, index) {
@@ -230,13 +330,13 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                       final eloRating = athlete['eloRating'] as int? ?? 0;
                       final provinceValue = athlete['province'] as String?;
                       final weightClass = athlete['weightClass'] as String?;
+                      final athleteId = (athlete['athleteId'] ?? athlete['id'])?.toString() ?? '';
                       final color = _rankColor(rank);
 
                       return RepaintBoundary(
                         child: ElevatedActionCard(
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            final athleteId = athlete['athleteId'] as String? ?? '';
                             if (athleteId.isNotEmpty) {
                               context.push('/athlete/$athleteId');
                             }
@@ -331,6 +431,25 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                   ),
                                 ],
                               ),
+                              if (athleteId.isNotEmpty && athleteId != myProfileId) ...[
+                                const SizedBox(width: AppTheme.space8),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Compare with $name',
+                                  icon: const Icon(
+                                    Icons.compare_arrows_rounded,
+                                    size: 18,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    final query = myProfileId != null && myProfileId.isNotEmpty
+                                        ? 'athleteId1=$myProfileId&athleteId2=$athleteId'
+                                        : 'athleteId2=$athleteId';
+                                    context.push('/matches/head-to-head?$query');
+                                  },
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -365,6 +484,8 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
               ),
             ),
+          ),
+            ],
           ),
         ],
       ),

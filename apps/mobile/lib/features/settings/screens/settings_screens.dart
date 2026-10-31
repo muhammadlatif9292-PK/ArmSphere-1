@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -18,10 +21,21 @@ class BlockedUsersScreen extends ConsumerWidget {
     final blockedAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked Users')),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(blockedUsersProvider),
-        child: blockedAsync.when(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Blocked Users'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(blockedUsersProvider),
+            child: blockedAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(
             padding: const EdgeInsets.all(AppTheme.space20),
@@ -60,7 +74,12 @@ class BlockedUsersScreen extends ConsumerWidget {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 24),
+              ),
               itemCount: blocked.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
               itemBuilder: (context, index) {
@@ -122,6 +141,8 @@ class BlockedUsersScreen extends ConsumerWidget {
           },
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -135,10 +156,21 @@ class MyTicketsScreen extends ConsumerWidget {
     final ticketsAsync = ref.watch(myTicketsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Tickets & Passes')),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(myTicketsProvider),
-        child: ticketsAsync.when(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('My Tickets & Passes'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(myTicketsProvider),
+            child: ticketsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => ListView(
             padding: const EdgeInsets.all(AppTheme.space20),
@@ -177,7 +209,12 @@ class MyTicketsScreen extends ConsumerWidget {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 24),
+              ),
               itemCount: tickets.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {
@@ -282,6 +319,8 @@ class MyTicketsScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

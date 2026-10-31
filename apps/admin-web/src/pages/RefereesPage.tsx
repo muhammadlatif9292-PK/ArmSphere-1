@@ -116,7 +116,10 @@ export default function RefereesPage() {
     return { total, active, certified, totalMatches, uniqueRegions };
   }, [referees]);
 
+  const [modalError, setModalError] = useState<string | null>(null);
+
   const handleOpenLicenseModal = (ref: RefereeAdminView) => {
+    setModalError(null);
     setActiveLicenseReferee(ref);
     setLicenseForm({
       certification: ref.licenseClass || 'NATIONAL',
@@ -125,6 +128,7 @@ export default function RefereesPage() {
   };
 
   const handleOpenRegionModal = (ref: RefereeAdminView) => {
+    setModalError(null);
     setActiveRegionReferee(ref);
     if (isProvincialDirector && jurisdiction) {
       setSelectedRegion(jurisdiction);
@@ -134,35 +138,55 @@ export default function RefereesPage() {
   };
 
   const handleOpenSuspendModal = (ref: RefereeAdminView) => {
+    setModalError(null);
     setActiveSuspendReferee(ref);
     setSuspensionReason('');
   };
 
   const handleSaveLicense = async () => {
     if (!activeLicenseReferee) return;
-    await updateLicenseMutation.mutateAsync({
-      id: activeLicenseReferee.id,
-      payload: licenseForm,
-    });
-    setActiveLicenseReferee(null);
+    try {
+      setModalError(null);
+      await updateLicenseMutation.mutateAsync({
+        id: activeLicenseReferee.id,
+        payload: licenseForm,
+      });
+      setActiveLicenseReferee(null);
+    } catch (err: any) {
+      setModalError(err?.message || 'Failed to update official license.');
+    }
   };
 
   const handleSaveRegion = async () => {
     if (!activeRegionReferee) return;
-    await assignRegionMutation.mutateAsync({
-      id: activeRegionReferee.id,
-      payload: { region: selectedRegion },
-    });
-    setActiveRegionReferee(null);
+    try {
+      setModalError(null);
+      await assignRegionMutation.mutateAsync({
+        id: activeRegionReferee.id,
+        payload: { region: selectedRegion },
+      });
+      setActiveRegionReferee(null);
+    } catch (err: any) {
+      setModalError(err?.message || 'Failed to assign regional coverage.');
+    }
   };
 
   const handleConfirmSuspend = async () => {
-    if (!activeSuspendReferee || !suspensionReason.trim()) return;
-    await suspendMutation.mutateAsync({
-      id: activeSuspendReferee.id,
-      payload: { reason: suspensionReason.trim() },
-    });
-    setActiveSuspendReferee(null);
+    if (!activeSuspendReferee) return;
+    if (suspensionReason.trim().length < 5) {
+      setModalError('Suspension reason must be at least 5 characters.');
+      return;
+    }
+    try {
+      setModalError(null);
+      await suspendMutation.mutateAsync({
+        id: activeSuspendReferee.id,
+        payload: { reason: suspensionReason.trim() },
+      });
+      setActiveSuspendReferee(null);
+    } catch (err: any) {
+      setModalError(err?.message || 'Failed to suspend official.');
+    }
   };
 
   return (
@@ -477,6 +501,12 @@ export default function RefereesPage() {
                   <option value="REVOKED">REVOKED</option>
                 </select>
               </div>
+
+              {modalError && (
+                <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded border border-red-500/20">
+                  {modalError}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
@@ -538,6 +568,12 @@ export default function RefereesPage() {
                   ))}
                 </select>
               </div>
+
+              {modalError && (
+                <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded border border-red-500/20">
+                  {modalError}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
@@ -586,7 +622,7 @@ export default function RefereesPage() {
               </p>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-mono text-slate-400">Reason for Suspension</label>
+                <label className="text-[11px] font-mono text-slate-400">Reason for Suspension (Min 5 chars)</label>
                 <textarea
                   value={suspensionReason}
                   onChange={(e) => setSuspensionReason(e.target.value)}
@@ -595,6 +631,12 @@ export default function RefereesPage() {
                   className="w-full px-3 py-2 bg-brand-raised border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-red-500"
                 />
               </div>
+
+              {modalError && (
+                <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded border border-red-500/20">
+                  {modalError}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">

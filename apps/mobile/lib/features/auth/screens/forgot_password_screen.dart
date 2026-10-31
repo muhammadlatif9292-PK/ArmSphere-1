@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/utils/error_formatter.dart';
@@ -71,11 +73,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/login'),
         title: const Text('Reset Credential'),
       ),
-      body: Center(
-        child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          Center(
+            child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.space24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -162,6 +173,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ],
           ),
         ),
+      ),
+        ],
       ),
     );
   }

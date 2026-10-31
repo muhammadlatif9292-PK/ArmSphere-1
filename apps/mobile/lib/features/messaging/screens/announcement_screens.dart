@@ -1,10 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/providers/announcement_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -23,10 +27,11 @@ class AnnouncementsListScreen extends ConsumerWidget {
     final announcementsAsync = ref.watch(announcementsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Federation Bulletins',
           style: TextStyle(
@@ -35,8 +40,14 @@ class AnnouncementsListScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: announcementsAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
+          ),
+          announcementsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
           itemCount: 4,
@@ -46,20 +57,38 @@ class AnnouncementsListScreen extends ConsumerWidget {
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load bulletins',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(announcementsProvider),
+          onRetry: () => ref.invalidate(announcementsProvider),
+          secondaryActionLabel: 'Return to Home',
+          onSecondaryAction: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.campaign_outlined,
               title: 'No active bulletins',
               subtitle:
                   'Official executive circulars, rule changes, and federation schedules will appear here once published.',
+              ctaLabel: 'Refresh Bulletins',
+              onCtaTap: () async {
+                await ref.read(announcementsProvider.notifier).refresh();
+              },
+              secondaryCtaLabel: 'Return to Home',
+              onSecondaryCtaTap: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/');
+                }
+              },
             );
           }
           return RefreshIndicator(
@@ -153,6 +182,8 @@ class AnnouncementsListScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+        ],
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 
@@ -62,7 +64,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ? SnackBarAction(
                     label: 'Sign In',
                     textColor: Colors.white,
-                    onPressed: () => context.pop(),
+                    onPressed: () => context.go('/login'),
                   )
                 : null,
           ),
@@ -82,32 +84,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/welcome'),
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.cardSurface,
-                        border: Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                          width: 2,
-                        ),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.glassSurface,
+                            border: Border.all(
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                              width: 2,
+                            ),
                         boxShadow: const [
                           BoxShadow(
                             color: AppTheme.goldGlow,
@@ -256,36 +264,57 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       const SizedBox(height: 24),
 
                       // Submit Button
-                      FilledButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                HapticFeedback.lightImpact();
-                                _submit();
-                              },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.goldPrimary,
-                          foregroundColor: Colors.black,
-                          minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      Container(
+                        height: 50,
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.championshipGoldGradient,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          border: Border.all(
+                            color: AppTheme.glassBorderSpecular,
+                            width: 1.0,
                           ),
-                          textStyle: const TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                          boxShadow: const [
+                            BoxShadow(
+                              color: AppTheme.goldGlow,
+                              blurRadius: 16,
+                              spreadRadius: 1,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            onTap: _isLoading
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    _submit();
+                                  },
+                            child: Center(
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Create Account',
+                                      style: TextStyle(
+                                        fontFamily: 'Space Grotesk',
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                            ),
                           ),
                         ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                                ),
-                              )
-                            : const Text('Create Account'),
                       ),
                     ],
                   ),
@@ -304,7 +333,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.go('/login');
+                    },
                     child: const Text('Sign In'),
                   ),
                 ],
@@ -312,6 +344,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ],
           ),
         ),
+      ),
+        ],
       ),
     );
   }

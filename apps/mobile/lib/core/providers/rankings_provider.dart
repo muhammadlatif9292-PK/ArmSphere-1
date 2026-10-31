@@ -7,6 +7,7 @@ import 'state_providers.dart';
 final rankingsArmProvider = StateProvider<String>((ref) => 'RIGHT');
 final rankingsProvinceProvider = StateProvider<String>((ref) => '');
 final rankingsSearchQueryProvider = StateProvider<String>((ref) => '');
+final rankingsWeightClassProvider = StateProvider<String>((ref) => 'ALL');
 
 class RankingsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override

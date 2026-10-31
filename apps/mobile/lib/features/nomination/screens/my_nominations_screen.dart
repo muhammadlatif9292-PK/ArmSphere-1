@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/nomination_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/theme/app_theme.dart';
@@ -29,7 +32,10 @@ class MyNominationsScreen extends ConsumerWidget {
     final nominationsAsync = ref.watch(nominationListProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(),
         title: const Text('My Nominations'),
         actions: [
           IconButton(
@@ -40,34 +46,32 @@ class MyNominationsScreen extends ConsumerWidget {
               context.push('/nominate');
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(nominationListProvider),
-        child: nominationsAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.rankings),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(nominationListProvider),
+            child: nominationsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
-            padding: const EdgeInsets.all(AppTheme.space20),
-            children: [
-              const SizedBox(height: 80),
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load nominations',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ref.invalidate(nominationListProvider);
-                  },
-                  child: const Text('Retry'),
-                ),
-              ),
-            ],
+          error: (e, _) => AppErrorView(
+            error: e,
+            title: 'Could not load nominations',
+            onRetry: () {
+              HapticFeedback.lightImpact();
+              ref.invalidate(nominationListProvider);
+            },
+            secondaryActionLabel: 'Return to Home',
+            onSecondaryAction: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
           ),
           data: (nominations) {
             if (nominations.isEmpty) {
@@ -82,6 +86,14 @@ class MyNominationsScreen extends ConsumerWidget {
                     onCtaTap: () {
                       HapticFeedback.lightImpact();
                       context.push('/nominate');
+                    },
+                    secondaryCtaLabel: 'Return to Home',
+                    onSecondaryCtaTap: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/');
+                      }
                     },
                   ),
                 ],
@@ -187,6 +199,8 @@ class MyNominationsScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

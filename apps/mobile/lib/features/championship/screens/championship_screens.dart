@@ -6,7 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/championship_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -25,10 +28,11 @@ class ChampionshipsListScreen extends ConsumerWidget {
     final championshipsAsync = ref.watch(championshipProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Championship Titles',
           style: TextStyle(
@@ -37,12 +41,16 @@ class ChampionshipsListScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async => ref.invalidate(championshipProvider),
-        child: championshipsAsync.when(
+      body: Stack(
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async => ref.invalidate(championshipProvider),
+            child: championshipsAsync.when(
           loading: () => ListView.separated(
             padding: const EdgeInsets.all(AppTheme.space16),
             itemCount: 4,
@@ -52,12 +60,12 @@ class ChampionshipsListScreen extends ConsumerWidget {
               borderRadius: AppTheme.radiusMedium,
             ),
           ),
-          error: (e, _) => AppEmptyState(
-            icon: Icons.error_outline,
+          error: (e, _) => AppErrorView(
+            error: e,
             title: 'Could not load championship titles',
-            subtitle: e.toString(),
-            ctaLabel: 'Retry',
-            onCtaTap: () => ref.invalidate(championshipProvider),
+            onRetry: () => ref.invalidate(championshipProvider),
+            onSecondaryAction: () => context.go('/'),
+            secondaryActionLabel: 'Return to Home',
           ),
           data: (championships) {
             if (championships.isEmpty) {
@@ -85,7 +93,7 @@ class ChampionshipsListScreen extends ConsumerWidget {
                 final name = c['name']?.toString() ?? 'Championship Title';
                 final arm = (c['arm']?.toString() ?? 'RIGHT').toUpperCase();
                 final weightClass = c['weightClass']?.toString() ?? '';
-                final ageGroup = c['ageGroup']?.toString() ?? '';
+                final ageGroup = (c['division'] ?? c['ageGroup'])?.toString() ?? '';
 
                 return RepaintBoundary(
                   child: ElevatedActionCard(
@@ -99,7 +107,7 @@ class ChampionshipsListScreen extends ConsumerWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: AppTheme.elevatedSurface,
+                            color: AppTheme.glassSurface,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
                             boxShadow: [
@@ -171,6 +179,8 @@ class ChampionshipsListScreen extends ConsumerWidget {
             );
           },
         ),
+          ),
+        ],
       ),
     );
   }
@@ -196,13 +206,14 @@ class ChampionshipDetailScreen extends ConsumerWidget {
     final titleName = title?['name']?.toString() ?? 'Championship Title';
     final arm = (title?['arm']?.toString() ?? 'RIGHT').toUpperCase();
     final weightClass = title?['weightClass']?.toString() ?? '';
-    final ageGroup = title?['ageGroup']?.toString() ?? '';
+    final ageGroup = (title?['division'] ?? title?['ageGroup'])?.toString() ?? '';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Title Lineage Ledger',
           style: TextStyle(
@@ -211,31 +222,35 @@ class ChampionshipDetailScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async =>
-            ref.invalidate(beltLineageProvider(championshipId)),
-        child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
-          children: [
-            // 1. Title Belt Dossier Card
-            ElevatedActionCard(
+      body: Stack(
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async =>
+                ref.invalidate(beltLineageProvider(championshipId)),
+            child: ListView(
               padding: const EdgeInsets.all(AppTheme.space16),
-              borderColor: AppTheme.goldPrimary.withValues(alpha: 0.5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+              children: [
+                // 1. Title Belt Dossier Card
+                ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.elevatedSurface,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppTheme.goldPrimary),
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.glassSurface,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppTheme.goldPrimary),
+                            ),
                         child: const Icon(Icons.military_tech, color: AppTheme.goldPrimary, size: 24),
                       ),
                       const SizedBox(width: AppTheme.space12),
@@ -323,21 +338,21 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                   SkeletonPlaceholder(height: 80, borderRadius: AppTheme.radiusMedium),
                 ],
               ),
-              error: (e, _) => AppEmptyState(
-                icon: Icons.error_outline,
+              error: (e, _) => AppErrorView(
+                error: e,
                 title: 'Could not load lineage',
-                subtitle: e.toString(),
-                ctaLabel: 'Retry',
-                onCtaTap: () => ref.invalidate(beltLineageProvider(championshipId)),
+                onRetry: () => ref.invalidate(beltLineageProvider(championshipId)),
+                onSecondaryAction: () => context.pop(),
+                secondaryActionLabel: 'Back to Championships',
               ),
               data: (lineage) {
                 if (lineage.isEmpty) {
                   return Container(
                     padding: const EdgeInsets.all(AppTheme.space24),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardSurface,
+                      color: AppTheme.glassSurface,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.borderTitanium),
                     ),
                     child: const Center(
                       child: Column(
@@ -363,13 +378,18 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                 return Column(
                   children: [
                     for (int i = 0; i < lineage.length; i++)
-                      _ReignCard(reign: lineage[i], isCurrent: i == 0),
+                      _ReignCard(
+                        reign: lineage[i],
+                        isCurrent: i == 0 && lineage[i]['vacatedAt'] == null,
+                      ),
                   ],
                 );
               },
             ),
           ],
         ),
+          ),
+        ],
       ),
     );
   }
@@ -381,30 +401,45 @@ class _ReignCard extends StatelessWidget {
 
   const _ReignCard({required this.reign, required this.isCurrent});
 
+  int _computeReignDays() {
+    final explicitDays = reign['reignDays'];
+    if (explicitDays is num) return explicitDays.toInt();
+    final acquiredStr = reign['acquiredAt']?.toString();
+    if (acquiredStr == null) return 0;
+    final acquired = DateTime.tryParse(acquiredStr);
+    if (acquired == null) return 0;
+    final vacatedStr = reign['vacatedAt']?.toString();
+    final end = (vacatedStr != null ? DateTime.tryParse(vacatedStr) : null) ?? DateTime.now();
+    final diff = end.difference(acquired).inDays;
+    return diff < 0 ? 0 : diff;
+  }
+
   @override
   Widget build(BuildContext context) {
     final defenses = reign['defensesCount'] ?? 0;
-    final days = (reign['reignDays'] ?? 0).toString();
+    final days = _computeReignDays().toString();
     final reason = reign['reason']?.toString() ?? '';
+    final displayName = reign['displayName']?.toString() ?? '';
     final athleteId = reign['athleteId']?.toString() ?? '—';
     final shortAthleteId = athleteId.length >= 8 ? athleteId.substring(0, 8).toUpperCase() : athleteId;
+    final championLabel = displayName.isNotEmpty ? displayName : 'Champion #$shortAthleteId';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.space8),
       child: RepaintBoundary(
         child: ElevatedActionCard(
           padding: const EdgeInsets.all(AppTheme.space14),
-          borderColor: isCurrent ? AppTheme.goldPrimary : AppTheme.border,
+          borderColor: isCurrent ? AppTheme.goldPrimary : AppTheme.borderTitanium,
           child: Row(
             children: [
               Container(
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isCurrent ? AppTheme.goldPrimary.withValues(alpha: 0.15) : AppTheme.elevatedSurface,
+                  color: isCurrent ? AppTheme.goldPrimary.withValues(alpha: 0.15) : AppTheme.glassSurface,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isCurrent ? AppTheme.goldPrimary : AppTheme.border,
+                    color: isCurrent ? AppTheme.goldPrimary : AppTheme.borderTitanium,
                     width: 1.0,
                   ),
                 ),
@@ -424,14 +459,17 @@ class _ReignCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Champion #$shortAthleteId',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: isCurrent ? AppTheme.goldLight : AppTheme.textPrimary,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                        Flexible(
+                          child: Text(
+                            championLabel,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: isCurrent ? AppTheme.goldLight : AppTheme.textPrimary,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
                           ),
                         ),
                         if (isCurrent)

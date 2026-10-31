@@ -7,6 +7,9 @@ import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -37,10 +40,11 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(informalEventListProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Practice Meetups',
           style: TextStyle(
@@ -50,21 +54,57 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppTheme.goldPrimary),
-            tooltip: 'Host practice meetup',
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              context.push('/informal-events/create');
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Center(
+              child: InkWell(
+                key: const ValueKey('informal_event_directory_create_button'),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/informal-events/create');
+                },
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, size: 14, color: AppTheme.goldPrimary),
+                      SizedBox(width: 4),
+                      Text(
+                        'HOST MEETUP',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.goldPrimary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async => ref.invalidate(informalEventListProvider),
-        child: eventsAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
+          ),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async => ref.invalidate(informalEventListProvider),
+            child: eventsAsync.when(
           loading: () => ListView.separated(
             padding: const EdgeInsets.all(AppTheme.space16),
             itemCount: 4,
@@ -103,7 +143,12 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
 
             return ListView.separated(
               key: const PageStorageKey<String>('informal_event_directory_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
+              ),
               itemCount: events.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {
@@ -130,7 +175,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.elevatedSurface,
+                            color: AppTheme.glassSurface,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6)),
                           ),
@@ -215,6 +260,8 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

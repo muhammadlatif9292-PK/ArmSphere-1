@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Shield } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminShell from './layout/AdminShell';
 import LoginPage from './pages/LoginPage';
@@ -45,16 +46,16 @@ class AppErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState>
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#070A11] text-slate-100 flex items-center justify-center p-6 font-sans">
-          <div className="max-w-md w-full bg-[#0F172A] border border-slate-800 rounded-2xl p-8 text-center space-y-4 shadow-2xl">
-            <div className="w-12 h-12 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-              🛡️
+          <div className="max-w-md w-full bg-[#111722] border border-[rgba(214,220,227,0.14)] rounded-2xl p-8 text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[#D4AF37] border border-[#D4AF37]/30 rounded-lg flex items-center justify-center mx-auto shadow-[0_0_14px_rgba(212,175,55,0.2)]">
+              <Shield className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-display font-bold text-slate-100">ArmSphere Console Recovery</h2>
             <p className="text-xs text-slate-400 leading-relaxed font-mono">
               An unexpected execution anomaly was contained safely. The application state remains protected.
             </p>
             {this.state.error?.message && (
-              <div className="p-3 bg-[#070A11] border border-slate-800 rounded-lg text-left text-[11px] font-mono text-red-400 overflow-x-auto">
+              <div className="p-3 bg-[#0E131C] border border-[rgba(214,220,227,0.12)] rounded-lg text-left text-[11px] font-mono text-red-300 overflow-x-auto">
                 {this.state.error.message}
               </div>
             )}
@@ -63,7 +64,7 @@ class AppErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState>
                 this.setState({ hasError: false, error: null });
                 window.location.href = '/';
               }}
-              className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-colors font-mono uppercase"
+              className="w-full py-2.5 bg-[#D4AF37] hover:bg-[#F5E096] text-slate-950 font-bold text-xs rounded-lg transition-colors font-mono uppercase"
             >
               Restart Console Operations
             </button>
@@ -102,7 +103,7 @@ export function RoleGuardedRoute({ path, children }: RoleGuardedRouteProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#070A11]">
-        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

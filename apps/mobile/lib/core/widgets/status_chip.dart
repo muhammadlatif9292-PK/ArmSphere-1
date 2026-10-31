@@ -50,26 +50,26 @@ class StatusChip extends StatelessWidget {
   Color _getForegroundColor() {
     switch (type) {
       case StatusType.success:
-        return AppTheme.success;
+        return AppTheme.verifiedEmerald;
       case StatusType.warning:
-        return AppTheme.secondaryAccent;
+        return AppTheme.championshipGold;
       case StatusType.error:
-        return AppTheme.error;
+        return AppTheme.competitionCrimson;
       case StatusType.info:
-        return AppTheme.info;
+        return AppTheme.electricCyan;
       case StatusType.neutral:
         return AppTheme.textSecondary;
       case StatusType.live:
-        return AppTheme.primaryAccent;
+        return AppTheme.competitionCrimson;
     }
   }
 
   Color _getBackgroundColor() {
-    return _getForegroundColor().withValues(alpha: 0.12);
+    return _getForegroundColor().withValues(alpha: 0.14);
   }
 
   Color _getBorderColor() {
-    return _getForegroundColor().withValues(alpha: 0.35);
+    return _getForegroundColor().withValues(alpha: 0.38);
   }
 
   @override
@@ -77,30 +77,64 @@ class StatusChip extends StatelessWidget {
     final fgColor = _getForegroundColor();
     final bgColor = _getBackgroundColor();
     final borderColor = _getBorderColor();
+    final isLive = type == StatusType.live;
 
     Widget chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
         border: Border.all(color: borderColor, width: 1.0),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.08),
+            bgColor,
+          ],
+        ),
+        boxShadow: isLive
+            ? [
+                BoxShadow(
+                  color: AppTheme.competitionCrimson.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  spreadRadius: 0.5,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (icon != null) ...[
+          if (isLive) ...[
+            Container(
+              width: 6.0,
+              height: 6.0,
+              margin: const EdgeInsets.only(right: 5.0),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.competitionCrimson,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.competitionCrimson,
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+          ] else if (icon != null) ...[
             Icon(icon, size: 12.0, color: fgColor),
             const SizedBox(width: 4.0),
           ],
           Text(
             label.toUpperCase(),
             style: TextStyle(
-              fontFamily: AppTheme.fontBody,
-              fontWeight: FontWeight.w700,
-              fontSize: 10.5,
+              fontFamily: AppTheme.fontDisplay,
+              fontWeight: FontWeight.w800,
+              fontSize: 10.0,
               color: fgColor,
-              letterSpacing: 0.5,
+              letterSpacing: 0.6,
             ),
           ),
         ],
@@ -129,24 +163,32 @@ class ArmIndicatorPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isRightArm ? AppTheme.cyanAccent : AppTheme.secondaryAccent;
+    final color = isRightArm ? AppTheme.electricCyan : AppTheme.championshipGold;
     final label = isRightArm ? 'RIGHT ARM' : 'LEFT ARM';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
         border: Border.all(color: color.withValues(alpha: 0.4), width: 1.0),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.08),
+            color.withValues(alpha: 0.12),
+          ],
+        ),
       ),
       child: Text(
         label,
         style: TextStyle(
           fontFamily: AppTheme.fontDisplay,
-          fontWeight: FontWeight.bold,
-          fontSize: 10.0,
+          fontWeight: FontWeight.w800,
+          fontSize: 9.5,
           color: color,
-          letterSpacing: 0.4,
+          letterSpacing: 0.6,
         ),
       ),
     );

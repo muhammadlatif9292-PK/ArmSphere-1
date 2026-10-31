@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/step_header.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../providers/auth_provider.dart';
 
@@ -149,8 +150,10 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text(
           'Set Up Your Experience',
           style: TextStyle(
@@ -189,43 +192,50 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const StepHeader(
-                    step: 1,
-                    totalSteps: 2,
-                    title: 'What brings you to ArmSphere?',
-                    subtitle:
-                        "Choose what you'd like to do first. You can always explore other roles later.",
-                  ),
-                  const SizedBox(height: 20),
-                  ..._intents.map((option) {
-                    final selected = _selected == option.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _IntentCard(
-                        option: option,
-                        selected: selected,
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _selected = option.value);
-                        },
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const StepHeader(
+                        step: 1,
+                        totalSteps: 2,
+                        title: 'What brings you to ArmSphere?',
+                        subtitle:
+                            "Choose what you'd like to do first. You can always explore other roles later.",
                       ),
-                    );
-                  }),
-                ],
+                      const SizedBox(height: 20),
+                      ..._intents.map((option) {
+                        final selected = _selected == option.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _IntentCard(
+                            option: option,
+                            selected: selected,
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selected = option.value);
+                            },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
       bottomNavigationBar: StickyBottomActionBar(
         primaryActionLabel: 'Continue to Profile',
@@ -274,21 +284,23 @@ class _IntentCard extends StatelessWidget {
         duration: AppTheme.animationNormal,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0x1AD4AF37) : AppTheme.cardSurface,
+          color: selected ? const Color(0x1AD4AF37) : AppTheme.glassSurface,
+          gradient: selected ? null : AppTheme.machinedTitaniumGradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           border: Border.all(
-            color: selected ? AppTheme.goldPrimary : AppTheme.border,
+            color: selected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
             width: selected ? 1.6 : 1.0,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.16),
-                    blurRadius: 12,
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                    blurRadius: 14,
                     spreadRadius: 0,
                   ),
+                  AppTheme.titaniumShadow(),
                 ]
-              : null,
+              : [AppTheme.titaniumShadow()],
         ),
         child: Row(
           children: [
@@ -298,11 +310,11 @@ class _IntentCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: selected
                     ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.elevatedSurface,
+                    : AppTheme.silverPlane,
                 border: Border.all(
                   color: selected
                       ? AppTheme.goldPrimary
-                      : AppTheme.goldPrimary.withValues(alpha: 0.3),
+                      : AppTheme.borderTitanium,
                 ),
               ),
               child: Icon(

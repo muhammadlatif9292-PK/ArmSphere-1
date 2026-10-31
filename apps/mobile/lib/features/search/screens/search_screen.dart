@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/athlete_provider.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
@@ -87,10 +89,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final isLoading = resultsAsync.isLoading;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/discover'),
         title: const Text(
           'SEARCH ATHLETES',
           style: TextStyle(
@@ -101,19 +104,24 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Column(
-          children: [
-            // ── Tactical Search Input Bar ────────────────────────────────────
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.cardSurface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
-              ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Column(
+              children: [
+                // ── Tactical Search Input Bar ────────────────────────────────────
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.glassSurface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                  ),
               child: TextField(
                 controller: _searchController,
                 style: const TextStyle(
@@ -177,7 +185,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                             height: 64,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppTheme.elevatedSurface,
+                              color: AppTheme.glassSurface,
                               border: Border.all(
                                 color: AppTheme.goldPrimary.withValues(alpha: 0.3),
                                 width: 1.2,
@@ -345,10 +353,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                                                       horizontal: 6, vertical: 1.5),
                                                   margin: const EdgeInsets.only(right: 6),
                                                   decoration: BoxDecoration(
-                                                    color: AppTheme.elevatedSurface,
+                                                    color: AppTheme.glassSurface,
                                                     borderRadius: BorderRadius.circular(3),
                                                     border: Border.all(
-                                                      color: AppTheme.borderSubtle,
+                                                      color: AppTheme.borderTitanium,
                                                       width: 0.6,
                                                     ),
                                                   ),
@@ -395,6 +403,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }

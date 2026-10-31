@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
 
 class NominateTalentScreen extends ConsumerStatefulWidget {
@@ -71,94 +74,88 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Nominate Talent')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Form(
-          key: _formKey,
-          child: ElevatedActionCard(
-            padding: const EdgeInsets.all(AppTheme.space20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return StickyFormScaffold(
+      stageDomain: ArmSphereStageDomain.rankings,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(fallbackRoute: '/nominations/mine'),
+        title: const Text('Nominate Talent'),
+        actions: const [CrystalHomeButton()],
+      ),
+      primaryActionLabel: 'File Official Nomination',
+      primaryActionIcon: Icons.star_border,
+      isLoading: _isLoading,
+      onPrimaryAction: _isLoading ? null : _submit,
+      formKey: _formKey,
+      child: ElevatedActionCard(
+        padding: const EdgeInsets.all(AppTheme.space20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppTheme.space10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                        border: Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.3),
-                          width: 1,
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.space10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    border: Border.all(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(Icons.star, size: 22, color: AppTheme.goldPrimary),
+                ),
+                const SizedBox(width: AppTheme.space12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Grassroots Scout Submission',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: AppTheme.textPrimary,
                         ),
                       ),
-                      child: const Icon(Icons.star, size: 22, color: AppTheme.goldPrimary),
-                    ),
-                    const SizedBox(width: AppTheme.space12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Grassroots Scout Submission',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          SizedBox(height: AppTheme.space2),
-                          Text(
-                            'Recommend upcoming talent for official federation ranking and sponsorship invites.',
-                            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                          ),
-                        ],
+                      SizedBox(height: AppTheme.space2),
+                      Text(
+                        'Recommend upcoming talent for official federation ranking and sponsorship invites.',
+                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.space20),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Candidate Athlete / Referee Name',
-                    hintText: 'e.g. John Doe',
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Please provide candidate name';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppTheme.space16),
-                TextFormField(
-                  controller: _reasonController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Scout Evaluation & Achievements',
-                    hintText: 'Describe their performance, tournament record, club affiliations, or standout puller attributes...',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Please provide evaluation details';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppTheme.space24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('File Official Nomination'),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: AppTheme.space20),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Candidate Athlete / Referee Name',
+                hintText: 'e.g. John Doe',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return 'Please provide candidate name';
+                return null;
+              },
+            ),
+            const SizedBox(height: AppTheme.space16),
+            TextFormField(
+              controller: _reasonController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Scout Evaluation & Achievements',
+                hintText: 'Describe their performance, tournament record, club affiliations, or standout puller attributes...',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return 'Please provide evaluation details';
+                return null;
+              },
+            ),
+          ],
         ),
       ),
     );

@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/state_providers.dart';
@@ -26,15 +28,18 @@ StatusType _resolveOperationStatusType(String status) {
     case 'PENDING':
     case 'READY':
     case 'SEEDED':
+    case 'DRAFT':
       return StatusType.warning;
     case 'CALLED':
     case 'ACTIVE':
+    case 'PUBLISHED':
       return StatusType.info;
     case 'WAITLISTED':
     case 'PENDING_PAYMENT':
       return StatusType.warning;
     case 'FAILED':
     case 'REJECTED':
+    case 'CANCELLED':
       return StatusType.error;
     default:
       return StatusType.neutral;
@@ -84,6 +89,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             eventId: eventId,
             action: action,
           );
+      ref.invalidate(eventDetailProvider(eventId));
       if (mounted && successMessage != null) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +107,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ? 'Table state changed. Refreshing current arena state.'
             : e.detail;
         if (is409) {
+          ref.invalidate(eventDetailProvider(eventId));
           ref.invalidate(eventMatchTablesProvider(eventId));
           ref.invalidate(eventMatchesProvider(eventId));
           ref.invalidate(eventLiveArenaTablesProvider(eventId));
@@ -903,7 +910,12 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final auth = ref.watch(authProvider);
 
     final userRole = auth.activeRole ?? auth.userProfile?['role']?.toString().toUpperCase() ?? '';
-    const operatorRoles = {'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
+    const operatorRoles = {
+      'TOURNAMENT_OPERATOR',
+      'PROVINCIAL_DIRECTOR',
+      'NATIONAL_DIRECTOR',
+      'SYSTEM_ADMIN',
+    };
     final isDirectorOrAdmin = operatorRoles.contains(userRole) ||
         auth.hasAnyRole(operatorRoles);
     final isOrganizer = eventAsync.value?['organizerId'] != null &&
@@ -913,7 +925,10 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final canManageTables = isDirectorOrAdmin || isOrganizer;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: const Text('Event Operations Desk'),
         actions: [
           IconButton(
@@ -923,26 +938,33 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 ? null
                 : () {
                     HapticFeedback.lightImpact();
+                    ref.invalidate(eventDetailProvider(widget.tournamentId));
                     ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
                     ref.invalidate(eventMatchesProvider(widget.tournamentId));
                     ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
                   },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(eventStatsProvider(widget.tournamentId));
-          ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
-          ref.invalidate(eventBracketsProvider(widget.tournamentId));
-          ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
-          ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
-          ref.invalidate(eventMatchesProvider(widget.tournamentId));
-          ref.invalidate(refereeDirectoryProvider);
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
-          children: [
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(eventDetailProvider(widget.tournamentId));
+              ref.invalidate(eventStatsProvider(widget.tournamentId));
+              ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
+              ref.invalidate(eventBracketsProvider(widget.tournamentId));
+              ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
+              ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
+              ref.invalidate(eventMatchesProvider(widget.tournamentId));
+              ref.invalidate(refereeDirectoryProvider);
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(AppTheme.space16),
+              children: [
             // --- Event header ---
             eventAsync.when(
               loading: () => const Center(child: Padding(
@@ -961,40 +983,114 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               ),
               data: (event) {
                 final status = (event['status']?.toString() ?? 'UNKNOWN').toUpperCase();
+                final showLifecycleControls =
+                    canManageTables && (status == 'DRAFT' || status == 'PUBLISHED');
                 return ElevatedActionCard(
                   padding: const EdgeInsets.all(AppTheme.space16),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              event['name']?.toString() ?? 'Event',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: AppTheme.textPrimary,
-                              ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event['name']?.toString() ?? 'Event',
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: AppTheme.space4),
+                                Text(
+                                  'Fee: ${formatEventFee(event['registrationFeeCents'])}'
+                                  ' • Payment: ${event['paymentMethod']?.toString() ?? 'N/A'}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+                                    fontFeatures: [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: AppTheme.space4),
-                            Text(
-                              'Fee: ${formatEventFee(event['registrationFeeCents'])}'
-                              ' • Payment: ${event['paymentMethod']?.toString() ?? 'N/A'}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textSecondary,
-                                fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                          StatusChip(
+                            label: status,
+                            type: _resolveOperationStatusType(status),
+                          ),
+                        ],
+                      ),
+                      if (showLifecycleControls) ...[
+                        const SizedBox(height: AppTheme.space12),
+                        const Divider(color: AppTheme.cardBorder, height: 1),
+                        const SizedBox(height: AppTheme.space12),
+                        Wrap(
+                          spacing: AppTheme.space8,
+                          runSpacing: AppTheme.space8,
+                          children: [
+                            if (status == 'DRAFT')
+                              ElevatedButton.icon(
+                                onPressed: _busy
+                                    ? null
+                                    : () => _run(
+                                          widget.tournamentId,
+                                          () => ref
+                                              .read(tournamentRepositoryProvider)
+                                              .publishEvent(eventId: widget.tournamentId),
+                                          successMessage: 'Tournament published and open for registration.',
+                                        ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.goldPrimary,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.publish, size: 16),
+                                label: const Text('PUBLISH EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               ),
+                            if (status == 'PUBLISHED')
+                              ElevatedButton.icon(
+                                onPressed: _busy
+                                    ? null
+                                    : () => _run(
+                                          widget.tournamentId,
+                                          () => ref
+                                              .read(tournamentRepositoryProvider)
+                                              .completeEvent(eventId: widget.tournamentId),
+                                          successMessage: 'Tournament officially completed.',
+                                        ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.success,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.verified, size: 16),
+                                label: const Text('COMPLETE EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              ),
+                            OutlinedButton.icon(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _run(
+                                        widget.tournamentId,
+                                        () => ref
+                                            .read(tournamentRepositoryProvider)
+                                            .cancelEvent(eventId: widget.tournamentId),
+                                        successMessage: 'Tournament cancelled.',
+                                      ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.error,
+                                side: const BorderSide(color: AppTheme.error),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                              icon: const Icon(Icons.cancel_outlined, size: 16),
+                              label: const Text('CANCEL EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
-                      ),
-                      StatusChip(
-                        label: status,
-                        type: _resolveOperationStatusType(status),
-                      ),
+                      ],
                     ],
                   ),
                 );
@@ -1348,6 +1444,8 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }
@@ -1864,9 +1962,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       margin: const EdgeInsets.only(bottom: AppTheme.space6),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       decoration: BoxDecoration(
-        color: AppTheme.cardSurface.withValues(alpha: 0.6),
+        color: AppTheme.glassSurface,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: AppTheme.cardBorder),
+        border: Border.all(color: AppTheme.borderTitanium),
       ),
       child: Row(
         children: [
@@ -1878,9 +1976,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTheme.elevatedSurface,
+                color: AppTheme.glassSurface,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.cardBorder),
+                border: Border.all(color: AppTheme.borderTitanium),
               ),
               child: Text(
                 '$pos',

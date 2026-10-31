@@ -199,7 +199,12 @@ adminRouter.get(
 adminRouter.post(
   "/disputes/:id/resolve",
   authenticate,
-  requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR, UserRole.COMPLIANCE_OFFICER),
+  requireRole(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.NATIONAL_DIRECTOR,
+    UserRole.PROVINCIAL_DIRECTOR,
+    UserRole.COMPLIANCE_OFFICER
+  ),
   AdministrationController.resolveDisputeCase
 );
 

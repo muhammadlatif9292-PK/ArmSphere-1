@@ -8,6 +8,8 @@ import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/signature_ceremonies.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 
@@ -278,9 +280,10 @@ class _TournamentAwardsCeremonyScreenState
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF070A11), // Void Substrate
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
 
           // Main Ceremony Body
@@ -390,8 +393,8 @@ class _TournamentAwardsCeremonyScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: const BoxDecoration(
-        color: Color(0xFF0B0F19),
-        border: Border(bottom: BorderSide(color: Color(0xFF334155), width: 1.0)),
+        color: AppTheme.glassSurface,
+        border: Border(bottom: BorderSide(color: AppTheme.borderTitanium, width: 1.0)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -399,11 +402,8 @@ class _TournamentAwardsCeremonyScreenState
           Expanded(
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
-                  onPressed: () => context.pop(),
-                ),
-                const SizedBox(width: 4),
+                const CrystalBackButton(fallbackRoute: '/tournaments'),
+                const SizedBox(width: 8),
                 ArmSphereImage(
                   assetPath: ArmSphereAssets.sealFed,
                   width: 22,
@@ -458,6 +458,7 @@ class _TournamentAwardsCeremonyScreenState
                   icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
                   onPressed: () => _showSharePodiumModal(context, champion, eventName),
                 ),
+              const CrystalHomeButton(),
             ],
           ),
         ],
@@ -473,8 +474,8 @@ class _TournamentAwardsCeremonyScreenState
       height: 44,
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: const BoxDecoration(
-        color: Color(0xFF0B0F19),
-        border: Border(bottom: BorderSide(color: Color(0xFF1E293B), width: 1.0)),
+        color: AppTheme.glassSurface,
+        border: Border(bottom: BorderSide(color: AppTheme.borderTitanium, width: 1.0)),
       ),
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -503,10 +504,10 @@ class _TournamentAwardsCeremonyScreenState
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppTheme.goldPrimary.withValues(alpha: 0.15)
-                      : const Color(0xFF121826),
+                      : AppTheme.glassSurface,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isSelected ? AppTheme.goldPrimary : const Color(0xFF334155),
+                    color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
                     width: 1.0,
                   ),
                 ),
@@ -830,7 +831,7 @@ class _TournamentAwardsCeremonyScreenState
                   end: Alignment.bottomCenter,
                   colors: [
                     accentColor.withValues(alpha: isSelected ? 0.35 : 0.20),
-                    const Color(0xFF121826),
+                    AppTheme.glassSurfaceHeavy,
                   ],
                 ),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
@@ -913,7 +914,7 @@ class _TournamentAwardsCeremonyScreenState
           height: 46,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFF121826),
+            color: AppTheme.glassSurface,
             border: Border.all(
               color: accentColor.withValues(alpha: 0.3),
               width: 1.5,
@@ -941,7 +942,7 @@ class _TournamentAwardsCeremonyScreenState
           height: pillarHeight,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF0D131F),
+            color: AppTheme.glassSurface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             border: Border.all(
               color: accentColor.withValues(alpha: 0.2),
@@ -977,10 +978,15 @@ class _TournamentAwardsCeremonyScreenState
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826), // L2 Surface Card
+        color: AppTheme.glassSurface, // Crystal Glassmorphism Card
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color, width: 1.5),
         boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
           BoxShadow(
             color: color.withValues(alpha: 0.15),
             blurRadius: 16,
@@ -1061,7 +1067,7 @@ class _TournamentAwardsCeremonyScreenState
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 12),
-          const Divider(color: Color(0xFF334155), height: 1),
+          const Divider(color: AppTheme.borderTitanium, height: 1),
           const SizedBox(height: 12),
 
           // Match Statistics Plane
@@ -1178,9 +1184,9 @@ class _TournamentAwardsCeremonyScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: AppTheme.glassSurface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF334155)),
+        border: Border.all(color: AppTheme.borderTitanium),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1267,10 +1273,10 @@ class _TournamentAwardsCeremonyScreenState
       margin: const EdgeInsets.symmetric(vertical: 24),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: AppTheme.glassSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF334155),
+          color: AppTheme.borderTitanium,
           width: 1.0,
         ),
       ),
@@ -1311,9 +1317,10 @@ class _TournamentAwardsCeremonyScreenState
   /// Restrained Ceremonial Loading State
   Widget _buildLoadingState(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF070A11),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
           SafeArea(
             child: Column(
@@ -1334,7 +1341,7 @@ class _TournamentAwardsCeremonyScreenState
                               color: AppTheme.goldPrimary.withValues(alpha: 0.4),
                               width: 1.5,
                             ),
-                            color: const Color(0xFF121826),
+                            color: AppTheme.glassSurface,
                           ),
                           child: ArmSphereImage(
                             assetPath: ArmSphereAssets.sealFed,
@@ -1393,9 +1400,10 @@ class _TournamentAwardsCeremonyScreenState
     String effectiveTournamentId,
   ) {
     return Scaffold(
-      backgroundColor: const Color(0xFF070A11),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
           SafeArea(
             child: Column(
@@ -1511,9 +1519,10 @@ class _TournamentAwardsCeremonyScreenState
     String effectiveTournamentId,
   ) {
     return Scaffold(
-      backgroundColor: const Color(0xFF070A11),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
           SafeArea(
             child: Column(
@@ -1532,7 +1541,7 @@ class _TournamentAwardsCeremonyScreenState
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF121826),
+                              color: AppTheme.glassSurface,
                               border: Border.all(
                                 color: AppTheme.goldPrimary.withValues(alpha: 0.4),
                                 width: 1.5,
@@ -1575,45 +1584,125 @@ class _TournamentAwardsCeremonyScreenState
                             ),
                           ),
                           const SizedBox(height: 24),
-                          TactilePressWrapper(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              if (effectiveTournamentId.isNotEmpty) {
-                                ref.invalidate(eventAwardsProvider(effectiveTournamentId));
-                                ref.invalidate(eventDetailProvider(effectiveTournamentId));
-                              }
-                              if (widget.tournamentId.isEmpty) {
-                                ref.invalidate(tournamentProvider);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                                  width: 1.0,
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.refresh_rounded, color: AppTheme.goldPrimary, size: 16),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'REFRESH RESULTS',
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11.5,
-                                      color: AppTheme.goldPrimary,
-                                      letterSpacing: 0.6,
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 10,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              TactilePressWrapper(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  if (effectiveTournamentId.isNotEmpty) {
+                                    ref.invalidate(eventAwardsProvider(effectiveTournamentId));
+                                    ref.invalidate(eventDetailProvider(effectiveTournamentId));
+                                  }
+                                  if (widget.tournamentId.isEmpty) {
+                                    ref.invalidate(tournamentProvider);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.glassSurface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                                      width: 1.0,
                                     ),
                                   ),
-                                ],
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.refresh_rounded, color: AppTheme.goldPrimary, size: 16),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'REFRESH RESULTS',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 11.5,
+                                          color: AppTheme.goldPrimary,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (effectiveTournamentId.isNotEmpty)
+                                TactilePressWrapper(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    context.push('/tournaments/$effectiveTournamentId/brackets');
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: AppTheme.borderSubtle,
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.account_tree_outlined, color: AppTheme.textSecondary, size: 16),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'VIEW BRACKETS',
+                                          style: TextStyle(
+                                            fontFamily: 'Space Grotesk',
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11.5,
+                                            color: AppTheme.textSecondary,
+                                            letterSpacing: 0.6,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              TactilePressWrapper(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  if (context.canPop()) {
+                                    context.pop();
+                                  } else {
+                                    context.go('/tournaments');
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppTheme.borderSubtle,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.arrow_back_rounded, color: AppTheme.textSecondary, size: 16),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'RETURN TO TOURNAMENTS',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11.5,
+                                          color: AppTheme.textSecondary,
+                                          letterSpacing: 0.6,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

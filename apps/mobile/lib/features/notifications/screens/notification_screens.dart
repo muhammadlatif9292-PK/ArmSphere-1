@@ -7,8 +7,11 @@ import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 
 /// Domain 8 / Stage 6 Convergence: Notifications List Screen
 ///
@@ -114,10 +117,11 @@ class _NotificationsListScreenState
     final notificationsAsync = ref.watch(notificationProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Notifications',
           style: TextStyle(
@@ -148,9 +152,15 @@ class _NotificationsListScreenState
                     ),
                   ),
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: notificationsAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
+          ),
+          notificationsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
           itemCount: 5,
@@ -181,7 +191,14 @@ class _NotificationsListScreenState
             onRefresh: () async => ref.invalidate(notificationProvider),
             child: ListView.separated(
               key: const PageStorageKey<String>('notifications_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.isInsideShell(context)
+                    ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                    : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+              ),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {
@@ -292,6 +309,8 @@ class _NotificationsListScreenState
             ),
           );
         },
+      ),
+        ],
       ),
     );
   }
