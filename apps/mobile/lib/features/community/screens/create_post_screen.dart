@@ -9,6 +9,8 @@ import '../../../core/services/sensory_feedback_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/embed_url_builder.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 
@@ -139,7 +141,10 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
+      stageDomain: ArmSphereStageDomain.community,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(fallbackRoute: '/community/feed'),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [
@@ -154,6 +159,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             Text('Share a Video Clip'),
           ],
         ),
+        actions: const [CrystalHomeButton()],
       ),
       primaryActionLabel: 'Submit Video Link',
       primaryActionIcon: Icons.upload_file_outlined,

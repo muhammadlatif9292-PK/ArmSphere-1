@@ -4,6 +4,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/providers/state_providers.dart';
 
 class SubmitVenueScreen extends ConsumerStatefulWidget {
@@ -74,8 +76,9 @@ class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
-      backgroundColor: AppTheme.background,
+      stageDomain: ArmSphereStageDomain.venues,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/venues'),
         title: const Text(
           'Register Training Venue',
           style: TextStyle(
@@ -84,7 +87,8 @@ class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        backgroundColor: AppTheme.elevatedSurface,
+        actions: const [CrystalHomeButton()],
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       primaryActionLabel: 'Submit Facility for Certification',

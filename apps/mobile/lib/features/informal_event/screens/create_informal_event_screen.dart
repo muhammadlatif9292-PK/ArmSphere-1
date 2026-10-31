@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 
 /// Domain 9 / Stage 6 Convergence: Create Informal Event Screen
@@ -137,10 +139,11 @@ class _CreateInformalEventScreenState
     final isSubmitting = ref.watch(informalEventCreationProvider).isLoading;
 
     return StickyFormScaffold(
-      backgroundColor: AppTheme.background,
+      stageDomain: ArmSphereStageDomain.venues,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/informal-events'),
         title: const Text(
           'Host Practice Meetup',
           style: TextStyle(
@@ -149,6 +152,7 @@ class _CreateInformalEventScreenState
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
       primaryActionLabel: 'PUBLISH PRACTICE MEETUP',
       primaryActionIcon: Icons.sports_martial_arts,
@@ -207,10 +211,14 @@ class _CreateInformalEventScreenState
                     hintText: 'e.g. Sunday Toproll & Strap Clinic',
                     hintStyle: const TextStyle(color: AppTheme.textMuted),
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -236,10 +244,14 @@ class _CreateInformalEventScreenState
                     hintText: 'Number of tables, beginner-friendly, chalk available...',
                     hintStyle: const TextStyle(color: AppTheme.textMuted),
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -262,11 +274,16 @@ class _CreateInformalEventScreenState
                           hintText: 'e.g. Lahore',
                           hintStyle: const TextStyle(color: AppTheme.textMuted),
                           filled: true,
-                          fillColor: AppTheme.elevatedSurface,
+                          fillColor: AppTheme.glassSurface,
                           border: OutlineInputBorder(
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusSmall),
-                            borderSide: const BorderSide(color: AppTheme.border),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
                           ),
                         ),
                         validator: (v) => (v == null || v.trim().isEmpty)
@@ -286,11 +303,16 @@ class _CreateInformalEventScreenState
                           hintText: 'e.g. Punjab',
                           hintStyle: const TextStyle(color: AppTheme.textMuted),
                           filled: true,
-                          fillColor: AppTheme.elevatedSurface,
+                          fillColor: AppTheme.glassSurface,
                           border: OutlineInputBorder(
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusSmall),
-                            borderSide: const BorderSide(color: AppTheme.border),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
                           ),
                         ),
                       ),
@@ -309,10 +331,14 @@ class _CreateInformalEventScreenState
                     hintText: 'e.g. 12',
                     hintStyle: const TextStyle(color: AppTheme.textMuted),
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                   ),
                 ),
@@ -326,10 +352,10 @@ class _CreateInformalEventScreenState
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppTheme.elevatedSurface,
+                      color: AppTheme.glassSurface,
                       borderRadius:
                           BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.borderTitanium),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

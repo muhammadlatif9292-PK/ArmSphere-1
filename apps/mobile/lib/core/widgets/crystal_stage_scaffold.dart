@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/asset_paths.dart';
 import '../providers/visual_preferences_provider.dart';
-export '../providers/visual_preferences_provider.dart' show VisualCustomizeSlot, ArmSphereStageDomain;
 import '../theme/app_theme.dart';
 import 'armsphere_image.dart';
 import 'crystal_gloss_card.dart';
+
+export '../providers/visual_preferences_provider.dart'
+    show ArmSphereStageDomain, VisualCustomizeSlot;
 
 /// Renders a 100% Full-Viewport, Crystal-Clear, Zero-Blur Functional Stage Background.
 ///

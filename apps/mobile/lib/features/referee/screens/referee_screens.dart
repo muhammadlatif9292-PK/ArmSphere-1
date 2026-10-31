@@ -1,10 +1,12 @@
-import 'dart:ui' show FontFeature, ImageFilter;
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -261,18 +263,28 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     final eventsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text('Referee Panel'),
+        actions: [
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.space16,
-          AppTheme.space16,
-          AppTheme.space16,
-          MainShellScope.bottomClearance(context, additionalPadding: 20),
-        ),
-        child: Column(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 20),
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
@@ -402,6 +414,8 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -517,11 +531,13 @@ class _AssignmentCard extends StatelessWidget {
     final isCalled = status == 'CALLED';
 
     return Container(
+      padding: const EdgeInsets.all(AppTheme.space16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurfaceHeavy,
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         border: Border.all(
-          color: isCalled ? AppTheme.cyan.withValues(alpha: 0.6) : AppTheme.glassBorder,
+          color: isCalled ? AppTheme.cyan.withValues(alpha: 0.65) : AppTheme.borderTitanium,
           width: isCalled ? 1.5 : 1.0,
         ),
         boxShadow: isCalled
@@ -535,18 +551,9 @@ class _AssignmentCard extends StatelessWidget {
               ]
             : [AppTheme.titaniumShadow()],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-          child: Container(
-            padding: const EdgeInsets.all(AppTheme.space16),
-            decoration: const BoxDecoration(
-              gradient: AppTheme.glassSheenGradient,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
                 Row(
                   children: [
                     Expanded(
@@ -670,9 +677,6 @@ class _AssignmentCard extends StatelessWidget {
                   ),
               ],
             ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -691,8 +695,7 @@ class _RefereeScorepadHeroCard extends StatelessWidget {
         HapticFeedback.mediumImpact();
         onTap();
       },
-      backgroundColor: AppTheme.cardSurface,
-      borderColor: AppTheme.primaryRed.withValues(alpha: 0.35),
+      borderColor: AppTheme.primaryRed.withValues(alpha: 0.45),
       padding: const EdgeInsets.all(AppTheme.space16),
       child: Row(
         children: [
@@ -804,7 +807,7 @@ class _RefCard extends StatelessWidget {
         HapticFeedback.lightImpact();
         onTap();
       },
-      backgroundColor: AppTheme.titanium,
+      backgroundColor: AppTheme.glassSurface,
       gradient: AppTheme.machinedTitaniumGradient,
       borderColor: AppTheme.borderTitanium,
       customShadow: [AppTheme.titaniumShadow()],
@@ -853,9 +856,19 @@ class RefereeCertificationsScreen extends ConsumerWidget {
     final certsAsync = ref.watch(refereeCertificationsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
-      appBar: AppBar(title: const Text('Certifications')),
-      body: certsAsync.when(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Certifications'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          certsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Padding(
@@ -990,6 +1003,8 @@ class RefereeCertificationsScreen extends ConsumerWidget {
             },
           );
         },
+      ),
+        ],
       ),
     );
   }
@@ -1230,8 +1245,9 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentDisplayName = _opponent?['displayName']?.toString() ?? 'Corner White (Select)';
 
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: const CrystalBackButton(),
         title: const Text('Referee Table Scorepad'),
         actions: [
           IconButton(
@@ -1242,11 +1258,18 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
               setState(() => _isLiveScorepadMode = !_isLiveScorepadMode);
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Mode Toggle Bar
@@ -1401,6 +1424,8 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             ],
           ],
         ),
+      ),
+        ],
       ),
     );
   }
@@ -1605,11 +1630,21 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
-      appBar: AppBar(title: const Text('Search Athletes')),
-      body: Padding(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Search Athletes'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
           children: [
             TextField(
               controller: _searchController,
@@ -1686,6 +1721,8 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -1725,12 +1762,22 @@ class EvidenceUploadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
-      appBar: AppBar(title: const Text('Evidence Upload')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.space24),
-          child: ElevatedActionCard(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Evidence Upload'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.space24),
+              child: ElevatedActionCard(
             padding: const EdgeInsets.all(AppTheme.space28),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1772,6 +1819,8 @@ class EvidenceUploadScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+        ],
       ),
     );
   }

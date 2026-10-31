@@ -7,6 +7,8 @@ import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -38,10 +40,11 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(informalEventListProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Practice Meetups',
           style: TextStyle(
@@ -52,7 +55,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 4),
             child: Center(
               child: InkWell(
                 key: const ValueKey('informal_event_directory_create_button'),
@@ -89,13 +92,19 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
               ),
             ),
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async => ref.invalidate(informalEventListProvider),
-        child: eventsAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
+          ),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async => ref.invalidate(informalEventListProvider),
+            child: eventsAsync.when(
           loading: () => ListView.separated(
             padding: const EdgeInsets.all(AppTheme.space16),
             itemCount: 4,
@@ -166,7 +175,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.elevatedSurface,
+                            color: AppTheme.glassSurface,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6)),
                           ),
@@ -251,6 +260,8 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

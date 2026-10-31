@@ -8,6 +8,8 @@ import '../../../core/providers/athlete_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/sensory_feedback_service.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -157,14 +159,25 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
     final isSelf = _resolveIsSelf(athleteId, myProfile, authState);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Training Log & PRs',
           style: TextStyle(fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
         ),
+        actions: const [
+          CrystalHomeButton(),
+        ],
       ),
-      body: RefreshIndicator(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(trainingLogPRsProvider(athleteId));
           ref.invalidate(trainingLogProvider(athleteId));
@@ -503,6 +516,8 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
       floatingActionButtonLocation: MainShellScope.fabLocation(context),
       floatingActionButton: isSelf

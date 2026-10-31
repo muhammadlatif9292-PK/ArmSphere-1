@@ -8,6 +8,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -75,10 +77,11 @@ class _InformalEventDetailScreenState
     final detailAsync = ref.watch(informalEventDetailProvider(widget.eventId));
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/informal-events'),
         title: const Text(
           'Practice Session Dossier',
           style: TextStyle(
@@ -87,13 +90,19 @@ class _InformalEventDetailScreenState
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async =>
-            ref.invalidate(informalEventDetailProvider(widget.eventId)),
-        child: detailAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
+          ),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async =>
+                ref.invalidate(informalEventDetailProvider(widget.eventId)),
+            child: detailAsync.when(
           loading: () => ListView(
             padding: const EdgeInsets.all(AppTheme.space16),
             children: const [
@@ -160,7 +169,7 @@ class _InformalEventDetailScreenState
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.elevatedSurface,
+                              color: AppTheme.glassSurface,
                               shape: BoxShape.circle,
                               border: Border.all(color: AppTheme.goldPrimary),
                             ),
@@ -260,9 +269,10 @@ class _InformalEventDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space20),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardSurface,
+                      color: AppTheme.glassSurface,
+                      gradient: AppTheme.machinedTitaniumGradient,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.borderTitanium),
                     ),
                     child: const Center(
                       child: Text(
@@ -415,9 +425,10 @@ class _InformalEventDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space14),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardSurface,
+                      color: AppTheme.glassSurface,
+                      gradient: AppTheme.machinedTitaniumGradient,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.borderTitanium),
                     ),
                     child: const Center(
                       child: Text(
@@ -430,6 +441,8 @@ class _InformalEventDetailScreenState
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

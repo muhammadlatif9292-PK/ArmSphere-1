@@ -6,10 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../auth/providers/auth_provider.dart';
 
 /// Tournament Operator Landing Dashboard
@@ -50,10 +52,11 @@ class _TournamentOperatorDashboardScreenState
     final operatorName = profile['displayName'] ?? profile['name'] ?? 'Operator';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -115,9 +118,14 @@ class _TournamentOperatorDashboardScreenState
               context.push('/settings/roles');
             },
           ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
-      body: tournamentsAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          tournamentsAsync.when(
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
@@ -201,9 +209,9 @@ class _TournamentOperatorDashboardScreenState
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.cardSurface,
+                          color: AppTheme.glassSurface,
                           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          border: Border.all(color: AppTheme.cardBorder),
+                          border: Border.all(color: AppTheme.borderTitanium),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -675,6 +683,8 @@ class _TournamentOperatorDashboardScreenState
           );
         },
       ),
+        ],
+      ),
     );
   }
 
@@ -695,7 +705,7 @@ class _TournamentOperatorDashboardScreenState
         fg = Colors.blueAccent;
         break;
       default:
-        bg = AppTheme.cardSurface;
+        bg = AppTheme.glassSurface;
         fg = AppTheme.textSecondary;
     }
 

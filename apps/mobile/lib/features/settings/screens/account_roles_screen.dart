@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -197,7 +199,9 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     final pendingApplications = authState.pendingRoleApplications;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: const CrystalBackButton(),
         title: const Text('Account Roles & Persona'),
         actions: [
           IconButton(
@@ -208,13 +212,20 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
             },
             tooltip: 'Refresh Roles',
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(authProvider.notifier).refreshUserRoles();
-        },
-        child: ListView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          RefreshIndicator(
+            onRefresh: () async {
+              await ref.read(authProvider.notifier).refreshUserRoles();
+            },
+            child: ListView(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
             AppTheme.space16,
@@ -406,24 +417,27 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                     final appRole = app['role']?.toString() ?? 'ROLE';
                     final certNum = app['certificationNumber']?.toString();
 
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.space16,
-                        vertical: AppTheme.space4,
-                      ),
-                      leading: const Icon(Icons.pending_actions, color: AppTheme.warning),
-                      title: Text(
-                        _formatRoleName(appRole),
-                        style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
-                      ),
-                      subtitle: Text(
-                        certNum != null && certNum.isNotEmpty
-                            ? 'Cert: $certNum'
-                            : 'Submitted for federation review',
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                      ),
-                      trailing: const StatusChip.warning(
-                        label: 'PENDING',
+                    return Material(
+                      type: MaterialType.transparency,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.space16,
+                          vertical: AppTheme.space4,
+                        ),
+                        leading: const Icon(Icons.pending_actions, color: AppTheme.warning),
+                        title: Text(
+                          _formatRoleName(appRole),
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                        ),
+                        subtitle: Text(
+                          certNum != null && certNum.isNotEmpty
+                              ? 'Cert: $certNum'
+                              : 'Submitted for federation review',
+                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                        ),
+                        trailing: const StatusChip.warning(
+                          label: 'PENDING',
+                        ),
                       ),
                     );
                   },
@@ -447,6 +461,8 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
             const SizedBox(height: AppTheme.space16),
           ],
         ),
+      ),
+        ],
       ),
     );
   }

@@ -345,21 +345,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'home',
                 builder: (context, state) => const RoleAwareHomeScreen(),
               ),
-              GoRoute(
-                path: '/athlete/dashboard',
-                name: 'athlete_dashboard',
-                builder: (context, state) => const AthleteDashboardScreen(),
-              ),
-              GoRoute(
-                path: '/referee/dashboard',
-                name: 'referee_dashboard',
-                builder: (context, state) => const RefereeDashboardScreen(),
-              ),
-              GoRoute(
-                path: '/governance',
-                name: 'governance',
-                builder: (context, state) => const GovernanceDashboardScreen(),
-              ),
             ],
           ),
           StatefulShellBranch(
@@ -369,11 +354,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'discover',
                 builder: (context, state) => const DiscoverScreen(),
               ),
-              GoRoute(
-                path: '/rankings',
-                name: 'rankings',
-                builder: (context, state) => const RankingsScreen(),
-              ),
             ],
           ),
           StatefulShellBranch(
@@ -381,11 +361,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/tournaments',
                 name: 'tournaments_tab',
-                builder: (context, state) => const TournamentsListScreen(),
-              ),
-              GoRoute(
-                path: '/tournament/dashboard',
-                name: 'tournament_dashboard_tab',
                 builder: (context, state) => const TournamentsListScreen(),
               ),
             ],
@@ -409,6 +384,46 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/athlete/dashboard',
+        name: 'athlete_dashboard',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const AthleteDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/referee/dashboard',
+        name: 'referee_dashboard',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const RefereeDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/governance',
+        name: 'governance',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const GovernanceDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/rankings',
+        name: 'rankings',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const RankingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/tournament/dashboard',
+        name: 'tournament_dashboard_tab',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const TournamentsListScreen(),
+        ),
       ),
       GoRoute(
         path: '/search',

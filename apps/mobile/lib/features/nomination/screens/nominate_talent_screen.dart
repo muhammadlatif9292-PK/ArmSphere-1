@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
@@ -73,7 +75,13 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
-      appBar: AppBar(title: const Text('Nominate Talent')),
+      stageDomain: ArmSphereStageDomain.rankings,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(fallbackRoute: '/nominations/mine'),
+        title: const Text('Nominate Talent'),
+        actions: const [CrystalHomeButton()],
+      ),
       primaryActionLabel: 'File Official Nomination',
       primaryActionIcon: Icons.star_border,
       isLoading: _isLoading,

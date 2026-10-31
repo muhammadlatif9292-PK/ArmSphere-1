@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
@@ -96,8 +98,11 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
+      stageDomain: ArmSphereStageDomain.passport,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/settings/roles'),
         title: const Text('Apply for Federation Role'),
+        actions: const [CrystalHomeButton()],
       ),
       primaryActionLabel: 'Submit Application',
       primaryActionIcon: Icons.badge_outlined,
@@ -195,18 +200,8 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
           const SizedBox(height: AppTheme.space8),
           TextFormField(
             controller: _certificationController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'e.g. PAFF-REF-2026-081',
-              filled: true,
-              fillColor: AppTheme.cardSurface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                borderSide: const BorderSide(color: AppTheme.cardBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                borderSide: const BorderSide(color: AppTheme.cardBorder),
-              ),
             ),
           ),
           const SizedBox(height: AppTheme.space20),
@@ -225,18 +220,8 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
           TextFormField(
             controller: _experienceController,
             maxLines: 4,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Describe your armwrestling officiating, organizing, or club background...',
-              filled: true,
-              fillColor: AppTheme.cardSurface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                borderSide: const BorderSide(color: AppTheme.cardBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                borderSide: const BorderSide(color: AppTheme.cardBorder),
-              ),
             ),
             validator: (value) {
               if (value == null || value.trim().length < 10) {

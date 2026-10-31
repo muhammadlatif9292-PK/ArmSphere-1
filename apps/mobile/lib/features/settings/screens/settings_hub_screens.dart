@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -15,16 +17,27 @@ class SettingsHubScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.space16,
-          AppTheme.space16,
-          AppTheme.space16,
-          MainShellScope.isInsideShell(context)
-              ? MainShellScope.bottomClearance(context, additionalPadding: 36)
-              : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
-        ),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Settings'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.isInsideShell(context)
+                  ? MainShellScope.bottomClearance(context, additionalPadding: 36)
+                  : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
+            ),
         children: [
           _sectionHeader(context, 'ACCOUNT'),
           ElevatedActionCard(
@@ -143,6 +156,8 @@ class SettingsHubScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppTheme.space24),
+        ],
+      ),
         ],
       ),
     );
@@ -384,15 +399,26 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Delete Account')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.space16,
-          AppTheme.space16,
-          AppTheme.space16,
-          MainShellScope.bottomClearance(context, additionalPadding: 24),
-        ),
-        child: Column(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Delete Account'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ElevatedActionCard(
@@ -476,6 +502,8 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -487,15 +515,26 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Terms of Service')),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.space16,
-          AppTheme.space16,
-          AppTheme.space16,
-          MainShellScope.bottomClearance(context, additionalPadding: 24),
-        ),
-        children: const [
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Terms of Service'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            children: const [
           ElevatedActionCard(
             padding: EdgeInsets.all(AppTheme.space20),
             child: Column(
@@ -541,6 +580,8 @@ class TermsScreen extends StatelessWidget {
           ),
         ],
       ),
+        ],
+      ),
     );
   }
 }
@@ -552,15 +593,26 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Privacy Policy')),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.space16,
-          AppTheme.space16,
-          AppTheme.space16,
-          MainShellScope.bottomClearance(context, additionalPadding: 24),
-        ),
-        children: const [
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(),
+        title: const Text('Privacy Policy'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            children: const [
           ElevatedActionCard(
             padding: EdgeInsets.all(AppTheme.space20),
             child: Column(
@@ -606,6 +658,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
         ],
       ),
     );

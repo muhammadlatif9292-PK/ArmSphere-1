@@ -129,22 +129,6 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               });
             },
           ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: 'Customize Community Wallpaper',
-            icon: const Icon(
-              Icons.wallpaper_rounded,
-              color: AppTheme.goldPrimary,
-              size: 19,
-            ),
-            onPressed: () {
-              showVisualCustomizationSheet(
-                context,
-                initialSlot: VisualCustomizeSlot.screenBackdrop,
-                domain: ArmSphereStageDomain.community,
-              );
-            },
-          ),
           // Create Post CTA
           Padding(
             padding: const EdgeInsets.only(right: 14, left: 2),

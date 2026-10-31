@@ -116,10 +116,10 @@ void main() {
           ),
         );
         final deco = pill.decoration! as BoxDecoration;
-        expect(deco.color, AppTheme.crimson.withValues(alpha: 0.12),
+        expect(deco.color, AppTheme.crimson.withValues(alpha: 0.16),
             reason: '${tab.label} pill fill');
         expect((deco.border! as Border).top.color,
-            AppTheme.crimson.withValues(alpha: 0.35),
+            AppTheme.crimson.withValues(alpha: 0.45),
             reason: '${tab.label} pill border');
       }
     });
@@ -242,5 +242,116 @@ void main() {
       }
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('auto-hides dock when scrolling down and reveals when scrolling up',
+        (tester) async {
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                MainShellScreen(navigationShell: navigationShell),
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => ListView.builder(
+                      itemCount: 40,
+                      itemExtent: 60,
+                      itemBuilder: (context, index) => Text('Item $index'),
+                    ),
+                  ),
+                ],
+              ),
+              for (var i = 1; i < _tabs.length; i++)
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: '/${_tabs[i].label.toLowerCase()}',
+                      builder: (context, state) =>
+                          Center(child: Text('${_tabs[i].label} page')),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      AnimatedOpacity dockOpacity() => tester.widget<AnimatedOpacity>(
+            find.ancestor(
+              of: find.byKey(const ValueKey('crystal_floating_nav_dock')),
+              matching: find.byType(AnimatedOpacity),
+            ),
+          );
+
+      expect(dockOpacity().opacity, 1.0);
+
+      // Drag up to scroll down -> dock auto-hides
+      await tester.drag(find.byType(ListView), const Offset(0, -180));
+      await tester.pumpAndSettle();
+      expect(dockOpacity().opacity, 0.0);
+
+      // Drag down to scroll up -> dock reveals
+      await tester.drag(find.byType(ListView), const Offset(0, 120));
+      await tester.pumpAndSettle();
+      expect(dockOpacity().opacity, 1.0);
+    });
+
+    testWidgets('hides floating dock completely on non-root inner sub-routes',
+        (tester) async {
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                MainShellScreen(navigationShell: navigationShell),
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => const Center(child: Text('Home root')),
+                    routes: [
+                      GoRoute(
+                        path: 'details',
+                        builder: (context, state) =>
+                            const Center(child: Text('Inner details screen')),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              for (var i = 1; i < _tabs.length; i++)
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: '/${_tabs[i].label.toLowerCase()}',
+                      builder: (context, state) =>
+                          Center(child: Text('${_tabs[i].label} page')),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('crystal_floating_nav_dock')), findsOneWidget);
+
+      router.go('/home/details');
+      await tester.pumpAndSettle();
+      expect(find.text('Inner details screen'), findsOneWidget);
+      expect(find.byKey(const ValueKey('crystal_floating_nav_dock')), findsNothing);
+    });
   });
 }
+

@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/providers/state_providers.dart';
@@ -923,7 +925,10 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final canManageTables = isDirectorOrAdmin || isOrganizer;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: const Text('Event Operations Desk'),
         actions: [
           IconButton(
@@ -939,22 +944,27 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                     ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
                   },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(eventDetailProvider(widget.tournamentId));
-          ref.invalidate(eventStatsProvider(widget.tournamentId));
-          ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
-          ref.invalidate(eventBracketsProvider(widget.tournamentId));
-          ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
-          ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
-          ref.invalidate(eventMatchesProvider(widget.tournamentId));
-          ref.invalidate(refereeDirectoryProvider);
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(AppTheme.space16),
-          children: [
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(eventDetailProvider(widget.tournamentId));
+              ref.invalidate(eventStatsProvider(widget.tournamentId));
+              ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
+              ref.invalidate(eventBracketsProvider(widget.tournamentId));
+              ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
+              ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
+              ref.invalidate(eventMatchesProvider(widget.tournamentId));
+              ref.invalidate(refereeDirectoryProvider);
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(AppTheme.space16),
+              children: [
             // --- Event header ---
             eventAsync.when(
               loading: () => const Center(child: Padding(
@@ -1434,6 +1444,8 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }
@@ -1950,9 +1962,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       margin: const EdgeInsets.only(bottom: AppTheme.space6),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       decoration: BoxDecoration(
-        color: AppTheme.cardSurface.withValues(alpha: 0.6),
+        color: AppTheme.glassSurface,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: AppTheme.cardBorder),
+        border: Border.all(color: AppTheme.borderTitanium),
       ),
       child: Row(
         children: [
@@ -1964,9 +1976,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTheme.elevatedSurface,
+                color: AppTheme.glassSurface,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.cardBorder),
+                border: Border.all(color: AppTheme.borderTitanium),
               ),
               child: Text(
                 '$pos',

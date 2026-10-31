@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/step_header.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/utils/error_formatter.dart';
 
 /// Guided athlete profile setup shown to every newly registered account.
@@ -181,8 +182,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text(
           'Build Your Athlete Profile',
           style: TextStyle(
@@ -221,47 +224,54 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Fixed top stepper bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 540),
-                child: StepHeader(
-                  step: _currentStep + 1,
-                  totalSteps: 3,
-                  title: _titles[_currentStep].$1,
-                  subtitle: _titles[_currentStep].$2,
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                // Fixed top stepper bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 540),
+                    child: StepHeader(
+                      step: _currentStep + 1,
+                      totalSteps: 3,
+                      title: _titles[_currentStep].$1,
+                      subtitle: _titles[_currentStep].$2,
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            // Animated directional PageView
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) => setState(() => _currentStep = index),
-                children: [
-                  _buildPageWrapper(
-                    formKey: _identityFormKey,
-                    child: _buildIdentityStep(),
+                // Animated directional PageView
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (index) => setState(() => _currentStep = index),
+                    children: [
+                      _buildPageWrapper(
+                        formKey: _identityFormKey,
+                        child: _buildIdentityStep(),
+                      ),
+                      _buildPageWrapper(
+                        formKey: _locationFormKey,
+                        child: _buildLocationStep(),
+                      ),
+                      _buildPageWrapper(
+                        formKey: _specsFormKey,
+                        child: _buildSpecsStep(),
+                      ),
+                    ],
                   ),
-                  _buildPageWrapper(
-                    formKey: _locationFormKey,
-                    child: _buildLocationStep(),
-                  ),
-                  _buildPageWrapper(
-                    formKey: _specsFormKey,
-                    child: _buildSpecsStep(),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: StickyBottomActionBar(
         primaryActionLabel: _currentStep == 2 ? 'Complete Profile' : 'Continue',
@@ -531,9 +541,9 @@ class _SpecSlider extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppTheme.elevatedSurface,
+                color: AppTheme.glassSurface,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45)),
               ),
               child: Text(
                 '${value.toStringAsFixed(decimals)} $suffix',

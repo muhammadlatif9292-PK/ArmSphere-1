@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/dispute_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
@@ -71,8 +73,9 @@ class _SubmitComplaintScreenState extends ConsumerState<SubmitComplaintScreen> {
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
-      backgroundColor: AppTheme.background,
+      stageDomain: ArmSphereStageDomain.referee,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/governance'),
         title: const Text(
           'File Official Complaint',
           style: TextStyle(
@@ -81,7 +84,8 @@ class _SubmitComplaintScreenState extends ConsumerState<SubmitComplaintScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        backgroundColor: AppTheme.elevatedSurface,
+        actions: const [CrystalHomeButton()],
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       primaryActionLabel: 'File Arbitration Request',

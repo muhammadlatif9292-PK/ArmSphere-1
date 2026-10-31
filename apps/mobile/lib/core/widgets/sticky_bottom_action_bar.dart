@@ -49,8 +49,10 @@ class StickyBottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBgColor = backgroundColor ?? AppTheme.glassSurfaceHeavy;
-    final effectiveBorderColor = borderColor ?? AppTheme.borderTitanium;
+    final effectiveBgColor =
+        backgroundColor ?? Colors.white.withValues(alpha: 0.05);
+    final effectiveBorderColor =
+        borderColor ?? Colors.white.withValues(alpha: 0.24);
 
     Widget content = child ?? _buildDefaultContent(context);
 
@@ -60,47 +62,35 @@ class StickyBottomActionBar extends StatelessWidget {
             ((View.maybeOf(context)?.viewInsets.bottom ?? 0) > 0));
     final shellClearance = (isInsideShell && !keyboardOpen) ? kFloatingDockTotalHeight : 0.0;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: effectiveBgColor,
-            border: Border(
-              top: BorderSide(color: effectiveBorderColor, width: 1.0),
-            ),
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x1AFFFFFF), // Fine specular highlight edge at top
-                Colors.transparent,
-              ],
-              stops: [0.0, 0.25],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.45),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: effectiveBgColor,
+        gradient: AppTheme.machinedTitaniumGradient,
+        border: Border(
+          top: BorderSide(color: effectiveBorderColor, width: 1.0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.48),
+            blurRadius: 22,
+            spreadRadius: -2,
+            offset: const Offset(0, -6),
           ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: EdgeInsets.only(bottom: shellClearance),
-              child: Align(
-                alignment: Alignment.center,
-                heightFactor: 1.0,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Padding(
-                    padding: padding,
-                    child: content,
-                  ),
-                ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: shellClearance),
+          child: Align(
+            alignment: Alignment.center,
+            heightFactor: 1.0,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Padding(
+                padding: padding,
+                child: content,
               ),
             ),
           ),

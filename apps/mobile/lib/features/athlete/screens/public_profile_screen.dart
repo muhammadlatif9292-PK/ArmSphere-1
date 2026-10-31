@@ -13,6 +13,7 @@ import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/messaging_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'athlete_screens.dart' show ArmSwitchEloCard;
@@ -50,7 +51,11 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text('Athlete Dossier'),
+        actions: const [
+          CrystalHomeButton(),
+        ],
       ),
       body: Stack(
         fit: StackFit.expand,

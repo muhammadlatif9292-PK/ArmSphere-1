@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/payment_methods_provider.dart';
@@ -118,15 +120,26 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     final isPaymentConfigured = ref.watch(paymentConfiguredProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment Methods')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.space16,
-          AppTheme.space16,
-          AppTheme.space16,
-          MainShellScope.bottomClearance(context, additionalPadding: 24),
-        ),
-        child: Column(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/settings'),
+        title: const Text('Payment Methods'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
@@ -359,6 +372,8 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }

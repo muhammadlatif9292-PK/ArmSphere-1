@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'crystal_stage_scaffold.dart';
 import 'sticky_bottom_action_bar.dart';
 
 /// Reusable Form Scaffold providing responsive keyboard avoidance,
@@ -72,6 +73,9 @@ class StickyFormScaffold extends StatelessWidget {
   /// Whether the body should resize when the soft keyboard appears (default: true).
   final bool resizeToAvoidBottomInset;
 
+  /// Functional stage domain for full-screen crystal-clear background.
+  final ArmSphereStageDomain stageDomain;
+
   const StickyFormScaffold({
     super.key,
     this.appBar,
@@ -94,6 +98,7 @@ class StickyFormScaffold extends StatelessWidget {
     this.bottomBarBackgroundColor,
     this.bottomBarBorderColor,
     this.resizeToAvoidBottomInset = true,
+    this.stageDomain = ArmSphereStageDomain.arena,
   });
 
   @override
@@ -165,10 +170,18 @@ class StickyFormScaffold extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor ?? AppTheme.background,
+      backgroundColor: backgroundColor ?? Colors.transparent,
       appBar: appBar,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      body: scaffoldBody,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: CrystalStageBackdrop(domain: stageDomain),
+          ),
+          scaffoldBody,
+        ],
+      ),
     );
   }
 }

@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/nomination_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/theme/app_theme.dart';
@@ -30,7 +32,10 @@ class MyNominationsScreen extends ConsumerWidget {
     final nominationsAsync = ref.watch(nominationListProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        leading: const CrystalBackButton(),
         title: const Text('My Nominations'),
         actions: [
           IconButton(
@@ -41,11 +46,16 @@ class MyNominationsScreen extends ConsumerWidget {
               context.push('/nominate');
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(nominationListProvider),
-        child: nominationsAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.rankings),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(nominationListProvider),
+            child: nominationsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => AppErrorView(
             error: e,
@@ -189,6 +199,8 @@ class MyNominationsScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

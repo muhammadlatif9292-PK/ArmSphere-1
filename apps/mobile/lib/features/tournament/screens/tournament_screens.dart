@@ -17,6 +17,7 @@ import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/tournament_widgets.dart';
 
@@ -81,6 +82,7 @@ class TournamentsListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
           'Competitions',
           style: TextStyle(
@@ -90,21 +92,11 @@ class TournamentsListScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.goldPrimary, size: 20),
-            tooltip: 'Customize Events Wallpaper',
-            onPressed: () {
-              showVisualCustomizationSheet(
-                context,
-                initialSlot: VisualCustomizeSlot.screenBackdrop,
-                domain: ArmSphereStageDomain.events,
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
             tooltip: 'Refresh Tournaments',
             onPressed: () => ref.invalidate(tournamentProvider),
           ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
       body: Stack(
@@ -324,7 +316,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       ),
       error: (error, _) => Scaffold(
         backgroundColor: AppTheme.background,
-        appBar: AppBar(title: const Text('Tournament Details')),
+        appBar: AppBar(
+          leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
+          title: const Text('Tournament Details'),
+          actions: const [CrystalHomeButton()],
+        ),
         body: AppErrorView(
           error: error,
           title: 'Could not load tournament',
@@ -380,26 +376,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     expandedHeight: 260.0,
                     pinned: true,
                     backgroundColor: Colors.transparent,
-                leading: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CircleAvatar(
-                    backgroundColor: Colors.black.withValues(alpha: 0.6),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        context.pop();
-                      },
-                    ),
-                  ),
-                ),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black.withValues(alpha: 0.6),
-                      child: IconButton(
+                    leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
+                    actions: [
+                      IconButton(
                         icon: const Icon(Icons.share_outlined, color: Colors.white, size: 18),
+                        tooltip: 'Share Tournament',
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           Clipboard.setData(ClipboardData(text: 'https://armsphere.app/tournament/${widget.tournamentId}'));
@@ -411,9 +392,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           );
                         },
                       ),
-                    ),
-                  ),
-                ],
+                      const CrystalHomeButton(),
+                    ],
                 flexibleSpace: FlexibleSpaceBar(
                   collapseMode: CollapseMode.parallax,
                   background: Stack(
@@ -1442,6 +1422,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: const Text(
           'Tournament Brackets',
           style: TextStyle(fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
@@ -1468,6 +1449,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
               }
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
       body: bracketsAsync.when(

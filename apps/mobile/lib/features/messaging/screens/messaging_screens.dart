@@ -9,7 +9,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -28,10 +30,11 @@ class ConversationsListScreen extends ConsumerWidget {
     final conversationsAsync = ref.watch(conversationsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Athlete Inbox',
           style: TextStyle(
@@ -40,8 +43,16 @@ class ConversationsListScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [
+          CrystalHomeButton(),
+        ],
       ),
-      body: conversationsAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
+          ),
+          conversationsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
           itemCount: 5,
@@ -191,6 +202,8 @@ class ConversationsListScreen extends ConsumerWidget {
           );
         },
       ),
+        ],
+      ),
     );
   }
 }
@@ -265,10 +278,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isDisconnected = messagesAsync.hasError;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Match Discussion',
           style: TextStyle(
@@ -277,9 +291,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [
+          CrystalHomeButton(),
+        ],
       ),
-      body: Column(
+      body: Stack(
         children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
+          ),
+          Column(
+            children: [
           Expanded(
             child: messagesAsync.when(
               loading: () => const Center(
@@ -331,10 +353,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isDeleted
-                              ? AppTheme.elevatedSurface
+                              ? AppTheme.glassSurface
                               : isMine
                                   ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-                                  : AppTheme.cardSurface,
+                                  : AppTheme.glassSurface,
+                          gradient: isMine ? null : AppTheme.machinedTitaniumGradient,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(AppTheme.radiusMedium),
                             topRight: const Radius.circular(AppTheme.radiusMedium),
@@ -343,10 +366,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ),
                           border: Border.all(
                             color: isMine
-                                ? AppTheme.goldPrimary.withValues(alpha: 0.4)
-                                : AppTheme.border,
+                                ? AppTheme.goldPrimary.withValues(alpha: 0.45)
+                                : AppTheme.borderTitanium,
                             width: 1.0,
                           ),
+                          boxShadow: [AppTheme.titaniumShadow()],
                         ),
                         child: Column(
                           crossAxisAlignment: isMine
@@ -389,9 +413,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // Composer Bar
           Container(
             padding: const EdgeInsets.all(AppTheme.space12),
-            decoration: const BoxDecoration(
-              color: AppTheme.cardSurface,
-              border: Border(top: BorderSide(color: AppTheme.border, width: 1.0)),
+            decoration: BoxDecoration(
+              color: AppTheme.glassSurface,
+              gradient: AppTheme.machinedTitaniumGradient,
+              border: const Border(top: BorderSide(color: AppTheme.borderTitanium, width: 1.0)),
+              boxShadow: [AppTheme.titaniumShadow()],
             ),
             child: SafeArea(
               child: Row(
@@ -407,12 +433,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             : 'Type your message...',
                         hintStyle: const TextStyle(color: AppTheme.textMuted),
                         filled: true,
-                        fillColor: AppTheme.elevatedSurface,
+                        fillColor: AppTheme.glassSurface,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          borderSide: const BorderSide(color: AppTheme.border),
+                          borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          borderSide: const BorderSide(color: AppTheme.borderTitanium),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -426,11 +456,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: isDisconnected
-                          ? AppTheme.cardSurface
+                          ? AppTheme.glassSurface
                           : AppTheme.goldPrimary,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: isDisconnected
-                          ? Border.all(color: AppTheme.borderSubtle)
+                          ? Border.all(color: AppTheme.borderTitanium)
                           : null,
                     ),
                     child: IconButton(
@@ -457,6 +487,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           ),
+        ],
+      ),
         ],
       ),
     );

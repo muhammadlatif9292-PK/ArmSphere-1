@@ -8,6 +8,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
@@ -83,10 +85,11 @@ class _GovernanceDashboardScreenState
     final disputesAsync = ref.watch(disputeProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
           'Arbitration & Disputes',
           style: TextStyle(
@@ -105,9 +108,16 @@ class _GovernanceDashboardScreenState
               context.push('/governance/submit-complaint');
             },
           ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
-      body: disputesAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          disputesAsync.when(
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
@@ -179,9 +189,11 @@ class _GovernanceDashboardScreenState
                 Container(
                   padding: const EdgeInsets.all(AppTheme.space12),
                   decoration: BoxDecoration(
-                    color: AppTheme.cardSurface,
+                    color: AppTheme.glassSurface,
+                    gradient: AppTheme.machinedTitaniumGradient,
                     borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.border, width: 1.0),
+                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                    boxShadow: [AppTheme.titaniumShadow()],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -404,6 +416,8 @@ class _GovernanceDashboardScreenState
           );
         },
       ),
+        ],
+      ),
     );
   }
 }
@@ -472,10 +486,10 @@ class _FilterTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.goldPrimary.withValues(alpha: 0.15)
-              : AppTheme.cardSurface,
+              : AppTheme.glassSurface,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.border,
+            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
             width: 1.0,
           ),
         ),
@@ -864,10 +878,11 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
     final disputesAsync = ref.watch(disputeProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Dispute Dossier',
           style: TextStyle(
@@ -876,8 +891,17 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [
+          CrystalHomeButton(),
+        ],
       ),
-      body: disputesAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          disputesAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppTheme.goldPrimary),
         ),
@@ -1203,6 +1227,8 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
             ),
           );
         },
+      ),
+        ],
       ),
     );
   }

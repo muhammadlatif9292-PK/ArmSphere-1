@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../routing/page_transitions.dart';
+import '../widgets/crystal_glass_nav_controls.dart';
 
 /// ArmSphere Design System & Theme Engine
 ///
@@ -646,7 +647,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: recessedSurface,
+        fillColor: glassSurface,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         border: OutlineInputBorder(
@@ -689,7 +690,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: goldPrimary,
           foregroundColor: voidBackground,
-          disabledBackgroundColor: elevatedSurface,
+          disabledBackgroundColor: glassSurfaceHeavy,
           disabledForegroundColor: textMuted,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
@@ -711,7 +712,7 @@ class AppTheme {
           disabledForegroundColor: textMuted,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
-          side: const BorderSide(color: border, width: 1.0),
+          side: const BorderSide(color: borderTitanium, width: 1.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMedium),
           ),
@@ -738,10 +739,10 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: elevatedSurface,
-        disabledColor: elevatedSurface.withValues(alpha: 0.5),
-        selectedColor: info.withValues(alpha: 0.2),
-        secondarySelectedColor: goldPrimary.withValues(alpha: 0.2),
+        backgroundColor: glassSurface,
+        disabledColor: glassSurfaceLight,
+        selectedColor: info.withValues(alpha: 0.18),
+        secondarySelectedColor: goldPrimary.withValues(alpha: 0.18),
         labelStyle: const TextStyle(
           fontFamily: fontBody,
           color: textPrimary,
@@ -755,7 +756,35 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusSmall),
-          side: const BorderSide(color: border, width: 1.0),
+          side: const BorderSide(color: borderTitanium, width: 1.0),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: const Color(0xEB0B0F19),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusLarge),
+          side: const BorderSide(color: borderTitanium, width: 1.0),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Color(0xEB0B0F19),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(radiusLarge)),
+          side: BorderSide(color: borderTitanium, width: 1.0),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: const Color(0xEB0B0F19),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
+          side: const BorderSide(color: borderTitanium, width: 1.0),
+        ),
+      ),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (context) => const CrystalNavCapsuleIcon(
+          icon: Icons.arrow_back_ios_new_rounded,
+          iconSize: 17,
+          iconColor: textPure,
         ),
       ),
       appBarTheme: const AppBarTheme(

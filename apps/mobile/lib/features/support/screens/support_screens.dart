@@ -8,6 +8,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -67,10 +70,11 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
     final ticketsAsync = ref.watch(supportTicketsProvider(_statusFilter));
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Text(
           isStaff ? 'Helpdesk Triage Queue' : 'Support & Helpdesk',
           style: const TextStyle(
@@ -81,7 +85,7 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 4),
             child: Center(
               child: InkWell(
                 key: const ValueKey('support_new_ticket_button'),
@@ -120,47 +124,52 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
               ),
             ),
           ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
-      body: Column(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Status filter bar
-          Container(
-            height: 48,
-            color: AppTheme.cardSurface,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
-              scrollDirection: Axis.horizontal,
-              itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final item = _filters[index];
-                final selected = _statusFilter == item['value'];
-                return Center(
-                  child: ChoiceChip(
-                    label: Text(
-                      item['label']!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: selected
-                            ? AppTheme.voidBackground
-                            : AppTheme.textSecondary,
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          Column(
+            children: [
+              // Status filter bar
+              Container(
+                height: 48,
+                color: AppTheme.glassSurface,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _filters.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final item = _filters[index];
+                    final selected = _statusFilter == item['value'];
+                    return Center(
+                      child: ChoiceChip(
+                        label: Text(
+                          item['label']!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: selected
+                                ? AppTheme.voidBackground
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                        selected: selected,
+                        selectedColor: AppTheme.goldPrimary,
+                        backgroundColor: AppTheme.glassSurface,
+                        onSelected: (_) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _statusFilter = item['value']);
+                        },
                       ),
-                    ),
-                    selected: selected,
-                    selectedColor: AppTheme.goldPrimary,
-                    backgroundColor: AppTheme.elevatedSurface,
-                    onSelected: (_) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _statusFilter = item['value']);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          const Divider(height: 1, color: AppTheme.border),
+                    );
+                  },
+                ),
+              ),
+              const Divider(height: 1, color: AppTheme.borderTitanium),
           Expanded(
             child: ticketsAsync.when(
               loading: () => ListView.separated(
@@ -265,9 +274,9 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.elevatedSurface,
+                                    color: AppTheme.glassSurface,
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: AppTheme.border),
+                                    border: Border.all(color: AppTheme.borderTitanium),
                                   ),
                                   child: Text(
                                     category,
@@ -317,6 +326,8 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
               },
             ),
           ),
+        ],
+      ),
         ],
       ),
     );
@@ -405,10 +416,12 @@ class _CreateSupportTicketScreenState
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
-      backgroundColor: AppTheme.background,
+      stageDomain: ArmSphereStageDomain.passport,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/support'),
         title: const Text(
           'Open Support Ticket',
           style: TextStyle(
@@ -417,6 +430,7 @@ class _CreateSupportTicketScreenState
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
       primaryActionLabel: 'SUBMIT SUPPORT REQUEST',
       primaryActionIcon: Icons.send_outlined,
@@ -433,14 +447,15 @@ class _CreateSupportTicketScreenState
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: _category,
-                  dropdownColor: AppTheme.elevatedSurface,
+                  dropdownColor: AppTheme.cardSurface,
                   style: const TextStyle(color: AppTheme.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Category',
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                   ),
                   items: _categories
@@ -453,14 +468,15 @@ class _CreateSupportTicketScreenState
                 const SizedBox(height: AppTheme.space16),
                 DropdownButtonFormField<String>(
                   initialValue: _priority,
-                  dropdownColor: AppTheme.elevatedSurface,
+                  dropdownColor: AppTheme.cardSurface,
                   style: const TextStyle(color: AppTheme.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Priority',
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                   ),
                   items: _priorities
@@ -479,9 +495,10 @@ class _CreateSupportTicketScreenState
                     labelText: 'Subject',
                     hintText: 'Brief summary of your issue',
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                   ),
                   validator: (val) {
@@ -502,9 +519,10 @@ class _CreateSupportTicketScreenState
                     hintText:
                         'Provide relevant details, match IDs, or event names...',
                     filled: true,
-                    fillColor: AppTheme.elevatedSurface,
+                    fillColor: AppTheme.glassSurface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
                     ),
                   ),
                   validator: (val) {
@@ -654,10 +672,11 @@ class _SupportTicketDetailScreenState
     final detailAsync = ref.watch(supportTicketDetailProvider(widget.ticketId));
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/support'),
         title: const Text(
           'Support Ticket',
           style: TextStyle(
@@ -666,8 +685,13 @@ class _SupportTicketDetailScreenState
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: detailAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          detailAsync.when(
         loading: () => ListView(
           padding: const EdgeInsets.all(AppTheme.space16),
           children: const [
@@ -761,7 +785,7 @@ class _SupportTicketDetailScreenState
                               Container(
                                 padding: const EdgeInsets.all(AppTheme.space12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.elevatedSurface,
+                                  color: AppTheme.glassSurface,
                                   borderRadius: BorderRadius.circular(
                                       AppTheme.radiusSmall),
                                   border: Border.all(
@@ -898,10 +922,10 @@ class _SupportTicketDetailScreenState
                         Container(
                           padding: const EdgeInsets.all(AppTheme.space16),
                           decoration: BoxDecoration(
-                            color: AppTheme.cardSurface,
+                            color: AppTheme.glassSurface,
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusMedium),
-                            border: Border.all(color: AppTheme.border),
+                            border: Border.all(color: AppTheme.borderTitanium),
                           ),
                           child: const Text(
                             'No replies yet. Add a message below to update the thread.',
@@ -978,8 +1002,8 @@ class _SupportTicketDetailScreenState
                     MediaQuery.of(context).padding.bottom + AppTheme.space12,
                   ),
                   decoration: const BoxDecoration(
-                    color: AppTheme.cardSurface,
-                    border: Border(top: BorderSide(color: AppTheme.border)),
+                    color: AppTheme.glassSurface,
+                    border: Border(top: BorderSide(color: AppTheme.borderTitanium)),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1014,12 +1038,13 @@ class _SupportTicketDetailScreenState
                                     ? 'Write internal staff note...'
                                     : 'Write a reply...',
                                 filled: true,
-                                fillColor: AppTheme.elevatedSurface,
+                                fillColor: AppTheme.glassSurface,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 10),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(
                                       AppTheme.radiusSmall),
+                                  borderSide: const BorderSide(color: AppTheme.borderTitanium),
                                 ),
                               ),
                             ),
@@ -1039,6 +1064,8 @@ class _SupportTicketDetailScreenState
             ],
           );
         },
+      ),
+        ],
       ),
     );
   }

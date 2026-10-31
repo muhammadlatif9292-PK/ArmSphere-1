@@ -89,123 +89,276 @@ class MainShellScope extends InheritedWidget {
 
 /// Primary Navigation Shell for ArmSphere
 ///
-/// Upgraded to ArmSphere Titanium Glass Master Design System:
-/// - Floating smoked optical glass navigation dock with backdrop diffusion.
-/// - Machined titanium rim borders and top specular reflection sheen.
-/// - Tactile haptic feedback and competition crimson/cyan active states.
-class MainShellScreen extends StatelessWidget {
+/// Upgraded to ArmSphere Crystal Glassmorphism Design System:
+/// - Compact floating crystal dock with optical backdrop blur (`sigma: 28`).
+/// - Crisp specular rim highlight and refractive crimson active tab capsule.
+/// - Restricted strictly to the 5 primary root tab destinations.
+/// - Smoothly auto-hides when scrolling down and reveals when scrolling up.
+class MainShellScreen extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
+
+  /// Canonical root tab paths where the bottom navigation dock is permitted to appear.
+  static const Set<String> kRootTabPaths = <String>{
+    '/home',
+    '/discover',
+    '/tournaments',
+    '/community/feed',
+    '/athlete/profile',
+    // Test harness root tab aliases:
+    '/arena',
+    '/events',
+    '/community',
+    '/passport',
+  };
 
   const MainShellScreen({
     super.key,
     required this.navigationShell,
   });
 
+  @override
+  State<MainShellScreen> createState() => _MainShellScreenState();
+}
+
+class _MainShellScreenState extends State<MainShellScreen> {
+  bool _isDockVisible = true;
+  double _scrollDeltaAccumulator = 0.0;
+
+  @override
+  void didUpdateWidget(covariant MainShellScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.navigationShell.currentIndex != widget.navigationShell.currentIndex) {
+      _isDockVisible = true;
+      _scrollDeltaAccumulator = 0.0;
+    }
+  }
+
+  bool _isRootTabRoute(BuildContext context) {
+    String? uriPath;
+    try {
+      uriPath = GoRouterState.of(context).uri.path;
+    } catch (_) {
+      final router = GoRouter.maybeOf(context);
+      uriPath = router?.routeInformationProvider.value.uri.path;
+    }
+    if (uriPath == null || uriPath.isEmpty) {
+      return true;
+    }
+    final normalized = uriPath.length > 1 && uriPath.endsWith('/')
+        ? uriPath.substring(0, uriPath.length - 1)
+        : uriPath;
+    return MainShellScreen.kRootTabPaths.contains(normalized);
+  }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+
+    // Always reveal the dock when at or near the top of the scroll view.
+    if (notification.metrics.pixels <= 16.0) {
+      _scrollDeltaAccumulator = 0.0;
+      if (!_isDockVisible) {
+        setState(() => _isDockVisible = true);
+      }
+      return false;
+    }
+
+    if (notification is ScrollUpdateNotification) {
+      final delta = notification.scrollDelta ?? 0.0;
+      if ((delta > 0 && _scrollDeltaAccumulator < 0) ||
+          (delta < 0 && _scrollDeltaAccumulator > 0)) {
+        _scrollDeltaAccumulator = 0.0;
+      }
+      _scrollDeltaAccumulator += delta;
+
+      // Scrolling down past threshold -> auto-hide dock
+      if (_scrollDeltaAccumulator > 10.0 &&
+          notification.metrics.pixels > 24.0 &&
+          _isDockVisible) {
+        _scrollDeltaAccumulator = 0.0;
+        setState(() => _isDockVisible = false);
+      } else if (_scrollDeltaAccumulator < -8.0 && !_isDockVisible) {
+        // Scrolling up -> reveal dock
+        _scrollDeltaAccumulator = 0.0;
+        setState(() => _isDockVisible = true);
+      }
+    }
+    return false;
+  }
+
   void _onTap(BuildContext context, int index) {
-    if (index != navigationShell.currentIndex) {
+    if (index != widget.navigationShell.currentIndex) {
       HapticFeedback.selectionClick();
     }
-    navigationShell.goBranch(
+    if (!_isDockVisible) {
+      setState(() {
+        _isDockVisible = true;
+        _scrollDeltaAccumulator = 0.0;
+      });
+    }
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isRootTab = _isRootTabRoute(context);
+    final bool showDock = isRootTab && _isDockVisible;
+
     return MainShellScope(
       child: Scaffold(
         backgroundColor: AppTheme.voidBackground,
         extendBody: true,
-        body: Stack(
-          children: [
-            AmbientParticleBackground(tabIndex: navigationShell.currentIndex),
-            SafeArea(
-              bottom: false,
-              child: navigationShell,
-            ),
-          ],
-        ),
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, kFloatingDockBottomMargin),
-            child: Container(
-              height: kFloatingDockHeight,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.24),
-                  width: 1.0,
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.45, 1.0],
-                  colors: [
-                    Colors.white.withValues(alpha: 0.08),
-                    Colors.white.withValues(alpha: 0.04),
-                    Colors.white.withValues(alpha: 0.02),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.50),
-                    offset: const Offset(0, 10),
-                    blurRadius: 26,
-                    spreadRadius: -2,
-                  ),
-                ],
+        body: NotificationListener<ScrollNotification>(
+          onNotification: _handleScrollNotification,
+          child: Stack(
+            children: [
+              AmbientParticleBackground(tabIndex: widget.navigationShell.currentIndex),
+              SafeArea(
+                bottom: false,
+                child: widget.navigationShell,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                      _buildNavItem(
-                        context,
-                        index: 0,
-                        icon: Icons.home_outlined,
-                        activeIcon: Icons.home_rounded,
-                        label: 'Arena',
-                      ),
-                      _buildNavItem(
-                        context,
-                        index: 1,
-                        icon: Icons.travel_explore_outlined,
-                        activeIcon: Icons.travel_explore_rounded,
-                        label: 'Discover',
-                      ),
-                      _buildNavItem(
-                        context,
-                        index: 2,
-                        icon: Icons.emoji_events_outlined,
-                        activeIcon: Icons.emoji_events_rounded,
-                        label: 'Events',
-                      ),
-                      _buildNavItem(
-                        context,
-                        index: 3,
-                        icon: Icons.forum_outlined,
-                        activeIcon: Icons.forum_rounded,
-                        label: 'Community',
-                      ),
-                      _buildNavItem(
-                        context,
-                        index: 4,
-                        icon: Icons.person_outline_rounded,
-                        activeIcon: Icons.person_rounded,
-                        label: 'Passport',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            ],
           ),
         ),
-      );
+        bottomNavigationBar: !isRootTab
+            ? null
+            : IgnorePointer(
+                ignoring: !showDock,
+                child: AnimatedSlide(
+                  key: const ValueKey('crystal_floating_nav_slide'),
+                  offset: showDock ? Offset.zero : const Offset(0.0, 1.35),
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedOpacity(
+                    key: const ValueKey('crystal_floating_nav_opacity'),
+                    opacity: showDock ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          18,
+                          0,
+                          18,
+                          kFloatingDockBottomMargin,
+                        ),
+                        child: Container(
+                          key: const ValueKey('crystal_floating_nav_dock'),
+                          height: kFloatingDockHeight,
+                          decoration: BoxDecoration(
+                            color: const Color(0xB8080C15),
+                            borderRadius: BorderRadius.circular(26),
+                            border: Border.all(
+                              color: const Color(0x42FFFFFF),
+                              width: 1.0,
+                            ),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: [0.0, 0.45, 1.0],
+                              colors: [
+                                Color(0x28FFFFFF),
+                                Color(0x10FFFFFF),
+                                Color(0x06FFFFFF),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.56),
+                                offset: const Offset(0, 10),
+                                blurRadius: 28,
+                                spreadRadius: -2,
+                              ),
+                              BoxShadow(
+                                color: AppTheme.crimson.withValues(alpha: 0.08),
+                                offset: const Offset(0, 2),
+                                blurRadius: 18,
+                                spreadRadius: -4,
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(25),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // Top specular crystal rim reflection line
+                                  Positioned(
+                                    top: 0,
+                                    left: 24,
+                                    right: 24,
+                                    height: 1.0,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.white.withValues(alpha: 0.0),
+                                            Colors.white.withValues(alpha: 0.55),
+                                            Colors.white.withValues(alpha: 0.0),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      _buildNavItem(
+                                        context,
+                                        index: 0,
+                                        icon: Icons.home_outlined,
+                                        activeIcon: Icons.home_rounded,
+                                        label: 'Arena',
+                                      ),
+                                      _buildNavItem(
+                                        context,
+                                        index: 1,
+                                        icon: Icons.travel_explore_outlined,
+                                        activeIcon: Icons.travel_explore_rounded,
+                                        label: 'Discover',
+                                      ),
+                                      _buildNavItem(
+                                        context,
+                                        index: 2,
+                                        icon: Icons.emoji_events_outlined,
+                                        activeIcon: Icons.emoji_events_rounded,
+                                        label: 'Events',
+                                      ),
+                                      _buildNavItem(
+                                        context,
+                                        index: 3,
+                                        icon: Icons.forum_outlined,
+                                        activeIcon: Icons.forum_rounded,
+                                        label: 'Community',
+                                      ),
+                                      _buildNavItem(
+                                        context,
+                                        index: 4,
+                                        icon: Icons.person_outline_rounded,
+                                        activeIcon: Icons.person_rounded,
+                                        label: 'Passport',
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+      ),
+    );
   }
 
   Widget _buildNavItem(
@@ -215,7 +368,7 @@ class MainShellScreen extends StatelessWidget {
     required IconData activeIcon,
     required String label,
   }) {
-    final isSelected = navigationShell.currentIndex == index;
+    final isSelected = widget.navigationShell.currentIndex == index;
     // Owner directive: crimson is the single active-navigation accent for all
     // five tabs. Gold stays reserved for championship/achievement cues.
     const activeColor = AppTheme.crimson;
@@ -245,15 +398,24 @@ class MainShellScreen extends StatelessWidget {
                 // label does not shift 2dp down when a tab becomes active.
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? activeColor.withValues(alpha: 0.12)
+                      ? activeColor.withValues(alpha: 0.16)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? activeColor.withValues(alpha: 0.35)
+                        ? activeColor.withValues(alpha: 0.45)
                         : Colors.transparent,
                     width: 1.0,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: activeColor.withValues(alpha: 0.28),
+                            blurRadius: 12,
+                            spreadRadius: -2,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Icon(
                   isSelected ? activeIcon : icon,

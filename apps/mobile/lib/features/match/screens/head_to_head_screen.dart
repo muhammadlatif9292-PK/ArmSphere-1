@@ -9,6 +9,8 @@ import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 
 /// Canary 5: Head-to-Head Comparison Screen (`/matches/head-to-head`)
@@ -378,14 +380,11 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     final redFavored = redElo >= blueElo;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF070A11), // Void Substrate
+      backgroundColor: Colors.transparent, // Crystal Stage
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F19),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
-          onPressed: () => context.pop(),
-        ),
+        leading: const CrystalBackButton(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -561,9 +560,15 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
               ),
             ),
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: (comparisonAsync != null && comparisonAsync.isLoading)
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          (comparisonAsync != null && comparisonAsync.isLoading)
           ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -706,6 +711,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     ],
                   ),
                 ),
+        ],
+      ),
     );
   }
 
@@ -1053,7 +1060,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.titanium,
+        color: AppTheme.glassSurface,
         gradient: AppTheme.brushedSteelGradient,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppTheme.borderTitanium),
@@ -1122,7 +1129,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.titanium,
+        color: AppTheme.glassSurface,
         gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.borderTitanium),
@@ -1386,7 +1393,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.titanium,
+        color: AppTheme.glassSurface,
         gradient: AppTheme.brushedSteelGradient,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.borderTitanium),
@@ -1489,7 +1496,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.titanium,
+        color: AppTheme.glassSurface,
         gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.borderTitanium),

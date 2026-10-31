@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
@@ -221,8 +223,9 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     final totalFeeCents = baseFeeCents;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: const Text(
           'Official Event Registration',
           style: TextStyle(
@@ -231,12 +234,17 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
             color: AppTheme.textPrimary,
           ),
         ),
-        backgroundColor: AppTheme.elevatedSurface,
+        actions: const [CrystalHomeButton()],
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          SafeArea(
+            child: Column(
+              children: [
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppTheme.space16),
@@ -449,6 +457,8 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -511,7 +521,7 @@ class _RegistrationSummaryCard extends StatelessWidget {
       key: const ValueKey('registration_summary_card'),
       padding: const EdgeInsets.all(AppTheme.space16),
       decoration: BoxDecoration(
-        color: AppTheme.cardSurface,
+        color: AppTheme.glassSurface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         border: Border.all(
           color: AppTheme.goldPrimary.withValues(alpha: 0.35),
@@ -571,9 +581,9 @@ class _RegistrationSummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              color: AppTheme.elevatedSurface,
+              color: AppTheme.glassSurface,
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-              border: Border.all(color: AppTheme.borderSubtle, width: 0.8),
+              border: Border.all(color: AppTheme.borderTitanium, width: 0.8),
             ),
             child: Row(
               children: [

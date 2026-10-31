@@ -21,7 +21,7 @@ enum ArmSphereStageDomain {
   referee,
 }
 
-/// Target slot to focus or customize when opening the Visual Studio.
+/// Target customization slot for the Visual Customization Studio sheet.
 enum VisualCustomizeSlot {
   portrait,
   heroCard,
@@ -219,9 +219,8 @@ class VisualPreferencesNotifier extends StateNotifier<VisualPreferencesState> {
       if (Hive.isBoxOpen(_boxName)) {
         final box = Hive.box(_boxName);
         _applyFromBox(box);
-        return;
-      }
-      if (Hive.isBoxOpen('local_data_cache') || Hive.isBoxOpen('offline_sync_queue')) {
+      } else if (Hive.isBoxOpen('local_data_cache') ||
+          Hive.isBoxOpen('offline_sync_queue')) {
         final box = await Hive.openBox(_boxName);
         _applyFromBox(box);
       }

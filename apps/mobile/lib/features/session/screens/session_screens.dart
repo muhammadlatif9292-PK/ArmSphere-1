@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/session_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../settings/widgets/biometric_settings_tile.dart';
 
@@ -81,12 +83,21 @@ class ActiveSessionsListScreen extends ConsumerWidget {
     final sessionsAsync = ref.watch(sessionProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text('Active Sessions & Security'),
+        actions: const [CrystalHomeButton()],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(sessionProvider),
-        child: ListView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(sessionProvider),
+            child: ListView(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
             AppTheme.space16,
@@ -321,6 +332,8 @@ class ActiveSessionsListScreen extends ConsumerWidget {
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -346,12 +359,21 @@ class ActiveSessionControlScreen extends ConsumerWidget {
     final ip = session?['ipAddress']?.toString() ?? '';
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        leading: const CrystalBackButton(fallbackRoute: '/athlete/sessions'),
         title: const Text('Session Details'),
+        actions: const [CrystalHomeButton()],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(sessionProvider),
-        child: ListView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(sessionProvider),
+            child: ListView(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
             AppTheme.space16,
@@ -483,6 +505,8 @@ class ActiveSessionControlScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }

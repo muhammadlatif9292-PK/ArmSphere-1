@@ -11,6 +11,7 @@ import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 
@@ -93,6 +94,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -108,17 +110,6 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Customize Rankings Wallpaper',
-            icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.goldPrimary, size: 20),
-            onPressed: () {
-              showVisualCustomizationSheet(
-                context,
-                initialSlot: VisualCustomizeSlot.screenBackdrop,
-                domain: ArmSphereStageDomain.rankings,
-              );
-            },
-          ),
-          IconButton(
             tooltip: 'Tale of the Tape (Compare)',
             icon: const Icon(Icons.compare_arrows_rounded, color: AppTheme.goldPrimary),
             onPressed: () {
@@ -126,6 +117,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               context.push('/matches/head-to-head');
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
       body: Stack(

@@ -19,6 +19,7 @@ import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/rankings_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 
 const Map<int, String> _months = {
   1: 'Jan',
@@ -1045,93 +1046,53 @@ class _AthleteDashboardScreenState
                 // Athlete Identity Stage
                 Row(
                   children: [
-                    // Avatar Portrait Frame + Interactive Camera / Card Studio Button
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            context.push('/athlete/profile');
-                          },
-                          child: Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(18),
-                              color: Colors.white.withValues(alpha: 0.05),
-                              border: Border.all(
-                                  color: AppTheme.borderHighlight, width: 1.5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.55),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                                if (isPodium)
-                                  BoxShadow(
-                                    color: AppTheme.goldPrimary
-                                        .withValues(alpha: 0.12),
-                                    blurRadius: 10,
-                                    spreadRadius: -2,
-                                  ),
-                              ],
+                    // Avatar Portrait Frame
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/athlete/profile');
+                      },
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          color: Colors.white.withValues(alpha: 0.05),
+                          border: Border.all(
+                              color: AppTheme.borderHighlight, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.55),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16.5),
-                              child: ArmSphereImage.avatar(
-                                imageUrl: (avatarUrl != null &&
-                                        !avatarUrl.startsWith('assets/'))
-                                    ? avatarUrl
-                                    : null,
-                                assetPath: (avatarUrl != null &&
-                                        avatarUrl.startsWith('assets/'))
-                                    ? avatarUrl
-                                    : null,
-                                initial: displayName,
-                                size: 72,
-                                fallbackAsset: ArmSphereAssets.heroGrip,
-                                semanticLabel: 'Athlete Avatar: $displayName',
+                            if (isPodium)
+                              BoxShadow(
+                                color: AppTheme.goldPrimary
+                                    .withValues(alpha: 0.12),
+                                blurRadius: 10,
+                                spreadRadius: -2,
                               ),
-                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16.5),
+                          child: ArmSphereImage.avatar(
+                            imageUrl: (avatarUrl != null &&
+                                    !avatarUrl.startsWith('assets/'))
+                                ? avatarUrl
+                                : null,
+                            assetPath: (avatarUrl != null &&
+                                    avatarUrl.startsWith('assets/'))
+                                ? avatarUrl
+                                : null,
+                            initial: displayName,
+                            size: 72,
+                            fallbackAsset: ArmSphereAssets.heroGrip,
+                            semanticLabel: 'Athlete Avatar: $displayName',
                           ),
                         ),
-                        Positioned(
-                          right: -4,
-                          bottom: -4,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () =>
-                                showVisualCustomizationSheet(context, ref: ref),
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                color: AppTheme.voidBackground
-                                    .withValues(alpha: 0.85),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppTheme.goldPrimary
-                                      .withValues(alpha: 0.75),
-                                  width: 1.0,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_outlined,
-                                size: 13.5,
-                                color: AppTheme.goldPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -3413,9 +3374,11 @@ class DualRolePersonaSwitcher extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppTheme.cardSurface,
+          color: Colors.white.withValues(alpha: 0.04),
+          gradient: AppTheme.machinedTitaniumGradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          border: Border.all(color: AppTheme.borderSubtle),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          boxShadow: [AppTheme.cardShadow()],
         ),
         child: Row(
           children: [
@@ -3665,6 +3628,7 @@ class AthleteProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
           'Athlete Profile',
           style: TextStyle(
@@ -3675,11 +3639,6 @@ class AthleteProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.wallpaper_rounded, color: AppTheme.cyan),
-            tooltip: 'Customize Portrait & Card Visuals',
-            onPressed: () => showVisualCustomizationSheet(context, ref: ref),
-          ),
           if (myProfileId != null && myProfileId.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: AppTheme.goldPrimary),
@@ -3698,6 +3657,7 @@ class AthleteProfileScreen extends ConsumerWidget {
               context.push('/settings');
             },
           ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
       body: Stack(
@@ -3723,26 +3683,23 @@ class AthleteProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-            // 1. Athlete Identity Header with Smoked Titanium Glass Card
+            // 1. Athlete Identity Header with Crystal Glassmorphic Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.glassSurfaceHeavy,
+                color: Colors.white.withValues(alpha: 0.04),
+                gradient: AppTheme.machinedTitaniumGradient,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0x1AFFFFFF),
-                    Color(0xB3151B24),
-                  ],
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  width: 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.45),
+                    blurRadius: 24,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -4177,19 +4134,6 @@ class AthleteProfileScreen extends ConsumerWidget {
                           onPressed: () => Navigator.of(ctx).pop(),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        showVisualCustomizationSheet(context, ref: ref);
-                      },
-                      icon: const Icon(Icons.camera_alt_outlined,
-                          size: 16, color: AppTheme.goldPrimary),
-                      label: const Text(
-                        'Upload Portrait, Card Art & Screen Wallpaper',
-                        style: TextStyle(color: AppTheme.goldPrimary),
-                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
@@ -4786,9 +4730,15 @@ class _WorkspaceTile extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isDestructive
-                    ? AppTheme.error.withValues(alpha: 0.1)
-                    : AppTheme.elevatedSurface,
+                    ? AppTheme.error.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDestructive
+                      ? AppTheme.error.withValues(alpha: 0.35)
+                      : Colors.white.withValues(alpha: 0.20),
+                  width: 1.0,
+                ),
               ),
               child: Icon(icon, size: 20, color: iconColor),
             ),
@@ -4849,8 +4799,11 @@ class AthleteAchievementsScreen extends ConsumerWidget {
     final athleteName = profileAsync.value?['displayName']?.toString();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const CrystalBackButton(),
         title: Text(
           athleteName != null && athleteName.isNotEmpty && targetId != null
               ? '$athleteName • Athletic Honors'
@@ -4858,47 +4811,56 @@ class AthleteAchievementsScreen extends ConsumerWidget {
           style: const TextStyle(
               fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          children: [
-            AchievementsSection(athleteData: profileAsync.value),
-            const SizedBox(height: 24),
-            ElevatedActionCard(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Row(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: Column(
+              children: [
+                AchievementsSection(athleteData: profileAsync.value),
+                const SizedBox(height: 24),
+                ElevatedActionCard(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.verified_outlined,
-                          size: 18, color: AppTheme.goldPrimary),
-                      SizedBox(width: 8),
-                      Text(
-                        'Certified Honors Verification',
+                      const Row(
+                        children: [
+                          Icon(Icons.verified_outlined,
+                              size: 18, color: AppTheme.goldPrimary),
+                          SizedBox(width: 8),
+                          Text(
+                            'Certified Honors Verification',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Achievements in ArmSphere are conferred automatically based on certified tournament reports, referee scorepads, and official ELO rating recalculations. Medals are secured cryptographically using SHA-256 state hashing to prevent tampering.',
                         style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: AppTheme.textPrimary,
-                        ),
+                            height: 1.5,
+                            fontSize: 13,
+                            color: AppTheme.textSecondary),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Achievements in ArmSphere are conferred automatically based on certified tournament reports, referee scorepads, and official ELO rating recalculations. Medals are secured cryptographically using SHA-256 state hashing to prevent tampering.',
-                    style: TextStyle(
-                        height: 1.5,
-                        fontSize: 13,
-                        color: AppTheme.textSecondary),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
