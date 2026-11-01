@@ -81,6 +81,7 @@ final followStatusProvider = AsyncNotifierProvider.autoDispose.family<FollowStat
 class FollowersNotifier extends AutoDisposeFamilyAsyncNotifier<List<Map<String, dynamic>>, String> {
   @override
   Future<List<Map<String, dynamic>>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getFollowers(arg);
   }
@@ -95,6 +96,7 @@ final followersProvider = AsyncNotifierProvider.autoDispose.family<FollowersNoti
 class FollowingNotifier extends AutoDisposeFamilyAsyncNotifier<List<Map<String, dynamic>>, String> {
   @override
   Future<List<Map<String, dynamic>>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getFollowing(arg);
   }
@@ -109,6 +111,7 @@ final followingProvider = AsyncNotifierProvider.autoDispose.family<FollowingNoti
 class TeamNotifier extends AutoDisposeFamilyAsyncNotifier<Map<String, dynamic>, String> {
   @override
   Future<Map<String, dynamic>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getTeam(arg);
   }
@@ -138,11 +141,97 @@ class TeamNotifier extends AutoDisposeFamilyAsyncNotifier<Map<String, dynamic>, 
       rethrow;
     }
   }
+
+  /// Updates a member's role on the team ('CAPTAIN' or 'MEMBER')
+  Future<bool> updateMemberRole(String athleteId, String role) async {
+    try {
+      final repo = ref.read(socialRepositoryProvider);
+      await repo.updateTeamMemberRole(arg, athleteId, role);
+      ref.invalidateSelf();
+      ref.invalidate(myTeamsProvider);
+      return true;
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Updates team metadata (name, description, foundedAt, clubId)
+  Future<Map<String, dynamic>> updateTeam(Map<String, dynamic> payload) async {
+    try {
+      final repo = ref.read(socialRepositoryProvider);
+      final updated = await repo.updateTeam(arg, payload);
+      ref.invalidateSelf();
+      ref.invalidate(myTeamsProvider);
+      return updated;
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// Deletes the team
+  Future<void> deleteTeam() async {
+    final repo = ref.read(socialRepositoryProvider);
+    await repo.deleteTeam(arg);
+    ref.invalidate(myTeamsProvider);
+  }
+
+  /// Leaves the team as the authenticated athlete
+  Future<void> leaveTeam() async {
+    final repo = ref.read(socialRepositoryProvider);
+    await repo.leaveTeam(arg);
+    ref.invalidateSelf();
+    ref.invalidate(myTeamsProvider);
+  }
 }
 
 /// Provider for TeamNotifier family.
 final teamProvider = AsyncNotifierProvider.autoDispose.family<TeamNotifier, Map<String, dynamic>, String>(() {
   return TeamNotifier();
+});
+
+/// Provider to list/search federation teams for directory and sparring invites.
+final teamsDirectoryProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String?>((ref, search) async {
+  ref.keepAlive();
+  final repo = ref.watch(socialRepositoryProvider);
+  return repo.listTeams(search: search);
+});
+
+/// Notifier to list and manage inter-team sparring invites (optionally scoped by teamId).
+class SparringInvitesNotifier extends AutoDisposeFamilyAsyncNotifier<List<Map<String, dynamic>>, String?> {
+  @override
+  Future<List<Map<String, dynamic>>> build(String? arg) async {
+    ref.keepAlive();
+    final repo = ref.watch(socialRepositoryProvider);
+    return repo.listSparringInvites(teamId: arg);
+  }
+
+  Future<Map<String, dynamic>> createInvite(Map<String, dynamic> payload) async {
+    final repo = ref.read(socialRepositoryProvider);
+    final created = await repo.createSparringInvite(payload);
+    ref.invalidateSelf();
+    return created;
+  }
+
+  Future<Map<String, dynamic>> respondInvite(String inviteId, String action) async {
+    final repo = ref.read(socialRepositoryProvider);
+    final updated = await repo.respondSparringInvite(inviteId, action);
+    ref.invalidateSelf();
+    return updated;
+  }
+
+  Future<Map<String, dynamic>> cancelInvite(String inviteId) async {
+    final repo = ref.read(socialRepositoryProvider);
+    final updated = await repo.cancelSparringInvite(inviteId);
+    ref.invalidateSelf();
+    return updated;
+  }
+}
+
+final sparringInvitesProvider = AsyncNotifierProvider.autoDispose
+    .family<SparringInvitesNotifier, List<Map<String, dynamic>>, String?>(() {
+  return SparringInvitesNotifier();
 });
 
 /// Notifier for managing team creation action.
@@ -171,6 +260,7 @@ final teamCreationProvider = AsyncNotifierProvider.autoDispose<TeamCreationNotif
 class MyTeamsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getMyTeams();
   }
@@ -185,6 +275,7 @@ final myTeamsProvider = AsyncNotifierProvider.autoDispose<MyTeamsNotifier, List<
 class BlockedUsersNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getBlockedUsers();
   }

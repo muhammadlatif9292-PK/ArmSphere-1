@@ -1799,4 +1799,154 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
       expect(response.body).toHaveProperty("eventId", UUID_EVENT_ACTIVE);
     });
   });
+
+  // ==========================================
+  // 8. P2-1 & P2-2 Lifecycle & State-Machine Integrity
+  // ==========================================
+  describe("P2-1 & P2-2: Tournament & Tournament Match Lifecycle State-Machine Guards", () => {
+    const UUID_EVENT_LIFECYCLE = "99999999-1111-4111-8111-111111111101";
+    const UUID_BRACKET_LIFECYCLE = "99999999-1111-4111-8111-111111111102";
+    const UUID_MATCH_LIFECYCLE = "99999999-1111-4111-8111-111111111103";
+
+    beforeEach(() => {
+      testDbStore.events.push({
+        id: UUID_EVENT_LIFECYCLE,
+        name: "Lifecycle Championship Event",
+        startDate: new Date("2026-09-01"),
+        endDate: new Date("2026-09-05"),
+        registrationStart: new Date("2026-08-01"),
+        registrationEnd: new Date("2026-08-25"),
+        province: "Ontario",
+        city: "Toronto",
+        venue: "Main Hall",
+        capacity: 50,
+        status: "DRAFT",
+        organizerId: UUID_DIRECTOR,
+      });
+    });
+
+    it("should enforce DRAFT -> PUBLISHED -> COMPLETED lifecycle and block completing with active brackets", async () => {
+      // Cannot register on DRAFT event
+      const draftReg = await request(app)
+        .post("/tournaments/registrations")
+        .send({
+          eventId: UUID_EVENT_LIFECYCLE,
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "70KG",
+          arm: "RIGHT",
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+      expect(draftReg.status).toBe(400);
+
+      // Cannot complete a DRAFT event
+      const draftComplete = await request(app)
+        .post(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/complete`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(draftComplete.status).toBe(400);
+
+      // Publish event
+      const pubRes = await request(app)
+        .post(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/publish`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(pubRes.status).toBe(200);
+      expect(pubRes.body.status).toBe("PUBLISHED");
+
+      // Re-publishing an already PUBLISHED event returns 409 Conflict
+      const repubRes = await request(app)
+        .post(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/publish`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(repubRes.status).toBe(409);
+
+      // Add an incomplete bracket -> completing the event must fail with 409
+      testDbStore.brackets.push({
+        id: UUID_BRACKET_LIFECYCLE,
+        eventId: UUID_EVENT_LIFECYCLE,
+        name: "Senior 70KG Right",
+        format: "SINGLE_ELIMINATION",
+        division: "SENIOR",
+        weightClass: "70KG",
+        arm: "RIGHT",
+        status: "ACTIVE",
+      });
+
+      const incompleteComplete = await request(app)
+        .post(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/complete`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(incompleteComplete.status).toBe(409);
+
+      // Mark bracket COMPLETED -> completing the event succeeds
+      testDbStore.brackets.find((b) => b.id === UUID_BRACKET_LIFECYCLE)!.status = "COMPLETED";
+      const completeRes = await request(app)
+        .post(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/complete`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(completeRes.status).toBe(200);
+      expect(completeRes.body.status).toBe("COMPLETED");
+
+      // Cannot cancel or edit a COMPLETED event
+      const cancelAfterComplete = await request(app)
+        .post(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/cancel`)
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(cancelAfterComplete.status).toBe(409);
+
+      const editAfterComplete = await request(app)
+        .put(`/tournaments/events/${UUID_EVENT_LIFECYCLE}/`)
+        .send({ name: "Illegal Edit" })
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(editAfterComplete.status).toBe(409);
+    });
+
+    it("should enforce tournament match result idempotency and reject conflicting result overwrites", async () => {
+      testDbStore.events.find((e) => e.id === UUID_EVENT_LIFECYCLE)!.status = "PUBLISHED";
+      testDbStore.brackets.push({
+        id: UUID_BRACKET_LIFECYCLE,
+        eventId: UUID_EVENT_LIFECYCLE,
+        name: "Senior 70KG Right",
+        format: "SINGLE_ELIMINATION",
+        division: "SENIOR",
+        weightClass: "70KG",
+        arm: "RIGHT",
+        status: "ACTIVE",
+      });
+      testDbStore.tournamentMatches.push({
+        id: UUID_MATCH_LIFECYCLE,
+        bracketId: UUID_BRACKET_LIFECYCLE,
+        round: 1,
+        matchIndex: 1,
+        bracketType: "PRIMARY",
+        athleteAId: UUID_ATHLETE_A,
+        athleteBId: UUID_ATHLETE_C,
+        status: "CALLED",
+        refereeId: UUID_REFEREE,
+      });
+
+      // 1. First result submission succeeds
+      const firstSub = await request(app)
+        .post("/tournaments/matches/result")
+        .send({ matchId: UUID_MATCH_LIFECYCLE, winnerId: UUID_ATHLETE_A, scoreLine: "3-1" })
+        .set("Authorization", authHeader(UserRole.REFEREE, UUID_REFEREE));
+      expect(firstSub.status).toBe(200);
+
+      // 2. Identical retry is idempotent (200)
+      const duplicateSameSub = await request(app)
+        .post("/tournaments/matches/result")
+        .send({ matchId: UUID_MATCH_LIFECYCLE, winnerId: UUID_ATHLETE_A, scoreLine: "3-1" })
+        .set("Authorization", authHeader(UserRole.REFEREE, UUID_REFEREE));
+      expect(duplicateSameSub.status).toBe(200);
+
+      // 3. Conflicting winner or scoreLine on COMPLETED match is rejected with 409 Conflict
+      const conflictingSub = await request(app)
+        .post("/tournaments/matches/result")
+        .send({ matchId: UUID_MATCH_LIFECYCLE, winnerId: UUID_ATHLETE_C, scoreLine: "3-2" })
+        .set("Authorization", authHeader(UserRole.REFEREE, UUID_REFEREE));
+      expect(conflictingSub.status).toBe(409);
+
+      // 4. Cannot assign a new referee to a COMPLETED match
+      const reassignRef = await request(app)
+        .post("/tournaments/matches/referee")
+        .send({ matchId: UUID_MATCH_LIFECYCLE, refereeId: UUID_REFEREE })
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, UUID_DIRECTOR));
+      expect(reassignRef.status).toBe(409);
+    });
+  });
 });

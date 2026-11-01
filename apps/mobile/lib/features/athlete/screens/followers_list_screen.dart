@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -16,7 +19,10 @@ class _AthleteRows extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return listAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CrystalScreenLoadingView(
+        itemCount: 5,
+        cardHeight: 74,
+      ),
       error: (err, _) => ListView(
         padding: const EdgeInsets.all(AppTheme.space20),
         children: [
@@ -142,12 +148,25 @@ class FollowersListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
+        elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text('Followers'),
+        actions: const [CrystalHomeButton()],
       ),
-      body: _AthleteRows(
-        listAsync: ref.watch(followersProvider(athleteId)),
-        onRetry: () => ref.invalidate(followersProvider(athleteId)),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
+          ),
+          _AthleteRows(
+            listAsync: ref.watch(followersProvider(athleteId)),
+            onRetry: () => ref.invalidate(followersProvider(athleteId)),
+          ),
+        ],
       ),
     );
   }
@@ -162,12 +181,25 @@ class FollowingListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
+        elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text('Following'),
+        actions: const [CrystalHomeButton()],
       ),
-      body: _AthleteRows(
-        listAsync: ref.watch(followingProvider(athleteId)),
-        onRetry: () => ref.invalidate(followingProvider(athleteId)),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
+          ),
+          _AthleteRows(
+            listAsync: ref.watch(followingProvider(athleteId)),
+            onRetry: () => ref.invalidate(followingProvider(athleteId)),
+          ),
+        ],
       ),
     );
   }

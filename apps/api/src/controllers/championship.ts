@@ -56,7 +56,8 @@ export class ChampionshipController {
       const validated = submitChallengeSchema.parse(req.body);
       const challenge = await ChampionshipService.submitChallenge(
         validated.titleId,
-        validated.challengerId
+        validated.challengerId,
+        req.user?.id
       );
 
       res.status(201).json({
@@ -74,7 +75,7 @@ export class ChampionshipController {
   static async acceptChallenge(req: Request, res: Response, next: NextFunction) {
     try {
       const challengeId = req.params.challengeId;
-      const updated = await ChampionshipService.updateChallengeStatus(challengeId, "ACCEPTED");
+      const updated = await ChampionshipService.updateChallengeStatus(challengeId, "ACCEPTED", req.user?.id);
 
       res.status(200).json({
         success: true,
@@ -91,7 +92,7 @@ export class ChampionshipController {
   static async declineChallenge(req: Request, res: Response, next: NextFunction) {
     try {
       const challengeId = req.params.challengeId;
-      const updated = await ChampionshipService.updateChallengeStatus(challengeId, "DECLINED");
+      const updated = await ChampionshipService.updateChallengeStatus(challengeId, "DECLINED", req.user?.id);
 
       res.status(200).json({
         success: true,

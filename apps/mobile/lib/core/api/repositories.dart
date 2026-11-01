@@ -256,11 +256,59 @@ class AthleteRepository extends BaseRepository {
   AthleteRepository({required super.dioClient, required super.hiveStorage});
 
   Future<Map<String, dynamic>> getProfile(String athleteId, {CancelToken? cancelToken}) async {
+    final isSelf = athleteId.isEmpty || athleteId == 'self' || athleteId == 'me';
+    final endpoint = isSelf ? '/athletes/me' : '/athletes/$athleteId';
+    final key = isSelf ? 'athlete_profile_self' : 'athlete_profile_$athleteId';
+
+    return executeRequest(
+      cacheKey: key,
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(endpoint, cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload as Map);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateProfile(
+    String athleteId,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     return executeRequest(
       cacheKey: 'athlete_profile_$athleteId',
       cancelToken: cancelToken,
-      request: (token) => dioClient.dio.get('/athletes/$athleteId', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      isMutation: true,
+      request: (token) => dioClient.dio.patch(
+        '/athletes/$athleteId',
+        data: data,
+        cancelToken: token,
+      ),
+      parse: (res) {
+        final payload = (res is Map && res['data'] is Map) ? res['data'] : res;
+        return Map<String, dynamic>.from(payload as Map);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateBiometricsDetails(
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'athlete_biometrics_self',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/athletes/biometrics',
+        data: data,
+        cancelToken: token,
+      ),
+      parse: (res) {
+        final payload = (res is Map && res['data'] is Map) ? res['data'] : res;
+        return Map<String, dynamic>.from(payload as Map);
+      },
     );
   }
 
@@ -500,12 +548,30 @@ class MatchRepository extends BaseRepository {
 class TournamentRepository extends BaseRepository {
   TournamentRepository({required super.dioClient, required super.hiveStorage});
 
+  static Map<String, dynamic> _unwrapMap(dynamic data) {
+    final payload = (data is Map && data.containsKey('data') && data['data'] is Map)
+        ? data['data']
+        : data;
+    if (payload is Map) {
+      return Map<String, dynamic>.from(payload);
+    }
+    return <String, dynamic>{};
+  }
+
+  static List<Map<String, dynamic>> _unwrapList(dynamic data) {
+    final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+    if (payload is List) {
+      return payload.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
+
   Future<List<Map<String, dynamic>>> getTournaments({CancelToken? cancelToken}) async {
     return executeRequest(
       cacheKey: 'tournaments_list',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -517,7 +583,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_detail_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -533,7 +599,7 @@ class TournamentRepository extends BaseRepository {
         '/tournaments/events/$tournamentId/documents/$documentId',
         cancelToken: token,
       ),
-      parse: (data) => Map<String, dynamic>.from(data is Map && data['data'] is Map ? data['data'] : data),
+      parse: _unwrapMap,
     );
   }
 
@@ -557,7 +623,7 @@ class TournamentRepository extends BaseRepository {
         'arm': arm,
         if (notes != null) 'notes': notes,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -566,7 +632,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'bracket_detail_$bracketId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/brackets/$bracketId', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -575,7 +641,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'brackets_list',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/brackets', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -587,8 +653,53 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'event_patch_$eventId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.patch('/tournaments/events/$eventId', data: data, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
+    );
+  }
+
+  Future<Map<String, dynamic>> publishEvent({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_publish_$eventId',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post('/tournaments/events/$eventId/publish', cancelToken: token),
+      parse: _unwrapMap,
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelEvent({
+    required String eventId,
+    String? reason,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_cancel_$eventId',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/tournaments/events/$eventId/cancel',
+        data: {if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim()},
+        cancelToken: token,
+      ),
+      parse: _unwrapMap,
+    );
+  }
+
+  Future<Map<String, dynamic>> completeEvent({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'event_complete_$eventId',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post('/tournaments/events/$eventId/complete', cancelToken: token),
+      parse: _unwrapMap,
     );
   }
 
@@ -599,8 +710,9 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'confirm_manual_payment_$registrationId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/confirm-manual-payment', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -612,7 +724,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_regs_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/registrations', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -624,7 +736,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_stats_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/stats', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -636,7 +748,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_awards_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/awards', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -647,8 +759,9 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'approve_reg_$registrationId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/approve', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -660,11 +773,12 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'weighin_$registrationId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/weighins', data: {
         'registrationId': registrationId,
         'weight': weightKg,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -675,8 +789,9 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'certify_weighin_$registrationId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/certify', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -689,12 +804,13 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'reassign_$registrationId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/registrations/reassign', data: {
         'registrationId': registrationId,
         'newDivision': newDivision,
         'newWeightClass': newWeightClass,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -710,6 +826,7 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'create_bracket_$eventId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets', data: {
         'eventId': eventId,
         'name': name,
@@ -718,7 +835,7 @@ class TournamentRepository extends BaseRepository {
         'weightClass': weightClass,
         'arm': arm,
       }, cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -730,8 +847,9 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'generate_seeds_$bracketId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/seeds', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -742,8 +860,9 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'lock_seeds_$bracketId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/seeds/lock', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -754,8 +873,9 @@ class TournamentRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'gen_matches_$bracketId',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/brackets/$bracketId/generate', cancelToken: token),
-      parse: (data) => Map<String, dynamic>.from(data),
+      parse: _unwrapMap,
     );
   }
 
@@ -770,7 +890,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_matches_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/matches', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -779,7 +899,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'match_tables',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/tables', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -791,7 +911,7 @@ class TournamentRepository extends BaseRepository {
       cacheKey: 'event_tables_$eventId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events/$eventId/tables', cancelToken: token),
-      parse: (data) => (data as List).map((e) => Map<String, dynamic>.from(e)).toList(),
+      parse: _unwrapList,
     );
   }
 
@@ -1678,6 +1798,171 @@ class SocialRepository extends BaseRepository {
     );
   }
 
+  Future<List<Map<String, dynamic>>> listTeams({String? search, String? clubId, CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'list_teams_${search ?? ''}_${clubId ?? ''}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/social/teams',
+        queryParameters: {
+          if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+          if (clubId != null && clubId.trim().isNotEmpty) 'clubId': clubId.trim(),
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTeam(String teamId, Map<String, dynamic> payload, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'update_team_${teamId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.patch(
+        '/social/teams/$teamId',
+        data: payload,
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> deleteTeam(String teamId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'delete_team_${teamId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.delete(
+        '/social/teams/$teamId',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payloadData is Map) {
+          return Map<String, dynamic>.from(payloadData);
+        }
+        return <String, dynamic>{'id': teamId};
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTeamMemberRole(String teamId, String athleteId, String role, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'update_team_member_role_${teamId}_${athleteId}_$role',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.patch(
+        '/social/teams/$teamId/members/$athleteId/role',
+        data: {'role': role},
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> leaveTeam(String teamId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'leave_team_${teamId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/social/teams/$teamId/leave',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payloadData is Map) {
+          return Map<String, dynamic>.from(payloadData);
+        }
+        return <String, dynamic>{'teamId': teamId};
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listSparringInvites({
+    String? teamId,
+    String? direction,
+    String? status,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'sparring_invites_${teamId ?? 'all'}_${direction ?? 'all'}_${status ?? 'all'}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/sparring-invites',
+        queryParameters: {
+          if (teamId != null && teamId.isNotEmpty) 'teamId': teamId,
+          if (direction != null && direction.isNotEmpty) 'direction': direction,
+          if (status != null && status.isNotEmpty) 'status': status,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createSparringInvite(Map<String, dynamic> payload, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'create_sparring_invite_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/sparring-invites',
+        data: payload,
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> respondSparringInvite(String inviteId, String action, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'respond_sparring_invite_${inviteId}_$action',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/sparring-invites/$inviteId/respond',
+        data: {'action': action},
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> cancelSparringInvite(String inviteId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'cancel_sparring_invite_$inviteId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post(
+        '/sparring-invites/$inviteId/cancel',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payloadData = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payloadData);
+      },
+    );
+  }
+
   Future<bool> checkFollowStatus(String followingId, {CancelToken? cancelToken}) async {
     return executeRequest(
       cacheKey: 'follow_status_$followingId',
@@ -2081,6 +2366,7 @@ class InformalEventRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'create_informal_event_${DateTime.now().millisecondsSinceEpoch}',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post(
         '/informal-events',
         data: {
@@ -2105,6 +2391,7 @@ class InformalEventRepository extends BaseRepository {
     return executeRequest(
       cacheKey: 'join_informal_event_${id}_${DateTime.now().millisecondsSinceEpoch}',
       cancelToken: cancelToken,
+      isMutation: true,
       request: (token) => dioClient.dio.post(
         '/informal-events/$id/join',
         cancelToken: token,
@@ -2127,6 +2414,155 @@ class InformalEventRepository extends BaseRepository {
     await dioClient.dio.delete(
       '/informal-events/$id',
       cancelToken: cancelToken,
+    );
+  }
+}
+
+class SupportRepository extends BaseRepository {
+  SupportRepository({required super.dioClient, required super.hiveStorage});
+
+  Future<List<Map<String, dynamic>>> listTickets({
+    String? status,
+    String? category,
+    String? priority,
+    String? assignedAgentId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'support_tickets_${status ?? 'all'}_${category ?? 'all'}_${priority ?? 'all'}_${assignedAgentId ?? 'all'}',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/support/tickets',
+        queryParameters: {
+          if (status != null && status.isNotEmpty) 'status': status,
+          if (category != null && category.isNotEmpty) 'category': category,
+          if (priority != null && priority.isNotEmpty) 'priority': priority,
+          if (assignedAgentId != null && assignedAgentId.isNotEmpty) 'assignedAgentId': assignedAgentId,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        if (payload is List) {
+          return payload.map((e) => Map<String, dynamic>.from(e)).toList();
+        }
+        return [];
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> getTicket(String ticketId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'support_ticket_$ticketId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/support/tickets/$ticketId',
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createTicket({
+    required String subject,
+    required String description,
+    String category = 'GENERAL',
+    String priority = 'MEDIUM',
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'create_support_ticket_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/support/tickets',
+        data: {
+          'subject': subject,
+          'description': description,
+          'category': category,
+          'priority': priority,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> assignTicket(String ticketId, String assignedAgentId, {CancelToken? cancelToken}) async {
+    return executeRequest(
+      cacheKey: 'assign_support_ticket_${ticketId}_$assignedAgentId',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/support/tickets/$ticketId/assign',
+        data: {
+          'agentId': assignedAgentId,
+          'assignedAgentId': assignedAgentId,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateTicketStatus(
+    String ticketId,
+    String status, {
+    String? resolutionNotes,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'update_support_ticket_status_${ticketId}_$status',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.patch(
+        '/support/tickets/$ticketId/status',
+        data: {
+          'status': status,
+          if (resolutionNotes != null && resolutionNotes.trim().isNotEmpty)
+            'resolutionNotes': resolutionNotes.trim(),
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> addTicketMessage(
+    String ticketId,
+    String content, {
+    bool isInternal = false,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'add_support_ticket_msg_${ticketId}_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/support/tickets/$ticketId/messages',
+        data: {
+          'message': content,
+          'content': content,
+          'isInternal': isInternal,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload);
+      },
     );
   }
 }

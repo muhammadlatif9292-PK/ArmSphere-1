@@ -390,4 +390,219 @@ describe("Tournament Event Lifecycle Authorization Hardening (P1 IDOR)", () => {
       expect(res.status).toBe(403);
     });
   });
+
+  describe("P0-8 — Tournament Operator Ownership & Provincial Jurisdiction Across Registration, Bracket, Table & Match Mutations", () => {
+    const owningOperatorUserId = uuidv4();
+    const otherOperatorUserId = uuidv4();
+    const regId = uuidv4();
+    const bracketId = uuidv4();
+    const matchId = uuidv4();
+    const athleteAProfileId = uuidv4();
+    const athleteBProfileId = uuidv4();
+
+    beforeEach(() => {
+      testDbStore.users.push(
+        {
+          id: owningOperatorUserId,
+          email: "op_owner@armsphere.test",
+          username: "operator_owner",
+          role: UserRole.TOURNAMENT_OPERATOR,
+          fullName: "Owning Operator",
+          province: PROVINCE_PUNJAB,
+          isActive: true,
+        },
+        {
+          id: otherOperatorUserId,
+          email: "op_other@armsphere.test",
+          username: "operator_other",
+          role: UserRole.TOURNAMENT_OPERATOR,
+          fullName: "Other Operator",
+          province: PROVINCE_PUNJAB,
+          isActive: true,
+        }
+      );
+
+      testDbStore.athleteProfiles = [
+        {
+          id: athleteAProfileId,
+          userId: athleteUserId,
+          displayName: "Athlete A",
+          province: PROVINCE_PUNJAB,
+          leftArmElo: 1500,
+          rightArmElo: 1500,
+        },
+        {
+          id: athleteBProfileId,
+          userId: uuidv4(),
+          displayName: "Athlete B",
+          province: PROVINCE_PUNJAB,
+          leftArmElo: 1500,
+          rightArmElo: 1500,
+        },
+      ];
+
+      testDbStore.eventRegistrations = [
+        {
+          id: regId,
+          eventId,
+          athleteId: athleteAProfileId,
+          division: "SENIOR_MEN",
+          weightClass: "80KG",
+          arm: "RIGHT",
+          status: "PENDING",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      testDbStore.brackets = [
+        {
+          id: bracketId,
+          eventId,
+          name: "Senior Men 80kg Right",
+          format: "SINGLE_ELIMINATION",
+          division: "SENIOR_MEN",
+          weightClass: "80KG",
+          arm: "RIGHT",
+          status: "DRAFT",
+          seedingLocked: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      testDbStore.tournamentMatches = [
+        {
+          id: matchId,
+          bracketId,
+          round: 1,
+          matchIndex: 0,
+          bracketType: "PRIMARY",
+          athleteAId: athleteAProfileId,
+          athleteBId: athleteBProfileId,
+          status: "PENDING",
+          province: PROVINCE_PUNJAB,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      testDbStore.refereeCertifications = [
+        {
+          id: uuidv4(),
+          userId: refereeUserId,
+          certificationLevel: "PRO_LEVEL_1",
+          issuedAt: new Date(Date.now() - 86400000 * 30),
+          expiresAt: new Date(Date.now() + 86400000 * 60),
+          status: "ACTIVE",
+          issuingBody: "WAF",
+        },
+      ];
+    });
+
+    it("rejects event creation by a PROVINCIAL_DIRECTOR outside their province (Sindh director creating Punjab event)", async () => {
+      const res = await request(app)
+        .post("/tournaments/events")
+        .set("Authorization", `Bearer ${tok(directorDiffProvinceUserId, "dir_sindh@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send(fullEditPayload);
+
+      expect(res.status).toBe(403);
+      expect(res.body.detail).toContain("Sindh");
+    });
+
+    it("rejects registration approval from a non-owning TOURNAMENT_OPERATOR and out-of-province PROVINCIAL_DIRECTOR", async () => {
+      const resOtherOp = await request(app)
+        .post(`/tournaments/registrations/${regId}/approve`)
+        .set("Authorization", `Bearer ${tok(otherOperatorUserId, "op_other@armsphere.test", UserRole.TOURNAMENT_OPERATOR)}`);
+      expect(resOtherOp.status).toBe(403);
+
+      const resDiffDir = await request(app)
+        .post(`/tournaments/registrations/${regId}/approve`)
+        .set("Authorization", `Bearer ${tok(directorDiffProvinceUserId, "dir_sindh@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`);
+      expect(resDiffDir.status).toBe(403);
+
+      // Same-province director succeeds
+      const resSameDir = await request(app)
+        .post(`/tournaments/registrations/${regId}/approve`)
+        .set("Authorization", `Bearer ${tok(directorSameProvinceUserId, "dir_punjab@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`);
+      expect(resSameDir.status).toBe(200);
+      expect(resSameDir.body.status).toBe("APPROVED");
+    });
+
+    it("rejects bracket creation from a non-owning TOURNAMENT_OPERATOR and out-of-province PROVINCIAL_DIRECTOR", async () => {
+      const payload = {
+        eventId,
+        name: "Senior Men 90kg Right",
+        format: "DOUBLE_ELIMINATION",
+        division: "SENIOR_MEN",
+        weightClass: "90KG",
+        arm: "RIGHT",
+      };
+
+      const resOtherOp = await request(app)
+        .post("/tournaments/brackets")
+        .set("Authorization", `Bearer ${tok(otherOperatorUserId, "op_other@armsphere.test", UserRole.TOURNAMENT_OPERATOR)}`)
+        .send(payload);
+      expect(resOtherOp.status).toBe(403);
+
+      const resDiffDir = await request(app)
+        .post("/tournaments/brackets")
+        .set("Authorization", `Bearer ${tok(directorDiffProvinceUserId, "dir_sindh@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send(payload);
+      expect(resDiffDir.status).toBe(403);
+
+      const resOrganizer = await request(app)
+        .post("/tournaments/brackets")
+        .set("Authorization", `Bearer ${tok(organizerUserId, "organizer@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send(payload);
+      expect(resOrganizer.status).toBe(201);
+    });
+
+    it("rejects table creation and referee assignment from a non-owning TOURNAMENT_OPERATOR and out-of-province PROVINCIAL_DIRECTOR", async () => {
+      const tableResOtherOp = await request(app)
+        .post(`/tournaments/events/${eventId}/tables`)
+        .set("Authorization", `Bearer ${tok(otherOperatorUserId, "op_other@armsphere.test", UserRole.TOURNAMENT_OPERATOR)}`)
+        .send({ name: "Table 1" });
+      expect(tableResOtherOp.status).toBe(403);
+
+      const tableResDiffDir = await request(app)
+        .post(`/tournaments/events/${eventId}/tables`)
+        .set("Authorization", `Bearer ${tok(directorDiffProvinceUserId, "dir_sindh@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send({ name: "Table 1" });
+      expect(tableResDiffDir.status).toBe(403);
+
+      const refResOtherOp = await request(app)
+        .post("/tournaments/matches/referee")
+        .set("Authorization", `Bearer ${tok(otherOperatorUserId, "op_other@armsphere.test", UserRole.TOURNAMENT_OPERATOR)}`)
+        .send({ matchId, refereeId: refereeUserId });
+      expect(refResOtherOp.status).toBe(403);
+
+      const refResDiffDir = await request(app)
+        .post("/tournaments/matches/referee")
+        .set("Authorization", `Bearer ${tok(directorDiffProvinceUserId, "dir_sindh@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send({ matchId, refereeId: refereeUserId });
+      expect(refResDiffDir.status).toBe(403);
+
+      // Organizer succeeds
+      const refResOrg = await request(app)
+        .post("/tournaments/matches/referee")
+        .set("Authorization", `Bearer ${tok(organizerUserId, "organizer@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send({ matchId, refereeId: refereeUserId });
+      expect(refResOrg.status).toBe(200);
+    });
+
+    it("rejects tournament match result submission from a non-owning TOURNAMENT_OPERATOR and out-of-province PROVINCIAL_DIRECTOR", async () => {
+      const resOtherOp = await request(app)
+        .post("/tournaments/matches/result")
+        .set("Authorization", `Bearer ${tok(otherOperatorUserId, "op_other@armsphere.test", UserRole.TOURNAMENT_OPERATOR)}`)
+        .send({ matchId, winnerId: athleteAProfileId, scoreLine: "3-0" });
+      expect(resOtherOp.status).toBe(403);
+
+      const resDiffDir = await request(app)
+        .post("/tournaments/matches/result")
+        .set("Authorization", `Bearer ${tok(directorDiffProvinceUserId, "dir_sindh@armsphere.test", UserRole.PROVINCIAL_DIRECTOR)}`)
+        .send({ matchId, winnerId: athleteAProfileId, scoreLine: "3-0" });
+      expect(resDiffDir.status).toBe(403);
+    });
+  });
 });

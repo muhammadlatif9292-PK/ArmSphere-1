@@ -52,11 +52,16 @@ export class CommunityService {
     weightKg?: number | null,
     reps?: number | null
   ) {
-    // 1. Verify athlete profile exists and is active
+    // 1. Verify athlete profile exists and is active (accepting either profile.id or profile.userId)
     const [profile] = await db
       .select()
       .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)))
+      .where(
+        and(
+          or(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.userId, athleteId)),
+          eq(athleteProfiles.isDeleted, false)
+        )
+      )
       .limit(1);
 
     if (!profile) {
@@ -591,11 +596,16 @@ export class CommunityService {
    * Fetch an athlete's GYM category posts (training log) filterable by exerciseType
    */
   static async getTrainingLog(athleteId: string, exerciseType?: string, actorUserId?: string) {
-    // 1. Verify athlete profile exists and is active
+    // 1. Verify athlete profile exists and is active (accepting either profile.id or profile.userId)
     const [profile] = await db
       .select()
       .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)))
+      .where(
+        and(
+          or(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.userId, athleteId)),
+          eq(athleteProfiles.isDeleted, false)
+        )
+      )
       .limit(1);
 
     if (!profile) {
@@ -606,7 +616,7 @@ export class CommunityService {
     await this.authorizeTrainingLogAccess(profile, actorUserId);
 
     const conditions = [
-      eq(communityPosts.athleteId, athleteId),
+      eq(communityPosts.athleteId, profile.id),
       eq(communityPosts.category, "GYM"),
       eq(communityPosts.isDeleted, false),
       eq(communityPosts.moderationStatus, "APPROVED"),
@@ -641,11 +651,16 @@ export class CommunityService {
    * Fetch an athlete's personal records (PRs) computed from post history
    */
   static async getTrainingLogPRs(athleteId: string, actorUserId?: string) {
-    // 1. Verify athlete profile exists and is active
+    // 1. Verify athlete profile exists and is active (accepting either profile.id or profile.userId)
     const [profile] = await db
       .select()
       .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)))
+      .where(
+        and(
+          or(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.userId, athleteId)),
+          eq(athleteProfiles.isDeleted, false)
+        )
+      )
       .limit(1);
 
     if (!profile) {
@@ -664,7 +679,7 @@ export class CommunityService {
       .from(communityPosts)
       .where(
         and(
-          eq(communityPosts.athleteId, athleteId),
+          eq(communityPosts.athleteId, profile.id),
           eq(communityPosts.category, "GYM"),
           eq(communityPosts.isDeleted, false),
           eq(communityPosts.moderationStatus, "APPROVED"),

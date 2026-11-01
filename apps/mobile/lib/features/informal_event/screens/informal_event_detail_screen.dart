@@ -4,11 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/providers/athlete_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 9 / Stage 6 Convergence: Informal Event Detail Screen
 ///
@@ -52,7 +56,7 @@ class _InformalEventDetailScreenState
         HapticFeedback.mediumImpact();
         if (successMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(successMessage), backgroundColor: AppTheme.success),
+            CrystalSnackBar(content: Text(successMessage), backgroundColor: AppTheme.success),
           );
         }
         if (popOnSuccess) Navigator.of(context).pop();
@@ -61,7 +65,7 @@ class _InformalEventDetailScreenState
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Action failed: $e'), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text('Action failed: $e'), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -74,10 +78,12 @@ class _InformalEventDetailScreenState
     final detailAsync = ref.watch(informalEventDetailProvider(widget.eventId));
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
+        leading: const CrystalBackButton(fallbackRoute: '/informal-events'),
         title: const Text(
           'Practice Session Dossier',
           style: TextStyle(
@@ -86,13 +92,19 @@ class _InformalEventDetailScreenState
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      body: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async =>
-            ref.invalidate(informalEventDetailProvider(widget.eventId)),
-        child: detailAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
+          ),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async =>
+                ref.invalidate(informalEventDetailProvider(widget.eventId)),
+            child: detailAsync.when(
           loading: () => ListView(
             padding: const EdgeInsets.all(AppTheme.space16),
             children: const [
@@ -129,11 +141,18 @@ class _InformalEventDetailScreenState
                     participants.length;
 
             final currentProfile = ref.watch(athleteProfileProvider).valueOrNull;
-            final currentUserId = currentProfile?['id']?.toString();
+            final authUser = ref.watch(authProvider).userProfile;
+            final candidateIds = <String>{
+              if (authUser?['id'] != null) authUser!['id'].toString(),
+              if (currentProfile?['userId'] != null) currentProfile!['userId'].toString(),
+              if (currentProfile?['id'] != null) currentProfile!['id'].toString(),
+            }.where((s) => s.isNotEmpty).toSet();
             final isCreator =
-                currentUserId != null && currentUserId == createdByUserId;
-            final isParticipant = currentUserId != null &&
-                participants.any((p) => p['id']?.toString() == currentUserId);
+                createdByUserId.isNotEmpty && candidateIds.contains(createdByUserId);
+            final isParticipant = candidateIds.isNotEmpty &&
+                participants.any((p) =>
+                    candidateIds.contains(p['id']?.toString() ?? '') ||
+                    candidateIds.contains(p['userId']?.toString() ?? ''));
             final isFull = maxParticipants != null &&
                 participantCount >= maxParticipants.toInt();
 
@@ -152,7 +171,7 @@ class _InformalEventDetailScreenState
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.elevatedSurface,
+                              color: AppTheme.glassSurface,
                               shape: BoxShape.circle,
                               border: Border.all(color: AppTheme.goldPrimary),
                             ),
@@ -252,9 +271,10 @@ class _InformalEventDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space20),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardSurface,
+                      color: AppTheme.glassSurface,
+                      gradient: AppTheme.machinedTitaniumGradient,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.borderTitanium),
                     ),
                     child: const Center(
                       child: Text(
@@ -407,9 +427,10 @@ class _InformalEventDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space14),
                     decoration: BoxDecoration(
-                      color: AppTheme.cardSurface,
+                      color: AppTheme.glassSurface,
+                      gradient: AppTheme.machinedTitaniumGradient,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.border),
+                      border: Border.all(color: AppTheme.borderTitanium),
                     ),
                     child: const Center(
                       child: Text(
@@ -422,6 +443,8 @@ class _InformalEventDetailScreenState
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

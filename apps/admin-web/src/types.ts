@@ -144,6 +144,7 @@ export interface Dispute {
   resolutionDetails: string | null;
   assignedReviewerId: string | null;
   province?: string | null;
+  evidence?: DisputeEvidence[];
   createdAt: string;
   updatedAt: string;
 }
@@ -157,6 +158,7 @@ export interface DisputeEvidence {
   sha256Hash: string;
   virusScanned: boolean;
   virusScanResult: "PENDING" | "CLEAN" | "INFECTED";
+  description?: string;
   createdAt: string;
 }
 

@@ -4,6 +4,7 @@ import 'state_providers.dart';
 class ChampionshipNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(championshipRepositoryProvider);
     return repo.getActiveTitles();
   }
@@ -14,6 +15,7 @@ final championshipProvider = AsyncNotifierProvider.autoDispose<ChampionshipNotif
 });
 
 final beltLineageProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, titleId) async {
+  ref.keepAlive();
   final repo = ref.watch(championshipRepositoryProvider);
   return repo.getBeltLineage(titleId);
 });

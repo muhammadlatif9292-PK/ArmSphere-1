@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentInformationGlassCard extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -241,7 +242,7 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
                             onTap: () {
                               HapticFeedback.lightImpact();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
+                                CrystalSnackBar(
                                   content: Row(
                                     children: [
                                       const Icon(Icons.map_rounded, color: Colors.black, size: 18),
@@ -326,7 +327,7 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
                             onTap: () {
                               HapticFeedback.lightImpact();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
+                                CrystalSnackBar(
                                   content: Row(
                                     children: [
                                       const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 18),

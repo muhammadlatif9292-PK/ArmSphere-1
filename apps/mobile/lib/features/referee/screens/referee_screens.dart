@@ -5,14 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/referee_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/live_scorepad_controller.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 const List<String> _kScoreOptions = ['3-0', '3-1', '3-2', '2-3', '1-3', '0-3'];
 
@@ -62,7 +67,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       await action();
       if (mounted && successMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -72,7 +77,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.detail),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -82,7 +87,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Action failed: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -105,7 +110,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     if (!mounted) return;
     if (tables.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('No tables exist yet — ask the organizer to add tables first.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -233,7 +238,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     if (winnerId == null || winnerId.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Both athletes must be determined before a result can be submitted.'),
             backgroundColor: AppTheme.warning,
             behavior: SnackBarBehavior.floating,
@@ -260,19 +265,30 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     final eventsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text('Referee Panel'),
         actions: [
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.go('/login'),
-          ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 20),
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
@@ -284,33 +300,34 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               ),
             ),
             const SizedBox(height: AppTheme.space12),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: AppTheme.space12,
-              crossAxisSpacing: AppTheme.space12,
-              childAspectRatio: 1.45,
+            _RefereeScorepadHeroCard(
+              onTap: () => context.push('/referee/submit-scorepad'),
+            ),
+            const SizedBox(height: AppTheme.space12),
+            Row(
               children: [
-                _RefCard(
-                  icon: Icons.assignment_outlined,
-                  label: 'Submit Scorepad',
-                  onTap: () => context.push('/referee/submit-scorepad'),
+                Expanded(
+                  child: _RefCard(
+                    icon: Icons.verified_outlined,
+                    label: 'Certifications',
+                    onTap: () => context.push('/referee/certifications'),
+                  ),
                 ),
-                _RefCard(
-                  icon: Icons.verified_outlined,
-                  label: 'Certifications',
-                  onTap: () => context.push('/referee/certifications'),
+                const SizedBox(width: AppTheme.space8),
+                Expanded(
+                  child: _RefCard(
+                    icon: Icons.search,
+                    label: 'Search Athletes',
+                    onTap: () => context.push('/referee/search-athletes'),
+                  ),
                 ),
-                _RefCard(
-                  icon: Icons.search,
-                  label: 'Search Athletes',
-                  onTap: () => context.push('/referee/search-athletes'),
-                ),
-                _RefCard(
-                  icon: Icons.cloud_upload_outlined,
-                  label: 'Upload Evidence',
-                  onTap: () => context.push('/referee/upload-evidence'),
+                const SizedBox(width: AppTheme.space8),
+                Expanded(
+                  child: _RefCard(
+                    icon: Icons.cloud_upload_outlined,
+                    label: 'Upload Evidence',
+                    onTap: () => context.push('/referee/upload-evidence'),
+                  ),
                 ),
               ],
             ),
@@ -326,11 +343,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             ),
             const SizedBox(height: AppTheme.space12),
             eventsAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.space24),
-                  child: CircularProgressIndicator(),
-                ),
+              loading: () => const Column(
+                children: [
+                  SkeletonPlaceholder(height: 84),
+                  SizedBox(height: AppTheme.space12),
+                  SkeletonPlaceholder(height: 112),
+                ],
               ),
               error: (e, _) => ElevatedActionCard(
                 padding: const EdgeInsets.all(AppTheme.space16),
@@ -401,6 +419,8 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -424,11 +444,12 @@ class _AssignmentsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final matchesAsync = ref.watch(eventMatchesProvider(eventId));
     return matchesAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppTheme.space16),
-          child: CircularProgressIndicator(),
-        ),
+      loading: () => const Column(
+        children: [
+          SkeletonPlaceholder(height: 112),
+          SizedBox(height: AppTheme.space12),
+          SkeletonPlaceholder(height: 112),
+        ],
       ),
       error: (e, _) => ElevatedActionCard(
         padding: const EdgeInsets.all(AppTheme.space16),
@@ -513,132 +534,265 @@ class _AssignmentCard extends StatelessWidget {
       match['arm']?.toString(),
     ].where((p) => p != null && p.isNotEmpty).join(' • ');
 
-    return ElevatedActionCard(
+    final isCalled = status == 'CALLED';
+
+    return Container(
       padding: const EdgeInsets.all(AppTheme.space16),
+      decoration: BoxDecoration(
+        color: AppTheme.glassSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        border: Border.all(
+          color: isCalled ? AppTheme.cyan.withValues(alpha: 0.65) : AppTheme.borderTitanium,
+          width: isCalled ? 1.5 : 1.0,
+        ),
+        boxShadow: isCalled
+            ? [
+                BoxShadow(
+                  color: AppTheme.cyanGlow,
+                  blurRadius: 14.0,
+                  spreadRadius: 1.0,
+                ),
+                AppTheme.titaniumShadow(),
+              ]
+            : [AppTheme.titaniumShadow()],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Row(
+                Row(
                   children: [
-                    if (roundNumber != null) ...[
+                    Expanded(
+                      child: Row(
+                        children: [
+                          if (roundNumber != null) ...[
+                            Text(
+                              'R$roundNumber-M${(matchIndex ?? 0) + 1} • ',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.goldPrimary,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                          Flexible(
+                            child: Text(
+                              category.toUpperCase(),
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontBody,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textSecondary,
+                                letterSpacing: 0.3,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    StatusChip(
+                      label: status,
+                      type: _resolveMatchStatusType(status),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.space10),
+                Text(
+                  '$aName  vs  $bName',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                if ((match['scoreLine']?.toString() ?? '').isNotEmpty) ...[
+                  const SizedBox(height: AppTheme.space6),
+                  Row(
+                    children: [
+                      const Icon(Icons.scoreboard_outlined, size: 14, color: AppTheme.success),
+                      const SizedBox(width: AppTheme.space6),
                       Text(
-                        'R$roundNumber-M${(matchIndex ?? 0) + 1} • ',
+                        'Final Score: ${match['scoreLine']}',
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
+                          fontSize: 13,
+                          color: AppTheme.success,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
                     ],
-                    Flexible(
+                  ),
+                ],
+                const SizedBox(height: AppTheme.space12),
+                if (status == 'CALLED')
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: busy
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    context.push('/referee/submit-scorepad', extra: match);
+                                  },
+                            icon: const Icon(Icons.touch_app, size: 18),
+                            label: const Text('OPEN SCOREPAD'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.space8),
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: busy
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    onResult(match);
+                                  },
+                            child: const Text('Quick Entry', style: TextStyle(fontSize: 12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else if (status == 'READY')
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              onCall(match);
+                            },
+                      icon: const Icon(Icons.table_restaurant, size: 18),
+                      label: const Text('CALL TO TABLE'),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
+}
+
+typedef _MatchItemCard = _AssignmentCard;
+
+class _RefereeScorepadHeroCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _RefereeScorepadHeroCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedActionCard(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      borderColor: AppTheme.primaryRed.withValues(alpha: 0.45),
+      padding: const EdgeInsets.all(AppTheme.space16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryRed,
+                  Color(0xFF8A0000),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryRed.withValues(alpha: 0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.sports_score_rounded,
+              size: 26,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: AppTheme.space16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Flexible(
                       child: Text(
-                        category.toUpperCase(),
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontBody,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textSecondary,
-                          letterSpacing: 0.3,
+                        'Live Table Scorepad',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: 0.2,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: AppTheme.space8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryRed.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: AppTheme.primaryRed.withValues(alpha: 0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'LIVE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryRed,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              StatusChip(
-                label: status,
-                type: _resolveMatchStatusType(status),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.space10),
-          Text(
-            '$aName  vs  $bName',
-            style: const TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          if ((match['scoreLine']?.toString() ?? '').isNotEmpty) ...[
-            const SizedBox(height: AppTheme.space6),
-            Row(
-              children: [
-                const Icon(Icons.scoreboard_outlined, size: 14, color: AppTheme.success),
-                const SizedBox(width: AppTheme.space6),
-                Text(
-                  'Final Score: ${match['scoreLine']}',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: AppTheme.success,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                const SizedBox(height: 4),
+                const Text(
+                  'Launch table-side scoring & foul console',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ],
-          const SizedBox(height: AppTheme.space12),
-          if (status == 'CALLED')
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: busy
-                          ? null
-                          : () {
-                              HapticFeedback.lightImpact();
-                              context.push('/referee/submit-scorepad', extra: match);
-                            },
-                      icon: const Icon(Icons.touch_app, size: 18),
-                      label: const Text('OPEN SCOREPAD'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppTheme.space8),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: busy
-                          ? null
-                          : () {
-                              HapticFeedback.lightImpact();
-                              onResult(match);
-                            },
-                      child: const Text('Quick Entry', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          else if (status == 'READY')
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: busy
-                    ? null
-                    : () {
-                        HapticFeedback.lightImpact();
-                        onCall(match);
-                      },
-                icon: const Icon(Icons.table_restaurant, size: 18),
-                label: const Text('CALL TO TABLE'),
-              ),
-            ),
+          ),
+          const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: AppTheme.textSecondary,
+          ),
         ],
       ),
     );
@@ -659,12 +813,16 @@ class _RefCard extends StatelessWidget {
         HapticFeedback.lightImpact();
         onTap();
       },
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12, vertical: AppTheme.space14),
+      backgroundColor: AppTheme.glassSurface,
+      gradient: AppTheme.machinedTitaniumGradient,
+      borderColor: AppTheme.borderTitanium,
+      customShadow: [AppTheme.titaniumShadow()],
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space8, vertical: AppTheme.space12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(AppTheme.space10),
+            padding: const EdgeInsets.all(AppTheme.space8),
             decoration: BoxDecoration(
               color: AppTheme.primaryRed.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -673,15 +831,15 @@ class _RefCard extends StatelessWidget {
                 width: 1,
               ),
             ),
-            child: Icon(icon, size: 24, color: AppTheme.primaryRed),
+            child: Icon(icon, size: 22, color: AppTheme.primaryRed),
           ),
-          const SizedBox(height: AppTheme.space10),
+          const SizedBox(height: AppTheme.space8),
           Text(
             label,
             style: const TextStyle(
               fontFamily: AppTheme.fontDisplay,
               fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: 11,
               color: AppTheme.textPrimary,
             ),
             textAlign: TextAlign.center,
@@ -704,9 +862,25 @@ class RefereeCertificationsScreen extends ConsumerWidget {
     final certsAsync = ref.watch(refereeCertificationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Certifications')),
-      body: certsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+      backgroundColor: AppTheme.voidBackground,
+      appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        leading: const CrystalBackButton(),
+        title: const Text('Certifications'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          certsAsync.when(
+        loading: () => const CrystalScreenLoadingView(
+          itemCount: 3,
+          cardHeight: 96,
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.space24),
@@ -841,6 +1015,8 @@ class RefereeCertificationsScreen extends ConsumerWidget {
           );
         },
       ),
+        ],
+      ),
     );
   }
 }
@@ -897,11 +1073,9 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     HapticFeedback.lightImpact();
     final selected = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => _AthleteSearchSheet(
         excludeId: (forChallenger ? _opponent : _challenger)?['id']?.toString(),
       ),
@@ -923,7 +1097,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentId = _opponent?['id']?.toString();
     if (challengerId == null || opponentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Select both the challenger and the opponent.'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -953,7 +1127,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Match result confirmed by server.'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -965,7 +1139,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Result saved on this device and queued to sync when connection returns.'),
             backgroundColor: Color(0xFFF59E0B),
             behavior: SnackBarBehavior.floating,
@@ -976,7 +1150,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.detail),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -986,7 +1160,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.toString()),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -1016,59 +1190,30 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isDismissible: false,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(AppTheme.space24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.emoji_events, color: AppTheme.goldPrimary, size: 28),
-                const SizedBox(width: AppTheme.space8),
-                Text(
-                  'MATCH CONCLUDED',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppTheme.goldPrimary,
-                    fontFamily: AppTheme.fontDisplay,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppTheme.space12),
-            Text(
-              '$winnerName wins the bout with score line $scoreLine.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: AppTheme.space20),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      Navigator.of(ctx).pop();
-                      _submit();
-                    },
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('SUBMIT OFFICIAL RESULT'),
-            ),
-            const SizedBox(height: AppTheme.space8),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('REVIEW / EDIT SCORE'),
-            ),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => CrystalModalSheet(
+        title: 'MATCH CONCLUDED',
+        subtitle: 'Official Bout Scorepad Verification',
+        headerIcon: Icons.emoji_events_rounded,
+        secondaryActionLabel: 'Review Score',
+        onSecondaryAction: () => Navigator.of(ctx).pop(),
+        primaryActionLabel: 'SUBMIT OFFICIAL RESULT',
+        primaryActionIcon: Icons.verified_rounded,
+        isPrimaryLoading: _isLoading,
+        onPrimaryAction: _isLoading
+            ? null
+            : () {
+                Navigator.of(ctx).pop();
+                _submit();
+              },
+        child: Text(
+          '$winnerName wins the bout with score line $scoreLine.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
       ),
     );
@@ -1080,7 +1225,11 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentDisplayName = _opponent?['displayName']?.toString() ?? 'Corner White (Select)';
 
     return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        leading: const CrystalBackButton(),
         title: const Text('Referee Table Scorepad'),
         actions: [
           IconButton(
@@ -1091,11 +1240,18 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
               setState(() => _isLiveScorepadMode = !_isLiveScorepadMode);
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Mode Toggle Bar
@@ -1251,6 +1407,8 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 
@@ -1320,35 +1478,46 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Search athletes by name',
-                    suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _search),
-                  ),
-                  onSubmitted: (_) => _search(),
+    return CrystalModalSheet(
+      title: 'SELECT TABLE COMPETITOR',
+      subtitle: 'Search Federation Athletes by Name',
+      headerIcon: Icons.person_search_rounded,
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.55,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+              decoration: CrystalModalSheet.inputDecoration(
+                labelText: 'Search athletes by name',
+                prefixIcon: Icons.search_rounded,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.arrow_forward_rounded, color: AppTheme.goldPrimary),
+                  onPressed: () {
+                    CrystalModalSheet.unfocusActiveInput(context);
+                    _search();
+                  },
                 ),
               ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
-                  child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 12)),
-                ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space8),
+              onSubmitted: (_) {
+                CrystalModalSheet.unfocusActiveInput(context);
+                _search();
+              },
+            ),
+            const SizedBox(height: 12),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 12)),
+              ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: AppTheme.space8),
                         itemCount: _results.length,
                         separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space8),
                         itemBuilder: (context, index) {
@@ -1399,9 +1568,8 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
                           );
                         },
                       ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1454,10 +1622,23 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Search Athletes')),
-      body: Padding(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+      backgroundColor: AppTheme.voidBackground,
+      appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        leading: const CrystalBackButton(),
+        title: const Text('Search Athletes'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppTheme.space16),
+            child: Column(
           children: [
             TextField(
               controller: _searchController,
@@ -1469,7 +1650,13 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
             ),
             const SizedBox(height: AppTheme.space16),
             if (_isLoading)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
+              const Expanded(
+                child: CrystalScreenLoadingView(
+                  itemCount: 4,
+                  cardHeight: 74,
+                  padding: EdgeInsets.zero,
+                ),
+              )
             else
               Expanded(
                 child: _results.isEmpty
@@ -1534,6 +1721,8 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 }
@@ -1573,11 +1762,24 @@ class EvidenceUploadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Evidence Upload')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppTheme.space24),
-          child: ElevatedActionCard(
+      backgroundColor: AppTheme.voidBackground,
+      appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        leading: const CrystalBackButton(),
+        title: const Text('Evidence Upload'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.space24),
+              child: ElevatedActionCard(
             padding: const EdgeInsets.all(AppTheme.space28),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1619,6 +1821,8 @@ class EvidenceUploadScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+        ],
       ),
     );
   }

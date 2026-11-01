@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Configures biometric unlock with zero dead-end device compatibility.
 ///
@@ -125,7 +126,7 @@ class BiometricSettingsTile extends ConsumerWidget {
 
                           if (newVal && !success) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              CrystalSnackBar(
                                 content: const Text(
                                   'Biometric verification was canceled or failed. Biometric unlock remained off.',
                                 ),
@@ -134,7 +135,7 @@ class BiometricSettingsTile extends ConsumerWidget {
                             );
                           } else if (success) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              CrystalSnackBar(
                                 content: Text(
                                   newVal
                                       ? 'Biometric unlock enabled.'

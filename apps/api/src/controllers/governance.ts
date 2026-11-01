@@ -256,6 +256,34 @@ export class GovernanceController {
   }
 
   /**
+   * Close a resolved or rejected dispute permanently
+   */
+  static async closeDispute(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = uuidParamSchema.parse(req.params.id);
+      const closureNotes = typeof req.body?.closureNotes === "string" ? req.body.closureNotes : undefined;
+
+      const dispute = await GovernanceService.closeDispute(
+        id,
+        {
+          id: req.user!.id,
+          role: req.user!.role,
+          province: req.user!.province ?? undefined,
+        },
+        closureNotes
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Dispute permanently closed",
+        dispute,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Issue a sanction against an athlete or referee
    */
   static async createSanction(req: Request, res: Response, next: NextFunction) {

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import 'eval_status.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class LiveEligibilityEngineCard extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -358,7 +359,7 @@ class _LiveEligibilityEngineCardState extends State<LiveEligibilityEngineCard>
                       onTap: () {
                         HapticFeedback.mediumImpact();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          CrystalSnackBar(
                             content: Text(presetData['actionToast'] as String),
                             backgroundColor: presetData['accentColor'] as Color,
                           ),

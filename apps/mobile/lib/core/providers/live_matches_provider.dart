@@ -6,6 +6,7 @@ import 'athlete_provider.dart';
 class LiveMatchesNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>> > build() async {
+    ref.keepAlive();
     // Match rows are keyed by athlete PROFILE ids (athlete_profiles.id), which
     // differ from auth user ids — resolve through the profile provider first.
     final profile = await ref.watch(athleteProfileProvider.future);

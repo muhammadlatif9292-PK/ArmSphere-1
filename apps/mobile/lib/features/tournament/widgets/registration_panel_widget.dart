@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class _RegistrationPanelWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -321,7 +322,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                 onTap: () {
                   if (!_termsAccepted || !_docLicense || !_docCnic || !_docMedical) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      CrystalSnackBar(
                         content: Text('Please upload all required documents and accept terms.'),
                         backgroundColor: Colors.orange,
                       ),
@@ -333,7 +334,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                     _isRegistered = true;
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    CrystalSnackBar(
                       content: Text('✓ REGISTRATION CONFIRMED for $_selectedCategory! Digital Pass Generated.'),
                       backgroundColor: const Color(0xFF00E676),
                     ),
@@ -668,10 +669,12 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(24.0),
@@ -803,7 +806,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                 Navigator.pop(ctx);
                 Clipboard.setData(ClipboardData(text: passCode));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Digital Pass code copied ($passCode). Present this at weigh-in.'),
                     backgroundColor: AppTheme.goldPrimary,
                   ),
