@@ -384,11 +384,31 @@ class _MainShellScreenState extends State<MainShellScreen> {
     }
 
     try {
+      final primary = PrimaryScrollController.maybeOf(context);
+      if (primary != null && primary.hasClients) {
+        for (final pos in primary.positions) {
+          if (pos.axis == Axis.vertical && pos.hasPixels && pos.pixels > 0.0) {
+            try {
+              pos.jumpTo(0.0);
+            } catch (_) {}
+          }
+        }
+      }
       context.visitChildElements(visitor);
     } catch (_) {}
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       try {
+        final primary = PrimaryScrollController.maybeOf(context);
+        if (primary != null && primary.hasClients) {
+          for (final pos in primary.positions) {
+            if (pos.axis == Axis.vertical && pos.hasPixels && pos.pixels > 0.0) {
+              try {
+                pos.jumpTo(0.0);
+              } catch (_) {}
+            }
+          }
+        }
         context.visitChildElements(visitor);
       } catch (_) {}
     });
@@ -456,6 +476,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
     }
 
     if (notification is ScrollUpdateNotification) {
+      // Only auto-hide or reveal on user drag gestures, never on programmatic jumpTo
+      if (notification.dragDetails == null) {
+        return false;
+      }
       final delta = notification.scrollDelta ?? 0.0;
       if ((delta > 0 && _scrollDeltaAccumulator < 0) ||
           (delta < 0 && _scrollDeltaAccumulator > 0)) {

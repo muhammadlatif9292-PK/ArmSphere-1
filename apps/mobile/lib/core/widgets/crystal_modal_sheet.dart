@@ -343,7 +343,8 @@ class CrystalModalSheet extends StatelessWidget {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        key: primaryActionKey,
+                        key: primaryActionKey ??
+                            const ValueKey('crystal_modal_primary_action'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.goldPrimary,
                           foregroundColor: AppTheme.voidBackground,
