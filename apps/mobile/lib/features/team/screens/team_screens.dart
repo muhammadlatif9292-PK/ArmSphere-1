@@ -109,7 +109,7 @@ class TeamsListScreen extends ConsumerWidget {
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(myTeamsProvider),
             child: ListView(
-              key: const ValueKey<String>('teams_list_view'),
+              key: const PageStorageKey<String>('teams_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,

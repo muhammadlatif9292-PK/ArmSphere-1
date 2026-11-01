@@ -313,14 +313,22 @@ class _MainShellScreenState extends State<MainShellScreen> {
         pathTabIdx != widget.navigationShell.currentIndex &&
         !_isRedirectingPushedTab) {
       final router = GoRouter.maybeOf(context);
-      if (router != null && router.canPop()) {
+      bool canPopSafely = false;
+      try {
+        canPopSafely = router != null && router.canPop();
+      } catch (_) {
+        canPopSafely = false;
+      }
+      if (canPopSafely) {
         _isRedirectingPushedTab = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           try {
-            if (router.canPop()) {
-              router.pop();
-            }
+            try {
+              if (router?.canPop() ?? false) {
+                router?.pop();
+              }
+            } catch (_) {}
             _navigateToTabInternal(pathTabIdx, recordHistory: true);
           } finally {
             _isRedirectingPushedTab = false;

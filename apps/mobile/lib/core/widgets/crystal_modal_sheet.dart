@@ -149,11 +149,10 @@ class CrystalModalSheet extends StatelessWidget {
           ],
           stops: [0.0, 0.55, 1.0],
         ),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: Color(0x45FFFFFF), width: 1.2),
-          left: BorderSide(color: Color(0x22FFFFFF), width: 1.0),
-          right: BorderSide(color: Color(0x22FFFFFF), width: 1.0),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(
+          color: const Color(0x33FFFFFF),
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(

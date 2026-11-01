@@ -116,7 +116,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
             }
 
             return ListView.separated(
-              key: const ValueKey<String>('informal_event_directory_list_view'),
+              key: const PageStorageKey<String>('informal_event_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,

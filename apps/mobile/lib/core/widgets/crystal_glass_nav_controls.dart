@@ -628,14 +628,22 @@ class CrystalFloatingActionButton extends StatelessWidget {
       ),
     );
 
-    Widget result = button;
-    if (tooltip != null && tooltip!.isNotEmpty) {
-      result = Tooltip(message: tooltip!, child: result);
-    }
-    if (heroTag != null) {
-      result = Hero(tag: heroTag!, child: result);
-    }
-    return result;
+    return FloatingActionButton(
+      heroTag: heroTag,
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onPressed();
+      },
+      tooltip: tooltip,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      disabledElevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: button,
+    );
   }
 }
 
