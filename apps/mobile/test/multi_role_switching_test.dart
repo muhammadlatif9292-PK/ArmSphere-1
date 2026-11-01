@@ -56,6 +56,10 @@ class FakeHiveStorage implements HiveStorage {
   @override
   Future<void> evictCache(String key) async => cache.remove(key);
   @override
+  Future<void> evictByPrefix(String prefix) async {
+    cache.removeWhere((k, _) => k.startsWith(prefix));
+  }
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

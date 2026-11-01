@@ -55,6 +55,12 @@ import '../../features/informal_event/screens/informal_event_directory_screen.da
 import '../../features/informal_event/screens/informal_event_detail_screen.dart';
 import '../../features/informal_event/screens/create_informal_event_screen.dart';
 import '../../features/support/screens/support_screens.dart';
+import '../../features/admin/screens/admin_command_screen.dart';
+import '../../features/admin/screens/admin_roster_screen.dart';
+import '../../features/admin/screens/admin_arena_ops_screen.dart';
+import '../../features/admin/screens/admin_governance_screen.dart';
+import '../../features/admin/screens/admin_dossier_screen.dart';
+import '../security/admin_permissions.dart';
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
 
@@ -68,22 +74,6 @@ bool _isRefereeLandingRole(String? role) {
 bool _isOperatorLandingRole(String? role) {
   const operatorRoles = {'TOURNAMENT_OPERATOR'};
   return role != null && operatorRoles.contains(role);
-}
-
-/// Roles that route to the governance dashboard.
-bool _isGovernanceLandingRole(String? role) {
-  const govRoles = {
-    'COMPLIANCE_OFFICER',
-    'PROVINCIAL_DIRECTOR',
-    'NATIONAL_DIRECTOR',
-    'SYSTEM_ADMIN',
-  };
-  return role != null && govRoles.contains(role);
-}
-
-/// Roles that route to the support requests hub.
-bool _isSupportLandingRole(String? role) {
-  return role == 'SUPPORT_AGENT';
 }
 
 /// Roles that have permission to access Referee routes.
@@ -111,33 +101,89 @@ bool _canAccessGovernance(String? role) {
   return role != null && accessRoles.contains(role);
 }
 
-/// Role-aware personalized home dispatcher widget.
+String _resolveEffectiveUserRole(AuthState authState) {
+  final profileRole = authState.userProfile?['role']?.toString();
+  return authState.activeRole?.toUpperCase() ??
+      (authState.verifiedRoles.length == 1
+          ? authState.verifiedRoles.first.toUpperCase()
+          : (profileRole?.toUpperCase() ?? 'ATHLETE'));
+}
+
+/// Role-aware personalized home dispatcher widget (Tab 0: `/home`).
 /// Renders the appropriate role-specific dashboard inside the persistent main shell.
 class RoleAwareHomeScreen extends ConsumerWidget {
   const RoleAwareHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final profileRole = authState.userProfile?['role']?.toString();
-    final userRole = authState.activeRole?.toUpperCase() ??
-        (authState.verifiedRoles.length == 1
-            ? authState.verifiedRoles.first.toUpperCase()
-            : (profileRole?.toUpperCase() ?? 'ATHLETE'));
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
 
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminCommandScreen();
+    }
     if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
     }
     if (_isOperatorLandingRole(userRole)) {
       return const TournamentOperatorDashboardScreen();
     }
-    if (_isSupportLandingRole(userRole)) {
-      return const SupportTicketsScreen();
-    }
-    if (_isGovernanceLandingRole(userRole)) {
-      return const GovernanceDashboardScreen();
-    }
     return const AthleteDashboardScreen();
+  }
+}
+
+/// Role-aware Tab 1 (`/discover`): `AdminRosterScreen` in Admin Mode, `DiscoverScreen` in Athlete Mode.
+class RoleAwareDiscoverScreen extends ConsumerWidget {
+  const RoleAwareDiscoverScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminRosterScreen();
+    }
+    return const DiscoverScreen();
+  }
+}
+
+/// Role-aware Tab 2 (`/tournaments`): `AdminArenaOpsScreen` in Admin Mode, `TournamentsListScreen` in Athlete Mode.
+class RoleAwareTournamentsScreen extends ConsumerWidget {
+  const RoleAwareTournamentsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminArenaOpsScreen();
+    }
+    return const TournamentsListScreen();
+  }
+}
+
+/// Role-aware Tab 3 (`/community/feed`): `AdminGovernanceScreen` in Admin Mode, `CommunityFeedScreen` in Athlete Mode.
+class RoleAwareCommunityScreen extends ConsumerWidget {
+  const RoleAwareCommunityScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminGovernanceScreen();
+    }
+    return const CommunityFeedScreen();
+  }
+}
+
+/// Role-aware Tab 4 (`/athlete/profile`): `AdminDossierScreen` in Admin Mode, `AthleteProfileScreen` in Athlete Mode.
+class RoleAwareProfileScreen extends ConsumerWidget {
+  const RoleAwareProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminDossierScreen();
+    }
+    return const AthleteProfileScreen();
   }
 }
 
@@ -203,14 +249,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 (authState.verifiedRoles.length == 1
                     ? authState.verifiedRoles.first.toUpperCase()
                     : 'ATHLETE');
-            
+
             if (_isRefereeLandingRole(activeRole)) {
               return '/referee/dashboard';
             }
-            if (_isGovernanceLandingRole(activeRole)) {
-              return '/governance';
-            }
-            // For athletes or other roles, go to home
+            // All Athlete and Admin roles land inside MainShellScreen at '/home'
+            // so the 5-tab bottom navigation dock (Athlete or Admin Mode) is always active.
             return '/home';
           }
           
@@ -335,7 +379,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return MainShellScreen(navigationShell: navigationShell);
+          final userRole = _resolveEffectiveUserRole(ref.read(authProvider));
+          return MainShellScreen(
+            navigationShell: navigationShell,
+            isAdminModeOverride:
+                AdminPermissions.isAdminWorkspaceRole(userRole),
+          );
         },
         branches: [
           StatefulShellBranch(
@@ -352,7 +401,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/discover',
                 name: 'discover',
-                builder: (context, state) => const DiscoverScreen(),
+                builder: (context, state) => const RoleAwareDiscoverScreen(),
               ),
             ],
           ),
@@ -361,7 +410,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/tournaments',
                 name: 'tournaments_tab',
-                builder: (context, state) => const TournamentsListScreen(),
+                builder: (context, state) => const RoleAwareTournamentsScreen(),
               ),
             ],
           ),
@@ -370,7 +419,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/community/feed',
                 name: 'community_feed',
-                builder: (context, state) => const CommunityFeedScreen(),
+                builder: (context, state) => const RoleAwareCommunityScreen(),
               ),
             ],
           ),
@@ -379,7 +428,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/athlete/profile',
                 name: 'athlete_profile_tab',
-                builder: (context, state) => const AthleteProfileScreen(),
+                builder: (context, state) => const RoleAwareProfileScreen(),
               ),
             ],
           ),

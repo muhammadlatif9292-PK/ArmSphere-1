@@ -7,6 +7,8 @@ import 'crystal_stage_scaffold.dart';
 import 'main_shell_screen.dart';
 import 'tactile_press_wrapper.dart';
 
+export 'crystal_modal_sheet.dart';
+
 /// Shared 38x38dp Crystal Glassmorphic Capsule Icon used across all inner-screen
 /// headers for Back and Home navigation actions.
 class CrystalNavCapsuleIcon extends StatelessWidget {
@@ -250,6 +252,7 @@ class CrystalHeaderActionPill extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onTap;
+  final VoidCallback? onPressed;
   final Color accentColor;
 
   const CrystalHeaderActionPill({
@@ -257,20 +260,24 @@ class CrystalHeaderActionPill extends StatelessWidget {
     required this.label,
     this.icon,
     this.onTap,
+    this.onPressed,
     this.accentColor = AppTheme.goldPrimary,
   });
 
+  VoidCallback? get _effectiveCallback => onTap ?? onPressed;
+
   @override
   Widget build(BuildContext context) {
+    final callback = _effectiveCallback;
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: Center(
         child: TactilePressWrapper(
-          onTap: onTap == null
+          onTap: callback == null
               ? null
               : () {
                   HapticFeedback.lightImpact();
-                  onTap!();
+                  callback();
                 },
           semanticLabel: label,
           child: Container(

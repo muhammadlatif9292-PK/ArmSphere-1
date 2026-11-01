@@ -915,6 +915,10 @@ class _SupportTicketDetailScreenState
                           if (m is! Map) return const SizedBox.shrink();
                           final msg = Map<String, dynamic>.from(m);
                           final isInternal = msg['isInternal'] == true;
+                          // Security Hardening: Never render internal staff notes to non-staff members
+                          if (isInternal && !isStaff) {
+                            return const SizedBox.shrink();
+                          }
                           final isMine =
                               msg['senderId']?.toString() == currentUserId;
 

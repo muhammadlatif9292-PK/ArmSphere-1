@@ -19,6 +19,7 @@ enum ArmSphereStageDomain {
   rankings,
   venues,
   referee,
+  governance,
 }
 
 /// Target customization slot for the Visual Customization Studio sheet.
@@ -201,6 +202,7 @@ class VisualPreferencesState {
         return kArmSphereProPresets[1]; // Studio Rim-Lit Grip Stage (heroGrip)
       case ArmSphereStageDomain.rankings:
       case ArmSphereStageDomain.referee:
+      case ArmSphereStageDomain.governance:
         return kArmSphereProPresets[4]; // Titanium Knurl & Chalk Vault
     }
   }

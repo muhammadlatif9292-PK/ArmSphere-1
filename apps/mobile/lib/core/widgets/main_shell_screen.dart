@@ -1,7 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/providers/auth_provider.dart';
+import '../security/admin_permissions.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
 
@@ -172,6 +175,7 @@ class MainShellScope extends InheritedWidget {
 /// - Resets scroll position to the top (`0.0`) whenever shifting tabs or opening a screen.
 class MainShellScreen extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
+  final bool? isAdminModeOverride;
 
   /// Canonical root tab paths where the bottom navigation dock is permitted to appear.
   static const Set<String> kRootTabPaths = <String>{
@@ -246,6 +250,7 @@ class MainShellScreen extends StatefulWidget {
   const MainShellScreen({
     super.key,
     required this.navigationShell,
+    this.isAdminModeOverride,
   });
 
   @override
@@ -262,8 +267,27 @@ class _MainShellScreenState extends State<MainShellScreen> {
   final List<int> _tabHistory = <int>[];
   late int _lastRecordedTabIndex;
   String? _lastObservedTopPath;
+  bool? _lastObservedAdminMode;
   bool _isSteppingBackTab = false;
   bool _isRedirectingPushedTab = false;
+
+  bool _resolveIsAdminMode(BuildContext context) {
+    if (widget.isAdminModeOverride != null) {
+      return widget.isAdminModeOverride!;
+    }
+    try {
+      final container = ProviderScope.containerOf(context);
+      final authState = container.read(authProvider);
+      final profileRole = authState.userProfile?['role']?.toString();
+      final effectiveRole = authState.activeRole ??
+          (authState.verifiedRoles.length == 1
+              ? authState.verifiedRoles.first
+              : (profileRole ?? 'ATHLETE'));
+      return AdminPermissions.isAdminWorkspaceRole(effectiveRole);
+    } catch (_) {
+      return false;
+    }
+  }
 
   @override
   void initState() {
@@ -567,6 +591,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isAdminMode = _resolveIsAdminMode(context);
+    if (_lastObservedAdminMode != null &&
+        _lastObservedAdminMode != isAdminMode) {
+      _tabHistory.clear();
+      _isDockVisible = true;
+      _scrollDeltaAccumulator = 0.0;
+      _resetScrollPositionsToTop();
+    }
+    _lastObservedAdminMode = isAdminMode;
+
     final bool isRootTab = _isRootTabRoute(context);
     final int effectiveTabIndex = _resolveEffectiveTabIndex(context);
     final bool showDock = isRootTab && _isDockVisible;
@@ -693,50 +727,113 @@ class _MainShellScreenState extends State<MainShellScreen> {
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceAround,
-                                      children: [
-                                        _buildNavItem(
-                                          context,
-                                          index: 0,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.home_outlined,
-                                          activeIcon: Icons.home_rounded,
-                                          label: 'Arena',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 1,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.travel_explore_outlined,
-                                          activeIcon:
-                                              Icons.travel_explore_rounded,
-                                          label: 'Discover',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 2,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.emoji_events_outlined,
-                                          activeIcon:
-                                              Icons.emoji_events_rounded,
-                                          label: 'Events',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 3,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.forum_outlined,
-                                          activeIcon: Icons.forum_rounded,
-                                          label: 'Community',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 4,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.person_outline_rounded,
-                                          activeIcon: Icons.person_rounded,
-                                          label: 'Passport',
-                                        ),
-                                      ],
+                                      children: isAdminMode
+                                          ? [
+                                              _buildNavItem(
+                                                context,
+                                                index: 0,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons
+                                                    .space_dashboard_outlined,
+                                                activeIcon: Icons
+                                                    .space_dashboard_rounded,
+                                                label: 'Command',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 1,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons.badge_outlined,
+                                                activeIcon: Icons.badge_rounded,
+                                                label: 'Roster',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 2,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon:
+                                                    Icons.emoji_events_outlined,
+                                                activeIcon:
+                                                    Icons.emoji_events_rounded,
+                                                label: 'Arena Ops',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 3,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons.gavel_outlined,
+                                                activeIcon: Icons.gavel_rounded,
+                                                label: 'Governance',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 4,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons
+                                                    .admin_panel_settings_outlined,
+                                                activeIcon: Icons
+                                                    .admin_panel_settings_rounded,
+                                                label: 'Dossier',
+                                              ),
+                                            ]
+                                          : [
+                                              _buildNavItem(
+                                                context,
+                                                index: 0,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons.home_outlined,
+                                                activeIcon: Icons.home_rounded,
+                                                label: 'Arena',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 1,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons
+                                                    .travel_explore_outlined,
+                                                activeIcon: Icons
+                                                    .travel_explore_rounded,
+                                                label: 'Discover',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 2,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon:
+                                                    Icons.emoji_events_outlined,
+                                                activeIcon:
+                                                    Icons.emoji_events_rounded,
+                                                label: 'Events',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 3,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons.forum_outlined,
+                                                activeIcon: Icons.forum_rounded,
+                                                label: 'Community',
+                                              ),
+                                              _buildNavItem(
+                                                context,
+                                                index: 4,
+                                                activeTabIndex:
+                                                    effectiveTabIndex,
+                                                icon: Icons
+                                                    .person_outline_rounded,
+                                                activeIcon:
+                                                    Icons.person_rounded,
+                                                label: 'Passport',
+                                              ),
+                                            ],
                                     ),
                                   ],
                                 ),

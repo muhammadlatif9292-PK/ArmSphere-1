@@ -29,6 +29,21 @@ class HiveStorage {
     await _cacheBox.delete(key);
   }
 
+  /// Evicts all cached entries whose string keys start with [prefix].
+  /// Used for targeted cache invalidation across admin mutations,
+  /// session teardown, and role switching.
+  Future<void> evictByPrefix(String prefix) async {
+    final keysToDelete = <dynamic>[];
+    for (final key in _cacheBox.keys) {
+      if (key is String && key.startsWith(prefix)) {
+        keysToDelete.add(key);
+      }
+    }
+    for (final key in keysToDelete) {
+      await _cacheBox.delete(key);
+    }
+  }
+
   Future<void> clearAllCaches() async {
     await _cacheBox.clear();
   }
