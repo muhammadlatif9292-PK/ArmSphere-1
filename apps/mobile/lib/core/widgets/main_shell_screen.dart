@@ -10,14 +10,21 @@ const double kFloatingDockHeight = 64.0;
 const double kFloatingDockBottomMargin = 12.0;
 
 /// Total vertical height of the floating dock including its bottom margin (76.0 dp).
-const double kFloatingDockTotalHeight = kFloatingDockHeight + kFloatingDockBottomMargin;
+const double kFloatingDockTotalHeight =
+    kFloatingDockHeight + kFloatingDockBottomMargin;
 
 /// Calculates dynamic bottom clearance for scrollable views inside or outside [MainShellScreen].
 ///
 /// If inside the shell: returns `kFloatingDockTotalHeight + safeArea.bottom + additionalPadding`.
 /// If outside the shell: returns `safeArea.bottom + additionalPadding`.
-double mainShellBottomClearance(BuildContext context, {double additionalPadding = 16.0}) {
-  return MainShellScope.bottomClearance(context, additionalPadding: additionalPadding);
+double mainShellBottomClearance(
+  BuildContext context, {
+  double additionalPadding = 16.0,
+}) {
+  return MainShellScope.bottomClearance(
+    context,
+    additionalPadding: additionalPadding,
+  );
 }
 
 /// A [FloatingActionButtonLocation] that positions the button safely above the floating dock.
@@ -26,28 +33,44 @@ double mainShellBottomClearance(BuildContext context, {double additionalPadding 
 class DockAwareEndFloatLocation extends FloatingActionButtonLocation {
   final double bottomOffset;
 
-  const DockAwareEndFloatLocation({this.bottomOffset = kFloatingDockTotalHeight});
+  const DockAwareEndFloatLocation({
+    this.bottomOffset = kFloatingDockTotalHeight,
+  });
 
   @override
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
-    final double fabX = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dx;
-    final double fabY = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dy - bottomOffset;
+    final double fabX =
+        FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dx;
+    final double fabY =
+        FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry).dy -
+            bottomOffset;
     return Offset(fabX, fabY);
   }
 }
 
 /// Scope provided by [MainShellScreen] to inform descendant screens and widgets
-/// of the floating navigation dock's dimensions and clearance requirements.
+/// of the floating navigation dock's dimensions, active tab state, and
+/// chronological step-by-step tab navigation controls.
 class MainShellScope extends InheritedWidget {
   static const double kShellClearance = kFloatingDockTotalHeight;
 
   final double dockHeight;
   final double dockBottomMargin;
+  final bool isRootTab;
+  final int activeTabIndex;
+  final bool canStepBackTab;
+  final ValueChanged<int>? onNavigateToTab;
+  final bool Function()? onStepBackTab;
 
   const MainShellScope({
     super.key,
     this.dockHeight = kFloatingDockHeight,
     this.dockBottomMargin = kFloatingDockBottomMargin,
+    this.isRootTab = true,
+    this.activeTabIndex = 0,
+    this.canStepBackTab = false,
+    this.onNavigateToTab,
+    this.onStepBackTab,
     required super.child,
   });
 
@@ -56,18 +79,60 @@ class MainShellScope extends InheritedWidget {
   }
 
   static bool isInsideShell(BuildContext context) {
-    return maybeOf(context) != null;
+    final scope = maybeOf(context);
+    return scope != null && scope.isRootTab;
+  }
+
+  /// Navigates to one of the 5 canonical main tabs (`0..4`), highlighting it on
+  /// the bottom navigation dock, recording the current tab in chronological
+  /// back history, and resetting scroll offset to the top.
+  static void goToMainTab(BuildContext context, int tabIndex) {
+    final clamped = tabIndex.clamp(0, 4);
+    final scope = maybeOf(context);
+    if (scope?.onNavigateToTab != null) {
+      scope!.onNavigateToTab!(clamped);
+      return;
+    }
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.go(MainShellScreen.pathForTabIndex(clamped));
+    }
+  }
+
+  /// Navigates to a main tab by its route path (e.g., `'/athlete/profile'`,
+  /// `'/discover'`, `'/tournaments'`, `'/community/feed'`, `'/home'`).
+  /// Returns `true` if [path] matched one of the 5 main tabs.
+  static bool goToMainTabByPath(BuildContext context, String path) {
+    final tabIndex = MainShellScreen.tabIndexForPath(path);
+    if (tabIndex == null) return false;
+    goToMainTab(context, tabIndex);
+    return true;
+  }
+
+  /// Steps back one entry in the shell's chronological tab history stack if available.
+  static bool stepBackIfPossible(BuildContext context) {
+    final scope = maybeOf(context);
+    if (scope?.onStepBackTab != null) {
+      return scope!.onStepBackTab!();
+    }
+    return false;
   }
 
   /// Calculates dynamic bottom clearance for scrollable views.
   ///
-  /// - If inside [MainShellScreen]: returns `dockHeight + dockBottomMargin + safeArea.bottom + additionalPadding`.
-  /// - If outside the shell: returns `safeArea.bottom + additionalPadding`.
-  static double bottomClearance(BuildContext context, {double additionalPadding = 16.0}) {
+  /// - If inside [MainShellScreen] on a root tab: returns `dockHeight + dockBottomMargin + safeArea.bottom + additionalPadding`.
+  /// - If outside the shell or on a non-root route: returns `safeArea.bottom + additionalPadding`.
+  static double bottomClearance(
+    BuildContext context, {
+    double additionalPadding = 16.0,
+  }) {
     final scope = maybeOf(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    if (scope != null) {
-      return scope.dockHeight + scope.dockBottomMargin + bottomInset + additionalPadding;
+    if (scope != null && scope.isRootTab) {
+      return scope.dockHeight +
+          scope.dockBottomMargin +
+          bottomInset +
+          additionalPadding;
     }
     return bottomInset + additionalPadding;
   }
@@ -75,16 +140,25 @@ class MainShellScope extends InheritedWidget {
   /// Returns a [FloatingActionButtonLocation] that lifts the button above the floating dock
   /// when rendered inside [MainShellScreen], or defaults to [FloatingActionButtonLocation.endFloat]
   /// when viewed outside the shell.
-  static FloatingActionButtonLocation fabLocation(BuildContext context, {double extraOffset = 0.0}) {
+  static FloatingActionButtonLocation fabLocation(
+    BuildContext context, {
+    double extraOffset = 0.0,
+  }) {
     if (isInsideShell(context)) {
-      return DockAwareEndFloatLocation(bottomOffset: kFloatingDockTotalHeight + extraOffset);
+      return DockAwareEndFloatLocation(
+        bottomOffset: kFloatingDockTotalHeight + extraOffset,
+      );
     }
     return FloatingActionButtonLocation.endFloat;
   }
 
   @override
   bool updateShouldNotify(MainShellScope oldWidget) =>
-      dockHeight != oldWidget.dockHeight || dockBottomMargin != oldWidget.dockBottomMargin;
+      dockHeight != oldWidget.dockHeight ||
+      dockBottomMargin != oldWidget.dockBottomMargin ||
+      isRootTab != oldWidget.isRootTab ||
+      activeTabIndex != oldWidget.activeTabIndex ||
+      canStepBackTab != oldWidget.canStepBackTab;
 }
 
 /// Primary Navigation Shell for ArmSphere
@@ -93,7 +167,9 @@ class MainShellScope extends InheritedWidget {
 /// - Compact floating crystal dock with optical backdrop blur (`sigma: 28`).
 /// - Crisp specular rim highlight and refractive crimson active tab capsule.
 /// - Restricted strictly to the 5 primary root tab destinations.
-/// - Smoothly auto-hides when scrolling down and reveals when scrolling up.
+/// - Auto-highlights the corresponding tab whenever any main screen is opened from anywhere.
+/// - Tracks chronological tab visit history so pressing Back steps backward one screen at a time.
+/// - Resets scroll position to the top (`0.0`) whenever shifting tabs or opening a screen.
 class MainShellScreen extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -104,12 +180,68 @@ class MainShellScreen extends StatefulWidget {
     '/tournaments',
     '/community/feed',
     '/athlete/profile',
-    // Test harness root tab aliases:
+    // Test harness & secondary alias root tab paths:
     '/arena',
     '/events',
     '/community',
     '/passport',
+    '/profile',
   };
+
+  /// Maps any canonical root tab path to its `0..4` bottom dock index.
+  static int? tabIndexForPath(String? rawPath) {
+    if (rawPath == null || rawPath.isEmpty) return null;
+    final clean = normalizePath(rawPath);
+    switch (clean) {
+      case '/home':
+      case '/arena':
+      case '/athlete/dashboard':
+        return 0;
+      case '/discover':
+        return 1;
+      case '/tournaments':
+      case '/events':
+      case '/tournament/dashboard':
+        return 2;
+      case '/community/feed':
+      case '/community':
+        return 3;
+      case '/athlete/profile':
+      case '/passport':
+      case '/profile':
+        return 4;
+      default:
+        return null;
+    }
+  }
+
+  /// Returns the canonical primary route path for a `0..4` tab index.
+  static String pathForTabIndex(int index) {
+    switch (index) {
+      case 0:
+        return '/home';
+      case 1:
+        return '/discover';
+      case 2:
+        return '/tournaments';
+      case 3:
+        return '/community/feed';
+      case 4:
+        return '/athlete/profile';
+      default:
+        return '/home';
+    }
+  }
+
+  static String normalizePath(String path) {
+    if (path.isEmpty) return '/';
+    final qIndex = path.indexOf('?');
+    final clean = qIndex >= 0 ? path.substring(0, qIndex) : path;
+    if (clean.length > 1 && clean.endsWith('/')) {
+      return clean.substring(0, clean.length - 1);
+    }
+    return clean;
+  }
 
   const MainShellScreen({
     super.key,
@@ -123,31 +255,182 @@ class MainShellScreen extends StatefulWidget {
 class _MainShellScreenState extends State<MainShellScreen> {
   bool _isDockVisible = true;
   double _scrollDeltaAccumulator = 0.0;
+  RouteInformationProvider? _routeInfoProvider;
+  RouterDelegate<Object>? _routerDelegate;
+
+  /// Chronological stack of previously visited root tab indices (`0..4`).
+  final List<int> _tabHistory = <int>[];
+  late int _lastRecordedTabIndex;
+  String? _lastObservedTopPath;
+  bool _isSteppingBackTab = false;
+  bool _isRedirectingPushedTab = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastRecordedTabIndex = widget.navigationShell.currentIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.maybeOf(context);
+    final newInfoProvider = router?.routeInformationProvider;
+    final newDelegate = router?.routerDelegate;
+    if (_routeInfoProvider != newInfoProvider) {
+      _routeInfoProvider?.removeListener(_onRouteChanged);
+      _routeInfoProvider = newInfoProvider;
+      _routeInfoProvider?.addListener(_onRouteChanged);
+    }
+    if (_routerDelegate != newDelegate) {
+      _routerDelegate?.removeListener(_onRouteChanged);
+      _routerDelegate = newDelegate;
+      _routerDelegate?.addListener(_onRouteChanged);
+    }
+    _lastObservedTopPath ??= _resolveTopRoutePath(context);
+  }
+
+  @override
+  void dispose() {
+    _routeInfoProvider?.removeListener(_onRouteChanged);
+    _routerDelegate?.removeListener(_onRouteChanged);
+    super.dispose();
+  }
+
+  void _onRouteChanged() {
+    if (!mounted) return;
+    final String topPath = _resolveTopRoutePath(context);
+    final bool pathChanged = topPath != _lastObservedTopPath;
+    _lastObservedTopPath = topPath;
+
+    final int? pathTabIdx = MainShellScreen.tabIndexForPath(topPath);
+
+    // If a main tab route (e.g. '/athlete/profile', '/discover', '/tournaments')
+    // was imperatively pushed on top of a different shell branch via context.push(),
+    // pop the duplicate pushed route and switch the shell branch cleanly so the
+    // bottom navigation dock highlights the target tab and history is preserved.
+    if (pathTabIdx != null &&
+        pathTabIdx != widget.navigationShell.currentIndex &&
+        !_isRedirectingPushedTab) {
+      final router = GoRouter.maybeOf(context);
+      if (router != null && router.canPop()) {
+        _isRedirectingPushedTab = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          try {
+            if (router.canPop()) {
+              router.pop();
+            }
+            _navigateToTabInternal(pathTabIdx, recordHistory: true);
+          } finally {
+            _isRedirectingPushedTab = false;
+          }
+        });
+      }
+    }
+
+    if (pathChanged) {
+      _isDockVisible = true;
+      _scrollDeltaAccumulator = 0.0;
+      _resetScrollPositionsToTop();
+    }
+
+    setState(() {});
+  }
 
   @override
   void didUpdateWidget(covariant MainShellScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.navigationShell.currentIndex != widget.navigationShell.currentIndex) {
+    final int newIndex = widget.navigationShell.currentIndex;
+    if (oldWidget.navigationShell.currentIndex != newIndex) {
+      if (!_isSteppingBackTab && _lastRecordedTabIndex != newIndex) {
+        if (_tabHistory.isEmpty || _tabHistory.last != _lastRecordedTabIndex) {
+          _tabHistory.add(_lastRecordedTabIndex);
+        }
+      }
+      _lastRecordedTabIndex = newIndex;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
+      _resetScrollPositionsToTop();
     }
   }
 
-  bool _isRootTabRoute(BuildContext context) {
-    String? uriPath;
+  /// Walks the descendant element tree and resets all active vertical
+  /// [ScrollPosition]s to offset `0.0` so newly opened or switched tabs always
+  /// start cleanly at the top.
+  void _resetScrollPositionsToTop() {
+    if (!mounted) return;
+    void visitor(Element element) {
+      if (element is StatefulElement && element.state is ScrollableState) {
+        final scrollableState = element.state as ScrollableState;
+        final position = scrollableState.position;
+        if (position.axis == Axis.vertical &&
+            position.hasPixels &&
+            position.pixels > 0.0) {
+          try {
+            position.jumpTo(0.0);
+          } catch (_) {}
+        }
+      }
+      element.visitChildren(visitor);
+    }
+
     try {
-      uriPath = GoRouterState.of(context).uri.path;
-    } catch (_) {
-      final router = GoRouter.maybeOf(context);
-      uriPath = router?.routeInformationProvider.value.uri.path;
+      context.visitChildElements(visitor);
+    } catch (_) {}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        context.visitChildElements(visitor);
+      } catch (_) {}
+    });
+  }
+
+  /// Resolves the top-most active route path, prioritizing
+  /// `routerDelegate.currentConfiguration.last.matchedLocation` so imperative
+  /// `context.push(...)` routes (like `/notifications` or `/athlete/:id/training-log`)
+  /// are accurately detected instead of being masked by `routeInformationProvider`.
+  String _resolveTopRoutePath(BuildContext context) {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      try {
+        final config = router.routerDelegate.currentConfiguration;
+        if (config.isNotEmpty) {
+          final lastMatched = config.last.matchedLocation;
+          if (lastMatched.isNotEmpty) {
+            return MainShellScreen.normalizePath(lastMatched);
+          }
+        }
+        final configUriPath = config.uri.path;
+        if (configUriPath.isNotEmpty) {
+          return MainShellScreen.normalizePath(configUriPath);
+        }
+      } catch (_) {}
+      try {
+        final infoPath = router.routeInformationProvider.value.uri.path;
+        if (infoPath.isNotEmpty) {
+          return MainShellScreen.normalizePath(infoPath);
+        }
+      } catch (_) {}
     }
-    if (uriPath == null || uriPath.isEmpty) {
-      return true;
-    }
-    final normalized = uriPath.length > 1 && uriPath.endsWith('/')
-        ? uriPath.substring(0, uriPath.length - 1)
-        : uriPath;
-    return MainShellScreen.kRootTabPaths.contains(normalized);
+    try {
+      final statePath = GoRouterState.of(context).uri.path;
+      if (statePath.isNotEmpty) {
+        return MainShellScreen.normalizePath(statePath);
+      }
+    } catch (_) {}
+    return '/home';
+  }
+
+  bool _isRootTabRoute(BuildContext context) {
+    final topPath = _resolveTopRoutePath(context);
+    return MainShellScreen.kRootTabPaths.contains(topPath);
+  }
+
+  int _resolveEffectiveTabIndex(BuildContext context) {
+    final topPath = _resolveTopRoutePath(context);
+    return MainShellScreen.tabIndexForPath(topPath) ??
+        widget.navigationShell.currentIndex;
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
@@ -187,167 +470,244 @@ class _MainShellScreenState extends State<MainShellScreen> {
     return false;
   }
 
-  void _onTap(BuildContext context, int index) {
-    if (index != widget.navigationShell.currentIndex) {
-      HapticFeedback.selectionClick();
+  void _navigateToTabInternal(int index, {required bool recordHistory}) {
+    final int currentIdx = widget.navigationShell.currentIndex;
+    if (recordHistory && index != currentIdx) {
+      if (_tabHistory.isEmpty || _tabHistory.last != currentIdx) {
+        _tabHistory.add(currentIdx);
+      }
     }
+    _lastRecordedTabIndex = index;
     if (!_isDockVisible) {
       setState(() {
         _isDockVisible = true;
         _scrollDeltaAccumulator = 0.0;
       });
+    } else {
+      _scrollDeltaAccumulator = 0.0;
     }
     widget.navigationShell.goBranch(
       index,
-      initialLocation: index == widget.navigationShell.currentIndex,
+      initialLocation: index == currentIdx,
     );
+    _resetScrollPositionsToTop();
+  }
+
+  /// Steps back one tab in `_tabHistory`. Returns `true` if a step back was performed.
+  bool _stepBackTab() {
+    final router = GoRouter.maybeOf(context);
+    if (router != null && router.canPop()) {
+      router.pop();
+      return true;
+    }
+    if (_tabHistory.isNotEmpty) {
+      final int previousTab = _tabHistory.removeLast();
+      _isSteppingBackTab = true;
+      try {
+        HapticFeedback.selectionClick();
+        _navigateToTabInternal(previousTab, recordHistory: false);
+      } finally {
+        _isSteppingBackTab = false;
+      }
+      setState(() {});
+      return true;
+    }
+    if (widget.navigationShell.currentIndex != 0) {
+      _isSteppingBackTab = true;
+      try {
+        HapticFeedback.selectionClick();
+        _navigateToTabInternal(0, recordHistory: false);
+      } finally {
+        _isSteppingBackTab = false;
+      }
+      setState(() {});
+      return true;
+    }
+    return false;
+  }
+
+  void _onTap(BuildContext context, int index) {
+    if (index != widget.navigationShell.currentIndex) {
+      HapticFeedback.selectionClick();
+    }
+    _navigateToTabInternal(index, recordHistory: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isRootTab = _isRootTabRoute(context);
+    final int effectiveTabIndex = _resolveEffectiveTabIndex(context);
     final bool showDock = isRootTab && _isDockVisible;
+    final bool canInterceptBack =
+        _tabHistory.isNotEmpty || widget.navigationShell.currentIndex != 0;
 
     return MainShellScope(
-      child: Scaffold(
-        backgroundColor: AppTheme.voidBackground,
-        extendBody: true,
-        body: NotificationListener<ScrollNotification>(
-          onNotification: _handleScrollNotification,
-          child: Stack(
-            children: [
-              AmbientParticleBackground(tabIndex: widget.navigationShell.currentIndex),
-              SafeArea(
-                bottom: false,
-                child: widget.navigationShell,
-              ),
-            ],
+      isRootTab: isRootTab,
+      activeTabIndex: effectiveTabIndex,
+      canStepBackTab: canInterceptBack,
+      onNavigateToTab: (index) =>
+          _navigateToTabInternal(index, recordHistory: true),
+      onStepBackTab: _stepBackTab,
+      child: PopScope(
+        canPop: !canInterceptBack,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) {
+            _stepBackTab();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: AppTheme.voidBackground,
+          extendBody: true,
+          body: NotificationListener<ScrollNotification>(
+            onNotification: _handleScrollNotification,
+            child: Stack(
+              children: [
+                AmbientParticleBackground(tabIndex: effectiveTabIndex),
+                SafeArea(
+                  bottom: false,
+                  child: widget.navigationShell,
+                ),
+              ],
+            ),
           ),
-        ),
-        bottomNavigationBar: !isRootTab
-            ? null
-            : IgnorePointer(
-                ignoring: !showDock,
-                child: AnimatedSlide(
-                  key: const ValueKey('crystal_floating_nav_slide'),
-                  offset: showDock ? Offset.zero : const Offset(0.0, 1.35),
-                  duration: const Duration(milliseconds: 240),
-                  curve: Curves.easeOutCubic,
-                  child: AnimatedOpacity(
-                    key: const ValueKey('crystal_floating_nav_opacity'),
-                    opacity: showDock ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
+          bottomNavigationBar: !isRootTab
+              ? null
+              : IgnorePointer(
+                  ignoring: !showDock,
+                  child: AnimatedSlide(
+                    key: const ValueKey('crystal_floating_nav_slide'),
+                    offset: showDock ? Offset.zero : const Offset(0.0, 1.35),
+                    duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,
-                    child: SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          18,
-                          0,
-                          18,
-                          kFloatingDockBottomMargin,
-                        ),
-                        child: Container(
-                          key: const ValueKey('crystal_floating_nav_dock'),
-                          height: kFloatingDockHeight,
-                          decoration: BoxDecoration(
-                            color: const Color(0xB8080C15),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: const Color(0x42FFFFFF),
-                              width: 1.0,
-                            ),
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              stops: [0.0, 0.45, 1.0],
-                              colors: [
-                                Color(0x28FFFFFF),
-                                Color(0x10FFFFFF),
-                                Color(0x06FFFFFF),
+                    child: AnimatedOpacity(
+                      key: const ValueKey('crystal_floating_nav_opacity'),
+                      opacity: showDock ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            18,
+                            0,
+                            18,
+                            kFloatingDockBottomMargin,
+                          ),
+                          child: Container(
+                            key: const ValueKey('crystal_floating_nav_dock'),
+                            height: kFloatingDockHeight,
+                            decoration: BoxDecoration(
+                              color: const Color(0xB8080C15),
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: const Color(0x42FFFFFF),
+                                width: 1.0,
+                              ),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                stops: [0.0, 0.45, 1.0],
+                                colors: [
+                                  Color(0x28FFFFFF),
+                                  Color(0x10FFFFFF),
+                                  Color(0x06FFFFFF),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.56),
+                                  offset: const Offset(0, 10),
+                                  blurRadius: 28,
+                                  spreadRadius: -2,
+                                ),
+                                BoxShadow(
+                                  color:
+                                      AppTheme.crimson.withValues(alpha: 0.08),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 18,
+                                  spreadRadius: -4,
+                                ),
                               ],
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.56),
-                                offset: const Offset(0, 10),
-                                blurRadius: 28,
-                                spreadRadius: -2,
-                              ),
-                              BoxShadow(
-                                color: AppTheme.crimson.withValues(alpha: 0.08),
-                                offset: const Offset(0, 2),
-                                blurRadius: 18,
-                                spreadRadius: -4,
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(25),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  // Top specular crystal rim reflection line
-                                  Positioned(
-                                    top: 0,
-                                    left: 24,
-                                    right: 24,
-                                    height: 1.0,
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.white.withValues(alpha: 0.0),
-                                            Colors.white.withValues(alpha: 0.55),
-                                            Colors.white.withValues(alpha: 0.0),
-                                          ],
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(25),
+                              child: BackdropFilter(
+                                filter:
+                                    ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    // Top specular crystal rim reflection line
+                                    Positioned(
+                                      top: 0,
+                                      left: 24,
+                                      right: 24,
+                                      height: 1.0,
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.white
+                                                  .withValues(alpha: 0.0),
+                                              Colors.white
+                                                  .withValues(alpha: 0.55),
+                                              Colors.white
+                                                  .withValues(alpha: 0.0),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [
-                                      _buildNavItem(
-                                        context,
-                                        index: 0,
-                                        icon: Icons.home_outlined,
-                                        activeIcon: Icons.home_rounded,
-                                        label: 'Arena',
-                                      ),
-                                      _buildNavItem(
-                                        context,
-                                        index: 1,
-                                        icon: Icons.travel_explore_outlined,
-                                        activeIcon: Icons.travel_explore_rounded,
-                                        label: 'Discover',
-                                      ),
-                                      _buildNavItem(
-                                        context,
-                                        index: 2,
-                                        icon: Icons.emoji_events_outlined,
-                                        activeIcon: Icons.emoji_events_rounded,
-                                        label: 'Events',
-                                      ),
-                                      _buildNavItem(
-                                        context,
-                                        index: 3,
-                                        icon: Icons.forum_outlined,
-                                        activeIcon: Icons.forum_rounded,
-                                        label: 'Community',
-                                      ),
-                                      _buildNavItem(
-                                        context,
-                                        index: 4,
-                                        icon: Icons.person_outline_rounded,
-                                        activeIcon: Icons.person_rounded,
-                                        label: 'Passport',
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      children: [
+                                        _buildNavItem(
+                                          context,
+                                          index: 0,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.home_outlined,
+                                          activeIcon: Icons.home_rounded,
+                                          label: 'Arena',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 1,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.travel_explore_outlined,
+                                          activeIcon:
+                                              Icons.travel_explore_rounded,
+                                          label: 'Discover',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 2,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.emoji_events_outlined,
+                                          activeIcon:
+                                              Icons.emoji_events_rounded,
+                                          label: 'Events',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 3,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.forum_outlined,
+                                          activeIcon: Icons.forum_rounded,
+                                          label: 'Community',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 4,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.person_outline_rounded,
+                                          activeIcon: Icons.person_rounded,
+                                          label: 'Passport',
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -356,7 +716,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -364,11 +724,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
   Widget _buildNavItem(
     BuildContext context, {
     required int index,
+    required int activeTabIndex,
     required IconData icon,
     required IconData activeIcon,
     required String label,
   }) {
-    final isSelected = widget.navigationShell.currentIndex == index;
+    final isSelected = activeTabIndex == index;
     // Owner directive: crimson is the single active-navigation accent for all
     // five tabs. Gold stays reserved for championship/achievement cues.
     const activeColor = AppTheme.crimson;
@@ -393,7 +754,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 // Border is always present (transparent when idle) so the
                 // label does not shift 2dp down when a tab becomes active.
                 decoration: BoxDecoration(
@@ -442,8 +804,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
                       letterSpacing: 0.3,
                       // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
                       // active label uses titanium white; crimson stays on icon + pill.
-                      color:
-                          isSelected ? AppTheme.textPrimary : AppTheme.textMuted,
+                      color: isSelected
+                          ? AppTheme.textPrimary
+                          : AppTheme.textMuted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

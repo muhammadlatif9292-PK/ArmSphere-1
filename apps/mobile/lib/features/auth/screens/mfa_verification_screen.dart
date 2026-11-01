@@ -10,6 +10,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class MfaVerificationScreen extends ConsumerStatefulWidget {
   final String? email;
@@ -52,7 +53,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(
               AppErrorFormatter.format(e),
               style: const TextStyle(fontFamily: AppTheme.fontBody),

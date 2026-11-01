@@ -8,6 +8,7 @@ import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Guided athlete profile setup shown to every newly registered account.
 ///
@@ -168,7 +169,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),

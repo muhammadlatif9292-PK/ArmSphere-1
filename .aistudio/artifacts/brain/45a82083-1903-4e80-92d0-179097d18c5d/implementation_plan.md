@@ -1,90 +1,61 @@
-# Crystal Glassmorphism Navigation & Inner-Screen Header Completion Plan
+# Crystal Glass Action Bars, Error States, Interactive Buttons, Chronological Navigation & Scroll-to-Top Plan
 
-Completes the full rollout of the Crystal Glassmorphism navigation architecture by adding a reusable `CrystalAppBar` header wrapper, upgrading all remaining inner screens across Tournaments, Championships, Referee Scorepad, Venues, Informal Events, Community, Support, Notifications, Teams, Nominations, Role Applications, and Auth to use unified `CrystalBackButton` and `CrystalHomeButton` controls, and enforcing strict 5-tab isolation in the router.
+## 1. Root Cause Analysis
 
-## User Review & Critical Decisions
+### A. Flat Action Completion Bars (SnackBars) & Error Presentations
+- **Current Issue**: Action completion bars (such as `"All alerts marked as read"` in `NotificationsListScreen`) use standard full-width `SnackBar` blocks (`SnackBarBehavior.fixed`) with solid flat green (`AppTheme.success`) or red (`AppTheme.error`) backgrounds that sit directly at the bottom edge of the viewport, colliding with the floating Crystal Glass navigation dock. Inline error states and `AppErrorView` also rely on flat boxes rather than refractive Crystal Glass surfaces.
+- **Solution**:
+  - Introduce a unified **`CrystalToast` / Crystal `SnackBar` Subsystem** (`apps/mobile/lib/core/widgets/crystal_toast.dart`) and configure global `SnackBarThemeData` in `AppTheme` so every action completion bar and error alert renders as a **floating Crystal Glass capsule above the dock** (`BackdropFilter` blur `sigma: 16`, status icon badge, semantic emerald/gold/crimson specular rim, ambient glow, and dock-safe bottom margin).
+  - Upgrade `AppErrorView` (`apps/mobile/lib/core/widgets/app_error_view.dart`) and inline error banners across screens into frosted Crystal Glass diagnostic panels with refractive retry buttons.
 
-> [!IMPORTANT]
-> All core design and navigation choices were confirmed by you in prior turns and in your completion checklist. No additional questions are required before execution.
+### B. Legacy Flat Action Buttons, Header Pills & Floating Action Buttons (FABs)
+- **Current Issue**:
+  - In-screen CTA buttons in `AppEmptyState` (e.g., `"Log a Session"`, `"Open Support Ticket"`, `"Create Team"`, `"Upload a Video"`), inline screen buttons, and header action buttons (e.g., plain yellow `"Mark all read"` text in `NotificationsListScreen` or flat `"NEW TICKET"` outline in `SupportTicketsScreen`) lack the refractive Crystal Glassmorphic styling.
+  - Bottom-right `FloatingActionButton` widgets (such as the flat yellow square `+` button on `Training Log & PRs`, `CommunityFeedScreen`, `TeamsListScreen`, `InformalEventDirectoryScreen`, and `VenueDirectoryScreen`) use flat solid fills without glass refraction or specular rims.
+- **Solution**:
+  - Create reusable **`CrystalActionButton`**, **`CrystalHeaderActionPill`**, and **`CrystalFloatingActionButton`** components in `apps/mobile/lib/core/widgets/crystal_glass_nav_controls.dart`.
+  - Upgrade `AppEmptyState` (`apps/mobile/lib/core/widgets/app_empty_state.dart`), `AppErrorView`, header action pills (`"Mark all read"`, `"New Ticket"`, etc.), in-screen action buttons (`"Log a Session"`, `"Create Team"`, `"Upload Video"`, etc.), and all `FloatingActionButton` instances across the app to frosted Crystal Glassmorphic capsules and 56×56dp squircle FABs with gold/crimson specular rims.
 
-- **Confirmed Decision 1 (Main-Tab-Only Dock + Auto-Hide)**: The bottom floating crystal dock appears strictly on the 5 primary root tabs (`Arena`, `Discover`, `Events`, `Community`, `Passport`) and smoothly auto-hides when scrolling down.
-- **Confirmed Decision 2 (Compact Crystal Glass Dock)**: Low-profile floating pill with optical blur (`sigma: 28`), crisp top specular rim, and refractive crimson active capsule.
-- **Confirmed Decision 3 (Unified Inner-Screen Top Navigation)**: Every inner/pushed screen features the identical 38×38dp `CrystalBackButton` on the top-left and `CrystalHomeButton` (`Back to Arena`) on the top-right, backed by a drop-in `CrystalAppBar` component.
+### C. Tab Highlighting Desync, Pushed Route Dock Visibility & Step-by-Step Back History
+- **Current Issue**:
+  1. When tapping Profile/Passport, Discover, Events, or Community from `AthleteDashboardScreen` (or anywhere else in the app via `context.push('/athlete/profile')` or `context.push('/discover')`), the screen opens on top of the current branch without syncing `StatefulNavigationShell`, leaving **Arena** highlighted on the bottom dock instead of highlighting **Passport** (or the target main tab).
+  2. In `MainShellScreen._isRootTabRoute`, `router.routeInformationProvider.value.uri.path` was checked before `router.routerDelegate.currentConfiguration`. In `go_router`, `routeInformationProvider` does not update on `context.push(...)` calls (like `/notifications` or `/athlete/:id/training-log`), causing `_isRootTabRoute` to falsely see `/home` and keep the bottom dock visible on inner pushed screens.
+  3. Pressing Back on main tabs or cross-navigated screens did not step backward through the exact chronological path of visited tabs/screens.
+- **Solution**:
+  - **Fix Top-Most Route Detection**: Update `MainShellScreen` to inspect `GoRouter.of(context).routerDelegate.currentConfiguration.last.matchedLocation` and `routerDelegate.currentConfiguration.uri.path` first.
+  - **Auto-Highlight Active Main Tab From Anywhere**: Map all 5 canonical root tab routes (`/home` → `0`, `/discover` → `1`, `/tournaments` → `2`, `/community/feed` → `3`, `/athlete/profile` → `4`) in `MainShellScreen`. Whenever any screen navigates to one of the 5 main tab routes (whether via bottom dock tap, dashboard profile header tap, quick command card, or deep link), switch/sync the active shell branch so the corresponding bottom dock tab (`Arena`, `Discover`, `Events`, `Community`, `Passport`) is immediately highlighted.
+  - **Chronological Step-by-Step Back History Stack**: Maintain a chronological navigation history stack (`_tabHistoryStack`) in `MainShellScreen` (coupled with `PopScope` and `CrystalBackButton` integration). Navigating across tabs or screens (e.g., `Arena → Discover → Passport` or `Arena → Passport`) records each step; pressing Back steps backward one screen/tab at a time along the exact path the user took, rather than jumping straight to Arena or exiting prematurely.
 
----
-
-## 1. Overview & Core Concept
-
-- **What It Does**: Eliminates legacy unstyled back arrows (`Icons.arrow_back`, `Icons.arrow_back_ios_new`) and missing home-jump actions across the remaining 20+ inner screens, while extracting secondary routes out of the 5-tab shell branches so inner flows never inherit bottom navigation bar clutter.
-- **Target Audience / Persona**: Athletes, Referees, Tournament Operators, and Governance Officials navigating deep into tournament brackets, live scorepads, award ceremonies, venue directories, informal events, support tickets, and role workflows.
-- **Key Value**: 100% visual and behavioral consistency across every screen in ArmSphere—every inner screen shares the exact same top-left Crystal Back button and top-right Quick-Jump Arena Home button, with 85%+ unobstructed viewport space.
-
----
-
-## 2. User Experience & Visual Design
-
-- **Key User Flows**:
-  1. **Root Tab Browsing**: Users switch between the 5 main tabs using the floating Crystal Glass dock. Scrolling down any feed or list smoothly slides and fades the dock out of the way; scrolling up or reaching the top restores it immediately.
-  2. **Deep Inner-Screen Navigation**: Opening any tournament detail, live scorepad, awards ceremony, venue, informal event, post comment thread, support ticket, nomination, or settings sub-screen renders full-screen without the bottom dock.
-  3. **One-Tap Return**: Users can either step back one level via the top-left `CrystalBackButton` or jump straight back to the main `/home` Arena tab from any depth via the top-right `CrystalHomeButton`.
-- **Visual Identity & Theme**:
-  - *Aesthetic Direction*: Refractive Dark Crystal Glassmorphism over atmospheric arena photography.
-  - *Color Palette & Mood*:
-    - Primary Canvas: Obsidian Void (`#07090E`) with translucent crystal surfaces (`rgba(255, 255, 255, 0.08)` to `0.16`).
-    - Specular Borders: Crisp 1px top-left refractive white rim (`rgba(255, 255, 255, 0.26)`) paired with Crimson (`#E11D48`) accent borders (`rgba(225, 29, 72, 0.45)`) on quick-jump controls.
-    - Text Hierarchy: Pure White (`#FFFFFF`) display headers and crisp muted silver secondary labels.
-  - *Typography & Hierarchy*: Bold uppercase display headers (`Bebas Neue` / `Oswald` tracking) in a compact 56dp top app bar, keeping sticky chrome well under the 15% mobile viewport cap.
-  - *Component Styling & Layout*: 38×38dp squircle (`borderRadius: 12dp`) crystal capsules wrapped in a ≥44×44dp interactive touch target for ergonomic thumb and finger reach.
-- **Interactive Feedback & Motion**:
-  - Haptic selection click (`HapticFeedback.selectionClick()`) on every back and home tap.
-  - 200ms–240ms `Curves.easeOutCubic` compositor-friendly slide and opacity transitions for the floating dock.
+### D. Scroll-to-Top Reset on Every Tab Shift & Screen Open
+- **Current Issue**: Because `StatefulShellRoute.indexedStack` preserves branch states and several scroll views retain old scroll offsets, returning to or switching tabs leaves the screen scrolled halfway down from previous browsing.
+- **Solution**:
+  - Implement an automatic **Scroll-to-Top Reset** in `MainShellScreen` and screen scroll controllers so that whenever the user switches tabs, opens a main tab from another screen, or navigates back/forward to a screen, the active scroll hierarchy resets smoothly/cleanly to offset `0.0` (the very top of the screen).
 
 ---
 
-## 3. Key Product Decisions & Trade-Offs
+## 2. Planned Changes by File
 
-- **Decision 1: Drop-In `CrystalAppBar` PreferredSizeWidget + Sliver Support**
-  - *Chosen Approach*: Introduce `CrystalAppBar` (implementing `PreferredSizeWidget`) and `CrystalSliverAppBar` inside the shared navigation controls module, automatically wiring `CrystalBackButton` as `leading` and appending `CrystalHomeButton` to `actions`.
-  - *Why*: Guarantees identical 56dp bar height, leading width, button alignment, and fallback routing across all remaining screens without repetitive boilerplate.
-  - *Alternatives Considered*: Manually copying `leading` and `actions` into every `AppBar`—prone to subtle padding or action-order drift.
-- **Decision 2: Strict Root Navigator Boundary for Secondary Routes**
-  - *Chosen Approach*: Move secondary routes (`/athlete/dashboard`, `/referee/dashboard`, `/governance`, `/rankings`, `/tournament/dashboard`) out of `StatefulShellBranch` into top-level router entries while preserving the route-aware dock check in `MainShellScreen` as a secondary defense-in-depth guard.
-  - *Why*: Ensures pushed and role-dispatched inner screens mount cleanly at the root navigator level with zero bottom dock overlap.
-
----
-
-## 4. Technical Architecture & Data Strategy
-
-### Architecture & Component Diagram
-
-```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                         GoRouter Navigation Layer                         │
-├───────────────────────────────────┬───────────────────────────────────────┤
-│   StatefulShellRoute (5 Branches) │       Top-Level Inner GoRoutes        │
-│   • /home (Arena)                 │   • Tournaments, Live Match, Ceremony │
-│   • /discover                     │   • Official Scorepad & Referee Ops   │
-│   • /tournaments                  │   • Venues & Informal Events          │
-│   • /community/feed               │   • Community Post Create & Comments  │
-│   • /athlete/profile              │   • Support, Sessions, Notifications  │
-│                                   │   • Teams, Nominations, Roles, Auth   │
-└─────────────────┬─────────────────┴───────────────────┬───────────────────┘
-                  │                                     │
-                  ▼                                     ▼
-┌───────────────────────────────────┐ ┌─────────────────────────────────────┐
-│          MainShellScreen          │ │   CrystalAppBar / Inner Headers     │
-│ • ScrollNotification Auto-Hide    │ │ • Left: CrystalBackButton (38x38dp) │
-│ • _isRootTabRoute Safeguard       │ │   -> canPop() ? pop() : go('/home') │
-│ • Compact Crystal Floating Dock   │ │ • Right: Contextual Actions +       │
-│   (BackdropFilter sigma 28)       │ │   CrystalHomeButton -> go('/home')  │
-└───────────────────────────────────┘ └─────────────────────────────────────┘
-```
-
-### Interactive Component & State Mapping
-
-- **`CrystalAppBar` & Header Unification**:
-  - Automatically injects `CrystalBackButton(fallbackRoute: ...)` in the left slot and appends `CrystalHomeButton()` as the terminal right-hand action (preserving any existing contextual actions such as filter, refresh, or share buttons to its left).
-  - For screens with custom header rows or `SliverAppBar` (such as Tournament Detail, Awards Ceremony, Venues, and Informal Events), replaces legacy `IconButton(icon: Icon(Icons.arrow_back...))` with `CrystalBackButton` and adds `CrystalHomeButton` in the trailing action cluster.
-  - For pre-authentication screens (`Login`, `Register`, `MFA Verification`, `Forgot/Reset Password`), uses `CrystalBackButton(fallbackRoute: '/welcome')` without showing the authenticated `/home` jump button.
-- **Verification**:
-  - Run widget tests and static analysis across all updated modules to verify zero regressions and full compilation.
+1. **`apps/mobile/lib/core/widgets/crystal_toast.dart` (New Component)**:
+   - Implement `CrystalToast` & `showCrystalSnackBar(BuildContext context, {required String message, CrystalToastType type, ...})` + `CrystalSnackBarContent` widget featuring optical `BackdropFilter` blur (`sigma: 16`), semantic status icon capsule (emerald check for success, gold info badge, crimson alert icon for errors), 1.2px specular gradient rim, and dock-aware floating margin.
+2. **`apps/mobile/lib/core/widgets/crystal_glass_nav_controls.dart`**:
+   - Add `CrystalActionButton` (frosted glass CTA button with gold or crimson specular rim, optional leading icon, and loading spinner support).
+   - Add `CrystalHeaderActionPill` (compact 34dp crystal capsule for AppBar actions like `"Mark all read"`, `"New Ticket"`, `"Filter"`, etc.).
+   - Add `CrystalFloatingActionButton` (56×56dp squircle refractive glass FAB with top-left specular highlight, gold/crimson rim, and ambient elevation glow).
+   - Enhance `CrystalBackButton` so that when invoked on a root tab or pushed route, it respects the chronological navigation history step-by-step before falling back to `/home`.
+3. **`apps/mobile/lib/core/widgets/main_shell_screen.dart`**:
+   - Fix `_resolveCurrentPath` to prioritize `router.routerDelegate.currentConfiguration` so inner pushed routes (`/notifications`, `/athlete/:id/training-log`, etc.) accurately hide the bottom dock, while all 5 root tab paths (`/home`, `/discover`, `/tournaments`, `/community/feed`, `/athlete/profile`) display the dock with the matching tab highlighted.
+   - Intercept cross-screen navigation to any of the 5 main tab routes so `navigationShell.goBranch(targetTabIndex)` is synchronized and the target tab is highlighted on the dock.
+   - Maintain a chronological `_tabHistory` stack and wrap `MainShellScreen` in `PopScope(canPop: ...)` so system Back and top-left Back step through the exact sequence of previously visited tabs/screens one by one.
+   - Add `_resetActiveBranchScrollToTop()` triggered on every tab switch and route transition to reset all active `ScrollPosition`s in the current subtree to `0.0`.
+4. **`apps/mobile/lib/core/widgets/app_empty_state.dart` & `apps/mobile/lib/core/widgets/app_error_view.dart`**:
+   - Upgrade `AppEmptyState` icon halo and action CTA button (`"Log a Session"`, `"Open Support Ticket"`, `"Create Team"`, etc.) to `CrystalActionButton`.
+   - Upgrade `AppErrorView` container and retry CTA button to a frosted Crystal Glass error panel with crimson specular border and `CrystalActionButton`.
+5. **`apps/mobile/lib/core/theme/app_theme.dart`**:
+   - Configure global `snackBarTheme` with `SnackBarBehavior.floating`, transparent outer canvas, dock-safe margin, and rounded squircle shape so all standard `SnackBar` calls inherit floating glass positioning.
+6. **App-Wide Screen Upgrades (Action Bars, Header Pills, CTAs, FABs & Tab Navigation Links)**:
+   - **`notification_screens.dart`**: Upgrade `"Mark all read"` header button to `CrystalHeaderActionPill` and upgrade the completion `SnackBar` (`"All alerts marked as read"`) to `showCrystalSnackBar`.
+   - **`training_log_screen.dart`**: Upgrade the bottom-right `+` `FloatingActionButton` to `CrystalFloatingActionButton`, upgrade inline error banner to Crystal Glass, and upgrade SnackBars to `showCrystalSnackBar`.
+   - **`athlete_screens.dart`**: Ensure tapping the Profile/Passport banner or quick links to `/athlete/profile`, `/discover`, `/tournaments`, `/community/feed` transitions cleanly into the corresponding highlighted shell tab and records chronological history; upgrade action buttons and SnackBars to Crystal Glass.
+   - **`community_feed_screen.dart`, `team_screens.dart`, `support_screens.dart`, `informal_event_screens.dart`, `venue_screens.dart`, `tournament_screens.dart`, `nomination_screens.dart`, `role_application_screens.dart`**: Upgrade FABs (`+`, `"Create Team"`, `"Upload Video"`, `"Log Session"`, `"New Ticket"`), header action pills, and completion/error `SnackBar`s to the unified Crystal Glass components.
+7. **`apps/mobile/test/core/widgets/main_shell_nav_dock_test.dart`**:
+   - Add widget tests verifying active tab highlighting when navigating to Passport/Discover from Dashboard, step-by-step chronological back navigation across tabs, and scroll-to-top reset on tab change.

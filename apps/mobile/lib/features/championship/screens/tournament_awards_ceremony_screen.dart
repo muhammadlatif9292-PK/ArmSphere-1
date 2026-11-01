@@ -12,6 +12,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/signature_ceremonies.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Canary 10: Championship Awards & Ceremony Screen (`/tournaments/:id/awards`)
 ///
@@ -195,7 +196,7 @@ class _TournamentAwardsCeremonyScreenState
                 onShare: () {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    CrystalSnackBar(
                       content: Text('${athlete['medal']} Citation exported to Photos & Federation Feed.'),
                       backgroundColor: const Color(0xFF10B981),
                     ),
@@ -280,7 +281,7 @@ class _TournamentAwardsCeremonyScreenState
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
@@ -1317,7 +1318,7 @@ class _TournamentAwardsCeremonyScreenState
   /// Restrained Ceremonial Loading State
   Widget _buildLoadingState(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
@@ -1400,7 +1401,7 @@ class _TournamentAwardsCeremonyScreenState
     String effectiveTournamentId,
   ) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
@@ -1519,7 +1520,7 @@ class _TournamentAwardsCeremonyScreenState
     String effectiveTournamentId,
   ) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),

@@ -12,6 +12,7 @@ final rankingsWeightClassProvider = StateProvider<String>((ref) => 'ALL');
 class RankingsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(rankingsRepositoryProvider);
     final arm = ref.watch(rankingsArmProvider);
     final province = ref.watch(rankingsProvinceProvider);

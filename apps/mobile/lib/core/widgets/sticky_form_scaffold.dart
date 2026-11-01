@@ -169,17 +169,25 @@ class StickyFormScaffold extends StatelessWidget {
       scaffoldBody = SafeArea(bottom: false, child: scaffoldBody);
     }
 
-    return Scaffold(
-      backgroundColor: backgroundColor ?? Colors.transparent,
-      appBar: appBar,
-      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      body: Stack(
+    final effectiveBg =
+        (backgroundColor == null || backgroundColor == Colors.transparent)
+            ? AppTheme.voidBackground
+            : backgroundColor!;
+
+    return ColoredBox(
+      color: effectiveBg,
+      child: Stack(
         fit: StackFit.expand,
         children: [
           Positioned.fill(
             child: CrystalStageBackdrop(domain: stageDomain),
           ),
-          scaffoldBody,
+          Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: appBar,
+            resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+            body: scaffoldBody,
+          ),
         ],
       ),
     );

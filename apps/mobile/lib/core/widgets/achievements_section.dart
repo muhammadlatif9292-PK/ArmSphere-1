@@ -449,6 +449,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
   void _showAchievementModal(AchievementItemData item) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {

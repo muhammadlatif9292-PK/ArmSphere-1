@@ -98,7 +98,7 @@ class AnnouncementsListScreen extends ConsumerWidget {
               await ref.read(announcementsProvider.notifier).refresh();
             },
             child: ListView.separated(
-              key: const PageStorageKey<String>('announcements_list_view'),
+              key: const ValueKey<String>('announcements_list_view'),
               padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),

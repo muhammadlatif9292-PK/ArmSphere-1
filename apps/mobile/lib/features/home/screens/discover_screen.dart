@@ -104,6 +104,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     HapticFeedback.lightImpact();
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: AppTheme.elevatedSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -374,7 +375,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         titleSpacing: AppTheme.space16,
         title: Row(
@@ -428,7 +429,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.discover,
+        ),
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
@@ -464,7 +468,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             backgroundColor: AppTheme.elevatedSurface,
             onRefresh: _handleRefresh,
             child: CustomScrollView(
-              key: const PageStorageKey<String>('discover_scroll_view'),
+              key: const ValueKey<String>('discover_scroll_view'),
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverPersistentHeader(
@@ -1392,54 +1396,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppTheme.elevatedSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-        side: BorderSide(color: AppTheme.border, width: 1),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isPinned ? Icons.push_pin : Icons.campaign_outlined,
-                    color: AppTheme.secondaryAccent,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title.toString(),
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(color: AppTheme.border, height: 1),
-              const SizedBox(height: 12),
-              Text(
-                body.toString(),
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontBody,
-                  color: AppTheme.textSecondary,
-                  fontSize: 13.5,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => CrystalModalSheet(
+        title: title.toString(),
+        subtitle: isPinned ? 'Pinned Federation Bulletin' : 'Official Circular',
+        headerIcon: isPinned ? Icons.push_pin_rounded : Icons.campaign_outlined,
+        primaryActionLabel: 'Close Bulletin',
+        onPrimaryAction: () => Navigator.of(ctx).pop(),
+        child: Text(
+          body.toString(),
+          style: const TextStyle(
+            fontFamily: AppTheme.fontBody,
+            color: AppTheme.textSecondary,
+            fontSize: 13.5,
+            height: 1.5,
           ),
         ),
       ),

@@ -14,6 +14,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 6 / Stage 6 Convergence: Governance Dashboard Screen
 ///
@@ -85,9 +86,10 @@ class _GovernanceDashboardScreenState
     final disputesAsync = ref.watch(disputeProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         elevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
@@ -177,7 +179,7 @@ class _GovernanceDashboardScreenState
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(disputeProvider),
             child: ListView(
-              key: const PageStorageKey<String>('governance_disputes_list_view'),
+              key: const ValueKey<String>('governance_disputes_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,
@@ -584,7 +586,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       if (result != null) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage ?? 'Dossier updated successfully'),
             backgroundColor: AppTheme.success,
           ),
@@ -592,7 +594,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       } else {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Action failed. Please try again.'),
             backgroundColor: AppTheme.error,
           ),
@@ -602,7 +604,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       if (!mounted) return;
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: Text(AppErrorFormatter.format(e)),
           backgroundColor: AppTheme.error,
         ),
@@ -672,7 +674,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
               final text = controller.text.trim();
               if (text.length < 5) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('Please provide at least 5 characters'),
                     backgroundColor: AppTheme.error,
                   ),
@@ -695,70 +697,68 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
     String fileType = 'VIDEO';
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: AppTheme.space20,
-              right: AppTheme.space20,
-              top: AppTheme.space16,
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom +
-                  AppTheme.space20,
-            ),
+        builder: (sheetContext, setSheetState) {
+          Future<void> submitEvidence() async {
+            CrystalModalSheet.unfocusActiveInput(sheetContext);
+            final url = urlController.text.trim();
+            final uri = Uri.tryParse(url);
+            if (uri == null ||
+                !uri.hasScheme ||
+                !(uri.scheme == 'http' || uri.scheme == 'https')) {
+              HapticFeedback.lightImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                CrystalSnackBar(
+                  content: Text('Please provide a valid HTTP/HTTPS URL'),
+                  backgroundColor: AppTheme.error,
+                ),
+              );
+              return;
+            }
+            Navigator.of(sheetContext).pop();
+            setState(() => _busy = true);
+            try {
+              final ok = await ref
+                  .read(disputeProvider.notifier)
+                  .submitEvidence(widget.disputeId, fileType, url);
+              if (!mounted) return;
+              HapticFeedback.mediumImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                CrystalSnackBar(
+                  content: Text(ok
+                      ? 'Evidence record attached to dossier'
+                      : 'Could not submit evidence'),
+                  backgroundColor: ok ? AppTheme.success : AppTheme.error,
+                ),
+              );
+            } finally {
+              if (mounted) setState(() => _busy = false);
+            }
+          }
+
+          return CrystalModalSheet(
+            title: 'SUBMIT EVIDENCE RECORD',
+            subtitle:
+                'Link high-definition table video, photo evidence, or official scorepad scans for arbitration review.',
+            headerIcon: Icons.gavel_rounded,
+            secondaryActionLabel: 'Cancel',
+            primaryActionLabel: 'ATTACH EVIDENCE RECORD',
+            primaryActionIcon: Icons.attach_file_rounded,
+            onPrimaryAction: submitEvidence,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppTheme.textMuted.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space16),
-                const Text(
-                  'SUBMIT EVIDENCE RECORD',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Link high-definition table video, photo evidence, or official scorepad scans for arbitration review.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space16),
                 DropdownButtonFormField<String>(
                   initialValue: fileType,
-                  dropdownColor: AppTheme.elevatedSurface,
+                  dropdownColor: const Color(0xF50E1525),
+                  onTap: () => CrystalModalSheet.unfocusActiveInput(sheetContext),
                   style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
+                  decoration: CrystalModalSheet.inputDecoration(
                     labelText: 'Evidence Type',
-                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                    filled: true,
-                    fillColor: AppTheme.elevatedSurface,
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
-                    ),
                   ),
                   items: const ['VIDEO', 'IMAGE', 'DOCUMENT']
                       .map((t) => DropdownMenuItem(
@@ -780,95 +780,29 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                             ),
                           ))
                       .toList(),
-                  onChanged: (v) =>
-                      setSheetState(() => fileType = v ?? 'VIDEO'),
+                  onChanged: (v) {
+                    CrystalModalSheet.unfocusActiveInput(sheetContext);
+                    setSheetState(() => fileType = v ?? 'VIDEO');
+                  },
                 ),
                 const SizedBox(height: AppTheme.space12),
                 TextField(
                   controller: urlController,
                   autofocus: true,
+                  onTapOutside: (_) =>
+                      CrystalModalSheet.unfocusActiveInput(sheetContext),
                   keyboardType: TextInputType.url,
                   style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
+                  decoration: CrystalModalSheet.inputDecoration(
                     labelText: 'Evidence URL (HTTP/HTTPS)',
-                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
                     hintText: 'https://...',
-                    hintStyle: const TextStyle(color: AppTheme.textMuted),
-                    filled: true,
-                    fillColor: AppTheme.elevatedSurface,
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide:
-                          const BorderSide(color: AppTheme.goldPrimary),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.goldPrimary,
-                    foregroundColor: AppTheme.voidBackground,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
-                    ),
-                  ),
-                  onPressed: () async {
-                    final url = urlController.text.trim();
-                    final uri = Uri.tryParse(url);
-                    if (uri == null ||
-                        !uri.hasScheme ||
-                        !(uri.scheme == 'http' || uri.scheme == 'https')) {
-                      HapticFeedback.lightImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please provide a valid HTTP/HTTPS URL'),
-                          backgroundColor: AppTheme.error,
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.of(sheetContext).pop();
-                    setState(() => _busy = true);
-                    try {
-                      final ok = await ref
-                          .read(disputeProvider.notifier)
-                          .submitEvidence(widget.disputeId, fileType, url);
-                      if (!mounted) return;
-                      HapticFeedback.mediumImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(ok
-                              ? 'Evidence record attached to dossier'
-                              : 'Could not submit evidence'),
-                          backgroundColor:
-                              ok ? AppTheme.success : AppTheme.error,
-                        ),
-                      );
-                    } finally {
-                      if (mounted) setState(() => _busy = false);
-                    }
-                  },
-                  child: const Text(
-                    'ATTACH EVIDENCE RECORD',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
+                    prefixIcon: Icons.link_rounded,
                   ),
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -878,9 +812,10 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
     final disputesAsync = ref.watch(disputeProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -902,8 +837,9 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
           disputesAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+        loading: () => const CrystalScreenLoadingView(
+          itemCount: 3,
+          cardHeight: 112,
         ),
         error: (error, _) => AppErrorView(
           error: error,

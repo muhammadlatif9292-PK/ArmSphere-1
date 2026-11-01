@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import 'crystal_stage_scaffold.dart';
 import 'main_shell_screen.dart';
+import 'tactile_press_wrapper.dart';
 
-/// Unified Crystal Glassmorphism 38x38dp visual capsule for top-bar navigation icons.
+/// Shared 38x38dp Crystal Glassmorphic Capsule Icon used across all inner-screen
+/// headers for Back and Home navigation actions.
 class CrystalNavCapsuleIcon extends StatelessWidget {
   final IconData icon;
   final double iconSize;
@@ -15,36 +18,39 @@ class CrystalNavCapsuleIcon extends StatelessWidget {
   const CrystalNavCapsuleIcon({
     super.key,
     required this.icon,
-    this.iconSize = 17.0,
+    this.iconSize = 18.0,
     this.iconColor = AppTheme.textPure,
     this.accentBorderColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = accentBorderColor ?? const Color(0x47FFFFFF);
     return Container(
       width: 38,
       height: 38,
       decoration: BoxDecoration(
+        color: const Color(0x990B101B),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           stops: [0.0, 0.48, 1.0],
           colors: [
-            Color(0x28FFFFFF),
+            Color(0x2EFFFFFF),
             Color(0x12FFFFFF),
-            Color(0x08FFFFFF),
+            Color(0x06FFFFFF),
           ],
-        ),
-        border: Border.all(
-          color: accentBorderColor ?? const Color(0x42FFFFFF),
-          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.38),
+            color: Colors.black.withValues(alpha: 0.45),
             blurRadius: 12,
+            spreadRadius: -2,
             offset: const Offset(0, 4),
           ),
         ],
@@ -70,7 +76,7 @@ class CrystalNavCapsuleIcon extends StatelessWidget {
 ///
 /// Always sits in the `AppBar.leading` slot with identical 38x38dp crystal glass
 /// geometry inside a 44x44dp ergonomic touch hitbox, haptic click feedback, and
-/// safe fallback navigation to `/home` when the navigation stack cannot pop.
+/// chronological step-by-step back navigation.
 class CrystalBackButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final String fallbackRoute;
@@ -107,17 +113,23 @@ class CrystalBackButton extends StatelessWidget {
       return;
     }
     final router = GoRouter.maybeOf(context);
-    if (router != null) {
-      if (router.canPop()) {
-        router.pop();
-      } else {
-        router.go(fallbackRoute);
-      }
+    if (router != null && router.canPop()) {
+      router.pop();
       return;
     }
     final nav = Navigator.maybeOf(context);
     if (nav != null && nav.canPop()) {
       nav.pop();
+      return;
+    }
+    if (MainShellScope.stepBackIfPossible(context)) {
+      return;
+    }
+    if (MainShellScope.goToMainTabByPath(context, fallbackRoute)) {
+      return;
+    }
+    if (router != null) {
+      router.go(fallbackRoute);
     }
   }
 
@@ -165,30 +177,40 @@ class CrystalHomeButton extends StatelessWidget {
     super.key,
     this.onPressed,
     this.homeRoute = '/home',
-    this.tooltip = 'Back to Arena',
+    this.tooltip = 'Home Arena',
   });
 
+  /// Returns a [CrystalHomeButton] only when rendered outside [MainShellScreen].
+  static Widget? maybeForInnerScreen(BuildContext context) {
+    if (MainShellScope.isInsideShell(context)) {
+      return null;
+    }
+    return const CrystalHomeButton();
+  }
+
   void _handlePress(BuildContext context) {
-    HapticFeedback.selectionClick();
+    HapticFeedback.lightImpact();
     if (onPressed != null) {
       onPressed!();
       return;
     }
     final router = GoRouter.maybeOf(context);
     if (router != null) {
-      router.go(homeRoute);
+      while (router.canPop()) {
+        router.pop();
+      }
+      if (!MainShellScope.goToMainTabByPath(context, homeRoute)) {
+        router.go(homeRoute);
+      }
       return;
     }
-    final nav = Navigator.maybeOf(context);
-    if (nav != null) {
-      nav.popUntil((route) => route.isFirst);
-    }
+    Navigator.maybeOf(context)?.popUntil((route) => route.isFirst);
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 6, left: 2),
+      padding: const EdgeInsets.only(right: 6),
       child: Semantics(
         button: true,
         label: tooltip,
@@ -209,7 +231,8 @@ class CrystalHomeButton extends StatelessWidget {
                     icon: Icons.home_rounded,
                     iconSize: 18,
                     iconColor: AppTheme.textPure,
-                    accentBorderColor: AppTheme.crimson.withValues(alpha: 0.45),
+                    accentBorderColor:
+                        AppTheme.crimson.withValues(alpha: 0.45),
                   ),
                 ),
               ),
@@ -221,16 +244,404 @@ class CrystalHomeButton extends StatelessWidget {
   }
 }
 
+/// Compact Frosted Crystal Glass Header Action Pill for `AppBar.actions`
+/// (e.g., "Mark all read", "NEW TICKET", "CREATE TEAM", "POST CLIP", "SUBMIT VENUE").
+class CrystalHeaderActionPill extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final Color accentColor;
+
+  const CrystalHeaderActionPill({
+    super.key,
+    required this.label,
+    this.icon,
+    this.onTap,
+    this.accentColor = AppTheme.goldPrimary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Center(
+        child: TactilePressWrapper(
+          onTap: onTap == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onTap!();
+                },
+          semanticLabel: label,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 34),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(11),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.42),
+                  blurRadius: 12,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: accentColor.withValues(alpha: 0.16),
+                  blurRadius: 12,
+                  spreadRadius: -2,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(11),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xB80B101C),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.58),
+                      width: 1.1,
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      stops: const [0.0, 0.5, 1.0],
+                      colors: [
+                        accentColor.withValues(alpha: 0.22),
+                        const Color(0x16FFFFFF),
+                        const Color(0x08FFFFFF),
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(
+                          icon,
+                          size: 14,
+                          color: accentColor,
+                        ),
+                        const SizedBox(width: 5),
+                      ],
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPure,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Frosted Crystal Glassmorphic Action Button for in-screen CTAs
+/// (e.g., "Log a Session", "Open Support Ticket", "Create a team", "Share a video").
+class CrystalActionButton extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  final Color accentColor;
+  final bool isPrimary;
+  final bool fullWidth;
+  final bool isLoading;
+  final EdgeInsetsGeometry? padding;
+
+  const CrystalActionButton({
+    super.key,
+    required this.label,
+    this.icon,
+    this.onTap,
+    this.accentColor = AppTheme.goldPrimary,
+    this.isPrimary = true,
+    this.fullWidth = false,
+    this.isLoading = false,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color effectiveAccent =
+        isPrimary ? accentColor : AppTheme.textSecondary;
+    final Widget buttonBody = Container(
+      width: fullWidth ? double.infinity : null,
+      constraints: const BoxConstraints(minHeight: 46),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.48),
+            blurRadius: 18,
+            spreadRadius: -2,
+            offset: const Offset(0, 6),
+          ),
+          if (isPrimary && onTap != null)
+            BoxShadow(
+              color: effectiveAccent.withValues(alpha: 0.24),
+              blurRadius: 16,
+              spreadRadius: -2,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: padding ??
+                const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xCC0B101C),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isPrimary
+                    ? effectiveAccent.withValues(alpha: 0.62)
+                    : AppTheme.borderTitanium,
+                width: isPrimary ? 1.2 : 1.0,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: const [0.0, 0.45, 1.0],
+                colors: isPrimary
+                    ? [
+                        effectiveAccent.withValues(alpha: 0.26),
+                        const Color(0x1EFFFFFF),
+                        const Color(0x0AFFFFFF),
+                      ]
+                    : [
+                        const Color(0x1FFFFFFF),
+                        const Color(0x0EFFFFFF),
+                        const Color(0x05FFFFFF),
+                      ],
+              ),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  top: 0,
+                  left: 14,
+                  right: 14,
+                  height: 1.0,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.0),
+                          Colors.white.withValues(alpha: 0.52),
+                          Colors.white.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (isLoading)
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                      color: isPrimary ? effectiveAccent : AppTheme.textPure,
+                    ),
+                  )
+                else
+                  Row(
+                    mainAxisSize:
+                        fullWidth ? MainAxisSize.max : MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(
+                          icon,
+                          size: 17,
+                          color:
+                              isPrimary ? effectiveAccent : AppTheme.textPure,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                            color: isPrimary
+                                ? AppTheme.textPure
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return TactilePressWrapper(
+      onTap: isLoading || onTap == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              onTap!();
+            },
+      semanticLabel: label,
+      child: buttonBody,
+    );
+  }
+}
+
+/// 56x56dp Squircle Frosted Crystal Glass Floating Action Button (`+` FAB)
+/// with optical blur, gold or crimson specular rim, and ambient glow.
+class CrystalFloatingActionButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String? tooltip;
+  final Color accentColor;
+
+  const CrystalFloatingActionButton({
+    super.key,
+    required this.onPressed,
+    this.icon = Icons.add_rounded,
+    this.tooltip,
+    this.accentColor = AppTheme.goldPrimary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget button = Semantics(
+      button: true,
+      label: tooltip ?? 'Action',
+      tooltip: tooltip,
+      excludeSemantics: true,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onPressed();
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.56),
+                blurRadius: 22,
+                spreadRadius: -2,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.28),
+                blurRadius: 18,
+                spreadRadius: -2,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xD90B101C),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.68),
+                    width: 1.3,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: const [0.0, 0.48, 1.0],
+                    colors: [
+                      accentColor.withValues(alpha: 0.30),
+                      const Color(0x22FFFFFF),
+                      const Color(0x0B0F19),
+                    ],
+                  ),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      top: 0,
+                      left: 10,
+                      right: 10,
+                      height: 1.2,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0.0),
+                              Colors.white.withValues(alpha: 0.65),
+                              Colors.white.withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      icon,
+                      size: 26,
+                      color: accentColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (tooltip != null && tooltip!.isNotEmpty) {
+      return Tooltip(message: tooltip!, child: button);
+    }
+    return button;
+  }
+}
+
 /// Drop-in standardized Crystal Glass AppBar for all inner screens.
 ///
-/// Automatically provides [CrystalBackButton] in `leading` and appends
-/// [CrystalHomeButton] to `actions` (when [showHomeButton] is true), ensuring
-/// 100% consistent top navigation geometry and behavior across ArmSphere.
+/// Automatically provides [CrystalBackButton] in `leading`, appends
+/// [CrystalHomeButton] to `actions` (when [showHomeButton] is true), and renders
+/// [CrystalHeaderStageBar] in `flexibleSpace` so the stage backdrop extends behind
+/// the top header with 100% occlusion against route bleed-through.
 class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? title;
   final String? titleText;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
+  final Widget? flexibleSpace;
   final VoidCallback? onBackPressed;
   final String fallbackRoute;
   final bool showBackButton;
@@ -245,12 +656,13 @@ class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.titleText,
     this.actions,
     this.bottom,
+    this.flexibleSpace,
     this.onBackPressed,
     this.fallbackRoute = '/home',
     this.showBackButton = true,
     this.showHomeButton = true,
     this.centerTitle = false,
-    this.backgroundColor = Colors.transparent,
+    this.backgroundColor = AppTheme.voidBackground,
     this.elevation = 0,
   });
 
@@ -282,10 +694,13 @@ class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: centerTitle,
       automaticallyImplyLeading: false,
       leading: resolvedLeading,
+      flexibleSpace: flexibleSpace ?? const CrystalHeaderStageBar(),
       title: title ??
           (titleText != null
               ? Text(
                   titleText!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 20,

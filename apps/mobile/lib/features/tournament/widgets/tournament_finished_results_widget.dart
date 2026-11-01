@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentFinishedResultsWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -458,7 +459,7 @@ class _TournamentFinishedResultsWidgetState
           onTap: () {
             HapticFeedback.lightImpact();
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              CrystalSnackBar(
                 content: Text(
                   '🏆 ${data['place']}: ${data['name']} (${data['club']}) - ${data['eloGain']}',
                 ),
@@ -747,7 +748,7 @@ class _TournamentFinishedResultsWidgetState
                           onPressed: () {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              CrystalSnackBar(
                                 content: Text('📄 Exporting Official PDF Standings Certificate...'),
                                 backgroundColor: AppTheme.goldPrimary,
                               ),

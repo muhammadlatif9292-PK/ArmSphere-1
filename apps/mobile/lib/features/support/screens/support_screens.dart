@@ -16,6 +16,7 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 bool _isSupportStaff(AuthState authState) {
   final activeRole = authState.activeRole?.toUpperCase();
@@ -70,13 +71,18 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
     final ticketsAsync = ref.watch(supportTicketsProvider(_statusFilter));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Text(
           isStaff ? 'Helpdesk Triage Queue' : 'Support & Helpdesk',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontWeight: FontWeight.bold,
@@ -87,40 +93,11 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Center(
-              child: InkWell(
+              child: CrystalHeaderActionPill(
                 key: const ValueKey('support_new_ticket_button'),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/support/create');
-                },
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_comment_outlined,
-                          size: 14, color: AppTheme.goldPrimary),
-                      SizedBox(width: 4),
-                      Text(
-                        'NEW TICKET',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                label: 'NEW TICKET',
+                icon: Icons.add_comment_outlined,
+                onTap: () => context.push('/support/create'),
               ),
             ),
           ),
@@ -172,15 +149,9 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
               const Divider(height: 1, color: AppTheme.borderTitanium),
           Expanded(
             child: ticketsAsync.when(
-              loading: () => ListView.separated(
-                padding: const EdgeInsets.all(AppTheme.space16),
+              loading: () => const CrystalScreenLoadingView(
                 itemCount: 3,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppTheme.space12),
-                itemBuilder: (_, __) => const SkeletonPlaceholder(
-                  height: 96,
-                  borderRadius: AppTheme.radiusMedium,
-                ),
+                cardHeight: 104,
               ),
               error: (error, _) => AppErrorView(
                 error: error,
@@ -391,7 +362,7 @@ class _CreateSupportTicketScreenState
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Support ticket submitted to ArmSphere Helpdesk'),
             backgroundColor: AppTheme.success,
           ),
@@ -402,7 +373,7 @@ class _CreateSupportTicketScreenState
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -417,10 +388,13 @@ class _CreateSupportTicketScreenState
   Widget build(BuildContext context) {
     return StickyFormScaffold(
       stageDomain: ArmSphereStageDomain.passport,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: const CrystalBackButton(fallbackRoute: '/support'),
         title: const Text(
           'Open Support Ticket',
@@ -573,7 +547,7 @@ class _SupportTicketDetailScreenState
       if (mounted && successMessage != null) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage),
             backgroundColor: AppTheme.success,
           ),
@@ -582,13 +556,13 @@ class _SupportTicketDetailScreenState
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -672,10 +646,13 @@ class _SupportTicketDetailScreenState
     final detailAsync = ref.watch(supportTicketDetailProvider(widget.ticketId));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: const CrystalBackButton(fallbackRoute: '/support'),
         title: const Text(
           'Support Ticket',

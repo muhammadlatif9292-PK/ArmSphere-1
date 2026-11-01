@@ -7,6 +7,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class NominateTalentScreen extends ConsumerStatefulWidget {
   const NominateTalentScreen({super.key});
@@ -45,7 +46,7 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
       if (mounted) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Nomination filed successfully with Federation Review!'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -56,7 +57,7 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.toString()),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,

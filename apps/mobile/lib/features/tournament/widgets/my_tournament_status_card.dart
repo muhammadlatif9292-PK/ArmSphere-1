@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class MyTournamentStatusCard extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -165,7 +166,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
           'onCtaTap': (BuildContext ctx) {
             HapticFeedback.mediumImpact();
             ScaffoldMessenger.of(ctx).showSnackBar(
-              const SnackBar(
+              CrystalSnackBar(
                 content: Text('✓ Checked In to Holding Area! Table call notifications active.'),
                 backgroundColor: Color(0xFF00BFA5),
               ),
@@ -221,9 +222,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20.0),
@@ -268,9 +271,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20.0),
@@ -305,7 +310,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
               onPressed: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Medical certificate uploaded successfully. Approved by Medical Desk.'),
                     backgroundColor: Color(0xFFB388FF),
                   ),
@@ -324,10 +329,12 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => SizedBox(
         height: MediaQuery.of(ctx).size.height * 0.6,
@@ -398,9 +405,11 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) {
         final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
@@ -489,14 +498,14 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
                   Navigator.pop(ctx);
                   if (hasValidCert) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      CrystalSnackBar(
                         content: Text('✓ Opening verified certificate...'),
                         backgroundColor: Color(0xFFFFD700),
                       ),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      CrystalSnackBar(
                         content: Text(
                           'Official digital certificate generation is pending external federation service integration. Status: PENDING EXTERNAL SERVICE.',
                         ),

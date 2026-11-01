@@ -7,12 +7,15 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/sensory_feedback_service.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 
 /// Athlete Training Log & Personal Records (PR) Screen
 ///
@@ -99,29 +102,14 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
       );
     }
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MainShellScope.bottomClearance(context)),
-      children: [
-        const SizedBox(height: 80),
-        const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-        const SizedBox(height: 12),
-        Text(
-          'Could not load training log',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
-        ),
-        const SizedBox(height: 16),
-        Center(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              ref.invalidate(trainingLogProvider(athleteId));
-              ref.invalidate(trainingLogPRsProvider(athleteId));
-            },
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Retry'),
-          ),
-        ),
-      ],
+    return AppErrorView(
+      error: e,
+      title: 'Could not load training log',
+      onRetry: () {
+        ref.invalidate(trainingLogProvider(athleteId));
+        ref.invalidate(trainingLogPRsProvider(athleteId));
+      },
+      showSecondaryAction: false,
     );
   }
 
@@ -159,9 +147,10 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
     final isSelf = _resolveIsSelf(athleteId, myProfile, authState);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -183,8 +172,9 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
           ref.invalidate(trainingLogProvider(athleteId));
         },
         child: logsAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+          loading: () => const CrystalScreenLoadingView(
+            itemCount: 4,
+            cardHeight: 88,
           ),
           error: (e, _) => _errorView(context, ref, e),
           data: (logs) {
@@ -310,11 +300,9 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
 
                 // Personal records — computed server-side from post history
                 prsAsync.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: CircularProgressIndicator(color: AppTheme.goldPrimary),
-                    ),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: SkeletonPlaceholder(height: 76),
                   ),
                   error: (_, __) => const SizedBox.shrink(),
                   data: (prs) {
@@ -353,10 +341,11 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                   hapticType: HapticFeedbackType.heavy,
                                 );
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  CrystalSnackBar(
                                     content: Text('Personal Record: $exercise - ${weight ?? '—'} kg!'),
                                     duration: const Duration(seconds: 2),
-                                    backgroundColor: AppTheme.elevatedSurface,
+                                    type: CrystalToastType.info,
+                                    customIcon: Icons.emoji_events_rounded,
                                   ),
                                 );
                               },
@@ -521,16 +510,13 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
       ),
       floatingActionButtonLocation: MainShellScope.fabLocation(context),
       floatingActionButton: isSelf
-          ? FloatingActionButton(
+          ? CrystalFloatingActionButton(
               heroTag: 'training_log_add',
               tooltip: 'Log a session',
-              backgroundColor: AppTheme.goldPrimary,
-              foregroundColor: Colors.black,
+              icon: Icons.add,
               onPressed: () {
-                HapticFeedback.selectionClick();
                 context.push('/community/create?category=GYM');
               },
-              child: const Icon(Icons.add),
             )
           : null,
     );

@@ -11,6 +11,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/signature_ceremonies.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Canary 9: Weigh-In & Athlete Certification Screen (`/tournaments/:id/weigh-in`)
 ///
@@ -129,7 +130,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final weight = _currentEnteredWeight;
     if (weight == null || weight <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Please enter a valid measured scale weight.'),
           backgroundColor: AppTheme.error,
         ),
@@ -140,7 +141,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final ceiling = _parseClassCeiling(reg['weightClass']?.toString());
     if (ceiling < 999.0 && weight > ceiling) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: Text(
             'Cannot certify overweight athlete: ${weight.toStringAsFixed(1)} KG exceeds ${ceiling.toStringAsFixed(1)} KG ceiling. Reassignment required.',
           ),
@@ -182,7 +183,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Row(
               children: [
                 const Icon(Icons.verified_rounded, color: Colors.black, size: 18),
@@ -206,7 +207,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       if (mounted) {
         setState(() => _isBusy = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
@@ -218,7 +219,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
             ? 'Network connection unavailable. Certification could not be submitted to the server.'
             : 'Certification failed: ${e.toString()}';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(errorMsg),
             backgroundColor: AppTheme.error,
           ),
@@ -236,10 +237,11 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     if (effectiveTournamentId.isEmpty) {
       final tournamentsAsync = ref.watch(tournamentProvider);
       return Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: AppTheme.voidBackground,
           elevation: 0,
+          flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
           leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
           title: const Text(
             'OFFICIAL WEIGH-IN DESK',
@@ -279,10 +281,11 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1247,7 +1250,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
               onPressed: () {
                 HapticFeedback.selectionClick();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('Use Operations Console to reassign athlete division or weight class.'),
                   ),
                 );

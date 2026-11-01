@@ -9,6 +9,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class MfaSetupScreen extends ConsumerStatefulWidget {
   const MfaSetupScreen({super.key});
@@ -51,7 +52,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Invalid verification code. Please check your authenticator app.'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,

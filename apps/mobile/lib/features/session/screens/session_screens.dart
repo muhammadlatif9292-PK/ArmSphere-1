@@ -10,8 +10,10 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../settings/widgets/biometric_settings_tile.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 Future<bool> _showRevokeConfirmationDialog({
   required BuildContext context,
@@ -83,8 +85,10 @@ class ActiveSessionsListScreen extends ConsumerWidget {
     final sessionsAsync = ref.watch(sessionProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text('Active Sessions & Security'),
         actions: const [CrystalHomeButton()],
@@ -131,9 +135,12 @@ class ActiveSessionsListScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppTheme.space8),
             sessionsAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.only(top: 40),
-                child: Center(child: CircularProgressIndicator()),
+              loading: () => const Column(
+                children: [
+                  SkeletonPlaceholder(height: 82),
+                  SizedBox(height: AppTheme.space10),
+                  SkeletonPlaceholder(height: 82),
+                ],
               ),
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(AppTheme.space12),
@@ -314,7 +321,7 @@ class ActiveSessionsListScreen extends ConsumerWidget {
                                 final ok = await ref.read(sessionProvider.notifier).revokeOthers();
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  CrystalSnackBar(
                                     content: Text(ok
                                         ? 'All other sessions revoked.'
                                         : 'Could not revoke other sessions.'),
@@ -359,8 +366,10 @@ class ActiveSessionControlScreen extends ConsumerWidget {
     final ip = session?['ipAddress']?.toString() ?? '';
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(fallbackRoute: '/athlete/sessions'),
         title: const Text('Session Details'),
         actions: const [CrystalHomeButton()],
@@ -454,7 +463,7 @@ class ActiveSessionControlScreen extends ConsumerWidget {
                                 .revokeSession(sessionId);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              CrystalSnackBar(
                                 content: Text(ok
                                     ? 'Session revoked successfully.'
                                     : 'Could not revoke session.'),
@@ -490,7 +499,7 @@ class ActiveSessionControlScreen extends ConsumerWidget {
                                 .revokeOthers();
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              CrystalSnackBar(
                                 content: Text(ok
                                     ? 'All other sessions revoked.'
                                     : 'Could not revoke other sessions.'),

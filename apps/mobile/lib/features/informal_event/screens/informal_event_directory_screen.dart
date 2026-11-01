@@ -40,10 +40,11 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
     final eventsAsync = ref.watch(informalEventListProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         leading: const CrystalBackButton(),
         title: const Text(
           'Practice Meetups',
@@ -57,38 +58,11 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Center(
-              child: InkWell(
+              child: CrystalHeaderActionPill(
                 key: const ValueKey('informal_event_directory_create_button'),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/informal-events/create');
-                },
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add, size: 14, color: AppTheme.goldPrimary),
-                      SizedBox(width: 4),
-                      Text(
-                        'HOST MEETUP',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                label: 'HOST MEETUP',
+                icon: Icons.add,
+                onTap: () => context.push('/informal-events/create'),
               ),
             ),
           ),
@@ -142,7 +116,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
             }
 
             return ListView.separated(
-              key: const PageStorageKey<String>('informal_event_directory_list_view'),
+              key: const ValueKey<String>('informal_event_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,

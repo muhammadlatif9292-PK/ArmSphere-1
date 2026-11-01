@@ -1,14 +1,14 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
-import 'tactile_press_wrapper.dart';
+import 'crystal_glass_nav_controls.dart';
 
 /// Standardized Empty State Component
 ///
-/// Upgraded to Canonical Stage 2 Specification (Slice 9 / [P1-04]):
-/// - High-contrast combat sports iconography and Space Grotesk typography.
-/// - Presets for Competitions, Matches, Search, Offline, and Notifications.
-/// - Standardized 8dp buttons with tactile feedback.
+/// Upgraded to ArmSphere Crystal Glassmorphism Design System:
+/// - Frosted Crystal Glass emblem halo with optical blur and gold specular rim.
+/// - Space Grotesk display typography and high-legibility subtitle prose.
+/// - Frosted [CrystalActionButton] CTAs with gold and titanium specular rims.
 class AppEmptyState extends StatefulWidget {
   final IconData icon;
   final String title;
@@ -32,7 +32,8 @@ class AppEmptyState extends StatefulWidget {
   const AppEmptyState.noCompetitions({
     super.key,
     this.title = 'No Competitions Found',
-    this.subtitle = 'There are no sanctioned tournaments matching your current criteria.',
+    this.subtitle =
+        'There are no sanctioned tournaments matching your current criteria.',
     this.ctaLabel = 'Refresh Events',
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -42,7 +43,8 @@ class AppEmptyState extends StatefulWidget {
   const AppEmptyState.noMatches({
     super.key,
     this.title = 'No Matches Recorded',
-    this.subtitle = 'Compete in sanctioned tournaments or record table bouts to establish your rating.',
+    this.subtitle =
+        'Compete in sanctioned tournaments or record table bouts to establish your rating.',
     this.ctaLabel,
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -52,7 +54,8 @@ class AppEmptyState extends StatefulWidget {
   const AppEmptyState.noSearchResults({
     super.key,
     this.title = 'No Results Found',
-    this.subtitle = 'Try refining your search terms or clearing active filters.',
+    this.subtitle =
+        'Try refining your search terms or clearing active filters.',
     this.ctaLabel = 'Clear Search',
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -62,7 +65,8 @@ class AppEmptyState extends StatefulWidget {
   const AppEmptyState.offline({
     super.key,
     this.title = 'Offline Mode Active',
-    this.subtitle = 'Cached data is accessible. Actions will sync automatically when connection restores.',
+    this.subtitle =
+        'Cached data is accessible. Actions will sync automatically when connection restores.',
     this.ctaLabel = 'Retry Connection',
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -72,7 +76,8 @@ class AppEmptyState extends StatefulWidget {
   const AppEmptyState.noNotifications({
     super.key,
     this.title = 'All Caught Up',
-    this.subtitle = 'You have no new alerts, match calls, or federation announcements.',
+    this.subtitle =
+        'You have no new alerts, match calls, or federation announcements.',
     this.ctaLabel,
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -131,26 +136,55 @@ class _AppEmptyStateState extends State<AppEmptyState>
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Frosted Crystal Glass Emblem Capsule
               Container(
-                width: 68,
-                height: 68,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.cardSurface,
-                  border: Border.all(color: AppTheme.borderSubtle, width: 1.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.48),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                    BoxShadow(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.18),
+                      blurRadius: 16,
+                      spreadRadius: -2,
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Icon(
-                    widget.icon,
-                    size: 30,
-                    color: AppTheme.goldPrimary,
+                child: ClipOval(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xBF0B101C),
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.48),
+                          width: 1.2,
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          stops: const [0.0, 0.5, 1.0],
+                          colors: [
+                            AppTheme.goldPrimary.withValues(alpha: 0.22),
+                            const Color(0x16FFFFFF),
+                            const Color(0x06FFFFFF),
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          widget.icon,
+                          size: 30,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -159,10 +193,10 @@ class _AppEmptyStateState extends State<AppEmptyState>
                 widget.title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: AppTheme.textPrimary,
+                  color: AppTheme.textPure,
                   fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  fontFamily: 'Space Grotesk',
+                  fontSize: 16.5,
+                  fontFamily: AppTheme.fontDisplay,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -180,73 +214,27 @@ class _AppEmptyStateState extends State<AppEmptyState>
                 ),
               ),
               if ((widget.ctaLabel != null && widget.onCtaTap != null) ||
-                  (widget.secondaryCtaLabel != null && widget.onSecondaryCtaTap != null)) ...[
-                const SizedBox(height: 20),
+                  (widget.secondaryCtaLabel != null &&
+                      widget.onSecondaryCtaTap != null)) ...[
+                const SizedBox(height: 22),
                 Wrap(
                   spacing: 12,
                   runSpacing: 10,
                   alignment: WrapAlignment.center,
                   children: [
                     if (widget.ctaLabel != null && widget.onCtaTap != null)
-                      TactilePressWrapper(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          widget.onCtaTap!();
-                        },
-                        semanticLabel: widget.ctaLabel,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.elevatedSurface,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.ctaLabel!,
-                                style: const TextStyle(
-                                  fontFamily: 'Space Grotesk',
-                                  color: AppTheme.goldPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      CrystalActionButton(
+                        label: widget.ctaLabel!,
+                        onTap: widget.onCtaTap,
+                        accentColor: AppTheme.goldPrimary,
+                        isPrimary: true,
                       ),
-                    if (widget.secondaryCtaLabel != null && widget.onSecondaryCtaTap != null)
-                      TactilePressWrapper(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          widget.onSecondaryCtaTap!();
-                        },
-                        semanticLabel: widget.secondaryCtaLabel,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(color: AppTheme.borderSubtle),
-                          ),
-                          child: Text(
-                            widget.secondaryCtaLabel!,
-                            style: const TextStyle(
-                              fontFamily: 'Space Grotesk',
-                              color: AppTheme.textSecondary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
+                    if (widget.secondaryCtaLabel != null &&
+                        widget.onSecondaryCtaTap != null)
+                      CrystalActionButton(
+                        label: widget.secondaryCtaLabel!,
+                        onTap: widget.onSecondaryCtaTap,
+                        isPrimary: false,
                       ),
                   ],
                 ),

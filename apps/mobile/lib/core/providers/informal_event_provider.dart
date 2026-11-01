@@ -35,6 +35,7 @@ final informalEventFilterProvider = StateProvider.autoDispose<InformalEventFilte
 class InformalEventListNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final filter = ref.watch(informalEventFilterProvider);
     final repo = ref.watch(informalEventRepositoryProvider);
     return repo.getEvents(
@@ -44,8 +45,10 @@ class InformalEventListNotifier extends AutoDisposeAsyncNotifier<List<Map<String
     );
   }
 
-  Future<void> refresh() async {
-    state = const AsyncValue.loading();
+  Future<void> refresh({bool silent = true}) async {
+    if (!silent || !state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       final filter = ref.read(informalEventFilterProvider);
       final repo = ref.read(informalEventRepositoryProvider);
@@ -56,7 +59,9 @@ class InformalEventListNotifier extends AutoDisposeAsyncNotifier<List<Map<String
       );
       state = AsyncValue.data(events);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      if (!state.hasValue) {
+        state = AsyncValue.error(e, stackTrace);
+      }
     }
   }
 }
@@ -69,18 +74,23 @@ final informalEventListProvider = AsyncNotifierProvider.autoDispose<InformalEven
 class InformalEventDetailNotifier extends AutoDisposeFamilyAsyncNotifier<Map<String, dynamic>, String> {
   @override
   Future<Map<String, dynamic>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(informalEventRepositoryProvider);
     return repo.getEventById(arg);
   }
 
-  Future<void> refresh() async {
-    state = const AsyncValue.loading();
+  Future<void> refresh({bool silent = true}) async {
+    if (!silent || !state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       final repo = ref.read(informalEventRepositoryProvider);
       final detail = await repo.getEventById(arg);
       state = AsyncValue.data(detail);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      if (!state.hasValue) {
+        state = AsyncValue.error(e, stackTrace);
+      }
     }
   }
 

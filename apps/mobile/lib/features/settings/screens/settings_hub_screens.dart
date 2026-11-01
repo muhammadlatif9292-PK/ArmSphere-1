@@ -9,6 +9,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/biometric_settings_tile.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Account & Settings hub (spec §36). Every section maps to a real surface.
 class SettingsHubScreen extends ConsumerWidget {
@@ -17,8 +18,12 @@ class SettingsHubScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: const CrystalBackButton(),
         title: const Text('Settings'),
         actions: const [CrystalHomeButton()],
@@ -167,87 +172,59 @@ class SettingsHubScreen extends ConsumerWidget {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.cardBackground,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.space20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
+      builder: (ctx) {
+        return CrystalModalSheet(
+          title: 'ARMSPHERE HELPDESK',
+          subtitle: 'Official Support & Federation Operations Assistance',
+          headerIcon: Icons.support_agent_rounded,
+          primaryActionLabel: 'Close',
+          onPrimaryAction: () => Navigator.of(ctx).pop(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Need assistance with your account, rules, disputes, or tournament operations? Our dedicated support team is available.',
+                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+              ),
+              const SizedBox(height: AppTheme.space16),
+              Container(
+                padding: const EdgeInsets.all(AppTheme.space14),
+                decoration: BoxDecoration(
+                  color: const Color(0x8012192A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0x2EFFFFFF)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppTheme.space8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryOrange.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.support_agent, color: AppTheme.primaryOrange, size: 24),
-                    ),
-                    const SizedBox(width: AppTheme.space12),
                     const Text(
-                      'ArmSphere Helpdesk',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: AppTheme.textPrimary,
-                      ),
+                      'DIRECT EMAIL SUPPORT',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: AppTheme.textMuted),
+                    ),
+                    const SizedBox(height: AppTheme.space8),
+                    Row(
+                      children: [
+                        const Icon(Icons.email_outlined, size: 18, color: AppTheme.primaryOrange),
+                        const SizedBox(width: 8),
+                        const SelectableText(
+                          'support@armsphere.pk',
+                          style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppTheme.space6),
+                    const Text(
+                      'All verified inquiries are routed into the official ArmSphere Helpdesk queue.',
+                      style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppTheme.space16),
-                const Text(
-                  'Need assistance with your account, rules, disputes, or tournament operations? Our dedicated support team is available.',
-                  style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
-                ),
-                const SizedBox(height: AppTheme.space16),
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.space14),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceDark,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.cardBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'DIRECT EMAIL SUPPORT',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.1, color: AppTheme.textMuted),
-                      ),
-                      const SizedBox(height: AppTheme.space8),
-                      Row(
-                        children: [
-                          const Icon(Icons.email_outlined, size: 18, color: AppTheme.primaryOrange),
-                          const SizedBox(width: 8),
-                          SelectableText(
-                            'support@armsphere.pk',
-                            style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppTheme.space6),
-                      const Text(
-                        'All verified inquiries are routed into the official ArmSphere Helpdesk queue.',
-                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space20),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -387,7 +364,7 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
       if (!mounted) return;
       setState(() => _deleting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: Text('Could not delete account: $e'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -399,8 +376,12 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: const CrystalBackButton(),
         title: const Text('Delete Account'),
         actions: const [CrystalHomeButton()],
@@ -515,8 +496,12 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: const CrystalBackButton(),
         title: const Text('Terms of Service'),
         actions: const [CrystalHomeButton()],
@@ -593,8 +578,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: const CrystalBackButton(),
         title: const Text('Privacy Policy'),
         actions: const [CrystalHomeButton()],

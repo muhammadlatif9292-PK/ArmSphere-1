@@ -4,6 +4,7 @@ import 'state_providers.dart';
 class NotificationNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(notificationRepositoryProvider);
     return repo.getNotifications();
   }

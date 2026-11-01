@@ -18,8 +18,10 @@ import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/tournament_widgets.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Shared formatting helpers for event data (used by list, detail and
 /// registration screens so every surface renders the same real values).
@@ -78,10 +80,13 @@ class TournamentsListScreen extends ConsumerWidget {
     final tournamentsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.events,
+        ),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
           'Competitions',
@@ -143,7 +148,7 @@ class TournamentsListScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.refresh(tournamentProvider.future),
             child: ListView.separated(
-              key: const PageStorageKey<String>('tournaments_list_view'),
+              key: const ValueKey<String>('tournaments_list_view'),
               padding: EdgeInsets.fromLTRB(
                 16,
                 20,
@@ -363,7 +368,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         final countdownText = _calculateCountdown(event['startDate']);
 
         return Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: AppTheme.voidBackground,
           body: Stack(
             fit: StackFit.expand,
             children: [
@@ -375,7 +380,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   SliverAppBar(
                     expandedHeight: 260.0,
                     pinned: true,
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: AppTheme.voidBackground,
                     leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
                     actions: [
                       IconButton(
@@ -385,7 +390,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           HapticFeedback.lightImpact();
                           Clipboard.setData(ClipboardData(text: 'https://armsphere.app/tournament/${widget.tournamentId}'));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            CrystalSnackBar(
                               content: Text('Tournament link copied to clipboard'),
                               duration: Duration(seconds: 2),
                             ),
@@ -1420,8 +1425,11 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
         : const AsyncValue<List<dynamic>>.loading();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: const Text(
           'Tournament Brackets',
@@ -1453,7 +1461,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
         ],
       ),
       body: bracketsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
+        loading: () => const CrystalScreenLoadingView(itemCount: 3, cardHeight: 112),
         error: (e, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -1567,7 +1575,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(bracketDetailsProvider(bracketId)),
       child: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
+        loading: () => const CrystalScreenLoadingView(itemCount: 3, cardHeight: 112),
         error: (e, _) => ListView(
           padding: const EdgeInsets.all(20),
           children: [

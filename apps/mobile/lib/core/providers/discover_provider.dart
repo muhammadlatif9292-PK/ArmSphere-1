@@ -60,6 +60,11 @@ class DiscoverFeed {
 class DiscoverFeedNotifier extends AutoDisposeAsyncNotifier<DiscoverFeed> {
   @override
   Future<DiscoverFeed> build() async {
+    ref.keepAlive();
+    return _fetchFeed();
+  }
+
+  Future<DiscoverFeed> _fetchFeed() async {
     final matchRepo = ref.watch(matchRepositoryProvider);
     final rankingsRepo = ref.watch(rankingsRepositoryProvider);
     final messagingRepo = ref.watch(messagingRepositoryProvider);
@@ -83,9 +88,17 @@ class DiscoverFeedNotifier extends AutoDisposeAsyncNotifier<DiscoverFeed> {
   }
 
   Future<void> refresh() async {
-    state = const AsyncLoading();
-    ref.invalidateSelf();
-    await future;
+    if (!state.hasValue) {
+      state = const AsyncLoading();
+    }
+    try {
+      final fresh = await _fetchFeed();
+      state = AsyncValue.data(fresh);
+    } catch (e, st) {
+      if (!state.hasValue) {
+        state = AsyncValue.error(e, st);
+      }
+    }
   }
 }
 

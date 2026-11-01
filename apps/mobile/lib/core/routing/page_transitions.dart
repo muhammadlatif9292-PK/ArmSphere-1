@@ -1,15 +1,19 @@
+// lib/core/routing/page_transitions.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../theme/app_theme.dart';
 
 /// App-wide custom page transitions builder for push/pop navigation.
 ///
-/// Forward (push):
-/// - Incoming screen: slides in from x-offset 30% of screen width to 0, opacity 0 -> 1,
-///   over 300ms duration, Curves.easeOutCubic.
-/// - Outgoing screen: slides to -10% offset, opacity 1 -> 0.85, scale 1.0 -> 0.98.
-///
-/// Reverse (pop):
-/// - Same shape over 250ms reverseTransitionDuration.
+/// Engineered for Zero Header Bleed & Zero Double-Exposure Overlap:
+/// - Outgoing screen (`secondaryAnimation`): rapidly fades `1.0 -> 0.0` in the first
+///   42% of the transition (`Interval(0.0, 0.42)`) with a subtle `-4%` horizontal shift,
+///   ensuring the outgoing header and action buttons dissolve completely before the
+///   incoming header settles.
+/// - Incoming screen (`primaryAnimation`): backed by a 100% opaque `#070A11` void
+///   substrate (`ColoredBox(color: AppTheme.voidBackground)`) that seals the route
+///   within the first 25% of the transition while the incoming screen glides from
+///   `+6%` x-offset to `0.0` over `220ms` (`Curves.easeOutCubic`).
 class AppPageTransitionsBuilder extends PageTransitionsBuilder {
   const AppPageTransitionsBuilder();
 
@@ -43,58 +47,80 @@ class AppCustomPageTransition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CurvedAnimation primaryCurve = CurvedAnimation(
+    // Incoming content motion curve
+    final CurvedAnimation primarySlideCurve = CurvedAnimation(
       parent: primaryAnimation,
       curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
     );
 
-    final CurvedAnimation secondaryCurve = CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeOutCubic,
+    // Incoming content opacity: starts after outgoing header begins dissolving
+    final Animation<double> primaryContentFade = CurvedAnimation(
+      parent: primaryAnimation,
+      curve: const Interval(0.18, 1.0, curve: Curves.easeOutCubic),
+      reverseCurve: const Interval(0.0, 0.82, curve: Curves.easeInCubic),
     );
 
-    // Primary (Incoming screen on push / Exiting screen on pop)
-    final Animation<Offset> primarySlide = Tween<Offset>(
-      begin: const Offset(0.3, 0.0),
-      end: Offset.zero,
-    ).animate(primaryCurve);
+    // Fast opaque void substrate seal so underlying route never bleeds through
+    final Animation<double> primaryBackdropFade = CurvedAnimation(
+      parent: primaryAnimation,
+      curve: const Interval(0.0, 0.28, curve: Curves.easeOut),
+      reverseCurve: const Interval(0.0, 0.28, curve: Curves.easeIn),
+    );
 
-    final Animation<double> primaryFade = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(primaryCurve);
-
-    // Secondary (Outgoing screen beneath new route)
-    final Animation<Offset> secondarySlide = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-0.1, 0.0),
-    ).animate(secondaryCurve);
-
+    // Outgoing screen beneath new route: dissolves completely in first 42%
     final Animation<double> secondaryFade = Tween<double>(
       begin: 1.0,
-      end: 0.85,
-    ).animate(secondaryCurve);
+      end: 0.0,
+    ).animate(
+      CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: const Interval(0.0, 0.42, curve: Curves.easeOut),
+        reverseCurve: const Interval(0.0, 0.42, curve: Curves.easeIn),
+      ),
+    );
 
-    final Animation<double> secondaryScale = Tween<double>(
-      begin: 1.0,
-      end: 0.98,
-    ).animate(secondaryCurve);
+    final Animation<Offset> secondarySlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-0.04, 0.0),
+    ).animate(
+      CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
+
+    final Animation<Offset> primarySlide = Tween<Offset>(
+      begin: const Offset(0.06, 0.0),
+      end: Offset.zero,
+    ).animate(primarySlideCurve);
 
     return SlideTransition(
       position: secondarySlide,
       child: FadeTransition(
         opacity: secondaryFade,
-        child: ScaleTransition(
-          scale: secondaryScale,
-          child: SlideTransition(
-            position: primarySlide,
-            child: FadeTransition(
-              opacity: primaryFade,
-              child: child,
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            FadeTransition(
+              opacity: primaryBackdropFade,
+              child: const ColoredBox(
+                color: AppTheme.voidBackground,
+                child: SizedBox.expand(),
+              ),
             ),
-          ),
+            SlideTransition(
+              position: primarySlide,
+              child: FadeTransition(
+                opacity: primaryContentFade,
+                child: ColoredBox(
+                  color: AppTheme.voidBackground,
+                  child: child,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -103,8 +129,8 @@ class AppCustomPageTransition extends StatelessWidget {
 
 /// App-wide custom GoRouter transition page.
 ///
-/// Configures transitionDuration to 300ms (forward push) and
-/// reverseTransitionDuration to 250ms (reverse pop) with [AppCustomPageTransition].
+/// Configures transitionDuration to 220ms (forward push) and
+/// reverseTransitionDuration to 180ms (reverse pop) with [AppCustomPageTransition].
 class AppTransitionPage extends CustomTransitionPage<void> {
   AppTransitionPage({
     required super.child,
@@ -113,8 +139,9 @@ class AppTransitionPage extends CustomTransitionPage<void> {
     super.arguments,
     super.restorationId,
   }) : super(
-          transitionDuration: const Duration(milliseconds: 300),
-          reverseTransitionDuration: const Duration(milliseconds: 250),
+          opaque: true,
+          transitionDuration: const Duration(milliseconds: 220),
+          reverseTransitionDuration: const Duration(milliseconds: 180),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return AppCustomPageTransition(
               primaryAnimation: animation,
@@ -124,4 +151,3 @@ class AppTransitionPage extends CustomTransitionPage<void> {
           },
         );
 }
-

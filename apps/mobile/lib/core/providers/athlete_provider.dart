@@ -5,6 +5,7 @@ import '../../features/auth/providers/auth_provider.dart';
 class AthleteProfileNotifier extends AutoDisposeAsyncNotifier<Map<String, dynamic>> {
   @override
   Future<Map<String, dynamic>> build() async {
+    ref.keepAlive();
     final authState = ref.watch(authProvider);
     final user = authState.userProfile;
     final athleteId = user?['id']?.toString() ?? 'self';
@@ -70,21 +71,25 @@ final athleteSearchProvider = FutureProvider.autoDispose<List<Map<String, dynami
 });
 
 final clubsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getClubs();
 });
 
 final publicAthleteProfileProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, athleteId) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getProfile(athleteId);
 });
 
 final trainingLogProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, athleteId) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getTrainingLog(athleteId);
 });
 
 final trainingLogPRsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, athleteId) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getTrainingLogPRs(athleteId);
 });

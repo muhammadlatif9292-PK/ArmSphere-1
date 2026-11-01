@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/widgets/crystal_glass_nav_controls.dart';
+import 'package:mobile/core/widgets/crystal_modal_sheet.dart';
+import 'package:mobile/core/widgets/crystal_toast.dart';
 import 'package:mobile/core/widgets/main_shell_screen.dart';
+import 'package:mobile/core/widgets/skeleton_placeholder.dart';
 
 const _tabs = <({String label, IconData icon, IconData activeIcon})>[
   (label: 'Arena', icon: Icons.home_outlined, activeIcon: Icons.home_rounded),
@@ -351,6 +355,373 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Inner details screen'), findsOneWidget);
       expect(find.byKey(const ValueKey('crystal_floating_nav_dock')), findsNothing);
+    });
+
+    testWidgets('hides floating dock when pushing a top-level inner route like /settings',
+        (tester) async {
+      final router = GoRouter(
+        initialLocation: '/profile',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                MainShellScreen(navigationShell: navigationShell),
+            branches: [
+              for (var i = 0; i < _tabs.length - 1; i++)
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: '/${_tabs[i].label.toLowerCase()}',
+                      builder: (context, state) =>
+                          Center(child: Text('${_tabs[i].label} page')),
+                    ),
+                  ],
+                ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/profile',
+                    builder: (context, state) =>
+                        const Center(child: Text('Passport root')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('Settings screen'))),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('crystal_floating_nav_dock')), findsOneWidget);
+
+      router.push('/settings');
+      await tester.pumpAndSettle();
+      expect(find.text('Settings screen'), findsOneWidget);
+      expect(find.byKey(const ValueKey('crystal_floating_nav_dock')), findsNothing);
+    });
+
+    testWidgets('SkeletonPlaceholder renders structured crystal card details for card heights',
+        (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  SkeletonPlaceholder(height: 96),
+                  SizedBox(height: 12),
+                  SkeletonPlaceholder(height: 156),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.byType(SkeletonPlaceholder), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'CrystalModalSheet keeps Save button pinned, unfocuses active input on background tap, and closes on handle tap',
+        (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      bool saved = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      useRootNavigator: true,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (ctx) => CrystalModalSheet(
+                        title: 'EDIT PROFILE & BIOMETRICS',
+                        subtitle: 'Official PAFF Competitor Dossier',
+                        primaryActionLabel: 'Save Changes',
+                        onPrimaryAction: () {
+                          saved = true;
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Column(
+                          children: [
+                            TextField(
+                              key: const ValueKey('test_bio_input'),
+                              focusNode: focusNode,
+                              decoration: CrystalModalSheet.inputDecoration(
+                                labelText: 'Body Weight (kg)',
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            const Text('Tap Area Outside Field'),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open Editor'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Editor'));
+      await tester.pumpAndSettle();
+
+      // Verify pinned Save Changes button is visible
+      expect(
+        find.byKey(const ValueKey('crystal_modal_primary_action')),
+        findsOneWidget,
+      );
+      expect(find.text('Save Changes'), findsOneWidget);
+
+      // Focus the TextField, then tap on the sheet background text to unfocus
+      await tester.tap(find.byKey(const ValueKey('test_bio_input')));
+      await tester.pump();
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.text('Tap Area Outside Field'));
+      await tester.pump();
+      expect(focusNode.hasFocus, isFalse);
+
+      // Tapping the primary action invokes callback and closes
+      await tester.tap(find.byKey(const ValueKey('crystal_modal_primary_action')));
+      await tester.pumpAndSettle();
+      expect(saved, isTrue);
+    });
+
+    testWidgets(
+        'highlights Passport tab when navigated from Arena and steps back chronologically',
+        (tester) async {
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                MainShellScreen(navigationShell: navigationShell),
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => Column(
+                      children: [
+                        const Text('Arena root'),
+                        ElevatedButton(
+                          onPressed: () => MainShellScope.goToMainTabByPath(
+                              context, '/discover'),
+                          child: const Text('Go Discover'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/discover',
+                    builder: (context, state) => Column(
+                      children: [
+                        const Text('Discover root'),
+                        ElevatedButton(
+                          onPressed: () => MainShellScope.goToMainTabByPath(
+                              context, '/athlete/profile'),
+                          child: const Text('Go Passport'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/tournaments',
+                    builder: (context, state) => const Text('Events root'),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/community/feed',
+                    builder: (context, state) => const Text('Community root'),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/athlete/profile',
+                    builder: (context, state) => Column(
+                      children: [
+                        const Text('Passport root'),
+                        const CrystalBackButton(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(_navSemantics(tester, 'Arena').properties.selected, isTrue);
+      expect(_navSemantics(tester, 'Passport').properties.selected, isFalse);
+
+      // Navigate Arena -> Discover -> Passport
+      await tester.tap(find.text('Go Discover'));
+      await tester.pumpAndSettle();
+      expect(_navSemantics(tester, 'Discover').properties.selected, isTrue);
+
+      await tester.tap(find.text('Go Passport'));
+      await tester.pumpAndSettle();
+      expect(_navSemantics(tester, 'Passport').properties.selected, isTrue);
+      expect(_navSemantics(tester, 'Arena').properties.selected, isFalse);
+
+      // Step back once -> returns to Discover (not straight to Arena)
+      final passportContext = tester.element(find.text('Passport root'));
+      final steppedToDiscover =
+          MainShellScope.stepBackIfPossible(passportContext);
+      await tester.pumpAndSettle();
+      expect(steppedToDiscover, isTrue);
+      expect(_navSemantics(tester, 'Discover').properties.selected, isTrue);
+
+      // Step back again -> returns to Arena
+      final discoverContext = tester.element(find.text('Discover root'));
+      final steppedToArena = MainShellScope.stepBackIfPossible(discoverContext);
+      await tester.pumpAndSettle();
+      expect(steppedToArena, isTrue);
+      expect(_navSemantics(tester, 'Arena').properties.selected, isTrue);
+    });
+
+    testWidgets('resets vertical scroll position to top when shifting tabs',
+        (tester) async {
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) =>
+                MainShellScreen(navigationShell: navigationShell),
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => ListView.builder(
+                      controller: scrollController,
+                      itemCount: 50,
+                      itemExtent: 60,
+                      itemBuilder: (context, index) => Text('Row $index'),
+                    ),
+                  ),
+                ],
+              ),
+              for (var i = 1; i < _tabs.length; i++)
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: '/${_tabs[i].label.toLowerCase()}',
+                      builder: (context, state) =>
+                          Center(child: Text('${_tabs[i].label} page')),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      scrollController.jumpTo(360.0);
+      await tester.pump();
+      expect(scrollController.offset, 360.0);
+
+      // Switch to Events tab and back to Arena tab -> scroll resets to 0.0
+      await tester.tap(find.text('Events'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Arena'));
+      await tester.pumpAndSettle();
+
+      expect(scrollController.offset, 0.0);
+    });
+
+    testWidgets(
+        'CrystalSnackBar, CrystalActionButton, CrystalHeaderActionPill, and CrystalFloatingActionButton render cleanly',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(
+              actions: [
+                CrystalHeaderActionPill(
+                  label: 'Mark all read',
+                  icon: Icons.done_all_rounded,
+                  onTap: () {},
+                ),
+              ],
+            ),
+            body: Builder(
+              builder: (context) => Center(
+                child: CrystalActionButton(
+                  label: 'Log a Session',
+                  icon: Icons.fitness_center,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CrystalSnackBar(
+                        content: const Text('All alerts marked as read'),
+                        backgroundColor: AppTheme.success,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            floatingActionButton: CrystalFloatingActionButton(
+              tooltip: 'Log a session',
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Mark all read'), findsOneWidget);
+      expect(find.text('Log a Session'), findsOneWidget);
+      expect(find.byType(CrystalFloatingActionButton), findsOneWidget);
+
+      await tester.tap(find.text('Log a Session'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('All alerts marked as read'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

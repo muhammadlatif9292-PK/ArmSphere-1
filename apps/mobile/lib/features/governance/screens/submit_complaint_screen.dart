@@ -8,6 +8,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Submit Complaint Screen — files an official dispute via
 /// POST /governance/disputes (title >= 5 chars, description >= 10 chars).
@@ -51,7 +52,7 @@ class _SubmitComplaintScreenState extends ConsumerState<SubmitComplaintScreen> {
       if (!mounted) return;
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Dispute filed successfully. Track review under Governance & Disputes.'),
             backgroundColor: AppTheme.success,
           ),
@@ -59,7 +60,7 @@ class _SubmitComplaintScreenState extends ConsumerState<SubmitComplaintScreen> {
         context.go('/governance');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Could not file dispute. Please verify network and try again.'),
             backgroundColor: AppTheme.error,
           ),

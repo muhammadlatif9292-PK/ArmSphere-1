@@ -14,6 +14,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 8 / Stage 6 Convergence: Conversations List Screen (Inbox)
 ///
@@ -30,9 +31,10 @@ class ConversationsListScreen extends ConsumerWidget {
     final conversationsAsync = ref.watch(conversationsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -87,7 +89,7 @@ class ConversationsListScreen extends ConsumerWidget {
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(conversationsProvider),
             child: ListView.separated(
-              key: const PageStorageKey<String>('conversations_list_view'),
+              key: const ValueKey<String>('conversations_list_view'),
               padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: conversations.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -246,7 +248,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (!ok && mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Could not send message. Please verify connection.'),
             backgroundColor: AppTheme.error,
           ),
@@ -258,7 +260,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -278,9 +280,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isDisconnected = messagesAsync.hasError;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -304,8 +307,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             children: [
           Expanded(
             child: messagesAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+              loading: () => const CrystalScreenLoadingView(
+                itemCount: 4,
+                cardHeight: 74,
               ),
               error: (error, _) => AppErrorView(
                 error: error,

@@ -18,6 +18,7 @@ import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 10 / Stage 6 Convergence: Teams List Screen
 ///
@@ -34,10 +35,11 @@ class TeamsListScreen extends ConsumerWidget {
     final myTeamsAsync = ref.watch(myTeamsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
         leading: const CrystalBackButton(),
         title: const Text(
           'My Teams & Clubs',
@@ -51,38 +53,11 @@ class TeamsListScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Center(
-              child: InkWell(
+              child: CrystalHeaderActionPill(
                 key: const ValueKey('teams_list_create_button'),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/teams/create');
-                },
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.group_add_outlined, size: 14, color: AppTheme.goldPrimary),
-                      SizedBox(width: 4),
-                      Text(
-                        'CREATE TEAM',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                label: 'CREATE TEAM',
+                icon: Icons.group_add_outlined,
+                onTap: () => context.push('/teams/create'),
               ),
             ),
           ),
@@ -134,7 +109,7 @@ class TeamsListScreen extends ConsumerWidget {
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(myTeamsProvider),
             child: ListView(
-              key: const PageStorageKey<String>('teams_list_view'),
+              key: const ValueKey<String>('teams_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,
@@ -357,7 +332,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       if (mounted && successMessage != null) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage),
             backgroundColor: AppTheme.success,
           ),
@@ -367,14 +342,14 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -593,11 +568,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (_) => _AddMemberSheet(teamId: teamId),
     );
   }
@@ -606,11 +579,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (_) => _EditTeamSheet(team: team),
     );
   }
@@ -619,11 +590,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (_) => _SendSparringInviteSheet(senderTeam: team),
     );
   }
@@ -635,10 +604,11 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     final sparringInvitesAsync = ref.watch(sparringInvitesProvider(widget.teamId));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
         leading: const CrystalBackButton(fallbackRoute: '/teams'),
         title: const Text(
           'Team Dossier',
@@ -1341,7 +1311,7 @@ class _EditTeamSheetState extends ConsumerState<_EditTeamSheet> {
         HapticFeedback.mediumImpact();
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Team details updated'),
             backgroundColor: AppTheme.success,
           ),
@@ -1350,7 +1320,7 @@ class _EditTeamSheetState extends ConsumerState<_EditTeamSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -1363,73 +1333,44 @@ class _EditTeamSheetState extends ConsumerState<_EditTeamSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: AppTheme.space20,
-          right: AppTheme.space20,
-          top: AppTheme.space16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.space20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'EDIT TEAM DOSSIER',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
-                color: AppTheme.textPrimary,
-              ),
+    return CrystalModalSheet(
+      title: 'EDIT TEAM DOSSIER',
+      subtitle: 'Update Squad Name, Creed & Federation Identity',
+      headerIcon: Icons.shield_outlined,
+      secondaryActionLabel: 'Cancel',
+      primaryActionLabel: 'SAVE TEAM CHANGES',
+      primaryActionIcon: Icons.check_circle_outline_rounded,
+      isPrimaryLoading: _busy,
+      onPrimaryAction: _busy
+          ? null
+          : () {
+              CrystalModalSheet.unfocusActiveInput(context);
+              _save();
+            },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _nameController,
+            onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: CrystalModalSheet.inputDecoration(
+              labelText: 'Team Name',
+              prefixIcon: Icons.groups_outlined,
             ),
-            const SizedBox(height: AppTheme.space16),
-            TextField(
-              controller: _nameController,
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Team Name',
-                filled: true,
-                fillColor: AppTheme.elevatedSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-              ),
+          ),
+          const SizedBox(height: AppTheme.space12),
+          TextField(
+            controller: _descriptionController,
+            maxLines: 3,
+            onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: CrystalModalSheet.inputDecoration(
+              labelText: 'Description & Creed',
             ),
-            const SizedBox(height: AppTheme.space12),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Description & Creed',
-                filled: true,
-                fillColor: AppTheme.elevatedSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppTheme.space16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.goldPrimary,
-                foregroundColor: AppTheme.voidBackground,
-                minimumSize: const Size.fromHeight(48),
-              ),
-              onPressed: _busy ? null : _save,
-              child: const Text(
-                'SAVE TEAM CHANGES',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1481,7 +1422,7 @@ class _SendSparringInviteSheetState extends ConsumerState<_SendSparringInviteShe
         HapticFeedback.mediumImpact();
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Sparring invite dispatched to opponent captain'),
             backgroundColor: AppTheme.success,
           ),
@@ -1490,7 +1431,7 @@ class _SendSparringInviteSheetState extends ConsumerState<_SendSparringInviteShe
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -1506,120 +1447,86 @@ class _SendSparringInviteSheetState extends ConsumerState<_SendSparringInviteShe
     final teamsAsync = ref.watch(teamsDirectoryProvider(null));
     final senderTeamId = widget.senderTeam['id']?.toString();
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: AppTheme.space20,
-          right: AppTheme.space20,
-          top: AppTheme.space16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.space20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'DISPATCH SPARRING INVITE',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
-                color: AppTheme.textPrimary,
-              ),
+    return CrystalModalSheet(
+      title: 'DISPATCH SPARRING INVITE',
+      subtitle: 'Challenge a Federated Squad to Table Practice',
+      headerIcon: Icons.sports_kabaddi_rounded,
+      secondaryActionLabel: 'Cancel',
+      primaryActionLabel: 'SEND SPARRING CHALLENGE',
+      primaryActionIcon: Icons.send_rounded,
+      isPrimaryLoading: _busy,
+      onPrimaryAction: _busy
+          ? null
+          : () {
+              CrystalModalSheet.unfocusActiveInput(context);
+              _submit();
+            },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          teamsAsync.when(
+            loading: () => const LinearProgressIndicator(color: AppTheme.goldPrimary),
+            error: (err, _) => Text(
+              AppErrorFormatter.format(err),
+              style: const TextStyle(color: AppTheme.error, fontSize: 12),
             ),
-            const SizedBox(height: AppTheme.space12),
-            teamsAsync.when(
-              loading: () => const LinearProgressIndicator(color: AppTheme.goldPrimary),
-              error: (err, _) => Text(
-                AppErrorFormatter.format(err),
-                style: const TextStyle(color: AppTheme.error, fontSize: 12),
-              ),
-              data: (allTeams) {
-                final opponents = allTeams
-                    .where((t) => t['id']?.toString() != senderTeamId)
-                    .toList();
-                return DropdownButtonFormField<String>(
-                  initialValue: _recipientTeamId,
-                  dropdownColor: AppTheme.elevatedSurface,
-                  style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Opponent Team',
-                    filled: true,
-                    fillColor: AppTheme.elevatedSurface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    ),
-                  ),
-                  items: opponents
-                      .map((t) => DropdownMenuItem(
-                            value: t['id']?.toString(),
-                            child: Text(t['name']?.toString() ?? 'Team'),
-                          ))
-                      .toList(),
-                  onChanged: (val) => setState(() => _recipientTeamId = val),
-                );
-              },
-            ),
-            const SizedBox(height: AppTheme.space12),
-            TextField(
-              controller: _titleController,
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Session Title (min 3 chars)',
-                hintText: 'e.g. Friday Night Heavyweight Table Practice',
-                filled: true,
-                fillColor: AppTheme.elevatedSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            data: (allTeams) {
+              final opponents = allTeams
+                  .where((t) => t['id']?.toString() != senderTeamId)
+                  .toList();
+              return DropdownButtonFormField<String>(
+                initialValue: _recipientTeamId,
+                dropdownColor: const Color(0xF50E1525),
+                onTap: () => CrystalModalSheet.unfocusActiveInput(context),
+                style: const TextStyle(color: AppTheme.textPrimary),
+                decoration: CrystalModalSheet.inputDecoration(
+                  labelText: 'Opponent Team',
                 ),
-              ),
+                items: opponents
+                    .map((t) => DropdownMenuItem(
+                          value: t['id']?.toString(),
+                          child: Text(t['name']?.toString() ?? 'Team'),
+                        ))
+                    .toList(),
+                onChanged: (val) {
+                  CrystalModalSheet.unfocusActiveInput(context);
+                  setState(() => _recipientTeamId = val);
+                },
+              );
+            },
+          ),
+          const SizedBox(height: AppTheme.space12),
+          TextField(
+            controller: _titleController,
+            onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: CrystalModalSheet.inputDecoration(
+              labelText: 'Session Title (min 3 chars)',
+              hintText: 'e.g. Friday Night Heavyweight Table Practice',
             ),
-            const SizedBox(height: AppTheme.space12),
-            TextField(
-              controller: _locationController,
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Location / Gym (optional)',
-                filled: true,
-                fillColor: AppTheme.elevatedSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-              ),
+          ),
+          const SizedBox(height: AppTheme.space12),
+          TextField(
+            controller: _locationController,
+            onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: CrystalModalSheet.inputDecoration(
+              labelText: 'Location / Gym (optional)',
+              prefixIcon: Icons.place_outlined,
             ),
-            const SizedBox(height: AppTheme.space12),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 2,
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                labelText: 'Notes / Weight Classes (optional)',
-                filled: true,
-                fillColor: AppTheme.elevatedSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-              ),
+          ),
+          const SizedBox(height: AppTheme.space12),
+          TextField(
+            controller: _descriptionController,
+            maxLines: 2,
+            onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: CrystalModalSheet.inputDecoration(
+              labelText: 'Notes / Weight Classes (optional)',
             ),
-            const SizedBox(height: AppTheme.space16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.goldPrimary,
-                foregroundColor: AppTheme.voidBackground,
-                minimumSize: const Size.fromHeight(48),
-              ),
-              onPressed: _busy ? null : _submit,
-              child: const Text(
-                'SEND SPARRING CHALLENGE',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1668,7 +1575,7 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet> {
         HapticFeedback.mediumImpact();
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('${selected['displayName']} added to the team'),
             backgroundColor: AppTheme.success,
           ),
@@ -1678,14 +1585,14 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Could not add member: $e'),
             backgroundColor: AppTheme.error,
           ),
@@ -1700,202 +1607,146 @@ class _AddMemberSheetState extends ConsumerState<_AddMemberSheet> {
   Widget build(BuildContext context) {
     final resultsAsync = ref.watch(athleteSearchProvider);
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: AppTheme.space20,
-          right: AppTheme.space20,
-          top: AppTheme.space16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + AppTheme.space20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Knurled Handle
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.textMuted.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+    return CrystalModalSheet(
+      title: 'RECRUIT ATHLETE TO ROSTER',
+      subtitle: 'Search registered athletes by name or federated handle.',
+      headerIcon: Icons.person_add_alt_1_rounded,
+      primaryActionLabel: _selected != null ? 'CONFIRM ROSTER ADDITION' : null,
+      primaryActionIcon: Icons.verified_user_outlined,
+      isPrimaryLoading: _busy,
+      onPrimaryAction: (_selected != null && !_busy)
+          ? () {
+              CrystalModalSheet.unfocusActiveInput(context);
+              _addSelected();
+            }
+          : null,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _searchController,
+            autofocus: true,
+            onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+            style: const TextStyle(color: AppTheme.textPrimary),
+            decoration: CrystalModalSheet.inputDecoration(
+              labelText: 'Search Athlete',
+              hintText: 'Search athlete name...',
+              prefixIcon: Icons.search,
             ),
-            const SizedBox(height: AppTheme.space16),
-            const Text(
-              'RECRUIT ATHLETE TO ROSTER',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
-                color: AppTheme.textPrimary,
+            onChanged: _onQueryChanged,
+          ),
+          const SizedBox(height: AppTheme.space12),
+          if (_selected != null) ...[
+            ElevatedActionCard(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              borderColor: AppTheme.goldPrimary,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _selected!['displayName']?.toString() ?? 'Athlete',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const Text(
+                          'Selected candidate',
+                          style: TextStyle(fontSize: 11, color: AppTheme.goldLight),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ChoiceChip(
+                    label: const Text('MEMBER'),
+                    selected: _role == 'MEMBER',
+                    selectedColor: AppTheme.goldPrimary,
+                    onSelected: (_) {
+                      CrystalModalSheet.unfocusActiveInput(context);
+                      setState(() => _role = 'MEMBER');
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  ChoiceChip(
+                    label: const Text('CAPTAIN'),
+                    selected: _role == 'CAPTAIN',
+                    selectedColor: AppTheme.goldPrimary,
+                    onSelected: (_) {
+                      CrystalModalSheet.unfocusActiveInput(context);
+                      setState(() => _role = 'CAPTAIN');
+                    },
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Search registered athletes by name or federated handle.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: AppTheme.space16),
-            TextField(
-              controller: _searchController,
-              autofocus: true,
-              style: const TextStyle(color: AppTheme.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Search athlete name...',
-                hintStyle: const TextStyle(color: AppTheme.textMuted),
-                prefixIcon: const Icon(Icons.search, color: AppTheme.goldPrimary),
-                filled: true,
-                fillColor: AppTheme.glassSurface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  borderSide: const BorderSide(color: AppTheme.borderTitanium),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  borderSide: const BorderSide(color: AppTheme.goldPrimary),
-                ),
-              ),
-              onChanged: _onQueryChanged,
             ),
             const SizedBox(height: AppTheme.space12),
-
-            if (_selected != null) ...[
-              ElevatedActionCard(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                borderColor: AppTheme.goldPrimary,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _selected!['displayName']?.toString() ?? 'Athlete',
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          const Text(
-                            'Selected candidate',
-                            style: TextStyle(fontSize: 11, color: AppTheme.goldLight),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ChoiceChip(
-                      label: const Text('MEMBER'),
-                      selected: _role == 'MEMBER',
-                      selectedColor: AppTheme.goldPrimary,
-                      onSelected: (_) => setState(() => _role = 'MEMBER'),
-                    ),
-                    const SizedBox(width: 6),
-                    ChoiceChip(
-                      label: const Text('CAPTAIN'),
-                      selected: _role == 'CAPTAIN',
-                      selectedColor: AppTheme.goldPrimary,
-                      onSelected: (_) => setState(() => _role = 'CAPTAIN'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppTheme.space12),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.goldPrimary,
-                  foregroundColor: AppTheme.voidBackground,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                ),
-                onPressed: _busy ? null : _addSelected,
-                child: _busy
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.voidBackground),
-                      )
-                    : const Text(
-                        'CONFIRM ROSTER ADDITION',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-              ),
-              const SizedBox(height: AppTheme.space12),
-            ],
-
-            Flexible(
-              child: resultsAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(AppTheme.space16),
-                  child: Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
-                ),
-                error: (error, _) => Padding(
-                  padding: const EdgeInsets.all(AppTheme.space16),
-                  child: Text(
-                    error.toString(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppTheme.error),
-                  ),
-                ),
-                data: (results) {
-                  if (results.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(AppTheme.space16),
-                      child: Text(
-                        'No matching athletes found.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppTheme.textSecondary),
-                      ),
-                    );
-                  }
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: results.length,
-                    itemBuilder: (context, index) {
-                      final a = results[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppTheme.elevatedSurface,
-                          backgroundImage: a['profilePhoto'] != null
-                              ? NetworkImage(a['profilePhoto'].toString())
-                              : null,
-                          child: a['profilePhoto'] == null
-                              ? Text((a['displayName']?.toString() ?? '?')[0].toUpperCase())
-                              : null,
-                        ),
-                        title: Text(
-                          a['displayName']?.toString() ?? 'Athlete',
-                          style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: a['province'] != null
-                            ? Text(a['province'].toString(), style: const TextStyle(color: AppTheme.textSecondary))
-                            : null,
-                        trailing: const Icon(Icons.add_circle_outline, color: AppTheme.goldPrimary),
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selected = a;
-                            _searchController.text = a['displayName']?.toString() ?? '';
-                          });
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
           ],
-        ),
+          SizedBox(
+            height: 240,
+            child: resultsAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+              ),
+              error: (error, _) => Center(
+                child: Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppTheme.error),
+                ),
+              ),
+              data: (results) {
+                if (results.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No matching athletes found.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final a = results[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.elevatedSurface,
+                        backgroundImage: a['profilePhoto'] != null
+                            ? NetworkImage(a['profilePhoto'].toString())
+                            : null,
+                        child: a['profilePhoto'] == null
+                            ? Text((a['displayName']?.toString() ?? '?')[0].toUpperCase())
+                            : null,
+                      ),
+                      title: Text(
+                        a['displayName']?.toString() ?? 'Athlete',
+                        style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: a['province'] != null
+                          ? Text(a['province'].toString(), style: const TextStyle(color: AppTheme.textSecondary))
+                          : null,
+                      trailing: const Icon(Icons.add_circle_outline, color: AppTheme.goldPrimary),
+                      onTap: () {
+                        CrystalModalSheet.unfocusActiveInput(context);
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selected = a;
+                          _searchController.text = a['displayName']?.toString() ?? '';
+                        });
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1972,18 +1823,18 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('${newTeam['name']} created — you are now team captain.'),
             backgroundColor: AppTheme.success,
           ),
         );
-        context.go('/teams/${newTeam['id']}');
+        context.replace('/teams/${newTeam['id']}');
       }
     } on ApiException catch (e) {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),
@@ -1993,7 +1844,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
           ),

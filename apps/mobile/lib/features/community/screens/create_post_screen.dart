@@ -13,6 +13,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Compose screen — submits a real video-link post via POST /community/links.
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
@@ -105,7 +106,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           HapticFeedback.lightImpact();
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Video link submitted for federation moderation.'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -116,7 +117,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.detail),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -126,7 +127,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Could not submit link: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,

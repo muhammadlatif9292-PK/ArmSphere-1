@@ -6,6 +6,7 @@ class SupportTicketsNotifier
     extends AutoDisposeFamilyAsyncNotifier<List<Map<String, dynamic>>, String?> {
   @override
   Future<List<Map<String, dynamic>>> build(String? arg) async {
+    ref.keepAlive();
     final repo = ref.watch(supportRepositoryProvider);
     return repo.listTickets(status: arg);
   }
@@ -38,6 +39,7 @@ class SupportTicketDetailNotifier
     extends AutoDisposeFamilyAsyncNotifier<Map<String, dynamic>, String> {
   @override
   Future<Map<String, dynamic>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(supportRepositoryProvider);
     return repo.getTicket(arg);
   }

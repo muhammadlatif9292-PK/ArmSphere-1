@@ -9,7 +9,9 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/providers/payment_methods_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class PaymentMethodsScreen extends ConsumerStatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -48,7 +50,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Payment card linked securely via Stripe'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -61,7 +63,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
         if (!errString.contains('canceled') && !errString.contains('Canceled')) {
           final formatted = AppErrorFormatter.format(e);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            CrystalSnackBar(
               content: Text(formatted),
               backgroundColor: AppTheme.warning,
               behavior: SnackBarBehavior.floating,
@@ -88,7 +90,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       await ref.read(paymentMethodsProvider.notifier).deletePaymentMethod(id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Payment method removed successfully'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -98,7 +100,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Failed to delete payment method: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -120,8 +122,10 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     final isPaymentConfigured = ref.watch(paymentConfiguredProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text('Payment Methods'),
         actions: const [CrystalHomeButton()],
@@ -301,11 +305,12 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                   ],
                 ),
               ),
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.space24),
-                  child: CircularProgressIndicator(),
-                ),
+              loading: () => const Column(
+                children: [
+                  SkeletonPlaceholder(height: 76),
+                  SizedBox(height: AppTheme.space10),
+                  SkeletonPlaceholder(height: 76),
+                ],
               ),
             ),
             const SizedBox(height: AppTheme.space32),

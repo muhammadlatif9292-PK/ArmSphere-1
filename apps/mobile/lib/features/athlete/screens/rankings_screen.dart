@@ -14,6 +14,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});
@@ -90,10 +91,13 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
         ref.watch(athleteProfileProvider).value?['id']?.toString();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.rankings,
+        ),
         leading: const CrystalBackButton(),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -314,7 +318,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                   }
 
                   return ListView.separated(
-                    key: const PageStorageKey<String>('rankings_list_view'),
+                    key: const ValueKey<String>('rankings_list_view'),
                     padding: EdgeInsets.fromLTRB(
                       AppTheme.space16,
                       AppTheme.space8,
@@ -481,7 +485,10 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                     ),
                   ],
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const CrystalScreenLoadingView(
+                  itemCount: 5,
+                  cardHeight: 78,
+                ),
               ),
             ),
           ),

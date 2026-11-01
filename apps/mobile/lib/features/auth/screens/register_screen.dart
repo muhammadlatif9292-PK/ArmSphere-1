@@ -8,6 +8,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -56,7 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         final isConflict = errorMsg.toLowerCase().contains('already exists') ||
                            errorMsg.toLowerCase().contains('conflict');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(errorMsg),
             backgroundColor: Theme.of(context).colorScheme.error,
             duration: const Duration(seconds: 5),

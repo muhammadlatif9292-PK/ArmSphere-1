@@ -9,6 +9,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class ApplyRoleScreen extends ConsumerStatefulWidget {
   const ApplyRoleScreen({super.key});
@@ -74,7 +75,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Application submitted successfully for federation review.'),
             backgroundColor: AppTheme.success,
           ),
@@ -84,7 +85,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.toString()),
             backgroundColor: AppTheme.error,
           ),

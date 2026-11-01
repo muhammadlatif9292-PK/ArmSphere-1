@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class CompetitionCategoriesGrid extends StatefulWidget {
   final Map<String, dynamic>? tournament;
 
@@ -458,9 +459,11 @@ class _CompetitionCategoriesGridState extends State<CompetitionCategoriesGrid> {
   void _showCategoryDetailModal(BuildContext context, Map<String, dynamic> cat) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(22.0),
@@ -555,7 +558,7 @@ class _CompetitionCategoriesGridState extends State<CompetitionCategoriesGrid> {
                   ? () {
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        CrystalSnackBar(
                           content: Text('✓ Category ${cat['division']} ${cat['weightClass']} selected for registration.'),
                           backgroundColor: AppTheme.goldPrimary,
                         ),

@@ -9,6 +9,7 @@ import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -32,9 +33,11 @@ class MyNominationsScreen extends ConsumerWidget {
     final nominationsAsync = ref.watch(nominationListProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.rankings),
         leading: const CrystalBackButton(),
         title: const Text('My Nominations'),
         actions: [
@@ -56,7 +59,7 @@ class MyNominationsScreen extends ConsumerWidget {
           RefreshIndicator(
             onRefresh: () async => ref.invalidate(nominationListProvider),
             child: nominationsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const CrystalScreenLoadingView(itemCount: 3, cardHeight: 112),
           error: (e, _) => AppErrorView(
             error: e,
             title: 'Could not load nominations',

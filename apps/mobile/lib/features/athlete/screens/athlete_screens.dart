@@ -20,6 +20,8 @@ import '../../../core/providers/rankings_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 
 const Map<int, String> _months = {
   1: 'Jan',
@@ -160,7 +162,7 @@ class _AthleteDashboardScreenState
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
           // Full-Screen Crystal-Clear Functional Arena Backdrop (Zero Blur, 100% Sharp)
@@ -493,7 +495,7 @@ class _AthleteDashboardScreenState
                     tooltip: 'Discover & Search',
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      context.push('/discover');
+                      MainShellScope.goToMainTabByPath(context, '/discover');
                     },
                   ),
                 ],
@@ -596,7 +598,7 @@ class _AthleteDashboardScreenState
     final exploreButton = TactilePressWrapper(
       onTap: () {
         HapticFeedback.selectionClick();
-        context.push('/tournaments');
+        MainShellScope.goToMainTabByPath(context, '/tournaments');
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1044,15 +1046,17 @@ class _AthleteDashboardScreenState
                 const SizedBox(height: 12),
 
                 // Athlete Identity Stage
-                Row(
-                  children: [
-                    // Avatar Portrait Frame
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/athlete/profile');
-                      },
-                      child: Container(
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    MainShellScope.goToMainTabByPath(
+                        context, '/athlete/profile');
+                  },
+                  child: Row(
+                    children: [
+                      // Avatar Portrait Frame
+                      Container(
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
@@ -1093,91 +1097,92 @@ class _AthleteDashboardScreenState
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayName,
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.4,
-                              color: AppTheme.textPure,
-                              height: 1.12,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                                color: AppTheme.textPure,
+                                height: 1.12,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 5),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            runSpacing: 3,
-                            children: [
-                              if (country != null && country.isNotEmpty) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.05),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                        color: AppTheme.borderSubtle,
-                                        width: 1.0),
-                                  ),
-                                  child: Text(
-                                    country,
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontSize: 10,
-                                      color: AppTheme.textSecondary,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.4,
+                            const SizedBox(height: 5),
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 3,
+                              children: [
+                                if (country != null && country.isNotEmpty) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 5, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                          color: AppTheme.borderSubtle,
+                                          width: 1.0),
+                                    ),
+                                    child: Text(
+                                      country,
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 10,
+                                        color: AppTheme.textSecondary,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.4,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                              Text.rich(
-                                TextSpan(
-                                  children: [
-                                    WidgetSpan(
-                                      alignment: PlaceholderAlignment.middle,
-                                      child: Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 3.5),
-                                        child: Icon(
-                                          Icons.shield_outlined,
-                                          size: 11,
-                                          color: AppTheme.crimson
-                                              .withValues(alpha: 0.85),
+                                ],
+                                Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      WidgetSpan(
+                                        alignment: PlaceholderAlignment.middle,
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 3.5),
+                                          child: Icon(
+                                            Icons.shield_outlined,
+                                            size: 11,
+                                            color: AppTheme.crimson
+                                                .withValues(alpha: 0.85),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    TextSpan(
-                                      text: clubName,
-                                      style: const TextStyle(
-                                        fontFamily: AppTheme.fontBody,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.2,
-                                        color: AppTheme.textSecondary,
+                                      TextSpan(
+                                        text: clubName,
+                                        style: const TextStyle(
+                                          fontFamily: AppTheme.fontBody,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.2,
+                                          color: AppTheme.textSecondary,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 14),
 
@@ -1309,7 +1314,7 @@ class _AthleteDashboardScreenState
       if (myProfileId != null) {
         context.push('/athlete/$myProfileId/training-log');
       } else {
-        context.push('/athlete/profile');
+        MainShellScope.goToMainTabByPath(context, '/athlete/profile');
       }
     }
 
@@ -1872,7 +1877,7 @@ class _AthleteDashboardScreenState
 
         void openBracket() {
           HapticFeedback.mediumImpact();
-          context.push('/tournaments');
+          MainShellScope.goToMainTabByPath(context, '/tournaments');
         }
 
         // Two fighter plates side by side; stacked at large text scales so
@@ -2336,33 +2341,13 @@ class _AthleteDashboardScreenState
             ),
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                context.push('/tournaments');
-              },
-              icon: const Icon(Icons.emoji_events_outlined,
-                  size: 16, color: Colors.black),
-              label: const Text(
-                'BROWSE TOURNAMENTS',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
-                  color: Colors.black,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.goldPrimary,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                elevation: 0,
-              ),
-            ),
+          CrystalActionButton(
+            label: 'BROWSE TOURNAMENTS',
+            icon: Icons.emoji_events_outlined,
+            expand: true,
+            onPressed: () {
+              MainShellScope.goToMainTabByPath(context, '/tournaments');
+            },
           ),
         ],
       ),
@@ -2649,7 +2634,7 @@ class _AthleteDashboardScreenState
 
     void open() {
       HapticFeedback.selectionClick();
-      context.push('/tournaments');
+      MainShellScope.goToMainTabByPath(context, '/tournaments');
     }
 
     final datePlate = parsed == null
@@ -3084,7 +3069,7 @@ class _AthleteDashboardScreenState
           color: AppTheme.goldPrimary,
           onTap: () {
             HapticFeedback.selectionClick();
-            context.push('/tournaments');
+            MainShellScope.goToMainTabByPath(context, '/tournaments');
           },
         ),
         _ShortcutButton(
@@ -3093,9 +3078,11 @@ class _AthleteDashboardScreenState
           color: AppTheme.emerald,
           onTap: () {
             HapticFeedback.selectionClick();
-            context.push(myProfileId != null
-                ? '/athlete/$myProfileId/training-log'
-                : '/athlete/profile');
+            if (myProfileId != null) {
+              context.push('/athlete/$myProfileId/training-log');
+            } else {
+              MainShellScope.goToMainTabByPath(context, '/athlete/profile');
+            }
           },
         ),
         _ShortcutButton(
@@ -3623,11 +3610,14 @@ class AthleteProfileScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.passport,
+        ),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
           'Athlete Profile',
@@ -3826,15 +3816,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             profileAsync.when(
-              loading: () => const ElevatedActionCard(
-                padding: EdgeInsets.all(20),
-                child: SizedBox(
-                  height: 120,
-                  child: Center(
-                      child: CircularProgressIndicator(
-                          color: AppTheme.goldPrimary)),
-                ),
-              ),
+              loading: () => const SkeletonPlaceholder(height: 148),
               error: (_, __) => ArmSwitchEloCard(profileData: mergedProfile),
               data: (p) => ArmSwitchEloCard(profileData: p),
             ),
@@ -3875,14 +3857,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             profileAsync.when(
-              loading: () => const ElevatedActionCard(
-                padding: EdgeInsets.all(16),
-                child: SizedBox(
-                    height: 50,
-                    child: Center(
-                        child: CircularProgressIndicator(
-                            color: AppTheme.goldPrimary))),
-              ),
+              loading: () => const SkeletonPlaceholder(height: 82),
               error: (_, __) => _buildBiometricsCard(mergedProfile),
               data: (p) => _buildBiometricsCard(p),
             ),
@@ -4080,10 +4055,32 @@ class AthleteProfileScreen extends ConsumerWidget {
       text: (biometrics?['handLength'] ?? biometrics?['handWidth'])?.toString() ?? '',
     );
 
+    String recommendDivisionForWeight(double weightKg) {
+      if (weightKg <= 65) return '65kg';
+      if (weightKg <= 75) return '75kg';
+      if (weightKg <= 85) return '85kg';
+      if (weightKg <= 95) return '95kg';
+      if (weightKg <= 105) return '105kg';
+      return '105kg+';
+    }
+
     const weightClasses = ['65kg', '75kg', '85kg', '95kg', '105kg', '105kg+'];
+    const weightClassLabels = <String, String>{
+      '65kg': '65kg (≤ 65 kg)',
+      '75kg': '75kg (≤ 75 kg)',
+      '85kg': '85kg (≤ 85 kg)',
+      '95kg': '95kg (≤ 95 kg)',
+      '105kg': '105kg (≤ 105 kg)',
+      '105kg+': '105kg+ (> 105 kg)',
+    };
+
     String selectedWeightClass = profile['weightClass']?.toString() ?? '85kg';
     if (!weightClasses.contains(selectedWeightClass)) {
       selectedWeightClass = '85kg';
+    }
+    final initialBodyWeight = double.tryParse(weightCtrl.text.trim());
+    if (initialBodyWeight != null && initialBodyWeight > 0) {
+      selectedWeightClass = recommendDivisionForWeight(initialBodyWeight);
     }
 
     const arms = ['RIGHT', 'LEFT', 'AMBIDEXTROUS'];
@@ -4096,240 +4093,315 @@ class AthleteProfileScreen extends ConsumerWidget {
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      barrierColor: const Color(0xAA030509),
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'EDIT PROFILE & BIOMETRICS',
+            Future<void> submitChanges() async {
+              CrystalModalSheet.unfocusActiveInput(ctx);
+              HapticFeedback.mediumImpact();
+              setSheetState(() => saving = true);
+              final profilePayload = <String, dynamic>{
+                if (nameCtrl.text.trim().length >= 2)
+                  'displayName': nameCtrl.text.trim(),
+                'weightClass': selectedWeightClass,
+                'dominantArm': selectedArm,
+                'handedness': selectedArm,
+                'biography': bioCtrl.text.trim(),
+              };
+              final w = double.tryParse(weightCtrl.text.trim());
+              final h = double.tryParse(heightCtrl.text.trim());
+              final r = double.tryParse(reachCtrl.text.trim());
+              if (w != null && w > 0) profilePayload['weight'] = w;
+              if (h != null && h > 0) profilePayload['height'] = h;
+              if (r != null && r > 0) profilePayload['reach'] = r;
+
+              final bioPayload = <String, dynamic>{};
+              final fa = double.tryParse(forearmCtrl.text.trim());
+              final bi = double.tryParse(bicepCtrl.text.trim());
+              final hl = double.tryParse(handCtrl.text.trim());
+              if (fa != null && fa > 0) bioPayload['forearmCircumference'] = fa;
+              if (bi != null && bi > 0) bioPayload['bicepCircumference'] = bi;
+              if (hl != null && hl > 0) bioPayload['handLength'] = hl;
+
+              final ok = await ref
+                  .read(athleteProfileProvider.notifier)
+                  .updateProfileAndBiometrics(
+                    athleteId: athleteId,
+                    profileData: profilePayload,
+                    biometricsData: bioPayload,
+                  );
+              if (ctx.mounted) {
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CrystalSnackBar(
+                    content: Text(
+                      ok
+                          ? 'Profile & biometrics updated.'
+                          : 'Could not update profile.',
+                    ),
+                    backgroundColor: ok ? AppTheme.success : AppTheme.error,
+                  ),
+                );
+              }
+            }
+
+            return CrystalModalSheet(
+              title: 'EDIT PROFILE & BIOMETRICS',
+              subtitle: 'Official PAFF Competitor Dossier & Scale Measurements',
+              headerIcon: Icons.tune_rounded,
+              secondaryActionLabel: 'Cancel',
+              primaryActionLabel: 'Save Changes',
+              primaryActionIcon: Icons.check_circle_outline_rounded,
+              isPrimaryLoading: saving,
+              onPrimaryAction: submitChanges,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'COMPETITOR IDENTITY & DIVISION',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.9,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: nameCtrl,
+                    onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontBody,
+                      fontSize: 15,
+                      color: AppTheme.textPrimary,
+                    ),
+                    decoration: CrystalModalSheet.inputDecoration(
+                      labelText: 'Display Name',
+                      prefixIcon: Icons.badge_outlined,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedWeightClass,
+                          isExpanded: true,
+                          dropdownColor: const Color(0xF50E1525),
+                          onTap: () => CrystalModalSheet.unfocusActiveInput(ctx),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Competition Division',
+                          ),
+                          items: weightClasses
+                              .map(
+                                (wc) => DropdownMenuItem(
+                                  value: wc,
+                                  child: Text(
+                                    weightClassLabels[wc] ?? wc,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13.5),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) {
+                            CrystalModalSheet.unfocusActiveInput(ctx);
+                            if (v != null) {
+                              setSheetState(() => selectedWeightClass = v);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 5,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedArm,
+                          isExpanded: true,
+                          dropdownColor: const Color(0xF50E1525),
+                          onTap: () => CrystalModalSheet.unfocusActiveInput(ctx),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Dominant Arm',
+                          ),
+                          items: arms
+                              .map(
+                                (a) => DropdownMenuItem(
+                                  value: a,
+                                  child: Text(
+                                    a,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13.5),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) {
+                            CrystalModalSheet.unfocusActiveInput(ctx);
+                            if (v != null) {
+                              setSheetState(() => selectedArm = v);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'SCALE & ANTHROPOMETRIC BIOMETRICS',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.9,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Text(
+                          'Bracket: $selectedWeightClass',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontMono,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
                             color: AppTheme.goldPrimary,
-                            letterSpacing: 0.8,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Display Name',
-                        isDense: true,
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Entering your actual Body Weight (kg) automatically syncs your Competition Division bracket above.',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontBody,
+                      fontSize: 11.5,
+                      color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: selectedWeightClass,
-                            dropdownColor: AppTheme.cardSurface,
-                            decoration: const InputDecoration(
-                              labelText: 'Weight Class',
-                              isDense: true,
-                            ),
-                            items: weightClasses
-                                .map((wc) => DropdownMenuItem(value: wc, child: Text(wc)))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v != null) setSheetState(() => selectedWeightClass = v);
-                            },
+                  ),
+                  const SizedBox(height: 10),
+                  // 2-Column Frosted Crystal Grid — zero label truncation
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: weightCtrl,
+                          onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (val) {
+                            final parsed = double.tryParse(val.trim());
+                            if (parsed != null && parsed > 0) {
+                              final recommended = recommendDivisionForWeight(parsed);
+                              if (recommended != selectedWeightClass) {
+                                setSheetState(() => selectedWeightClass = recommended);
+                              }
+                            }
+                          },
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Body Weight (kg)',
+                            suffixText: 'kg',
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: selectedArm,
-                            dropdownColor: AppTheme.cardSurface,
-                            decoration: const InputDecoration(
-                              labelText: 'Dominant Arm',
-                              isDense: true,
-                            ),
-                            items: arms
-                                .map((a) => DropdownMenuItem(value: a, child: Text(a)))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v != null) setSheetState(() => selectedArm = v);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: weightCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Weight (kg)',
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: heightCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Height (cm)',
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: reachCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Reach (cm)',
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: forearmCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Forearm (cm)',
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: bicepCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Bicep (cm)',
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: handCtrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(
-                              labelText: 'Hand Span (cm)',
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: bioCtrl,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        labelText: 'Athletic Bio',
-                        isDense: true,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 46,
-                      child: ElevatedButton(
-                        onPressed: saving
-                            ? null
-                            : () async {
-                                HapticFeedback.mediumImpact();
-                                setSheetState(() => saving = true);
-                                final profilePayload = <String, dynamic>{
-                                  if (nameCtrl.text.trim().length >= 2)
-                                    'displayName': nameCtrl.text.trim(),
-                                  'weightClass': selectedWeightClass,
-                                  'dominantArm': selectedArm,
-                                  'handedness': selectedArm,
-                                  'biography': bioCtrl.text.trim(),
-                                };
-                                final w = double.tryParse(weightCtrl.text.trim());
-                                final h = double.tryParse(heightCtrl.text.trim());
-                                final r = double.tryParse(reachCtrl.text.trim());
-                                if (w != null && w > 0) profilePayload['weight'] = w;
-                                if (h != null && h > 0) profilePayload['height'] = h;
-                                if (r != null && r > 0) profilePayload['reach'] = r;
-
-                                final bioPayload = <String, dynamic>{};
-                                final fa = double.tryParse(forearmCtrl.text.trim());
-                                final bi = double.tryParse(bicepCtrl.text.trim());
-                                final hl = double.tryParse(handCtrl.text.trim());
-                                if (fa != null && fa > 0) bioPayload['forearmCircumference'] = fa;
-                                if (bi != null && bi > 0) bioPayload['bicepCircumference'] = bi;
-                                if (hl != null && hl > 0) bioPayload['handLength'] = hl;
-
-                                final ok = await ref
-                                    .read(athleteProfileProvider.notifier)
-                                    .updateProfileAndBiometrics(
-                                      athleteId: athleteId,
-                                      profileData: profilePayload,
-                                      biometricsData: bioPayload,
-                                    );
-                                if (ctx.mounted) {
-                                  Navigator.of(ctx).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        ok
-                                            ? 'Profile & biometrics updated.'
-                                            : 'Could not update profile.',
-                                      ),
-                                      backgroundColor:
-                                          ok ? AppTheme.success : AppTheme.error,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                        child: saving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Save Changes'),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: heightCtrl,
+                          onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Height (cm)',
+                            suffixText: 'cm',
+                          ),
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: reachCtrl,
+                          onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Arm Reach (cm)',
+                            suffixText: 'cm',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: forearmCtrl,
+                          onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Forearm (cm)',
+                            suffixText: 'cm',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: bicepCtrl,
+                          onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Bicep (cm)',
+                            suffixText: 'cm',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: handCtrl,
+                          onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: CrystalModalSheet.inputDecoration(
+                            labelText: 'Hand Span (cm)',
+                            suffixText: 'cm',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: bioCtrl,
+                    maxLines: 2,
+                    onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                    decoration: CrystalModalSheet.inputDecoration(
+                      labelText: 'Athletic Bio',
+                      hintText: 'Pulling style, titles, and federation background',
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -4799,10 +4871,13 @@ class AthleteAchievementsScreen extends ConsumerWidget {
     final athleteName = profileAsync.value?['displayName']?.toString();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.arena,
+        ),
         leading: const CrystalBackButton(),
         title: Text(
           athleteName != null && athleteName.isNotEmpty && targetId != null

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/state_providers.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class OfficialDocumentsWidget extends ConsumerStatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -94,7 +95,7 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('✓ ${_documents[index]['title']} downloaded successfully'),
             backgroundColor: _documents[index]['accentColor'] as Color,
             duration: const Duration(seconds: 2),
@@ -109,7 +110,7 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Failed to download ${_documents[index]['title']}: \${e.toString()}'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),

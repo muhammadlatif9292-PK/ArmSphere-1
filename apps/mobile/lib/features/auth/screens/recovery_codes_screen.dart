@@ -7,6 +7,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class RecoveryCodesScreen extends StatefulWidget {
   const RecoveryCodesScreen({super.key});
@@ -38,7 +39,7 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: const Row(
             children: [
               Icon(Icons.check_circle_outline, color: AppTheme.success, size: 20),

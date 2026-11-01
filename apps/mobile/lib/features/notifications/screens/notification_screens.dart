@@ -12,6 +12,7 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 8 / Stage 6 Convergence: Notifications List Screen
 ///
@@ -51,8 +52,8 @@ class _NotificationsListScreenState
       ref.invalidate(notificationProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All alerts marked as read'),
+          CrystalSnackBar(
+            content: const Text('All alerts marked as read'),
             backgroundColor: AppTheme.success,
           ),
         );
@@ -61,7 +62,7 @@ class _NotificationsListScreenState
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Could not mark all as read: $e'),
             backgroundColor: AppTheme.error,
           ),
@@ -117,10 +118,13 @@ class _NotificationsListScreenState
     final notificationsAsync = ref.watch(notificationProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.community,
+        ),
         leading: const CrystalBackButton(),
         title: const Text(
           'Notifications',
@@ -131,27 +135,26 @@ class _NotificationsListScreenState
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: _markingAll ? null : _markAllRead,
-            child: _markingAll
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppTheme.goldPrimary,
-                    ),
-                  )
-                : const Text(
-                    'Mark all read',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.goldPrimary,
-                    ),
+          if (_markingAll)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.goldPrimary,
                   ),
-          ),
+                ),
+              ),
+            )
+          else
+            CrystalHeaderActionPill(
+              label: 'Mark all read',
+              icon: Icons.done_all_rounded,
+              onTap: _markAllRead,
+            ),
           const CrystalHomeButton(),
         ],
       ),
@@ -161,14 +164,9 @@ class _NotificationsListScreenState
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
           ),
           notificationsAsync.when(
-        loading: () => ListView.separated(
-          padding: const EdgeInsets.all(AppTheme.space16),
+        loading: () => const CrystalScreenLoadingView(
           itemCount: 5,
-          separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
-          itemBuilder: (_, __) => const SkeletonPlaceholder(
-            height: 84,
-            borderRadius: AppTheme.radiusMedium,
-          ),
+          cardHeight: 88,
         ),
         error: (error, _) => AppEmptyState(
           icon: Icons.error_outline,
@@ -190,7 +188,7 @@ class _NotificationsListScreenState
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(notificationProvider),
             child: ListView.separated(
-              key: const PageStorageKey<String>('notifications_list_view'),
+              key: const ValueKey<String>('notifications_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,

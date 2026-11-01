@@ -8,6 +8,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 9 / Stage 6 Convergence: Create Informal Event Screen
 ///
@@ -93,7 +94,7 @@ class _CreateInformalEventScreenState
     if (_scheduledAt == null) {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Please specify a date and start time for the meetup'),
           backgroundColor: AppTheme.error,
         ),
@@ -116,7 +117,7 @@ class _CreateInformalEventScreenState
       if (!mounted) return;
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Practice session posted to local pullers!'),
           backgroundColor: AppTheme.success,
         ),
@@ -126,7 +127,7 @@ class _CreateInformalEventScreenState
       if (!mounted) return;
       HapticFeedback.heavyImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: Text('Could not post practice session: $e'),
           backgroundColor: AppTheme.error,
         ),

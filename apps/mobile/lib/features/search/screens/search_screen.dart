@@ -89,9 +89,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final isLoading = resultsAsync.isLoading;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
         elevation: 0,
         leading: const CrystalBackButton(fallbackRoute: '/discover'),
         title: const Text(

@@ -14,6 +14,7 @@ import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'tournament_screens.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 const List<String> _kDivisions = ['SENIOR', 'JUNIOR', 'FEMALE'];
 const List<String> _kWeightClasses = ['-70kg', '-85kg', '-95kg', '+95kg'];
@@ -93,7 +94,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       if (mounted && successMessage != null) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -113,7 +114,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
           ref.invalidate(eventLiveArenaTablesProvider(eventId));
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(msg),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -123,7 +124,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } on OfflineException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.message),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -133,7 +134,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Action failed: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -218,7 +219,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     }
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('No approved registrations yet — approve entries first.'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -316,7 +317,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final name = controller.text.trim();
     if (name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Table name needs at least 2 characters.'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -339,7 +340,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: Text('Could not load referee directory: $e'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -350,7 +351,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     if (!mounted) return;
     if (referees.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('No certified referees registered in the federation directory yet.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -414,7 +415,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        CrystalSnackBar(
           content: Text('Could not load tables: $e'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -426,7 +427,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     if (!mounted) return;
     if (idle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('No idle tables available. Add a table or free one up first.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -619,7 +620,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
 
     if (candidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('No eligible READY matches available to queue. Ensure bracket matches are generated and competitors determined.'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -818,7 +819,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final nameB = match['athleteBName']?.toString() ?? 'Athlete B';
     if (athleteAId.isEmpty || athleteBId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Both competitor slots must be filled before a result can be recorded.'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -925,9 +926,11 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final canManageTables = isDirectorOrAdmin || isOrganizer;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
         title: const Text('Event Operations Desk'),
         actions: [

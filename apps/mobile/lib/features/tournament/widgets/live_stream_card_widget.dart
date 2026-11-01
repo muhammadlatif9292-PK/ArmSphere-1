@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class LiveStreamCardWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -382,7 +383,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
               onPressed: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Redirecting to PAFF Official YouTube Channel Live Stream...'),
                     backgroundColor: Color(0xFFFF2A6D),
                   ),

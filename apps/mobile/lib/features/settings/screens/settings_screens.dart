@@ -10,6 +10,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// Blocked Users Screen
@@ -21,8 +22,10 @@ class BlockedUsersScreen extends ConsumerWidget {
     final blockedAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
         title: const Text('Blocked Users'),
         actions: const [CrystalHomeButton()],
@@ -36,7 +39,10 @@ class BlockedUsersScreen extends ConsumerWidget {
           RefreshIndicator(
             onRefresh: () async => ref.invalidate(blockedUsersProvider),
             child: blockedAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const CrystalScreenLoadingView(
+            itemCount: 4,
+            cardHeight: 74,
+          ),
           error: (e, _) => ListView(
             padding: const EdgeInsets.all(AppTheme.space20),
             children: [
@@ -156,8 +162,10 @@ class MyTicketsScreen extends ConsumerWidget {
     final ticketsAsync = ref.watch(myTicketsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
         title: const Text('My Tickets & Passes'),
         actions: const [CrystalHomeButton()],
@@ -171,7 +179,10 @@ class MyTicketsScreen extends ConsumerWidget {
           RefreshIndicator(
             onRefresh: () async => ref.invalidate(myTicketsProvider),
             child: ticketsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const CrystalScreenLoadingView(
+            itemCount: 3,
+            cardHeight: 132,
+          ),
           error: (e, _) => ListView(
             padding: const EdgeInsets.all(AppTheme.space20),
             children: [

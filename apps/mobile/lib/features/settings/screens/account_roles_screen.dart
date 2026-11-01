@@ -10,6 +10,7 @@ import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class AccountRolesScreen extends ConsumerStatefulWidget {
   const AccountRolesScreen({super.key});
@@ -151,7 +152,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
       await ref.read(authProvider.notifier).switchActiveRole(targetRole);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
             backgroundColor: AppTheme.goldPrimary,
           ),
@@ -160,7 +161,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.toString()),
             backgroundColor: AppTheme.error,
           ),
@@ -199,8 +200,10 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     final pendingApplications = authState.pendingRoleApplications;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
         title: const Text('Account Roles & Persona'),
         actions: [

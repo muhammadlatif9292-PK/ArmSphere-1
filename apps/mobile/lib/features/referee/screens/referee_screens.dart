@@ -10,12 +10,14 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/referee_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/live_scorepad_controller.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 const List<String> _kScoreOptions = ['3-0', '3-1', '3-2', '2-3', '1-3', '0-3'];
 
@@ -65,7 +67,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       await action();
       if (mounted && successMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -75,7 +77,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.detail),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -85,7 +87,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Action failed: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -108,7 +110,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     if (!mounted) return;
     if (tables.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('No tables exist yet — ask the organizer to add tables first.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -236,7 +238,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     if (winnerId == null || winnerId.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Both athletes must be determined before a result can be submitted.'),
             backgroundColor: AppTheme.warning,
             behavior: SnackBarBehavior.floating,
@@ -263,8 +265,10 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     final eventsAsync = ref.watch(tournamentProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text('Referee Panel'),
         actions: [
@@ -339,11 +343,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             ),
             const SizedBox(height: AppTheme.space12),
             eventsAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.space24),
-                  child: CircularProgressIndicator(),
-                ),
+              loading: () => const Column(
+                children: [
+                  SkeletonPlaceholder(height: 84),
+                  SizedBox(height: AppTheme.space12),
+                  SkeletonPlaceholder(height: 112),
+                ],
               ),
               error: (e, _) => ElevatedActionCard(
                 padding: const EdgeInsets.all(AppTheme.space16),
@@ -439,11 +444,12 @@ class _AssignmentsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final matchesAsync = ref.watch(eventMatchesProvider(eventId));
     return matchesAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppTheme.space16),
-          child: CircularProgressIndicator(),
-        ),
+      loading: () => const Column(
+        children: [
+          SkeletonPlaceholder(height: 112),
+          SizedBox(height: AppTheme.space12),
+          SkeletonPlaceholder(height: 112),
+        ],
       ),
       error: (e, _) => ElevatedActionCard(
         padding: const EdgeInsets.all(AppTheme.space16),
@@ -856,8 +862,10 @@ class RefereeCertificationsScreen extends ConsumerWidget {
     final certsAsync = ref.watch(refereeCertificationsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         leading: const CrystalBackButton(),
         title: const Text('Certifications'),
         actions: const [CrystalHomeButton()],
@@ -869,7 +877,10 @@ class RefereeCertificationsScreen extends ConsumerWidget {
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
           certsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const CrystalScreenLoadingView(
+          itemCount: 3,
+          cardHeight: 96,
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.space24),
@@ -1062,11 +1073,9 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     HapticFeedback.lightImpact();
     final selected = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => _AthleteSearchSheet(
         excludeId: (forChallenger ? _opponent : _challenger)?['id']?.toString(),
       ),
@@ -1088,7 +1097,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentId = _opponent?['id']?.toString();
     if (challengerId == null || opponentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Select both the challenger and the opponent.'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -1118,7 +1127,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Match result confirmed by server.'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -1130,7 +1139,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Result saved on this device and queued to sync when connection returns.'),
             backgroundColor: Color(0xFFF59E0B),
             behavior: SnackBarBehavior.floating,
@@ -1141,7 +1150,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.detail),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -1151,7 +1160,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.toString()),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -1181,59 +1190,30 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isDismissible: false,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(AppTheme.space24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.emoji_events, color: AppTheme.goldPrimary, size: 28),
-                const SizedBox(width: AppTheme.space8),
-                Text(
-                  'MATCH CONCLUDED',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: AppTheme.goldPrimary,
-                    fontFamily: AppTheme.fontDisplay,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppTheme.space12),
-            Text(
-              '$winnerName wins the bout with score line $scoreLine.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: AppTheme.space20),
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      Navigator.of(ctx).pop();
-                      _submit();
-                    },
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('SUBMIT OFFICIAL RESULT'),
-            ),
-            const SizedBox(height: AppTheme.space8),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('REVIEW / EDIT SCORE'),
-            ),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => CrystalModalSheet(
+        title: 'MATCH CONCLUDED',
+        subtitle: 'Official Bout Scorepad Verification',
+        headerIcon: Icons.emoji_events_rounded,
+        secondaryActionLabel: 'Review Score',
+        onSecondaryAction: () => Navigator.of(ctx).pop(),
+        primaryActionLabel: 'SUBMIT OFFICIAL RESULT',
+        primaryActionIcon: Icons.verified_rounded,
+        isPrimaryLoading: _isLoading,
+        onPrimaryAction: _isLoading
+            ? null
+            : () {
+                Navigator.of(ctx).pop();
+                _submit();
+              },
+        child: Text(
+          '$winnerName wins the bout with score line $scoreLine.',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
       ),
     );
@@ -1245,8 +1225,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
     final opponentDisplayName = _opponent?['displayName']?.toString() ?? 'Corner White (Select)';
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         leading: const CrystalBackButton(),
         title: const Text('Referee Table Scorepad'),
         actions: [
@@ -1496,35 +1478,46 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Search athletes by name',
-                    suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _search),
-                  ),
-                  onSubmitted: (_) => _search(),
+    return CrystalModalSheet(
+      title: 'SELECT TABLE COMPETITOR',
+      subtitle: 'Search Federation Athletes by Name',
+      headerIcon: Icons.person_search_rounded,
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.55,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(context),
+              decoration: CrystalModalSheet.inputDecoration(
+                labelText: 'Search athletes by name',
+                prefixIcon: Icons.search_rounded,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.arrow_forward_rounded, color: AppTheme.goldPrimary),
+                  onPressed: () {
+                    CrystalModalSheet.unfocusActiveInput(context);
+                    _search();
+                  },
                 ),
               ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
-                  child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 12)),
-                ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space8),
+              onSubmitted: (_) {
+                CrystalModalSheet.unfocusActiveInput(context);
+                _search();
+              },
+            ),
+            const SizedBox(height: 12),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 12)),
+              ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: AppTheme.space8),
                         itemCount: _results.length,
                         separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space8),
                         itemBuilder: (context, index) {
@@ -1575,9 +1568,8 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
                           );
                         },
                       ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1630,8 +1622,10 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         leading: const CrystalBackButton(),
         title: const Text('Search Athletes'),
         actions: const [CrystalHomeButton()],
@@ -1656,7 +1650,13 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
             ),
             const SizedBox(height: AppTheme.space16),
             if (_isLoading)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
+              const Expanded(
+                child: CrystalScreenLoadingView(
+                  itemCount: 4,
+                  cardHeight: 74,
+                  padding: EdgeInsets.zero,
+                ),
+              )
             else
               Expanded(
                 child: _results.isEmpty
@@ -1762,8 +1762,10 @@ class EvidenceUploadScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         leading: const CrystalBackButton(),
         title: const Text('Evidence Upload'),
         actions: const [CrystalHomeButton()],

@@ -11,7 +11,9 @@ import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Canary 5: Head-to-Head Comparison Screen (`/matches/head-to-head`)
 ///
@@ -380,9 +382,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     final redFavored = redElo >= blueElo;
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Crystal Stage
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: Column(
@@ -569,24 +572,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
           ),
           (comparisonAsync != null && comparisonAsync.isLoading)
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: AppTheme.goldPrimary),
-                  SizedBox(height: 16),
-                  Text(
-                    'LOADING OFFICIAL MATCHUP DATA...',
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textMuted,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ],
-              ),
+          ? const CrystalScreenLoadingView(
+              itemCount: 4,
+              cardHeight: 112,
             )
           : (comparisonAsync != null && comparisonAsync.hasError)
               ? Center(
@@ -771,7 +759,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   context.push('/athlete/$athleteId');
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                    CrystalSnackBar(
                                       content: Text('Athlete passport unavailable in preview mode.'),
                                       duration: Duration(seconds: 2),
                                     ),
@@ -886,7 +874,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   context.push('/athlete/$athleteId');
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
+                                    CrystalSnackBar(
                                       content: Text('Athlete passport unavailable in preview mode.'),
                                       duration: Duration(seconds: 2),
                                     ),
@@ -1631,10 +1619,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
 
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF111318),
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (sheetCtx) {
         return StatefulBuilder(
@@ -1667,49 +1657,56 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                 ? const Color(0xFFEF4444)
                 : const Color(0xFF38BDF8);
 
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-              ),
-              child: SizedBox(
-                height: 420,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'SELECT $cornerLabel CONTENDER',
-                          style: TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13,
-                            color: cornerColor,
-                            letterSpacing: 0.8,
+            return GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => CrystalModalSheet.unfocusActiveInput(ctx),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+                ),
+                child: SizedBox(
+                  height: 420,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'SELECT $cornerLabel CONTENDER',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: cornerColor,
+                              letterSpacing: 0.8,
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: searchCtrl,
-                      onChanged: (v) => runSearch(v),
-                      decoration: const InputDecoration(
-                        hintText: 'Search federation athletes by name...',
-                        prefixIcon: Icon(Icons.search, size: 18),
-                        isDense: true,
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18, color: AppTheme.textMuted),
+                            onPressed: () {
+                              CrystalModalSheet.unfocusActiveInput(ctx);
+                              Navigator.of(ctx).pop();
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: searchCtrl,
+                        onTapOutside: (_) => CrystalModalSheet.unfocusActiveInput(ctx),
+                        onChanged: (v) => runSearch(v),
+                        decoration: CrystalModalSheet.inputDecoration(
+                          labelText: 'Search Athlete',
+                          hintText: 'Search federation athletes by name...',
+                          prefixIcon: Icons.search,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
                       child: loading
                           ? const Center(
                               child: CircularProgressIndicator(color: AppTheme.goldPrimary),
@@ -1783,7 +1780,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                         if (oppositeCornerId != null && oppositeCornerId == id) {
                                           HapticFeedback.heavyImpact();
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
+                                            CrystalSnackBar(
                                               content: Text('Select a different athlete than the opposite corner contender.'),
                                               behavior: SnackBarBehavior.floating,
                                             ),
@@ -1806,6 +1803,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     ),
                   ],
                 ),
+              ),
               ),
             );
           },

@@ -7,6 +7,7 @@ import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/providers/state_providers.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class SubmitVenueScreen extends ConsumerStatefulWidget {
   const SubmitVenueScreen({super.key});
@@ -48,7 +49,7 @@ class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Venue submitted for federation certification!'),
             backgroundColor: AppTheme.success,
           ),
@@ -58,7 +59,7 @@ class _SubmitVenueScreenState extends ConsumerState<SubmitVenueScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(e.toString()),
             backgroundColor: AppTheme.error,
           ),

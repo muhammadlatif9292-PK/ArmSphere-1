@@ -27,9 +27,10 @@ class VenueDetailScreen extends ConsumerWidget {
     final venueAsync = ref.watch(venueDetailProvider(venueId));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         elevation: 0,
         leading: const CrystalBackButton(fallbackRoute: '/venues'),
         title: const Text(

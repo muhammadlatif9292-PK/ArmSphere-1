@@ -15,7 +15,9 @@ import '../../../core/providers/messaging_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 import 'athlete_screens.dart' show ArmSwitchEloCard;
 
 class PublicAthleteProfileScreen extends ConsumerWidget {
@@ -47,9 +49,10 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
         ]);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text('Athlete Dossier'),
@@ -64,7 +67,10 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
           ),
           profileAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const CrystalScreenLoadingView(
+              itemCount: 4,
+              cardHeight: 112,
+            ),
             error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.space24),
@@ -352,7 +358,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 } catch (_) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      CrystalSnackBar(
                                         content: Text('Could not update follow status'),
                                         backgroundColor: AppTheme.error,
                                         behavior: SnackBarBehavior.floating,
@@ -608,7 +614,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
     final targetUserId = profile['userId']?.toString();
     if (targetUserId == null || targetUserId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('This athlete cannot be messaged yet'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -624,7 +630,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
       if (!context.mounted) return;
       if (conversation == null || conversation['id'] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Could not start conversation'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -636,7 +642,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Could not start conversation'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,

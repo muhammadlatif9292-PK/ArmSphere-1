@@ -8,6 +8,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -43,7 +44,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (mounted) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Password recovery link sent to your registered email.'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -54,7 +55,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,

@@ -10,6 +10,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -74,7 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           return;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            CrystalSnackBar(
               content: Text(
                 'Stored session expired. Please sign in with your email and password.',
               ),
@@ -85,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Voluntary cancel by user; remain on standard login form without error
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(
               result.message ??
                   'Biometric authentication failed. Please enter your password.',
@@ -97,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(
               'Biometrics unavailable: ${AppErrorFormatter.format(e)}. Please enter your password.',
             ),
@@ -137,7 +138,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),

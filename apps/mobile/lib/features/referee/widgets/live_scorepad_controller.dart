@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import 'foul_sheet_modal.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Table-Side Live Referee Scorepad Controller
 ///
@@ -215,7 +216,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
 
   void _showFoulSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      CrystalSnackBar(
         content: Text(message, style: const TextStyle(fontFamily: AppTheme.fontBody, fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.primaryAccent,
         duration: const Duration(seconds: 2),

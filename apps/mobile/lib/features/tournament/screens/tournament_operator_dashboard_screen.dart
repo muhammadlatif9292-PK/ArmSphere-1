@@ -52,10 +52,11 @@ class _TournamentOperatorDashboardScreenState
     final operatorName = profile['displayName'] ?? profile['name'] ?? 'Operator';
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -14,9 +14,11 @@ import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
 ///
@@ -54,10 +56,13 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
     final feedAsync = ref.watch(communityFeedProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.community,
+        ),
         titleSpacing: 16,
         title: Row(
           children: [
@@ -133,37 +138,10 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 14, left: 2),
             child: Center(
-              child: InkWell(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/community/post/create');
-                },
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add, size: 14, color: AppTheme.goldPrimary),
-                      SizedBox(width: 4),
-                      Text(
-                        'POST CLIP',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              child: CrystalHeaderActionPill(
+                label: 'POST CLIP',
+                icon: Icons.add,
+                onTap: () => context.push('/community/post/create'),
               ),
             ),
           ),
@@ -299,7 +277,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                 return false;
               },
               child: ListView.separated(
-                key: const PageStorageKey<String>('community_feed_list_view'),
+                key: const ValueKey<String>('community_feed_list_view'),
                 padding: EdgeInsets.fromLTRB(
                   16,
                   16,
@@ -725,7 +703,7 @@ class _TacticalFeedCard extends StatelessWidget {
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        CrystalSnackBar(
                           content: Text('Clip link copied to clipboard'),
                           duration: Duration(seconds: 2),
                           backgroundColor: AppTheme.elevatedSurface,
@@ -949,7 +927,7 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                           onPressed: () {
                             HapticFeedback.lightImpact();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              CrystalSnackBar(
                                 content: Text('Clip link copied to clipboard'),
                                 duration: Duration(seconds: 2),
                               ),
@@ -1112,7 +1090,7 @@ class _ScaleBounceLikeButtonState extends ConsumerState<_ScaleBounceLikeButton>
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Could not update like status'),
             backgroundColor: AppTheme.error,
           ),

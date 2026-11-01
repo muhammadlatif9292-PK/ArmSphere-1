@@ -28,9 +28,10 @@ class VenueDirectoryScreen extends ConsumerWidget {
     final venuesAsync = ref.watch(venueListProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -45,38 +46,11 @@ class VenueDirectoryScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: Center(
-              child: InkWell(
+              child: CrystalHeaderActionPill(
                 key: const ValueKey('venue_directory_create_button'),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.push('/venues/submit');
-                },
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_location_alt_outlined, size: 14, color: AppTheme.goldPrimary),
-                      SizedBox(width: 4),
-                      Text(
-                        'SUBMIT VENUE',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.goldPrimary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                label: 'SUBMIT VENUE',
+                icon: Icons.add_location_alt_outlined,
+                onTap: () => context.push('/venues/submit'),
               ),
             ),
           ),
@@ -130,7 +104,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
             }
 
             return ListView.separated(
-              key: const PageStorageKey<String>('venue_directory_list_view'),
+              key: const ValueKey<String>('venue_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
                 AppTheme.space16,

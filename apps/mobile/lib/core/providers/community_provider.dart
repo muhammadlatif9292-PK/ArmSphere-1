@@ -6,6 +6,7 @@ import 'athlete_provider.dart';
 class CommunityFeedNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(communityRepositoryProvider);
     return repo.getFeed(limit: 20);
   }
@@ -31,15 +32,19 @@ class CommunityFeedNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dy
     }
   }
 
-  /// Refresh the feed from scratch
+  /// Refresh the feed silently if already loaded
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
+    if (!state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       final repo = ref.read(communityRepositoryProvider);
       final feed = await repo.getFeed(limit: 20);
       state = AsyncValue.data(feed);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      if (!state.hasValue) {
+        state = AsyncValue.error(e, stackTrace);
+      }
       rethrow;
     }
   }

@@ -768,10 +768,15 @@ class AppTheme {
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Color(0xEB0B0F19),
+        backgroundColor: Color(0xF00B101B),
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: Color(0xF00B101B),
+        modalBarrierColor: Color(0xAA030509),
+        elevation: 0,
+        modalElevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(radiusLarge)),
-          side: BorderSide(color: borderTitanium, width: 1.0),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
@@ -789,7 +794,8 @@ class AppTheme {
         ),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Color(0xEB070A11),
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -801,6 +807,32 @@ class AppTheme {
           fontSize: 20,
           color: textPrimary,
           letterSpacing: -0.2,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xEB0B101C),
+        elevation: 0,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: goldPrimary.withValues(alpha: 0.55), width: 1.2),
+        ),
+        contentTextStyle: const TextStyle(
+          fontFamily: fontBody,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+          color: textPure,
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: const Color(0xD90B101C),
+        foregroundColor: goldPrimary,
+        elevation: 0,
+        highlightElevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: goldPrimary.withValues(alpha: 0.68), width: 1.3),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(

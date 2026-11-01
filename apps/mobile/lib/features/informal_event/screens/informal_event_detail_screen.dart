@@ -12,6 +12,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 9 / Stage 6 Convergence: Informal Event Detail Screen
 ///
@@ -55,7 +56,7 @@ class _InformalEventDetailScreenState
         HapticFeedback.mediumImpact();
         if (successMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(successMessage), backgroundColor: AppTheme.success),
+            CrystalSnackBar(content: Text(successMessage), backgroundColor: AppTheme.success),
           );
         }
         if (popOnSuccess) Navigator.of(context).pop();
@@ -64,7 +65,7 @@ class _InformalEventDetailScreenState
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Action failed: $e'), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text('Action failed: $e'), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -77,10 +78,11 @@ class _InformalEventDetailScreenState
     final detailAsync = ref.watch(informalEventDetailProvider(widget.eventId));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
         elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         leading: const CrystalBackButton(fallbackRoute: '/informal-events'),
         title: const Text(
           'Practice Session Dossier',

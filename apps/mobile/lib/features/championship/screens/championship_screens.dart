@@ -28,9 +28,10 @@ class ChampionshipsListScreen extends ConsumerWidget {
     final championshipsAsync = ref.watch(championshipProvider);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -83,7 +84,7 @@ class ChampionshipsListScreen extends ConsumerWidget {
             }
 
             return ListView.separated(
-              key: const PageStorageKey<String>('championships_list_view'),
+              key: const ValueKey<String>('championships_list_view'),
               padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: championships.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -209,9 +210,10 @@ class ChampionshipDetailScreen extends ConsumerWidget {
     final ageGroup = (title?['division'] ?? title?['ageGroup'])?.toString() ?? '';
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(

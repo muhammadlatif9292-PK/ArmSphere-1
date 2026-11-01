@@ -11,6 +11,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import 'tournament_screens.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class EventRegistrationScreen extends ConsumerStatefulWidget {
   final String tournamentId;
@@ -39,7 +40,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     final athleteId = _currentAthleteId();
     if (athleteId == null || athleteId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        CrystalSnackBar(
           content: Text('Session expired — please sign in again.'),
           backgroundColor: AppTheme.error,
         ),
@@ -93,13 +94,13 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: $e'), backgroundColor: AppTheme.error),
+          CrystalSnackBar(content: Text('Registration failed: $e'), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -109,7 +110,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
 
   void _showResult({required String title, required String body, required Color color}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      CrystalSnackBar(
         content: Text('$title $body'),
         backgroundColor: color,
         duration: const Duration(seconds: 4),
