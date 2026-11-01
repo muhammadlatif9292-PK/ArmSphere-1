@@ -138,8 +138,8 @@ class CrystalModalSheet extends StatelessWidget {
       constraints: BoxConstraints(
         maxHeight: media.size.height * maxHeightFactor,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
@@ -154,7 +154,7 @@ class CrystalModalSheet extends StatelessWidget {
           color: const Color(0x33FFFFFF),
           width: 1.0,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color(0xB3000000),
             blurRadius: 32,
