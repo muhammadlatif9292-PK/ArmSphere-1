@@ -49,11 +49,23 @@ class CrystalModalSheet extends StatelessWidget {
   static void unfocusActiveInput([BuildContext? context]) {
     FocusManager.instance.primaryFocus?.unfocus();
     if (context != null) {
-      final scope = FocusScope.maybeOf(context);
-      if (scope != null && scope.hasFocus) {
-        scope.unfocus();
-      }
+      try {
+        final scope = FocusScope.of(context);
+        if (scope.hasFocus) {
+          scope.unfocus();
+        }
+      } catch (_) {}
     }
+  }
+
+  /// Helper to convert IconData or Widget into a standard input icon.
+  static Widget? _resolveInputIcon(dynamic icon) {
+    if (icon == null) return null;
+    if (icon is Widget) return icon;
+    if (icon is IconData) {
+      return Icon(icon, size: 18, color: AppTheme.textSecondary);
+    }
+    return null;
   }
 
   /// Standardized frosted Crystal Glass input decoration for fields & dropdowns.
@@ -61,15 +73,15 @@ class CrystalModalSheet extends StatelessWidget {
     required String labelText,
     String? hintText,
     String? suffixText,
-    Widget? prefixIcon,
-    Widget? suffixIcon,
+    dynamic prefixIcon,
+    dynamic suffixIcon,
   }) {
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
       suffixText: suffixText,
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
+      prefixIcon: _resolveInputIcon(prefixIcon),
+      suffixIcon: _resolveInputIcon(suffixIcon),
       isDense: true,
       filled: true,
       fillColor: const Color(0x12FFFFFF),

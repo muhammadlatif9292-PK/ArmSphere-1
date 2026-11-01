@@ -366,12 +366,15 @@ class CrystalActionButton extends StatelessWidget {
     required this.label,
     this.icon,
     this.onTap,
+    VoidCallback? onPressed,
     this.accentColor = AppTheme.goldPrimary,
     this.isPrimary = true,
-    this.fullWidth = false,
+    bool? fullWidth,
+    bool? expand,
     this.isLoading = false,
     this.padding,
-  });
+  })  : onTap = onPressed ?? onTap,
+        fullWidth = expand ?? fullWidth ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -520,6 +523,7 @@ class CrystalFloatingActionButton extends StatelessWidget {
   final IconData icon;
   final String? tooltip;
   final Color accentColor;
+  final Object? heroTag;
 
   const CrystalFloatingActionButton({
     super.key,
@@ -527,6 +531,7 @@ class CrystalFloatingActionButton extends StatelessWidget {
     this.icon = Icons.add_rounded,
     this.tooltip,
     this.accentColor = AppTheme.goldPrimary,
+    this.heroTag,
   });
 
   @override
@@ -623,10 +628,14 @@ class CrystalFloatingActionButton extends StatelessWidget {
       ),
     );
 
+    Widget result = button;
     if (tooltip != null && tooltip!.isNotEmpty) {
-      return Tooltip(message: tooltip!, child: button);
+      result = Tooltip(message: tooltip!, child: result);
     }
-    return button;
+    if (heroTag != null) {
+      result = Hero(tag: heroTag!, child: result);
+    }
+    return result;
   }
 }
 

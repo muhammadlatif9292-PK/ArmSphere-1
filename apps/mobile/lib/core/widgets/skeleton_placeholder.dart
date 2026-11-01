@@ -452,11 +452,12 @@ class CrystalScreenLoadingView extends StatelessWidget {
   const CrystalScreenLoadingView({
     super.key,
     this.itemCount = 4,
-    this.itemHeight = 92.0,
+    double? itemHeight,
+    double? cardHeight,
     this.padding = const EdgeInsets.all(AppTheme.space16),
     this.shrinkWrap = false,
     this.physics,
-  });
+  }) : itemHeight = cardHeight ?? itemHeight ?? 92.0;
 
   @override
   Widget build(BuildContext context) {

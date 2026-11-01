@@ -40,6 +40,8 @@ class CrystalSnackBar extends SnackBar {
     DismissDirection? dismissDirection,
     Clip clipBehavior = Clip.none,
     CrystalToastType? toastType,
+    CrystalToastType? type,
+    IconData? customIcon,
   }) : super(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -65,9 +67,10 @@ class CrystalSnackBar extends SnackBar {
           clipBehavior: clipBehavior,
           content: CrystalToastCapsule(
             content: content,
-            type: toastType ?? CrystalToastCapsule.inferType(backgroundColor),
+            type: type ?? toastType ?? CrystalToastCapsule.inferType(backgroundColor),
             action: action,
             customPadding: padding,
+            customIcon: customIcon,
           ),
         );
 }
@@ -100,6 +103,7 @@ class CrystalToastCapsule extends StatelessWidget {
   final CrystalToastType type;
   final SnackBarAction? action;
   final EdgeInsetsGeometry? customPadding;
+  final IconData? customIcon;
 
   const CrystalToastCapsule({
     super.key,
@@ -107,6 +111,7 @@ class CrystalToastCapsule extends StatelessWidget {
     this.type = CrystalToastType.info,
     this.action,
     this.customPadding,
+    this.customIcon,
   });
 
   /// Infers the semantic [CrystalToastType] from legacy [SnackBar.backgroundColor] tokens.
@@ -149,6 +154,9 @@ class CrystalToastCapsule extends StatelessWidget {
   }
 
   IconData _statusIcon() {
+    if (customIcon != null) {
+      return customIcon!;
+    }
     switch (type) {
       case CrystalToastType.success:
         return Icons.check_circle_rounded;
