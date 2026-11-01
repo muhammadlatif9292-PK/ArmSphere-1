@@ -553,7 +553,8 @@ void main() {
         expect(find.text('Match Oversight'), findsOneWidget);
         expect(find.text('Belt Titles'), findsOneWidget);
         expect(find.text('Tournaments'), findsOneWidget);
-        expect(find.text('Zubair Khan vs. Hamza Ali'), findsOneWidget);
+        expect(find.text('Zubair Khan'), findsOneWidget);
+        expect(find.text('Hamza Ali'), findsOneWidget);
       },
     );
 

@@ -954,15 +954,19 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Right vs. Left Arm ELO Distribution',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textPure,
+              const Expanded(
+                child: Text(
+                  'Right vs. Left Arm ELO Distribution',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPure,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'Avg ELO $avgElo • $activeTournaments Events',
                 style: const TextStyle(
