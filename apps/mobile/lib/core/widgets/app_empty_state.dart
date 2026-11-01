@@ -13,6 +13,7 @@ class AppEmptyState extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? description;
   final String? ctaLabel;
   final VoidCallback? onCtaTap;
   final String? secondaryCtaLabel;
@@ -22,17 +23,21 @@ class AppEmptyState extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    String? subtitle,
+    String? description,
     this.ctaLabel,
     this.onCtaTap,
     this.secondaryCtaLabel,
     this.onSecondaryCtaTap,
-  });
+  })  : subtitle = subtitle ?? description ?? '',
+        description = description ?? subtitle;
 
   const AppEmptyState.noCompetitions({
     super.key,
     this.title = 'No Competitions Found',
     this.subtitle =
+        'There are no sanctioned tournaments matching your current criteria.',
+    this.description =
         'There are no sanctioned tournaments matching your current criteria.',
     this.ctaLabel = 'Refresh Events',
     this.onCtaTap,
@@ -45,6 +50,8 @@ class AppEmptyState extends StatefulWidget {
     this.title = 'No Matches Recorded',
     this.subtitle =
         'Compete in sanctioned tournaments or record table bouts to establish your rating.',
+    this.description =
+        'Compete in sanctioned tournaments or record table bouts to establish your rating.',
     this.ctaLabel,
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -55,6 +62,8 @@ class AppEmptyState extends StatefulWidget {
     super.key,
     this.title = 'No Results Found',
     this.subtitle =
+        'Try refining your search terms or clearing active filters.',
+    this.description =
         'Try refining your search terms or clearing active filters.',
     this.ctaLabel = 'Clear Search',
     this.onCtaTap,
@@ -67,6 +76,8 @@ class AppEmptyState extends StatefulWidget {
     this.title = 'Offline Mode Active',
     this.subtitle =
         'Cached data is accessible. Actions will sync automatically when connection restores.',
+    this.description =
+        'Cached data is accessible. Actions will sync automatically when connection restores.',
     this.ctaLabel = 'Retry Connection',
     this.onCtaTap,
     this.secondaryCtaLabel,
@@ -77,6 +88,8 @@ class AppEmptyState extends StatefulWidget {
     super.key,
     this.title = 'All Caught Up',
     this.subtitle =
+        'You have no new alerts, match calls, or federation announcements.',
+    this.description =
         'You have no new alerts, match calls, or federation announcements.',
     this.ctaLabel,
     this.onCtaTap,

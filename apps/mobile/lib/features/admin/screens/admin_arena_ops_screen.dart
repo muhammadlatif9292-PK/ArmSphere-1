@@ -109,7 +109,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                 final reason = reasonCtrl.text.trim();
                 if (reason.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const CrystalSnackBar(
+                    CrystalSnackBar(
                       content: Text(
                         'An official audit reason is mandatory to override match results.',
                       ),
@@ -132,7 +132,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                   if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const CrystalSnackBar(
+                      CrystalSnackBar(
                         content: Text(
                           'Official match score corrected and ELO ratings recalculated.',
                         ),
@@ -252,7 +252,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                       final reason = reasonCtrl.text.trim();
                       if (reason.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const CrystalSnackBar(
+                          CrystalSnackBar(
                             content: Text(
                               'Enter an official audit reason before voiding a sanctioned match.',
                             ),
@@ -272,7 +272,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                         if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const CrystalSnackBar(
+                            CrystalSnackBar(
                               content: Text(
                                 'Match voided and ELO rating changes reverted.',
                               ),
@@ -325,7 +325,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                 if (nameCtrl.text.trim().isEmpty ||
                     weightCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const CrystalSnackBar(
+                    CrystalSnackBar(
                       content: Text(
                         'Title name and weight class are required.',
                       ),

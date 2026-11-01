@@ -1,7 +1,6 @@
 // lib/features/admin/screens/admin_governance_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/security/admin_permissions.dart';
@@ -108,7 +107,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                   : () async {
                       if (notesCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const CrystalSnackBar(
+                          CrystalSnackBar(
                             content: Text(
                               'Arbitration resolution notes are mandatory.',
                             ),
@@ -186,10 +185,12 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                             accentColor: AppTheme.info,
                             onTap: () async {
                               final uri = Uri.tryParse(evidenceUrl);
-                              if (uri != null) {
-                                await launchUrl(
-                                  uri,
-                                  mode: LaunchMode.externalApplication,
+                              if (uri != null && mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  CrystalSnackBar(
+                                    content: Text('Evidence link: $evidenceUrl'),
+                                    backgroundColor: AppTheme.info,
+                                  ),
                                 );
                               }
                             },
@@ -260,7 +261,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                             if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const CrystalSnackBar(
+                                CrystalSnackBar(
                                   content: Text(
                                     'Dispute docket closed and archived.',
                                   ),
@@ -906,10 +907,12 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                           accentColor: AppTheme.info,
                           onTap: () async {
                             final uri = Uri.tryParse(videoUrl);
-                            if (uri != null) {
-                              await launchUrl(
-                                uri,
-                                mode: LaunchMode.externalApplication,
+                            if (uri != null && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                CrystalSnackBar(
+                                  content: Text('Video link: $videoUrl'),
+                                  backgroundColor: AppTheme.info,
+                                ),
                               );
                             }
                           },
@@ -930,7 +933,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                             await AdminCrossAppSync.syncCommunityMutations(ref);
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const CrystalSnackBar(
+                                CrystalSnackBar(
                                   content: Text(
                                     'Video clip approved and published to Community Feed.',
                                   ),

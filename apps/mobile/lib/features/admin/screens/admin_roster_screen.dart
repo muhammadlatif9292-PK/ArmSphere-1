@@ -412,7 +412,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                             onTap: () {
                               if (reasonCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const CrystalSnackBar(
+                                  CrystalSnackBar(
                                     content: Text(
                                       'An audit reason is required to override athlete records.',
                                     ),
@@ -793,6 +793,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
               secondaryActionLabel: 'Cancel',
               onPrimaryAction: () async {
                 setSheetState(() => isSubmitting = true);
+                try {
                   await ref.read(adminRepositoryProvider).updateRefereeLicense(
                         refereeId: refereeId,
                         certification: selectedLevel,
@@ -895,7 +896,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                     onTap: () async {
                       if (suspendReasonCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const CrystalSnackBar(
+                          CrystalSnackBar(
                             content: Text(
                               'Enter a disciplinary reason before suspending a referee.',
                             ),

@@ -26,6 +26,14 @@ class _TestAuthNotifier extends StateNotifier<AuthState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _TestTournamentNotifier extends TournamentNotifier {
+  final List<Map<String, dynamic>> _data;
+  _TestTournamentNotifier([this._data = const []]);
+
+  @override
+  Future<List<Map<String, dynamic>>> build() async => _data;
+}
+
 void main() {
   group('Canonical SHA-256 Audit Chain Verifier', () {
     String computeHash8({
@@ -534,7 +542,7 @@ void main() {
               ]),
               adminChampionshipTitlesProvider.overrideWith((ref) async => const []),
               adminPendingChallengesProvider.overrideWith((ref) async => const []),
-              tournamentProvider.overrideWith((ref) async => const []),
+              tournamentProvider.overrideWith(() => _TestTournamentNotifier()),
             ],
             child: const MaterialApp(home: AdminArenaOpsScreen()),
           ),

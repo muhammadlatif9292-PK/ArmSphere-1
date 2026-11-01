@@ -66,7 +66,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 final jur = jurisdictionCtrl.text.trim();
                 if (uid.isEmpty || reason.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const CrystalSnackBar(
+                    CrystalSnackBar(
                       content: Text(
                         'Target User ID and official justification are required.',
                       ),
@@ -77,7 +77,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 }
                 if (needsJurisdiction && jur.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const CrystalSnackBar(
+                    CrystalSnackBar(
                       content: Text(
                         'Provincial Director grants require an assigned province jurisdiction.',
                       ),
