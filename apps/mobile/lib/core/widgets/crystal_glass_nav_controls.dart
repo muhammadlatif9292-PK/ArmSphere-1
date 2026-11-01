@@ -365,7 +365,7 @@ class CrystalActionButton extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
-    this.onTap,
+    VoidCallback? onTap,
     VoidCallback? onPressed,
     this.accentColor = AppTheme.goldPrimary,
     this.isPrimary = true,
