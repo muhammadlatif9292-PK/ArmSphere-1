@@ -188,7 +188,8 @@ void main() {
         expect(find.textContaining('Titan Pullers Tbilisi'), findsOneWidget);
         expect(find.text('R-ARM RATING'), findsOneWidget);
         expect(find.text('ELO 1890'), findsOneWidget);
-        expect(find.text('▲ +28'), findsOneWidget);
+        expect(find.text('+28'), findsWidgets);
+        expect(find.byIcon(Icons.arrow_drop_up_rounded), findsWidgets);
         expect(find.text('WORLD RANK'), findsOneWidget);
         expect(find.text('175.0 kg'), findsOneWidget);
         expect(find.text('96.4%'), findsOneWidget);

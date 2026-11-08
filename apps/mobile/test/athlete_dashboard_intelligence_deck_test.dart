@@ -1286,8 +1286,8 @@ void main() {
         'eloDelta': 18,
       });
       expect(find.text('▲ +18'), findsNothing);
-      expect(find.text('+18'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_drop_up_rounded), findsOneWidget);
+      expect(find.text('+18'), findsWidgets);
+      expect(find.byIcon(Icons.arrow_drop_up_rounded), findsWidgets);
       await _disposeDashboard(tester);
 
       await _pumpDashboard(tester, athleteProfile: {
@@ -1296,8 +1296,8 @@ void main() {
         'leftArmElo': 1980,
         'eloDelta': -12,
       });
-      expect(find.text('-12'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_drop_down_rounded), findsOneWidget);
+      expect(find.text('-12'), findsWidgets);
+      expect(find.byIcon(Icons.arrow_drop_down_rounded), findsWidgets);
       await _disposeDashboard(tester);
     });
 

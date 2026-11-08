@@ -224,10 +224,11 @@ class _AthleteDashboardScreenState
                 eloDelta: eloDelta,
                 isRightArm: _isRightArm,
                 heroConfig: visualPrefs.resolveAthleteHeroConfig(
-                  profileAvatarUrl: (p['profilePhoto'] ??
-                          p['avatarUrl'] ??
-                          profile['avatarUrl'])
-                      ?.toString(),
+                  profileAvatarUrl: visualPrefs.customPortraitImage ??
+                      (p['profilePhoto'] ??
+                              p['avatarUrl'] ??
+                              profile['avatarUrl'])
+                          ?.toString(),
                 ),
                 avatarUrl: visualPrefs.customPortraitImage ??
                     (p['profilePhoto'] ??
@@ -1395,9 +1396,6 @@ class _AthleteDashboardScreenState
     final eloText = currentElo != null ? 'ELO $currentElo' : 'ELO UNRATED';
     final hasDelta = eloDelta != null && eloDelta != 0;
     final isPositive = (eloDelta ?? 0) > 0;
-    final deltaLabel = hasDelta
-        ? '${isPositive ? '▲ +' : '▼ '}$eloDelta'
-        : (currentElo != null ? 'ACTIVE' : 'PENDING');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
@@ -1478,18 +1476,41 @@ class _AthleteDashboardScreenState
                 width: 0.8,
               ),
             ),
-            child: Text(
-              deltaLabel,
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-                color: hasDelta
-                    ? (isPositive ? AppTheme.emerald : AppTheme.crimson)
-                    : AppTheme.goldPrimary,
-              ),
-            ),
+            child: hasDelta
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isPositive
+                            ? Icons.arrow_drop_up_rounded
+                            : Icons.arrow_drop_down_rounded,
+                        size: 13,
+                        color: isPositive ? AppTheme.emerald : AppTheme.crimson,
+                      ),
+                      Text(
+                        '${isPositive ? '+' : ''}$eloDelta',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: isPositive
+                              ? AppTheme.emerald
+                              : AppTheme.crimson,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    currentElo != null ? 'ACTIVE' : 'PENDING',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: AppTheme.goldPrimary,
+                    ),
+                  ),
           ),
         ],
       ),
