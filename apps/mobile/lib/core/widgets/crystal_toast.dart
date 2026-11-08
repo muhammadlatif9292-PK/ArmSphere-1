@@ -330,3 +330,49 @@ class CrystalToastCapsule extends StatelessWidget {
     );
   }
 }
+
+
+/// Static toast invocation helper matching the AI Studio component contract.
+class CrystalToast {
+  static void show(
+    BuildContext context, {
+    required String title,
+    String? message,
+    CrystalToastType type = CrystalToastType.info,
+    Duration duration = const Duration(seconds: 4),
+    SnackBarAction? action,
+  }) {
+    final textWidget = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            color: AppTheme.textPure,
+          ),
+        ),
+        if (message != null && message.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppTheme.textMuted,
+            ),
+          ),
+        ],
+      ],
+    );
+
+    showCrystalSnackBar(
+      context,
+      content: textWidget,
+      type: type,
+      duration: duration,
+      action: action,
+    );
+  }
+}

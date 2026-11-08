@@ -82,6 +82,7 @@ class AppTheme {
   // ---------------------------------------------------------------------------
   /// Competition Crimson (#E23B3B) - Competitive intensity, red-corner identity, live bouts.
   static const Color crimson = Color(0xFFE23B3B);
+  static const Color crimsonPrimary = Color(0xFFE23B3B);
   static const Color primaryAccent = crimson;
   static const Color primaryRed = crimson;
   static const Color combatCrimson = crimson;
