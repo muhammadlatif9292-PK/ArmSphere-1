@@ -78,18 +78,20 @@ class CrystalSnackBar extends SnackBar {
 /// Displays a floating Crystal Glassmorphic completion or error bar via [ScaffoldMessenger].
 void showCrystalSnackBar(
   BuildContext context, {
-  required String message,
+  String? message,
+  Widget? content,
   CrystalToastType type = CrystalToastType.info,
   Duration duration = const Duration(seconds: 3),
   SnackBarAction? action,
 }) {
   final messenger = ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
+  final effectiveContent = content ?? Text(message ?? '');
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       CrystalSnackBar(
-        content: Text(message),
+        content: effectiveContent,
         toastType: type,
         duration: duration,
         action: action,
@@ -369,6 +371,7 @@ class CrystalToast {
 
     showCrystalSnackBar(
       context,
+      message: message ?? title,
       content: textWidget,
       type: type,
       duration: duration,
