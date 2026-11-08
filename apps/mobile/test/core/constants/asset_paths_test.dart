@@ -28,6 +28,76 @@ void main() {
 
       expect(ArmSphereAssets.heroGrip, startsWith('assets/images/heroes/'));
       expect(ArmSphereAssets.heroGrip, endsWith('.webp'));
+
+      final integratedWebpHeroes = [
+        ArmSphereAssets.heroAthleteDashboard,
+        ArmSphereAssets.cardArenaRadar,
+        ArmSphereAssets.cardSupermatchVs,
+        ArmSphereAssets.bentoVenues,
+        ArmSphereAssets.bentoPickupSparring,
+        ArmSphereAssets.bentoCommunityFeed,
+        ArmSphereAssets.bentoEloRankings,
+        ArmSphereAssets.heroWelcomeGrip,
+        ArmSphereAssets.stageArena9x16,
+        ArmSphereAssets.stageTrainingLab9x16,
+      ];
+      for (final asset in integratedWebpHeroes) {
+        expect(asset, startsWith('assets/images/heroes/'));
+        expect(asset, endsWith('.webp'));
+      }
+    });
+
+    test('Semantic catalog maps all 11 approved slot IDs and normalizes legacy .png paths', () {
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('profile.athlete.dashboard_hero'),
+        equals(ArmSphereAssets.heroAthleteDashboard),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('arena.home.radar_card'),
+        equals(ArmSphereAssets.cardArenaRadar),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('arena.home.supermatch_card'),
+        equals(ArmSphereAssets.cardSupermatchVs),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('discover.hub.venues_tile'),
+        equals(ArmSphereAssets.bentoVenues),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('discover.hub.pickup_meetups_tile'),
+        equals(ArmSphereAssets.bentoPickupSparring),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('discover.hub.community_feed_tile'),
+        equals(ArmSphereAssets.bentoCommunityFeed),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('discover.hub.elo_rankings_tile'),
+        equals(ArmSphereAssets.bentoEloRankings),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('events.tournament.detail_hero'),
+        equals(ArmSphereAssets.defaultTournament),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('auth.welcome.hero_banner'),
+        equals(ArmSphereAssets.heroWelcomeGrip),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('arena.home.background'),
+        equals(ArmSphereAssets.stageArena9x16),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset('training.log.background'),
+        equals(ArmSphereAssets.stageTrainingLab9x16),
+      );
+      expect(
+        ArmSphereAssets.resolveSemanticAsset(
+          'assets/images/heroes/m1_hero_athlete_dashboard.png',
+        ),
+        equals(ArmSphereAssets.heroAthleteDashboard),
+      );
     });
 
     test('M4 Badges & Insignia have valid paths and webp extensions', () {
@@ -88,6 +158,16 @@ void main() {
         ArmSphereAssets.texChalk,
         ArmSphereAssets.heroArena,
         ArmSphereAssets.heroGrip,
+        ArmSphereAssets.heroAthleteDashboard,
+        ArmSphereAssets.cardArenaRadar,
+        ArmSphereAssets.cardSupermatchVs,
+        ArmSphereAssets.bentoVenues,
+        ArmSphereAssets.bentoPickupSparring,
+        ArmSphereAssets.bentoCommunityFeed,
+        ArmSphereAssets.bentoEloRankings,
+        ArmSphereAssets.heroWelcomeGrip,
+        ArmSphereAssets.stageArena9x16,
+        ArmSphereAssets.stageTrainingLab9x16,
         ArmSphereAssets.badgeHeavyweight,
         ArmSphereAssets.badgeMiddleweight,
         ArmSphereAssets.badgeLightweight,

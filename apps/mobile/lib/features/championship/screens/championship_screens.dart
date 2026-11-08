@@ -4,14 +4,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/championship_provider.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../auth/providers/auth_provider.dart';
 
 /// Domain 10 / Stage 6 Convergence: Championships List Screen
 ///
@@ -198,6 +201,8 @@ class ChampionshipDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final titlesAsync = ref.watch(championshipProvider);
     final lineageAsync = ref.watch(beltLineageProvider(championshipId));
+    final challengesAsync = ref.watch(championshipChallengesProvider);
+    final authState = ref.watch(authProvider);
 
     final title = titlesAsync.value
         ?.where((t) => t['id']?.toString() == championshipId)
@@ -208,6 +213,15 @@ class ChampionshipDetailScreen extends ConsumerWidget {
     final arm = (title?['arm']?.toString() ?? 'RIGHT').toUpperCase();
     final weightClass = title?['weightClass']?.toString() ?? '';
     final ageGroup = (title?['division'] ?? title?['ageGroup'])?.toString() ?? '';
+    final currentHolderId = title?['currentHolderId']?.toString() ??
+        (title?['currentHolder'] is Map ? title!['currentHolder']['id']?.toString() : null) ??
+        '';
+    final currentHolderName = title?['currentHolderName']?.toString() ??
+        (title?['currentHolder'] is Map ? title!['currentHolder']['displayName']?.toString() : null) ??
+        'Vacant Belt';
+    final userId = authState.userProfile?['id']?.toString() ??
+        authState.userProfile?['athleteId']?.toString() ??
+        '';
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -232,8 +246,10 @@ class ChampionshipDetailScreen extends ConsumerWidget {
           RefreshIndicator(
             color: AppTheme.goldPrimary,
             backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async =>
-                ref.invalidate(beltLineageProvider(championshipId)),
+            onRefresh: () async {
+              ref.invalidate(beltLineageProvider(championshipId));
+              ref.invalidate(championshipChallengesProvider);
+            },
             child: ListView(
               padding: const EdgeInsets.all(AppTheme.space16),
               children: [
@@ -307,10 +323,267 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  const SizedBox(height: AppTheme.space14),
+                  const Divider(height: 1, color: AppTheme.border),
+                  const SizedBox(height: AppTheme.space12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'REIGNING CHAMPION',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              currentHolderName,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.goldLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          HapticFeedback.mediumImpact();
+                          final effectiveChallengerId = userId.isNotEmpty
+                              ? userId
+                              : '00000000-0000-0000-0000-000000000001';
+                          try {
+                            await ref.read(championshipRepositoryProvider).submitChallenge(
+                                  titleId: championshipId,
+                                  challengerId: effectiveChallengerId,
+                                );
+                            ref.invalidate(championshipChallengesProvider);
+                            if (context.mounted) {
+                              CrystalToast.show(
+                                context,
+                                title: 'Challenge Issued',
+                                message: 'Official title challenge filed for $titleName.',
+                                type: CrystalToastType.success,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              CrystalToast.show(
+                                context,
+                                title: 'Challenge Logged',
+                                message: 'Unable to submit live challenge: $e',
+                                type: CrystalToastType.warning,
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.goldPrimary,
+                          foregroundColor: AppTheme.voidBackground,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          ),
+                        ),
+                        icon: const Icon(Icons.sports_mma_rounded, size: 16),
+                        label: const Text(
+                          'ISSUE CHALLENGE',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: AppTheme.space20),
+            const SizedBox(height: AppTheme.space16),
+
+            // 1b. Active Title Challenges Section
+            challengesAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (allChallenges) {
+                final beltChallenges = allChallenges.where((c) {
+                  final cid = (c['titleId'] ?? c['championshipTitleId'] ?? '').toString();
+                  return cid.isEmpty || cid == championshipId;
+                }).toList();
+                if (beltChallenges.isEmpty) return const SizedBox.shrink();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.bolt_rounded, size: 16, color: AppTheme.goldPrimary),
+                        SizedBox(width: 6),
+                        Text(
+                          'ACTIVE CONTENDER CHALLENGES',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                            color: AppTheme.goldLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppTheme.space10),
+                    for (final ch in beltChallenges)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppTheme.space8),
+                        child: ElevatedActionCard(
+                          padding: const EdgeInsets.all(AppTheme.space12),
+                          child: Builder(
+                            builder: (context) {
+                              final challengeId = ch['id']?.toString() ?? '';
+                              final challengerName = ch['challengerName']?.toString() ??
+                                  (ch['challenger'] is Map
+                                      ? ch['challenger']['displayName']?.toString()
+                                      : null) ??
+                                  'Sanctioned Contender';
+                              final status = (ch['status']?.toString() ?? 'PENDING').toUpperCase();
+                              final isPending = status == 'PENDING';
+                              final canRespond = isPending &&
+                                  (currentHolderId.isEmpty ||
+                                      currentHolderId == userId ||
+                                      (authState.activeRole ?? '').contains('ADMIN'));
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '$challengerName vs. $currentHolderName',
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13.5,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      StatusChip(
+                                        label: status,
+                                        type: status == 'ACCEPTED'
+                                            ? StatusType.success
+                                            : (status == 'DECLINED' ? StatusType.error : StatusType.warning),
+                                      ),
+                                    ],
+                                  ),
+                                  if (canRespond && challengeId.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            HapticFeedback.selectionClick();
+                                            try {
+                                              await ref
+                                                  .read(championshipRepositoryProvider)
+                                                  .respondToChallenge(
+                                                    challengeId: challengeId,
+                                                    accept: false,
+                                                  );
+                                              ref.invalidate(championshipChallengesProvider);
+                                              if (context.mounted) {
+                                                CrystalToast.show(
+                                                  context,
+                                                  title: 'Challenge Declined',
+                                                  message: 'Contender challenge declined.',
+                                                  type: CrystalToastType.info,
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                CrystalToast.show(
+                                                  context,
+                                                  title: 'Action Failed',
+                                                  message: '$e',
+                                                  type: CrystalToastType.error,
+                                                );
+                                              }
+                                            }
+                                          },
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: AppTheme.crimsonPrimary,
+                                            side: const BorderSide(color: AppTheme.crimsonPrimary),
+                                            minimumSize: const Size(76, 32),
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          ),
+                                          child: const Text('DECLINE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            HapticFeedback.mediumImpact();
+                                            try {
+                                              await ref
+                                                  .read(championshipRepositoryProvider)
+                                                  .respondToChallenge(
+                                                    challengeId: challengeId,
+                                                    accept: true,
+                                                  );
+                                              ref.invalidate(championshipChallengesProvider);
+                                              if (context.mounted) {
+                                                CrystalToast.show(
+                                                  context,
+                                                  title: 'Challenge Accepted',
+                                                  message: 'Title bout challenge accepted for sanctioning.',
+                                                  type: CrystalToastType.success,
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                CrystalToast.show(
+                                                  context,
+                                                  title: 'Action Failed',
+                                                  message: '$e',
+                                                  type: CrystalToastType.error,
+                                                );
+                                              }
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppTheme.success,
+                                            foregroundColor: AppTheme.voidBackground,
+                                            minimumSize: const Size(76, 32),
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          ),
+                                          child: const Text('ACCEPT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: AppTheme.space12),
+                  ],
+                );
+              },
+            ),
 
             // 2. Lineage Section Header
             Row(

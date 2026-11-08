@@ -13,12 +13,12 @@ async function bootstrap() {
       startScheduledJobsRunner();
     }
 
-    // 3. Start Listening securely on the configured runtime port
+    // 3. Start Listening securely on the configured runtime port (dual-stack IPv6 + IPv4)
     const PORT = env.PORT;
-    const server = app.listen(PORT, "0.0.0.0", () => {
+    const server = app.listen(PORT, "::", () => {
       logger.info(
         { port: PORT, environment: env.NODE_ENV },
-        `🚀 ArmSphere API Engine listening securely on http://0.0.0.0:${PORT}`
+        `🚀 ArmSphere API Engine listening securely on dual-stack port ${PORT}`
       );
     });
 

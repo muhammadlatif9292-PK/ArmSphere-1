@@ -71,9 +71,20 @@ export class AdministrationService {
       disputed: allMatches.filter(m => m.status === "DISPUTED").length,
     };
 
-    // Verification backlog
+    // Verification backlog (include both explicit PENDING rows and profiles not yet verified/rejected)
     const verifications = await db.select().from(athleteVerifications);
-    const pendingVerifications = verifications.filter(v => v.status === "PENDING").length;
+    const decidedAthleteIds = new Set(
+      verifications
+        .filter(v => v.status === "VERIFIED" || v.status === "REJECTED")
+        .map(v => v.athleteId)
+    );
+    const unverifiedProfilesCount = allProfiles.filter(
+      p => !decidedAthleteIds.has(p.userId)
+    ).length;
+    const pendingVerifications = Math.max(
+      verifications.filter(v => v.status === "PENDING").length,
+      unverifiedProfilesCount
+    );
 
     // Dispute breakdown
     const disputeStats = {
@@ -101,6 +112,10 @@ export class AdministrationService {
           totalDisputes,
           activeChampionships,
         },
+        pendingVerifications,
+        openDisputes: disputeStats.open,
+        totalAthletes,
+        totalMatches,
         athleteGrowth: formattedGrowth,
         matchStats,
         verificationBacklog: pendingVerifications,
@@ -173,7 +188,16 @@ export class AdministrationService {
     }
 
     if (filters.status) {
-      list = list.filter(item => item.verificationStatus === filters.status);
+      const targetStatus = filters.status.toUpperCase();
+      if (targetStatus === "PENDING") {
+        list = list.filter(
+          item =>
+            item.verificationStatus === "PENDING" ||
+            item.verificationStatus === "UNVERIFIED"
+        );
+      } else {
+        list = list.filter(item => item.verificationStatus === targetStatus);
+      }
     }
 
     if (effectiveProvince) {
@@ -891,15 +915,47 @@ export class AdministrationService {
         };
       }
 
-      // 2. Recompute hash
-      const payloadString = event.payload ? JSON.stringify(event.payload) : "";
-      const inputStr = `${event.parentHash}|${event.eventId}|${event.actorId || "SYSTEM"}|${event.entityType}|${event.entityId}|${event.action}|${payloadString}`;
-      const recalculatedHash = crypto
-        .createHash("sha256")
-        .update(inputStr)
-        .digest("hex");
+      // 2. Recompute hash (accept canonical 8-field format, legacy 7-field format, and Postgres jsonb key-order permutations)
+      const payloadString = event.payload ? JSON.stringify(event.payload) : "{}";
+      const createdAtStr = event.createdAt ? new Date(event.createdAt).toISOString() : "";
+      const actorStr = event.actorId || "SYSTEM";
 
-      if (event.eventHash !== recalculatedHash) {
+      const candidatePayloads = new Set<string>([payloadString]);
+      if (event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)) {
+        const rawObj = event.payload as Record<string, unknown>;
+        const sortedKeys = Object.keys(rawObj).sort();
+        const sortedObj: Record<string, unknown> = {};
+        for (const k of sortedKeys) sortedObj[k] = rawObj[k];
+        candidatePayloads.add(JSON.stringify(sortedObj));
+
+        // Known insertion key orders prior to Postgres jsonb normalization
+        const knownKeyOrders = [
+          ["ipAddress", "city", "userAgent", "deviceFingerprint"],
+          ["previousIp", "currentIp", "previousCity", "currentCity", "distanceKm", "timeDifferenceHours", "velocityKmh"],
+          ["currentActiveSessions", "ipAddress"],
+        ];
+        for (const order of knownKeyOrders) {
+          if (order.length === sortedKeys.length && order.every(k => Object.prototype.hasOwnProperty.call(rawObj, k))) {
+            const ordered: Record<string, unknown> = {};
+            for (const k of order) ordered[k] = rawObj[k];
+            candidatePayloads.add(JSON.stringify(ordered));
+          }
+        }
+      }
+
+      let hashMatched = false;
+      for (const pStr of candidatePayloads) {
+        const inputStr8 = `${event.parentHash}|${event.eventId}|${actorStr}|${event.entityType}|${event.entityId}|${event.action}|${pStr}|${createdAtStr}`;
+        const recalculatedHash8 = crypto.createHash("sha256").update(inputStr8).digest("hex");
+        const inputStr7 = `${event.parentHash}|${event.eventId}|${actorStr}|${event.entityType}|${event.entityId}|${event.action}|${event.payload ? pStr : ""}`;
+        const recalculatedHash7 = crypto.createHash("sha256").update(inputStr7).digest("hex");
+        if (event.eventHash === recalculatedHash8 || event.eventHash === recalculatedHash7) {
+          hashMatched = true;
+          break;
+        }
+      }
+
+      if (!hashMatched) {
         return {
           isValid: false,
           tamperedEventId: event.id,

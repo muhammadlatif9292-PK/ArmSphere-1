@@ -111,27 +111,40 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             left: 0,
             right: 0,
             height: 280,
-            child: ShaderMask(
-              shaderCallback: (rect) {
-                return const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x8CFFFFFF), // ~55% opacity at top so void breathes
-                    Color(0x33FFFFFF),
-                    Colors.transparent, // Dissolves seamlessly into void canvas
-                  ],
-                  stops: [0.0, 0.55, 1.0],
-                ).createShader(rect);
-              },
-              blendMode: BlendMode.dstIn,
-              child: const ArmSphereImage(
-                assetPath: ArmSphereAssets.heroGrip,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 280,
-                excludeFromSemantics: true,
-              ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Opacity(
+                  opacity: 0.68,
+                  child: ArmSphereImage(
+                    assetPath: ArmSphereAssets.resolveSemanticAsset(
+                      ArmSphereAssets.semanticAuthWelcomeHeroBanner,
+                    ),
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0.0, -0.25),
+                    width: double.infinity,
+                    height: 280,
+                    fallbackAsset: ArmSphereAssets.heroGrip,
+                    excludeFromSemantics: true,
+                  ),
+                ),
+                // 4-stop vertical bottom fade into #070A11
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x2E070A11),
+                        Color(0x59070A11),
+                        Color(0xB8070A11),
+                        Color(0xFF070A11),
+                      ],
+                      stops: [0.0, 0.42, 0.78, 1.0],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

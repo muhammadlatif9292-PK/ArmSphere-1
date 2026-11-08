@@ -150,7 +150,9 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.training,
+        ),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -164,7 +166,9 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(
+              domain: ArmSphereStageDomain.training,
+            ),
           ),
           RefreshIndicator(
         onRefresh: () async {

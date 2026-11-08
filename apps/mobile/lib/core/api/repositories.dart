@@ -1120,6 +1120,21 @@ class TournamentRepository extends BaseRepository {
       },
     );
   }
+
+  Future<Map<String, dynamic>> refundTicket({
+    required String ticketId,
+    CancelToken? cancelToken,
+  }) async {
+    return executeRequest(
+      cacheKey: 'refund_ticket_$ticketId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.post('/tickets/$ticketId/refund', cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+        return payload is Map ? Map<String, dynamic>.from(payload) : {'status': 'REFUNDED'};
+      },
+    );
+  }
 }
 
 class RankingsRepository extends BaseRepository {
@@ -1392,6 +1407,53 @@ class ChampionshipRepository extends BaseRepository {
         return [];
       },
     );
+  }
+
+  Future<Map<String, dynamic>> submitChallenge({
+    required String titleId,
+    required String challengerId,
+    CancelToken? cancelToken,
+  }) async {
+    final payload = {
+      'titleId': titleId,
+      'challengerId': challengerId,
+    };
+    try {
+      final response = await dioClient.dio.post(
+        '/championships/challenges',
+        data: payload,
+        cancelToken: cancelToken,
+      );
+      final data = response.data;
+      final inner = (data is Map && data.containsKey('data')) ? data['data'] : data;
+      return inner is Map ? Map<String, dynamic>.from(inner) : {'status': 'PENDING', ...payload};
+    } on DioException catch (e) {
+      if (e.error is OfflineException || e.type == DioExceptionType.connectionError) {
+        await hiveStorage.enqueueAction(
+          actionType: 'CHAMPIONSHIP_CHALLENGE',
+          endpoint: '/championships/challenges',
+          payload: payload,
+          method: 'POST',
+        );
+        return {'status': 'PENDING', 'offlineQueued': true, ...payload};
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> respondToChallenge({
+    required String challengeId,
+    required bool accept,
+    CancelToken? cancelToken,
+  }) async {
+    final action = accept ? 'accept' : 'decline';
+    final response = await dioClient.dio.post(
+      '/championships/challenges/$challengeId/$action',
+      cancelToken: cancelToken,
+    );
+    final data = response.data;
+    final inner = (data is Map && data.containsKey('data')) ? data['data'] : data;
+    return inner is Map ? Map<String, dynamic>.from(inner) : {'status': accept ? 'ACCEPTED' : 'DECLINED'};
   }
 }
 

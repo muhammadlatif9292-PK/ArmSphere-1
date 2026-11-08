@@ -70,7 +70,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('WelcomeScreen integrates ArmSphereAssets.heroGrip and iconGold via ArmSphereImage', (WidgetTester tester) async {
+    testWidgets('WelcomeScreen integrates ArmSphereAssets.heroWelcomeGrip and iconGold via ArmSphereImage', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -81,11 +81,12 @@ void main() {
 
       await tester.pump();
 
-      // Verify heroGrip environmental anchor is present with excludeFromSemantics
+      // Verify heroWelcomeGrip (auth.welcome.hero_banner) environmental anchor is present with Alignment(0.0, -0.25)
       final gripHeroFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.heroGrip &&
+            widget.assetPath == ArmSphereAssets.heroWelcomeGrip &&
+            widget.alignment == const Alignment(0.0, -0.25) &&
             widget.excludeFromSemantics == true,
       );
       expect(gripHeroFinder, findsOneWidget);
@@ -108,7 +109,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('AthleteDashboardScreen integrates ArmSphereAssets.heroArena and avatar', (WidgetTester tester) async {
+    testWidgets('AthleteDashboardScreen integrates ArmSphereAssets.stageArena9x16, cardArenaRadar, and heroAthleteDashboard', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -137,14 +138,25 @@ void main() {
 
       await tester.pump();
 
-      // Verify heroArena environmental anchor is present in the Sanctioned Arena Radar
-      final arenaFinder = find.byWidgetPredicate(
+      // Verify stageArena9x16 (arena.home.background) environmental anchor is active in the full-screen CrystalStageBackdrop
+      final arenaStageFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.heroArena &&
+            widget.assetPath == ArmSphereAssets.stageArena9x16 &&
+            widget.alignment == const Alignment(0.0, -0.55) &&
             widget.excludeFromSemantics == true,
       );
-      expect(arenaFinder, findsAtLeastNWidgets(1));
+      expect(arenaStageFinder, findsAtLeastNWidgets(1));
+
+      // Verify dedicated cardArenaRadar (arena.home.radar_card) is integrated in the Sanctioned Arena Radar card
+      final radarCardImageFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is ArmSphereImage &&
+            widget.assetPath == ArmSphereAssets.cardArenaRadar &&
+            widget.alignment == const Alignment(0.45, 0.0) &&
+            widget.excludeFromSemantics == true,
+      );
+      expect(radarCardImageFinder, findsOneWidget);
 
       // Verify the Sanctioned Arena Radar copy
       expect(find.text('SANCTIONED ARENA RADAR'), findsOneWidget);

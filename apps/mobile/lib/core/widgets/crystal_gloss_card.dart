@@ -52,19 +52,17 @@ class CrystalGlossCard extends StatelessWidget {
     Widget cardBody = Container(
       margin: margin,
       decoration: BoxDecoration(
-        // Pillar 2: High Transparency (0.03 - 0.05 faint white tint + subtle gloss)
-        color: Colors.white.withValues(alpha: surfaceOpacity),
-        gradient: LinearGradient(
+        // Pillar 2: Rich Smoked Dark Glass (~82% dark obsidian + subtle titanium sheen)
+        color: const Color(0xD10B101C),
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white
-                .withValues(alpha: (surfaceOpacity + 0.02).clamp(0.0, 0.14)),
-            Colors.white.withValues(alpha: surfaceOpacity),
-            Colors.white
-                .withValues(alpha: (surfaceOpacity * 0.5).clamp(0.0, 0.08)),
+            Color(0xD9141E30),
+            Color(0xD10D1320),
+            Color(0xCC080C15),
           ],
-          stops: const [0.0, 0.45, 1.0],
+          stops: [0.0, 0.45, 1.0],
         ),
         borderRadius: effectiveRadius,
         // Pillar 3: Specular Light-Catching Border

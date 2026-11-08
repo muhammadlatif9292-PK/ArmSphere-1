@@ -94,22 +94,13 @@ class _GlassCardState extends State<GlassCard>
       margin: widget.margin,
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: widget.backgroundColor ?? AppTheme.smokedCardSurface,
         borderRadius: BorderRadius.circular(widget.borderRadius),
         border: Border.all(
           color: effectiveBorderColor,
           width: 1.0,
         ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.06),
-            Colors.white.withValues(alpha: 0.04),
-            Colors.white.withValues(alpha: 0.02),
-          ],
-          stops: const [0.0, 0.45, 1.0],
-        ),
+        gradient: AppTheme.machinedTitaniumGradient,
         boxShadow: [
           if (widget.enableGlow)
             BoxShadow(

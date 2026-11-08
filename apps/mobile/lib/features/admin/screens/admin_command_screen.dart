@@ -33,6 +33,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
     ref.invalidate(adminRoleApplicationsProvider);
     ref.invalidate(adminAnalyticsOverviewProvider);
     ref.invalidate(adminEloDistributionProvider);
+    ref.invalidate(adminAthletesProvider(const AdminAthleteFilter()));
   }
 
   Future<void> _openGrantRoleSheet(String activeRole) async {
@@ -67,7 +68,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 if (uid.isEmpty || reason.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     CrystalSnackBar(
-                      content: Text(
+                      content: const Text(
                         'Target User ID and official justification are required.',
                       ),
                       backgroundColor: AppTheme.error,
@@ -78,7 +79,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 if (needsJurisdiction && jur.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     CrystalSnackBar(
-                      content: Text(
+                      content: const Text(
                         'Provincial Director grants require an assigned province jurisdiction.',
                       ),
                       backgroundColor: AppTheme.error,
@@ -528,6 +529,8 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
     final roleAppsAsync = ref.watch(adminRoleApplicationsProvider);
     final analyticsAsync = ref.watch(adminAnalyticsOverviewProvider);
     final eloDistAsync = ref.watch(adminEloDistributionProvider);
+    final allAthletesAsync =
+        ref.watch(adminAthletesProvider(const AdminAthleteFilter()));
 
     final canManageRoles = AdminPermissions.canPerform(
       activeRole,
@@ -539,6 +542,13 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
     );
 
     final stats = statsAsync.valueOrNull ?? const <String, dynamic>{};
+    final kpisMap = stats['kpis'] is Map
+        ? Map<String, dynamic>.from(stats['kpis'] as Map)
+        : const <String, dynamic>{};
+    final disputeMap = stats['disputeStats'] is Map
+        ? Map<String, dynamic>.from(stats['disputeStats'] as Map)
+        : const <String, dynamic>{};
+
     final roleApps = roleAppsAsync.valueOrNull ?? const <Map<String, dynamic>>[];
     final pendingRoleApps = roleApps
         .where(
@@ -547,26 +557,60 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
         )
         .toList();
 
-    final int pendingVerifications = _readInt(stats, [
-      'pendingVerifications',
-      'pendingAthletes',
-      'unverifiedAthletes',
-    ]);
-    final int openDisputes = _readInt(stats, [
-      'openDisputes',
-      'activeDisputes',
-      'pendingDisputes',
-    ]);
-    final int totalAthletes = _readInt(stats, [
-      'totalAthletes',
-      'verifiedAthletes',
-      'athleteCount',
-    ], fallback: 48);
-    final int totalMatches = _readInt(stats, [
-      'totalMatches',
-      'matchesCount',
-      'sanctionedMatches',
-    ], fallback: 124);
+    final allAthletes =
+        allAthletesAsync.valueOrNull ?? const <Map<String, dynamic>>[];
+    final liveUnverifiedCount = allAthletes.where((a) {
+      final s = (a['verificationStatus'] ?? a['status'] ?? 'UNVERIFIED')
+          .toString()
+          .toUpperCase();
+      return s == 'PENDING' || s == 'UNVERIFIED';
+    }).length;
+
+    final statsPendingVerifications = _readInt(
+      stats,
+      [
+        'pendingVerifications',
+        'verificationBacklog',
+        'pendingAthletes',
+        'unverifiedAthletes',
+      ],
+      fallback: _readInt(
+        kpisMap,
+        ['verificationBacklog', 'pendingVerifications'],
+        fallback: 0,
+      ),
+    );
+    final int pendingVerifications = statsPendingVerifications > 0
+        ? statsPendingVerifications
+        : liveUnverifiedCount;
+
+    final int openDisputes = _readInt(
+      stats,
+      ['openDisputes', 'activeDisputes', 'pendingDisputes'],
+      fallback: _readInt(
+        kpisMap,
+        ['openDisputes'],
+        fallback: _readInt(disputeMap, ['open', 'underReview'], fallback: 0),
+      ),
+    );
+    final int totalAthletes = _readInt(
+      stats,
+      ['totalAthletes', 'verifiedAthletes', 'athleteCount'],
+      fallback: _readInt(
+        kpisMap,
+        ['totalAthletes'],
+        fallback: allAthletes.length,
+      ),
+    );
+    final int totalMatches = _readInt(
+      stats,
+      ['totalMatches', 'matchesCount', 'sanctionedMatches'],
+      fallback: _readInt(
+        kpisMap,
+        ['totalMatches', 'sanctionedMatches'],
+        fallback: 0,
+      ),
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -848,8 +892,133 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                _buildEloDistributionCard(eloDistAsync, analyticsAsync),
+                _buildEloDistributionCard(
+                  eloDistAsync: eloDistAsync,
+                  analyticsAsync: analyticsAsync,
+                  stats: stats,
+                  allAthletes: allAthletes,
+                ),
                 const SizedBox(height: 18),
+
+                // 4b. Federation Maintenance & Prestige Sync
+                if (activeRole == 'SYSTEM_ADMIN' ||
+                    activeRole == 'SUPER_ADMIN' ||
+                    activeRole == 'FEDERATION_ADMIN') ...[
+                  ElevatedActionCard(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.memory_rounded,
+                              size: 16,
+                              color: AppTheme.goldPrimary,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'FEDERATION MAINTENANCE & PRESTIGE SYNC',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CrystalActionButton(
+                                label: 'RUN DUE JOBS',
+                                icon: Icons.play_circle_outline_rounded,
+                                accentColor: AppTheme.info,
+                                onTap: () async {
+                                  HapticFeedback.mediumImpact();
+                                  try {
+                                    await ref
+                                        .read(adminRepositoryProvider)
+                                        .runScheduledJobs();
+                                    _refreshAll();
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        CrystalSnackBar(
+                                          content: const Text(
+                                            'Scheduled federation jobs executed and telemetry refreshed.',
+                                          ),
+                                          backgroundColor: AppTheme.success,
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        CrystalSnackBar(
+                                          content: Text(
+                                            'Job dispatch queued: $e',
+                                          ),
+                                          backgroundColor: AppTheme.warning,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: CrystalActionButton(
+                                label: 'RECOMPUTE PRESTIGE',
+                                icon: Icons.workspace_premium_rounded,
+                                accentColor: AppTheme.goldPrimary,
+                                onTap: () async {
+                                  HapticFeedback.mediumImpact();
+                                  try {
+                                    await ref
+                                        .read(adminRepositoryProvider)
+                                        .recomputePrestigeScores();
+                                    await AdminCrossAppSync
+                                        .syncChampionshipMutations(ref);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        CrystalSnackBar(
+                                          content: const Text(
+                                            'Pound-for-pound prestige ratings recalculated.',
+                                          ),
+                                          backgroundColor: AppTheme.success,
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        CrystalSnackBar(
+                                          content: Text(
+                                            'Prestige recompute failed: $e',
+                                          ),
+                                          backgroundColor: AppTheme.warning,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
                 // 5. Quick Access to Settings Role Switcher
                 ElevatedActionCard(
@@ -910,40 +1079,96 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
     );
   }
 
-  Widget _buildEloDistributionCard(
-    AsyncValue<List<Map<String, dynamic>>> eloDistAsync,
-    AsyncValue<Map<String, dynamic>> analyticsAsync,
-  ) {
+  Widget _buildEloDistributionCard({
+    required AsyncValue<List<Map<String, dynamic>>> eloDistAsync,
+    required AsyncValue<Map<String, dynamic>> analyticsAsync,
+    required Map<String, dynamic> stats,
+    required List<Map<String, dynamic>> allAthletes,
+  }) {
     final buckets = eloDistAsync.valueOrNull ?? const <Map<String, dynamic>>[];
     final overview = analyticsAsync.valueOrNull ?? const <String, dynamic>{};
+    final kpisMap = stats['kpis'] is Map
+        ? Map<String, dynamic>.from(stats['kpis'] as Map)
+        : const <String, dynamic>{};
+    final eloHealthMap = stats['eloHealth'] is Map
+        ? Map<String, dynamic>.from(stats['eloHealth'] as Map)
+        : const <String, dynamic>{};
 
-    final displayBuckets = buckets.isNotEmpty
-        ? buckets
-        : const <Map<String, dynamic>>[
-            {'bucket': '1000-1199', 'rightCount': 18, 'leftCount': 21},
-            {'bucket': '1200-1399', 'rightCount': 34, 'leftCount': 29},
-            {'bucket': '1400-1599', 'rightCount': 26, 'leftCount': 22},
-            {'bucket': '1600-1799', 'rightCount': 12, 'leftCount': 9},
-            {'bucket': '1800+', 'rightCount': 5, 'leftCount': 4},
-          ];
+    List<Map<String, dynamic>> displayBuckets = buckets;
+    if (displayBuckets.isEmpty) {
+      int r1000 = 0, l1000 = 0;
+      int r1200 = 0, l1200 = 0;
+      int r1400 = 0, l1400 = 0;
+      int r1600 = 0, l1600 = 0;
+      int r1800 = 0, l1800 = 0;
+      for (final a in allAthletes) {
+        final r = _readInt(a, ['rightArmElo', 'rightElo'], fallback: 1000);
+        final l = _readInt(a, ['leftArmElo', 'leftElo'], fallback: 1000);
+        if (r < 1200) {
+          r1000++;
+        } else if (r < 1400) {
+          r1200++;
+        } else if (r < 1600) {
+          r1400++;
+        } else if (r < 1800) {
+          r1600++;
+        } else {
+          r1800++;
+        }
+        if (l < 1200) {
+          l1000++;
+        } else if (l < 1400) {
+          l1200++;
+        } else if (l < 1600) {
+          l1400++;
+        } else if (l < 1800) {
+          l1600++;
+        } else {
+          l1800++;
+        }
+      }
+      displayBuckets = <Map<String, dynamic>>[
+        {'bucket': '1000-1199', 'rightArmCount': r1000, 'leftArmCount': l1000},
+        {'bucket': '1200-1399', 'rightArmCount': r1200, 'leftArmCount': l1200},
+        {'bucket': '1400-1599', 'rightArmCount': r1400, 'leftArmCount': l1400},
+        {'bucket': '1600-1799', 'rightArmCount': r1600, 'leftArmCount': l1600},
+        {'bucket': '1800+', 'rightArmCount': r1800, 'leftArmCount': l1800},
+      ];
+    }
 
     int maxCount = 1;
     for (final b in displayBuckets) {
-      final r = _readInt(b, ['rightCount', 'rightArm', 'count'], fallback: 10);
-      final l = _readInt(b, ['leftCount', 'leftArm', 'count'], fallback: 8);
+      final r = _readInt(
+        b,
+        ['rightArmCount', 'rightCount', 'rightArm', 'count'],
+        fallback: 0,
+      );
+      final l = _readInt(
+        b,
+        ['leftArmCount', 'leftCount', 'leftArm', 'count'],
+        fallback: 0,
+      );
       if (r > maxCount) maxCount = r;
       if (l > maxCount) maxCount = l;
     }
 
     final activeTournaments = _readInt(
       overview,
-      ['activeTournaments', 'tournamentsCount'],
-      fallback: 6,
+      ['activeTournaments', 'tournamentsCount', 'totalEvents'],
+      fallback: _readInt(kpisMap, ['totalEvents', 'activeTournaments'], fallback: 0),
     );
+    int computedAvgElo = 1000;
+    if (allAthletes.isNotEmpty) {
+      int sum = 0;
+      for (final a in allAthletes) {
+        sum += _readInt(a, ['rightArmElo', 'rightElo'], fallback: 1000);
+      }
+      computedAvgElo = (sum / allAthletes.length).round();
+    }
     final avgElo = _readInt(
       overview,
       ['averageElo', 'avgRightElo'],
-      fallback: 1342,
+      fallback: _readInt(eloHealthMap, ['average'], fallback: computedAvgElo),
     );
 
     return ElevatedActionCard(
@@ -956,14 +1181,14 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
             children: [
               const Expanded(
                 child: Text(
-                  'Right vs. Left Arm ELO Distribution',
+                  'Right vs. Left Arm ELO',
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPure,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
@@ -983,19 +1208,23 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
           ...displayBuckets.take(5).map((b) {
             final label = b['bucket']?.toString() ??
                 b['range']?.toString() ??
-                '1200-1400';
+                '1000-1199';
             final rightVal = _readInt(
               b,
-              ['rightCount', 'rightArm', 'count'],
-              fallback: 12,
+              ['rightArmCount', 'rightCount', 'rightArm', 'count'],
+              fallback: 0,
             );
             final leftVal = _readInt(
               b,
-              ['leftCount', 'leftArm', 'count'],
-              fallback: 10,
+              ['leftArmCount', 'leftCount', 'leftArm', 'count'],
+              fallback: 0,
             );
-            final rightRatio = (rightVal / maxCount).clamp(0.08, 1.0);
-            final leftRatio = (leftVal / maxCount).clamp(0.08, 1.0);
+            final rightRatio = rightVal == 0
+                ? 0.04
+                : (rightVal / maxCount).clamp(0.08, 1.0);
+            final leftRatio = leftVal == 0
+                ? 0.04
+                : (leftVal / maxCount).clamp(0.08, 1.0);
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),

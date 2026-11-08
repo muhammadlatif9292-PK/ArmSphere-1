@@ -71,16 +71,19 @@ class CrystalStageBackdrop extends ConsumerWidget {
                 opacity: 0.46,
                 child: (customImg != null && customImg.trim().isNotEmpty)
                     ? ArmSphereImage(
-                        imageUrl: customImg,
+                        imageUrl: ArmSphereAssets.resolveSemanticAsset(customImg),
                         fit: BoxFit.cover,
+                        alignment: preset.defaultFocalAlignment,
                         width: double.infinity,
                         height: double.infinity,
                         fallbackAsset: preset.primaryAsset,
                         excludeFromSemantics: true,
                       )
                     : ArmSphereImage(
-                        assetPath: preset.primaryAsset,
+                        assetPath: ArmSphereAssets.resolveSemanticAsset(
+                            preset.primaryAsset),
                         fit: BoxFit.cover,
+                        alignment: preset.defaultFocalAlignment,
                         width: double.infinity,
                         height: double.infinity,
                         excludeFromSemantics: true,

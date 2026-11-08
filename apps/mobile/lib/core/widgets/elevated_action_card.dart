@@ -49,7 +49,7 @@ class ElevatedActionCard extends StatelessWidget {
     final effectiveBorderColor =
         borderColor ?? Colors.white.withValues(alpha: 0.22);
 
-    // Pillar 2: High-transparency faint white surface plane (0.04 alpha)
+    // Pillar 2: Rich Smoked Dark Glass surface plane (~82% dark opacity)
     final bool useCrystalDefault =
         backgroundColor == null ||
         backgroundColor == AppTheme.cardSurface ||
@@ -58,20 +58,11 @@ class ElevatedActionCard extends StatelessWidget {
         backgroundColor == AppTheme.voidBackground;
 
     final Color effectiveBgColor = useCrystalDefault
-        ? Colors.white.withValues(alpha: 0.04)
+        ? AppTheme.smokedCardSurface
         : backgroundColor!;
 
-    final Gradient effectiveGradient = gradient ??
-        LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.06),
-            Colors.white.withValues(alpha: 0.04),
-            Colors.white.withValues(alpha: 0.02),
-          ],
-          stops: const [0.0, 0.45, 1.0],
-        );
+    final Gradient effectiveGradient =
+        gradient ?? AppTheme.machinedTitaniumGradient;
 
     // Pillar 4: Levitating Y-Axis Floating Shadow
     final List<BoxShadow> effectiveShadows = customShadow ??

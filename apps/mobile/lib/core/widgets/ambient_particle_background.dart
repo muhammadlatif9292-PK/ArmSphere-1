@@ -26,11 +26,11 @@ class AmbientParticleBackground extends StatelessWidget {
 
   String _resolvePrimaryAsset() {
     if (backgroundAsset != null && backgroundAsset!.isNotEmpty) {
-      return backgroundAsset!;
+      return ArmSphereAssets.resolveSemanticAsset(backgroundAsset!);
     }
     switch (tabIndex) {
       case 0: // Arena
-        return ArmSphereAssets.heroArena;
+        return ArmSphereAssets.stageArena9x16;
       case 1: // Discover
         return ArmSphereAssets.heroGrip;
       case 2: // Events / Competitions
@@ -40,17 +40,31 @@ class AmbientParticleBackground extends StatelessWidget {
       case 4: // Passport
         return ArmSphereAssets.heroGrip;
       default:
-        return ArmSphereAssets.heroArena;
+        return ArmSphereAssets.stageArena9x16;
     }
+  }
+
+  Alignment _resolvePrimaryAlignment(String resolvedAsset) {
+    if (resolvedAsset == ArmSphereAssets.stageArena9x16) {
+      return const Alignment(0.0, -0.55);
+    }
+    if (resolvedAsset == ArmSphereAssets.stageTrainingLab9x16) {
+      return const Alignment(0.0, -0.45);
+    }
+    return Alignment.center;
   }
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAsset = _resolvePrimaryAsset();
     return Stack(
       fit: StackFit.expand,
       children: [
         // 1. Full-screen crystal-clear photographic stage + spotlight mesh
-        _StaticAtmosphereSubstrate(primaryAsset: _resolvePrimaryAsset()),
+        _StaticAtmosphereSubstrate(
+          primaryAsset: resolvedAsset,
+          primaryAlignment: _resolvePrimaryAlignment(resolvedAsset),
+        ),
 
         // 2. Frozen subtle stardust particles (zero runtime CPU/GPU cost)
         RepaintBoundary(
@@ -70,8 +84,12 @@ class AmbientParticleBackground extends StatelessWidget {
 
 class _StaticAtmosphereSubstrate extends StatelessWidget {
   final String primaryAsset;
+  final Alignment primaryAlignment;
 
-  const _StaticAtmosphereSubstrate({required this.primaryAsset});
+  const _StaticAtmosphereSubstrate({
+    required this.primaryAsset,
+    this.primaryAlignment = Alignment.center,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -84,10 +102,11 @@ class _StaticAtmosphereSubstrate extends StatelessWidget {
         children: [
           // 1. Full-Screen Crystal-Clear Functional Photography (NO BLUR, 100% sharp)
           Opacity(
-            opacity: 0.44,
+            opacity: 0.46,
             child: ArmSphereImage(
               assetPath: primaryAsset,
               fit: BoxFit.cover,
+              alignment: primaryAlignment,
               width: double.infinity,
               height: double.infinity,
               excludeFromSemantics: true,

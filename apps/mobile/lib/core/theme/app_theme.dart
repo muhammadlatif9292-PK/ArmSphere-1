@@ -133,9 +133,15 @@ class AppTheme {
   static const Color highlightPurple = Color(0xFFC084FC);
 
   // ---------------------------------------------------------------------------
-  // 3. Crystal Glassmorphic / Glossmorphic Surface Tokens (Zero Blur, 0.04 White Tint)
+  // 3. Crystal Glassmorphic / Glossmorphic Surface Tokens
   // ---------------------------------------------------------------------------
-  /// Crystal-clear faint white surface plane (4% white opacity = 0x0AFFFFFF).
+  /// Rich Smoked Dark Glass surface for main content cards & image cards (~82% dark opacity).
+  static const Color smokedCardSurface = Color(0xD10B101C);
+
+  /// Elevated Smoked Dark Glass surface for prominent headers & podium cards (~85% dark opacity).
+  static const Color smokedCardSurfaceElevated = Color(0xD9121A2B);
+
+  /// Crystal-clear faint white surface plane for inputs & small chips (4% white opacity = 0x0AFFFFFF).
   static const Color glassSurface = Color(0x0AFFFFFF);
 
   /// Elevated crystal-clear surface plane (5% white opacity = 0x0DFFFFFF).
@@ -328,49 +334,49 @@ class AppTheme {
   }
 
   // ---------------------------------------------------------------------------
-  // 10. Crystal Glassmorphic / Glossmorphic Gradients & Surface Shaders
+  // 10. Smoked Dark Glass Gradients & Surface Shaders (~82% Dark Opacity)
   // ---------------------------------------------------------------------------
-  /// Crystal Glossmorphic card surface gradient (0.06 -> 0.03 faint white sheen).
+  /// Rich Smoked Dark Glass card surface gradient (~82% dark obsidian with top-left titanium sheen).
   static const LinearGradient machinedTitaniumGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0x0FFFFFFF),
-      Color(0x0AFFFFFF),
-      Color(0x05FFFFFF),
+      Color(0xD9141E30),
+      Color(0xD10D1320),
+      Color(0xCC080C15),
     ],
     stops: [0.0, 0.45, 1.0],
   );
 
-  /// Secondary Crystal Glossmorphic gradient for compact controls & sub-cards.
+  /// Secondary Smoked Dark Glass gradient for compact cards & sub-panels.
   static const LinearGradient brushedSteelGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0x12FFFFFF),
-      Color(0x08FFFFFF),
+      Color(0xD9162032),
+      Color(0xCF0C121E),
     ],
   );
 
-  /// Immersive Crystal Glossmorphic athlete hero banner gradient.
+  /// Immersive Smoked Dark Glass athlete hero banner gradient.
   static const LinearGradient cinematicBannerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0x12FFFFFF),
-      Color(0x0AFFFFFF),
-      Color(0x05FFFFFF),
+      Color(0xD9151F32),
+      Color(0xD10D1320),
+      Color(0xCC080C15),
     ],
     stops: [0.0, 0.45, 1.0],
   );
 
-  /// Broadcast fight card / Supermatch Crystal Glossmorphic stage gradient.
+  /// Broadcast fight card / Supermatch Smoked Dark Glass stage gradient.
   static const LinearGradient upcomingMatchGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0x12FFFFFF),
-      Color(0x07FFFFFF),
+      Color(0xD9161F30),
+      Color(0xCF0B101B),
     ],
   );
 
@@ -466,7 +472,7 @@ class AppTheme {
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      color: surfaceColor ?? glassSurface,
+      color: surfaceColor ?? smokedCardSurface,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: borderColor ?? glassBorder,
@@ -637,7 +643,7 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: glassSurface,
+        color: smokedCardSurface,
         shadowColor: Colors.black.withValues(alpha: 0.45),
         elevation: 0,
         margin: EdgeInsets.zero,

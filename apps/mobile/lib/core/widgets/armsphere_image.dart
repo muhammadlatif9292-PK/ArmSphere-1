@@ -40,6 +40,9 @@ class ArmSphereImage extends StatelessWidget {
   /// Content fit strategy. Defaults to [BoxFit.cover].
   final BoxFit fit;
 
+  /// Focal alignment within the target bounds. Defaults to [Alignment.center].
+  final Alignment alignment;
+
   /// Level 2 fallback asset path if Level 1 fails or is omitted.
   final String? fallbackAsset;
 
@@ -80,6 +83,7 @@ class ArmSphereImage extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.fallbackAsset = ArmSphereAssets.defaultTournament,
     this.fallbackIcon = Icons.fitness_center_rounded,
     this.initial,
@@ -100,6 +104,7 @@ class ArmSphereImage extends StatelessWidget {
     this.assetPath,
     double size = 40.0,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.fallbackAsset = ArmSphereAssets.defaultAvatar,
     this.fallbackIcon = Icons.person_rounded,
     this.initial,
@@ -122,6 +127,7 @@ class ArmSphereImage extends StatelessWidget {
     this.width,
     this.height = 200.0,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.fallbackAsset = ArmSphereAssets.heroArena,
     this.fallbackIcon = Icons.sports_kabaddi_rounded,
     this.initial,
@@ -202,9 +208,9 @@ class ArmSphereImage extends StatelessWidget {
   }
 
   Widget _buildImagePipeline(BuildContext context) {
-    // Level 1A: Remote Network Image, Data URI, or Asset path passed in imageUrl
+    // Level 1A: Remote Network Image, Data URI, or Asset path / Semantic key passed in imageUrl
     if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
-      final trimmed = imageUrl!.trim();
+      final trimmed = ArmSphereAssets.resolveSemanticAsset(imageUrl!.trim());
       if (trimmed.startsWith('data:image/')) {
         final commaIdx = trimmed.indexOf(',');
         if (commaIdx != -1 && commaIdx + 1 < trimmed.length) {
@@ -215,6 +221,7 @@ class ArmSphereImage extends StatelessWidget {
               width: width,
               height: height,
               fit: fit,
+              alignment: alignment,
               cacheWidth: _effectiveCacheWidth,
               cacheHeight: _effectiveCacheHeight,
               errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
@@ -230,6 +237,7 @@ class ArmSphereImage extends StatelessWidget {
           width: width,
           height: height,
           fit: fit,
+          alignment: alignment,
           cacheWidth: _effectiveCacheWidth,
           cacheHeight: _effectiveCacheHeight,
           errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
@@ -240,6 +248,7 @@ class ArmSphereImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        alignment: alignment,
         memCacheWidth: _effectiveCacheWidth,
         memCacheHeight: _effectiveCacheHeight,
         placeholder: (ctx, url) => _buildPlaceholder(),
@@ -247,13 +256,16 @@ class ArmSphereImage extends StatelessWidget {
       );
     }
 
-    // Level 1B: Bundled Local Asset
+    // Level 1B: Bundled Local Asset or Semantic Asset Identifier
     if (assetPath != null && assetPath!.trim().isNotEmpty) {
+      final resolvedAsset =
+          ArmSphereAssets.resolveSemanticAsset(assetPath!.trim());
       return Image.asset(
-        assetPath!.trim(),
+        resolvedAsset,
         width: width,
         height: height,
         fit: fit,
+        alignment: alignment,
         cacheWidth: _effectiveCacheWidth,
         cacheHeight: _effectiveCacheHeight,
         errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
@@ -271,10 +283,11 @@ class ArmSphereImage extends StatelessWidget {
     }
 
     return Image.asset(
-      fallbackAsset!.trim(),
+      ArmSphereAssets.resolveSemanticAsset(fallbackAsset!.trim()),
       width: width,
       height: height,
       fit: fit,
+      alignment: alignment,
       cacheWidth: _effectiveCacheWidth,
       cacheHeight: _effectiveCacheHeight,
       errorBuilder: (ctx, error, stackTrace) => _buildLevel3Fallback(context),

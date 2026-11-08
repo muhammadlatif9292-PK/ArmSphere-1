@@ -36,6 +36,102 @@ abstract final class ArmSphereAssets {
   /// Macro Forearm Clash, Knuckles & Chalk Smoke (16:9 ratio)
   static const String heroGrip = 'assets/images/heroes/m1_hero_grip.webp';
 
+  /// Shadowed Athlete in Crimson Smoke — Default Athlete Dashboard Hero (16:9 ratio)
+  static const String heroAthleteDashboard =
+      'assets/images/heroes/m1_hero_athlete_dashboard.webp';
+
+  /// Sanctioned Arena Radar Card — Spotlighted Competition Table & Jumbotron (21:9 ratio, 1920x820)
+  static const String cardArenaRadar =
+      'assets/images/heroes/m1_card_arena_radar.webp';
+
+  /// Upcoming Supermatch Card — Split Red/Blue Corner Table & Referee Strap (16:9 ratio)
+  static const String cardSupermatchVs =
+      'assets/images/heroes/m1_card_supermatch_vs.webp';
+
+  /// Discover Federation Hub Bento Tile 1 — Training Venues & Club Directory (4:3 ratio)
+  static const String bentoVenues =
+      'assets/images/heroes/m1_bento_venues.webp';
+
+  /// Discover Federation Hub Bento Tile 2 — Pickup Meetups & Sparring (4:3 ratio)
+  static const String bentoPickupSparring =
+      'assets/images/heroes/m1_bento_pickup_sparring.webp';
+
+  /// Discover Federation Hub Bento Tile 3 — Community Feed & Technique Clips (4:3 ratio)
+  static const String bentoCommunityFeed =
+      'assets/images/heroes/m1_bento_community_feed.webp';
+
+  /// Discover Federation Hub Bento Tile 4 — ELO Rankings & Championship Standings (4:3 ratio)
+  static const String bentoEloRankings =
+      'assets/images/heroes/m1_bento_elo_rankings.webp';
+
+  /// Welcome Screen Hero Banner — Macro Chalked Forearm Lockup Over Void (16:9 ratio)
+  static const String heroWelcomeGrip =
+      'assets/images/heroes/m1_hero_welcome_grip.webp';
+
+  /// Full-Screen 9:16 Stage Backdrop — Main Championship Arena Canopy & Floor
+  static const String stageArena9x16 =
+      'assets/images/heroes/m1_stage_arena_9x16.webp';
+
+  /// Full-Screen 9:16 Stage Backdrop — Strength & Performance Lab (Table Pulley & Wrist Wrench)
+  static const String stageTrainingLab9x16 =
+      'assets/images/heroes/m1_stage_training_lab_9x16.webp';
+
+  // ---------------------------------------------------------------------------
+  // Canonical Semantic Asset Identifiers
+  // ---------------------------------------------------------------------------
+
+  static const String semanticProfileAthleteDashboardHero =
+      'profile.athlete.dashboard_hero';
+  static const String semanticArenaHomeRadarCard = 'arena.home.radar_card';
+  static const String semanticArenaHomeSupermatchCard =
+      'arena.home.supermatch_card';
+  static const String semanticDiscoverHubVenuesTile =
+      'discover.hub.venues_tile';
+  static const String semanticDiscoverHubPickupMeetupsTile =
+      'discover.hub.pickup_meetups_tile';
+  static const String semanticDiscoverHubCommunityFeedTile =
+      'discover.hub.community_feed_tile';
+  static const String semanticDiscoverHubEloRankingsTile =
+      'discover.hub.elo_rankings_tile';
+  static const String semanticEventsTournamentDetailHero =
+      'events.tournament.detail_hero';
+  static const String semanticAuthWelcomeHeroBanner =
+      'auth.welcome.hero_banner';
+  static const String semanticArenaHomeBackground = 'arena.home.background';
+  static const String semanticTrainingLogBackground = 'training.log.background';
+
+  /// Semantic Asset Catalog mapping logical slot IDs to bundled default assets.
+  static const Map<String, String> semanticCatalog = {
+    'profile.athlete.dashboard_hero': heroAthleteDashboard,
+    'arena.home.radar_card': cardArenaRadar,
+    'arena.home.supermatch_card': cardSupermatchVs,
+    'discover.hub.venues_tile': bentoVenues,
+    'discover.hub.pickup_meetups_tile': bentoPickupSparring,
+    'discover.hub.community_feed_tile': bentoCommunityFeed,
+    'discover.hub.elo_rankings_tile': bentoEloRankings,
+    'events.tournament.detail_hero': defaultTournament,
+    'auth.welcome.hero_banner': heroWelcomeGrip,
+    'arena.home.background': stageArena9x16,
+    'training.log.background': stageTrainingLab9x16,
+  };
+
+  /// Normalizes legacy `.png` hero paths to `.webp` and resolves semantic asset
+  /// identifiers (such as `profile.athlete.dashboard_hero`) to their registered
+  /// asset path, or returns [keyOrPath] unchanged if it is already a direct
+  /// asset path, network URL, or data URI.
+  static String resolveSemanticAsset(
+    String? keyOrPath, {
+    String fallback = heroAthleteDashboard,
+  }) {
+    if (keyOrPath == null) return fallback;
+    final trimmed = keyOrPath.trim();
+    if (trimmed.isEmpty) return fallback;
+    if (trimmed.endsWith('m1_hero_athlete_dashboard.png')) {
+      return heroAthleteDashboard;
+    }
+    return semanticCatalog[trimmed] ?? trimmed;
+  }
+
   // ---------------------------------------------------------------------------
   // M4: Division Badges & Referee Certification Insignia (assets/images/badges/)
   // ---------------------------------------------------------------------------

@@ -317,23 +317,36 @@ class AdminRepository extends BaseRepository {
     String? province,
     CancelToken? cancelToken,
   }) {
+    final normalizedStatus = status?.trim().toUpperCase() ?? '';
+    final isPendingFilter = normalizedStatus == 'PENDING';
     return executeRequest(
       cacheKey:
-          'admin_athletes_${search ?? ""}_${status ?? ""}_${province ?? ""}',
+          'admin_athletes_${search ?? ""}_${normalizedStatus}_${province ?? ""}',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get(
         '/admin/athletes',
         queryParameters: {
           if (search != null && search.trim().isNotEmpty)
             'search': search.trim(),
-          if (status != null && status.trim().isNotEmpty)
-            'status': status.trim(),
+          if (normalizedStatus.isNotEmpty && !isPendingFilter)
+            'status': normalizedStatus,
           if (province != null && province.trim().isNotEmpty)
             'province': province.trim(),
         },
         cancelToken: token,
       ),
-      parse: (data) => _unwrapList(data, nestedKey: 'athletes'),
+      parse: (data) {
+        final list = _unwrapList(data, nestedKey: 'athletes');
+        if (isPendingFilter) {
+          return list.where((a) {
+            final s = (a['verificationStatus'] ?? a['status'] ?? 'UNVERIFIED')
+                .toString()
+                .toUpperCase();
+            return s == 'PENDING' || s == 'UNVERIFIED';
+          }).toList();
+        }
+        return list;
+      },
     );
   }
 

@@ -413,7 +413,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                               if (reasonCtrl.text.trim().isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   CrystalSnackBar(
-                                    content: Text(
+                                    content: const Text(
                                       'An audit reason is required to override athlete records.',
                                     ),
                                     backgroundColor: AppTheme.error,
@@ -897,7 +897,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                       if (suspendReasonCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           CrystalSnackBar(
-                            content: Text(
+                            content: const Text(
                               'Enter a disciplinary reason before suspending a referee.',
                             ),
                             backgroundColor: AppTheme.error,
@@ -1171,6 +1171,12 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                       ),
                     ),
                     _buildStatusChip(status),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppTheme.textMuted,
+                      size: 18,
+                    ),
                   ],
                 ),
               ),
@@ -1294,6 +1300,12 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                       ),
                     ),
                     StatusChip.info(label: level),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppTheme.textMuted,
+                      size: 18,
+                    ),
                   ],
                 ),
               ),
@@ -1491,6 +1503,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
       case 'ACTIVE':
         return StatusChip.success(label: status);
       case 'PENDING':
+      case 'UNVERIFIED':
       case 'CONTACTED':
         return StatusChip.warning(label: status);
       case 'REJECTED':

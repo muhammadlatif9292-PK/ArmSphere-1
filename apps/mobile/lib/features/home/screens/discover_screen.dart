@@ -941,7 +941,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         icon: Icons.storefront_outlined,
         color: AppTheme.secondaryAccent,
         route: '/venues',
-        bgAsset: ArmSphereAssets.defaultClub,
+        bgAsset: ArmSphereAssets.resolveSemanticAsset(
+          ArmSphereAssets.semanticDiscoverHubVenuesTile,
+        ),
+        bgAlignment: const Alignment(0.35, 0.0),
       ),
       _HubItem(
         title: 'Pickup Meetups',
@@ -950,7 +953,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         icon: Icons.handshake_outlined,
         color: AppTheme.success,
         route: '/informal-events',
-        bgAsset: ArmSphereAssets.heroGrip,
+        bgAsset: ArmSphereAssets.resolveSemanticAsset(
+          ArmSphereAssets.semanticDiscoverHubPickupMeetupsTile,
+        ),
+        bgAlignment: const Alignment(0.30, -0.15),
       ),
       _HubItem(
         title: 'Community Feed',
@@ -959,7 +965,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         icon: Icons.forum_outlined,
         color: AppTheme.info,
         route: '/community',
-        bgAsset: ArmSphereAssets.heroArena,
+        bgAsset: ArmSphereAssets.resolveSemanticAsset(
+          ArmSphereAssets.semanticDiscoverHubCommunityFeedTile,
+        ),
+        bgAlignment: const Alignment(0.30, -0.15),
       ),
       _HubItem(
         title: 'ELO Rankings',
@@ -968,7 +977,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         icon: Icons.leaderboard_outlined,
         color: AppTheme.warning,
         route: '/rankings',
-        bgAsset: ArmSphereAssets.defaultTournament,
+        bgAsset: ArmSphereAssets.resolveSemanticAsset(
+          ArmSphereAssets.semanticDiscoverHubEloRankingsTile,
+        ),
+        bgAlignment: const Alignment(0.35, -0.10),
       ),
     ];
 
@@ -1007,7 +1019,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       semanticLabel: '${item.title}: ${item.subtitle}',
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
+          color: AppTheme.smokedCardSurface,
+          gradient: AppTheme.machinedTitaniumGradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.24),
@@ -1015,7 +1028,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.44),
+              color: Colors.black.withValues(alpha: 0.48),
               blurRadius: 22,
               spreadRadius: -2,
               offset: const Offset(0, 10),
@@ -1033,10 +1046,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     fit: StackFit.expand,
                     children: [
                       Opacity(
-                        opacity: 0.30,
+                        opacity: 0.55,
                         child: ArmSphereImage(
                           assetPath: item.bgAsset,
                           fit: BoxFit.cover,
+                          alignment: item.bgAlignment,
                           excludeFromSemantics: true,
                         ),
                       ),
@@ -1052,17 +1066,33 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ),
                         ),
                       ),
+                      // Bottom-left + vertical readability scrim protecting top-left icon/chip
+                      // and bottom-left title/subtitle while keeping right-center subject clear
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                            colors: [
+                              Color(0xD9070A11),
+                              Color(0x8C0B0F17),
+                              Color(0x330B0F17),
+                            ],
+                            stops: [0.0, 0.52, 1.0],
+                          ),
+                        ),
+                      ),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Color(0x380B0F17),
-                              Color(0x590B0F17),
-                              Color(0x730E131C),
+                              Color(0x47070A11),
+                              Color(0x2E0B0F17),
+                              Color(0x8C070A11),
                             ],
-                            stops: [0.0, 0.55, 1.0],
+                            stops: [0.0, 0.50, 1.0],
                           ),
                         ),
                       ),
@@ -1940,7 +1970,8 @@ class _FramedDirectorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: AppTheme.smokedCardSurface,
+        gradient: AppTheme.machinedTitaniumGradient,
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.22),
@@ -1948,7 +1979,7 @@ class _FramedDirectorySection extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.44),
+            color: Colors.black.withValues(alpha: 0.48),
             offset: const Offset(0, 10),
             blurRadius: 24,
             spreadRadius: -2,
@@ -1961,12 +1992,12 @@ class _FramedDirectorySection extends StatelessWidget {
           // Section Header Bar
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 11),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: const BorderRadius.vertical(
+            decoration: const BoxDecoration(
+              color: AppTheme.smokedCardSurfaceElevated,
+              borderRadius: BorderRadius.vertical(
                 top: Radius.circular(AppTheme.radiusLarge - 1),
               ),
-              border: const Border(
+              border: Border(
                 bottom: BorderSide(color: AppTheme.border, width: 1.0),
               ),
             ),
@@ -2094,7 +2125,7 @@ class _CompactEmptyBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.035),
+        color: AppTheme.smokedCardSurface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.20),
@@ -2189,6 +2220,7 @@ class _HubItem {
   final Color color;
   final String route;
   final String bgAsset;
+  final Alignment bgAlignment;
 
   _HubItem({
     required this.title,
@@ -2198,6 +2230,7 @@ class _HubItem {
     required this.color,
     required this.route,
     required this.bgAsset,
+    this.bgAlignment = Alignment.center,
   });
 }
 

@@ -291,6 +291,8 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppTheme.textSecondary,
@@ -320,7 +322,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                               key: const ValueKey(
                                 'admin_dossier_switch_persona_btn',
                               ),
-                              label: 'SWITCH PERSONA (SETTINGS)',
+                              label: 'SWITCH ROLE',
                               icon: Icons.swap_horiz_rounded,
                               accentColor: AppTheme.goldPrimary,
                               onTap: () => context.push('/settings/roles'),
@@ -345,18 +347,23 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'CRYPTOGRAPHIC SHA-256 AUDIT LEDGER',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                          color: AppTheme.goldPrimary,
+                      const Expanded(
+                        child: Text(
+                          'CRYPTOGRAPHIC SHA-256 AUDIT LEDGER',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.7,
+                            color: AppTheme.goldPrimary,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       CrystalHeaderActionPill(
-                        label: 'VERIFY HASH CHAIN',
+                        label: 'VERIFY CHAIN',
                         icon: Icons.verified_user_rounded,
                         accentColor:
                             isChainValid ? AppTheme.success : AppTheme.crimson,
@@ -485,6 +492,38 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
     );
   }
 
+  String _formatAuditActionLabel(String actionType) {
+    switch (actionType.toUpperCase()) {
+      case 'AUTH_NEW_DEVICE_ALERT':
+        return 'New Device Sign-In Alert';
+      case 'AUTH_IMPOSSIBLE_TRAVEL':
+        return 'Impossible Travel Security Alert';
+      case 'AUTH_CONCURRENT_SESSIONS':
+        return 'Concurrent Session Alert';
+      case 'ATHLETE_REVIEW':
+      case 'ATHLETE_VERIFIED':
+        return 'Athlete Verification Review';
+      case 'MATCH_OVERRIDE':
+      case 'MATCH_RESULT_CORRECTED':
+        return 'Sanctioned Bout Score Override';
+      case 'DISPUTE_RESOLVED':
+        return 'Arbitration Dispute Ruling';
+      case 'ROLE_GRANTED':
+        return 'Federation Role Credential Granted';
+      case 'ATHLETE_SUSPENDED':
+        return 'Disciplinary Athlete Suspension';
+      default:
+        return actionType
+            .split('_')
+            .where((w) => w.isNotEmpty)
+            .map(
+              (w) =>
+                  '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}',
+            )
+            .join(' ');
+    }
+  }
+
   Widget _buildAuditEventsList(
     AsyncValue<List<Map<String, dynamic>>> eventsAsync,
   ) {
@@ -512,12 +551,18 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
       children: events.map((ev) {
         final actionType =
             ev['actionType']?.toString() ?? ev['action']?.toString() ?? 'EVENT';
+        final readableTitle = _formatAuditActionLabel(actionType);
         final actorId =
             ev['actorId']?.toString() ?? ev['userId']?.toString() ?? 'System';
-        final currentHash =
-            ev['currentHash']?.toString() ?? ev['hash']?.toString() ?? '';
-        final shortHash = currentHash.length > 12
-            ? '${currentHash.substring(0, 12)}…'
+        final shortActor = actorId.length > 14
+            ? '${actorId.substring(0, 8)}…'
+            : actorId;
+        final currentHash = ev['eventHash']?.toString() ??
+            ev['currentHash']?.toString() ??
+            ev['hash']?.toString() ??
+            '';
+        final shortHash = currentHash.length > 10
+            ? '${currentHash.substring(0, 10)}…'
             : (currentHash.isEmpty ? 'SHA-256' : currentHash);
 
         return Padding(
@@ -527,10 +572,17 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                const Icon(
-                  Icons.fingerprint_rounded,
-                  color: AppTheme.goldPrimary,
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.fingerprint_rounded,
+                    color: AppTheme.goldPrimary,
+                    size: 19,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -538,7 +590,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        actionType,
+                        readableTitle,
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 13.5,
@@ -547,13 +599,30 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        'Actor: $actorId • Hash: $shortHash',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: AppTheme.textSecondary,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              actionType,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            ' • Actor: $shortActor • #$shortHash',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textSecondary,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

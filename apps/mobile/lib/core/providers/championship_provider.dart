@@ -19,3 +19,10 @@ final beltLineageProvider = FutureProvider.autoDispose.family<List<Map<String, d
   final repo = ref.watch(championshipRepositoryProvider);
   return repo.getBeltLineage(titleId);
 });
+
+final championshipChallengesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.keepAlive();
+  final repo = ref.watch(championshipRepositoryProvider);
+  return repo.getChallenges();
+});
+

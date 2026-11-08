@@ -263,6 +263,7 @@ class AdminSegmentedDeck extends StatelessWidget {
 
   Widget _buildSegment(BuildContext context, int index, AdminSegmentItem item) {
     final bool isSelected = index == selectedIndex;
+    final bool isDense = segments.length >= 4;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -276,7 +277,10 @@ class AdminSegmentedDeck extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         constraints: const BoxConstraints(minHeight: 42),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: isDense ? 4 : 6,
+          vertical: 8,
+        ),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.crimson.withValues(alpha: 0.18)
@@ -306,24 +310,24 @@ class AdminSegmentedDeck extends StatelessWidget {
             children: [
               Icon(
                 item.icon,
-                size: 15,
+                size: isDense ? 13.5 : 15,
                 color: isSelected ? AppTheme.crimson : AppTheme.textMuted,
               ),
-              const SizedBox(width: 5),
+              SizedBox(width: isDense ? 3.5 : 5),
               Text(
                 item.label,
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
-                  fontSize: 11.5,
+                  fontSize: isDense ? 11.0 : 11.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected ? AppTheme.textPure : AppTheme.textSecondary,
                 ),
               ),
               if (item.count != null) ...[
-                const SizedBox(width: 5),
+                SizedBox(width: isDense ? 3.5 : 5),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDense ? 4 : 5,
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
@@ -456,11 +460,39 @@ class AdminCrystalSearchBar extends StatelessWidget {
     );
   }
 
+  static String _defaultFilterLabel(String value) {
+    switch (value) {
+      case '':
+      case 'ALL':
+        return 'ALL';
+      case 'UNDER_REVIEW':
+        return 'IN REVIEW';
+      case 'RESOLVED_UPHELD':
+        return 'UPHELD';
+      case 'RESOLVED_OVERTURNED':
+        return 'OVERTURNED';
+      case 'IN_PROGRESS':
+        return 'IN PROGRESS';
+      case 'ATHLETE_REVIEW':
+        return 'ATHLETE REVIEW';
+      case 'MATCH_OVERRIDE':
+        return 'MATCH OVERRIDE';
+      case 'DISPUTE_RESOLVED':
+        return 'DISPUTE RULING';
+      case 'ROLE_GRANTED':
+        return 'ROLE GRANT';
+      case 'ATHLETE_SUSPENDED':
+        return 'SUSPENSION';
+      default:
+        return value.replaceAll('_', ' ');
+    }
+  }
+
   Widget _buildFilterChip(BuildContext context, String value) {
     final bool isSelected = selectedFilter == value;
     final String label = filterLabelBuilder != null
         ? filterLabelBuilder!(value)
-        : (value.isEmpty ? 'ALL' : value.replaceAll('_', ' '));
+        : _defaultFilterLabel(value);
 
     return GestureDetector(
       onTap: () {
@@ -470,7 +502,7 @@ class AdminCrystalSearchBar extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.goldPrimary.withValues(alpha: 0.18)
@@ -486,10 +518,10 @@ class AdminCrystalSearchBar extends StatelessWidget {
           label,
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             color: isSelected ? AppTheme.goldPrimary : AppTheme.textSecondary,
-            letterSpacing: 0.4,
+            letterSpacing: 0.35,
           ),
         ),
       ),
@@ -531,21 +563,25 @@ class AdminKpiCrystalCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    label.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.7,
-                      color: AppTheme.textSecondary,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      label.toUpperCase(),
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.35,
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: accentColor.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(8),
@@ -553,7 +589,7 @@ class AdminKpiCrystalCard extends StatelessWidget {
                       color: accentColor.withValues(alpha: 0.38),
                     ),
                   ),
-                  child: Icon(icon, size: 15, color: accentColor),
+                  child: Icon(icon, size: 14, color: accentColor),
                 ),
               ],
             ),

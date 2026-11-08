@@ -108,7 +108,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                       if (notesCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           CrystalSnackBar(
-                            content: Text(
+                            content: const Text(
                               'Arbitration resolution notes are mandatory.',
                             ),
                             backgroundColor: AppTheme.error,
@@ -183,16 +183,15 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                             label: 'OPEN VIDEO EVIDENCE',
                             icon: Icons.play_circle_fill_rounded,
                             accentColor: AppTheme.info,
-                            onTap: () async {
-                              final uri = Uri.tryParse(evidenceUrl);
-                              if (uri != null && mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  CrystalSnackBar(
-                                    content: Text('Evidence link: $evidenceUrl'),
-                                    backgroundColor: AppTheme.info,
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                CrystalSnackBar(
+                                  content: Text(
+                                    'Evidence URL: $evidenceUrl',
                                   ),
-                                );
-                              }
+                                  backgroundColor: AppTheme.info,
+                                ),
+                              );
                             },
                           ),
                         ],
@@ -262,7 +261,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 CrystalSnackBar(
-                                  content: Text(
+                                  content: const Text(
                                     'Dispute docket closed and archived.',
                                   ),
                                   backgroundColor: AppTheme.success,
@@ -905,16 +904,15 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                           label: 'OPEN SOURCE CLIP',
                           icon: Icons.open_in_new_rounded,
                           accentColor: AppTheme.info,
-                          onTap: () async {
-                            final uri = Uri.tryParse(videoUrl);
-                            if (uri != null && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                CrystalSnackBar(
-                                  content: Text('Video link: $videoUrl'),
-                                  backgroundColor: AppTheme.info,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              CrystalSnackBar(
+                                content: Text(
+                                  'Source clip URL: $videoUrl',
                                 ),
-                              );
-                            }
+                                backgroundColor: AppTheme.info,
+                              ),
+                            );
                           },
                         ),
                       if (canModerate && postId.isNotEmpty) ...[
@@ -934,7 +932,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 CrystalSnackBar(
-                                  content: Text(
+                                  content: const Text(
                                     'Video clip approved and published to Community Feed.',
                                   ),
                                   backgroundColor: AppTheme.success,

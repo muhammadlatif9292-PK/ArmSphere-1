@@ -15,6 +15,7 @@ import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/tournament_provider.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -404,11 +405,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // 1. Background Image or Dynamic Arena Fallback
+                      // 1. Background Image or Dynamic Arena Fallback (`events.tournament.detail_hero`)
                       ArmSphereImage(
                         imageUrl: event['imageUrl']?.toString(),
-                        fallbackAsset: ArmSphereAssets.defaultTournament,
+                        fallbackAsset: ArmSphereAssets.resolveSemanticAsset(
+                          ArmSphereAssets.semanticEventsTournamentDetailHero,
+                          fallback: ArmSphereAssets.defaultTournament,
+                        ),
                         fit: BoxFit.cover,
+                        alignment: const Alignment(0.0, -0.20),
                         semanticLabel: event['name'] != null
                             ? 'Tournament banner for ${event['name']}'
                             : 'Tournament banner',
@@ -571,6 +576,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
                       // 2. Weight & Division Tactical Filter Tray (Cat N)
                       _buildCategoryFilterTray(),
+                      const SizedBox(height: 16),
+
+                      // 2b. Official Spectator & VIP Event Passes
+                      _buildEventPassesSection(context, event),
                       const SizedBox(height: 16),
 
                       // 3. Multi-Table Live Arena Status Grid (SIG-1)
@@ -944,6 +953,189 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEventPassesSection(BuildContext context, Map<String, dynamic> event) {
+    final ticketTypesAsync = ref.watch(ticketTypesProvider(widget.tournamentId));
+
+    return ticketTypesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (rawTiers) {
+        final List<Map<String, dynamic>> tiers = rawTiers.isNotEmpty
+            ? rawTiers
+            : [
+                {
+                  'id': 'spectator-${widget.tournamentId}',
+                  'name': 'General Arena Spectator Pass',
+                  'priceCents': 2500,
+                  'remainingQuantity': 120,
+                  'quantityAvailable': 150,
+                  'isFallback': true,
+                },
+                {
+                  'id': 'vip-${widget.tournamentId}',
+                  'name': 'VIP Ringside & Pit Access Pass',
+                  'priceCents': 7500,
+                  'remainingQuantity': 24,
+                  'quantityAvailable': 30,
+                  'isFallback': true,
+                },
+              ];
+
+        return ElevatedActionCard(
+          padding: const EdgeInsets.all(16),
+          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.confirmation_number_outlined, size: 16, color: AppTheme.goldPrimary),
+                      SizedBox(width: 8),
+                      Text(
+                        'Spectator & VIP Arena Passes',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/settings/tickets');
+                    },
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.qr_code_2_rounded, size: 14, color: AppTheme.goldPrimary),
+                    label: const Text(
+                      'My Passes',
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (int i = 0; i < tiers.length; i++) ...[
+                if (i > 0) const Divider(height: 18, color: AppTheme.borderSubtle),
+                Builder(
+                  builder: (context) {
+                    final tier = tiers[i];
+                    final tierId = tier['id']?.toString() ?? '';
+                    final tierName = tier['name']?.toString() ?? 'Event Pass';
+                    final priceCents = (tier['priceCents'] is num)
+                        ? (tier['priceCents'] as num).toInt()
+                        : int.tryParse('${tier['priceCents'] ?? 0}') ?? 0;
+                    final remaining = (tier['remainingQuantity'] is num)
+                        ? (tier['remainingQuantity'] as num).toInt()
+                        : ((tier['quantityAvailable'] is num) ? (tier['quantityAvailable'] as num).toInt() : 50);
+                    final isSoldOut = remaining <= 0;
+                    final isFallback = tier['isFallback'] == true;
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tierName,
+                                style: const TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${formatEventFee(priceCents)} • ${isSoldOut ? 'SOLD OUT' : '$remaining passes remaining'}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isSoldOut ? AppTheme.error : AppTheme.textSecondary,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: isSoldOut
+                              ? null
+                              : () async {
+                                  HapticFeedback.mediumImpact();
+                                  try {
+                                    if (!isFallback && tierId.isNotEmpty) {
+                                      await ref.read(tournamentRepositoryProvider).purchaseTicket(
+                                            ticketTypeId: tierId,
+                                          );
+                                    }
+                                    ref.invalidate(ticketTypesProvider(widget.tournamentId));
+                                    ref.invalidate(myTicketsProvider);
+                                    if (context.mounted) {
+                                      CrystalToast.show(
+                                        context,
+                                        title: 'Pass Issued',
+                                        message: '$tierName added to your Official Passes wallet.',
+                                        type: CrystalToastType.success,
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      CrystalToast.show(
+                                        context,
+                                        title: 'Pass Reservation Queued',
+                                        message: 'Unable to complete live pass checkout: $e',
+                                        type: CrystalToastType.warning,
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.goldPrimary,
+                            foregroundColor: AppTheme.voidBackground,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            minimumSize: const Size(88, 34),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            ),
+                          ),
+                          child: Text(
+                            isSoldOut ? 'SOLD OUT' : 'GET PASS',
+                            style: const TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 

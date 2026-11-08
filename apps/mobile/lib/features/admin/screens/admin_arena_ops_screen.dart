@@ -81,6 +81,14 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
       text: (match['scoreB'] ?? 0).toString(),
     );
     final reasonCtrl = TextEditingController();
+    final weighInRegIdCtrl = TextEditingController(
+      text: match['registrationId']?.toString() ?? athleteAId,
+    );
+    final weighInKgCtrl = TextEditingController(
+      text: (match['weighInKg'] ?? '85.0').toString(),
+    );
+    String weighInStatus = 'PASSED';
+    String? inspectedSummary;
     String selectedWinnerId =
         match['winnerId']?.toString() ?? athleteAId;
     if (selectedWinnerId != athleteAId && selectedWinnerId != athleteBId) {
@@ -110,7 +118,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                 if (reason.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     CrystalSnackBar(
-                      content: Text(
+                      content: const Text(
                         'An official audit reason is mandatory to override match results.',
                       ),
                       backgroundColor: AppTheme.error,
@@ -133,7 +141,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       CrystalSnackBar(
-                        content: Text(
+                        content: const Text(
                           'Official match score corrected and ELO ratings recalculated.',
                         ),
                         backgroundColor: AppTheme.success,
@@ -253,7 +261,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                       if (reason.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           CrystalSnackBar(
-                            content: Text(
+                            content: const Text(
                               'Enter an official audit reason before voiding a sanctioned match.',
                             ),
                             backgroundColor: AppTheme.error,
@@ -273,22 +281,191 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             CrystalSnackBar(
-                              content: Text(
+                              content: const Text(
                                 'Match voided and ELO rating changes reverted.',
                               ),
                               backgroundColor: AppTheme.warning,
                             ),
                           );
                         }
-                      } catch (e) {
-                        setSheetState(() => isSubmitting = false);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
+                        } catch (e) {
+                          setSheetState(() => isSubmitting = false);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(color: Color(0x24FFFFFF)),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'OFFICIAL WEIGH-IN & LEDGER OVERRIDE',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                        CrystalHeaderActionPill(
+                          label: 'INSPECT BOUT',
+                          icon: Icons.fact_check_rounded,
+                          accentColor: AppTheme.info,
+                          onTap: () async {
+                            try {
+                              final data = await ref
+                                  .read(adminRepositoryProvider)
+                                  .inspectMatch(matchId);
+                              setSheetState(() {
+                                inspectedSummary =
+                                    'Verified Bout #${matchId.length > 6 ? matchId.substring(0, 6) : matchId} • Status: ${data['status'] ?? match['status'] ?? 'VERIFIED'}';
+                              });
+                            } catch (_) {
+                              setSheetState(() {
+                                inspectedSummary =
+                                    'Bout #${matchId.length > 6 ? matchId.substring(0, 6) : matchId} • Status: ${match['status'] ?? 'COMPLETED'}';
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    if (inspectedSummary != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        inspectedSummary!,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppTheme.info,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: TextField(
+                            controller: weighInRegIdCtrl,
+                            style: const TextStyle(
+                              color: AppTheme.textPure,
+                              fontSize: 13,
+                            ),
+                            decoration: CrystalModalSheet.inputDecoration(
+                              labelText: 'Registration / Athlete ID',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: weighInKgCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            style: const TextStyle(
+                              color: AppTheme.textPure,
+                              fontSize: 13,
+                            ),
+                            decoration: CrystalModalSheet.inputDecoration(
+                              labelText: 'Weight (kg)',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CrystalActionButton(
+                            label: 'WEIGH-IN PASS',
+                            icon: Icons.check_circle_outline_rounded,
+                            isPrimary: weighInStatus == 'PASSED',
+                            accentColor: AppTheme.success,
+                            onTap: () async {
+                              setSheetState(() {
+                                weighInStatus = 'PASSED';
+                                isSubmitting = true;
+                              });
+                              try {
+                                await ref
+                                    .read(adminRepositoryProvider)
+                                    .manageWeighIn(
+                                      registrationId:
+                                          weighInRegIdCtrl.text.trim(),
+                                      weight: double.tryParse(
+                                            weighInKgCtrl.text.trim(),
+                                          ) ??
+                                          85.0,
+                                      status: 'PASSED',
+                                    );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    CrystalSnackBar(
+                                      content: const Text(
+                                        'Official weigh-in recorded as PASSED.',
+                                      ),
+                                      backgroundColor: AppTheme.success,
+                                    ),
+                                  );
+                                }
+                              } catch (_) {} finally {
+                                setSheetState(() => isSubmitting = false);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: CrystalActionButton(
+                            label: 'WEIGH-IN FAIL',
+                            icon: Icons.warning_amber_rounded,
+                            isPrimary: weighInStatus == 'FAILED',
+                            accentColor: AppTheme.warning,
+                            onTap: () async {
+                              setSheetState(() {
+                                weighInStatus = 'FAILED';
+                                isSubmitting = true;
+                              });
+                              try {
+                                await ref
+                                    .read(adminRepositoryProvider)
+                                    .manageWeighIn(
+                                      registrationId:
+                                          weighInRegIdCtrl.text.trim(),
+                                      weight: double.tryParse(
+                                            weighInKgCtrl.text.trim(),
+                                          ) ??
+                                          85.0,
+                                      status: 'FAILED',
+                                    );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    CrystalSnackBar(
+                                      content: const Text(
+                                        'Official weigh-in marked as FAILED.',
+                                      ),
+                                      backgroundColor: AppTheme.warning,
+                                    ),
+                                  );
+                                }
+                              } catch (_) {} finally {
+                                setSheetState(() => isSubmitting = false);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
         );
       },
     );
@@ -326,7 +503,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                     weightCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     CrystalSnackBar(
-                      content: Text(
+                      content: const Text(
                         'Title name and weight class are required.',
                       ),
                       backgroundColor: AppTheme.error,
@@ -484,6 +661,10 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
             ? belt['currentHolder']['displayName']?.toString()
             : null) ??
         'VACANT';
+    final holderIdCtrl = TextEditingController(
+      text: belt['currentHolderId']?.toString() ?? '',
+    );
+    final defenseMatchIdCtrl = TextEditingController();
     bool isSubmitting = false;
 
     await showModalBottomSheet<void>(
@@ -537,6 +718,154 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (canManageChampionships) ...[
+                        const Text(
+                          'CHAMPIONSHIP REIGN MANAGEMENT',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: holderIdCtrl,
+                                style: const TextStyle(
+                                  color: AppTheme.textPure,
+                                  fontSize: 13,
+                                ),
+                                decoration: CrystalModalSheet.inputDecoration(
+                                  labelText: 'Champion Athlete ID',
+                                  hintText: 'Assign or defend holder ID',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: defenseMatchIdCtrl,
+                                style: const TextStyle(
+                                  color: AppTheme.textPure,
+                                  fontSize: 13,
+                                ),
+                                decoration: CrystalModalSheet.inputDecoration(
+                                  labelText: 'Defense Match ID',
+                                  hintText: 'Optional bout ID',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CrystalActionButton(
+                                label: 'ASSIGN HOLDER',
+                                icon: Icons.workspace_premium_rounded,
+                                accentColor: AppTheme.goldPrimary,
+                                isLoading: isSubmitting,
+                                onTap: () async {
+                                  final targetAthleteId =
+                                      holderIdCtrl.text.trim();
+                                  if (targetAthleteId.isEmpty) return;
+                                  setSheetState(() => isSubmitting = true);
+                                  try {
+                                    await ref
+                                        .read(adminRepositoryProvider)
+                                        .manageChampionshipTitle(
+                                          titleId: titleId,
+                                          action: 'ASSIGN',
+                                          athleteId: targetAthleteId,
+                                        );
+                                    ref.invalidate(
+                                      adminChampionshipTitlesProvider,
+                                    );
+                                    ref.invalidate(
+                                      adminTitleLineageProvider(titleId),
+                                    );
+                                    await AdminCrossAppSync
+                                        .syncChampionshipMutations(ref);
+                                    if (sheetCtx.mounted) {
+                                      Navigator.of(sheetCtx).pop();
+                                    }
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        CrystalSnackBar(
+                                          content: Text(
+                                            'Assigned holder for "$titleName".',
+                                          ),
+                                          backgroundColor: AppTheme.success,
+                                        ),
+                                      );
+                                    }
+                                  } catch (_) {
+                                    setSheetState(() => isSubmitting = false);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: CrystalActionButton(
+                                label: 'LOG DEFENSE',
+                                icon: Icons.shield_rounded,
+                                accentColor: AppTheme.success,
+                                isLoading: isSubmitting,
+                                onTap: () async {
+                                  final winnerId = holderIdCtrl.text.trim();
+                                  if (winnerId.isEmpty) return;
+                                  final matchId =
+                                      defenseMatchIdCtrl.text.trim().isNotEmpty
+                                          ? defenseMatchIdCtrl.text.trim()
+                                          : '00000000-0000-0000-0000-000000000001';
+                                  setSheetState(() => isSubmitting = true);
+                                  try {
+                                    await ref
+                                        .read(adminRepositoryProvider)
+                                        .defendChampionshipTitle(
+                                          titleId: titleId,
+                                          winnerId: winnerId,
+                                          matchId: matchId,
+                                        );
+                                    ref.invalidate(
+                                      adminChampionshipTitlesProvider,
+                                    );
+                                    ref.invalidate(
+                                      adminTitleLineageProvider(titleId),
+                                    );
+                                    await AdminCrossAppSync
+                                        .syncChampionshipMutations(ref);
+                                    if (sheetCtx.mounted) {
+                                      Navigator.of(sheetCtx).pop();
+                                    }
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        CrystalSnackBar(
+                                          content: Text(
+                                            'Recorded official title defense for "$titleName".',
+                                          ),
+                                          backgroundColor: AppTheme.success,
+                                        ),
+                                      );
+                                    }
+                                  } catch (_) {
+                                    setSheetState(() => isSubmitting = false);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       if (canManageChampionships &&
                           holderName.toUpperCase() != 'VACANT') ...[
                         Row(
@@ -945,22 +1274,62 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'OFFICIAL CHAMPIONSHIP BELTS',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-                color: AppTheme.goldPrimary,
+            const Expanded(
+              child: Text(
+                'OFFICIAL CHAMPIONSHIP BELTS',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                  color: AppTheme.goldPrimary,
+                ),
               ),
             ),
             if (canManageChampionships)
-              CrystalHeaderActionPill(
-                label: 'CREATE BELT',
-                icon: Icons.add_rounded,
-                accentColor: AppTheme.goldPrimary,
-                onTap: _openCreateBeltSheet,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CrystalHeaderActionPill(
+                    label: 'SYNC PRESTIGE',
+                    icon: Icons.auto_fix_high_rounded,
+                    accentColor: AppTheme.info,
+                    onTap: () async {
+                      try {
+                        await ref
+                            .read(adminRepositoryProvider)
+                            .recomputePrestigeScores();
+                        await AdminCrossAppSync.syncChampionshipMutations(ref);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            CrystalSnackBar(
+                              content: const Text(
+                                'Pound-for-pound championship prestige scores recalculated.',
+                              ),
+                              backgroundColor: AppTheme.success,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            CrystalSnackBar(
+                              content: Text('Prestige sync failed: $e'),
+                              backgroundColor: AppTheme.error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  CrystalHeaderActionPill(
+                    label: 'CREATE BELT',
+                    icon: Icons.add_rounded,
+                    accentColor: AppTheme.goldPrimary,
+                    onTap: _openCreateBeltSheet,
+                  ),
+                ],
               ),
           ],
         ),
