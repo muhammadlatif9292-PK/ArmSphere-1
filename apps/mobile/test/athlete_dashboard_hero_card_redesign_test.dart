@@ -78,6 +78,7 @@ Future<void> _pumpHeroDashboard(
 
   await tester.pumpWidget(
     ProviderScope(
+      key: UniqueKey(),
       overrides: [
         authProvider.overrideWith(
           (ref) => _TestAuthNotifier(
@@ -211,6 +212,7 @@ void main() {
           ),
         );
         expect(tester.takeException(), isNull);
+        await _disposeHeroDashboard(tester);
 
         // 2. Portrait / square athlete photo blended on the left subject stage
         await _pumpHeroDashboard(
