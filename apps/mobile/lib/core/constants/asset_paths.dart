@@ -149,9 +149,13 @@ class ArmSphereAssets {
   static const String semanticTrainingLogBackground       = stageTrainingLab;
 
   /// Semantic slot resolver for dynamic asset bindings
-  static String resolveSemanticAsset(String? slotId) {
-    if (slotId == null || slotId.trim().isEmpty) return '';
-    switch (slotId) {
+  static String resolveSemanticAsset(
+    String? slotId, {
+    String fallback = '',
+  }) {
+    if (slotId == null || slotId.trim().isEmpty) return fallback;
+    final trimmed = slotId.trim();
+    switch (trimmed) {
       case 'profile.athlete.dashboard_hero':
         return athleteDashboardHero;
       case 'arena.home.radar_card':
@@ -161,13 +165,16 @@ class ArmSphereAssets {
       case 'discover.hub.venues_tile':
         return bentoVenues;
       case 'discover.hub.pickup_meetups_tile':
+      case 'discover.hub.pickup_tile':
         return bentoPickupSparring;
       case 'discover.hub.community_feed_tile':
+      case 'discover.hub.community_tile':
         return bentoCommunityFeed;
       case 'discover.hub.elo_rankings_tile':
+      case 'discover.hub.rankings_tile':
         return bentoEloRankings;
       case 'events.tournament.detail_hero':
-        return defaultTournament;
+        return fallback.isNotEmpty ? fallback : defaultTournament;
       case 'auth.welcome.hero_banner':
         return welcomeGripHero;
       case 'arena.home.background':
@@ -175,11 +182,11 @@ class ArmSphereAssets {
       case 'training.log.background':
         return stageTrainingLab;
       default:
-        if (slotId.endsWith('.png')) {
-          final candidate = slotId.replaceFirst('.png', '.webp');
+        if (trimmed.endsWith('.png')) {
+          final candidate = trimmed.replaceFirst('.png', '.webp');
           return candidate;
         }
-        return slotId;
+        return fallback.isNotEmpty ? fallback : trimmed;
     }
   }
 
