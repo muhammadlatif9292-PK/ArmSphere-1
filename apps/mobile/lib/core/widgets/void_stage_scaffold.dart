@@ -4,7 +4,8 @@ import '../constants/asset_paths.dart';
 class VoidStageScaffold extends StatelessWidget {
   final String backgroundAsset;
   final Alignment focalAlignment;
-  final Widget child;
+  final Widget? child;
+  final Widget? body;
   final PreferredSizeWidget? appBar;
   final Widget? bottomNavigationBar;
   final Widget? floatingActionButton;
@@ -17,7 +18,8 @@ class VoidStageScaffold extends StatelessWidget {
   const VoidStageScaffold({
     super.key,
     required this.backgroundAsset,
-    required this.child,
+    this.child,
+    this.body,
     this.focalAlignment = ArmSphereAssets.stageTopFocal,
     this.appBar,
     this.bottomNavigationBar,
@@ -27,10 +29,12 @@ class VoidStageScaffold extends StatelessWidget {
     this.endDrawer,
     this.resizeToAvoidBottomInset,
     this.useSafeArea = true,
-  });
+  }) : assert(child != null || body != null, 'Either child or body must be provided to VoidStageScaffold');
 
   @override
   Widget build(BuildContext context) {
+    final Widget content = child ?? body ?? const SizedBox();
+
     return Scaffold(
       backgroundColor: const Color(0xFF070A11),
       extendBodyBehindAppBar: true,
@@ -73,7 +77,7 @@ class VoidStageScaffold extends StatelessWidget {
               ),
             ),
           ),
-          useSafeArea ? SafeArea(child: child) : child,
+          useSafeArea ? SafeArea(child: content) : content,
         ],
       ),
     );

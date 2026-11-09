@@ -16,7 +16,12 @@ import '../../../core/widgets/void_stage_scaffold.dart';
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
 /// (type/weight/reps) are only allowed in the GYM category.
 class CreatePostScreen extends ConsumerStatefulWidget {
-  const CreatePostScreen({super.key});
+  final String? initialCategory;
+
+  const CreatePostScreen({
+    super.key,
+    this.initialCategory,
+  });
 
   @override
   ConsumerState<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -38,6 +43,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialCategory != null) {
+      final normalized = widget.initialCategory!.trim().toUpperCase();
+      if (_categories.contains(normalized)) {
+        _category = normalized;
+      }
+    }
     _urlController.addListener(_onUrlChanged);
   }
 

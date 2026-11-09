@@ -149,7 +149,8 @@ class ArmSphereAssets {
   static const String semanticTrainingLogBackground       = stageTrainingLab;
 
   /// Semantic slot resolver for dynamic asset bindings
-  static String resolveSemanticAsset(String slotId) {
+  static String resolveSemanticAsset(String? slotId) {
+    if (slotId == null || slotId.trim().isEmpty) return '';
     switch (slotId) {
       case 'profile.athlete.dashboard_hero':
         return athleteDashboardHero;
