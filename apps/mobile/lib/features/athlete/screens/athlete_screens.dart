@@ -703,6 +703,132 @@ class _DashboardMatchRow extends StatelessWidget {
 }
 
 /// Helper Shortcut Button with ElevatedActionCard styling & Tactile Feedback
+class IntelligenceDeckTabBar extends StatelessWidget {
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  const IntelligenceDeckTabBar({
+    super.key,
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  static const double _segmentGap = 6.0;
+  static const double _wrapGap = 8.0;
+  static const double _segmentPadding = 6.0; // minimum per side, one-row mode
+  static const double _pillPadding = 14.0; // per side, wrap mode
+  static const double _borderWidth = 1.0;
+  static const double _minTouchHeight = 40.0;
+
+  static const TextStyle _labelStyle = TextStyle(
+    fontFamily: AppTheme.fontDisplay,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScaler = MediaQuery.textScalerOf(context);
+        final direction = Directionality.of(context);
+
+        var widestLabel = 0.0;
+        for (final label in labels) {
+          final painter = TextPainter(
+            text: TextSpan(text: label, style: _labelStyle),
+            textDirection: direction,
+            textScaler: textScaler,
+            maxLines: 1,
+          )..layout();
+          widestLabel = math.max(widestLabel, painter.width);
+          painter.dispose();
+        }
+
+        final count = labels.length;
+        final segmentWidth =
+            (constraints.maxWidth - _segmentGap * (count - 1)) / count;
+        final fitsInOneRow = constraints.hasBoundedWidth &&
+            widestLabel + 2 * (_segmentPadding + _borderWidth) <= segmentWidth;
+
+        if (fitsInOneRow) {
+          return Row(
+            children: [
+              for (var i = 0; i < count; i++) ...[
+                if (i > 0) const SizedBox(width: _segmentGap),
+                Expanded(child: _buildTab(i, expand: true)),
+              ],
+            ],
+          );
+        }
+        return Wrap(
+          spacing: _wrapGap,
+          runSpacing: _wrapGap,
+          children: [
+            for (var i = 0; i < count; i++) _buildTab(i, expand: false),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTab(int index, {required bool expand}) {
+    final label = labels[index];
+    final isSelected = index == selectedIndex;
+    final text = Text(
+      label,
+      textAlign: TextAlign.center,
+      style: _labelStyle.copyWith(
+        color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
+      ),
+    );
+
+    return Semantics(
+      container: true,
+      button: true,
+      selected: isSelected,
+      label: label,
+      onTap: () => onSelected(index),
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onSelected(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOutCubic,
+          constraints: const BoxConstraints(minHeight: _minTouchHeight),
+          alignment: expand ? Alignment.center : null,
+          padding: EdgeInsets.symmetric(
+            horizontal: expand ? _segmentPadding : _pillPadding,
+            vertical: 6,
+          ),
+          // Same active treatment as the verified navigation dock, now with the
+          // bevelled plate shape used by the badges and the arm selector.
+          decoration: ShapeDecoration(
+            color: isSelected
+                ? AppTheme.crimson.withValues(alpha: 0.12)
+                : Colors.transparent,
+            shape: BeveledRectangleBorder(
+              side: BorderSide(
+                color: isSelected
+                    ? AppTheme.crimson.withValues(alpha: 0.35)
+                    : const Color(0x1FFFFFFF),
+                width: _borderWidth,
+              ),
+              borderRadius: BorderRadius.circular(9),
+            ),
+          ),
+          child: expand ? text : Center(widthFactor: 1.0, child: text),
+        ),
+      ),
+    );
+  }
+}
+
+/// Helper Shortcut Button with ElevatedActionCard styling & Tactile Feedback
+
 class _ShortcutButton extends StatelessWidget {
   final IconData icon;
   final String label;
