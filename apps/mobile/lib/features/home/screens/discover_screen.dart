@@ -169,7 +169,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               delegate: _StickySearchHeaderDelegate(
                 searchBar: _buildSearchBar(),
                 filterChips: _buildFilterChips(),
-                height: 104.0,
+                height: 96.0,
               ),
             ),
             SliverPadding(
@@ -1525,7 +1525,7 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   _StickySearchHeaderDelegate({
     required this.searchBar,
     required this.filterChips,
-    this.height = 104.0,
+    this.height = 96.0,
   });
 
   @override
@@ -1536,14 +1536,15 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppTheme.background,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          searchBar,
-          filterChips,
-        ],
+    return SizedBox.expand(
+      child: Container(
+        color: AppTheme.background,
+        child: Column(
+          children: [
+            searchBar,
+            filterChips,
+          ],
+        ),
       ),
     );
   }
