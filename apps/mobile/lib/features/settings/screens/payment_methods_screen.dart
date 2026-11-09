@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/void_stage_scaffold.dart';
+import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/providers/payment_methods_provider.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class PaymentMethodsScreen extends ConsumerStatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -46,7 +50,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Payment card linked securely via Stripe'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -57,10 +61,11 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       if (mounted) {
         final errString = e.toString();
         if (!errString.contains('canceled') && !errString.contains('Canceled')) {
+          final formatted = AppErrorFormatter.format(e);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Stripe setup failed: $e'),
-              backgroundColor: AppTheme.error,
+            CrystalSnackBar(
+              content: Text(formatted),
+              backgroundColor: AppTheme.warning,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -85,7 +90,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
       await ref.read(paymentMethodsProvider.notifier).deletePaymentMethod(id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Payment method removed successfully'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -95,7 +100,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text('Failed to delete payment method: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -114,14 +119,31 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
   @override
   Widget build(BuildContext context) {
     final methodsAsyncValue = ref.watch(paymentMethodsProvider);
+    final isPaymentConfigured = ref.watch(paymentConfiguredProvider);
 
-    return VoidStageScaffold(
-      backgroundAsset: ArmSphereAssets.stagePassportVault,
-      focalAlignment: const Alignment(0.0, -0.52),
-      appBar: AppBar(backgroundColor: Colors.transparent, title: const Text('Payment Methods')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space16),
-        child: Column(
+    return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
+      appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
+        leading: const CrystalBackButton(fallbackRoute: '/settings'),
+        title: const Text('Payment Methods'),
+        actions: const [CrystalHomeButton()],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              AppTheme.space16,
+              AppTheme.space16,
+              MainShellScope.bottomClearance(context, additionalPadding: 24),
+            ),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
@@ -138,6 +160,34 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
 
             methodsAsyncValue.when(
               data: (methods) {
+                if (!isPaymentConfigured && methods.isEmpty) {
+                  return const ElevatedActionCard(
+                    padding: EdgeInsets.all(AppTheme.space20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.credit_card_off_outlined, size: 32, color: AppTheme.goldPrimary),
+                        SizedBox(height: AppTheme.space8),
+                        Text(
+                          'Online Card Vault Not Enabled',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: AppTheme.space4),
+                        Text(
+                          'Stripe card vaulting is not configured on this server environment. Tournament entry fees can still be settled on-site at official weigh-in.',
+                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12.5, height: 1.4),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
                 if (methods.isEmpty) {
                   return const ElevatedActionCard(
                     padding: EdgeInsets.all(AppTheme.space24),
@@ -227,12 +277,23 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, size: 36, color: AppTheme.error),
+                    const Icon(Icons.credit_card_off_outlined, size: 36, color: AppTheme.goldPrimary),
                     const SizedBox(height: AppTheme.space8),
+                    const Text(
+                      'Online Card Vault Unavailable',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppTheme.space4),
                     Center(
                       child: Text(
-                        'Error: $err',
-                        style: const TextStyle(color: AppTheme.error, fontSize: 13),
+                        AppErrorFormatter.format(err),
+                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12.5),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -244,11 +305,12 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                   ],
                 ),
               ),
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(AppTheme.space24),
-                  child: CircularProgressIndicator(),
-                ),
+              loading: () => const Column(
+                children: [
+                  SkeletonPlaceholder(height: 76),
+                  SizedBox(height: AppTheme.space10),
+                  SkeletonPlaceholder(height: 76),
+                ],
               ),
             ),
             const SizedBox(height: AppTheme.space32),
@@ -307,14 +369,16 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.add_card, size: 18),
-                    label: const Text('Add Payment Method'),
-                    onPressed: _isLoading ? null : _addPaymentMethod,
+                    label: Text(isPaymentConfigured ? 'Add Payment Method' : 'Stripe Vault Unavailable'),
+                    onPressed: (_isLoading || !isPaymentConfigured) ? null : _addPaymentMethod,
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }

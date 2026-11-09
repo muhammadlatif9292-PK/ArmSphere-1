@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/nomination_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
 
 StatusType _resolveNominationStatusType(String status) {
@@ -30,9 +32,13 @@ class MyNominationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nominationsAsync = ref.watch(nominationListProvider);
 
-    return VoidStageScaffold(
-      backgroundAsset: ArmSphereAssets.stageRankings,
+    return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
+        backgroundColor: AppTheme.voidBackground,
+        elevation: 0,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.rankings),
+        leading: const CrystalBackButton(),
         title: const Text('My Nominations'),
         actions: [
           IconButton(
@@ -43,34 +49,32 @@ class MyNominationsScreen extends ConsumerWidget {
               context.push('/nominate');
             },
           ),
+          const CrystalHomeButton(),
         ],
       ),
-      child: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(nominationListProvider),
-        child: nominationsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
-            padding: const EdgeInsets.all(AppTheme.space20),
-            children: [
-              const SizedBox(height: 80),
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
-              const SizedBox(height: 12),
-              Text(
-                'Could not load nominations',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ref.invalidate(nominationListProvider);
-                  },
-                  child: const Text('Retry'),
-                ),
-              ),
-            ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.rankings),
+          RefreshIndicator(
+            onRefresh: () async => ref.invalidate(nominationListProvider),
+            child: nominationsAsync.when(
+          loading: () => const CrystalScreenLoadingView(itemCount: 3, cardHeight: 112),
+          error: (e, _) => AppErrorView(
+            error: e,
+            title: 'Could not load nominations',
+            onRetry: () {
+              HapticFeedback.lightImpact();
+              ref.invalidate(nominationListProvider);
+            },
+            secondaryActionLabel: 'Return to Home',
+            onSecondaryAction: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
           ),
           data: (nominations) {
             if (nominations.isEmpty) {
@@ -85,6 +89,14 @@ class MyNominationsScreen extends ConsumerWidget {
                     onCtaTap: () {
                       HapticFeedback.lightImpact();
                       context.push('/nominate');
+                    },
+                    secondaryCtaLabel: 'Return to Home',
+                    onSecondaryCtaTap: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/');
+                      }
                     },
                   ),
                 ],
@@ -190,6 +202,8 @@ class MyNominationsScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

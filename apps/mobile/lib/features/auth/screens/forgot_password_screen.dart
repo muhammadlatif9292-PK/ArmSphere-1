@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/void_stage_scaffold.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/utils/error_formatter.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -43,7 +44,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (mounted) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Password recovery link sent to your registered email.'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -54,7 +55,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -72,15 +73,21 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return VoidStageScaffold(
-      backgroundAsset: ArmSphereAssets.stageAuthWalkout,
-      focalAlignment: ArmSphereAssets.walkoutFocal,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/login'),
         title: const Text('Reset Credential'),
       ),
-      body: Center(
-        child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+          ),
+          Center(
+            child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.space24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -167,6 +174,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ],
           ),
         ),
+      ),
+        ],
       ),
     );
   }

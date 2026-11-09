@@ -2,14 +2,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/venue_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Domain 9 / Stage 6 Convergence: Venue Detail Screen
 ///
@@ -26,11 +26,13 @@ class VenueDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final venueAsync = ref.watch(venueDetailProvider(venueId));
 
-    return VoidStageScaffold(
-      backgroundAsset: ArmSphereAssets.stageVenues,
+    return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         elevation: 0,
+        leading: const CrystalBackButton(fallbackRoute: '/venues'),
         title: const Text(
           'Venue Dossier',
           style: TextStyle(
@@ -39,12 +41,18 @@ class VenueDetailScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [CrystalHomeButton()],
       ),
-      child: RefreshIndicator(
-        color: AppTheme.goldPrimary,
-        backgroundColor: AppTheme.cardSurface,
-        onRefresh: () async => ref.invalidate(venueDetailProvider(venueId)),
-        child: venueAsync.when(
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
+          ),
+          RefreshIndicator(
+            color: AppTheme.goldPrimary,
+            backgroundColor: AppTheme.cardSurface,
+            onRefresh: () async => ref.invalidate(venueDetailProvider(venueId)),
+            child: venueAsync.when(
           loading: () => ListView(
             padding: const EdgeInsets.all(AppTheme.space16),
             children: const [
@@ -93,10 +101,10 @@ class VenueDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.elevatedSurface,
+                              color: AppTheme.glassSurface,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isVerified ? AppTheme.goldPrimary : AppTheme.border,
+                                color: isVerified ? AppTheme.goldPrimary : AppTheme.borderTitanium,
                               ),
                             ),
                             child: Icon(
@@ -276,6 +284,8 @@ class VenueDetailScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+        ],
       ),
     );
   }

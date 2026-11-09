@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
-
+import '../../../core/widgets/crystal_toast.dart';
 class LiveStreamCardWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -38,10 +37,11 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final statusStr = (widget.tournament['status'] ?? 'LIVE').toString().toUpperCase();
-    final streamUrl = widget.tournament['streamUrl']?.toString() ?? widget.tournament['youtubeLiveUrl']?.toString();
-    final bool isLive = (statusStr == 'LIVE' || statusStr == 'ONGOING') && (streamUrl == null || streamUrl.isNotEmpty);
-    final bool isStandby = !isLive || streamUrl == null || streamUrl.isEmpty;
+    final bool isLive = (widget.tournament['status'] ?? 'LIVE').toString().toUpperCase() == 'LIVE';
+
+    if (!isLive) {
+      return const SizedBox();
+    }
 
     return Container(
       width: double.infinity,
@@ -161,7 +161,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
 
             const SizedBox(height: 16),
 
-            // Video Preview Frame Backdrop Card (with m1_card_live_broadcast.webp standby / fallback)
+            // Video Preview Frame Backdrop Card
             Builder(
               builder: (context) {
                 final String? streamThumbnail = (widget.tournament['streamThumbnailUrl'] ?? widget.tournament['bannerUrl']) as String?;
@@ -171,124 +171,97 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                 final viewers = widget.tournament['liveViewerCount']?.toString() ??
                     (widget.tournament['viewers'] != null ? widget.tournament['viewers'].toString() : null);
 
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: double.infinity,
-                    height: 168,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: const Color(0xFF070A11),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (streamThumbnail != null && streamThumbnail.isNotEmpty && !isStandby)
-                          Image.network(
-                            streamThumbnail,
+                return Container(
+                  width: double.infinity,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF131D33),
+                    image: (streamThumbnail != null && streamThumbnail.isNotEmpty)
+                        ? DecorationImage(
+                            image: NetworkImage(streamThumbnail),
                             fit: BoxFit.cover,
-                            alignment: ArmSphereAssets.cardRightFocal,
-                            errorBuilder: (_, __, ___) => Image.asset(
-                              ArmSphereAssets.cardLiveBroadcast,
-                              fit: BoxFit.cover,
-                              alignment: ArmSphereAssets.cardRightFocal,
-                            ),
+                            colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.darken),
                           )
-                        else
-                          Image.asset(
-                            ArmSphereAssets.cardLiveBroadcast,
-                            fit: BoxFit.cover,
-                            alignment: ArmSphereAssets.cardRightFocal,
-                            errorBuilder: (_, __, ___) => const ColoredBox(color: Color(0xFF070A11)),
-                          ),
-                        // Left-to-right obsidian safe-zone scrim (protects right-aligned broadcast camera rig)
-                        Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                Color(0xF5070A11),
-                                Color(0xCC070A11),
-                                Color(0x33070A11),
-                              ],
-                              stops: [0.0, 0.55, 1.0],
+                        : null,
+                    gradient: (streamThumbnail == null || streamThumbnail.isEmpty)
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              const Color(0xFF1E293B),
+                              const Color(0xFF0F172A),
+                              const Color(0xFFFF2A6D).withValues(alpha: 0.15),
+                            ],
+                          )
+                        : null,
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Center Play Overlay Icon
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
+                              blurRadius: 16,
+                              spreadRadius: 2,
                             ),
-                          ),
+                          ],
                         ),
-                        // Left 55% Safe Zone Status Badges & Broadcast Info
-                        FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: 0.58,
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: isStandby
-                                        ? AppTheme.goldPrimary.withValues(alpha: 0.16)
-                                        : const Color(0xFFFF2A6D).withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: isStandby ? AppTheme.goldPrimary : const Color(0xFFFF2A6D),
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    isStandby
-                                        ? (statusStr == 'PUBLISHED' ? 'UPCOMING BROADCAST' : 'LIVE STREAM STANDBY')
-                                        : 'LIVE ARENA FEED',
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.6,
-                                      color: isStandby ? AppTheme.goldPrimary : const Color(0xFFFF2A6D),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  currentMatch,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.25,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
+                        child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
+                      ),
+
+                      // Bottom Info Overlay Bar
+                      Positioned(
+                        bottom: 12,
+                        left: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
                                   children: [
-                                    const Icon(Icons.videocam_outlined, size: 12, color: AppTheme.textMuted),
-                                    const SizedBox(width: 4),
+                                    const Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 14),
+                                    const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        viewers != null ? '$viewers watching' : 'Multi-angle table telemetry',
-                                        maxLines: 1,
+                                        currentMatch,
+                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 10.5,
-                                          color: AppTheme.textSecondary,
-                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              if (viewers != null)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.remove_red_eye_rounded, color: Color(0xFF00E5FF), size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      viewers,
+                                      style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -410,7 +383,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
               onPressed: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Redirecting to PAFF Official YouTube Channel Live Stream...'),
                     backgroundColor: Color(0xFFFF2A6D),
                   ),

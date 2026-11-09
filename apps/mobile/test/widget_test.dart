@@ -293,9 +293,13 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // WelcomeScreen core elements are present
+        // WelcomeScreen core elements are present and removed ecosystem block is absent
         expect(find.text('ENTER ARENA'), findsOneWidget);
         expect(find.text('I ALREADY HAVE AN ACCOUNT'), findsOneWidget);
+        expect(find.text('SANCTIONED COMPETITIVE ECOSYSTEM'), findsNothing);
+        expect(find.text('Live Bracket Battles'), findsNothing);
+        expect(find.text('National Federation Rankings'), findsNothing);
+        expect(find.text('Table-Side Precision Scoring'), findsNothing);
 
         // Tap ENTER ARENA to go to /register
         await tester.tap(find.text('ENTER ARENA'));
@@ -316,7 +320,7 @@ void main() {
 
   group('Referee, Settings & Athlete Profile Cleanup Tests', () {
     testWidgets(
-      'RefereeDashboardScreen header renders cleanly with referee panel controls',
+      'RefereeDashboardScreen header omits logout door icon',
       (WidgetTester tester) async {
         await tester.pumpWidget(
           ProviderScope(
@@ -332,6 +336,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Referee Panel'), findsOneWidget);
+        expect(find.byIcon(Icons.logout), findsNothing);
       },
     );
 
@@ -353,7 +358,8 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Verify Account Roles is present under ACCOUNT
+        // Redundant Profile tile is removed; Account Roles is first under ACCOUNT
+        expect(find.text('View and manage your athlete profile'), findsNothing);
         expect(find.text('Account Roles'), findsOneWidget);
 
         // Scroll to bottom of SettingsHubScreen and verify Delete Account & Log Out are visible

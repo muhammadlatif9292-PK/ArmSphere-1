@@ -3,14 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/dispute_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
-import '../../../core/widgets/void_stage_scaffold.dart';
+import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/crystal_toast.dart';
 
 /// Domain 6 / Stage 6 Convergence: Governance Dashboard Screen
 ///
@@ -71,7 +75,7 @@ class _GovernanceDashboardScreenState
         return status == 'ESCALATED' || status == 'AWAITING_EVIDENCE';
       }
       if (_selectedFilter == 'RESOLVED') {
-        return status == 'RESOLVED' || status == 'REJECTED';
+        return status == 'RESOLVED' || status == 'REJECTED' || status == 'CLOSED';
       }
       return true;
     }).toList();
@@ -81,11 +85,13 @@ class _GovernanceDashboardScreenState
   Widget build(BuildContext context) {
     final disputesAsync = ref.watch(disputeProvider);
 
-    return VoidStageScaffold(
-      backgroundAsset: ArmSphereAssets.stageAdminGovernance,
+    return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         elevation: 0,
+        leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
           'Arbitration & Disputes',
           style: TextStyle(
@@ -104,11 +110,23 @@ class _GovernanceDashboardScreenState
               context.push('/governance/submit-complaint');
             },
           ),
+          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
         ],
       ),
-      child: disputesAsync.when(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          disputesAsync.when(
         loading: () => ListView.separated(
-          padding: const EdgeInsets.all(AppTheme.space16),
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            AppTheme.space16,
+            AppTheme.space16,
+            MainShellScope.bottomClearance(context, additionalPadding: 16),
+          ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
           itemBuilder: (_, __) => const SkeletonPlaceholder(
@@ -116,12 +134,12 @@ class _GovernanceDashboardScreenState
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
+        error: (error, _) => AppErrorView(
+          error: error,
           title: 'Could not load disputes',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(disputeProvider),
+          onRetry: () => ref.invalidate(disputeProvider),
+          onSecondaryAction: () => context.go('/'),
+          secondaryActionLabel: 'Return to Home',
         ),
         data: (disputes) {
           if (disputes.isEmpty) {
@@ -150,7 +168,8 @@ class _GovernanceDashboardScreenState
           final resolvedCount = disputes
               .where((d) =>
                   (d['status']?.toString().toUpperCase()) == 'RESOLVED' ||
-                  (d['status']?.toString().toUpperCase()) == 'REJECTED')
+                  (d['status']?.toString().toUpperCase()) == 'REJECTED' ||
+                  (d['status']?.toString().toUpperCase()) == 'CLOSED')
               .length;
 
           final filtered = _filterDisputes(disputes);
@@ -160,16 +179,23 @@ class _GovernanceDashboardScreenState
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(disputeProvider),
             child: ListView(
-              key: const PageStorageKey<String>('governance_disputes_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
+              key: const ValueKey<String>('governance_disputes_list_view'),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                AppTheme.space16,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 20),
+              ),
               children: [
                 // Top Operational Metrics Ribbon
                 Container(
                   padding: const EdgeInsets.all(AppTheme.space12),
                   decoration: BoxDecoration(
-                    color: AppTheme.cardSurface,
+                    color: AppTheme.glassSurface,
+                    gradient: AppTheme.machinedTitaniumGradient,
                     borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.border, width: 1.0),
+                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                    boxShadow: [AppTheme.titaniumShadow()],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -392,6 +418,8 @@ class _GovernanceDashboardScreenState
           );
         },
       ),
+        ],
+      ),
     );
   }
 }
@@ -460,10 +488,10 @@ class _FilterTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.goldPrimary.withValues(alpha: 0.15)
-              : AppTheme.cardSurface,
+              : AppTheme.glassSurface,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.border,
+            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
             width: 1.0,
           ),
         ),
@@ -558,7 +586,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       if (result != null) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          CrystalSnackBar(
             content: Text(successMessage ?? 'Dossier updated successfully'),
             backgroundColor: AppTheme.success,
           ),
@@ -566,12 +594,21 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       } else {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          CrystalSnackBar(
             content: Text('Action failed. Please try again.'),
             backgroundColor: AppTheme.error,
           ),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: Text(AppErrorFormatter.format(e)),
+          backgroundColor: AppTheme.error,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -637,7 +674,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
               final text = controller.text.trim();
               if (text.length < 5) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('Please provide at least 5 characters'),
                     backgroundColor: AppTheme.error,
                   ),
@@ -660,70 +697,68 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
     String fileType = 'VIDEO';
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppTheme.radiusLarge)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: AppTheme.space20,
-              right: AppTheme.space20,
-              top: AppTheme.space16,
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom +
-                  AppTheme.space20,
-            ),
+        builder: (sheetContext, setSheetState) {
+          Future<void> submitEvidence() async {
+            CrystalModalSheet.unfocusActiveInput(sheetContext);
+            final url = urlController.text.trim();
+            final uri = Uri.tryParse(url);
+            if (uri == null ||
+                !uri.hasScheme ||
+                !(uri.scheme == 'http' || uri.scheme == 'https')) {
+              HapticFeedback.lightImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                CrystalSnackBar(
+                  content: Text('Please provide a valid HTTP/HTTPS URL'),
+                  backgroundColor: AppTheme.error,
+                ),
+              );
+              return;
+            }
+            Navigator.of(sheetContext).pop();
+            setState(() => _busy = true);
+            try {
+              final ok = await ref
+                  .read(disputeProvider.notifier)
+                  .submitEvidence(widget.disputeId, fileType, url);
+              if (!mounted) return;
+              HapticFeedback.mediumImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                CrystalSnackBar(
+                  content: Text(ok
+                      ? 'Evidence record attached to dossier'
+                      : 'Could not submit evidence'),
+                  backgroundColor: ok ? AppTheme.success : AppTheme.error,
+                ),
+              );
+            } finally {
+              if (mounted) setState(() => _busy = false);
+            }
+          }
+
+          return CrystalModalSheet(
+            title: 'SUBMIT EVIDENCE RECORD',
+            subtitle:
+                'Link high-definition table video, photo evidence, or official scorepad scans for arbitration review.',
+            headerIcon: Icons.gavel_rounded,
+            secondaryActionLabel: 'Cancel',
+            primaryActionLabel: 'ATTACH EVIDENCE RECORD',
+            primaryActionIcon: Icons.attach_file_rounded,
+            onPrimaryAction: submitEvidence,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppTheme.textMuted.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space16),
-                const Text(
-                  'SUBMIT EVIDENCE RECORD',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Link high-definition table video, photo evidence, or official scorepad scans for arbitration review.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space16),
                 DropdownButtonFormField<String>(
                   initialValue: fileType,
-                  dropdownColor: AppTheme.elevatedSurface,
+                  dropdownColor: const Color(0xF50E1525),
+                  onTap: () => CrystalModalSheet.unfocusActiveInput(sheetContext),
                   style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
+                  decoration: CrystalModalSheet.inputDecoration(
                     labelText: 'Evidence Type',
-                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
-                    filled: true,
-                    fillColor: AppTheme.elevatedSurface,
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
-                    ),
                   ),
                   items: const ['VIDEO', 'IMAGE', 'DOCUMENT']
                       .map((t) => DropdownMenuItem(
@@ -745,95 +780,29 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                             ),
                           ))
                       .toList(),
-                  onChanged: (v) =>
-                      setSheetState(() => fileType = v ?? 'VIDEO'),
+                  onChanged: (v) {
+                    CrystalModalSheet.unfocusActiveInput(sheetContext);
+                    setSheetState(() => fileType = v ?? 'VIDEO');
+                  },
                 ),
                 const SizedBox(height: AppTheme.space12),
                 TextField(
                   controller: urlController,
                   autofocus: true,
+                  onTapOutside: (_) =>
+                      CrystalModalSheet.unfocusActiveInput(sheetContext),
                   keyboardType: TextInputType.url,
                   style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: InputDecoration(
+                  decoration: CrystalModalSheet.inputDecoration(
                     labelText: 'Evidence URL (HTTP/HTTPS)',
-                    labelStyle: const TextStyle(color: AppTheme.textSecondary),
                     hintText: 'https://...',
-                    hintStyle: const TextStyle(color: AppTheme.textMuted),
-                    filled: true,
-                    fillColor: AppTheme.elevatedSurface,
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide:
-                          const BorderSide(color: AppTheme.goldPrimary),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.goldPrimary,
-                    foregroundColor: AppTheme.voidBackground,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
-                    ),
-                  ),
-                  onPressed: () async {
-                    final url = urlController.text.trim();
-                    final uri = Uri.tryParse(url);
-                    if (uri == null ||
-                        !uri.hasScheme ||
-                        !(uri.scheme == 'http' || uri.scheme == 'https')) {
-                      HapticFeedback.lightImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please provide a valid HTTP/HTTPS URL'),
-                          backgroundColor: AppTheme.error,
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.of(sheetContext).pop();
-                    setState(() => _busy = true);
-                    try {
-                      final ok = await ref
-                          .read(disputeProvider.notifier)
-                          .submitEvidence(widget.disputeId, fileType, url);
-                      if (!mounted) return;
-                      HapticFeedback.mediumImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(ok
-                              ? 'Evidence record attached to dossier'
-                              : 'Could not submit evidence'),
-                          backgroundColor:
-                              ok ? AppTheme.success : AppTheme.error,
-                        ),
-                      );
-                    } finally {
-                      if (mounted) setState(() => _busy = false);
-                    }
-                  },
-                  child: const Text(
-                    'ATTACH EVIDENCE RECORD',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
+                    prefixIcon: Icons.link_rounded,
                   ),
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -842,11 +811,13 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
   Widget build(BuildContext context) {
     final disputesAsync = ref.watch(disputeProvider);
 
-    return VoidStageScaffold(
-      backgroundAsset: ArmSphereAssets.stageAdminGovernance,
+    return Scaffold(
+      backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.voidBackground,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
         elevation: 0,
+        leading: const CrystalBackButton(),
         title: const Text(
           'Dispute Dossier',
           style: TextStyle(
@@ -855,17 +826,27 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
+        actions: const [
+          CrystalHomeButton(),
+        ],
       ),
-      child: disputesAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+          ),
+          disputesAsync.when(
+        loading: () => const CrystalScreenLoadingView(
+          itemCount: 3,
+          cardHeight: 112,
         ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
-          title: 'Could not load dispute',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(disputeProvider),
+        error: (error, _) => AppErrorView(
+          error: error,
+          title: 'Could not load dispute dossier',
+          onRetry: () => ref.invalidate(disputeProvider),
+          onSecondaryAction: () => context.go('/governance'),
+          secondaryActionLabel: 'Back to Disputes',
         ),
         data: (disputes) {
           final d = _findDispute(disputes);
@@ -881,7 +862,9 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
           }
 
           final status = d['status']?.toString().toUpperCase() ?? 'OPEN';
-          final isTerminal = status == 'RESOLVED' || status == 'REJECTED';
+          final isResolvedOrRejected = status == 'RESOLVED' || status == 'REJECTED';
+          final isClosed = status == 'CLOSED';
+          final isActiveDispute = !isResolvedOrRejected && !isClosed;
           final idStr = d['id']?.toString() ?? '';
           final shortId = idStr.length >= 8
               ? idStr.substring(0, 8).toUpperCase()
@@ -1060,63 +1043,65 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                 const SizedBox(height: AppTheme.space24),
 
                 // 4. Action Console
-                ElevatedButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => _promptText(
-                            'Escalate dispute to Executive Panel',
-                            'Provide explicit grounds why table officiating requires higher federation review...',
-                            (reason) => ref
-                                .read(disputeProvider.notifier)
-                                .escalateDispute(
-                                    widget.disputeId, reason),
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryAccent,
-                    foregroundColor: AppTheme.voidBackground,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
+                if (isActiveDispute) ...[
+                  ElevatedButton.icon(
+                    onPressed: _busy
+                        ? null
+                        : () => _promptText(
+                              'Escalate dispute to Executive Panel',
+                              'Provide explicit grounds why table officiating requires higher federation review...',
+                              (reason) => ref
+                                  .read(disputeProvider.notifier)
+                                  .escalateDispute(
+                                      widget.disputeId, reason),
+                            ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryAccent,
+                      foregroundColor: AppTheme.voidBackground,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                    ),
+                    icon: const Icon(Icons.trending_up, size: 18),
+                    label: const Text(
+                      'ESCALATE DISPUTE',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.trending_up, size: 18),
-                  label: const Text(
-                    'ESCALATE DISPUTE',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space12),
+                  const SizedBox(height: AppTheme.space12),
 
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _addEvidence,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.textPrimary,
-                    side: const BorderSide(color: AppTheme.border, width: 1.0),
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMedium),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _addEvidence,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.textPrimary,
+                      side: const BorderSide(color: AppTheme.border, width: 1.0),
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusMedium),
+                      ),
+                    ),
+                    icon: const Icon(Icons.attach_file,
+                        size: 18, color: AppTheme.goldPrimary),
+                    label: const Text(
+                      'ATTACH EVIDENCE LINK',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.attach_file,
-                      size: 18, color: AppTheme.goldPrimary),
-                  label: const Text(
-                    'ATTACH EVIDENCE LINK',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.space12),
+                  const SizedBox(height: AppTheme.space12),
+                ],
 
-                if (isTerminal)
+                if (isResolvedOrRejected)
                   OutlinedButton.icon(
                     onPressed: _busy
                         ? null
@@ -1148,6 +1133,19 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                       ),
                     ),
                   )
+                else if (isClosed)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.space16, vertical: AppTheme.space8),
+                    child: Text(
+                      'This dispute dossier is permanently closed and sealed.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                  )
                 else
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -1165,6 +1163,8 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
             ),
           );
         },
+      ),
+        ],
       ),
     );
   }
