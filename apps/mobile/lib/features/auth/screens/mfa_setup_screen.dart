@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../../core/widgets/crystal_toast.dart';
 
 class MfaSetupScreen extends ConsumerStatefulWidget {
   const MfaSetupScreen({super.key});
@@ -52,7 +51,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          const SnackBar(
             content: Text('Invalid verification code. Please check your authenticator app.'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -70,23 +69,16 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageAuthWalkout,
+      focalAlignment: ArmSphereAssets.walkoutFocal,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text('Setup Two-Factor Auth'),
-        actions: const [CrystalHomeButton()],
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
-          ),
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.space24),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
@@ -191,8 +183,6 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
             ),
           ],
         ),
-      ),
-        ],
       ),
     );
   }

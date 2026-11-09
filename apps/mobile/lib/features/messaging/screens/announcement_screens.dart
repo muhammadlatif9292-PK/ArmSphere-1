@@ -1,16 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/providers/announcement_provider.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
-import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Domain 8 / Stage 6 Convergence: Announcements List Screen
 ///
@@ -26,12 +24,11 @@ class AnnouncementsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final announcementsAsync = ref.watch(announcementsProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageCommunity,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const CrystalBackButton(),
         title: const Text(
           'Federation Bulletins',
           style: TextStyle(
@@ -40,14 +37,8 @@ class AnnouncementsListScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: const [CrystalHomeButton()],
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
-          ),
-          announcementsAsync.when(
+      body: announcementsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
           itemCount: 4,
@@ -57,38 +48,20 @@ class AnnouncementsListScreen extends ConsumerWidget {
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppErrorView(
-          error: error,
+        error: (error, _) => AppEmptyState(
+          icon: Icons.error_outline,
           title: 'Could not load bulletins',
-          onRetry: () => ref.invalidate(announcementsProvider),
-          secondaryActionLabel: 'Return to Home',
-          onSecondaryAction: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
+          subtitle: error.toString(),
+          ctaLabel: 'Retry',
+          onCtaTap: () => ref.invalidate(announcementsProvider),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return AppEmptyState(
+            return const AppEmptyState(
               icon: Icons.campaign_outlined,
               title: 'No active bulletins',
               subtitle:
                   'Official executive circulars, rule changes, and federation schedules will appear here once published.',
-              ctaLabel: 'Refresh Bulletins',
-              onCtaTap: () async {
-                await ref.read(announcementsProvider.notifier).refresh();
-              },
-              secondaryCtaLabel: 'Return to Home',
-              onSecondaryCtaTap: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/');
-                }
-              },
             );
           }
           return RefreshIndicator(
@@ -98,7 +71,7 @@ class AnnouncementsListScreen extends ConsumerWidget {
               await ref.read(announcementsProvider.notifier).refresh();
             },
             child: ListView.separated(
-              key: const ValueKey<String>('announcements_list_view'),
+              key: const PageStorageKey<String>('announcements_list_view'),
               padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -182,8 +155,6 @@ class AnnouncementsListScreen extends ConsumerWidget {
             ),
           );
         },
-      ),
-        ],
       ),
     );
   }

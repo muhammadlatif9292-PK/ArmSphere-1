@@ -5,12 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/services/biometric_service.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
-import '../../../core/widgets/crystal_toast.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -75,7 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           return;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            CrystalSnackBar(
+            const SnackBar(
               content: Text(
                 'Stored session expired. Please sign in with your email and password.',
               ),
@@ -86,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Voluntary cancel by user; remain on standard login form without error
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(
               result.message ??
                   'Biometric authentication failed. Please enter your password.',
@@ -98,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(
               'Biometrics unavailable: ${AppErrorFormatter.format(e)}. Please enter your password.',
             ),
@@ -138,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
@@ -157,39 +156,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        leading: const CrystalBackButton(fallbackRoute: '/welcome'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
-          ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo Header
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 76,
-                          height: 76,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppTheme.glassSurface,
-                            border: Border.all(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                              width: 2,
-                            ),
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageAuthWalkout,
+      focalAlignment: ArmSphereAssets.walkoutFocal,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Logo Header
+              Center(
+                child: Column(
+                  children: [
+                    Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.cardSurface,
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                          width: 2,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: AppTheme.goldGlow,
@@ -306,57 +296,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 16),
 
                       // Submit Button
-                      Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.championshipGoldGradient,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          border: Border.all(
-                            color: AppTheme.glassBorderSpecular,
-                            width: 1.0,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: AppTheme.goldGlow,
-                              blurRadius: 16,
-                              spreadRadius: 1,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
+                      FilledButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                HapticFeedback.lightImpact();
+                                _submit();
+                              },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.goldPrimary,
+                          foregroundColor: Colors.black,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            onTap: _isLoading
-                                ? null
-                                : () {
-                                    HapticFeedback.lightImpact();
-                                    _submit();
-                                  },
-                            child: Center(
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Sign In to Account',
-                                      style: TextStyle(
-                                        fontFamily: 'Space Grotesk',
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black,
-                                        letterSpacing: 0.3,
-                                      ),
-                                    ),
-                            ),
+                          ),
+                          textStyle: const TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                ),
+                              )
+                            : const Text('Sign In to Account'),
                       ),
 
                       if (_canUseBiometrics) ...[
@@ -401,10 +370,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      context.go('/register');
-                    },
+                    onPressed: () => context.push('/register'),
                     child: const Text('Sign Up'),
                   ),
                 ],
@@ -412,8 +378,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
           ),
         ),
-      ),
-        ],
       ),
     );
   }

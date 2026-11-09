@@ -4,14 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/signature_ceremonies.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
-import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Canary 9: Weigh-In & Athlete Certification Screen (`/tournaments/:id/weigh-in`)
 ///
@@ -130,7 +129,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final weight = _currentEnteredWeight;
     if (weight == null || weight <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('Please enter a valid measured scale weight.'),
           backgroundColor: AppTheme.error,
         ),
@@ -141,7 +140,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final ceiling = _parseClassCeiling(reg['weightClass']?.toString());
     if (ceiling < 999.0 && weight > ceiling) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        SnackBar(
           content: Text(
             'Cannot certify overweight athlete: ${weight.toStringAsFixed(1)} KG exceeds ${ceiling.toStringAsFixed(1)} KG ceiling. Reassignment required.',
           ),
@@ -183,7 +182,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Row(
               children: [
                 const Icon(Icons.verified_rounded, color: Colors.black, size: 18),
@@ -207,7 +206,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       if (mounted) {
         setState(() => _isBusy = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
+          SnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
         );
       }
     } catch (e) {
@@ -219,7 +218,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
             ? 'Network connection unavailable. Certification could not be submitted to the server.'
             : 'Certification failed: ${e.toString()}';
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(errorMsg),
             backgroundColor: AppTheme.error,
           ),
@@ -236,13 +235,15 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
 
     if (effectiveTournamentId.isEmpty) {
       final tournamentsAsync = ref.watch(tournamentProvider);
-      return Scaffold(
-        backgroundColor: AppTheme.voidBackground,
+      return VoidStageScaffold(
+        backgroundAsset: ArmSphereAssets.stageArena,
         appBar: AppBar(
-          backgroundColor: AppTheme.voidBackground,
+          backgroundColor: Colors.transparent,
           elevation: 0,
-          flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
-          leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+            onPressed: () => context.pop(),
+          ),
           title: const Text(
             'OFFICIAL WEIGH-IN DESK',
             style: TextStyle(
@@ -253,25 +254,18 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
               letterSpacing: 0.8,
             ),
           ),
-          actions: const [CrystalHomeButton()],
         ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
-            tournamentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
-              error: (err, _) => Center(
-                child: Text('Error finding tournament: $err', style: const TextStyle(color: AppTheme.error)),
-              ),
-              data: (tournaments) => const Center(
-                child: Text(
-                  'No active tournament found for weigh-in.',
-                  style: TextStyle(color: AppTheme.textMuted),
-                ),
-              ),
+        body: tournamentsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
+          error: (err, _) => Center(
+            child: Text('Error finding tournament: $err', style: const TextStyle(color: AppTheme.error)),
+          ),
+          data: (tournaments) => const Center(
+            child: Text(
+              'No active tournament found for weigh-in.',
+              style: TextStyle(color: AppTheme.textMuted),
             ),
-          ],
+          ),
         ),
       );
     }
@@ -280,13 +274,15 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final eventAsync = ref.watch(eventDetailProvider(effectiveTournamentId));
     final disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageArena,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
-        leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -320,7 +316,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFF10B981).withValues(alpha: 0.15),
@@ -344,14 +340,9 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
               ],
             ),
           ),
-          const CrystalHomeButton(),
         ],
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
-          regsAsync.when(
+      body: regsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.goldPrimary)),
         error: (err, _) => Center(
           child: Text('Error loading registrations: $err', style: const TextStyle(color: AppTheme.error)),
@@ -437,8 +428,6 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
             ),
           );
         },
-      ),
-        ],
       ),
     );
   }
@@ -526,13 +515,13 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? AppTheme.goldPrimary.withValues(alpha: 0.14)
-                                : AppTheme.glassSurface,
+                                ? const Color(0xFF1E293B)
+                                : const Color(0xFF0F172A),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: isSelected
                                   ? AppTheme.goldPrimary
-                                  : AppTheme.borderTitanium,
+                                  : const Color(0xFF334155),
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
@@ -627,23 +616,18 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
           ? const Color(0xFF10B981)
           : (isOverweight
               ? Color.lerp(const Color(0xFFEF4444), const Color(0xFFF59E0B), animValue)!
-              : AppTheme.borderTitanium);
+              : const Color(0xFF334155));
 
       return Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: AppTheme.glassSurface,
+            color: const Color(0xFF121826), // L2 Surface Card
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: borderColor,
               width: (isOverweight || isCertified) ? 2.0 : 1.0,
             ),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.45),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
               if (isCertified)
                 BoxShadow(
                   color: const Color(0xFF10B981).withValues(alpha: 0.2),
@@ -845,9 +829,8 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppTheme.glassSurface,
+                        color: const Color(0xFF0F172A),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.borderTitanium, width: 0.8),
                       ),
                       child: const Row(
                         children: [
@@ -916,9 +899,9 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.glassSurface,
+          color: const Color(0xFF0B0F19),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.borderTitanium),
+          border: Border.all(color: const Color(0xFF334155)),
         ),
         child: Column(
           children: [
@@ -1008,9 +991,9 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppTheme.glassSurface,
+            color: const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: AppTheme.borderTitanium),
+            border: Border.all(color: const Color(0xFF334155)),
           ),
           child: Text(
             label,
@@ -1091,9 +1074,9 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.glassSurface,
+          color: const Color(0xFF0F172A),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.borderTitanium),
+          border: Border.all(color: const Color(0xFF334155)),
         ),
         child: Column(
           children: [
@@ -1126,9 +1109,9 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                 child: Container(
                   height: 42,
                   decoration: BoxDecoration(
-                    color: AppTheme.glassSurface,
+                    color: const Color(0xFF1E293B).withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.borderTitanium),
+                    border: Border.all(color: const Color(0xFF334155)),
                   ),
                   alignment: Alignment.center,
                   child: const Text(
@@ -1166,9 +1149,9 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
         child: Container(
           height: 64, // Strict 64dp height requirement
           decoration: BoxDecoration(
-            color: AppTheme.glassSurface,
+            color: const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppTheme.borderTitanium),
+            border: Border.all(color: const Color(0xFF334155)),
             boxShadow: const [
               BoxShadow(
                 color: Colors.black45,
@@ -1250,7 +1233,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
               onPressed: () {
                 HapticFeedback.selectionClick();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  CrystalSnackBar(
+                  const SnackBar(
                     content: Text('Use Operations Console to reassign athlete division or weight class.'),
                   ),
                 );

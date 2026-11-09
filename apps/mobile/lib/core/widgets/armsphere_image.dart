@@ -105,7 +105,7 @@ class ArmSphereImage extends StatelessWidget {
     double size = 40.0,
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
-    this.fallbackAsset = ArmSphereAssets.defaultAvatar,
+    this.fallbackAsset = ArmSphereAssets.avatarNeutralDark,
     this.fallbackIcon = Icons.person_rounded,
     this.initial,
     this.cacheWidth,
@@ -118,6 +118,28 @@ class ArmSphereImage extends StatelessWidget {
         height = size,
         borderRadius = null,
         shape = BoxShape.circle;
+
+  /// Convenience constructor for club/team shield emblems.
+  const ArmSphereImage.club({
+    super.key,
+    this.imageUrl,
+    this.assetPath,
+    double size = 48.0,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.fallbackAsset = ArmSphereAssets.teamCrestDefault,
+    this.fallbackIcon = Icons.shield_rounded,
+    this.initial,
+    this.cacheWidth,
+    this.cacheHeight,
+    this.borderRadius,
+    this.shape = BoxShape.circle,
+    this.border,
+    this.semanticLabel,
+    this.excludeFromSemantics = false,
+    this.showLoadingIndicator = true,
+  })  : width = size,
+        height = size;
 
   /// Convenience constructor for full-bleed or card hero banners.
   const ArmSphereImage.hero({

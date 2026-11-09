@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
-import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Domain 9 / Stage 6 Convergence: Informal Event Directory Screen
 ///
@@ -39,13 +38,11 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(informalEventListProvider);
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageVenues,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: AppTheme.cardSurface,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
-        leading: const CrystalBackButton(),
         title: const Text(
           'Practice Meetups',
           style: TextStyle(
@@ -55,30 +52,21 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Center(
-              child: CrystalHeaderActionPill(
-                key: const ValueKey('informal_event_directory_create_button'),
-                label: 'HOST MEETUP',
-                icon: Icons.add,
-                onTap: () => context.push('/informal-events/create'),
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: AppTheme.goldPrimary),
+            tooltip: 'Host practice meetup',
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.push('/informal-events/create');
+            },
           ),
-          const CrystalHomeButton(),
         ],
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
-          ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => ref.invalidate(informalEventListProvider),
-            child: eventsAsync.when(
+      child: RefreshIndicator(
+        color: AppTheme.goldPrimary,
+        backgroundColor: AppTheme.cardSurface,
+        onRefresh: () async => ref.invalidate(informalEventListProvider),
+        child: eventsAsync.when(
           loading: () => ListView.separated(
             padding: const EdgeInsets.all(AppTheme.space16),
             itemCount: 4,
@@ -117,12 +105,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
 
             return ListView.separated(
               key: const PageStorageKey<String>('informal_event_directory_list_view'),
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.space16,
-                AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
-              ),
+              padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: events.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {
@@ -149,7 +132,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
+                            color: AppTheme.elevatedSurface,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6)),
                           ),
@@ -234,8 +217,6 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
             );
           },
         ),
-      ),
-        ],
       ),
     );
   }

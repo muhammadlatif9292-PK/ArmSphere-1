@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/utils/error_formatter.dart';
-import '../../../core/widgets/crystal_toast.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -48,7 +47,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       if (mounted) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          const SnackBar(
             content: Text('Password updated successfully. You can now login.'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -59,7 +58,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(AppErrorFormatter.format(e)),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -77,21 +76,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageAuthWalkout,
+      focalAlignment: ArmSphereAssets.walkoutFocal,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: const CrystalBackButton(fallbackRoute: '/login'),
         title: const Text('Reset Password'),
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
-          ),
-          Center(
-            child: SingleChildScrollView(
+      body: Center(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.space24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,8 +199,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ],
           ),
         ),
-      ),
-        ],
       ),
     );
   }

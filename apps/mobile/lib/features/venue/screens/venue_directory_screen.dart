@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/venue_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
-import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Domain 9 / Stage 6 Convergence: Venue Directory Screen
 ///
@@ -27,13 +26,11 @@ class VenueDirectoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final venuesAsync = ref.watch(venueListProvider);
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageVenues,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
+        backgroundColor: AppTheme.cardSurface,
         elevation: 0,
-        leading: const CrystalBackButton(),
         title: const Text(
           'Armwrestling Venues',
           style: TextStyle(
@@ -43,30 +40,21 @@ class VenueDirectoryScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Center(
-              child: CrystalHeaderActionPill(
-                key: const ValueKey('venue_directory_create_button'),
-                label: 'SUBMIT VENUE',
-                icon: Icons.add_location_alt_outlined,
-                onTap: () => context.push('/venues/submit'),
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.add_location_alt_outlined, color: AppTheme.goldPrimary),
+            tooltip: 'Submit training venue',
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.push('/venues/submit');
+            },
           ),
-          const CrystalHomeButton(),
         ],
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
-          ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => ref.invalidate(venueListProvider),
-            child: venuesAsync.when(
+      child: RefreshIndicator(
+        color: AppTheme.goldPrimary,
+        backgroundColor: AppTheme.cardSurface,
+        onRefresh: () async => ref.invalidate(venueListProvider),
+        child: venuesAsync.when(
           loading: () => ListView.separated(
             padding: const EdgeInsets.all(AppTheme.space16),
             itemCount: 4,
@@ -105,12 +93,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
 
             return ListView.separated(
               key: const PageStorageKey<String>('venue_directory_list_view'),
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.space16,
-                AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
-              ),
+              padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: venues.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {
@@ -139,10 +122,10 @@ class VenueDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
+                            color: AppTheme.elevatedSurface,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(
-                              color: isVerified ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                              color: isVerified ? AppTheme.goldPrimary : AppTheme.border,
                               width: 1.0,
                             ),
                           ),
@@ -233,8 +216,6 @@ class VenueDirectoryScreen extends ConsumerWidget {
             );
           },
         ),
-      ),
-        ],
       ),
     );
   }

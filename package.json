@@ -16,12 +16,18 @@
     "preview": "vite preview",
     "start": "node apps/api/dist/server.js",
     "test": "npm run test --workspace=@armsphere/api",
-    "test:postgres": "npm run test:postgres --workspace=@armsphere/api",
     "test:admin-web": "npm run test --workspace=@armsphere/admin-web",
     "lint": "tsc && npm run lint --workspace=@armsphere/api && npm run lint --workspace=@armsphere/admin-web"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.62.7",
+    "axios": "^1.7.9",
     "esbuild": "^0.28.2",
+    "lucide-react": "^0.546.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "react-router-dom": "^7.1.1",
+    "recharts": "^3.9.2",
     "tsx": "^4.7.1",
     "typescript": "^5.0.0"
   },

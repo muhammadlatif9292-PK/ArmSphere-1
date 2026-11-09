@@ -8,11 +8,8 @@ import '../../../core/providers/community_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/armsphere_image.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/skeleton_placeholder.dart';
-import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Post comments — real GET/POST /community/posts/:id/comments.
 class PostCommentsScreen extends ConsumerStatefulWidget {
@@ -48,7 +45,7 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(e.detail),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -58,7 +55,7 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text('Could not add comment: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -74,12 +71,10 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
   Widget build(BuildContext context) {
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageCommunity,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
-        leading: const CrystalBackButton(fallbackRoute: '/community/feed'),
+        backgroundColor: Colors.transparent,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [
@@ -94,20 +89,12 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
             Text('Community Discussion'),
           ],
         ),
-        actions: const [CrystalHomeButton()],
       ),
-      body: Stack(
-        fit: StackFit.expand,
+      body: Column(
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
-          Column(
-            children: [
           Expanded(
             child: commentsAsync.when(
-              loading: () => const CrystalScreenLoadingView(
-                itemCount: 4,
-                cardHeight: 80,
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => AppEmptyState(
                 icon: Icons.error_outline,
                 title: 'Could not load comments',
@@ -205,8 +192,8 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
               decoration: const BoxDecoration(
-                color: AppTheme.glassSurface,
-                border: Border(top: BorderSide(color: AppTheme.borderTitanium, width: 1)),
+                color: AppTheme.background,
+                border: Border(top: BorderSide(color: AppTheme.cardBorder, width: 1)),
               ),
               child: Row(
                 children: [
@@ -235,8 +222,6 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
               ),
             ),
           ),
-        ],
-      ),
         ],
       ),
     );

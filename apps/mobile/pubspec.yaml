@@ -54,6 +54,7 @@ flutter:
     - assets/sounds/
     - assets/images/brand/
     - assets/images/heroes/
+    - assets/images/bento/
     - assets/images/textures/
     - assets/images/badges/
     - assets/images/defaults/

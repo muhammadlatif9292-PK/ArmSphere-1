@@ -3,16 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/state_providers.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/count_up_text.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/audio/sound_service.dart';
 import '../../../core/widgets/celebration_overlay.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/foul_sheet_modal.dart';
-import '../../../core/widgets/crystal_toast.dart';
 
 // ==========================================
 // SCREEN 13: OFFICIAL SCOREPAD & MATCH CERTIFICATION (CONCEPT 2)
@@ -173,22 +172,16 @@ class _OfficialScorepadScreenState
 
     return WillPopScope(
       onWillPop: _handleWillPop,
-      child: Scaffold(
-        backgroundColor: AppTheme.voidBackground,
+      child: VoidStageScaffold(
+        backgroundAsset: ArmSphereAssets.stageReferee,
         appBar: AppBar(
-          backgroundColor: AppTheme.voidBackground,
+          backgroundColor: AppTheme.glassSurface,
           elevation: 0,
-          flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
-          leading: CrystalBackButton(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
             onPressed: () async {
               if (await _handleWillPop()) {
-                if (!mounted) return;
-                final router = GoRouter.maybeOf(context);
-                if (router != null && router.canPop()) {
-                  router.pop();
-                } else {
-                  Navigator.maybeOf(context)?.maybePop();
-                }
+                if (mounted) context.pop();
               }
             },
           ),
@@ -227,7 +220,7 @@ class _OfficialScorepadScreenState
                 HapticFeedback.lightImpact();
                 setState(() => _isOffline = !_isOffline);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  CrystalSnackBar(
+                  SnackBar(
                     content: Text(_isOffline
                         ? 'Switched to Encrypted Local Draft Mode'
                         : 'Switched to Authoritative Live Federation Sync'),
@@ -248,32 +241,12 @@ class _OfficialScorepadScreenState
                     () => _hasConcurrentConflict = !_hasConcurrentConflict);
               },
             ),
-            CrystalHomeButton(
-              onPressed: () async {
-                if (await _handleWillPop()) {
-                  if (!mounted) return;
-                  final router = GoRouter.maybeOf(context);
-                  if (router != null) {
-                    router.go('/home');
-                  } else {
-                    Navigator.maybeOf(context)?.popUntil((route) => route.isFirst);
-                  }
-                }
-              },
-            ),
           ],
         ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            const Positioned.fill(
-              child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  // OFFLINE & CONCURRENT CONFLICT WARNING STRIPS
-                  _buildOperationalStatusBanner(),
+        child: Column(
+            children: [
+              // OFFLINE & CONCURRENT CONFLICT WARNING STRIPS
+              _buildOperationalStatusBanner(),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -357,9 +330,6 @@ class _OfficialScorepadScreenState
               _buildCertificationBottomBar(athleteAName, athleteBName),
             ],
           ),
-        ),
-          ],
-        ),
       ),
     );
   }
@@ -371,12 +341,7 @@ class _OfficialScorepadScreenState
     if (!_isOffline && !_hasConcurrentConflict) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: const BoxDecoration(
-          color: AppTheme.glassSurface,
-          border: Border(
-            bottom: BorderSide(color: AppTheme.borderTitanium, width: 1),
-          ),
-        ),
+        color: AppTheme.surface,
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -652,15 +617,13 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _isAthletesVerified
-              ? AppTheme.borderTitanium
+              ? AppTheme.border
               : AppTheme.warning.withValues(alpha: 0.6),
         ),
-        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -852,11 +815,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -906,10 +867,10 @@ class _OfficialScorepadScreenState
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.goldPrimary
-              : AppTheme.glassSurface,
+              : AppTheme.elevatedSurface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+            color: isSelected ? AppTheme.goldPrimary : AppTheme.border,
           ),
         ),
         child: Row(
@@ -941,11 +902,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1003,9 +962,9 @@ class _OfficialScorepadScreenState
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: AppTheme.glassSurface,
+              color: AppTheme.elevatedSurface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.borderTitanium),
+              border: Border.all(color: AppTheme.border),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1080,14 +1039,16 @@ class _OfficialScorepadScreenState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppTheme.glassSurface,
+                  color: winner != null
+                      ? AppTheme.elevatedSurface
+                      : AppTheme.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: winner == 'A'
-                        ? AppTheme.goldPrimary.withValues(alpha: 0.65)
+                        ? AppTheme.goldPrimary.withValues(alpha: 0.5)
                         : winner == 'B'
-                            ? AppTheme.primaryAccent.withValues(alpha: 0.65)
-                            : AppTheme.borderTitanium,
+                            ? AppTheme.primaryAccent.withValues(alpha: 0.5)
+                            : AppTheme.border,
                   ),
                 ),
                 child: Row(
@@ -1216,11 +1177,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1394,11 +1353,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1519,11 +1476,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1597,11 +1552,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1663,15 +1616,13 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: winner != null
-              ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-              : AppTheme.borderTitanium,
+              ? AppTheme.goldPrimary.withValues(alpha: 0.6)
+              : AppTheme.border,
         ),
-        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1747,11 +1698,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1875,15 +1824,13 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: errors.isEmpty
-              ? AppTheme.success.withValues(alpha: 0.55)
-              : AppTheme.warning.withValues(alpha: 0.55),
+              ? AppTheme.success.withValues(alpha: 0.5)
+              : AppTheme.warning.withValues(alpha: 0.5),
         ),
-        boxShadow: [AppTheme.titaniumShadow()],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1959,11 +1906,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
@@ -2026,11 +1971,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2063,7 +2006,7 @@ class _OfficialScorepadScreenState
                 HapticFeedback.selectionClick();
                 setState(() => _amendmentRequested = true);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  CrystalSnackBar(
+                  const SnackBar(
                     content: Text(
                         'Official Result Amendment Request Submitted to Technical Delegate'),
                     backgroundColor: AppTheme.warning,
@@ -2124,11 +2067,9 @@ class _OfficialScorepadScreenState
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        border: const Border(top: BorderSide(color: AppTheme.borderTitanium)),
-        boxShadow: [AppTheme.titaniumShadow()],
+        border: Border(top: BorderSide(color: AppTheme.border)),
       ),
       child: _isSubmitting
           ? const Center(
@@ -2154,7 +2095,7 @@ class _OfficialScorepadScreenState
                     : () {
                         HapticFeedback.vibrate();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          CrystalSnackBar(
+                          SnackBar(
                             content: Text(_validationErrors.first),
                             backgroundColor: AppTheme.warning,
                           ),
@@ -2194,35 +2135,48 @@ class _OfficialScorepadScreenState
 
     showModalBottomSheet(
       context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.surface,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return CrystalModalSheet(
-              title: 'CERTIFY OFFICIAL BOUT RESULT',
-              subtitle: 'Referee Cryptographic Bout Attestation',
-              headerIcon: Icons.workspace_premium_rounded,
-              secondaryActionLabel: 'Cancel',
-              primaryActionLabel: 'SIGN & AUTHORIZE CERTIFICATION',
-              primaryActionIcon: Icons.draw_rounded,
-              onPrimaryAction: confirmedStatement
-                  ? () {
-                      Navigator.pop(context);
-                      _executeCertificationProcess();
-                    }
-                  : null,
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.workspace_premium,
+                          color: AppTheme.goldPrimary, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'CERTIFY OFFICIAL BOUT RESULT',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          fontFamily: AppTheme.fontDisplay,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0x8012192A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0x2EFFFFFF)),
+                      color: AppTheme.elevatedSurface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.border),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2248,17 +2202,48 @@ class _OfficialScorepadScreenState
                   ),
                   const SizedBox(height: 14),
                   CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
                     activeColor: AppTheme.goldPrimary,
                     checkColor: AppTheme.background,
                     title: const Text(
                       'I confirm that this scorepad accurately represents the official result of this match.',
                       style: TextStyle(
-                          color: AppTheme.textPrimary, fontSize: 11.5),
+                          color: AppTheme.textPrimary, fontSize: 11),
                     ),
                     value: confirmedStatement,
                     onChanged: (val) =>
                         setSheetState(() => confirmedStatement = val ?? false),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: confirmedStatement
+                            ? AppTheme.goldPrimary
+                            : AppTheme.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: confirmedStatement
+                          ? () {
+                              Navigator.pop(context);
+                              _executeCertificationProcess();
+                            }
+                          : null,
+                      icon: const Icon(Icons.draw,
+                          color: AppTheme.background, size: 18),
+                      label: const Text(
+                        'SIGN & AUTHORIZE CERTIFICATION',
+                        style: TextStyle(
+                          color: AppTheme.background,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          fontFamily: AppTheme.fontDisplay,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -2308,7 +2293,7 @@ class _OfficialScorepadScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: const Text('Certification failed: \${e.toString()}'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),

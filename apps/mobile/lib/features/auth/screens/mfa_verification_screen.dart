@@ -4,13 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
-import '../../../core/widgets/crystal_toast.dart';
 
 class MfaVerificationScreen extends ConsumerStatefulWidget {
   final String? email;
@@ -53,7 +52,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
       if (mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(
               AppErrorFormatter.format(e),
               style: const TextStyle(fontFamily: AppTheme.fontBody),
@@ -73,8 +72,9 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageAuthWalkout,
+      focalAlignment: ArmSphereAssets.walkoutFocal,
       appBar: AppBar(
         title: const Text(
           'MFA Verification',
@@ -87,36 +87,31 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: CrystalBackButton(
-          fallbackRoute: '/login',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppTheme.textSecondary),
           onPressed: () => context.go('/login'),
         ),
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
-          ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.space24),
-              child: RepaintBoundary(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppTheme.glassSurface,
-                              border: Border.all(
-                                color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                                width: 2,
-                              ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppTheme.space24),
+          child: RepaintBoundary(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.cardSurface,
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                            width: 2,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: AppTheme.goldGlow,
@@ -186,10 +181,10 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                           alignLabelWithHint: true,
                           counterText: '',
                           filled: true,
-                          fillColor: AppTheme.glassSurface,
+                          fillColor: AppTheme.elevatedSurface,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                            borderSide: const BorderSide(color: AppTheme.border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -269,8 +264,6 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
             ),
           ),
         ),
-      ),
-        ],
       ),
     );
   }

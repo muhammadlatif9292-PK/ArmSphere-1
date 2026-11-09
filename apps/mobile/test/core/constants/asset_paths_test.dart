@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/constants/asset_paths.dart';
 
@@ -28,26 +29,38 @@ void main() {
 
       expect(ArmSphereAssets.heroGrip, startsWith('assets/images/heroes/'));
       expect(ArmSphereAssets.heroGrip, endsWith('.webp'));
-
-      final integratedWebpHeroes = [
-        ArmSphereAssets.heroAthleteDashboard,
-        ArmSphereAssets.cardArenaRadar,
-        ArmSphereAssets.cardSupermatchVs,
-        ArmSphereAssets.bentoVenues,
-        ArmSphereAssets.bentoPickupSparring,
-        ArmSphereAssets.bentoCommunityFeed,
-        ArmSphereAssets.bentoEloRankings,
-        ArmSphereAssets.heroWelcomeGrip,
-        ArmSphereAssets.stageArena9x16,
-        ArmSphereAssets.stageTrainingLab9x16,
-      ];
-      for (final asset in integratedWebpHeroes) {
-        expect(asset, startsWith('assets/images/heroes/'));
-        expect(asset, endsWith('.webp'));
-      }
     });
 
-    test('Semantic catalog maps all 11 approved slot IDs and normalizes legacy .png paths', () {
+    test('Tier 0-3 Void 28-asset catalog paths and focal alignments are valid', () {
+      expect(ArmSphereAssets.allTieredWebpAssets.length, equals(28));
+      for (final path in ArmSphereAssets.allTieredWebpAssets) {
+        expect(path, endsWith('.webp'));
+      }
+
+      expect(ArmSphereAssets.stageTopFocal, equals(const Alignment(0.0, -0.50)));
+      expect(ArmSphereAssets.walkoutFocal, equals(const Alignment(0.0, -0.35)));
+      expect(ArmSphereAssets.cardRightFocal, equals(const Alignment(0.35, 0.0)));
+      expect(ArmSphereAssets.clipCenterFocal, equals(Alignment.center));
+
+      expect(
+        ArmSphereAssets.clipFallbackForCategory(ClipCategory.sparring),
+        equals(ArmSphereAssets.clipFallbackSparring),
+      );
+      expect(
+        ArmSphereAssets.clipFallbackForCategory(ClipCategory.match),
+        equals(ArmSphereAssets.clipFallbackMatch),
+      );
+      expect(
+        ArmSphereAssets.resolveClipFallback('SPARRING'),
+        equals(ArmSphereAssets.clipFallbackSparring),
+      );
+      expect(
+        ArmSphereAssets.resolveClipFallback('TOURNAMENT'),
+        equals(ArmSphereAssets.clipFallbackMatch),
+      );
+    });
+
+    test('Semantic catalog maps approved slot IDs and normalizes legacy .png paths', () {
       expect(
         ArmSphereAssets.resolveSemanticAsset('profile.athlete.dashboard_hero'),
         equals(ArmSphereAssets.heroAthleteDashboard),
@@ -150,7 +163,8 @@ void main() {
     });
 
     test('All declared image assets physically exist on disk and are non-empty', () {
-      final allImages = [
+      final allImages = {
+        ...ArmSphereAssets.allTieredWebpAssets,
         ArmSphereAssets.logoFull,
         ArmSphereAssets.iconGold,
         ArmSphereAssets.sealFederation,
@@ -158,16 +172,6 @@ void main() {
         ArmSphereAssets.texChalk,
         ArmSphereAssets.heroArena,
         ArmSphereAssets.heroGrip,
-        ArmSphereAssets.heroAthleteDashboard,
-        ArmSphereAssets.cardArenaRadar,
-        ArmSphereAssets.cardSupermatchVs,
-        ArmSphereAssets.bentoVenues,
-        ArmSphereAssets.bentoPickupSparring,
-        ArmSphereAssets.bentoCommunityFeed,
-        ArmSphereAssets.bentoEloRankings,
-        ArmSphereAssets.heroWelcomeGrip,
-        ArmSphereAssets.stageArena9x16,
-        ArmSphereAssets.stageTrainingLab9x16,
         ArmSphereAssets.badgeHeavyweight,
         ArmSphereAssets.badgeMiddleweight,
         ArmSphereAssets.badgeLightweight,
@@ -179,7 +183,7 @@ void main() {
         ArmSphereAssets.defaultAvatar,
         ArmSphereAssets.defaultTournament,
         ArmSphereAssets.defaultClub,
-      ];
+      };
 
       for (final relativePath in allImages) {
         final file = File(relativePath).existsSync()

@@ -2,12 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
-import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 class RecoveryCodesScreen extends StatefulWidget {
   const RecoveryCodesScreen({super.key});
@@ -39,7 +38,7 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        SnackBar(
           content: const Row(
             children: [
               Icon(Icons.check_circle_outline, color: AppTheme.success, size: 20),
@@ -60,10 +59,10 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageAuthWalkout,
+      focalAlignment: ArmSphereAssets.walkoutFocal,
       appBar: AppBar(
-        leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text(
           'Recovery Codes',
           style: TextStyle(
@@ -73,33 +72,27 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: const [CrystalHomeButton()],
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppTheme.space24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.glassSurface,
-                      border: Border.all(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                        width: 1.5,
-                      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppTheme.space24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.cardSurface,
+                  border: Border.all(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppTheme.goldGlow,
@@ -157,10 +150,10 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                           alignment: Alignment.center,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
+                            color: AppTheme.elevatedSurface,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(
-                              color: AppTheme.borderTitanium,
+                              color: AppTheme.border,
                               width: 1,
                             ),
                           ),
@@ -236,10 +229,9 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppTheme.glassSurface,
-                    gradient: AppTheme.machinedTitaniumGradient,
+                    color: AppTheme.elevatedSurface,
                     borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.borderTitanium),
+                    border: Border.all(color: AppTheme.border),
                   ),
                   child: const Text(
                     'Continue to Dashboard',
@@ -255,8 +247,6 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
             ],
           ),
         ),
-      ),
-        ],
       ),
     );
   }

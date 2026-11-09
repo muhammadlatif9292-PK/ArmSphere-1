@@ -5,16 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/messaging_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
-import '../../../core/widgets/app_error_view.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/elevated_action_card.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
-import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 
 /// Domain 8 / Stage 6 Convergence: Conversations List Screen (Inbox)
 ///
@@ -30,13 +28,11 @@ class ConversationsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationsAsync = ref.watch(conversationsProvider);
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageCommunity,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const CrystalBackButton(),
         title: const Text(
           'Athlete Inbox',
           style: TextStyle(
@@ -45,16 +41,8 @@ class ConversationsListScreen extends ConsumerWidget {
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: const [
-          CrystalHomeButton(),
-        ],
       ),
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
-          ),
-          conversationsAsync.when(
+      body: conversationsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
           itemCount: 5,
@@ -64,24 +52,20 @@ class ConversationsListScreen extends ConsumerWidget {
             borderRadius: AppTheme.radiusMedium,
           ),
         ),
-        error: (error, _) => AppErrorView(
-          error: error,
+        error: (error, _) => AppEmptyState(
+          icon: Icons.error_outline,
           title: 'Could not load inbox',
-          onRetry: () => ref.invalidate(conversationsProvider),
-          onSecondaryAction: () => context.go('/'),
-          secondaryActionLabel: 'Return to Home',
+          subtitle: error.toString(),
+          ctaLabel: 'Retry',
+          onCtaTap: () => ref.invalidate(conversationsProvider),
         ),
         data: (conversations) {
           if (conversations.isEmpty) {
-            return AppEmptyState(
+            return const AppEmptyState(
               icon: Icons.forum_outlined,
               title: 'No conversations yet',
               subtitle:
                   'Open an athlete\'s profile and tap Message to coordinate sparring or discuss matchups.',
-              ctaLabel: 'Find Sparring Partners',
-              onCtaTap: () => context.push('/search'),
-              secondaryCtaLabel: 'Return to Home',
-              onSecondaryCtaTap: () => context.go('/'),
             );
           }
           return RefreshIndicator(
@@ -89,7 +73,7 @@ class ConversationsListScreen extends ConsumerWidget {
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(conversationsProvider),
             child: ListView.separated(
-              key: const ValueKey<String>('conversations_list_view'),
+              key: const PageStorageKey<String>('conversations_list_view'),
               padding: const EdgeInsets.all(AppTheme.space16),
               itemCount: conversations.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -119,19 +103,12 @@ class ConversationsListScreen extends ConsumerWidget {
                               width: unread > 0 ? 2.0 : 1.0,
                             ),
                           ),
-                          child: CircleAvatar(
-                            radius: 22,
-                            backgroundColor: AppTheme.elevatedSurface,
-                            backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                            child: photo.isEmpty
-                                ? Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  )
-                                : null,
+                          child: ArmSphereImage.avatar(
+                            imageUrl: photo.isNotEmpty ? photo : null,
+                            initial: name,
+                            size: 44,
+                            fallbackAsset: ArmSphereAssets.avatarNeutralDark,
+                            semanticLabel: 'Profile photo for $name',
                           ),
                         ),
                         const SizedBox(width: AppTheme.space12),
@@ -204,8 +181,6 @@ class ConversationsListScreen extends ConsumerWidget {
           );
         },
       ),
-        ],
-      ),
     );
   }
 }
@@ -248,23 +223,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (!ok && mounted) {
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          const SnackBar(
             content: Text('Could not send message. Please verify connection.'),
             backgroundColor: AppTheme.error,
           ),
         );
       } else if (mounted) {
         _messageController.clear();
-      }
-    } catch (e) {
-      if (mounted) {
-        HapticFeedback.heavyImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: Text(AppErrorFormatter.format(e)),
-            backgroundColor: AppTheme.error,
-          ),
-        );
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -277,15 +242,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ref.watch(messageThreadProvider(widget.conversationId));
     final myUserId =
         ref.watch(authProvider).userProfile?['id']?.toString();
-    final isDisconnected = messagesAsync.hasError;
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageCommunity,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const CrystalBackButton(),
         title: const Text(
           'Match Discussion',
           style: TextStyle(
@@ -294,30 +256,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: const [
-          CrystalHomeButton(),
-        ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
-          ),
-          Column(
-            children: [
           Expanded(
             child: messagesAsync.when(
-              loading: () => const CrystalScreenLoadingView(
-                itemCount: 4,
-                cardHeight: 74,
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppTheme.goldPrimary),
               ),
-              error: (error, _) => AppErrorView(
-                error: error,
+              error: (error, _) => AppEmptyState(
+                icon: Icons.error_outline,
                 title: 'Could not load messages',
-                onRetry: () =>
+                subtitle: error.toString(),
+                ctaLabel: 'Retry',
+                onCtaTap: () =>
                     ref.invalidate(messageThreadProvider(widget.conversationId)),
-                onSecondaryAction: () => context.pop(),
-                secondaryActionLabel: 'Leave Chat',
               ),
               data: (messages) {
                 if (messages.isEmpty) {
@@ -357,11 +310,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isDeleted
-                              ? AppTheme.glassSurface
+                              ? AppTheme.elevatedSurface
                               : isMine
                                   ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-                                  : AppTheme.glassSurface,
-                          gradient: isMine ? null : AppTheme.machinedTitaniumGradient,
+                                  : AppTheme.cardSurface,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(AppTheme.radiusMedium),
                             topRight: const Radius.circular(AppTheme.radiusMedium),
@@ -370,11 +322,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ),
                           border: Border.all(
                             color: isMine
-                                ? AppTheme.goldPrimary.withValues(alpha: 0.45)
-                                : AppTheme.borderTitanium,
+                                ? AppTheme.goldPrimary.withValues(alpha: 0.4)
+                                : AppTheme.border,
                             width: 1.0,
                           ),
-                          boxShadow: [AppTheme.titaniumShadow()],
                         ),
                         child: Column(
                           crossAxisAlignment: isMine
@@ -417,11 +368,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // Composer Bar
           Container(
             padding: const EdgeInsets.all(AppTheme.space12),
-            decoration: BoxDecoration(
-              color: AppTheme.glassSurface,
-              gradient: AppTheme.machinedTitaniumGradient,
-              border: const Border(top: BorderSide(color: AppTheme.borderTitanium, width: 1.0)),
-              boxShadow: [AppTheme.titaniumShadow()],
+            decoration: const BoxDecoration(
+              color: AppTheme.cardSurface,
+              border: Border(top: BorderSide(color: AppTheme.border, width: 1.0)),
             ),
             child: SafeArea(
               child: Row(
@@ -429,43 +378,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
-                      enabled: !isDisconnected && !_sending,
                       style: const TextStyle(color: AppTheme.textPrimary),
                       decoration: InputDecoration(
-                        hintText: isDisconnected
-                            ? 'Messaging unavailable while disconnected'
-                            : 'Type your message...',
+                        hintText: 'Type your message...',
                         hintStyle: const TextStyle(color: AppTheme.textMuted),
                         filled: true,
-                        fillColor: AppTheme.glassSurface,
+                        fillColor: AppTheme.elevatedSurface,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          borderSide: const BorderSide(color: AppTheme.borderTitanium),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          borderSide: const BorderSide(color: AppTheme.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                           borderSide: const BorderSide(color: AppTheme.goldPrimary),
                         ),
                       ),
-                      onSubmitted: isDisconnected ? null : (_) => _send(),
+                      onSubmitted: (_) => _send(),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDisconnected
-                          ? AppTheme.glassSurface
-                          : AppTheme.goldPrimary,
+                      color: AppTheme.goldPrimary,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: isDisconnected
-                          ? Border.all(color: AppTheme.borderTitanium)
-                          : null,
                     ),
                     child: IconButton(
                       icon: _sending
@@ -477,22 +414,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 color: AppTheme.voidBackground,
                               ),
                             )
-                          : Icon(
-                              Icons.send,
-                              color: isDisconnected
-                                  ? AppTheme.textMuted
-                                  : AppTheme.voidBackground,
-                              size: 20,
-                            ),
-                      onPressed: (isDisconnected || _sending) ? null : _send,
+                          : const Icon(Icons.send, color: AppTheme.voidBackground, size: 20),
+                      onPressed: _sending ? null : _send,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
         ],
       ),
     );

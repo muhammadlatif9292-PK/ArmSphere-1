@@ -5,16 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
-import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'tournament_screens.dart';
-import '../../../core/widgets/crystal_toast.dart';
 
 const List<String> _kDivisions = ['SENIOR', 'JUNIOR', 'FEMALE'];
 const List<String> _kWeightClasses = ['-70kg', '-85kg', '-95kg', '+95kg'];
@@ -29,18 +28,15 @@ StatusType _resolveOperationStatusType(String status) {
     case 'PENDING':
     case 'READY':
     case 'SEEDED':
-    case 'DRAFT':
       return StatusType.warning;
     case 'CALLED':
     case 'ACTIVE':
-    case 'PUBLISHED':
       return StatusType.info;
     case 'WAITLISTED':
     case 'PENDING_PAYMENT':
       return StatusType.warning;
     case 'FAILED':
     case 'REJECTED':
-    case 'CANCELLED':
       return StatusType.error;
     default:
       return StatusType.neutral;
@@ -90,11 +86,10 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             eventId: eventId,
             action: action,
           );
-      ref.invalidate(eventDetailProvider(eventId));
       if (mounted && successMessage != null) {
         HapticFeedback.lightImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(successMessage),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
@@ -108,13 +103,12 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ? 'Table state changed. Refreshing current arena state.'
             : e.detail;
         if (is409) {
-          ref.invalidate(eventDetailProvider(eventId));
           ref.invalidate(eventMatchTablesProvider(eventId));
           ref.invalidate(eventMatchesProvider(eventId));
           ref.invalidate(eventLiveArenaTablesProvider(eventId));
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(msg),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -124,7 +118,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } on OfflineException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text(e.message),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -134,7 +128,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
+          SnackBar(
             content: Text('Action failed: $e'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
@@ -219,7 +213,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     }
     if (available.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('No approved registrations yet — approve entries first.'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -317,7 +311,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final name = controller.text.trim();
     if (name.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('Table name needs at least 2 characters.'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -340,7 +334,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        SnackBar(
           content: Text('Could not load referee directory: $e'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -351,7 +345,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     if (!mounted) return;
     if (referees.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('No certified referees registered in the federation directory yet.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -415,7 +409,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        SnackBar(
           content: Text('Could not load tables: $e'),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -427,7 +421,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     if (!mounted) return;
     if (idle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('No idle tables available. Add a table or free one up first.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -620,7 +614,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
 
     if (candidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('No eligible READY matches available to queue. Ensure bracket matches are generated and competitors determined.'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -819,7 +813,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final nameB = match['athleteBName']?.toString() ?? 'Athlete B';
     if (athleteAId.isEmpty || athleteBId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
+        const SnackBar(
           content: Text('Both competitor slots must be filled before a result can be recorded.'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -911,12 +905,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final auth = ref.watch(authProvider);
 
     final userRole = auth.activeRole ?? auth.userProfile?['role']?.toString().toUpperCase() ?? '';
-    const operatorRoles = {
-      'TOURNAMENT_OPERATOR',
-      'PROVINCIAL_DIRECTOR',
-      'NATIONAL_DIRECTOR',
-      'SYSTEM_ADMIN',
-    };
+    const operatorRoles = {'PROVINCIAL_DIRECTOR', 'NATIONAL_DIRECTOR', 'SYSTEM_ADMIN'};
     final isDirectorOrAdmin = operatorRoles.contains(userRole) ||
         auth.hasAnyRole(operatorRoles);
     final isOrganizer = eventAsync.value?['organizerId'] != null &&
@@ -925,13 +914,10 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final canOperate = isDirectorOrAdmin || isOrganizer || isReferee;
     final canManageTables = isDirectorOrAdmin || isOrganizer;
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
+    return VoidStageScaffold(
+      backgroundAsset: ArmSphereAssets.stageArena,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
-        leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
+        backgroundColor: Colors.transparent,
         title: const Text('Event Operations Desk'),
         actions: [
           IconButton(
@@ -941,33 +927,26 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 ? null
                 : () {
                     HapticFeedback.lightImpact();
-                    ref.invalidate(eventDetailProvider(widget.tournamentId));
                     ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
                     ref.invalidate(eventMatchesProvider(widget.tournamentId));
                     ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
                   },
           ),
-          const CrystalHomeButton(),
         ],
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
-          RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(eventDetailProvider(widget.tournamentId));
-              ref.invalidate(eventStatsProvider(widget.tournamentId));
-              ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
-              ref.invalidate(eventBracketsProvider(widget.tournamentId));
-              ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
-              ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
-              ref.invalidate(eventMatchesProvider(widget.tournamentId));
-              ref.invalidate(refereeDirectoryProvider);
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(AppTheme.space16),
-              children: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(eventStatsProvider(widget.tournamentId));
+          ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
+          ref.invalidate(eventBracketsProvider(widget.tournamentId));
+          ref.invalidate(eventMatchTablesProvider(widget.tournamentId));
+          ref.invalidate(eventLiveArenaTablesProvider(widget.tournamentId));
+          ref.invalidate(eventMatchesProvider(widget.tournamentId));
+          ref.invalidate(refereeDirectoryProvider);
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(AppTheme.space16),
+          children: [
             // --- Event header ---
             eventAsync.when(
               loading: () => const Center(child: Padding(
@@ -986,114 +965,40 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               ),
               data: (event) {
                 final status = (event['status']?.toString() ?? 'UNKNOWN').toUpperCase();
-                final showLifecycleControls =
-                    canManageTables && (status == 'DRAFT' || status == 'PUBLISHED');
                 return ElevatedActionCard(
                   padding: const EdgeInsets.all(AppTheme.space16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  event['name']?.toString() ?? 'Event',
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: AppTheme.space4),
-                                Text(
-                                  'Fee: ${formatEventFee(event['registrationFeeCents'])}'
-                                  ' • Payment: ${event['paymentMethod']?.toString() ?? 'N/A'}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.textSecondary,
-                                    fontFeatures: [FontFeature.tabularFigures()],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          StatusChip(
-                            label: status,
-                            type: _resolveOperationStatusType(status),
-                          ),
-                        ],
-                      ),
-                      if (showLifecycleControls) ...[
-                        const SizedBox(height: AppTheme.space12),
-                        const Divider(color: AppTheme.cardBorder, height: 1),
-                        const SizedBox(height: AppTheme.space12),
-                        Wrap(
-                          spacing: AppTheme.space8,
-                          runSpacing: AppTheme.space8,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (status == 'DRAFT')
-                              ElevatedButton.icon(
-                                onPressed: _busy
-                                    ? null
-                                    : () => _run(
-                                          widget.tournamentId,
-                                          () => ref
-                                              .read(tournamentRepositoryProvider)
-                                              .publishEvent(eventId: widget.tournamentId),
-                                          successMessage: 'Tournament published and open for registration.',
-                                        ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.goldPrimary,
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                icon: const Icon(Icons.publish, size: 16),
-                                label: const Text('PUBLISH EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text(
+                              event['name']?.toString() ?? 'Event',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.textPrimary,
                               ),
-                            if (status == 'PUBLISHED')
-                              ElevatedButton.icon(
-                                onPressed: _busy
-                                    ? null
-                                    : () => _run(
-                                          widget.tournamentId,
-                                          () => ref
-                                              .read(tournamentRepositoryProvider)
-                                              .completeEvent(eventId: widget.tournamentId),
-                                          successMessage: 'Tournament officially completed.',
-                                        ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.success,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                icon: const Icon(Icons.verified, size: 16),
-                                label: const Text('COMPLETE EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(height: AppTheme.space4),
+                            Text(
+                              'Fee: ${formatEventFee(event['registrationFeeCents'])}'
+                              ' • Payment: ${event['paymentMethod']?.toString() ?? 'N/A'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                                fontFeatures: [FontFeature.tabularFigures()],
                               ),
-                            OutlinedButton.icon(
-                              onPressed: _busy
-                                  ? null
-                                  : () => _run(
-                                        widget.tournamentId,
-                                        () => ref
-                                            .read(tournamentRepositoryProvider)
-                                            .cancelEvent(eventId: widget.tournamentId),
-                                        successMessage: 'Tournament cancelled.',
-                                      ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppTheme.error,
-                                side: const BorderSide(color: AppTheme.error),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                              icon: const Icon(Icons.cancel_outlined, size: 16),
-                              label: const Text('CANCEL EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
-                      ],
+                      ),
+                      StatusChip(
+                        label: status,
+                        type: _resolveOperationStatusType(status),
+                      ),
                     ],
                   ),
                 );
@@ -1447,8 +1352,6 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ),
           ],
         ),
-      ),
-        ],
       ),
     );
   }
@@ -1965,9 +1868,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       margin: const EdgeInsets.only(bottom: AppTheme.space6),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
+        color: AppTheme.cardSurface.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: AppTheme.borderTitanium),
+        border: Border.all(color: AppTheme.cardBorder),
       ),
       child: Row(
         children: [
@@ -1979,9 +1882,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTheme.glassSurface,
+                color: AppTheme.elevatedSurface,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.borderTitanium),
+                border: Border.all(color: AppTheme.cardBorder),
               ),
               child: Text(
                 '$pos',
