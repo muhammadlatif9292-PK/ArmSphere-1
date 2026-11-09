@@ -307,7 +307,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      context.go('/login');
+                    },
                     child: const Text('Sign In'),
                   ),
                 ],

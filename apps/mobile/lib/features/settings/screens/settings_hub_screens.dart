@@ -8,6 +8,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/biometric_settings_tile.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 
 /// Account & Settings hub (spec §36). Every section maps to a real surface.
 class SettingsHubScreen extends ConsumerWidget {
@@ -20,7 +21,12 @@ class SettingsHubScreen extends ConsumerWidget {
       focalAlignment: const Alignment(0.0, -0.52),
       appBar: AppBar(backgroundColor: Colors.transparent, title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(AppTheme.space16),
+        padding: EdgeInsets.fromLTRB(
+          AppTheme.space16,
+          AppTheme.space16,
+          AppTheme.space16,
+          mainShellBottomClearance(context, additionalPadding: 36),
+        ),
         children: [
           _sectionHeader(context, 'ACCOUNT'),
           ElevatedActionCard(
