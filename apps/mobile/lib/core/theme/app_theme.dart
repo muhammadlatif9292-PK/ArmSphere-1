@@ -29,11 +29,11 @@ class AppTheme {
   /// Precision Machined Titanium container (#151B24) - For primary cards and panels.
   static const Color titanium = Color(0xFF151B24);
 
-  /// Solid card container (#151B24) - Polished titanium surface.
-  static const Color cardSurface = Color(0xFF151B24);
+  /// Solid card container (#151B24 neutralised to transparent for floating stage materials).
+  static const Color cardSurface = Colors.transparent;
 
-  /// Primary surface token (mapped to cardSurface #151B24).
-  static const Color surface = Color(0xFF151B24);
+  /// Primary surface token (mapped to cardSurface).
+  static const Color surface = Colors.transparent;
 
   /// Elevated action cell / secondary interactive container (#1E2836).
   static const Color elevatedSurface = Color(0xFF1E2836);
@@ -50,20 +50,20 @@ class AppTheme {
   /// Recessed graphite container (#0E131C) for inputs and inactive surfaces.
   static const Color recessedSurface = Color(0xFF0E131C);
 
-  /// Crystal Glassmorphic Specular Card Border (rgba(255, 255, 255, 0.22) = 0x38FFFFFF).
-  static const Color borderTitanium = Color(0x38FFFFFF);
+  /// Crystal Glassmorphic Specular Card Border (neutralized for floating stage materials).
+  static const Color borderTitanium = Colors.transparent;
 
   /// Metallic specular upper-edge highlight border (rgba(255, 255, 255, 0.36) = 0x5CFFFFFF).
   static const Color borderHighlight = Color(0x5CFFFFFF);
 
-  /// Structural card and divider border (22% crisp white specular edge).
-  static const Color border = Color(0x38FFFFFF);
+  /// Structural card and divider border (neutralized for floating stage materials).
+  static const Color border = Colors.transparent;
 
   /// Muted structural divider for subtle separators.
-  static const Color borderMuted = Color(0x18FFFFFF);
+  static const Color borderMuted = Colors.transparent;
 
   /// Subtle structural divider for secondary separators.
-  static const Color borderSubtle = Color(0x24FFFFFF);
+  static const Color borderSubtle = Colors.transparent;
 
   /// Elevated bright divider for focused states.
   static const Color borderLight = Color(0x47FFFFFF);

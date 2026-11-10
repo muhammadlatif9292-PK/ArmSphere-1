@@ -1,5 +1,6 @@
 // lib/features/home/screens/discover_screen.dart
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -2257,33 +2258,34 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final isPinnedActive = overlapsContent || shrinkOffset > 0;
     return SizedBox.expand(
-      child: Container(
-        decoration: BoxDecoration(
-          color: isPinnedActive
-              ? const Color(0xBD070A11)
-              : Colors.white.withValues(alpha: 0.04),
-          border: const Border(
-            bottom: BorderSide(
-              color: AppTheme.border,
-              width: 1.0,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: isPinnedActive ? 20.0 : 0.0,
+            sigmaY: isPinnedActive ? 20.0 : 0.0,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: isPinnedActive
+                  ? const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xF2070A11),
+                        Color(0xD9070A11),
+                      ],
+                    )
+                  : null,
+              color: isPinnedActive ? null : Colors.transparent,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                searchBar,
+                filterChips,
+              ],
             ),
           ),
-          boxShadow: isPinnedActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.42),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            searchBar,
-            filterChips,
-          ],
         ),
       ),
     );
