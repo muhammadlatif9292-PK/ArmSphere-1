@@ -20,14 +20,14 @@ abstract final class ArmSphereAssets {
   // Focal Alignment Presets
   // ---------------------------------------------------------------------------
 
-  /// Top-weighted stage focal preset (0.0, -0.65) for 9:16 stages and Arena Radar
-  static const Alignment stageTopFocal = Alignment(0.0, -0.65);
+  /// Top-weighted stage focal preset (0.0, -0.50) for 9:16 stages and Arena Radar
+  static const Alignment stageTopFocal = Alignment(0.0, -0.50);
 
-  /// Walkout & Welcome grip focal preset (0.0, -0.25)
-  static const Alignment walkoutFocal = Alignment(0.0, -0.25);
+  /// Walkout & Welcome grip focal preset (0.0, -0.35)
+  static const Alignment walkoutFocal = Alignment(0.0, -0.35);
 
-  /// Right-weighted athlete silhouette focal preset (0.85, 0.0) for Athlete Dashboard Hero
-  static const Alignment cardRightFocal = Alignment(0.85, 0.0);
+  /// Right-weighted athlete silhouette focal preset (0.35, 0.0) for Athlete Dashboard Hero
+  static const Alignment cardRightFocal = Alignment(0.35, 0.0);
 
   /// Tournament detail poster header focal preset (0.0, -0.20)
   static const Alignment posterTopFocal = Alignment(0.0, -0.20);
@@ -356,32 +356,40 @@ abstract final class ArmSphereAssets {
   static const String defaultTournament = tournamentPoster;
   static const String defaultClub = teamCrestDefault;
 
-  static const String heroArena = cardArenaRadar;
-  static const String heroGrip = heroWelcomeGrip;
+  // ===========================================================================
+  // M0: System & Brand Core (assets/images/brand/)
+  // ===========================================================================
+  static const String logoFull       = 'assets/images/brand/m0_logo_full.webp';
+  static const String iconGold       = 'assets/images/brand/m0_icon_gold.webp';
+  static const String sealFederation = 'assets/images/brand/m0_seal_fed.webp';
 
-  static const String logoFull = teamCrestDefault;
-  static const String iconGold = teamCrestDefault;
-  static const String sealFederation = teamCrestDefault;
-  static const String sealFed = teamCrestDefault;
+  // ===========================================================================
+  // M1: Bundled Textures & Canonical Hero Backdrops
+  // ===========================================================================
+  static const String texKnurl   = 'assets/images/textures/m1_tex_knurl.webp';
+  static const String texChalk   = 'assets/images/textures/m1_tex_chalk.webp';
+  static const String heroArena  = 'assets/images/heroes/m1_hero_arena.webp';
+  static const String heroGrip   = 'assets/images/heroes/m1_hero_grip.webp';
 
-  static const String texKnurl = bentoVenues;
-  static const String texChalk = bentoPickupSparring;
+  // ===========================================================================
+  // M4: Division Badges & Referee Certification Insignia (assets/images/badges/)
+  // ===========================================================================
+  static const String badgeHeavyweight = 'assets/images/badges/m4_bdg_heavy.webp';
+  static const String badgeMiddleweight = 'assets/images/badges/m4_bdg_middle.webp';
+  static const String badgeLightweight  = 'assets/images/badges/m4_bdg_light.webp';
+  static const String badgeJunior       = 'assets/images/badges/m4_bdg_junior.webp';
+  static const String badgeMasters      = 'assets/images/badges/m4_bdg_masters.webp';
+  static const String refMaster         = 'assets/images/badges/m4_ref_master.webp';
+  static const String refNational       = 'assets/images/badges/m4_ref_nat.webp';
+  static const String refRegional       = 'assets/images/badges/m4_ref_reg.webp';
 
-  static const String badgeHeavyweight = bentoEloRankings;
-  static const String badgeMiddleweight = bentoEloRankings;
-  static const String badgeLightweight = bentoEloRankings;
-  static const String badgeJunior = bentoEloRankings;
-  static const String badgeMasters = bentoEloRankings;
-
-  static const String refMaster = stageReferee9x16;
-  static const String refNational = stageReferee9x16;
-  static const String refRegional = stageReferee9x16;
-
-  static const String badgeHeavy = badgeHeavyweight;
+  /// Concise canonical aliases matching physical asset short filenames
+  static const String sealFed     = sealFederation;
+  static const String badgeHeavy  = badgeHeavyweight;
   static const String badgeMiddle = badgeMiddleweight;
-  static const String badgeLight = badgeLightweight;
-  static const String refNat = refNational;
-  static const String refReg = refRegional;
+  static const String badgeLight  = badgeLightweight;
+  static const String refNat      = refNational;
+  static const String refReg      = refRegional;
 
   // ---------------------------------------------------------------------------
   // M6: Audio Sensory Pack (assets/sounds/)
