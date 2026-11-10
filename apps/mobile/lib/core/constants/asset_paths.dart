@@ -278,7 +278,6 @@ abstract final class ArmSphereAssets {
   static const String welcomeGripHero = heroWelcomeGrip;
   static const String athleteDashboardHero = heroAthleteDashboard;
   static const String arenaRadarCard = cardArenaRadar;
-  static const String supermatchVsCard = cardSupermatchVs;
 
   // Semantic Canonical Constants (Used by Visual Preferences & Tests)
   static const String semanticProfileAthleteDashboardHero = heroAthleteDashboard;

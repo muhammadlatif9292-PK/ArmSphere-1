@@ -14,9 +14,12 @@ import 'tactile_press_wrapper.dart';
 class AppEmptyState extends StatefulWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
+  final String? subtitle;
+  final String? description;
   final String? ctaLabel;
   final VoidCallback? onCtaTap;
+  final String? secondaryCtaLabel;
+  final VoidCallback? onSecondaryCtaTap;
   final String? bannerAsset;
   final Alignment bannerAlignment;
 
@@ -24,9 +27,12 @@ class AppEmptyState extends StatefulWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
+    this.description,
     this.ctaLabel,
     this.onCtaTap,
+    this.secondaryCtaLabel,
+    this.onSecondaryCtaTap,
     this.bannerAsset,
     this.bannerAlignment = Alignment.center,
   });
@@ -232,16 +238,17 @@ class _AppEmptyStateState extends State<AppEmptyState>
                                 ),
                               ),
                               const SizedBox(height: 3),
-                              Text(
-                                widget.subtitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
-                                  height: 1.35,
+                              if ((widget.subtitle ?? widget.description ?? '').isNotEmpty)
+                                Text(
+                                  widget.subtitle ?? widget.description!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                    height: 1.35,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),

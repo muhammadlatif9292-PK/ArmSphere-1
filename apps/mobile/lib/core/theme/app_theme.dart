@@ -71,6 +71,12 @@ class AppTheme {
   /// Backward-compatible alias for structural card border.
   static const Color cardBorder = border;
 
+  /// Obsidian rim border token (14% white specular sheen).
+  static const Color obsidianRimBorder = Color(0x24FFFFFF);
+
+  /// Smoked obsidian glass surface token.
+  static const Color smokedObsidianGlass = Color(0xCC0D121D);
+
   /// Backward-compatible alias for cardSurface (#151B24).
   static const Color cardBackground = cardSurface;
 
