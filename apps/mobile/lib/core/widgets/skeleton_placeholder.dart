@@ -78,6 +78,7 @@ class CrystalScreenLoadingView extends StatelessWidget {
   final int itemCount;
   final double cardHeight;
   final String? semanticLabel;
+  final EdgeInsetsGeometry? padding;
 
   const CrystalScreenLoadingView({
     super.key,
@@ -85,6 +86,7 @@ class CrystalScreenLoadingView extends StatelessWidget {
     this.itemCount = 3,
     this.cardHeight = 100.0,
     this.semanticLabel,
+    this.padding,
   });
 
   @override

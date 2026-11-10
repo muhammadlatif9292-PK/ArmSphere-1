@@ -15,6 +15,7 @@ class ElevatedActionCard extends StatelessWidget {
   final double borderRadius;
   final Color? borderColor;
   final Color? backgroundColor;
+  final Gradient? gradient;
   final VoidCallback? onTap;
   final String? semanticLabel;
   final List<BoxShadow>? customShadow;
@@ -28,6 +29,7 @@ class ElevatedActionCard extends StatelessWidget {
     this.borderRadius = AppTheme.radiusLarge,
     this.borderColor,
     this.backgroundColor,
+    this.gradient,
     this.onTap,
     this.semanticLabel,
     this.customShadow,
@@ -39,7 +41,23 @@ class ElevatedActionCard extends StatelessWidget {
     Widget cardContent = Container(
       padding: padding,
       margin: margin,
-      color: Colors.transparent,
+      decoration: gradient != null
+          ? BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(borderRadius),
+            )
+          : (backgroundColor != null
+              ? BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: borderColor != null
+                      ? Border.all(color: borderColor!)
+                      : null,
+                )
+              : null),
+      color: (gradient == null && backgroundColor == null)
+          ? Colors.transparent
+          : null,
       child: child,
     );
 
