@@ -183,6 +183,16 @@ vi.mock('../lib/governanceApi', () => ({
         resolutionDetails: null,
         assignedReviewerId: null,
         province: 'Punjab',
+        evidence: [
+          {
+            id: 'ev-1',
+            disputeId: 'disp-1',
+            uploadedById: 'u-athlete-1',
+            fileUrl: 'https://cdn.armsphere.pk/evidence/punjab-foul.mp4',
+            description: 'Official table cam angle A',
+            createdAt: new Date().toISOString(),
+          },
+        ],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -196,6 +206,21 @@ vi.mock('../lib/governanceApi', () => ({
         resolutionDetails: null,
         assignedReviewerId: null,
         province: 'Balochistan',
+        evidence: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'disp-3',
+        matchId: 'm-99999999',
+        creatorId: 'u-athlete-3',
+        title: 'Resolved Grip Dispute Punjab',
+        description: 'Resolved protest awaiting closure',
+        status: 'RESOLVED',
+        resolutionDetails: 'Upheld after video review.',
+        assignedReviewerId: 'usr-admin-1',
+        province: 'Punjab',
+        evidence: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -206,6 +231,7 @@ vi.mock('../lib/governanceApi', () => ({
     refetch: vi.fn(),
   })),
   useResolveDispute: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCloseDispute: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock('../lib/auditApi', () => ({
@@ -1017,6 +1043,39 @@ describe('ArmSphere Admin Web RBAC & Governance Hardening Suite', () => {
       expect(screen.getByText('Cross-Jurisdiction Restriction')).toBeDefined();
       expect(screen.getByText(/scoped to Punjab.*originated in Balochistan/i)).toBeDefined();
       expect(screen.queryByText('Adjudicate Case')).toBeNull();
+    });
+
+    it('renders real evidence links and empty evidence state instead of hardcoded mock filenames, and shows Finalize & Close button for RESOLVED disputes', () => {
+      const sysAdmin = makeMockUser({
+        role: UserRole.SYSTEM_ADMIN,
+      });
+      const authCtx = createMockAuthContext({
+        user: sysAdmin,
+        activeRole: UserRole.SYSTEM_ADMIN,
+        jurisdiction: null,
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authCtx}>
+            <MemoryRouter>
+              <GovernancePage />
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      );
+
+      // Default selected dispute disp-1 has real evidence
+      expect(screen.getByText('Official table cam angle A')).toBeDefined();
+      expect(screen.queryByText('Incident_Video_Clip_01.mp4')).toBeNull();
+
+      // Switch to disp-2 which has empty evidence
+      fireEvent.click(screen.getByText('Elbow Foul Balochistan'));
+      expect(screen.getByText(/No evidence files attached to this dispute dossier/i)).toBeDefined();
+
+      // Switch to disp-3 which is RESOLVED and verify Close Dispute Dossier button is rendered
+      fireEvent.click(screen.getByText('Resolved Grip Dispute Punjab'));
+      expect(screen.getByRole('button', { name: /Close Dispute Dossier/i })).toBeDefined();
     });
   });
 

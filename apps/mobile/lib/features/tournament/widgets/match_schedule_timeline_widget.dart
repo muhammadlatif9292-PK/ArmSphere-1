@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class MatchScheduleTimelineWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -542,7 +543,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                                       onTap: () {
                                         HapticFeedback.heavyImpact();
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
+                                          CrystalSnackBar(
                                             content: Text('✓ Opening Live Stream for Table #2 Stage B'),
                                             backgroundColor: Color(0xFFFF2A6D),
                                           ),
@@ -584,7 +585,7 @@ class _MatchScheduleTimelineWidgetState extends State<MatchScheduleTimelineWidge
                                           }
                                         });
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
+                                          CrystalSnackBar(
                                             content: Text(
                                               isReminderSet
                                                   ? 'Reminder removed for ${match['matchNumber']}'

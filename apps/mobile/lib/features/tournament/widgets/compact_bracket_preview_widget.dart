@@ -644,10 +644,12 @@ class _CompactBracketPreviewWidgetState extends State<CompactBracketPreviewWidge
   void _openFullBracketModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => FullInteractiveBracketModal(tournament: widget.tournament),
     );

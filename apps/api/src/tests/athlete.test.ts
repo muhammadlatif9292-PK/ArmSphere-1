@@ -229,6 +229,27 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(res.body.data.displayName).toBe("Johnny Doe");
     });
 
+    it("should retrieve profile by profileId without false block denial when caller is the owner", async () => {
+      const profileUuid = "33333333-3333-3333-3333-333333333333";
+      testDbStore.athleteProfiles.push({
+        id: profileUuid,
+        userId: athleteUserId,
+        displayName: "Johnny Doe",
+        province: "Punjab",
+        city: "Lahore",
+        isDeleted: false,
+      });
+
+      const res = await request(app)
+        .get(`/athletes/${profileUuid}`)
+        .set("Authorization", athleteToken);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.id).toBe(profileUuid);
+      expect(res.body.data.userId).toBe(athleteUserId);
+    });
+
     it("should return a 404 NotFound if profile does not exist", async () => {
       const res = await request(app)
         .get("/athletes/22222222-2222-2222-2222-222222222222") // non-existent UUID
@@ -399,6 +420,64 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       // Store must be unchanged
       const stored = testDbStore.athleteProfiles.find((p) => p.id === profileId);
       expect(stored?.displayName).toBe("Original Owner");
+    });
+
+    it("should allow Provincial Director to update athlete in their province, but reject cross-province updates with 403", async () => {
+      const profileId = "22222222-2222-2222-2222-222222222222";
+      testDbStore.athleteProfiles[0].id = profileId;
+      testDbStore.athleteProfiles[0].province = "Punjab";
+      testDbStore.athleteProfiles[0].displayName = "Punjab Athlete";
+
+      const dirPunjabId = "44444444-4444-4444-4444-444444444441";
+      testDbStore.users.push({
+        id: dirPunjabId,
+        email: "dir_punjab@armsphere.com",
+        username: "dir_punjab",
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        fullName: "Punjab Director",
+        isActive: true,
+        province: "Punjab",
+        regionalCoverage: "Punjab",
+      });
+      const dirPunjabToken = `Bearer ${generateAccessToken(
+        dirPunjabId,
+        "dir_punjab@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      const dirSindhId = "44444444-4444-4444-4444-444444444442";
+      testDbStore.users.push({
+        id: dirSindhId,
+        email: "dir_sindh@armsphere.com",
+        username: "dir_sindh",
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        fullName: "Sindh Director",
+        isActive: true,
+        province: "Sindh",
+        regionalCoverage: "Sindh",
+      });
+      const dirSindhToken = `Bearer ${generateAccessToken(
+        dirSindhId,
+        "dir_sindh@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      // Sindh director attempts cross-province update -> 403 Forbidden
+      const resCross = await request(app)
+        .patch(`/athletes/${profileId}`)
+        .set("Authorization", dirSindhToken)
+        .send({ displayName: "Cross-Province Edit" });
+      expect(resCross.status).toBe(403);
+
+      // Punjab director updates same-province athlete -> 200 OK
+      const resSame = await request(app)
+        .patch(`/athletes/${profileId}`)
+        .set("Authorization", dirPunjabToken)
+        .send({ displayName: "Punjab Director Approved Edit" });
+      expect(resSame.status).toBe(200);
+      expect(resSame.body.data.displayName).toBe("Punjab Director Approved Edit");
     });
   });
 
@@ -577,6 +656,51 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
         .get("/athletes/me")
         .set("Authorization", athleteToken);
       expect(profileRes.body.data.verificationStatus).toBe("VERIFIED");
+    });
+
+    it("should allow verification review by profileId and enforce provincial director jurisdiction", async () => {
+      const profileId = "22222222-2222-2222-2222-222222222222";
+      testDbStore.athleteProfiles[0].id = profileId;
+      testDbStore.athleteProfiles[0].province = "Punjab";
+
+      const dirSindhId = "44444444-4444-4444-4444-444444444442";
+      testDbStore.users.push({
+        id: dirSindhId,
+        email: "dir_sindh_verif@armsphere.com",
+        username: "dir_sindh_verif",
+        role: UserRole.PROVINCIAL_DIRECTOR,
+        fullName: "Sindh Director",
+        isActive: true,
+        province: "Sindh",
+        regionalCoverage: "Sindh",
+      });
+      const dirSindhToken = `Bearer ${generateAccessToken(
+        dirSindhId,
+        "dir_sindh_verif@armsphere.com",
+        UserRole.PROVINCIAL_DIRECTOR,
+        env.JWT_ACCESS_SECRET
+      )}`;
+
+      // Cross-province review attempt -> 403 Forbidden
+      const resSindh = await request(app)
+        .post("/athletes/verification/review")
+        .set("Authorization", dirSindhToken)
+        .send({
+          athleteId: profileId,
+          status: "VERIFIED",
+        });
+      expect(resSindh.status).toBe(403);
+
+      // Admin review by profileId -> 200 OK
+      const resAdmin = await request(app)
+        .post("/athletes/verification/review")
+        .set("Authorization", adminToken)
+        .send({
+          athleteId: profileId,
+          status: "VERIFIED",
+        });
+      expect(resAdmin.status).toBe(200);
+      expect(resAdmin.body.data.status).toBe("VERIFIED");
     });
 
     it("should prevent non-admin/non-reviewers from reviewing documents", async () => {
@@ -1079,7 +1203,30 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(res.status).toBe(400);
     });
 
-    it("GET /athletes/compare: returns head-to-head comparison payload for two athletes", async () => {
+    it("GET /athletes/compare: returns head-to-head comparison payload for two athletes with dual-arm ELO and per-arm win rates", async () => {
+      testDbStore.matches.push(
+        {
+          id: "match-cmp-1",
+          challengerId: athlete1ProfileId,
+          opponentId: athlete2ProfileId,
+          arm: "RIGHT",
+          winnerId: athlete1ProfileId,
+          scoreLine: "3-0",
+          status: "VERIFIED",
+          verifiedAt: new Date(),
+        },
+        {
+          id: "match-cmp-2",
+          challengerId: athlete1ProfileId,
+          opponentId: athlete2ProfileId,
+          arm: "LEFT",
+          winnerId: athlete2ProfileId,
+          scoreLine: "2-3",
+          status: "VERIFIED",
+          verifiedAt: new Date(),
+        }
+      );
+
       const res = await request(app)
         .get(`/athletes/compare?athlete1Id=${athlete1ProfileId}&athlete2Id=${athlete2ProfileId}`)
         .set("Authorization", athleteToken);
@@ -1092,6 +1239,12 @@ describe("Athlete Profiles, Verification & Storage API Suite", () => {
       expect(res.body.data).toHaveProperty("winProbability");
       expect(res.body.data.athlete1.id).toBe(athlete1ProfileId);
       expect(res.body.data.athlete2.id).toBe(athlete2ProfileId);
+      expect(typeof res.body.data.athlete1.rightArmElo).toBe("number");
+      expect(typeof res.body.data.athlete1.leftArmElo).toBe("number");
+      expect(res.body.data.athlete1.winRateRight).toBe(100);
+      expect(res.body.data.athlete1.winRateLeft).toBe(0);
+      expect(res.body.data.athlete2.winRateRight).toBe(0);
+      expect(res.body.data.athlete2.winRateLeft).toBe(100);
     });
 
     it("GET /athletes/compare: supports id1 and id2 query aliases", async () => {

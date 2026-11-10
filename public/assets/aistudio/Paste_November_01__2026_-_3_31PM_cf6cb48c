@@ -1,0 +1,1012 @@
+ARMSPHERE — ADMIN CONVERGENCE PERFECTION PASS
+
+Deep Code Audit • Complete Functionality • Cross-App Integration • Data Consistency • Security • Premium UX
+
+You are continuing the development of ArmSphere.
+
+A major Admin Web → Native Flutter convergence implementation has been completed in the current AI Studio workspace and packaged in:
+
+"public/armsphere-admin-convergence-snapshot.zip"
+
+The previous implementation introduced a native five-tab Admin Workspace, granular permissions, an administrative repository, multiple administrative screens, persona switching, API integrations, and architecture documentation.
+
+However, this implementation must now undergo a much deeper engineering and product-quality pass.
+
+Your mission is to inspect what was actually implemented, identify every incomplete, inconsistent, disconnected, incorrect, or poorly integrated part, and bring the entire implementation to a genuinely complete and reliable state.
+
+This is not just a visual polishing task.
+
+This is not merely an Admin Workspace review.
+
+This is a whole-application integration and correctness task.
+
+The primary question you must continuously ask is:
+
+When an administrator performs an operation, does that operation correctly affect every relevant part of ArmSphere that depends on the information being changed?
+
+A screen is not complete simply because it displays data or has working buttons. Its functionality must be connected to the underlying domain, backend, shared state, permissions, and every relevant consumer throughout the application.
+
+Your objective is to make the administrative features genuinely operational as part of one coherent Flutter product.
+
+---
+
+1. ESTABLISH THE CORRECT SOURCE OF TRUTH
+
+Before implementing anything, inspect the actual current workspace and the supplied snapshot.
+
+The snapshot may contain a subset of changed files rather than a complete repository. Determine exactly what it contains.
+
+Inspect:
+
+- The ZIP file structure and all included files.
+- The existing Flutter application.
+- The existing administrative implementation.
+- The backend API routes and business logic.
+- The existing Admin Web implementation.
+- Existing state-management architecture and data models.
+- All relevant screens that display, consume, or modify administrative data.
+- The current implementation state and previous architectural decisions.
+
+Determine whether the snapshot and workspace represent the same code version.
+
+Do not blindly extract and overwrite files.
+
+Do not assume the implementation report is proof that everything works.
+
+Use the actual source code as the authority.
+
+Identify any discrepancies between the report, ZIP, current workspace, API contracts, and actual implementation.
+
+Preserve all valid previous work and established product decisions.
+
+Do not recreate existing functionality unnecessarily.
+
+---
+
+2. CONDUCT A REAL IMPLEMENTATION AUDIT
+
+Inspect every newly introduced and modified administrative file.
+
+At minimum, inspect the following areas:
+
+Security and authorization
+
+- "apps/mobile/lib/core/security/admin_permissions.dart"
+- "apps/mobile/lib/features/settings/screens/account_roles_screen.dart"
+- Authentication and active-role handling.
+- Route-level access restrictions.
+- Backend permission enforcement.
+
+Repository and state management
+
+- "apps/mobile/lib/core/providers/admin_provider.dart"
+- AdminRepository methods.
+- Riverpod providers and filters.
+- API request and response handling.
+- Caching and invalidation.
+- Shared domain providers used outside the admin workspace.
+
+Admin interface
+
+- "apps/mobile/lib/features/admin/widgets/admin_crystal_widgets.dart"
+- "admin_command_screen.dart"
+- "admin_roster_screen.dart"
+- "admin_arena_ops_screen.dart"
+- "admin_governance_screen.dart"
+- "admin_dossier_screen.dart"
+
+Navigation and app integration
+
+- "main_shell_screen.dart"
+- "app_router.dart"
+- Account roles and persona switching.
+- Deep links and nested navigation.
+- Existing athlete navigation.
+
+Testing
+
+- "apps/mobile/test/features/admin/admin_workspace_convergence_test.dart"
+- Existing tests for every affected feature.
+- Relevant API integration and backend tests.
+
+These are starting points, not the complete inspection scope. Follow the dependencies into the rest of the application.
+
+For every important implementation, establish:
+
+1. What it is supposed to do.
+2. What it actually does.
+3. Which backend operation it calls.
+4. Whether the request and response match the real API contract.
+5. Whether authorization is enforced.
+6. Whether state is updated correctly.
+7. Which other screens depend on the resulting data.
+8. Whether those screens receive the correct updated state.
+9. Whether the complete workflow is tested.
+
+Do not rely on method names or screen appearances as evidence of correct functionality.
+
+---
+
+3. THE MOST IMPORTANT REQUIREMENT: CROSS-APPLICATION FUNCTIONAL INTEGRATION
+
+The Admin Workspace cannot behave like a separate application whose operations only affect its own screens.
+
+All administrative operations must connect to the real shared ArmSphere domain.
+
+Create a detailed cross-application dependency map.
+
+For every administrative mutation, trace this entire chain:
+
+Administrator action → Permission validation → API request → Backend business operation → Persisted result → Shared application state → Every relevant consuming screen → Correct resulting user experience.
+
+Investigate whether the current implementation completes every link.
+
+A successful API response alone is not enough.
+
+Invalidating the admin provider alone is not enough.
+
+Displaying a success snackbar alone is not enough.
+
+The resulting information must be reflected throughout the application wherever it matters.
+
+A. Athlete identity, profile, and verification
+
+Administrative operations include:
+
+- Athlete identity verification.
+- Profile correction.
+- ELO correction.
+- Suspension.
+- Blacklisting.
+- Recovery.
+- Referee certification issuance and revocation where applicable.
+
+Trace their effects into:
+
+- Athlete profile and passport.
+- Athlete discovery.
+- Search results.
+- Rankings.
+- ELO displays and statistical summaries.
+- Athlete directories.
+- Team member lists.
+- Team administration.
+- Challenge creation and participation.
+- Tournament eligibility.
+- Match records and relevant historical displays.
+- Referee selection and certification displays.
+- Any other relevant athlete-facing feature.
+
+Examples of required correctness:
+
+- A verified athlete's status must appear consistently throughout relevant athlete experiences.
+- A profile correction must not leave an outdated profile displayed elsewhere.
+- An ELO override must update every relevant ELO presentation and use the authoritative updated value wherever the domain rules require it.
+- A suspended or blacklisted athlete must be prevented from performing operations that their status makes ineligible.
+- Recovery must restore the correct permitted state without erasing relevant history.
+- Revoked referee certification must no longer be presented as valid.
+
+Do not introduce arbitrary business rules. Derive eligibility and status transitions from the existing backend implementation and product requirements.
+
+B. Referee management and licensing
+
+Administrative operations include:
+
+- License grade management.
+- Regional coverage assignment.
+- Referee suspension.
+- Certification issuance and revocation.
+
+Trace the consequences into:
+
+- Referee profiles and credentials.
+- Referee discovery.
+- Match referee selection.
+- Competition operations.
+- Regional assignment and availability.
+- Any relevant public-facing qualification indicators.
+
+An invalid, revoked, expired, or suspended credential must not continue to be treated as valid wherever qualification matters.
+
+Regional restrictions must be respected consistently.
+
+C. Talent scouting and nominations
+
+Administrative operations include:
+
+- Reviewing scouting nominations.
+- Changing nomination status.
+- Progression through the existing nomination lifecycle.
+
+Trace the effects into relevant:
+
+- Scouting feeds.
+- Athlete and prospect dossiers.
+- Nomination records.
+- Progression history.
+- Relevant administrative queues.
+- Any existing athlete-facing status or notification experience.
+
+Ensure status transitions follow actual business rules.
+
+Do not create duplicate nominations or contradictory states.
+
+D. Matches, results, and official corrections
+
+Administrative operations include:
+
+- Official score correction.
+- Match voiding.
+- Relevant competition oversight.
+
+Trace the effects into:
+
+- Match details.
+- Athlete match histories.
+- Win/loss statistics.
+- Rankings.
+- ELO calculations and displays.
+- Team statistics.
+- Competition standings.
+- Tournament results.
+- Championship lineage and belt records.
+- Relevant public event feeds.
+- Historical analytics.
+
+This is especially important.
+
+A corrected match must not leave old results or statistics appearing in other parts of the application.
+
+A voided match must be treated consistently by every relevant feature according to the actual domain rules.
+
+Investigate whether corrections trigger the appropriate backend recalculation or whether a separate existing operation is required.
+
+Do not independently invent ELO recalculation rules.
+
+E. Championships, belts, and challenges
+
+Administrative operations include:
+
+- Creating championship titles.
+- Managing title lineage.
+- Vacating or stripping a title.
+- Approving or declining pending challenges.
+
+Trace the results into:
+
+- Championship pages.
+- Titleholder profiles.
+- Athlete records.
+- Team and competition displays where applicable.
+- Challenge screens.
+- Championship histories.
+- Match and event displays.
+- Any title-related rankings or statistics.
+
+The championship system must maintain coherent records.
+
+A belt cannot simultaneously appear vacant and held by an athlete.
+
+Challenge decisions must update the relevant challenge lifecycle and not merely disappear from an admin list.
+
+Preserve the authoritative championship rules already implemented in the backend.
+
+F. Community video moderation
+
+Administrative operations include:
+
+- Loading pending video links.
+- Approving clips.
+- Rejecting clips.
+- Moderating existing content.
+
+Trace the effects into:
+
+- Community feeds.
+- Public content discovery.
+- User submissions.
+- Content details.
+- Moderation status and history.
+
+Rejected or pending content must not accidentally appear as approved public content.
+
+Approved content should appear through the actual existing community publication flow.
+
+Do not create a second independent feed or duplicate content records.
+
+G. Partner gym verification
+
+Administrative operations include:
+
+- Reviewing gym records.
+- Verifying partner gyms.
+
+Trace the effects into:
+
+- Gym discovery.
+- Team and regional experiences.
+- Venue selection.
+- Relevant venue profiles.
+- Other features that display certification or verification.
+
+Verified status should be consistently represented.
+
+A rejected or unverified gym must not gain verified privileges simply because the administrative interface displays an updated label.
+
+H. Support helpdesk
+
+Administrative operations include:
+
+- Loading support tickets.
+- Assigning tickets.
+- Adding internal notes.
+- Resolving or changing ticket status.
+
+Trace these operations into the actual support experience and ticket lifecycle.
+
+Very important:
+
+- Staff-only notes must remain inaccessible to ticket owners and ordinary users.
+- Ticket assignment must persist.
+- Ticket status must remain consistent across agent and user interfaces.
+- Assignment and resolution must not overwrite unrelated ticket information.
+- Cached or offline data must not expose internal information.
+
+I. Audit ledger and regulatory exports
+
+Administrative operations include:
+
+- Loading audit events.
+- Inspecting event records.
+- Verifying the SHA-256 hash chain.
+- Exporting regulatory reports.
+
+Ensure the audit experience uses real backend data and the correct cryptographic verification rules.
+
+Verify that important administrative mutations generate the appropriate audit events where required.
+
+The chain inspector must not misrepresent incomplete or invalid verification as successful.
+
+Exported data must accurately represent the selected records, format, filters, and permissions.
+
+---
+
+4. CREATE A COMPLETE CROSS-APPLICATION INTEGRATION MATRIX
+
+Create or update:
+
+"ADMIN_CROSS_APP_INTEGRATION_MATRIX.md"
+
+For every administrative operation, document:
+
+Field| Requirement
+Operation| Exact admin action
+Permission| Required role/action and jurisdiction
+API| Actual backend endpoint
+Persisted data| What changes
+Source of truth| Authoritative backend model or record
+State providers| Providers that must refresh
+Admin consumers| Other relevant admin screens
+User consumers| Relevant athlete and public-facing screens
+Business effects| Eligibility, statistics, history, or workflow consequences
+Tests| Tests verifying the complete operation
+Status| Complete, partial, blocked, or not implemented
+
+Identify orphaned functionality:
+
+- Admin actions that change data but fail to update dependent screens.
+- Screens that consume outdated data.
+- Providers that are not invalidated after mutations.
+- Multiple providers representing the same domain data independently.
+- Incorrect or missing model mappings.
+- API operations that are implemented but never exposed properly.
+- Features that look complete but cannot finish their workflow.
+- Backend features with no usable Flutter integration.
+
+The objective is to remove these gaps.
+
+---
+
+5. PERMISSIONS, PERSONA SWITCHING, AND SECURITY
+
+Treat this as a critical requirement.
+
+Inspect all authorization paths.
+
+Role switching
+
+Settings → Account Roles & Persona must only allow users to switch into roles genuinely assigned to their accounts.
+
+Never grant authority through local persona switching.
+
+Check:
+
+- Authenticated user identity.
+- Actual assigned roles.
+- Active role persistence.
+- Token and authorization consistency.
+- App restart behavior.
+- Logout and account switching.
+- Role removal or permission changes.
+- Deep-link attempts.
+- Direct route access.
+
+A user who loses administrative authorization must not retain access because an old active role or cached value remains.
+
+Granular permissions
+
+Inspect every "AdminAction".
+
+Verify each administrative operation against:
+
+- Actual role.
+- Actual jurisdiction.
+- Target entity's jurisdiction.
+- Required permission.
+- Backend authorization.
+- Relevant record ownership and state.
+
+Do not trust client-side checks alone.
+
+If backend permission enforcement is missing or inconsistent, identify and address it through the established backend architecture, without weakening existing security.
+
+Sensitive information
+
+Pay special attention to:
+
+- Identity verification evidence.
+- Support internal notes.
+- Dispute evidence.
+- Referee and athlete credentials.
+- Administrative reports.
+- Audit records.
+- Cached privileged information.
+
+Verify that sensitive information is only available to authorized roles and is not accidentally exposed through logs, shared providers, ordinary user screens, cached data, or API responses.
+
+Inspect Hive caching carefully:
+
+- Appropriate protection for sensitive stored information.
+- Cache expiration.
+- Logout cleanup.
+- Account-switch isolation.
+- Active-role isolation.
+- Stale privileged data.
+- Online and offline behavior.
+- Mutation handling after network failures.
+
+Do not queue privileged mutations for later execution unless the existing architecture safely revalidates authorization and entity state at execution time.
+
+---
+
+6. DATA CONSISTENCY AND STATE MANAGEMENT
+
+Inspect how the Flutter application shares data between features.
+
+The goal is a coherent source of truth.
+
+Avoid having separate conflicting copies of athlete, match, ranking, referee, championship, venue, or support data.
+
+For every mutation, determine the correct state synchronization strategy.
+
+Use the existing application architecture appropriately:
+
+- Riverpod provider invalidation.
+- Shared repositories.
+- Correct provider dependencies.
+- Refresh of affected collections and individual records.
+- State restoration after navigation.
+- Appropriate optimistic updates, only when safe.
+- Server-authoritative reconciliation.
+
+Check both directions:
+
+Admin → User application
+
+An administrator changes a record, and relevant user-facing screens receive the correct updated state.
+
+User application → Admin
+
+A user performs an operation, and relevant administrative queues, records, dashboards, and dossiers receive the correct updated state.
+
+Examples:
+
+- A user submits a role application; authorized administrators can see the new application.
+- An athlete updates permitted profile information; the administrative dossier reflects the actual record.
+- A match completes; relevant administrative and public match records are consistent.
+- A support ticket is submitted; the helpdesk receives the correct ticket.
+- A user submits a community clip; the moderation queue can review it.
+- A nomination progresses; relevant scouting interfaces show the updated state.
+
+Do not assume that invalidating an admin-only provider refreshes the user-facing application.
+
+Trace actual shared dependencies.
+
+Check loading, refresh, error, empty, and stale-data states.
+
+Do not let a failed mutation leave the interface showing a success state or an incorrect optimistic result.
+
+---
+
+7. COMPLETE USER JOURNEYS AND EDGE CASES
+
+For every administrative module, exercise the actual workflow from beginning to end.
+
+Do not judge a screen in isolation.
+
+For example, a role application workflow should cover:
+
+Application submission → queue visibility → review → decision → persisted role assignment or rejection → appropriate account state → correct future access.
+
+An athlete verification workflow should cover:
+
+Submission → review queue → evidence inspection → authorized decision → persisted verification state → profile and related eligibility consumers.
+
+A match correction workflow should cover:
+
+Match inspection → correction validation → authorization → backend correction → recalculation where required → refreshed match records, statistics, rankings, and histories.
+
+Test meaningful edge cases, including:
+
+- Missing records.
+- Already processed records.
+- Invalid status transitions.
+- Duplicate requests.
+- Unauthorized actions.
+- Expired sessions.
+- Network failure.
+- Backend validation errors.
+- Concurrent modifications.
+- Stale cached records.
+- App restart after mutation.
+- Role switching after mutation.
+- Navigation away and back.
+- Repeated refresh.
+- Incorrect or missing related records.
+
+Provide understandable feedback.
+
+Use confirmation steps for consequential actions.
+
+Prevent accidental duplicate submissions.
+
+Never make unsupported operations appear successful.
+
+---
+
+8. FIVE-TAB ADMIN WORKSPACE — PRODUCT AND UX PERFECTION
+
+Review the existing five-tab structure:
+
+1. Command
+2. Roster
+3. Arena Ops
+4. Governance
+5. Dossier
+
+Do not redesign the entire application simply for visual novelty.
+
+Keep the established Titanium Luxe / Championship Slate visual identity, existing design tokens, Space Grotesk, JetBrains Mono, and premium visual language.
+
+Evaluate each screen for:
+
+- Clear purpose.
+- Correct hierarchy.
+- Useful information density.
+- Readability on Android phones.
+- Appropriate scrolling behavior.
+- Search and filtering.
+- Clear status indicators.
+- Meaningful actions.
+- Accessible touch targets.
+- Error prevention.
+- Loading and empty states.
+- Appropriate confirmation dialogs.
+- Responsive behavior.
+- Consistent navigation.
+- Appropriate deep links.
+- Smooth interaction and state updates.
+
+The five-tab structure should genuinely reduce administrative friction.
+
+Do not make the Command screen a decorative dashboard.
+
+Its backlog cards and operational indicators must represent real records and actual actionable work.
+
+Ensure every shortcut opens the correct screen and filter.
+
+Ensure that returning from a detail or modal preserves useful state where appropriate.
+
+Review the CrystalModalSheet and dossier interactions for completeness and usability.
+
+Avoid excessive decorative cards, redundant statistics, unnecessary glow, and overcrowded screens.
+
+A premium interface must be functional, clear, fast, and reliable—not merely attractive.
+
+---
+
+9. ROUTING AND APP-WIDE NAVIGATION
+
+Inspect the complete navigation architecture.
+
+Verify:
+
+- Admin entry points.
+- Athlete entry points.
+- Persona transitions.
+- Persistent five-tab shell behavior.
+- Deep links.
+- Authentication guards.
+- Role authorization.
+- Nested routes.
+- Back navigation.
+- Modal navigation.
+- Route restoration.
+- Screen state preservation.
+- Direct unauthorized route access.
+- App restart behavior.
+
+The Admin Workspace must integrate naturally into the existing Flutter application shell.
+
+When switching to Athlete Mode, the existing athlete navigation and experiences should be restored correctly.
+
+When switching to Admin Mode, the authorized five-tab workspace should open correctly.
+
+No broken routes, unexpected redirects, lost navigation state, duplicated screens, or incorrect persona leakage.
+
+Test real navigation sequences rather than only rendering individual widgets.
+
+---
+
+10. BACKEND AND API CONTRACT VERIFICATION
+
+Inspect every administrative repository method.
+
+Verify:
+
+- HTTP method.
+- Endpoint.
+- Authentication.
+- Request body.
+- Required fields.
+- Response parsing.
+- Nullability.
+- Error responses.
+- Pagination.
+- Filtering.
+- Status values.
+- Serialization.
+- Backend validation.
+- Authorization.
+- Persistence.
+- Side effects.
+
+Compare the Flutter implementation against the real backend route and service implementation.
+
+Do not assume that an endpoint exists just because its name appears in AdminRepository.
+
+Do not silently guess response structures.
+
+Do not use mock responses as live data.
+
+Do not add duplicate endpoints when an existing authoritative operation is available.
+
+Where the API lacks a required operation, identify the precise missing backend capability and implement it only when necessary and consistent with the existing backend architecture.
+
+Where an API exists but its result is not propagated into the rest of the app, fix the application integration.
+
+---
+
+11. TEST THE COMPLETE SYSTEM, NOT JUST THE NEW SCREENS
+
+Add or improve tests at the appropriate levels.
+
+Unit tests
+
+Test:
+
+- Permission rules.
+- Jurisdiction restrictions.
+- Business-rule transformations.
+- Status transitions.
+- Model parsing.
+- Repository request construction.
+- Error handling.
+- Data consistency logic.
+
+Widget tests
+
+Test:
+
+- Five-tab workspace.
+- Athlete/Admin navigation switching.
+- Role-aware visibility.
+- Administrative screen rendering.
+- Search and filtering.
+- Forms and validation.
+- Confirmation behavior.
+- Loading and failure states.
+- Navigation and modal behavior.
+
+Integration tests
+
+Where the environment and infrastructure allow, test complete journeys with the real application architecture and appropriate backend test environment.
+
+Prioritize cross-feature consequences.
+
+For example:
+
+- Correct an athlete's ELO and verify all relevant affected screens.
+- Suspend an athlete and verify relevant eligibility behavior.
+- Change a referee's certification and verify referee selection.
+- Correct a match and verify relevant statistics and histories.
+- Approve community content and verify the publication flow.
+- Verify a gym and verify its relevant discovery/venue presentation.
+- Assign and resolve a support ticket and verify internal-note privacy.
+
+Tests must verify actual resulting state, not just that a button was tapped or an API method was called.
+
+Do not weaken or delete tests to achieve a green result.
+
+Do not claim that tests passed unless they were actually executed successfully.
+
+If the AI Studio environment lacks Flutter SDK support, continue with static inspection and available checks, but clearly distinguish verified results from checks that must run in GitHub Actions.
+
+---
+
+12. PERFORMANCE, RELIABILITY, AND DATA HANDLING
+
+Review the implementation for practical mobile quality.
+
+Investigate:
+
+- Unnecessary provider rebuilds.
+- Excessive API calls.
+- Repeated full-list refreshes.
+- Large dossier loads.
+- Search and filter performance.
+- Pagination where required by existing APIs.
+- Caching correctness.
+- Image and evidence loading.
+- Memory and lifecycle handling.
+- Async operations after screen disposal.
+- Duplicate requests.
+- Network retry behavior.
+- Session expiration.
+- Empty and failure responses.
+
+Do not overengineer performance systems.
+
+Fix actual bottlenecks and fragile behavior found in the code.
+
+Protect sensitive data and follow existing privacy and retention rules.
+
+---
+
+13. PRESERVE EXISTING ARM­SPHERE FUNCTIONALITY
+
+The primary application must remain one coherent product.
+
+Do not break or regress:
+
+- Authentication and onboarding.
+- Athlete profiles.
+- Teams and membership.
+- Regions and geographical hierarchy.
+- Rankings and ELO.
+- Training logs.
+- Challenges.
+- Matches and match history.
+- Tournaments.
+- Superfights.
+- Championships.
+- Community feeds and media.
+- Referee experiences.
+- Other completed user-facing modules.
+
+Where administration touches these features, verify the connection rather than independently duplicating the functionality.
+
+Do not silently change core domain rules, ELO formulas, scoring, PR definitions, athlete ownership, or competition logic.
+
+Use the existing source of truth.
+
+If a rule is inconsistent or ambiguous, investigate the implementation and document the issue instead of inventing a replacement.
+
+Avoid unrelated redesigns and broad refactors.
+
+---
+
+14. IMPLEMENTATION APPROACH
+
+Do not stop at producing an audit document.
+
+Follow this process:
+
+Step 1 — Inspect
+
+Inspect the snapshot and workspace. Establish the real implementation state and identify discrepancies.
+
+Step 2 — Trace
+
+Build the administrative operation → backend → shared state → consuming screens dependency map.
+
+Step 3 — Identify
+
+Create a prioritized defect and incompleteness list, distinguishing:
+
+- Critical security problems.
+- Incorrect business behavior.
+- Broken cross-app propagation.
+- Missing backend support.
+- Incomplete workflows.
+- Navigation defects.
+- UI/UX problems.
+- Performance and reliability issues.
+- Test coverage gaps.
+
+Step 4 — Prioritize
+
+Fix security and data-integrity problems first.
+
+Then fix broken business behavior and cross-app integration.
+
+Then finish incomplete workflows.
+
+Then refine navigation, usability, and visual quality.
+
+Then strengthen testing and performance.
+
+Step 5 — Implement
+
+Work through complete vertical slices.
+
+For each one, correct the underlying implementation and its downstream effects.
+
+Do not produce a large collection of disconnected partial fixes.
+
+Step 6 — Recheck
+
+After changes, revisit the relevant dependency paths and verify that the fix has not introduced new inconsistencies.
+
+Run relevant tests and available checks.
+
+Step 7 — Report
+
+Provide a truthful, specific report of what is complete and what remains.
+
+If the scope is too large for one pass, complete the highest-priority coherent slices and preserve the remaining work in the implementation-state document. Never claim unfinished modules are complete.
+
+---
+
+15. REQUIRED QUALITY DOCUMENTATION
+
+Maintain the existing documents rather than creating unnecessary documentation duplicates.
+
+Update:
+
+- "ADMIN_CAPABILITY_MATRIX.md"
+- "ADMIN_CAPABILITY_INVENTORY.md"
+- "ADMIN_FLUTTER_EXPERIENCE_PLAN.md"
+- "ADMIN_IMPLEMENTATION_STATE.md"
+
+Create:
+
+- "ADMIN_CROSS_APP_INTEGRATION_MATRIX.md"
+- "ADMIN_PERFECTION_AUDIT_REPORT.md"
+
+The audit report should contain actual findings, their severity, affected files, root causes, changes made, and verification evidence.
+
+The integration matrix must show which consuming features were checked for every important administrative mutation.
+
+Documentation must match actual code.
+
+Do not mark something complete because it is planned, because a screen exists, or because a method has been created.
+
+---
+
+16. GIT, EXPORT, AND ENVIRONMENT RULES
+
+Do not push to GitHub.
+
+Do not merge PR #3.
+
+Do not initiate another GitHub Actions verification cycle.
+
+Do not rewrite Git history, switch branches unnecessarily, or perform destructive Git operations.
+
+Do not overwrite unrelated work.
+
+Preserve existing changes and the current workspace.
+
+The final output should include:
+
+1. The updated complete project snapshot or a clearly identified change bundle, with an explicit explanation of which one it is.
+2. The updated administrative capability and integration documents.
+3. The perfection audit report.
+4. The exact list of modified and created files.
+5. The tests and checks genuinely executed.
+6. Remaining blockers and required external verification.
+
+Do not label a partial ZIP as a complete repository export.
+
+If full-project packaging is not available, produce a correctly structured and clearly documented change bundle.
+
+---
+
+17. FINAL ACCEPTANCE CRITERIA
+
+The work should not be considered complete until these questions have been answered with evidence:
+
+Functionality
+
+- Does every implemented administrative action perform its intended backend operation?
+- Do important workflows reach their real completion state?
+- Are all required inputs validated?
+- Are errors and edge cases handled?
+
+Cross-app behavior
+
+- Does each important administrative change propagate to every relevant consuming feature?
+- Do user-generated changes also appear correctly in administrative views?
+- Are rankings, statistics, histories, eligibility, discovery, and related records consistent?
+- Does the application still show correct data after navigation, refresh, role switching, and restart?
+
+Security
+
+- Can only genuinely authorized users access privileged functionality?
+- Are jurisdiction boundaries enforced?
+- Are sensitive records protected?
+- Are internal notes and administrative evidence private?
+- Does persona switching avoid granting authority?
+
+Data integrity
+
+- Are backend records authoritative?
+- Are mutations persistent?
+- Are state transitions valid?
+- Are duplicate or conflicting states prevented?
+- Are audit records and downstream consequences correct?
+
+User experience
+
+- Are all five admin tabs intuitive and useful?
+- Do their workflows feel native to the existing ArmSphere application?
+- Are loading, empty, error, confirmation, and success experiences complete?
+- Does the UI preserve the established premium identity?
+
+Reliability
+
+- Are relevant tests present?
+- Are tests and builds honestly verified?
+- Are pre-existing user-facing features protected?
+- Are remaining limitations documented accurately?
+
+---
+
+FINAL INSTRUCTION
+
+Think beyond the individual Admin screens.
+
+Think about ArmSphere as one interconnected product.
+
+An administrative action should not merely change a record in a hidden administrative corner. Its legitimate consequences must flow through the application wherever that information is used.
+
+A corrected match must lead to consistent match history and statistics.
+
+An athlete's regulatory status must be respected by relevant athlete and competition functionality.
+
+A referee's changed credentials must affect relevant referee experiences.
+
+A championship decision must be reflected in the actual championship lifecycle.
+
+A community moderation decision must affect the actual public content.
+
+A support agent's internal notes must remain private.
+
+An administrator must have the right authority, and only the right authority, throughout the application.
+
+Do not settle for a working-looking interface. Build the complete underlying functionality and its connections.
+
+I want the best possible version of this implementation: coherent, secure, consistent, thoroughly integrated, premium in design, and genuinely functional across ArmSphere.
+
+Be critical of your own previous implementation. Find what is wrong, incomplete, disconnected, fragile, or unnecessary. Fix it carefully, verify it honestly, and leave the project in a clean, understandable state ready for the next review and integration stage.

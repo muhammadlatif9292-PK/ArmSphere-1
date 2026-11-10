@@ -83,3 +83,30 @@ export function useCreateTitle() {
     },
   });
 }
+
+export interface BeltLineageRecord {
+  id: string;
+  titleId: string;
+  athleteId: string;
+  displayName?: string;
+  acquiredAt: string;
+  vacatedAt: string | null;
+  defensesCount: number;
+  reason: string;
+}
+
+export function useTitleLineage(titleId: string | null) {
+  return useQuery<BeltLineageRecord[]>({
+    queryKey: ['admin', 'championships', 'lineage', titleId],
+    enabled: Boolean(titleId),
+    queryFn: async () => {
+      const response = await apiClient.get(`/championships/titles/${titleId}/lineage`);
+      const payload = unwrapMutationData(response);
+      if (!Array.isArray(payload)) {
+        return [];
+      }
+      return payload as BeltLineageRecord[];
+    },
+  });
+}
+

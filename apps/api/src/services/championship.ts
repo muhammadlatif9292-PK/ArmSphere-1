@@ -6,9 +6,10 @@ import {
   championshipChallenges, 
   prestigeMetrics, 
   athleteProfiles,
-  matches
+  matches,
+  users
 } from "@armsphere/db-schema";
-import { BadRequestError, NotFoundError, logger } from "@armsphere/core";
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, logger } from "@armsphere/core";
 import { RefereeCertificationService } from "./refereeCertification.js";
 
 export class ChampionshipService {
@@ -37,7 +38,7 @@ export class ChampionshipService {
   /**
    * Challenge active champion to a Title Bout
    */
-  static async submitChallenge(titleId: string, challengerId: string) {
+  static async submitChallenge(titleId: string, challengerId: string, actorId?: string) {
     const [title] = await db
       .select()
       .from(championshipTitles)
@@ -62,6 +63,38 @@ export class ChampionshipService {
       throw new NotFoundError("Challenger profile not found");
     }
 
+    if (challenger.isDeleted) {
+      throw new BadRequestError("Deleted athlete profile cannot submit a title challenge");
+    }
+
+    if (actorId) {
+      const [actorUser] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+      if (actorUser) {
+        const isDirectorOrAdmin = ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"].includes(
+          String(actorUser.role)
+        );
+        if (!isDirectorOrAdmin && challenger.userId !== actorId) {
+          throw new ForbiddenError("You can only submit a championship challenge for your own athlete profile.");
+        }
+      }
+    }
+
+    const existingChallenges = await db
+      .select()
+      .from(championshipChallenges)
+      .where(
+        and(
+          eq(championshipChallenges.titleId, titleId),
+          eq(championshipChallenges.challengerId, challengerId)
+        )
+      );
+    const activeChallenge = existingChallenges.find(
+      (c: any) => c.status === "PENDING" || c.status === "ACCEPTED"
+    );
+    if (activeChallenge) {
+      throw new ConflictError("An active challenge for this title by this challenger already exists.");
+    }
+
     const [challenge] = await db
       .insert(championshipChallenges)
       .values({
@@ -78,7 +111,11 @@ export class ChampionshipService {
   /**
    * Accepts, declines, or completes championship challenges
    */
-  static async updateChallengeStatus(challengeId: string, status: "ACCEPTED" | "DECLINED" | "COMPLETED" | "EXPIRED") {
+  static async updateChallengeStatus(
+    challengeId: string,
+    status: "ACCEPTED" | "DECLINED" | "COMPLETED" | "EXPIRED",
+    actorId?: string
+  ) {
     const [challenge] = await db
       .select()
       .from(championshipChallenges)
@@ -87,6 +124,56 @@ export class ChampionshipService {
 
     if (!challenge) {
       throw new NotFoundError("Challenge not found");
+    }
+
+    const [title] = await db
+      .select()
+      .from(championshipTitles)
+      .where(eq(championshipTitles.id, challenge.titleId))
+      .limit(1);
+
+    if (!title) {
+      throw new NotFoundError("Championship Title not found");
+    }
+
+    if (actorId) {
+      const [actorUser] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+      if (actorUser) {
+        const isDirectorOrAdmin = ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"].includes(
+          String(actorUser.role)
+        );
+        let isActiveChampion = false;
+        if (title.activeChampionId) {
+          const [champProfile] = await db
+            .select()
+            .from(athleteProfiles)
+            .where(eq(athleteProfiles.id, title.activeChampionId))
+            .limit(1);
+          isActiveChampion = !!champProfile && champProfile.userId === actorId;
+        }
+        if (!isDirectorOrAdmin && !isActiveChampion) {
+          throw new ForbiddenError(
+            "Only the active champion or a federation director/administrator may accept or decline a title challenge."
+          );
+        }
+      }
+    }
+
+    if (status === "ACCEPTED" || status === "DECLINED") {
+      if (challenge.status !== "PENDING") {
+        throw new ConflictError(
+          `Cannot transition challenge from ${challenge.status} to ${status}.`
+        );
+      }
+      if (status === "ACCEPTED" && title.activeChampionId === challenge.challengerId) {
+        throw new ConflictError("Active champion cannot accept a self-challenge.");
+      }
+    } else if (status === "COMPLETED" || status === "EXPIRED") {
+      if (challenge.status !== "ACCEPTED" && challenge.status !== "PENDING") {
+        throw new ConflictError(
+          `Cannot transition challenge from ${challenge.status} to ${status}.`
+        );
+      }
     }
 
     const [updated] = await db
@@ -121,6 +208,37 @@ export class ChampionshipService {
       throw new BadRequestError("Cannot defend a vacant title. Use crownChampion instead.");
     }
 
+    const [winnerProfile] = await db
+      .select()
+      .from(athleteProfiles)
+      .where(eq(athleteProfiles.id, winnerId))
+      .limit(1);
+    if (!winnerProfile) {
+      throw new NotFoundError("Winner athlete profile not found");
+    }
+    if (winnerProfile.isDeleted) {
+      throw new BadRequestError("Cannot crown a deleted athlete profile");
+    }
+
+    if (matchId) {
+      const [matchRecord] = await db
+        .select()
+        .from(matches)
+        .where(eq(matches.id, matchId))
+        .limit(1);
+      if (matchRecord) {
+        if (matchRecord.status === "VOID" || matchRecord.status === "VOIDED") {
+          throw new ConflictError("Cannot record a title defense from a voided match.");
+        }
+        const participants = [matchRecord.challengerId, matchRecord.opponentId];
+        if (!participants.includes(activeChampId) || !participants.includes(winnerId)) {
+          throw new BadRequestError(
+            "Both the active champion and the bout winner must be participants in the referenced match."
+          );
+        }
+      }
+    }
+
     const now = new Date();
 
     if (winnerId === activeChampId) {
@@ -152,7 +270,7 @@ export class ChampionshipService {
     } else {
       // 2. Challenger won! Crown new champion and update lineage records
       await db.transaction(async (tx) => {
-        // End former champion reign
+        // End any open champion reign on this title
         await tx
           .update(beltLineage)
           .set({
@@ -163,7 +281,6 @@ export class ChampionshipService {
           .where(
             and(
               eq(beltLineage.titleId, titleId),
-              eq(beltLineage.athleteId, activeChampId),
               isNull(beltLineage.vacatedAt)
             )
           );
@@ -185,6 +302,25 @@ export class ChampionshipService {
             updatedAt: now,
           })
           .where(eq(championshipTitles.id, titleId));
+
+        // Complete any open challenge by this challenger
+        const openChallenges = await tx
+          .select()
+          .from(championshipChallenges)
+          .where(
+            and(
+              eq(championshipChallenges.titleId, titleId),
+              eq(championshipChallenges.challengerId, winnerId)
+            )
+          );
+        for (const ch of openChallenges) {
+          if (ch.status === "ACCEPTED" || ch.status === "PENDING") {
+            await tx
+              .update(championshipChallenges)
+              .set({ status: "COMPLETED", updatedAt: now })
+              .where(eq(championshipChallenges.id, ch.id));
+          }
+        }
       });
 
       logger.info({ titleId, formerChamp: activeChampId, newChamp: winnerId }, "Title transferred to challenger after bout victory");

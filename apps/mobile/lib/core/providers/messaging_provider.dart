@@ -8,6 +8,7 @@ class ConversationsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dy
 
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(messagingRepositoryProvider);
 
     _pollingTimer?.cancel();
@@ -78,6 +79,7 @@ class MessageThreadNotifier extends AutoDisposeFamilyAsyncNotifier<List<Map<Stri
 
   @override
   Future<List<Map<String, dynamic>>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(messagingRepositoryProvider);
     try {
       await repo.markConversationAsRead(arg);

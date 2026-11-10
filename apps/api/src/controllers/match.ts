@@ -11,6 +11,7 @@ const submitMatchSchema = z.object({
   winnerId: z.string().uuid("Winner ID must be a valid UUID"),
   scoreLine: z.string().min(3, "Score line must be at least 3 characters"),
   evidenceUrl: z.string().url("Evidence URL must be a valid URL").optional(),
+  province: z.string().min(1).optional(),
 });
 
 const disputeMatchSchema = z.object({

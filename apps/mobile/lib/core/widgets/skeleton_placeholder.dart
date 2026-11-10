@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'pulse_indicator.dart';
 
-/// Standardized Shimmer Skeleton Loader
+/// Minimal Floating Gold Pulse Loading Indicator
 ///
-/// Upgraded to Canonical Stage 2 Specification (Slice 9 / [P1-04] / Debt 77):
-/// - Base color: #121826 (AppTheme.cardSurface).
-/// - Highlight color: #1E293B (AppTheme.elevatedSurface).
-/// - Linear gradient locked at 15-degree sweep angle.
-/// - Preset constructors for cards, text lines, avatars, and list tiles.
-class SkeletonPlaceholder extends StatefulWidget {
+/// Replaces solid dark-grey rectangular skeleton boxes so the 9:16 stage
+/// artwork remains completely unobstructed while data loads.
+class SkeletonPlaceholder extends StatelessWidget {
   final double? width;
   final double? height;
   final double borderRadius;
@@ -50,67 +48,66 @@ class SkeletonPlaceholder extends StatefulWidget {
   }) : shape = BoxShape.rectangle;
 
   @override
-  State<SkeletonPlaceholder> createState() => _SkeletonPlaceholderState();
-}
+  Widget build(BuildContext context) {
+    final effectiveHeight = height ?? 36.0;
+    // For tiny text-line placeholders, render nothing so only primary loaders pulse cleanly
+    if (effectiveHeight < 28.0) {
+      return const SizedBox.shrink();
+    }
 
-class _SkeletonPlaceholderState extends State<SkeletonPlaceholder>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _gradientAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat();
-    _gradientAnimation = Tween<double>(begin: -1.5, end: 1.5).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    return Semantics(
+      label: semanticLabel ?? 'Loading content',
+      child: SizedBox(
+        width: width,
+        height: effectiveHeight.clamp(36.0, 72.0),
+        child: const Center(
+          child: PulseIndicator(
+            color: AppTheme.goldPrimary,
+            size: 10.0,
+          ),
+        ),
+      ),
     );
   }
+}
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+
+/// Compatibility Loading View using the minimal floating gold pulse
+class CrystalScreenLoadingView extends StatelessWidget {
+  final String? message;
+  final int itemCount;
+  final double cardHeight;
+  final String? semanticLabel;
+  final EdgeInsetsGeometry? padding;
+
+  const CrystalScreenLoadingView({
+    super.key,
+    this.message,
+    this.itemCount = 3,
+    this.cardHeight = 100.0,
+    this.semanticLabel,
+    this.padding,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: widget.semanticLabel ?? 'Loading content placeholder',
-      child: AnimatedBuilder(
-        animation: _gradientAnimation,
-        builder: (context, child) {
-          final progress = ((_gradientAnimation.value + 1.5) / 3.0).clamp(0.0, 1.0);
-
-          return Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              shape: widget.shape,
-              borderRadius: widget.shape == BoxShape.circle
-                  ? null
-                  : BorderRadius.circular(widget.borderRadius),
-              // 15-degree sweep angle: Alignment(-1.0, -0.27) to Alignment(1.0, 0.27)
-              gradient: LinearGradient(
-                begin: const Alignment(-1.0, -0.27),
-                end: const Alignment(1.0, 0.27),
-                colors: const [
-                  AppTheme.cardSurface,      // #121826 Base
-                  AppTheme.elevatedSurface,  // #1E293B Highlight
-                  AppTheme.cardSurface,      // #121826 Base
-                ],
-                stops: [
-                  (progress - 0.3).clamp(0.0, 1.0),
-                  progress,
-                  (progress + 0.3).clamp(0.0, 1.0),
-                ],
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const PulseIndicator(color: AppTheme.goldPrimary, size: 16.0),
+          if (message != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              message!,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontBody,
+                fontSize: 12,
+                color: AppTheme.textSecondary,
               ),
             ),
-          );
-        },
+          ],
+        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/dependency_providers.dart';
+import '../../../core/security/admin_permissions.dart';
 import '../../../core/storage/hive_storage.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/notifications/push_notification_manager.dart';
@@ -166,18 +167,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   List<String> _extractVerifiedRoles(Map<String, dynamic>? profile) {
     if (profile == null) return const [];
     if (profile['verifiedRoles'] is List) {
-      final roles = (profile['verifiedRoles'] as List).map((e) => e.toString()).toList();
-      if (roles.contains('SYSTEM_ADMIN') || profile['role'] == 'SYSTEM_ADMIN') {
-        return ['ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR', 'SYSTEM_ADMIN'];
+      final roles = (profile['verifiedRoles'] as List)
+          .map((e) => e.toString().toUpperCase())
+          .toSet();
+      // Ensure ATHLETE is always recognized if user has an active athlete profile
+      if (profile['isOnboarded'] == true || profile['profile'] != null) {
+        roles.add('ATHLETE');
       }
-      return roles;
+      return roles.toList();
     }
-    final primaryRole = profile['role']?.toString();
+    final primaryRole = profile['role']?.toString().toUpperCase();
     if (primaryRole != null && primaryRole.isNotEmpty) {
-      if (primaryRole == 'SYSTEM_ADMIN') {
-        return ['ATHLETE', 'REFEREE', 'TOURNAMENT_OPERATOR', 'SYSTEM_ADMIN'];
+      final roles = <String>{primaryRole};
+      if (profile['roleGrants'] is List) {
+        final granted = (profile['roleGrants'] as List)
+            .whereType<Map>()
+            .where((g) => g['isActive'] != false && g['role'] != null)
+            .map((g) => g['role'].toString().toUpperCase());
+        roles.addAll(granted);
       }
-      return [primaryRole];
+      if (profile['isOnboarded'] == true || profile['profile'] != null) {
+        roles.add('ATHLETE');
+      }
+      return roles.toList();
     }
     return const ['ATHLETE'];
   }
@@ -536,6 +548,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await hiveStorage.evictCache('auth_session_user');
         await hiveStorage.evictCache('auth_role_intent');
         await hiveStorage.evictCache('auth_active_role');
+        await hiveStorage.evictByPrefix('admin_');
+        await hiveStorage.evictByPrefix('support_');
       } catch (_) {}
 
       state = AuthState(status: AuthStatus.unauthenticated);
@@ -567,24 +581,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await hiveStorage.evictCache('auth_session_user');
         await hiveStorage.evictCache('auth_role_intent');
         await hiveStorage.evictCache('auth_active_role');
+        await hiveStorage.evictByPrefix('admin_');
+        await hiveStorage.evictByPrefix('support_');
       } catch (_) {}
 
       state = AuthState(status: AuthStatus.unauthenticated);
     }
   }
 
-  /// Switches the client presentation persona to another verified role.
+  /// Switches the client presentation persona to another verified role (or baseline ATHLETE).
   /// Server authorization never trusts activeRole; permissions remain server-authoritative.
   Future<void> switchActiveRole(String newRole) async {
-    if (!state.verifiedRoles.contains(newRole)) {
+    final normalized = newRole.trim().toUpperCase();
+    final bool isEligibleAthlete = normalized == 'ATHLETE' &&
+        (state.verifiedRoles.contains('ATHLETE') ||
+            state.userProfile?['isOnboarded'] == true ||
+            state.userProfile?['profile'] != null);
+
+    if (!isEligibleAthlete && !state.verifiedRoles.contains(normalized)) {
       throw Exception('Role $newRole is not verified for this account.');
     }
+
     try {
       final hiveStorage = ref.read(hiveStorageProvider);
-      await hiveStorage.cacheData('auth_active_role', {'activeRole': newRole});
+      await hiveStorage.cacheData('auth_active_role', {'activeRole': normalized});
+      // Evict privileged admin and support cache when switching away from admin workspace
+      if (!AdminPermissions.isAdminWorkspaceRole(normalized)) {
+        await hiveStorage.evictByPrefix('admin_');
+        await hiveStorage.evictByPrefix('support_');
+      }
     } catch (_) {}
 
-    state = state.copyWith(activeRole: newRole);
+    final updatedVerified = state.verifiedRoles.contains(normalized)
+        ? state.verifiedRoles
+        : (isEligibleAthlete
+            ? <String>['ATHLETE', ...state.verifiedRoles]
+            : state.verifiedRoles);
+
+    state = state.copyWith(
+      activeRole: normalized,
+      verifiedRoles: updatedVerified,
+    );
   }
 
   /// Refreshes verified roles and pending applications from the backend.
@@ -593,7 +630,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final repo = ref.read(authRepositoryProvider);
       final rolesData = await repo.getUserRoles();
       final verified = (rolesData['verifiedRoles'] as List?)
-              ?.map((e) => e.toString())
+              ?.map((e) => e.toString().toUpperCase())
               .toList() ??
           state.verifiedRoles;
       final pending = (rolesData['pendingApplications'] as List?)
@@ -604,6 +641,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final hiveStorage = ref.read(hiveStorageProvider);
       final cachedRole = _readActiveRole(hiveStorage);
+
+      // If active role is no longer verified, safely demote
       final currentActive = _resolveActiveRoleOnLaunch(
         verified,
         state.activeRole ?? cachedRole,
@@ -611,6 +650,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (currentActive != cachedRole) {
         await hiveStorage.cacheData('auth_active_role', {'activeRole': currentActive});
+      }
+
+      // If active role was demoted from admin, clear privileged cache
+      if (AdminPermissions.isAdminWorkspaceRole(state.activeRole) &&
+          !AdminPermissions.isAdminWorkspaceRole(currentActive)) {
+        await hiveStorage.evictByPrefix('admin_');
+        await hiveStorage.evictByPrefix('support_');
       }
 
       state = state.copyWith(

@@ -18,12 +18,30 @@ const createTeamSchema = z.object({
   clubId: z.string().uuid("Invalid club ID format").optional(),
 });
 
+const updateTeamSchema = z.object({
+  name: z.string().min(2, "Team name must be at least 2 characters").optional(),
+  description: z.string().nullable().optional(),
+  foundedAt: z.string().nullable().optional(),
+  clubId: z.string().uuid("Invalid club ID format").nullable().optional(),
+});
+
 const addMemberSchema = z.object({
   athleteId: z.string().uuid("Invalid athlete ID format"),
   role: z.enum(["MEMBER", "CAPTAIN"]).default("MEMBER"),
 });
 
+const updateMemberRoleSchema = z.object({
+  role: z.enum(["MEMBER", "CAPTAIN"]),
+});
+
 const paginationSchema = z.object({
+  limit: z.coerce.number().int().positive().default(50),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+
+const listTeamsQuerySchema = z.object({
+  search: z.string().optional(),
+  clubId: z.string().uuid().optional(),
   limit: z.coerce.number().int().positive().default(50),
   offset: z.coerce.number().int().nonnegative().default(0),
 });
@@ -148,6 +166,82 @@ export class SocialController {
   }
 
   /**
+   * List all teams (directory search & club filter)
+   */
+  static async listTeams(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filters = listTeamsQuerySchema.parse(req.query);
+      const teamsList = await SocialService.listTeams(filters);
+
+      res.status(200).json({
+        success: true,
+        data: teamsList,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update team metadata (captain or admin)
+   */
+  static async updateTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const teamId = req.params.teamId;
+      const validated = updateTeamSchema.parse(req.body);
+
+      let callerAthleteId: string | undefined = undefined;
+      try {
+        callerAthleteId = await SocialController.getAthleteProfileIdForUser(req.user!.id);
+      } catch (e) {
+        // Ignore if admin without athlete profile
+      }
+
+      const updated = await SocialService.updateTeam(teamId, validated, {
+        id: req.user!.id,
+        role: req.user!.role,
+        athleteId: callerAthleteId,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Delete a team (captain or admin)
+   */
+  static async deleteTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const teamId = req.params.teamId;
+
+      let callerAthleteId: string | undefined = undefined;
+      try {
+        callerAthleteId = await SocialController.getAthleteProfileIdForUser(req.user!.id);
+      } catch (e) {
+        // Ignore if admin without athlete profile
+      }
+
+      const deleted = await SocialService.deleteTeam(teamId, {
+        id: req.user!.id,
+        role: req.user!.role,
+        athleteId: callerAthleteId,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: deleted,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Add member to a team
    */
   static async addTeamMember(req: Request, res: Response, next: NextFunction) {
@@ -209,6 +303,60 @@ export class SocialController {
       res.status(200).json({
         success: true,
         data: removed,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update member role on a team (MEMBER <-> CAPTAIN)
+   */
+  static async updateTeamMemberRole(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId, athleteId } = req.params;
+      const validated = updateMemberRoleSchema.parse(req.body);
+
+      let callerAthleteId: string | undefined = undefined;
+      try {
+        callerAthleteId = await SocialController.getAthleteProfileIdForUser(req.user!.id);
+      } catch (e) {
+        // Ignore if admin without athlete profile
+      }
+
+      const updated = await SocialService.updateTeamMemberRole(
+        teamId,
+        athleteId,
+        validated.role,
+        {
+          id: req.user!.id,
+          role: req.user!.role,
+          athleteId: callerAthleteId,
+        }
+      );
+
+      res.status(200).json({
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Leave a team as the authenticated athlete
+   */
+  static async leaveTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId } = req.params;
+      const athleteId = await SocialController.getAthleteProfileIdForUser(req.user!.id);
+
+      const deleted = await SocialService.leaveTeam(teamId, athleteId);
+
+      res.status(200).json({
+        success: true,
+        data: deleted,
       });
     } catch (error) {
       next(error);

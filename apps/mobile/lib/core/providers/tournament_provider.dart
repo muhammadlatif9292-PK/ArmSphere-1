@@ -5,6 +5,7 @@ import '../../features/auth/providers/auth_provider.dart';
 class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(tournamentRepositoryProvider);
     return repo.getTournaments();
   }

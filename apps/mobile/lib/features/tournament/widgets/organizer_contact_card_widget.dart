@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class OrganizerContactCardWidget extends StatelessWidget {
   final Map<String, dynamic> tournament;
 
@@ -245,7 +246,7 @@ class OrganizerContactCardWidget extends StatelessWidget {
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    CrystalSnackBar(
                       content: Text('✓ Copied email: $email'),
                       backgroundColor: const Color(0xFF00E5FF),
                       duration: const Duration(seconds: 2),
@@ -266,7 +267,7 @@ class OrganizerContactCardWidget extends StatelessWidget {
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    CrystalSnackBar(
                       content: Text('📞 Dialing official organizer phone: $phone'),
                       backgroundColor: const Color(0xFF00E676),
                       duration: const Duration(seconds: 2),
@@ -287,7 +288,7 @@ class OrganizerContactCardWidget extends StatelessWidget {
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    CrystalSnackBar(
                       content: Text('🌐 Opening official portal: $website'),
                       backgroundColor: AppTheme.goldPrimary,
                       duration: const Duration(seconds: 2),

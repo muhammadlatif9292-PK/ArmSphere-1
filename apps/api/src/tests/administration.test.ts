@@ -408,4 +408,62 @@ describe("Sprint 9 - Administration & Operations Center Integration Suite", () =
       expect(res.text).toContain("Federation Report");
     });
   });
+
+  describe("7. Disputes & Sanctions Center Contract Reconciliation", () => {
+    it("enriches /admin/disputes with attached evidence records and preserves REJECTED status on rejection", async () => {
+      const disputeId = "dddddddd-1111-1111-1111-111111111111";
+      testDbStore.disputes.push({
+        id: disputeId,
+        matchId: null,
+        creatorId: athleteId,
+        title: "Dispute with Evidence",
+        description: "Checking evidence enrichment and REJECTED state.",
+        status: "OPEN",
+        province: "Punjab",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      testDbStore.disputeEvidence.push({
+        id: "eeeeeeee-1111-1111-1111-111111111111",
+        disputeId,
+        submitterId: athleteId,
+        fileUrl: "https://cdn.armsphere.org/evidence/clip1.mp4",
+        fileType: "VIDEO",
+        sha256Hash: "a".repeat(64),
+        virusScanned: true,
+        virusScanResult: "CLEAN",
+        createdAt: new Date(),
+      });
+
+      const listRes = await request(app)
+        .get("/admin/disputes")
+        .set("Authorization", adminToken);
+
+      expect(listRes.status).toBe(200);
+      expect(listRes.body.data).toHaveLength(1);
+      expect(listRes.body.data[0].evidence).toHaveLength(1);
+      expect(listRes.body.data[0].evidence[0].fileUrl).toBe("https://cdn.armsphere.org/evidence/clip1.mp4");
+
+      const rejectRes = await request(app)
+        .post(`/admin/disputes/${disputeId}/resolve`)
+        .set("Authorization", complianceToken)
+        .send({
+          decision: "REJECTED",
+          resolutionDetails: "Insufficient video angle to overturn referee call.",
+        });
+
+      expect(rejectRes.status).toBe(200);
+      expect(testDbStore.disputes[0].status).toBe("REJECTED");
+
+      // Compliance Officer can then close the REJECTED dispute
+      const closeRes = await request(app)
+        .post(`/governance/disputes/${disputeId}/close`)
+        .set("Authorization", complianceToken)
+        .send({ closureNotes: "Finalized after review window" });
+
+      expect(closeRes.status).toBe(200);
+      expect(testDbStore.disputes[0].status).toBe("CLOSED");
+    });
+  });
 });
+

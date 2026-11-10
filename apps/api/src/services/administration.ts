@@ -19,7 +19,7 @@ import {
   refereeCertifications,
   userRoleGrants
 } from "@armsphere/db-schema";
-import { BadRequestError, ForbiddenError, NotFoundError, logger } from "@armsphere/core";
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, logger } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 import { scheduleJob, SCHEDULED_JOB_TYPES, processedJobsTracker } from "./scheduledJobs.js";
 import { MatchService } from "./match.js";
@@ -71,9 +71,20 @@ export class AdministrationService {
       disputed: allMatches.filter(m => m.status === "DISPUTED").length,
     };
 
-    // Verification backlog
+    // Verification backlog (include both explicit PENDING rows and profiles not yet verified/rejected)
     const verifications = await db.select().from(athleteVerifications);
-    const pendingVerifications = verifications.filter(v => v.status === "PENDING").length;
+    const decidedAthleteIds = new Set(
+      verifications
+        .filter(v => v.status === "VERIFIED" || v.status === "REJECTED")
+        .map(v => v.athleteId)
+    );
+    const unverifiedProfilesCount = allProfiles.filter(
+      p => !decidedAthleteIds.has(p.userId)
+    ).length;
+    const pendingVerifications = Math.max(
+      verifications.filter(v => v.status === "PENDING").length,
+      unverifiedProfilesCount
+    );
 
     // Dispute breakdown
     const disputeStats = {
@@ -101,6 +112,10 @@ export class AdministrationService {
           totalDisputes,
           activeChampionships,
         },
+        pendingVerifications,
+        openDisputes: disputeStats.open,
+        totalAthletes,
+        totalMatches,
         athleteGrowth: formattedGrowth,
         matchStats,
         verificationBacklog: pendingVerifications,
@@ -173,7 +188,16 @@ export class AdministrationService {
     }
 
     if (filters.status) {
-      list = list.filter(item => item.verificationStatus === filters.status);
+      const targetStatus = filters.status.toUpperCase();
+      if (targetStatus === "PENDING") {
+        list = list.filter(
+          item =>
+            item.verificationStatus === "PENDING" ||
+            item.verificationStatus === "UNVERIFIED"
+        );
+      } else {
+        list = list.filter(item => item.verificationStatus === targetStatus);
+      }
     }
 
     if (effectiveProvince) {
@@ -632,6 +656,10 @@ export class AdministrationService {
       // deletes the superseded ledger rows) if it was previously verified,
       // then re-verify with the corrected winner (which correctly reapplies
       // ELO from scratch with real locking).
+      if (winnerId !== matchRecord.challengerId && winnerId !== matchRecord.opponentId) {
+        throw new BadRequestError("Corrected winner must be one of the match participants");
+      }
+
       const wasVerified = matchRecord.status === "VERIFIED";
 
       if (wasVerified) {
@@ -640,7 +668,7 @@ export class AdministrationService {
 
       await db
         .update(matches)
-        .set({ winnerId, scoreLine, updatedAt: new Date() })
+        .set({ winnerId, scoreLine, status: "PENDING_VERIFICATION", updatedAt: new Date() })
         .where(eq(matches.id, matchId));
 
       await MatchService.verifyMatch(matchId, reviewerId);
@@ -648,6 +676,9 @@ export class AdministrationService {
       const [tMatch] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId));
       if (!tMatch) {
         throw new NotFoundError("Match not found in standard or tournament registries");
+      }
+      if (winnerId !== tMatch.athleteAId && winnerId !== tMatch.athleteBId) {
+        throw new BadRequestError("Corrected winner must be one of the match participants");
       }
       // Tournament matches are not currently evidenced anywhere in this
       // repository as feeding the same ELO ledger/rating system standard
@@ -675,7 +706,8 @@ export class AdministrationService {
 
     const [matchRecord] = await db.select().from(matches).where(eq(matches.id, matchId));
     if (matchRecord) {
-      await db.update(matches).set({ status: "VOID", updatedAt: new Date() }).where(eq(matches.id, matchId));
+      await MatchService.voidMatch(matchId, reviewerId, reason || "Voided by administration");
+      return { success: true };
     } else {
       const [tMatch] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, matchId));
       if (!tMatch) {
@@ -732,27 +764,48 @@ export class AdministrationService {
       throw new NotFoundError("Championship title belt not found");
     }
 
+    const now = new Date();
     if (action === "VACATE") {
-      await db.update(championshipTitles).set({ activeChampionId: null, updatedAt: new Date() }).where(eq(championshipTitles.id, titleId));
-      
-      await db.insert(beltLineage).values({
-        titleId,
-        athleteId: title.activeChampionId!,
-        acquiredAt: new Date(),
-        vacatedAt: new Date(),
-        reason: "VACATED",
-      });
+      if (!title.activeChampionId) {
+        throw new ConflictError("Championship title is already vacant");
+      }
+      await db
+        .update(beltLineage)
+        .set({ vacatedAt: now, reason: "VACATED", updatedAt: now })
+        .where(and(eq(beltLineage.titleId, titleId), isNull(beltLineage.vacatedAt)));
+
+      await db
+        .update(championshipTitles)
+        .set({ activeChampionId: null, updatedAt: now })
+        .where(eq(championshipTitles.id, titleId));
     } else if (action === "ASSIGN") {
       if (!data.athleteId) {
         throw new BadRequestError("Athlete ID is required for assignment");
       }
-      await db.update(championshipTitles).set({ activeChampionId: data.athleteId, updatedAt: new Date() }).where(eq(championshipTitles.id, titleId));
+      const [athlete] = await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, data.athleteId)).limit(1);
+      if (!athlete || athlete.isDeleted) {
+        throw new NotFoundError("Athlete profile not found");
+      }
+      if (title.activeChampionId === data.athleteId) {
+        throw new ConflictError("Athlete is already the active champion for this title");
+      }
+
+      await db
+        .update(beltLineage)
+        .set({ vacatedAt: now, reason: "VACATED", updatedAt: now })
+        .where(and(eq(beltLineage.titleId, titleId), isNull(beltLineage.vacatedAt)));
+
+      await db
+        .update(championshipTitles)
+        .set({ activeChampionId: data.athleteId, updatedAt: now })
+        .where(eq(championshipTitles.id, titleId));
 
       await db.insert(beltLineage).values({
         titleId,
         athleteId: data.athleteId,
-        acquiredAt: new Date(),
+        acquiredAt: now,
         reason: "DEFENSE",
+        defensesCount: 0,
       });
     } else if (action === "RECALCULATE") {
       // Trigger Prestige Recalculation Worker
@@ -773,7 +826,18 @@ export class AdministrationService {
    * 7. Disputes & Sanctions Center
    */
   static async getDisputesTimeline() {
-    return db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    const rows = await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    const allEvidence = await db.select().from(disputeEvidence);
+    const evidenceByDisputeId = new Map<string, any[]>();
+    for (const ev of allEvidence) {
+      const list = evidenceByDisputeId.get(ev.disputeId) ?? [];
+      list.push(ev);
+      evidenceByDisputeId.set(ev.disputeId, list);
+    }
+    return rows.map((row: any) => ({
+      ...row,
+      evidence: evidenceByDisputeId.get(row.id) ?? [],
+    }));
   }
 
   static async resolveDisputeCase(disputeId: string, resolutionDetails: string, decision: "RESOLVED" | "REJECTED", reviewerId: string) {
@@ -784,10 +848,27 @@ export class AdministrationService {
       throw new NotFoundError("Dispute not found");
     }
 
+    if (dispute.status === "RESOLVED" || dispute.status === "REJECTED" || dispute.status === "CLOSED") {
+      throw new ConflictError("Dispute has already been resolved");
+    }
+
+    const [reviewer] = await db.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+    if (reviewer && (reviewer as any).role === "PROVINCIAL_DIRECTOR" && dispute.province) {
+      const reviewerJurisdiction =
+        ((reviewer as any).province as string | null | undefined) ??
+        ((reviewer as any).regionalCoverage as string | null | undefined) ??
+        null;
+      if (!reviewerJurisdiction || dispute.province.trim().toLowerCase() !== reviewerJurisdiction.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial Director can only resolve disputes in their assigned province (${reviewerJurisdiction || "unassigned"})`
+        );
+      }
+    }
+
     await db
       .update(disputes)
       .set({
-        status: decision === "RESOLVED" ? "RESOLVED" : "CLOSED",
+        status: decision,
         resolutionDetails,
         assignedReviewerId: reviewerId,
         updatedAt: new Date(),
@@ -834,15 +915,47 @@ export class AdministrationService {
         };
       }
 
-      // 2. Recompute hash
-      const payloadString = event.payload ? JSON.stringify(event.payload) : "";
-      const inputStr = `${event.parentHash}|${event.eventId}|${event.actorId || "SYSTEM"}|${event.entityType}|${event.entityId}|${event.action}|${payloadString}`;
-      const recalculatedHash = crypto
-        .createHash("sha256")
-        .update(inputStr)
-        .digest("hex");
+      // 2. Recompute hash (accept canonical 8-field format, legacy 7-field format, and Postgres jsonb key-order permutations)
+      const payloadString = event.payload ? JSON.stringify(event.payload) : "{}";
+      const createdAtStr = event.createdAt ? new Date(event.createdAt).toISOString() : "";
+      const actorStr = event.actorId || "SYSTEM";
 
-      if (event.eventHash !== recalculatedHash) {
+      const candidatePayloads = new Set<string>([payloadString]);
+      if (event.payload && typeof event.payload === "object" && !Array.isArray(event.payload)) {
+        const rawObj = event.payload as Record<string, unknown>;
+        const sortedKeys = Object.keys(rawObj).sort();
+        const sortedObj: Record<string, unknown> = {};
+        for (const k of sortedKeys) sortedObj[k] = rawObj[k];
+        candidatePayloads.add(JSON.stringify(sortedObj));
+
+        // Known insertion key orders prior to Postgres jsonb normalization
+        const knownKeyOrders = [
+          ["ipAddress", "city", "userAgent", "deviceFingerprint"],
+          ["previousIp", "currentIp", "previousCity", "currentCity", "distanceKm", "timeDifferenceHours", "velocityKmh"],
+          ["currentActiveSessions", "ipAddress"],
+        ];
+        for (const order of knownKeyOrders) {
+          if (order.length === sortedKeys.length && order.every(k => Object.prototype.hasOwnProperty.call(rawObj, k))) {
+            const ordered: Record<string, unknown> = {};
+            for (const k of order) ordered[k] = rawObj[k];
+            candidatePayloads.add(JSON.stringify(ordered));
+          }
+        }
+      }
+
+      let hashMatched = false;
+      for (const pStr of candidatePayloads) {
+        const inputStr8 = `${event.parentHash}|${event.eventId}|${actorStr}|${event.entityType}|${event.entityId}|${event.action}|${pStr}|${createdAtStr}`;
+        const recalculatedHash8 = crypto.createHash("sha256").update(inputStr8).digest("hex");
+        const inputStr7 = `${event.parentHash}|${event.eventId}|${actorStr}|${event.entityType}|${event.entityId}|${event.action}|${event.payload ? pStr : ""}`;
+        const recalculatedHash7 = crypto.createHash("sha256").update(inputStr7).digest("hex");
+        if (event.eventHash === recalculatedHash8 || event.eventHash === recalculatedHash7) {
+          hashMatched = true;
+          break;
+        }
+      }
+
+      if (!hashMatched) {
         return {
           isValid: false,
           tamperedEventId: event.id,

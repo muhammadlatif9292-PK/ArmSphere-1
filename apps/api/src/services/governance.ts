@@ -8,6 +8,8 @@ import {
   auditEvents,
   users,
   tournamentMatches,
+  matches,
+  events,
   athleteProfiles,
   eloLedger,
   brackets
@@ -57,6 +59,7 @@ export class GovernanceService {
       "SUPPORT_AGENT",
       "REFEREE",
     ];
+    let rows: any[];
     if (
       requester &&
       requester.role &&
@@ -64,23 +67,38 @@ export class GovernanceService {
     ) {
       // PROVINCIAL_DIRECTOR only sees disputes from their province
       if (requester.role === "PROVINCIAL_DIRECTOR" && requester.province) {
-        return await db
+        rows = await db
           .select()
           .from(disputes)
           .where(eq(disputes.province, requester.province))
           .orderBy(desc(disputes.createdAt));
+      } else {
+        // Other privileged roles see all disputes
+        rows = await db.select().from(disputes).orderBy(desc(disputes.createdAt));
       }
-      // Other privileged roles see all disputes
-      return await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+    } else {
+      if (!requester) {
+        throw new ForbiddenError("Requester context is required to list disputes.");
+      }
+      rows = await db
+        .select()
+        .from(disputes)
+        .where(eq(disputes.creatorId, requester.id))
+        .orderBy(desc(disputes.createdAt));
     }
-    if (!requester) {
-      throw new ForbiddenError("Requester context is required to list disputes.");
+
+    const allEvidence = (await db.select().from(disputeEvidence)) as any[];
+    const evidenceByDisputeId = new Map<string, any[]>();
+    for (const ev of allEvidence) {
+      const list = evidenceByDisputeId.get(ev.disputeId) ?? [];
+      list.push(ev);
+      evidenceByDisputeId.set(ev.disputeId, list);
     }
-    return await db
-      .select()
-      .from(disputes)
-      .where(eq(disputes.creatorId, requester.id))
-      .orderBy(desc(disputes.createdAt));
+
+    return rows.map((row: any) => ({
+      ...row,
+      evidence: evidenceByDisputeId.get(row.id) ?? [],
+    }));
   }
 
   /**
@@ -211,6 +229,122 @@ export class GovernanceService {
     title: string,
     description: string
   ): Promise<any> {
+    const [creatorUser] = await db.select().from(users).where(eq(users.id, creatorId)).limit(1);
+    if (!creatorUser) {
+      throw new NotFoundError("Dispute creator not found");
+    }
+    if ((creatorUser as any).isActive === false) {
+      throw new ForbiddenError("Account is inactive");
+    }
+
+    const [creatorProfile] = await db
+      .select()
+      .from(athleteProfiles)
+      .where(eq(athleteProfiles.userId, creatorId))
+      .limit(1);
+
+    const creatorRole = (creatorUser as any).role as string;
+    const creatorJurisdiction =
+      ((creatorUser as any).province as string | null | undefined) ??
+      ((creatorUser as any).regionalCoverage as string | null | undefined) ??
+      null;
+    const isUniversalOfficial = ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "COMPLIANCE_OFFICER"].includes(creatorRole);
+
+    let resolvedMatchProvince: string | null = null;
+
+    if (matchId) {
+      const [tMatch] = await db
+        .select()
+        .from(tournamentMatches)
+        .where(eq(tournamentMatches.id, matchId))
+        .limit(1);
+
+      if (tMatch) {
+        let parentEvent: any = null;
+        if (tMatch.bracketId) {
+          const [bracket] = await db.select().from(brackets).where(eq(brackets.id, tMatch.bracketId)).limit(1);
+          if (bracket?.eventId) {
+            const [ev] = await db.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+            parentEvent = ev ?? null;
+          }
+        }
+        resolvedMatchProvince = (tMatch as any).province ?? parentEvent?.province ?? null;
+
+        const isParticipant =
+          !!creatorProfile && (creatorProfile.id === tMatch.athleteAId || creatorProfile.id === tMatch.athleteBId);
+        const isAssignedReferee = tMatch.refereeId === creatorId;
+        const isEventOrganizer = !!parentEvent && parentEvent.organizerId === creatorId;
+        const isScopedProvincialDirector =
+          creatorRole === "PROVINCIAL_DIRECTOR" &&
+          (!resolvedMatchProvince ||
+            (!!creatorJurisdiction &&
+              creatorJurisdiction.trim().toLowerCase() === resolvedMatchProvince.trim().toLowerCase()));
+
+        if (
+          !isParticipant &&
+          !isAssignedReferee &&
+          !isEventOrganizer &&
+          !isUniversalOfficial &&
+          !isScopedProvincialDirector
+        ) {
+          throw new ForbiddenError(
+            "Only a match participant, the assigned referee, event organizer, or an authorized federation official may file a dispute on this match."
+          );
+        }
+      } else {
+        const [regularMatch] = await db
+          .select()
+          .from(matches)
+          .where(eq(matches.id, matchId))
+          .limit(1);
+
+        if (regularMatch) {
+          const [challenger] = await db
+            .select({ province: athleteProfiles.province })
+            .from(athleteProfiles)
+            .where(eq(athleteProfiles.id, regularMatch.challengerId))
+            .limit(1);
+          resolvedMatchProvince = challenger?.province ?? (regularMatch as any).province ?? null;
+
+          const isParticipant =
+            !!creatorProfile &&
+            (creatorProfile.id === regularMatch.challengerId || creatorProfile.id === regularMatch.opponentId);
+          const isAssignedReferee = regularMatch.refereeId === creatorId;
+          const isScopedProvincialDirector =
+            creatorRole === "PROVINCIAL_DIRECTOR" &&
+            (!resolvedMatchProvince ||
+              (!!creatorJurisdiction &&
+                creatorJurisdiction.trim().toLowerCase() === resolvedMatchProvince.trim().toLowerCase()));
+
+          if (!isParticipant && !isAssignedReferee && !isUniversalOfficial && !isScopedProvincialDirector) {
+            throw new ForbiddenError(
+              "Only a match participant, the assigned referee, or an authorized federation official may file a dispute on this match."
+            );
+          }
+        } else {
+          throw new NotFoundError("Referenced match not found.");
+        }
+      }
+
+      // Prevent duplicate active disputes by the same filer on the same match
+      const existingDisputes = await db
+        .select()
+        .from(disputes)
+        .where(and(eq(disputes.matchId, matchId), eq(disputes.creatorId, creatorId)));
+      const activeDuplicate = existingDisputes.find((d: any) =>
+        ["OPEN", "UNDER_REVIEW", "ESCALATED", "AWAITING_EVIDENCE"].includes(d.status)
+      );
+      if (activeDuplicate) {
+        throw new ConflictError("An active dispute for this match has already been filed by this user.");
+      }
+    }
+
+    const disputeProvince =
+      resolvedMatchProvince ??
+      (creatorProfile as any)?.province ??
+      creatorJurisdiction ??
+      null;
+
     const [newDispute] = await db
       .insert(disputes)
       .values({
@@ -219,6 +353,7 @@ export class GovernanceService {
         title,
         description,
         status: "OPEN",
+        province: disputeProvince,
         updatedAt: new Date(),
       })
       .returning();
@@ -244,8 +379,8 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
-    // Terminal-state guard: once resolved or closed, disputes cannot be assigned to a reviewer
-    if (dispute.status === "RESOLVED" || dispute.status === "CLOSED") {
+    // Terminal-state guard: once resolved, rejected, or closed, disputes cannot be assigned to a reviewer
+    if (dispute.status === "RESOLVED" || dispute.status === "REJECTED" || dispute.status === "CLOSED") {
       throw new ConflictError("Dispute has already been resolved");
     }
 
@@ -336,6 +471,10 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
+    if (dispute.status === "CLOSED") {
+      throw new ConflictError("Cannot submit evidence to a closed dispute.");
+    }
+
     // Only the dispute creator, the assigned reviewer, or federation staff may
     // attach evidence to a dispute. Canonical identity: the users-table row
     // decides — the optional actorRole caller hint (JWT claim) is accepted
@@ -418,6 +557,10 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
+    if (dispute.status === "CLOSED") {
+      throw new ConflictError("Cannot add comments to a closed dispute.");
+    }
+
     // Comments are limited to the dispute creator, the assigned reviewer, and
     // federation staff — not arbitrary authenticated users. Canonical
     // identity: the users-table row decides — the optional actorRole caller
@@ -475,8 +618,8 @@ export class GovernanceService {
       throw new NotFoundError("Dispute not found");
     }
 
-    // P0: terminal-state guard - re-resolution must not silently overwrite.
-    if (dispute.status === "RESOLVED" || dispute.status === "CLOSED") {
+    // P0: terminal-state guard - re-resolution must not silently overwrite unless appealed to AWAITING_EVIDENCE.
+    if (dispute.status === "RESOLVED" || dispute.status === "REJECTED" || dispute.status === "CLOSED") {
       throw new ConflictError("Dispute has already been resolved");
     }
 
@@ -562,6 +705,77 @@ export class GovernanceService {
       .returning();
 
     await this.logAuditEvent(actorId, "DISPUTE", disputeId, `DISPUTE_${decision}`, { resolutionDetails });
+
+    return updated;
+  }
+
+  public static async closeDispute(
+    disputeId: string,
+    actor: { id: string; role?: string; province?: string } | string,
+    closureNotes?: string
+  ): Promise<any> {
+    const actorId = typeof actor === "string" ? actor : actor.id;
+    const [dispute] = await db
+      .select()
+      .from(disputes)
+      .where(eq(disputes.id, disputeId))
+      .limit(1);
+
+    if (!dispute) {
+      throw new NotFoundError("Dispute not found");
+    }
+
+    if (dispute.status === "CLOSED") {
+      throw new ConflictError("Dispute is already closed");
+    }
+
+    if (dispute.status !== "RESOLVED" && dispute.status !== "REJECTED") {
+      throw new ConflictError("Only resolved or rejected disputes can be closed");
+    }
+
+    const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (!dbActor) {
+      throw new NotFoundError("Closing actor not found");
+    }
+
+    const canonicalRole = (dbActor as any).role as string;
+    const ALLOWED_CLOSER_ROLES = [
+      "SYSTEM_ADMIN",
+      "NATIONAL_DIRECTOR",
+      "PROVINCIAL_DIRECTOR",
+      "COMPLIANCE_OFFICER",
+    ];
+    if (!ALLOWED_CLOSER_ROLES.includes(canonicalRole)) {
+      throw new ForbiddenError("Only federation directors, compliance officers, or system administrators may close disputes");
+    }
+
+    if (canonicalRole === "PROVINCIAL_DIRECTOR" && dispute.province) {
+      const actorJurisdiction =
+        ((dbActor as any).province as string | null | undefined) ??
+        ((dbActor as any).regionalCoverage as string | null | undefined) ??
+        null;
+      if (!actorJurisdiction || dispute.province.trim().toLowerCase() !== actorJurisdiction.trim().toLowerCase()) {
+        throw new ForbiddenError(
+          `Provincial Director can only close disputes in their assigned province (${actorJurisdiction || "unassigned"})`
+        );
+      }
+    }
+
+    const updatedResolutionDetails = closureNotes
+      ? `${dispute.resolutionDetails ? `${dispute.resolutionDetails} | ` : ""}Closed: ${closureNotes}`
+      : dispute.resolutionDetails;
+
+    const [updated] = await db
+      .update(disputes)
+      .set({
+        status: "CLOSED",
+        resolutionDetails: updatedResolutionDetails,
+        updatedAt: new Date(),
+      })
+      .where(eq(disputes.id, disputeId))
+      .returning();
+
+    await this.logAuditEvent(actorId, "DISPUTE", disputeId, "DISPUTE_CLOSED", { closureNotes });
 
     return updated;
   }
@@ -780,39 +994,127 @@ export class GovernanceService {
     reviewerId: string
   ): Promise<any> {
     return await db.transaction(async (tx) => {
+      const [reviewerUser] = await tx.select().from(users).where(eq(users.id, reviewerId)).limit(1);
+      if (!reviewerUser) {
+        throw new NotFoundError("Reviewer user not found");
+      }
+      const allowedRoles = ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"];
+      if (!allowedRoles.includes((reviewerUser as any).role as string)) {
+        throw new ForbiddenError("Only federation directors or system administrators may correct official match results.");
+      }
+
       const [match] = await tx
         .select()
         .from(tournamentMatches)
         .where(eq(tournamentMatches.id, matchId))
         .limit(1);
 
-      if (!match) {
+      if (match) {
+        if (actualWinnerId !== match.athleteAId && actualWinnerId !== match.athleteBId) {
+          throw new BadRequestError("Corrected winner must be one of the match competitors.");
+        }
+
+        if ((reviewerUser as any).role === "PROVINCIAL_DIRECTOR") {
+          let matchProvince = (match as any).province ?? null;
+          if (!matchProvince && match.bracketId) {
+            const [bracket] = await tx.select().from(brackets).where(eq(brackets.id, match.bracketId)).limit(1);
+            if (bracket?.eventId) {
+              const [ev] = await tx.select().from(events).where(eq(events.id, bracket.eventId)).limit(1);
+              matchProvince = ev?.province ?? null;
+            }
+          }
+          const actorJurisdiction =
+            ((reviewerUser as any).province as string | null | undefined) ??
+            ((reviewerUser as any).regionalCoverage as string | null | undefined) ??
+            null;
+          if (
+            matchProvince &&
+            (!actorJurisdiction || actorJurisdiction.trim().toLowerCase() !== matchProvince.trim().toLowerCase())
+          ) {
+            throw new ForbiddenError(
+              `Provincial directors can only correct match results within their assigned province (${actorJurisdiction || "unassigned"}).`
+            );
+          }
+        }
+
+        const originalWinnerId = match.winnerId;
+
+        // Update match winner
+        const [updatedMatch] = await tx
+          .update(tournamentMatches)
+          .set({
+            winnerId: actualWinnerId,
+            updatedAt: new Date(),
+          })
+          .where(eq(tournamentMatches.id, matchId))
+          .returning();
+
+        await this.logAuditEvent(reviewerId, "TOURNAMENT_MATCH", matchId, "MATCH_CORRECTED", {
+          originalWinnerId,
+          actualWinnerId,
+        });
+
+        logger.info({ matchId }, "Match result corrected. Triggering automatic sequence ELO replay.");
+
+        // Trigger ELO chronological replay sequence starting from this match's creation timestamp
+        await this.triggerEloRecalculationFrom(match.createdAt || new Date());
+
+        return updatedMatch;
+      }
+
+      const [regularMatch] = await tx
+        .select()
+        .from(matches)
+        .where(eq(matches.id, matchId))
+        .limit(1);
+
+      if (!regularMatch) {
         throw new NotFoundError("Tournament Match not found");
       }
 
-      const originalWinnerId = match.winnerId;
-      
-      // Update match winner
-      const [updatedMatch] = await tx
-        .update(tournamentMatches)
+      if (actualWinnerId !== regularMatch.challengerId && actualWinnerId !== regularMatch.opponentId) {
+        throw new BadRequestError("Corrected winner must be one of the match competitors.");
+      }
+
+      if ((reviewerUser as any).role === "PROVINCIAL_DIRECTOR") {
+        const [challenger] = await tx
+          .select({ province: athleteProfiles.province })
+          .from(athleteProfiles)
+          .where(eq(athleteProfiles.id, regularMatch.challengerId))
+          .limit(1);
+        const matchProvince = challenger?.province ?? (regularMatch as any).province ?? null;
+        const actorJurisdiction =
+          ((reviewerUser as any).province as string | null | undefined) ??
+          ((reviewerUser as any).regionalCoverage as string | null | undefined) ??
+          null;
+        if (
+          matchProvince &&
+          (!actorJurisdiction || actorJurisdiction.trim().toLowerCase() !== matchProvince.trim().toLowerCase())
+        ) {
+          throw new ForbiddenError(
+            `Provincial directors can only correct match results within their assigned province (${actorJurisdiction || "unassigned"}).`
+          );
+        }
+      }
+
+      const originalWinnerId = regularMatch.winnerId;
+      const [updatedRegularMatch] = await tx
+        .update(matches)
         .set({
           winnerId: actualWinnerId,
           updatedAt: new Date(),
         })
-        .where(eq(tournamentMatches.id, matchId))
+        .where(eq(matches.id, matchId))
         .returning();
 
-      await this.logAuditEvent(reviewerId, "TOURNAMENT_MATCH", matchId, "MATCH_CORRECTED", {
+      await this.logAuditEvent(reviewerId, "MATCH", matchId, "MATCH_CORRECTED", {
         originalWinnerId,
         actualWinnerId,
       });
 
-      logger.info({ matchId }, "Match result corrected. Triggering automatic sequence ELO replay.");
+      await this.triggerEloRecalculationFrom(regularMatch.createdAt || new Date());
 
-      // Trigger ELO chronological replay sequence starting from this match's creation timestamp
-      await this.triggerEloRecalculationFrom(match.createdAt || new Date());
-
-      return updatedMatch;
+      return updatedRegularMatch;
     });
   }
 

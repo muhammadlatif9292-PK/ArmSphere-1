@@ -80,59 +80,16 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderColor = widget.borderColor ?? const Color(0x26D4AF37); // 15% opacity gold
-    final effectiveBgColor = widget.backgroundColor ?? AppTheme.glassSurface; // Deep glass onyx
-    final effectiveGlowColor = widget.glowColor ?? const Color(0x26D4AF37);
-
     Widget content = Container(
       margin: widget.margin,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        boxShadow: widget.enableGlow
-            ? [
-                BoxShadow(
-                  color: effectiveGlowColor,
-                  blurRadius: 16.0,
-                  spreadRadius: -2.0,
-                ),
-              ]
-            : null,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: widget.blurAmount,
-            sigmaY: widget.blurAmount,
-          ),
-          child: Container(
-            padding: widget.padding,
-            decoration: BoxDecoration(
-              color: effectiveBgColor,
-              borderRadius: BorderRadius.circular(widget.borderRadius),
-              border: Border.all(
-                color: effectiveBorderColor,
-                width: 1.0,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0x24FFFFFF), // Subtle top-left highlight sheen
-                  effectiveBgColor,
-                  const Color(0x0A000000),
-                ],
-                stops: const [0.0, 0.4, 1.0],
-              ),
-            ),
-            child: widget.child,
-          ),
-        ),
-      ),
+      padding: widget.padding,
+      color: Colors.transparent,
+      child: widget.child,
     );
 
     if (widget.onTap != null) {
       return GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTapDown: _onTapDown,
         onTapUp: _onTapUp,
         onTapCancel: _onTapCancel,

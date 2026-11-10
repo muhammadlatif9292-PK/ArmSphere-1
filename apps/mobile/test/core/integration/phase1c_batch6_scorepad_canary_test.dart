@@ -266,6 +266,9 @@ void main() {
 
       // Gesture down on Pin Hold button for Red Corner
       final pinHoldFinder = find.text('HOLD TO PIN (400ms)').first;
+      await tester.ensureVisible(pinHoldFinder);
+      await tester.pumpAndSettle();
+
       final pinHoldGesture = await tester.startGesture(tester.getCenter(pinHoldFinder));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -274,7 +277,12 @@ void main() {
       expect(find.textContaining('LOCKING PIN:'), findsOneWidget);
 
       // Complete 400ms hold threshold -> locks pin and awards point
-      await tester.pump(const Duration(milliseconds: 250));
+      for (int i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.pump();
+      final allTexts = tester.widgetList<Text>(find.byType(Text)).map((w) => w.data).toList();
+      debugPrint('>>> ALL TEXTS AT REQ 6: $allTexts');
       expect(find.text('1'), findsOneWidget); // Score incremented to 1!
 
       await pinHoldGesture.up();
@@ -484,6 +492,86 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(longNameA), findsOneWidget);
       expect(find.text(longNameB), findsOneWidget);
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 11: Reset Score Explicit Confirmation & Cancellation (Task 32 P0 Fix)
+    // -------------------------------------------------------------------------
+    testWidgets('Requirement 11: Reset Score requires explicit confirmation; cancelling preserves state, confirming resets',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: LiveScorepadController(
+                challengerName: 'Sultan Al-Balushi',
+                opponentName: 'Kamran Zaidi',
+                arm: 'RIGHT',
+                maxPoints: 3,
+                onMatchFinished: ({
+                  required int challengerScore,
+                  required int opponentScore,
+                  required String winnerSide,
+                  required String scoreLine,
+                }) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Award 2 points to Red Corner
+      final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.tap(pointButtons.first);
+      await tester.pump();
+      await tester.tap(pointButtons.first);
+      await tester.pump();
+      expect(find.text('2'), findsOneWidget);
+
+      // 2. Assess 1 foul on Red Corner
+      final foulButtons = find.widgetWithText(OutlinedButton, 'FOUL');
+      await tester.tap(foulButtons.first);
+      await tester.pump();
+      expect(find.text('F: 1/2'), findsOneWidget);
+
+      // 3. Locate Reset Score button
+      final resetScoreButton = find.widgetWithText(TextButton, 'Reset Score');
+      expect(resetScoreButton, findsOneWidget);
+
+      // 4. Tap Reset Score -> Dialog MUST appear
+      await tester.ensureVisible(resetScoreButton);
+      await tester.tap(resetScoreButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reset Score & Bout State?'), findsOneWidget);
+      expect(find.textContaining('Current Score: Red 2 — White 0'), findsOneWidget);
+      expect(find.text('Cancel (Keep Score)'), findsOneWidget);
+
+      // 5. Cancel the reset -> Score MUST remain 2 and foul MUST remain 1
+      await tester.tap(find.text('Cancel (Keep Score)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reset Score & Bout State?'), findsNothing);
+      expect(find.text('2'), findsOneWidget); // Score unchanged!
+      expect(find.text('F: 1/2'), findsOneWidget); // Foul unchanged!
+
+      // 6. Tap Reset Score again and CONFIRM
+      await tester.ensureVisible(resetScoreButton);
+      await tester.tap(resetScoreButton);
+      await tester.pumpAndSettle();
+
+      // Tap Reset Score inside dialog
+      final confirmResetButton = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(FilledButton, 'Reset Score'),
+      );
+      await tester.tap(confirmResetButton);
+      await tester.pumpAndSettle();
+
+      // 7. Verify score is now 0-0 and foul is 0/2
+      expect(find.text('0'), findsNWidgets(2)); // Both corners reset to 0!
+      expect(find.text('F: 0/2'), findsNWidgets(2)); // Both fouls reset to 0!
     });
   });
 }

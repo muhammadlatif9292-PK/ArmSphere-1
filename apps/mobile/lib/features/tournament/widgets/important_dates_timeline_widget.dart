@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class ImportantDatesTimelineWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -407,7 +408,7 @@ class _ImportantDatesTimelineWidgetState extends State<ImportantDatesTimelineWid
                 onTap: () {
                   HapticFeedback.selectionClick();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
+                    CrystalSnackBar(
                       content: Text('📅 ${event['title']}: ${event['date']} • ${event['time']}'),
                       backgroundColor: accentColor,
                       duration: const Duration(seconds: 2),

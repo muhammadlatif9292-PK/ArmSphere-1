@@ -137,5 +137,78 @@ void main() {
         equals('Custom operation failed'),
       );
     });
+
+    test('formats raw [401] Session Expired string cleanly into user-friendly copy', () {
+      final rawStr = '[401] Session Expired: Please log in again.';
+      expect(
+        AppErrorFormatter.format(rawStr),
+        equals('Your session has expired. Please sign in again.'),
+      );
+      final ex = Exception('[401] Session Expired: Please log in again.');
+      expect(
+        AppErrorFormatter.format(ex),
+        equals('Your session has expired. Please sign in again.'),
+      );
+    });
+
+    test('formats ApiException with status 401 and default detail cleanly', () {
+      final apiEx = ApiException(
+        type: 'auth:session-expired',
+        title: 'Session Expired',
+        status: 401,
+        detail: 'Please log in again.',
+      );
+      expect(
+        AppErrorFormatter.format(apiEx),
+        equals('Your session has expired. Please sign in again.'),
+      );
+    });
+
+    test('detects isAuthError correctly across ApiException, DioException, and raw strings', () {
+      final apiEx = ApiException(
+        type: 'auth:session-expired',
+        title: 'Session Expired',
+        status: 401,
+        detail: 'Please log in again.',
+      );
+      expect(AppErrorFormatter.isAuthError(apiEx), isTrue);
+
+      final dioEx = DioException(
+        requestOptions: RequestOptions(path: '/championships'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/championships'),
+          statusCode: 401,
+        ),
+      );
+      expect(AppErrorFormatter.isAuthError(dioEx), isTrue);
+      expect(AppErrorFormatter.isAuthError('[401] Session Expired'), isTrue);
+      expect(AppErrorFormatter.isAuthError('Server error: connection timeout'), isFalse);
+    });
+
+    test('detects isPermissionError correctly for 403 status', () {
+      final apiEx = ApiException(
+        type: 'auth:forbidden',
+        title: 'Forbidden',
+        status: 403,
+        detail: 'Access restricted.',
+      );
+      expect(AppErrorFormatter.isPermissionError(apiEx), isTrue);
+      expect(AppErrorFormatter.isPermissionError('[403] Forbidden'), isTrue);
+      expect(AppErrorFormatter.isPermissionError(apiEx.toString()), isTrue);
+      expect(AppErrorFormatter.isPermissionError('Session Expired'), isFalse);
+    });
+
+    test('detects isNetworkError correctly across offline and timeout errors', () {
+      final offline = OfflineException('Device offline.');
+      expect(AppErrorFormatter.isNetworkError(offline), isTrue);
+
+      final dioTimeout = DioException(
+        requestOptions: RequestOptions(path: '/teams'),
+        type: DioExceptionType.connectionTimeout,
+      );
+      expect(AppErrorFormatter.isNetworkError(dioTimeout), isTrue);
+      expect(AppErrorFormatter.isNetworkError('Connection reset by peer'), isTrue);
+      expect(AppErrorFormatter.isNetworkError(Exception('User not found')), isFalse);
+    });
   });
 }

@@ -22,6 +22,9 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "apps/admin-web/src/test/**/*",
+    "apps/admin-web/src/**/*.test.tsx",
+    "apps/admin-web/src/**/*.test.ts"
   ]
 }

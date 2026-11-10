@@ -9,6 +9,8 @@ import 'package:mobile/features/athlete/screens/athlete_screens.dart';
 import 'package:mobile/features/auth/providers/auth_provider.dart';
 import 'package:mobile/core/providers/athlete_provider.dart';
 import 'package:mobile/core/providers/live_matches_provider.dart';
+import 'package:mobile/core/providers/tournament_provider.dart';
+import 'package:mobile/core/providers/rankings_provider.dart';
 
 class _FakeAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
   _FakeAuthNotifier(super.state);
@@ -26,6 +28,16 @@ class _FakeAthleteProfileNotifier extends AthleteProfileNotifier {
 }
 
 class _FakeLiveMatchesNotifier extends LiveMatchesNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
+class _FakeTournamentNotifier extends TournamentNotifier {
+  @override
+  Future<List<Map<String, dynamic>>> build() async => [];
+}
+
+class _FakeRankingsNotifier extends RankingsNotifier {
   @override
   Future<List<Map<String, dynamic>>> build() async => [];
 }
@@ -58,7 +70,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('WelcomeScreen integrates ArmSphereAssets.heroGrip and iconGold via ArmSphereImage', (WidgetTester tester) async {
+    testWidgets('WelcomeScreen integrates ArmSphereAssets.heroWelcomeGrip and iconGold via ArmSphereImage', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -69,11 +81,12 @@ void main() {
 
       await tester.pump();
 
-      // Verify heroGrip environmental anchor is present with excludeFromSemantics
+      // Verify heroWelcomeGrip (auth.welcome.hero_banner) environmental anchor is present with Alignment(0.0, -0.25)
       final gripHeroFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.heroGrip &&
+            widget.assetPath == ArmSphereAssets.heroWelcomeGrip &&
+            widget.alignment == const Alignment(0.0, -0.25) &&
             widget.excludeFromSemantics == true,
       );
       expect(gripHeroFinder, findsOneWidget);
@@ -96,7 +109,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('AthleteDashboardScreen integrates ArmSphereAssets.heroArena and avatar', (WidgetTester tester) async {
+    testWidgets('AthleteDashboardScreen integrates ArmSphereAssets.stageArena9x16, cardArenaRadar, and heroAthleteDashboard', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -112,6 +125,9 @@ void main() {
                   'leftArmElo': 1690,
                 })),
             liveMatchesProvider.overrideWith(() => _FakeLiveMatchesNotifier()),
+            tournamentProvider.overrideWith(() => _FakeTournamentNotifier()),
+            rankingsProvider.overrideWith(() => _FakeRankingsNotifier()),
+            trainingLogProvider('test_ath_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
             trainingLogPRsProvider('test_ath_1').overrideWith((ref) async => <Map<String, dynamic>>[]),
           ],
           child: const MaterialApp(
@@ -122,14 +138,25 @@ void main() {
 
       await tester.pump();
 
-      // Verify heroArena environmental anchor is present in the Sanctioned Arena Radar
-      final arenaFinder = find.byWidgetPredicate(
+      // Verify stageArena9x16 (arena.home.background) environmental anchor is active in the full-screen CrystalStageBackdrop
+      final arenaStageFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.heroArena &&
+            widget.assetPath == ArmSphereAssets.stageArena9x16 &&
+            widget.alignment == const Alignment(0.0, -0.55) &&
             widget.excludeFromSemantics == true,
       );
-      expect(arenaFinder, findsOneWidget);
+      expect(arenaStageFinder, findsAtLeastNWidgets(1));
+
+      // Verify dedicated cardArenaRadar (arena.home.radar_card) is integrated in the Sanctioned Arena Radar card
+      final radarCardImageFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is ArmSphereImage &&
+            widget.assetPath == ArmSphereAssets.cardArenaRadar &&
+            widget.alignment == const Alignment(0.45, 0.0) &&
+            widget.excludeFromSemantics == true,
+      );
+      expect(radarCardImageFinder, findsOneWidget);
 
       // Verify the Sanctioned Arena Radar copy
       expect(find.text('SANCTIONED ARENA RADAR'), findsOneWidget);

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,9 @@ class ArmSphereImage extends StatelessWidget {
   /// Content fit strategy. Defaults to [BoxFit.cover].
   final BoxFit fit;
 
+  /// Focal alignment within the target bounds. Defaults to [Alignment.center].
+  final Alignment alignment;
+
   /// Level 2 fallback asset path if Level 1 fails or is omitted.
   final String? fallbackAsset;
 
@@ -79,6 +83,7 @@ class ArmSphereImage extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.fallbackAsset = ArmSphereAssets.defaultTournament,
     this.fallbackIcon = Icons.fitness_center_rounded,
     this.initial,
@@ -99,7 +104,8 @@ class ArmSphereImage extends StatelessWidget {
     this.assetPath,
     double size = 40.0,
     this.fit = BoxFit.cover,
-    this.fallbackAsset = ArmSphereAssets.defaultAvatar,
+    this.alignment = Alignment.center,
+    this.fallbackAsset = ArmSphereAssets.avatarNeutralDark,
     this.fallbackIcon = Icons.person_rounded,
     this.initial,
     this.cacheWidth,
@@ -113,6 +119,28 @@ class ArmSphereImage extends StatelessWidget {
         borderRadius = null,
         shape = BoxShape.circle;
 
+  /// Convenience constructor for club/team shield emblems.
+  const ArmSphereImage.club({
+    super.key,
+    this.imageUrl,
+    this.assetPath,
+    double size = 48.0,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.fallbackAsset = ArmSphereAssets.teamCrestDefault,
+    this.fallbackIcon = Icons.shield_rounded,
+    this.initial,
+    this.cacheWidth,
+    this.cacheHeight,
+    this.borderRadius,
+    this.shape = BoxShape.circle,
+    this.border,
+    this.semanticLabel,
+    this.excludeFromSemantics = false,
+    this.showLoadingIndicator = true,
+  })  : width = size,
+        height = size;
+
   /// Convenience constructor for full-bleed or card hero banners.
   const ArmSphereImage.hero({
     super.key,
@@ -121,6 +149,7 @@ class ArmSphereImage extends StatelessWidget {
     this.width,
     this.height = 200.0,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.fallbackAsset = ArmSphereAssets.heroArena,
     this.fallbackIcon = Icons.sports_kabaddi_rounded,
     this.initial,
@@ -201,13 +230,47 @@ class ArmSphereImage extends StatelessWidget {
   }
 
   Widget _buildImagePipeline(BuildContext context) {
-    // Level 1A: Remote Network Image with disk and memory caching
+    // Level 1A: Remote Network Image, Data URI, or Asset path / Semantic key passed in imageUrl
     if (imageUrl != null && imageUrl!.trim().isNotEmpty) {
+      final trimmed = ArmSphereAssets.resolveSemanticAsset(imageUrl!.trim());
+      if (trimmed.startsWith('data:image/')) {
+        final commaIdx = trimmed.indexOf(',');
+        if (commaIdx != -1 && commaIdx + 1 < trimmed.length) {
+          try {
+            final bytes = base64Decode(trimmed.substring(commaIdx + 1));
+            return Image.memory(
+              bytes,
+              width: width,
+              height: height,
+              fit: fit,
+              alignment: alignment,
+              cacheWidth: _effectiveCacheWidth,
+              cacheHeight: _effectiveCacheHeight,
+              errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
+            );
+          } catch (_) {
+            return _buildLevel2Fallback(context);
+          }
+        }
+      }
+      if (trimmed.startsWith('assets/')) {
+        return Image.asset(
+          trimmed,
+          width: width,
+          height: height,
+          fit: fit,
+          alignment: alignment,
+          cacheWidth: _effectiveCacheWidth,
+          cacheHeight: _effectiveCacheHeight,
+          errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
+        );
+      }
       return CachedNetworkImage(
-        imageUrl: imageUrl!.trim(),
+        imageUrl: trimmed,
         width: width,
         height: height,
         fit: fit,
+        alignment: alignment,
         memCacheWidth: _effectiveCacheWidth,
         memCacheHeight: _effectiveCacheHeight,
         placeholder: (ctx, url) => _buildPlaceholder(),
@@ -215,13 +278,16 @@ class ArmSphereImage extends StatelessWidget {
       );
     }
 
-    // Level 1B: Bundled Local Asset
+    // Level 1B: Bundled Local Asset or Semantic Asset Identifier
     if (assetPath != null && assetPath!.trim().isNotEmpty) {
+      final resolvedAsset =
+          ArmSphereAssets.resolveSemanticAsset(assetPath!.trim());
       return Image.asset(
-        assetPath!.trim(),
+        resolvedAsset,
         width: width,
         height: height,
         fit: fit,
+        alignment: alignment,
         cacheWidth: _effectiveCacheWidth,
         cacheHeight: _effectiveCacheHeight,
         errorBuilder: (ctx, error, stackTrace) => _buildLevel2Fallback(context),
@@ -239,10 +305,11 @@ class ArmSphereImage extends StatelessWidget {
     }
 
     return Image.asset(
-      fallbackAsset!.trim(),
+      ArmSphereAssets.resolveSemanticAsset(fallbackAsset!.trim()),
       width: width,
       height: height,
       fit: fit,
+      alignment: alignment,
       cacheWidth: _effectiveCacheWidth,
       cacheHeight: _effectiveCacheHeight,
       errorBuilder: (ctx, error, stackTrace) => _buildLevel3Fallback(context),

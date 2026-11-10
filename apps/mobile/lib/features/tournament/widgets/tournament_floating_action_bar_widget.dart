@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentFloatingActionBarWidget extends StatelessWidget {
   final Map<String, dynamic> tournament;
 
@@ -75,19 +76,19 @@ class TournamentFloatingActionBarWidget extends StatelessWidget {
             HapticFeedback.heavyImpact();
             if (status == 'COMPLETED' || status == 'FINISHED') {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✓ Opening Official Championship Results Modal...'), backgroundColor: AppTheme.goldPrimary),
+                CrystalSnackBar(content: Text('✓ Opening Official Championship Results Modal...'), backgroundColor: AppTheme.goldPrimary),
               );
             } else if (status == 'LIVE') {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✓ Tuning into PAFF ArmSphere TV HD Stream...'), backgroundColor: Color(0xFFFF2A6D)),
+                CrystalSnackBar(content: Text('✓ Tuning into PAFF ArmSphere TV HD Stream...'), backgroundColor: Color(0xFFFF2A6D)),
               );
             } else if (status == 'IN_PROGRESS' || status == 'ONGOING') {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✓ Launching Interactive Bracket Tree...'), backgroundColor: Color(0xFF00E5FF)),
+                CrystalSnackBar(content: Text('✓ Launching Interactive Bracket Tree...'), backgroundColor: Color(0xFF00E5FF)),
               );
             } else if (isRegistered) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✓ Opening Digital Weigh-In Pass & QR Code...'), backgroundColor: Color(0xFF00E676)),
+                CrystalSnackBar(content: Text('✓ Opening Digital Weigh-In Pass & QR Code...'), backgroundColor: Color(0xFF00E676)),
               );
             } else {
               context.push('/tournament/${tournament['id']}/register', extra: tournament);

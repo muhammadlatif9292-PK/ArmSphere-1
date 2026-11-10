@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import 'tournament_empty_state_type.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentEmptyStateWidget extends StatelessWidget {
   final TournamentEmptyStateType type;
   final VoidCallback? onAction;
@@ -158,7 +159,7 @@ class TournamentEmptyStateWidget extends StatelessWidget {
                 onAction!();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Action triggered for: $title'),
                     backgroundColor: accentColor,
                   ),

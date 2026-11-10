@@ -99,22 +99,51 @@ export class AuditLedgerService {
       }
 
       const actorStr = current.actorId || "SYSTEM";
-      const payloadStr = current.payload ? JSON.stringify(current.payload) : "{}";
+      const rawPayload = current.payload;
+      const payloadStr = rawPayload ? JSON.stringify(rawPayload) : "{}";
       const createdAtStr = new Date(current.createdAt).toISOString();
 
-      const dataToHash = [
-        current.parentHash,
-        current.eventId,
-        actorStr,
-        current.entityType,
-        current.entityId,
-        current.action,
-        payloadStr,
-        createdAtStr
-      ].join("|");
+      const candidatePayloads = new Set<string>([payloadStr]);
+      if (rawPayload && typeof rawPayload === "object" && !Array.isArray(rawPayload)) {
+        const rawObj = rawPayload as Record<string, unknown>;
+        const sortedKeys = Object.keys(rawObj).sort();
+        const sortedObj: Record<string, unknown> = {};
+        for (const k of sortedKeys) sortedObj[k] = rawObj[k];
+        candidatePayloads.add(JSON.stringify(sortedObj));
 
-      const recalculatedHash = this.sha256(dataToHash);
-      if (recalculatedHash !== current.eventHash) {
+        const knownKeyOrders = [
+          ["ipAddress", "city", "userAgent", "deviceFingerprint"],
+          ["previousIp", "currentIp", "previousCity", "currentCity", "distanceKm", "timeDifferenceHours", "velocityKmh"],
+          ["currentActiveSessions", "ipAddress"],
+        ];
+        for (const order of knownKeyOrders) {
+          if (order.length === sortedKeys.length && order.every(k => Object.prototype.hasOwnProperty.call(rawObj, k))) {
+            const ordered: Record<string, unknown> = {};
+            for (const k of order) ordered[k] = rawObj[k];
+            candidatePayloads.add(JSON.stringify(ordered));
+          }
+        }
+      }
+
+      let matched = false;
+      for (const pStr of candidatePayloads) {
+        const dataToHash = [
+          current.parentHash,
+          current.eventId,
+          actorStr,
+          current.entityType,
+          current.entityId,
+          current.action,
+          pStr,
+          createdAtStr
+        ].join("|");
+        if (this.sha256(dataToHash) === current.eventHash) {
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched) {
         corruptedEventIds.push(current.eventId);
       }
     }

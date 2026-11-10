@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import 'tactile_press_wrapper.dart';
 
-/// High-Performance Athletic Action Card
+/// Invisible Interactive Floating Container
 ///
-/// Solid substrate container designed for high-density vertical lists (Rankings,
-/// Tournaments, Match Queues, Training Logs) where `GlassCard`'s GPU `BackdropFilter`
-/// would cause fill-rate bottlenecking or frame drops.
-///
-/// Grounded in `docs/design/09_COMPONENT_SYSTEM.md` and `docs/design/39_DESIGN_DEBT_MAP.md`.
+/// Renders zero visible background slab, border, or shadow so text, icons,
+/// avatars, and badges float directly over the 9:16 stage artwork while
+/// preserving full container bounds and tactile hit-target responsiveness.
 class ElevatedActionCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -16,6 +15,7 @@ class ElevatedActionCard extends StatelessWidget {
   final double borderRadius;
   final Color? borderColor;
   final Color? backgroundColor;
+  final Gradient? gradient;
   final VoidCallback? onTap;
   final String? semanticLabel;
   final List<BoxShadow>? customShadow;
@@ -26,9 +26,10 @@ class ElevatedActionCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppTheme.space16),
     this.margin,
-    this.borderRadius = AppTheme.radiusMedium,
+    this.borderRadius = AppTheme.radiusLarge,
     this.borderColor,
     this.backgroundColor,
+    this.gradient,
     this.onTap,
     this.semanticLabel,
     this.customShadow,
@@ -37,27 +38,35 @@ class ElevatedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderColor = borderColor ?? AppTheme.border;
-    final effectiveBgColor = backgroundColor ?? AppTheme.cardSurface;
-
     Widget cardContent = Container(
       padding: padding,
       margin: margin,
-      decoration: BoxDecoration(
-        color: effectiveBgColor,
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(
-          color: effectiveBorderColor,
-          width: 1.0,
-        ),
-        boxShadow: customShadow ?? boxShadow ?? [AppTheme.cardShadow()],
-      ),
+      decoration: gradient != null
+          ? BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(borderRadius),
+            )
+          : (backgroundColor != null
+              ? BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: borderColor != null
+                      ? Border.all(color: borderColor!)
+                      : null,
+                )
+              : null),
+      color: (gradient == null && backgroundColor == null)
+          ? Colors.transparent
+          : null,
       child: child,
     );
 
     if (onTap != null) {
       cardContent = TactilePressWrapper(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap!();
+        },
         semanticLabel: semanticLabel,
         child: cardContent,
       );

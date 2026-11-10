@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.armsphere.app"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.3.13750724"
 
     compileOptions {
         coreLibraryDesugaringEnabled true

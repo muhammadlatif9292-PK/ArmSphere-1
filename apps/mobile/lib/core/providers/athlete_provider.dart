@@ -5,6 +5,7 @@ import '../../features/auth/providers/auth_provider.dart';
 class AthleteProfileNotifier extends AutoDisposeAsyncNotifier<Map<String, dynamic>> {
   @override
   Future<Map<String, dynamic>> build() async {
+    ref.keepAlive();
     final authState = ref.watch(authProvider);
     final user = authState.userProfile;
     final athleteId = user?['id']?.toString() ?? 'self';
@@ -33,6 +34,27 @@ class AthleteProfileNotifier extends AutoDisposeAsyncNotifier<Map<String, dynami
       return false;
     }
   }
+
+  Future<bool> updateProfileAndBiometrics({
+    required String athleteId,
+    required Map<String, dynamic> profileData,
+    Map<String, dynamic>? biometricsData,
+  }) async {
+    try {
+      final repo = ref.read(athleteRepositoryProvider);
+      if (profileData.isNotEmpty) {
+        await repo.updateProfile(athleteId, profileData);
+      }
+      if (biometricsData != null && biometricsData.isNotEmpty) {
+        await repo.updateBiometricsDetails(biometricsData);
+      }
+      final refreshed = await repo.getProfile(athleteId);
+      state = AsyncData(refreshed);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 final athleteProfileProvider = AsyncNotifierProvider.autoDispose<AthleteProfileNotifier, Map<String, dynamic>>(() {
@@ -49,21 +71,25 @@ final athleteSearchProvider = FutureProvider.autoDispose<List<Map<String, dynami
 });
 
 final clubsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getClubs();
 });
 
 final publicAthleteProfileProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, athleteId) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getProfile(athleteId);
 });
 
 final trainingLogProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, athleteId) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getTrainingLog(athleteId);
 });
 
 final trainingLogPRsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, athleteId) async {
+  ref.keepAlive();
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.getTrainingLogPRs(athleteId);
 });

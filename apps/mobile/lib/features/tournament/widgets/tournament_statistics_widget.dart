@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentStatisticsWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -301,7 +302,7 @@ class _TournamentStatisticsWidgetState extends State<TournamentStatisticsWidget>
           onTap: () {
             HapticFeedback.selectionClick();
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              CrystalSnackBar(
                 content: Text('✓ ${stat['label']}: ${stat['subtitle']}'),
                 backgroundColor: accentColor,
                 duration: const Duration(seconds: 2),

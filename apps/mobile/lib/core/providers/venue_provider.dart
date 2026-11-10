@@ -25,6 +25,7 @@ final venueFilterProvider = StateProvider.autoDispose<VenueFilter>((ref) {
 class VenueListNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final filter = ref.watch(venueFilterProvider);
     final repo = ref.watch(venueRepositoryProvider);
     return repo.getVenues(
@@ -34,7 +35,9 @@ class VenueListNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynami
   }
 
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
+    if (!state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       final filter = ref.read(venueFilterProvider);
       final repo = ref.read(venueRepositoryProvider);
@@ -44,7 +47,9 @@ class VenueListNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynami
       );
       state = AsyncValue.data(venues);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      if (!state.hasValue) {
+        state = AsyncValue.error(e, stackTrace);
+      }
     }
   }
 }
@@ -57,18 +62,23 @@ final venueListProvider = AsyncNotifierProvider.autoDispose<VenueListNotifier, L
 class VenueDetailNotifier extends AutoDisposeFamilyAsyncNotifier<Map<String, dynamic>, String> {
   @override
   Future<Map<String, dynamic>> build(String arg) async {
+    ref.keepAlive();
     final repo = ref.watch(venueRepositoryProvider);
     return repo.getVenueById(arg);
   }
 
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
+    if (!state.hasValue) {
+      state = const AsyncValue.loading();
+    }
     try {
       final repo = ref.read(venueRepositoryProvider);
       final detail = await repo.getVenueById(arg);
       state = AsyncValue.data(detail);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      if (!state.hasValue) {
+        state = AsyncValue.error(e, stackTrace);
+      }
     }
   }
 }

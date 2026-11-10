@@ -5,18 +5,24 @@ import 'state_providers.dart';
 class NominationListNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
+    ref.keepAlive();
     final repo = ref.watch(nominationRepositoryProvider);
     return repo.getOwnNominations();
   }
 
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
+    final previous = state.valueOrNull;
+    if (previous == null) {
+      state = const AsyncValue.loading();
+    }
     try {
       final repo = ref.read(nominationRepositoryProvider);
       final nominations = await repo.getOwnNominations();
       state = AsyncValue.data(nominations);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      if (previous == null) {
+        state = AsyncValue.error(e, stackTrace);
+      }
     }
   }
 }

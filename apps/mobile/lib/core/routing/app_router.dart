@@ -23,6 +23,7 @@ import '../../features/home/screens/discover_screen.dart';
 import '../../features/referee/screens/referee_screens.dart';
 import '../../features/tournament/screens/tournament_screens.dart';
 import '../../features/tournament/screens/tournament_operations_screen.dart';
+import '../../features/tournament/screens/tournament_operator_dashboard_screen.dart';
 import '../../features/tournament/screens/tournament_weigh_in_screen.dart';
 import '../../features/tournament/screens/event_registration_screen.dart';
 import '../../features/governance/screens/governance_screens.dart';
@@ -53,6 +54,13 @@ import '../../features/nomination/screens/nominate_talent_screen.dart';
 import '../../features/informal_event/screens/informal_event_directory_screen.dart';
 import '../../features/informal_event/screens/informal_event_detail_screen.dart';
 import '../../features/informal_event/screens/create_informal_event_screen.dart';
+import '../../features/support/screens/support_screens.dart';
+import '../../features/admin/screens/admin_command_screen.dart';
+import '../../features/admin/screens/admin_roster_screen.dart';
+import '../../features/admin/screens/admin_arena_ops_screen.dart';
+import '../../features/admin/screens/admin_governance_screen.dart';
+import '../../features/admin/screens/admin_dossier_screen.dart';
+import '../security/admin_permissions.dart';
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
 
@@ -62,17 +70,10 @@ bool _isRefereeLandingRole(String? role) {
   return role != null && refereeRoles.contains(role);
 }
 
-/// Roles that route to the governance dashboard.
-bool _isGovernanceLandingRole(String? role) {
-  const govRoles = {
-    'TOURNAMENT_OPERATOR',
-    'COMPLIANCE_OFFICER',
-    'SUPPORT_AGENT',
-    'PROVINCIAL_DIRECTOR',
-    'NATIONAL_DIRECTOR',
-    'SYSTEM_ADMIN',
-  };
-  return role != null && govRoles.contains(role);
+/// Roles that route to the tournament operator dashboard.
+bool _isOperatorLandingRole(String? role) {
+  const operatorRoles = {'TOURNAMENT_OPERATOR'};
+  return role != null && operatorRoles.contains(role);
 }
 
 /// Roles that have permission to access Referee routes.
@@ -100,26 +101,89 @@ bool _canAccessGovernance(String? role) {
   return role != null && accessRoles.contains(role);
 }
 
-/// Role-aware personalized home dispatcher widget.
+String _resolveEffectiveUserRole(AuthState authState) {
+  final profileRole = authState.userProfile?['role']?.toString();
+  return authState.activeRole?.toUpperCase() ??
+      (authState.verifiedRoles.length == 1
+          ? authState.verifiedRoles.first.toUpperCase()
+          : (profileRole?.toUpperCase() ?? 'ATHLETE'));
+}
+
+/// Role-aware personalized home dispatcher widget (Tab 0: `/home`).
 /// Renders the appropriate role-specific dashboard inside the persistent main shell.
 class RoleAwareHomeScreen extends ConsumerWidget {
   const RoleAwareHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final userRole = authState.activeRole?.toUpperCase() ??
-        (authState.verifiedRoles.length == 1
-            ? authState.verifiedRoles.first.toUpperCase()
-            : 'ATHLETE');
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
 
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminCommandScreen();
+    }
     if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
     }
-    if (_isGovernanceLandingRole(userRole)) {
-      return const GovernanceDashboardScreen();
+    if (_isOperatorLandingRole(userRole)) {
+      return const TournamentOperatorDashboardScreen();
     }
     return const AthleteDashboardScreen();
+  }
+}
+
+/// Role-aware Tab 1 (`/discover`): `AdminRosterScreen` in Admin Mode, `DiscoverScreen` in Athlete Mode.
+class RoleAwareDiscoverScreen extends ConsumerWidget {
+  const RoleAwareDiscoverScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminRosterScreen();
+    }
+    return const DiscoverScreen();
+  }
+}
+
+/// Role-aware Tab 2 (`/tournaments`): `AdminArenaOpsScreen` in Admin Mode, `TournamentsListScreen` in Athlete Mode.
+class RoleAwareTournamentsScreen extends ConsumerWidget {
+  const RoleAwareTournamentsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminArenaOpsScreen();
+    }
+    return const TournamentsListScreen();
+  }
+}
+
+/// Role-aware Tab 3 (`/community/feed`): `AdminGovernanceScreen` in Admin Mode, `CommunityFeedScreen` in Athlete Mode.
+class RoleAwareCommunityScreen extends ConsumerWidget {
+  const RoleAwareCommunityScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminGovernanceScreen();
+    }
+    return const CommunityFeedScreen();
+  }
+}
+
+/// Role-aware Tab 4 (`/athlete/profile`): `AdminDossierScreen` in Admin Mode, `AthleteProfileScreen` in Athlete Mode.
+class RoleAwareProfileScreen extends ConsumerWidget {
+  const RoleAwareProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userRole = _resolveEffectiveUserRole(ref.watch(authProvider));
+    if (AdminPermissions.isAdminWorkspaceRole(userRole)) {
+      return const AdminDossierScreen();
+    }
+    return const AthleteProfileScreen();
   }
 }
 
@@ -185,14 +249,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 (authState.verifiedRoles.length == 1
                     ? authState.verifiedRoles.first.toUpperCase()
                     : 'ATHLETE');
-            
+
             if (_isRefereeLandingRole(activeRole)) {
               return '/referee/dashboard';
             }
-            if (_isGovernanceLandingRole(activeRole)) {
-              return '/governance';
-            }
-            // For athletes or other roles, go to home
+            // All Athlete and Admin roles land inside MainShellScreen at '/home'
+            // so the 5-tab bottom navigation dock (Athlete or Admin Mode) is always active.
             return '/home';
           }
           
@@ -317,7 +379,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return MainShellScreen(navigationShell: navigationShell);
+          final userRole = _resolveEffectiveUserRole(ref.read(authProvider));
+          return MainShellScreen(
+            navigationShell: navigationShell,
+            isAdminModeOverride:
+                AdminPermissions.isAdminWorkspaceRole(userRole),
+          );
         },
         branches: [
           StatefulShellBranch(
@@ -327,21 +394,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'home',
                 builder: (context, state) => const RoleAwareHomeScreen(),
               ),
-              GoRoute(
-                path: '/athlete/dashboard',
-                name: 'athlete_dashboard',
-                builder: (context, state) => const AthleteDashboardScreen(),
-              ),
-              GoRoute(
-                path: '/referee/dashboard',
-                name: 'referee_dashboard',
-                builder: (context, state) => const RefereeDashboardScreen(),
-              ),
-              GoRoute(
-                path: '/governance',
-                name: 'governance',
-                builder: (context, state) => const GovernanceDashboardScreen(),
-              ),
             ],
           ),
           StatefulShellBranch(
@@ -349,12 +401,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/discover',
                 name: 'discover',
-                builder: (context, state) => const DiscoverScreen(),
-              ),
-              GoRoute(
-                path: '/rankings',
-                name: 'rankings',
-                builder: (context, state) => const RankingsScreen(),
+                builder: (context, state) => const RoleAwareDiscoverScreen(),
               ),
             ],
           ),
@@ -363,12 +410,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/tournaments',
                 name: 'tournaments_tab',
-                builder: (context, state) => const TournamentsListScreen(),
-              ),
-              GoRoute(
-                path: '/tournament/dashboard',
-                name: 'tournament_dashboard_tab',
-                builder: (context, state) => const TournamentsListScreen(),
+                builder: (context, state) => const RoleAwareTournamentsScreen(),
               ),
             ],
           ),
@@ -377,7 +419,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/community/feed',
                 name: 'community_feed',
-                builder: (context, state) => const CommunityFeedScreen(),
+                builder: (context, state) => const RoleAwareCommunityScreen(),
               ),
             ],
           ),
@@ -386,11 +428,51 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/athlete/profile',
                 name: 'athlete_profile_tab',
-                builder: (context, state) => const AthleteProfileScreen(),
+                builder: (context, state) => const RoleAwareProfileScreen(),
               ),
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/athlete/dashboard',
+        name: 'athlete_dashboard',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const AthleteDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/referee/dashboard',
+        name: 'referee_dashboard',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const RefereeDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/governance',
+        name: 'governance',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const GovernanceDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/rankings',
+        name: 'rankings',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const RankingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/tournament/dashboard',
+        name: 'tournament_dashboard_tab',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const TournamentsListScreen(),
+        ),
       ),
       GoRoute(
         path: '/search',
@@ -401,6 +483,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/athlete/achievements',
+        name: 'athlete_achievements',
+        pageBuilder: (context, state) {
+          final athleteId = state.uri.queryParameters['athleteId'] ??
+              (state.extra is String ? state.extra as String? : null);
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: AthleteAchievementsScreen(athleteId: athleteId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/athlete/session/:sessionId',
+        name: 'active_session_detail',
+        pageBuilder: (context, state) {
+          final sessionId = state.pathParameters['sessionId'] ?? '';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: ActiveSessionControlScreen(sessionId: sessionId),
+          );
+        },
+      ),
+      GoRoute(
         path: '/athlete/:athleteId',
         name: 'public_athlete_profile',
         pageBuilder: (context, state) {
@@ -409,6 +514,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             key: state.pageKey,
             child: PublicAthleteProfileScreen(athleteId: athleteId),
           );
+        },
+      ),
+      GoRoute(
+        path: '/athletes/:athleteId',
+        redirect: (context, state) {
+          final athleteId = state.pathParameters['athleteId'] ?? '';
+          return '/athlete/$athleteId';
         },
       ),
       GoRoute(
@@ -911,17 +1023,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/athlete/session/:sessionId',
-        name: 'active_session_detail',
-        pageBuilder: (context, state) {
-          final sessionId = state.pathParameters['sessionId'] ?? '';
-          return AppTransitionPage(
-            key: state.pageKey,
-            child: ActiveSessionControlScreen(sessionId: sessionId),
-          );
-        },
-      ),
-      GoRoute(
         path: '/settings/payment-methods',
         name: 'payment_methods',
         pageBuilder: (context, state) => AppTransitionPage(
@@ -1020,7 +1121,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'create_post',
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
-          child: const CreatePostScreen(),
+          child: CreatePostScreen(
+            initialCategory: state.uri.queryParameters['category'],
+          ),
         ),
       ),
       GoRoute(
@@ -1028,7 +1131,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'create_post_alternate',
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
-          child: const CreatePostScreen(),
+          child: CreatePostScreen(
+            initialCategory: state.uri.queryParameters['category'],
+          ),
         ),
       ),
       GoRoute(
@@ -1181,7 +1286,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/achievements',
         name: 'achievements',
         pageBuilder: (context, state) {
-          final athleteId = state.extra as String?;
+          final athleteId = state.uri.queryParameters['athleteId'] ??
+              (state.extra is String ? state.extra as String? : null);
           return AppTransitionPage(
             key: state.pageKey,
             child: AthleteAchievementsScreen(athleteId: athleteId),
@@ -1189,13 +1295,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/athlete/achievements',
-        name: 'athlete_achievements',
+        path: '/support',
+        name: 'support_tickets',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const SupportTicketsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/support/create',
+        name: 'create_support_ticket',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const CreateSupportTicketScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/support/:ticketId',
+        name: 'support_ticket_detail',
         pageBuilder: (context, state) {
-          final athleteId = state.extra as String?;
+          final ticketId = state.pathParameters['ticketId'] ?? '';
           return AppTransitionPage(
             key: state.pageKey,
-            child: AthleteAchievementsScreen(athleteId: athleteId),
+            child: SupportTicketDetailScreen(ticketId: ticketId),
           );
         },
       ),

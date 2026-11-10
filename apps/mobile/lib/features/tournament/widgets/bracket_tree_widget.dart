@@ -432,6 +432,66 @@ class _BracketTreeWidgetState extends State<BracketTreeWidget>
                 ),
               ),
 
+            // Bottom-Left Interactive Canvas Zoom & Reset Controls (Phase 5 / S-039)
+            Positioned(
+              left: 16,
+              bottom: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.zoom_in_rounded, size: 20, color: AppTheme.goldPrimary),
+                      tooltip: 'Zoom in bracket draw',
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _zoomBy(1.25, viewportSize),
+                    ),
+                    Container(width: 1, height: 16, color: AppTheme.borderSubtle),
+                    IconButton(
+                      icon: const Icon(Icons.zoom_out_rounded, size: 20, color: AppTheme.goldPrimary),
+                      tooltip: 'Zoom out bracket draw',
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _zoomBy(0.8, viewportSize),
+                    ),
+                    Container(width: 1, height: 16, color: AppTheme.borderSubtle),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(36, 36),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: _resetZoom,
+                      child: const Text(
+                        'RESET',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.goldPrimary,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             // Bottom-Right Floating Radar Mini-Map HUD (88dp x 64dp)
             Positioned(
               right: 16,
@@ -448,6 +508,27 @@ class _BracketTreeWidgetState extends State<BracketTreeWidget>
         );
       },
     );
+  }
+
+  void _zoomBy(double factor, Size viewportSize) {
+    HapticFeedback.selectionClick();
+    final current = _transformationController.value;
+    final currentScale = current.getMaxScaleOnAxis();
+    final targetScale = (currentScale * factor).clamp(0.5, 2.5);
+    final actualFactor = targetScale / currentScale;
+
+    final center = Offset(viewportSize.width / 2, viewportSize.height / 2);
+    final matrix = Matrix4.identity()
+      ..translate(center.dx, center.dy)
+      ..scale(actualFactor)
+      ..translate(-center.dx, -center.dy)
+      ..multiply(current);
+    _transformationController.value = matrix;
+  }
+
+  void _resetZoom() {
+    HapticFeedback.mediumImpact();
+    _transformationController.value = Matrix4.identity();
   }
 
   Widget _buildPartitionChip(String key, String label) {

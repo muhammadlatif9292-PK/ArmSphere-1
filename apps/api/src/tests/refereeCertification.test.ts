@@ -5,6 +5,8 @@ import { app } from "../app.js";
 import { UserRole } from "@armsphere/types";
 import { generateAccessToken } from "@armsphere/cryptography";
 import env from "../config/env.js";
+import { RefereeCertificationService } from "../services/refereeCertification.js";
+import { scheduleJob, runDueScheduledJobs, processedJobsTracker, resetJobTrackers, SCHEDULED_JOB_TYPES } from "../services/scheduledJobs.js";
 
 function authHeader(role: UserRole = UserRole.ATHLETE, userId = "00000000-0000-0000-0000-000000000099") {
   const token = generateAccessToken(userId, "test@armsphere.com", role, env.JWT_ACCESS_SECRET);
@@ -22,9 +24,12 @@ describe("Referee Certification and Action Gating API Suite", () => {
     // Clear & Seed base objects
     testDbStore.users = [];
     testDbStore.refereeCertifications = [];
+    testDbStore.notifications = [];
+    testDbStore.scheduledJobs = [];
     testDbStore.events = [];
     testDbStore.eventRegistrations = [];
     testDbStore.officialWeighins = [];
+    resetJobTrackers();
 
     // Seed users
     testDbStore.users.push(
@@ -252,6 +257,222 @@ describe("Referee Certification and Action Gating API Suite", () => {
         });
 
       expect(response.status).toBe(201);
+    });
+  });
+
+  describe("Referee Certification Expiry Processing & Notifications", () => {
+    it("should process expired certifications, transition status to EXPIRED, and notify referees", async () => {
+      // 1. Seed one active unexpired cert and one active expired cert
+      const activeUnexpiredId = "cert-active-unexpired";
+      const activeExpiredId = "cert-active-expired";
+
+      testDbStore.refereeCertifications.push(
+        {
+          id: activeUnexpiredId,
+          userId: refereeId,
+          certificationLevel: "PRO_LEVEL_1",
+          issuedAt: new Date(Date.now() - 86400000 * 30),
+          expiresAt: new Date(Date.now() + 86400000 * 60), // expires in 60 days
+          status: "ACTIVE",
+          issuingBody: "WAF_OFFICIAL",
+        },
+        {
+          id: activeExpiredId,
+          userId: refereeId,
+          certificationLevel: "PRO_LEVEL_2",
+          issuedAt: new Date(Date.now() - 86400000 * 400),
+          expiresAt: new Date(Date.now() - 86400000 * 30), // expired 30 days ago
+          status: "ACTIVE",
+          issuingBody: "WAF_OFFICIAL",
+        }
+      );
+
+      const result = await RefereeCertificationService.processExpiredCertifications();
+
+      expect(result.expiredCount).toBe(1);
+      expect(result.expiredIds).toEqual([activeExpiredId]);
+
+      // Verify status in database
+      const expiredCert = testDbStore.refereeCertifications.find((c) => c.id === activeExpiredId);
+      expect(expiredCert?.status).toBe("EXPIRED");
+
+      const unexpiredCert = testDbStore.refereeCertifications.find((c) => c.id === activeUnexpiredId);
+      expect(unexpiredCert?.status).toBe("ACTIVE");
+
+      // Verify in-app notification sent to the referee
+      const notifications = testDbStore.notifications.filter((n) => n.userId === refereeId);
+      expect(notifications.length).toBeGreaterThan(0);
+      const expiryNotification = notifications.find((n) => n.title.includes("Referee Certification Expired"));
+      expect(expiryNotification).toBeDefined();
+      expect(expiryNotification?.priority).toBe("HIGH");
+      expect(expiryNotification?.content).toContain("PRO_LEVEL_2");
+    });
+
+    it("should execute certification expiry through the postgres scheduled jobs runner", async () => {
+      const activeExpiredId = "cert-job-expired";
+      testDbStore.refereeCertifications.push({
+        id: activeExpiredId,
+        userId: refereeId,
+        certificationLevel: "MASTER_OFFICIAL",
+        issuedAt: new Date(Date.now() - 86400000 * 500),
+        expiresAt: new Date(Date.now() - 86400000 * 5),
+        status: "ACTIVE",
+        issuingBody: "WAF_OFFICIAL",
+      });
+
+      // Schedule the job
+      await scheduleJob(SCHEDULED_JOB_TYPES.CERTIFICATION_EXPIRY, new Date(Date.now() - 1000));
+
+      // Run due scheduled jobs
+      const runResult = await runDueScheduledJobs();
+      expect(runResult.executedCount).toBeGreaterThanOrEqual(1);
+
+      // Verify job tracker recorded the expiry execution
+      expect(processedJobsTracker.certificationExpiries.length).toBe(1);
+      expect(processedJobsTracker.certificationExpiries[0].result.expiredCount).toBe(1);
+
+      // Verify database certification status
+      const cert = testDbStore.refereeCertifications.find((c) => c.id === activeExpiredId);
+      expect(cert?.status).toBe("EXPIRED");
+    });
+
+    it("should be strictly idempotent across repeated runs and never create duplicate expiry notifications", async () => {
+      const certId = "cert-idempotent-1";
+      testDbStore.refereeCertifications.push({
+        id: certId,
+        userId: refereeId,
+        certificationLevel: "NATIONAL_LEVEL_1",
+        issuedAt: new Date(Date.now() - 86400000 * 400),
+        expiresAt: new Date(Date.now() - 86400000 * 2),
+        status: "ACTIVE",
+        issuingBody: "WAF_OFFICIAL",
+      });
+
+      const firstRun = await RefereeCertificationService.processExpiredCertifications();
+      expect(firstRun.expiredCount).toBe(1);
+      expect(firstRun.expiredIds).toEqual([certId]);
+
+      const secondRun = await RefereeCertificationService.processExpiredCertifications();
+      expect(secondRun.expiredCount).toBe(0);
+      expect(secondRun.expiredIds).toEqual([]);
+
+      // Even if status were momentarily flipped back to ACTIVE before a retry, groupId deduplication prevents duplicate notifications
+      const certRow = testDbStore.refereeCertifications.find((c) => c.id === certId);
+      certRow.status = "ACTIVE";
+      const thirdRun = await RefereeCertificationService.processExpiredCertifications();
+      expect(thirdRun.expiredCount).toBe(1);
+
+      const expiryNotifications = testDbStore.notifications.filter(
+        (n) => n.userId === refereeId && n.groupId === `cert-expiry-${certId}`
+      );
+      expect(expiryNotifications).toHaveLength(1);
+    });
+  });
+
+  describe("Referee Certification Listing by Province (users.province join)", () => {
+    const directorPunjabId = "director-punjab-uuid";
+    const directorSindhId = "director-sindh-uuid";
+    const refereePunjabId = "referee-punjab-uuid";
+    const refereeSindhId = "referee-sindh-uuid";
+
+    beforeEach(() => {
+      testDbStore.users.push(
+        {
+          id: directorPunjabId,
+          email: "director.punjab@armsphere.com",
+          username: "director_punjab",
+          role: UserRole.PROVINCIAL_DIRECTOR,
+          province: "Punjab",
+          fullName: "Punjab Director",
+          isActive: true,
+        },
+        {
+          id: directorSindhId,
+          email: "director.sindh@armsphere.com",
+          username: "director_sindh",
+          role: UserRole.PROVINCIAL_DIRECTOR,
+          province: "Sindh",
+          fullName: "Sindh Director",
+          isActive: true,
+        },
+        {
+          id: refereePunjabId,
+          email: "referee.punjab@armsphere.com",
+          username: "referee_punjab",
+          role: UserRole.REFEREE,
+          province: "Punjab",
+          fullName: "Punjab Official",
+          isActive: true,
+        },
+        {
+          id: refereeSindhId,
+          email: "referee.sindh@armsphere.com",
+          username: "referee_sindh",
+          role: UserRole.REFEREE,
+          province: "Sindh",
+          fullName: "Sindh Official",
+          isActive: true,
+        }
+      );
+
+      testDbStore.refereeCertifications.push(
+        {
+          id: "cert-punjab-1",
+          userId: refereePunjabId,
+          certificationLevel: "PRO_LEVEL_1",
+          issuedAt: new Date(),
+          status: "ACTIVE",
+          issuingBody: "WAF_OFFICIAL",
+        },
+        {
+          id: "cert-sindh-1",
+          userId: refereeSindhId,
+          certificationLevel: "NATIONAL_LEVEL_2",
+          issuedAt: new Date(),
+          status: "ACTIVE",
+          issuingBody: "WAF_OFFICIAL",
+        }
+      );
+    });
+
+    it("should allow SYSTEM_ADMIN to list certifications in any province", async () => {
+      const response = await request(app)
+        .get("/referees/by-province/Punjab")
+        .set("Authorization", authHeader(UserRole.SYSTEM_ADMIN, systemAdminId));
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].userId).toBe(refereePunjabId);
+      expect(response.body.data[0].userProvince).toBe("Punjab");
+    });
+
+    it("should allow Provincial Director to list certifications in their own province", async () => {
+      const response = await request(app)
+        .get("/referees/by-province/Punjab")
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, directorPunjabId));
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].userId).toBe(refereePunjabId);
+    });
+
+    it("should reject Provincial Director attempting to view certifications in a different province (403)", async () => {
+      const response = await request(app)
+        .get("/referees/by-province/Punjab")
+        .set("Authorization", authHeader(UserRole.PROVINCIAL_DIRECTOR, directorSindhId));
+
+      expect(response.status).toBe(403);
+      expect(response.body.detail || response.body.error?.detail).toContain("own province");
+    });
+
+    it("should reject non-director non-admin roles from accessing by-province endpoint (403)", async () => {
+      const response = await request(app)
+        .get("/referees/by-province/Punjab")
+        .set("Authorization", authHeader(UserRole.ATHLETE, athleteId));
+
+      expect(response.status).toBe(403);
     });
   });
 });

@@ -95,7 +95,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Attempt to call refresh token endpoint
+        const hasRefreshCookie =
+          typeof document !== 'undefined' &&
+          typeof document.cookie === 'string' &&
+          document.cookie.includes('refreshToken=');
+
+        if (!cachedUserStr && !cachedToken && !hasRefreshCookie) {
+          return;
+        }
+
+        // Attempt to call refresh token endpoint when a session or cookie is present
         const res = await apiClient.post('/auth/refresh', {}, { withCredentials: true });
         if (res.data && res.data.success && res.data.data) {
           const { accessToken, user: loggedUser } = res.data.data;

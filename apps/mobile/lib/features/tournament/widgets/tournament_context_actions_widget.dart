@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentContextActionsWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -304,7 +305,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
           onTap: () {
             HapticFeedback.mediumImpact();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              CrystalSnackBar(
                 content: Text('✓ Digital Check-In Complete! Assigned to holding area.'),
                 backgroundColor: Color(0xFF00E676),
               ),
@@ -485,9 +486,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20.0),
@@ -522,7 +525,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
               onPressed: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Medical certificate uploaded successfully. Pending doctor sign-off.'),
                     backgroundColor: Color(0xFF00E5FF),
                   ),
@@ -541,9 +544,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20.0),
@@ -597,10 +602,12 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
@@ -665,9 +672,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20.0),
@@ -746,14 +755,14 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
                 Navigator.pop(ctx);
                 if (hasValidCert) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    CrystalSnackBar(
                       content: Text('✓ Opening verified certificate...'),
                       backgroundColor: AppTheme.goldPrimary,
                     ),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    CrystalSnackBar(
                       content: Text(
                         'Official digital certificate generation is pending external federation service integration. Status: PENDING EXTERNAL SERVICE.',
                       ),
@@ -815,9 +824,11 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
   void _showShareModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      useRootNavigator: true,
+      backgroundColor: const Color(0xF00B101B),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20.0),
@@ -852,7 +863,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
               onPressed: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  CrystalSnackBar(
                     content: Text('✓ Tournament link copied to clipboard!'),
                     backgroundColor: Color(0xFF00E5FF),
                   ),

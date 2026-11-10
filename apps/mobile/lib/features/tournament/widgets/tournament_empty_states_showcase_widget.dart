@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import 'empty_state_type.dart';
+import '../../../core/widgets/crystal_toast.dart';
 class TournamentEmptyStatesShowcaseWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -348,7 +349,7 @@ class _TournamentEmptyStatesShowcaseWidgetState
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                            CrystalSnackBar(
                               content: Text(
                                 currentConfig['toastMessage'] as String,
                                 style: const TextStyle(
