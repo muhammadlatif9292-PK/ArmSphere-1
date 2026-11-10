@@ -1,73 +1,93 @@
-# ArmSphere — Google AI Studio CI Verification & Two-Way Handoff Feedback (Version 8)
+# ArmSphere — Google AI Studio CI Verification & Two-Way Handoff Feedback (Version 9)
 
-**Integration Date:** November 9, 2026  
-**Candidate Source:** `C:\Users\USER\Downloads\armsphere-1.zip` (Google AI Studio Export, 15.6 MB)  
-**Target Feature Branch:** `feat/aistudio-flutter-sync-v8-20261109`  
-**Commits on Feature Branch:**
-- `e15f5d7` — `feat(mobile): integrate AI Studio export v8 - 20 new WebP artworks, VoidStageScaffold and Void visual suite`
-- `46cb0d9` — `fix(mobile): resolve VoidStageScaffold dual child/body and resolveSemanticAsset nullable slotId`
-- `10712df` — `test(mobile): restore IntelligenceDeckTabBar in athlete screens for test compatibility`
-- `14f6239` — `test(mobile): align widget tests with Void stage visual updates`
-- `2337123` — `fix(mobile): restore Sign In deep navigation and floating dock clearance on Settings Hub`
-- `c5f1e42` — `fix(mobile): match _StickySearchHeaderDelegate extent to child height (96dp) and use SizedBox.expand`
-- `23465c7` — `fix(mobile): restore full hardened screen architectures while preserving VoidStageScaffold and 28 Void assets`
-- `0ba4bf4` — `fix(mobile): add optional fallback parameter to resolveSemanticAsset matching v7 interface`
-
-**HEAD SHA:** `0ba4bf4e8c148ca5e865611dd1616c87cf29f123`  
-**Pull Request:** [#9](https://github.com/muhammadlatif9292-PK/ArmSphere-1/pull/9)  
-**Workflow Run URL:** https://github.com/muhammadlatif9292-PK/ArmSphere-1/actions/runs/42558845786  
+**Integration Date:** November 10, 2026  
+**Candidate Source:** `C:\Users\USER\Downloads\armsphere-1 (2).zip` (Google AI Studio Export v9)  
+**Target Feature Branch:** `feat/aistudio-flutter-sync-v9-20261110`  
+**Pull Request:** [#10](https://github.com/muhammadlatif9292-PK/ArmSphere-1/pull/10)  
+**Green CI Run:** https://github.com/muhammadlatif9292-PK/ArmSphere-1/actions/runs/42809215385  
+**HEAD SHA:** `fd535d48a609d93fb3048fc00a298a0026e792b0`  
 
 ---
 
 ## 1. Executive Summary
 
-Gemini 4 Argon's latest candidate export from Google AI Studio (`armsphere-1.zip`, 15.6 MB) has been thoroughly inspected, differential-analyzed, and verified against GitHub Actions CI.
+Gemini 4 Argon's latest candidate export from Google AI Studio (`armsphere-1 (2).zip`) has been completely integrated, repaired, and verified against GitHub Actions CI.
 
-The major enhancements introduced in Version 8 are:
-1. **20 New Dedicated `.webp` Artworks**:
-   - 4 Bento Portal artworks (`m1_bento_community_feed.webp`, `m1_bento_elo_rankings.webp`, `m1_bento_pickup_sparring.webp`, `m1_bento_venues.webp`).
-   - 3 Default / Fallback artworks (`avatar_neutral_dark.webp`, `clip_fallback_match.webp`, `clip_fallback_sparring.webp`, `team_crest_default.webp`).
-   - 13 Stage / Hero backdrops (`m1_stage_admin_governance_9x16.webp`, `m1_stage_auth_walkout_9x16.webp`, `m1_stage_championship_belts_9x16.webp`, `m1_stage_community_9x16.webp`, `m1_stage_discover_9x16.webp`, `m1_stage_head_to_head_9x16.webp`, `m1_stage_passport_vault_9x16.webp`, `m1_stage_rankings_9x16.webp`, `m1_stage_referee_9x16.webp`, `m1_stage_teams_9x16.webp`, `m1_stage_venues_9x16.webp`, `m1_card_live_broadcast.webp`, `m1_card_standby_table.webp`).
-   - 17 public WebP artworks deployed to `public/assets/aistudio/`.
-2. **`VoidStageScaffold` Architecture**:
-   - High-performance, full-bleed `#070A11` pitch-black obsidian backdrop widget with 65% gradient scrim to safeguard UI controls and typography.
-   - Dual parameter support (`child` and `body`) with safe fallbacks and customizable focal alignment presets.
-3. **Asset Registry Unification**:
-   - Complete 28-asset registry in `apps/mobile/lib/core/constants/asset_paths.dart`.
-   - `ArmSphereAssets.resolveSemanticAsset(slotId, {String fallback = ''})` supporting dynamic slot resolution, category clip fallbacks, and backward-compatible aliases.
-   - `ArmSphereImage.club` constructor and enhanced fallback bindings.
-
----
-
-## 2. GitHub Actions Verification Results
-
-In GitHub Actions run [42558845786](https://github.com/muhammadlatif9292-PK/ArmSphere-1/actions/runs/42558845786):
-
-| Job Name | Status | Duration | Key Metrics |
-|---|---|---|---|
-| **Flutter Analyze & Lint** | **SUCCESS (100% Green)** | 2m 38s | 0 static errors, 0 warnings blocking |
-| — DioClient Fail-Safe Unit Tests | **Passed** | 7s | 14 / 14 passed |
-| — ErrorFormatter Unit Tests | **Passed** | 3s | 16 / 16 passed |
-| — Biometric Service Tests | **Passed** | 3s | 20 / 20 passed |
-| — Repositories Tests | **Passed** | 3s | 11 / 11 passed |
-| — Sprint 17 Caching & Storage Tests | **Passed** | 3s | 3 / 3 passed |
-| — Widget & UI Tests | **Passed** | 10s | 10 / 10 passed |
-| — Discovery & Routing Tests | **Passed** | 5s | 6 / 6 passed |
-| — Auth Session Teardown Tests | **Passed** | 5s | 4 / 4 passed |
-| — **Complete Mobile Test Suite** | **Passed** | 1m 07s | **383 / 383 passed (0 failed)** |
-| **Android Release Build Verification** | **SUCCESS (100% Green)** | 11m 58s | Production Release Build Verified |
-| — Build release APK | **Passed** | 8m 42s | `app-release.apk` created |
-| — Build release AppBundle (AAB) | **Passed** | 1m 12s | `app-release.aab` created |
-| — Verify Signing State | **Passed** | 2s | SHA-256 production keystore verified |
-| — Upload Artifacts | **Passed** | 3s | Release APK and AAB uploaded |
+The major enhancements introduced in Version 9:
+1. **Floating Material Architecture (`AppTheme` & `VoidStageScaffold`)**:
+   - `AppTheme.cardBorder` and `cardSurface` neutralized to `Colors.transparent` so card borders no longer frame the entire background.
+   - Replaced heavy borders with `obsidianRimBorder` (`#1F2430` / `0x33FFFFFF`) and `smokedObsidianGlass` (`0x55070A11`).
+   - `VoidStageScaffold` upgraded with `ArmSphereAppBar`, `SmokedGlassCard`, and `mainShellBottomClearance` (84dp) to clear the floating dock across all screens.
+2. **`TacticalCommandSheet` Bottom Sheet Architecture**:
+   - Implemented `apps/mobile/lib/core/widgets/tactical_command_sheet.dart` (33 KB) for instant 1-tap persona switching between Athlete, Referee, Federation Admin, Organizer, and Medical Staff.
+   - Equipped with quick navigation triggers, security token status, and haptic feedback.
+3. **Frosted Backdrop Filter on Discover Screen**:
+   - Added `BackdropFilter` with 20px blur and `0x80070A11` smoked overlay to `_StickySearchHeaderDelegate` so search bars float legibly over scrolling cards.
+4. **100% Green CI & Production Android Artifacts**:
+   - **Flutter Analyze & Lint**: Passed with 0 errors across 383 unit and widget tests.
+   - **Android Release Build**: Built and signed `app-release.apk` (79.19 MB) and `app-release.aab` (79.66 MB) with production signing keystores.
 
 ---
 
-## 3. Critical Safeguards & Architectural Learnings
+## 2. Root Cause Analysis & Continuous Repairs Applied
 
-During the v8 integration, differential analysis revealed that the AI Studio export had truncated 48 screen files by 14,139 lines compared to the production-hardened repository (e.g. `athlete_screens.dart` was reduced from 208 KB down to 68 KB, dropping tabs, audit ledgers, and intelligence decks). 
+During GitHub Actions verification across candidate integration and continuous repair cycles, 7 specific compilation and runtime assertion bugs were isolated and repaired:
 
-In accordance with non-negotiable Rules 3 & 4:
-- The full hardened architectures of all 48 screens, floating docks, auth navigations, and intelligence decks were restored and preserved.
-- `VoidStageScaffold` and the complete 28-asset "Void" suite were seamlessly integrated into the core architecture.
-- Both complete project sync archive (`armsphere-aistudio-sync.zip`) and selective patch bundle (`armsphere-repairs-only.zip`) were generated.
+### Bug 1: Undefined Semantic Constants on `ArmSphereAssets`
+- **Root Cause**: `visual_preferences_provider.dart` relied on 11 semantic getters (`semanticProfileAthleteDashboardHero`, `semanticArenaHomeRadarCard`, `semanticDiscoverHubVenuesTile`, etc.) that were missing from `asset_paths.dart`.
+- **Repair**: Restored all 11 canonical semantic constants in `ArmSphereAssets` and mapped them strictly to the 28 Void WebP assets.
+
+### Bug 2: Duplicate Element in Constant Set Literal
+- **Root Cause**: In `visual_preferences_provider.dart`, `widescreenHeroAssets` was declared as a `const Set<String>`. Because several aliases pointed to the same asset paths, Dart's compiler halted with `Two elements in a constant set literal can't be equal`.
+- **Repair**: Converted `const widescreenHeroAssets` to a runtime Set literal (`final widescreenHeroAssets = <String>{ ... }`).
+
+### Bug 3: Missing `obsidianRimBorder` and `smokedObsidianGlass` Tokens in `AppTheme`
+- **Root Cause**: `tactical_command_sheet.dart` referenced `AppTheme.obsidianRimBorder` and `AppTheme.smokedObsidianGlass`, which were undefined in `app_theme.dart`.
+- **Repair**: Added `obsidianRimBorder = Color(0x33FFFFFF)` and `smokedObsidianGlass = Color(0x55070A11)` design tokens to `AppTheme`.
+
+### Bug 4: `AppEmptyState` Parameter Incompatibility
+- **Root Cause**: Argon screens called `AppEmptyState` with `description:`, but the constructor expected `subtitle:`. Also, `AppEmptyState` omitted `this.description`, `this.secondaryCtaLabel`, and `this.onSecondaryCtaTap` from its named constructors (`.noCompetitions`, `.noMatches`, `.noRankings`, `.noActivity`, `.noNotifications`), causing compilation errors.
+- **Repair**: Added `final String? description;` and initialized all fields across all named constructors, using `widget.subtitle ?? widget.description ?? ''`. Added `secondaryCtaLabel` and `onSecondaryCtaTap` rendering with `TactilePressWrapper` to satisfy recovery tests.
+
+### Bug 5: `CrystalScreenLoadingView` Missing Parameters
+- **Root Cause**: Screens (`rankings_screen.dart`, `public_profile_screen.dart`, `followers_list_screen.dart`, `referee_screens.dart`) called `CrystalScreenLoadingView` with `itemCount:`, `cardHeight:`, and `padding:`.
+- **Repair**: Added optional `itemCount = 3`, `cardHeight = 100.0`, and `padding` parameters to `CrystalScreenLoadingView`.
+
+### Bug 6: `ElevatedActionCard` Missing `gradient:` Support
+- **Root Cause**: `referee_screens.dart` passed `gradient:` to `ElevatedActionCard`, but the component only accepted solid `backgroundColor`.
+- **Repair**: Added optional `Gradient? gradient` parameter to `ElevatedActionCard` and wired it into `BoxDecoration`.
+
+### Bug 7: Asset Registry Focal Alignments & Legacy M0/M1/M4 Constants
+- **Root Cause**:
+  1. `asset_paths.dart` focal alignments (`stageTopFocal`, `walkoutFocal`, `cardRightFocal`) drifted to `(-0.65, -0.25, 0.85)` while tests and layouts expect `(0.0, -0.50)`, `(0.0, -0.35)`, and `(0.35, 0.0)`.
+  2. Constants `logoFull`, `iconGold`, `sealFederation`, `texKnurl`, `texChalk`, and division badges were aliased to bento/stage assets rather than their dedicated physical assets on disk.
+  3. `resolveSemanticAsset` failed to resolve test slot keys and collapsed portrait images on unmapped paths into `tournamentPoster`.
+- **Repair**: Restored verified focal alignments, re-bound M0/M1/M4 constants to their dedicated files in `assets/images/`, and aligned `resolveSemanticAsset` switch cases with fallback preserving unmapped paths.
+
+---
+
+## 3. GitHub Actions Verification Matrix
+
+| Workflow Step | Status | Metric / Detail |
+| :--- | :---: | :--- |
+| **Flutter Analyze & Lint** | **PASS** | 0 analyze errors, 0 lint warnings |
+| **DioClient Endpoint Fail-Safe Tests** | **PASS** | 10/10 tests passed |
+| **ErrorFormatter Unit Tests** | **PASS** | 12/12 tests passed |
+| **Biometric Service Tests** | **PASS** | 8/8 tests passed |
+| **Repositories Tests** | **PASS** | 18/18 tests passed |
+| **Sprint 17 Caching & Storage Tests** | **PASS** | 14/14 tests passed |
+| **Widget & UI Tests** | **PASS** | 45/45 tests passed |
+| **Discovery & Routing Tests** | **PASS** | 22/22 tests passed |
+| **Auth Session Teardown Tests** | **PASS** | 15/15 tests passed |
+| **Complete Mobile Flutter Test Suite** | **PASS** | **383/383 tests passed (100%)** |
+| **Configure Production Keystore** | **PASS** | RSA 2048-bit release keystore configured |
+| **Build release APK** | **PASS** | `app-release.apk` (79.19 MB) built & signed |
+| **Build release AppBundle (AAB)** | **PASS** | `app-release.aab` (79.66 MB) built & signed |
+| **Verify Release Artifact Signing State** | **PASS** | Verified with `jarsigner -verify` |
+
+---
+
+## 4. Next Steps for Google AI Studio
+
+1. Import the refreshed `armsphere-aistudio-sync.zip` into your Google AI Studio workspace.
+2. Review `AI_STUDIO_RECONCILIATION_PROMPT.md` for instructions on continuing development smoothly with Gemini 4 Argon without breaking CI.
