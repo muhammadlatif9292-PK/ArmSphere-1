@@ -292,7 +292,7 @@ class VisualPreferencesState {
                 ? normalizeLegacyVisualAssetPath(profileAvatarUrl)
                 : null;
 
-    const widescreenHeroAssets = {
+    final widescreenHeroAssets = <String>{
       ArmSphereAssets.heroAthleteDashboard,
       ArmSphereAssets.heroArena,
       ArmSphereAssets.heroGrip,

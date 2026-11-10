@@ -1,5 +1,14 @@
 import 'package:flutter/widgets.dart';
 
+/// Clip categories used to resolve category-specific video thumbnail fallbacks.
+enum ClipCategory {
+  sparring,
+  technique,
+  tournament,
+  supermatch,
+  match,
+}
+
 /// Authoritative ArmSphere 28-Asset Canonical Registry & Semantic Resolver
 ///
 /// Exclusively binds the 28 hand-crafted `.webp` artworks across:
@@ -189,6 +198,38 @@ abstract final class ArmSphereAssets {
     teamCrestDefault,
   ];
 
+  /// Backward-compatible alias for canonical28Assets
+  static const List<String> allTieredWebpAssets = canonical28Assets;
+
+  /// Video clip center focal alignment
+  static const Alignment clipCenterFocal = Alignment.center;
+
+  /// Resolves the appropriate `.webp` fallback thumbnail for a video clip by enum category.
+  static String clipFallbackForCategory(ClipCategory category) {
+    switch (category) {
+      case ClipCategory.sparring:
+      case ClipCategory.technique:
+        return clipFallbackSparring;
+      case ClipCategory.tournament:
+      case ClipCategory.supermatch:
+      case ClipCategory.match:
+        return clipFallbackMatch;
+    }
+  }
+
+  /// Resolves the appropriate `.webp` fallback thumbnail from a raw category string.
+  static String resolveClipFallback(String? rawCategory) {
+    final normalized = (rawCategory ?? '').trim().toUpperCase();
+    if (normalized.contains('TOURNAMENT') ||
+        normalized.contains('SUPERMATCH') ||
+        normalized.contains('MATCH') ||
+        normalized.contains('CHAMPIONSHIP') ||
+        normalized.contains('HIGHLIGHT')) {
+      return clipFallbackMatch;
+    }
+    return clipFallbackSparring;
+  }
+
   // ---------------------------------------------------------------------------
   // Semantic Slot Resolution Engine
   // ---------------------------------------------------------------------------
@@ -237,6 +278,20 @@ abstract final class ArmSphereAssets {
   static const String welcomeGripHero = heroWelcomeGrip;
   static const String athleteDashboardHero = heroAthleteDashboard;
   static const String arenaRadarCard = cardArenaRadar;
+  static const String supermatchVsCard = cardSupermatchVs;
+
+  // Semantic Canonical Constants (Used by Visual Preferences & Tests)
+  static const String semanticProfileAthleteDashboardHero = heroAthleteDashboard;
+  static const String semanticArenaHomeRadarCard          = cardArenaRadar;
+  static const String semanticArenaHomeSupermatchCard     = cardSupermatchVs;
+  static const String semanticDiscoverHubVenuesTile       = bentoVenues;
+  static const String semanticDiscoverHubPickupMeetupsTile = bentoPickupSparring;
+  static const String semanticDiscoverHubCommunityFeedTile = bentoCommunityFeed;
+  static const String semanticDiscoverHubEloRankingsTile  = bentoEloRankings;
+  static const String semanticEventsTournamentDetailHero  = tournamentPoster;
+  static const String semanticAuthWelcomeHeroBanner       = heroWelcomeGrip;
+  static const String semanticArenaHomeBackground         = stageArena9x16;
+  static const String semanticTrainingLogBackground       = stageTrainingLab9x16;
 
   static const String stageAuthWalkout = stageAuthWalkout9x16;
   static const String stageDiscover = stageDiscover9x16;
