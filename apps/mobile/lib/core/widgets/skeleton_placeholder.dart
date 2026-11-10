@@ -75,7 +75,17 @@ class SkeletonPlaceholder extends StatelessWidget {
 /// Compatibility Loading View using the minimal floating gold pulse
 class CrystalScreenLoadingView extends StatelessWidget {
   final String? message;
-  const CrystalScreenLoadingView({super.key, this.message});
+  final int itemCount;
+  final double cardHeight;
+  final String? semanticLabel;
+
+  const CrystalScreenLoadingView({
+    super.key,
+    this.message,
+    this.itemCount = 3,
+    this.cardHeight = 100.0,
+    this.semanticLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
