@@ -233,43 +233,89 @@ abstract final class ArmSphereAssets {
   // ---------------------------------------------------------------------------
   // Semantic Slot Resolution Engine
   // ---------------------------------------------------------------------------
-  static const Map<String, String> _semanticSlotMap = {
-    'arena.home.hero': heroAthleteDashboard,
-    'arena.home.radar_card': cardArenaRadar,
-    'arena.home.supermatch_card': cardSupermatchVs,
-    'arena.standby.table': cardStandbyTable,
-    'arena.live.broadcast': cardLiveBroadcast,
-    'auth.welcome.hero': heroWelcomeGrip,
-    'auth.stage.walkout': stageAuthWalkout9x16,
-    'tournament.detail.poster': tournamentPoster,
-    'discover.bento.venues': bentoVenues,
-    'discover.bento.sparring': bentoPickupSparring,
-    'discover.bento.community': bentoCommunityFeed,
-    'discover.bento.rankings': bentoEloRankings,
-    'stage.arena': stageArena9x16,
-    'stage.training': stageTrainingLab9x16,
-    'stage.h2h': stageHeadToHead9x16,
-    'stage.championship': stageChampionshipBelts9x16,
-    'stage.rankings': stageRankings9x16,
-    'stage.referee': stageReferee9x16,
-    'stage.governance': stageAdminGovernance9x16,
-    'stage.teams': stageTeams9x16,
-    'stage.venues': stageVenues9x16,
-    'stage.discover': stageDiscover9x16,
-    'stage.passport': stagePassportVault9x16,
-    'stage.community': stageCommunity9x16,
-    'clip.fallback.sparring': clipFallbackSparring,
-    'clip.fallback.match': clipFallbackMatch,
-    'avatar.default': avatarNeutralDark,
-    'team.crest.default': teamCrestDefault,
-  };
-
-  /// Resolves a semantic slot identifier to one of the 28 canonical assets.
+  /// Resolves a semantic slot identifier or legacy asset path to one of the canonical assets.
   static String resolveSemanticAsset(
     String? slotId, {
-    String fallback = tournamentPoster,
+    String fallback = '',
   }) {
-    return _semanticSlotMap[slotId] ?? fallback;
+    if (slotId == null || slotId.trim().isEmpty) return fallback;
+    final trimmed = slotId.trim();
+    switch (trimmed) {
+      case 'profile.athlete.dashboard_hero':
+      case 'arena.home.hero':
+        return heroAthleteDashboard;
+      case 'arena.home.radar_card':
+        return cardArenaRadar;
+      case 'arena.home.supermatch_card':
+        return cardSupermatchVs;
+      case 'arena.standby.table':
+        return cardStandbyTable;
+      case 'arena.live.broadcast':
+        return cardLiveBroadcast;
+      case 'discover.hub.venues_tile':
+      case 'discover.bento.venues':
+        return bentoVenues;
+      case 'discover.hub.pickup_meetups_tile':
+      case 'discover.hub.pickup_tile':
+      case 'discover.bento.sparring':
+        return bentoPickupSparring;
+      case 'discover.hub.community_feed_tile':
+      case 'discover.hub.community_tile':
+      case 'discover.bento.community':
+        return bentoCommunityFeed;
+      case 'discover.hub.elo_rankings_tile':
+      case 'discover.hub.rankings_tile':
+      case 'discover.bento.rankings':
+        return bentoEloRankings;
+      case 'events.tournament.detail_hero':
+      case 'tournament.detail.poster':
+        return fallback.isNotEmpty ? fallback : defaultTournament;
+      case 'auth.welcome.hero_banner':
+      case 'auth.welcome.hero':
+        return heroWelcomeGrip;
+      case 'auth.stage.walkout':
+        return stageAuthWalkout9x16;
+      case 'arena.home.background':
+      case 'stage.arena':
+        return stageArena9x16;
+      case 'training.log.background':
+      case 'stage.training':
+        return stageTrainingLab9x16;
+      case 'stage.h2h':
+        return stageHeadToHead9x16;
+      case 'stage.championship':
+        return stageChampionshipBelts9x16;
+      case 'stage.rankings':
+        return stageRankings9x16;
+      case 'stage.referee':
+        return stageReferee9x16;
+      case 'stage.governance':
+        return stageAdminGovernance9x16;
+      case 'stage.teams':
+        return stageTeams9x16;
+      case 'stage.venues':
+        return stageVenues9x16;
+      case 'stage.discover':
+        return stageDiscover9x16;
+      case 'stage.passport':
+        return stagePassportVault9x16;
+      case 'stage.community':
+        return stageCommunity9x16;
+      case 'clip.fallback.sparring':
+        return clipFallbackSparring;
+      case 'clip.fallback.match':
+        return clipFallbackMatch;
+      case 'avatar.default':
+        return avatarNeutralDark;
+      case 'team.crest.default':
+        return teamCrestDefault;
+      default:
+        if (trimmed.endsWith('.png')) {
+          final candidate = trimmed.replaceFirst('.png', '.webp');
+          return candidate;
+        }
+        return fallback.isNotEmpty ? fallback : trimmed;
+    }
   }
 
   // ---------------------------------------------------------------------------

@@ -271,44 +271,88 @@ class _AppEmptyStateState extends State<AppEmptyState>
                     ),
                   ),
                 ),
-                if (widget.ctaLabel != null && widget.onCtaTap != null) ...[
+                if ((widget.ctaLabel != null && widget.onCtaTap != null) ||
+                    (widget.secondaryCtaLabel != null &&
+                        widget.onSecondaryCtaTap != null)) ...[
                   const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TactilePressWrapper(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        widget.onCtaTap!();
-                      },
-                      semanticLabel: widget.ctaLabel,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 6,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.ctaLabel!,
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                color: AppTheme.goldPrimary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                                letterSpacing: 0.3,
-                              ),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.start,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (widget.ctaLabel != null && widget.onCtaTap != null)
+                        TactilePressWrapper(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            widget.onCtaTap!();
+                          },
+                          semanticLabel: widget.ctaLabel,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 6,
                             ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 15,
-                              color: AppTheme.goldPrimary,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  widget.ctaLabel!,
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    color: AppTheme.goldPrimary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 15,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
+                      if (widget.secondaryCtaLabel != null &&
+                          widget.onSecondaryCtaTap != null)
+                        TactilePressWrapper(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            widget.onSecondaryCtaTap!();
+                          },
+                          semanticLabel: widget.secondaryCtaLabel,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 6,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  widget.secondaryCtaLabel!,
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 15,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ],
