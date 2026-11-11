@@ -1043,7 +1043,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       onTap: () => context.push(item.route),
       semanticLabel: item.title,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 132),
+        height: 132,
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
