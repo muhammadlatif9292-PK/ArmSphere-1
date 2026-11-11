@@ -104,7 +104,7 @@ void main() {
       expect(find.text('No purchased tickets'), findsOneWidget);
       expect(
         find.text('Passes and registration tickets you purchase for tournaments and seminars will appear here.'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byIcon(Icons.confirmation_number_outlined), findsOneWidget);
     });

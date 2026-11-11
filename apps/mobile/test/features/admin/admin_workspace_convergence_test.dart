@@ -507,7 +507,7 @@ void main() {
           find.byKey(const ValueKey<String>('admin_locked_jurisdiction_banner')),
           findsOneWidget,
         );
-        expect(find.textContaining('JURISDICTION LOCK: PUNJAB'), findsOneWidget);
+        expect(find.textContaining('JURISDICTION: PUNJAB'), findsOneWidget);
         expect(find.text('Tariq Javed'), findsOneWidget);
       },
     );
