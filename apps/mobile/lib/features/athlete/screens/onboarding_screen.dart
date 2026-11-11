@@ -228,14 +228,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SafeArea(
             child: Column(
               children: [
-                // Fixed top stepper bar
+                // Keep top 38% open for the 3D fighter walkout tunnel showcase
+                SizedBox(height: MediaQuery.sizeOf(context).height * 0.20),
+                // Fixed top stepper bar in the lower 62% safe zone
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 540),
                     child: StepHeader(
@@ -310,10 +312,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Form(
-            key: formKey,
-            child: child,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xCC0B0F19),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0x26FFFFFF),
+                width: 1.0,
+              ),
+            ),
+            child: Form(
+              key: formKey,
+              child: child,
+            ),
           ),
         ),
       ),

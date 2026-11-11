@@ -23,7 +23,7 @@ class GlassCard extends StatefulWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16.0),
     this.margin,
-    this.borderRadius = 16.0,
+    this.borderRadius = 18.0,
     this.borderColor,
     this.backgroundColor,
     this.blurAmount = 12.0,
@@ -80,10 +80,45 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final effectiveBorder = (widget.borderColor != null &&
+            widget.borderColor != Colors.transparent)
+        ? widget.borderColor!
+        : const Color(0x26FFFFFF);
+
     Widget content = Container(
       margin: widget.margin,
       padding: widget.padding,
-      color: Colors.transparent,
+      decoration: BoxDecoration(
+        gradient: widget.backgroundColor != null
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xD9101520),
+                  Color(0xF0070A11),
+                ],
+              ),
+        color: widget.backgroundColor,
+        borderRadius: BorderRadius.circular(widget.borderRadius),
+        border: Border.all(
+          color: effectiveBorder,
+          width: 1.0,
+        ),
+        boxShadow: [
+          const BoxShadow(
+            color: Color(0x99000000),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+          if (widget.enableGlow && widget.glowColor != null)
+            BoxShadow(
+              color: widget.glowColor!.withValues(alpha: 0.25),
+              blurRadius: 16,
+              spreadRadius: -2,
+            ),
+        ],
+      ),
       child: widget.child,
     );
 

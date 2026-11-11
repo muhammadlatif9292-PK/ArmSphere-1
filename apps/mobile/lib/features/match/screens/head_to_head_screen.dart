@@ -385,7 +385,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.headToHead),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: Column(
@@ -569,7 +569,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.headToHead),
           ),
           (comparisonAsync != null && comparisonAsync.isLoading)
           ? const CrystalScreenLoadingView(
@@ -616,13 +616,16 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                 )
               : RepaintBoundary(
                   child: ListView(
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(
+                      top: 165,
+                      bottom: MediaQuery.paddingOf(context).bottom + 120,
+                    ),
                     children: [
                       if (effectiveId1 == null || effectiveId2 == null)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          color: const Color(0xFF141824),
+                          color: const Color(0xCC0B0F19),
                           child: Row(
                             children: [
                               const Icon(Icons.sports_mma_outlined, size: 16, color: AppTheme.goldPrimary),
@@ -713,7 +716,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     bool redFavored,
     int eloDiff,
   ) {
-    const double heroHeight = 260.0;
+    const double heroHeight = 250.0;
 
     return SizedBox(
       height: heroHeight,
@@ -721,7 +724,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Red Corner Panel (Left Side with 15° Shear Angle)
+          // Red Corner Panel (Left Side with 15° Shear Angle — aligned below left 3D Red Corner silhouette)
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _redSlideAnim,
@@ -736,22 +739,22 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFF3F0B0B), // Deep Red Corner Hue
-                            Color(0xFF1E0A0A),
-                            Color(0xFF0F172A),
+                            Color(0xD91A080A), // Deep Obsidian-Crimson Corner Safe Zone
+                            Color(0xE60B0F19),
+                            Color(0xF5070A11),
                           ],
                         ),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 20, top: 20, right: 60),
+                        padding: const EdgeInsets.only(left: 20, top: 18, right: 60),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Corner Badge
-                            _buildCornerPill('RED CORNER', const Color(0xFFEF4444)),
+                            _buildCornerPill('RED CORNER', const Color(0xFFE23B3B)),
                             const SizedBox(height: 12),
 
-                            // Clickable Avatar with Red Ring (ISSUE-P3-01: Direct passport navigation)
+                            // Clickable Avatar with Competition Crimson (#E23B3B) Ring
                             TactilePressWrapper(
                               onTap: () {
                                 final athleteId = red['id']?.toString() ?? widget.athleteId1;
@@ -769,14 +772,14 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                               child: Tooltip(
                                 message: 'View ${red['name']} Passport',
                                 child: Container(
-                                  width: 52,
-                                  height: 52,
+                                  width: 56,
+                                  height: 56,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFFEF4444), width: 2.2),
+                                    border: Border.all(color: const Color(0xFFE23B3B), width: 2.0),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                                        color: const Color(0xFFE23B3B).withValues(alpha: 0.35),
                                         blurRadius: 12,
                                       ),
                                     ],
@@ -784,8 +787,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   child: ArmSphereImage.avatar(
                                     imageUrl: red['avatarUrl']?.toString(),
                                     initial: red['avatar']?.toString() ?? (red['name']?.toString().isNotEmpty == true ? red['name']![0] : 'R'),
-                                    size: 52,
-                                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                    size: 56,
+                                    fallbackAsset: ArmSphereAssets.avatarNeutralDark,
                                     semanticLabel: 'Red corner competitor avatar for ${red['name']}',
                                   ),
                                 ),
@@ -822,7 +825,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                 fontFamily: 'Space Grotesk',
                                 fontWeight: FontWeight.w900,
                                 fontSize: 18,
-                                color: Color(0xFFEF4444),
+                                color: Color(0xFFE23B3B),
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
@@ -836,7 +839,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
             ),
           ),
 
-          // Blue Corner Panel (Right Side with 15° Shear Angle)
+          // Blue Corner Panel (Right Side with 15° Shear Angle — aligned below right 3D Blue Corner silhouette)
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _blueSlideAnim,
@@ -851,22 +854,22 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                           begin: Alignment.topRight,
                           end: Alignment.bottomLeft,
                           colors: [
-                            Color(0xFF0C2744), // Deep Blue Corner Hue
-                            Color(0xFF09192C),
-                            Color(0xFF0F172A),
+                            Color(0xD90E1726), // Deep Obsidian-Titanium Corner Safe Zone
+                            Color(0xE60B0F19),
+                            Color(0xF5070A11),
                           ],
                         ),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 20, top: 20, left: 60),
+                        padding: const EdgeInsets.only(right: 20, top: 18, left: 60),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             // Corner Badge
-                            _buildCornerPill('BLUE CORNER', const Color(0xFF38BDF8)),
+                            _buildCornerPill('BLUE CORNER', const Color(0xFF94A3B8)),
                             const SizedBox(height: 12),
 
-                            // Clickable Avatar with Blue Ring (ISSUE-P3-01: Direct passport navigation)
+                            // Clickable Avatar with Brushed-Titanium/Silver (#94A3B8) Ring
                             TactilePressWrapper(
                               onTap: () {
                                 final athleteId = blue['id']?.toString() ?? widget.athleteId2;
@@ -884,14 +887,14 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                               child: Tooltip(
                                 message: 'View ${blue['name']} Passport',
                                 child: Container(
-                                  width: 52,
-                                  height: 52,
+                                  width: 56,
+                                  height: 56,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFF38BDF8), width: 2.2),
+                                    border: Border.all(color: const Color(0xFF94A3B8), width: 2.0),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
+                                        color: const Color(0xFF94A3B8).withValues(alpha: 0.35),
                                         blurRadius: 12,
                                       ),
                                     ],
@@ -899,8 +902,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   child: ArmSphereImage.avatar(
                                     imageUrl: blue['avatarUrl']?.toString(),
                                     initial: blue['avatar']?.toString() ?? (blue['name']?.toString().isNotEmpty == true ? blue['name']![0] : 'B'),
-                                    size: 52,
-                                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                    size: 56,
+                                    fallbackAsset: ArmSphereAssets.avatarNeutralDark,
                                     semanticLabel: 'Blue corner competitor avatar for ${blue['name']}',
                                   ),
                                 ),
@@ -939,7 +942,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                 fontFamily: 'Space Grotesk',
                                 fontWeight: FontWeight.w900,
                                 fontSize: 18,
-                                color: Color(0xFF38BDF8),
+                                color: Color(0xFFCBD5E1),
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),

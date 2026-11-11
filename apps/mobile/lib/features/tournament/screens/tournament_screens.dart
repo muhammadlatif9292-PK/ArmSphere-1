@@ -83,7 +83,7 @@ class TournamentsListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.events,
@@ -152,9 +152,9 @@ class TournamentsListScreen extends ConsumerWidget {
               key: const ValueKey<String>('tournaments_list_view'),
               padding: EdgeInsets.fromLTRB(
                 16,
-                20,
+                155,
                 16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               itemCount: visible.length,
               separatorBuilder: (_, __) => const SizedBox(height: 14),
@@ -405,13 +405,14 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // 1. Background Image or Dynamic Arena Fallback (`events.tournament.detail_hero`)
+                      // 1. Background Image or Dynamic Arena Fallback (`tournament_poster.webp` at 100% opacity)
                       ArmSphereImage(
                         imageUrl: event['imageUrl']?.toString(),
-                        fallbackAsset: ArmSphereAssets.resolveSemanticAsset(
-                          ArmSphereAssets.semanticEventsTournamentDetailHero,
-                          fallback: ArmSphereAssets.defaultTournament,
-                        ),
+                        assetPath: (event['imageUrl'] == null ||
+                                event['imageUrl'].toString().isEmpty)
+                            ? ArmSphereAssets.tournamentPoster
+                            : null,
+                        fallbackAsset: ArmSphereAssets.tournamentPoster,
                         fit: BoxFit.cover,
                         alignment: const Alignment(0.0, -0.20),
                         semanticLabel: event['name'] != null
@@ -419,10 +420,21 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             : 'Tournament banner',
                       ),
 
-                      // 2. Canonical 4-Stop Hero Scrim Gradient (AppTheme.heroScrim)
-                      Positioned.fill(
+                      // 2. Bottom-Only Gradient (y: 0.55 to 1.0) preserving 100% clarity of the 3D Grand Prix stage, table, and trophies
+                      const Positioned.fill(
                         child: DecoratedBox(
-                          decoration: AppTheme.heroScrim(),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: [0.0, 0.55, 1.0],
+                              colors: [
+                                Color(0x00070A11),
+                                Color(0x00070A11),
+                                Color(0xF2070A11),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
 

@@ -29,17 +29,17 @@ class AppTheme {
   /// Precision Machined Titanium container (#151B24) - For primary cards and panels.
   static const Color titanium = Color(0xFF151B24);
 
-  /// Solid card container (#151B24 neutralised to transparent for floating stage materials).
-  static const Color cardSurface = Colors.transparent;
+  /// Smoked-Obsidian Crystal Glass card surface (#D9101520 -> #F0070A11).
+  static const Color cardSurface = Color(0xD9101520);
 
   /// Primary surface token (mapped to cardSurface).
-  static const Color surface = Colors.transparent;
+  static const Color surface = Color(0xD9101520);
 
-  /// Elevated action cell / secondary interactive container (#1E2836).
-  static const Color elevatedSurface = Color(0xFF1E2836);
+  /// Elevated action cell / secondary interactive container (#05070C recessed obsidian well).
+  static const Color elevatedSurface = Color(0xCC05070C);
 
   /// Backward-compatible alias for elevatedSurface.
-  static const Color surfaceElevated = Color(0xFF1E2836);
+  static const Color surfaceElevated = Color(0xCC05070C);
 
   /// Silver Plane structural substrate (#202832).
   static const Color silverPlane = Color(0xFF202832);
@@ -47,23 +47,23 @@ class AppTheme {
   /// Dark brushed steel surface (#1A2330).
   static const Color brushedSteel = Color(0xFF1A2330);
 
-  /// Recessed graphite container (#0E131C) for inputs and inactive surfaces.
-  static const Color recessedSurface = Color(0xFF0E131C);
+  /// Recessed obsidian well container (#CC05070C) for inputs, stat cells, and inner wells.
+  static const Color recessedSurface = Color(0xCC05070C);
 
-  /// Crystal Glassmorphic Specular Card Border (neutralized for floating stage materials).
-  static const Color borderTitanium = Colors.transparent;
+  /// Crystal Glassmorphic Specular Card Border (15% white = 0x26FFFFFF).
+  static const Color borderTitanium = Color(0x26FFFFFF);
 
   /// Metallic specular upper-edge highlight border (rgba(255, 255, 255, 0.36) = 0x5CFFFFFF).
   static const Color borderHighlight = Color(0x5CFFFFFF);
 
-  /// Structural card and divider border (neutralized for floating stage materials).
-  static const Color border = Colors.transparent;
+  /// Structural card and divider border (15% white = 0x26FFFFFF).
+  static const Color border = Color(0x26FFFFFF);
 
-  /// Muted structural divider for subtle separators.
-  static const Color borderMuted = Colors.transparent;
+  /// Muted structural divider for subtle separators (8% white = 0x14FFFFFF).
+  static const Color borderMuted = Color(0x14FFFFFF);
 
-  /// Subtle structural divider for secondary separators.
-  static const Color borderSubtle = Colors.transparent;
+  /// Subtle structural divider for secondary separators & recessed inner wells (8% white = 0x14FFFFFF).
+  static const Color borderSubtle = Color(0x14FFFFFF);
 
   /// Elevated bright divider for focused states.
   static const Color borderLight = Color(0x47FFFFFF);
@@ -71,13 +71,13 @@ class AppTheme {
   /// Backward-compatible alias for structural card border.
   static const Color cardBorder = border;
 
-  /// Obsidian rim border token (14% white specular sheen).
-  static const Color obsidianRimBorder = Color(0x24FFFFFF);
+  /// Obsidian rim border token (15% white specular sheen).
+  static const Color obsidianRimBorder = Color(0x26FFFFFF);
 
   /// Smoked obsidian glass surface token.
-  static const Color smokedObsidianGlass = Color(0xCC0D121D);
+  static const Color smokedObsidianGlass = Color(0xF0070A11);
 
-  /// Backward-compatible alias for cardSurface (#151B24).
+  /// Backward-compatible alias for cardSurface.
   static const Color cardBackground = cardSurface;
 
   /// Backward-compatible alias for background (#0B0F19).
@@ -142,24 +142,24 @@ class AppTheme {
   // ---------------------------------------------------------------------------
   // 3. Crystal Glassmorphic / Glossmorphic Surface Tokens
   // ---------------------------------------------------------------------------
-  /// Rich Smoked Dark Glass surface for main content cards & image cards (~82% dark opacity).
-  static const Color smokedCardSurface = Color(0xD10B101C);
+  /// Rich Smoked-Obsidian Crystal Glass surface for main content cards & image cards.
+  static const Color smokedCardSurface = Color(0xF0070A11);
 
-  /// Elevated Smoked Dark Glass surface for prominent headers & podium cards (~85% dark opacity).
-  static const Color smokedCardSurfaceElevated = Color(0xD9121A2B);
+  /// Elevated Smoked-Obsidian Crystal Glass surface for prominent headers & podium cards.
+  static const Color smokedCardSurfaceElevated = Color(0xD9101520);
 
-  /// Crystal-clear faint white surface plane for inputs & small chips (4% white opacity = 0x0AFFFFFF).
-  static const Color glassSurface = Color(0x0AFFFFFF);
+  /// Deep recessed obsidian inner well surface (#CC05070C) for inputs, stat boxes & empty wells.
+  static const Color glassSurface = Color(0xCC05070C);
 
-  /// Elevated crystal-clear surface plane (5% white opacity = 0x0DFFFFFF).
-  static const Color glassSurfaceHeavy = Color(0x0DFFFFFF);
+  /// Elevated recessed obsidian surface plane (#CC05070C).
+  static const Color glassSurfaceHeavy = Color(0xCC05070C);
   static const Color glassSurfaceHigh = glassSurfaceHeavy;
 
-  /// Ultra-light floating crystal plane (3.5% white opacity = 0x09FFFFFF).
-  static const Color glassSurfaceLight = Color(0x09FFFFFF);
+  /// Ultra-light floating crystal plane (#CC05070C).
+  static const Color glassSurfaceLight = Color(0xCC05070C);
 
-  /// Crisp light-catching specular border (22% white reflection = 0x38FFFFFF).
-  static const Color glassBorder = Color(0x38FFFFFF);
+  /// Crisp light-catching specular border (15% white reflection = 0x26FFFFFF).
+  static const Color glassBorder = Color(0x26FFFFFF);
 
   /// Upper-crest specular glass highlight line (38% white reflection = 0x61FFFFFF).
   static const Color glassBorderSpecular = Color(0x61FFFFFF);
@@ -310,80 +310,73 @@ class AppTheme {
     );
   }
 
-  /// Standard Crystal Glossmorphic levitating Y-axis drop shadow.
+  /// Standard Smoked-Obsidian Crystal Glass levitating Y-axis drop shadow.
   static BoxShadow cardShadow() {
-    return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.44),
-      blurRadius: 22.0,
-      spreadRadius: -2.0,
-      offset: const Offset(0, 10),
+    return const BoxShadow(
+      color: Color(0x99000000),
+      blurRadius: 20.0,
+      offset: Offset(0, 10),
     );
   }
 
-  /// Crystal Glossmorphic architectural floating card shadow.
+  /// Smoked-Obsidian Crystal Glass architectural floating card shadow.
   static BoxShadow titaniumShadow() {
-    return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.45),
-      blurRadius: 24.0,
-      spreadRadius: -2.0,
-      offset: const Offset(0, 10),
+    return const BoxShadow(
+      color: Color(0x99000000),
+      blurRadius: 20.0,
+      offset: Offset(0, 10),
     );
   }
 
   /// Deep floating crystal dock elevation shadow.
   static BoxShadow glassDockShadow() {
-    return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.52),
-      blurRadius: 26.0,
-      spreadRadius: -2.0,
-      offset: const Offset(0, 10),
+    return const BoxShadow(
+      color: Color(0x99000000),
+      blurRadius: 20.0,
+      offset: Offset(0, 10),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // 10. Smoked Dark Glass Gradients & Surface Shaders (~82% Dark Opacity)
+  // 10. Smoked-Obsidian Crystal Glass Gradients & Surface Shaders
   // ---------------------------------------------------------------------------
-  /// Rich Smoked Dark Glass card surface gradient (~82% dark obsidian with top-left titanium sheen).
+  /// Unified Smoked-Obsidian Crystal Glass outer card surface gradient.
   static const LinearGradient machinedTitaniumGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9141E30),
-      Color(0xD10D1320),
-      Color(0xCC080C15),
+      Color(0xD9101520),
+      Color(0xF0070A11),
     ],
-    stops: [0.0, 0.45, 1.0],
   );
 
-  /// Secondary Smoked Dark Glass gradient for compact cards & sub-panels.
+  /// Secondary Smoked-Obsidian Crystal Glass gradient for compact cards & sub-panels.
   static const LinearGradient brushedSteelGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9162032),
-      Color(0xCF0C121E),
+      Color(0xD9101520),
+      Color(0xF0070A11),
     ],
   );
 
-  /// Immersive Smoked Dark Glass athlete hero banner gradient.
+  /// Immersive Smoked-Obsidian Crystal Glass athlete hero banner gradient.
   static const LinearGradient cinematicBannerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9151F32),
-      Color(0xD10D1320),
-      Color(0xCC080C15),
+      Color(0xD9101520),
+      Color(0xF0070A11),
     ],
-    stops: [0.0, 0.45, 1.0],
   );
 
-  /// Broadcast fight card / Supermatch Smoked Dark Glass stage gradient.
+  /// Broadcast fight card / Supermatch Smoked-Obsidian Crystal Glass stage gradient.
   static const LinearGradient upcomingMatchGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9161F30),
-      Color(0xCF0B101B),
+      Color(0xD9101520),
+      Color(0xF0070A11),
     ],
   );
 
@@ -435,9 +428,9 @@ class AppTheme {
     ],
   );
 
-  /// Standard Machined Titanium Box Decoration with crisp metallic border.
+  /// Unified Smoked-Obsidian Crystal Glass Outer Card Box Decoration.
   static BoxDecoration machinedTitaniumDecoration({
-    double radius = radiusMedium,
+    double radius = 18.0,
     Color? borderColor,
     Color? customBackground,
     List<BoxShadow>? customShadow,
@@ -447,45 +440,75 @@ class AppTheme {
       color: customBackground,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? borderTitanium,
+        color: borderColor ?? const Color(0x26FFFFFF),
         width: 1.0,
       ),
-      boxShadow: customShadow ?? [titaniumShadow()],
+      boxShadow: customShadow ??
+          const [
+            BoxShadow(
+              color: Color(0x99000000),
+              blurRadius: 20.0,
+              offset: Offset(0, 10),
+            ),
+          ],
     );
   }
 
-  /// Dark Brushed Steel Box Decoration for compact cards & controls.
+  /// Dark Brushed Steel / Recessed Obsidian Box Decoration for compact cards & controls.
   static BoxDecoration brushedSteelDecoration({
-    double radius = radiusSmall,
+    double radius = 14.0,
     Color? borderColor,
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      gradient: brushedSteelGradient,
+      color: const Color(0xCC05070C),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? borderTitanium,
+        color: borderColor ?? const Color(0x14FFFFFF),
         width: 1.0,
       ),
-      boxShadow: customShadow ?? [cardShadow()],
+      boxShadow: customShadow,
     );
   }
 
-  /// Smoked Optical Glass Box Decoration.
+  /// Smoked-Obsidian Crystal Glass Outer Card Box Decoration.
   static BoxDecoration smokedGlassDecoration({
-    double radius = radiusLarge,
+    double radius = 18.0,
     Color? borderColor,
     Color? surfaceColor,
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      color: surfaceColor ?? smokedCardSurface,
+      gradient: surfaceColor != null ? null : machinedTitaniumGradient,
+      color: surfaceColor,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? glassBorder,
+        color: borderColor ?? const Color(0x26FFFFFF),
         width: 1.0,
       ),
-      boxShadow: customShadow ?? [glassDockShadow()],
+      boxShadow: customShadow ??
+          const [
+            BoxShadow(
+              color: Color(0x99000000),
+              blurRadius: 20.0,
+              offset: Offset(0, 10),
+            ),
+          ],
+    );
+  }
+
+  /// Deep Recessed Obsidian Inner Well Decoration (`#CC05070C`, `radius: 14`, `1px #14FFFFFF` border).
+  static BoxDecoration recessedObsidianWellDecoration({
+    double radius = 14.0,
+    Color? borderColor,
+  }) {
+    return BoxDecoration(
+      color: const Color(0xCC05070C),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor ?? const Color(0x14FFFFFF),
+        width: 1.0,
+      ),
     );
   }
 
@@ -807,7 +830,7 @@ class AppTheme {
         ),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xEB070A11),
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,

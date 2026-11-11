@@ -19,6 +19,7 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 
 /// Federation Discovery Segment Categories
@@ -377,6 +378,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         titleSpacing: AppTheme.space16,
         title: Row(
@@ -430,32 +432,26 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ],
         ),
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(
-          domain: ArmSphereStageDomain.discover,
-        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.tune_rounded,
-              color: AppTheme.textSecondary,
-              size: 20,
-            ),
+          CrystalIconPillButton(
+            icon: Icons.tune_rounded,
+            iconColor: AppTheme.textPure,
+            iconSize: 18,
             tooltip: 'Directory Navigator',
             onPressed: () => _showDirectoryQuickDrawer(context),
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: AppTheme.textSecondary,
-              size: 21,
-            ),
+          CrystalIconPillButton(
+            icon: Icons.notifications_outlined,
+            iconColor: AppTheme.textPure,
+            iconSize: 19,
             tooltip: 'Notifications',
             onPressed: () => context.push('/notifications'),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -472,6 +468,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               key: const ValueKey<String>('discover_scroll_view'),
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
+                // 110px open stage header so the 3D Titanium Compass Globe in
+                // m1_stage_discover_9x16.webp shines clearly at the top
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 110),
+                ),
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _StickySearchHeaderDelegate(
@@ -521,15 +522,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       padding: const EdgeInsets.fromLTRB(AppTheme.space16, 6, AppTheme.space16, 6),
       child: Container(
         height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          border: Border.all(
-            color: _activeQuery.isNotEmpty
-                ? AppTheme.primaryAccent
-                : Colors.white.withValues(alpha: 0.22),
-            width: 1.0,
-          ),
+        decoration: AppTheme.recessedObsidianWellDecoration(
+          radius: 14,
+          borderColor: _activeQuery.isNotEmpty
+              ? AppTheme.primaryAccent
+              : const Color(0x14FFFFFF),
         ),
         child: TextField(
           controller: _searchController,
@@ -985,32 +982,80 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       ),
     ];
 
-    return _FramedDirectorySection(
-      title: 'Federation Hub',
-      subtitle: '4 Sanctioned Quick Portals',
-      icon: Icons.apps_rounded,
-      accentColor: AppTheme.primaryAccent,
-      actionLabel: 'All Portals',
-      onActionTap: () => _showDirectoryQuickDrawer(context),
-      child: Column(
-        children: [
-          Row(
+    // Unbundled 2x2 Bento Grid rendered directly on the stage with 14px spacing
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, right: 2, bottom: 10),
+          child: Row(
             children: [
-              Expanded(child: _buildBentoPortalTile(context, hubItems[0])),
-              const SizedBox(width: 10),
-              Expanded(child: _buildBentoPortalTile(context, hubItems[1])),
+              const Expanded(
+                child: Text(
+                  'Federation Hub',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _showDirectoryQuickDrawer(context),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xB3070A11),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: const Color(0x26FFFFFF)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'All Portals',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 10,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(child: _buildBentoPortalTile(context, hubItems[2])),
-              const SizedBox(width: 10),
-              Expanded(child: _buildBentoPortalTile(context, hubItems[3])),
-            ],
-          ),
-        ],
-      ),
+        ),
+        Row(
+          children: [
+            Expanded(child: _buildBentoPortalTile(context, hubItems[0])),
+            const SizedBox(width: 14),
+            Expanded(child: _buildBentoPortalTile(context, hubItems[1])),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(child: _buildBentoPortalTile(context, hubItems[2])),
+            const SizedBox(width: 14),
+            Expanded(child: _buildBentoPortalTile(context, hubItems[3])),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1019,17 +1064,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       onTap: () => context.push(item.route),
       semanticLabel: '${item.title}: ${item.subtitle}',
       child: Container(
+        constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
-          color: AppTheme.smokedCardSurface,
-          gradient: AppTheme.machinedTitaniumGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          color: const Color(0xFF070A11),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.24),
+            color: const Color(0x26FFFFFF),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.48),
+              color: Colors.black.withValues(alpha: 0.52),
               blurRadius: 22,
               spreadRadius: -2,
               offset: const Offset(0, 10),
@@ -1037,63 +1082,32 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium - 1),
+          borderRadius: BorderRadius.circular(15),
           child: Stack(
             children: [
-              // Per-tile atmospheric background image & radial corner glow
+              // Per-tile 100% crystal-clear artwork & compact bottom-third readability gradient (y: 0.58 to 1.0)
               Positioned.fill(
                 child: IgnorePointer(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Opacity(
-                        opacity: 0.55,
-                        child: ArmSphereImage(
-                          assetPath: item.bgAsset,
-                          fit: BoxFit.cover,
-                          alignment: item.bgAlignment,
-                          excludeFromSemantics: true,
-                        ),
-                      ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(0.85, -0.85),
-                            radius: 1.1,
-                            colors: [
-                              item.color.withValues(alpha: 0.24),
-                              const Color(0x00151B24),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Bottom-left + vertical readability scrim protecting top-left icon/chip
-                      // and bottom-left title/subtitle while keeping right-center subject clear
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                            colors: [
-                              Color(0xD9070A11),
-                              Color(0x8C0B0F17),
-                              Color(0x330B0F17),
-                            ],
-                            stops: [0.0, 0.52, 1.0],
-                          ),
-                        ),
+                      ArmSphereImage(
+                        assetPath: item.bgAsset,
+                        fit: BoxFit.cover,
+                        alignment: item.bgAlignment,
+                        excludeFromSemantics: true,
                       ),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
+                            stops: [0.0, 0.58, 1.0],
                             colors: [
-                              Color(0x47070A11),
-                              Color(0x2E0B0F17),
-                              Color(0x8C070A11),
+                              Color(0x00070A11),
+                              Color(0x00070A11),
+                              Color(0xF0070A11),
                             ],
-                            stops: [0.0, 0.50, 1.0],
                           ),
                         ),
                       ),
@@ -1124,83 +1138,75 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: item.color.withValues(alpha: 0.16),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(
-                              color: item.color.withValues(alpha: 0.35),
-                            ),
-                          ),
-                          child: Icon(item.icon, color: item.color, size: 16),
-                        ),
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: item.color.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: item.color.withValues(alpha: 0.32),
-                              ),
-                            ),
-                            child: Text(
-                              item.tag,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.bold,
-                                color: item.color,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                    // Compact top-right pill badge ONLY (top 65% of 3D artwork is unobstructed)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xCC070A11),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: item.color.withValues(alpha: 0.45),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.title,
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: AppTheme.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        child: Text(
+                          item.tag,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.bold,
+                            color: item.color,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const Icon(
-                          Icons.arrow_outward_rounded,
-                          size: 13,
-                          color: AppTheme.textMuted,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.subtitle,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontBody,
-                        fontSize: 11,
-                        color: AppTheme.textSecondary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 48),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.title,
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13.5,
+                                  color: AppTheme.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_outward_rounded,
+                              size: 13,
+                              color: AppTheme.textMuted,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item.subtitle,
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontBody,
+                            fontSize: 11,
+                            color: AppTheme.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1725,6 +1731,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
                 return ElevatedActionCard(
                   margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                  backgroundColor: const Color(0xCC05070C),
+                  borderRadius: 14,
+                  borderColor: idx == 0
+                      ? const Color(0x4DD4AF37)
+                      : const Color(0x14FFFFFF),
+                  boxShadow: const [],
                   onTap: () {
                     if (athleteId != null) {
                       context.push('/athlete/$athleteId');
@@ -1745,7 +1757,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         decoration: BoxDecoration(
                           color: idx < 3
                               ? AppTheme.secondaryAccent.withValues(alpha: 0.16)
-                              : AppTheme.background,
+                              : const Color(0xCC05070C),
                           borderRadius:
                               BorderRadius.circular(AppTheme.radiusSmall),
                           border: Border.all(
@@ -1970,23 +1982,7 @@ class _FramedDirectorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.smokedCardSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.22),
-          width: 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.48),
-            offset: const Offset(0, 10),
-            blurRadius: 24,
-            spreadRadius: -2,
-          ),
-        ],
-      ),
+      decoration: AppTheme.machinedTitaniumDecoration(radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1994,12 +1990,12 @@ class _FramedDirectorySection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 11),
             decoration: const BoxDecoration(
-              color: AppTheme.smokedCardSurfaceElevated,
+              color: Color(0x6605070C),
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppTheme.radiusLarge - 1),
+                top: Radius.circular(17),
               ),
               border: Border(
-                bottom: BorderSide(color: AppTheme.border, width: 1.0),
+                bottom: BorderSide(color: Color(0x14FFFFFF), width: 1.0),
               ),
             ),
             child: Row(
@@ -2027,14 +2023,15 @@ class _FramedDirectorySection extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        softWrap: true,
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 15,
+                          fontSize: 14.5,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
                           letterSpacing: 0.2,
+                          height: 1.2,
                         ),
                       ),
                       if (subtitle != null)
@@ -2103,7 +2100,7 @@ class _FramedDirectorySection extends StatelessWidget {
   }
 }
 
-/// Compact bordered empty-state banner card replacing tall unbordered icons
+/// Vertically stacked obsidian glass empty-state card (never squishing text beside a button)
 class _CompactEmptyBanner extends StatelessWidget {
   final IconData icon;
   final Color accentColor;
@@ -2124,84 +2121,79 @@ class _CompactEmptyBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.smokedCardSurface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.20),
-          width: 1.0,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: accentColor.withValues(alpha: 0.3),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Icon(icon, color: accentColor, size: 17),
               ),
-            ),
-            child: Icon(icon, color: accentColor, size: 17),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
                   title,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                    fontSize: 13.5,
                     color: AppTheme.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontBody,
-                    fontSize: 11.5,
-                    color: AppTheme.textSecondary,
-                    height: 1.3,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontFamily: AppTheme.fontBody,
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+              height: 1.38,
             ),
           ),
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(width: 10),
-            TextButton(
-              onPressed: onAction,
-              style: TextButton.styleFrom(
-                foregroundColor: accentColor,
-                backgroundColor: accentColor.withValues(alpha: 0.1),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  side: BorderSide(
-                    color: accentColor.withValues(alpha: 0.35),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: onAction,
+                icon: Icon(Icons.arrow_forward_rounded,
+                    size: 14, color: accentColor),
+                label: Text(
+                  actionLabel!,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
-              ),
-              child: Text(
-                actionLabel!,
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
+                style: TextButton.styleFrom(
+                  foregroundColor: accentColor,
+                  backgroundColor: accentColor.withValues(alpha: 0.12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    side: BorderSide(
+                      color: accentColor.withValues(alpha: 0.38),
+                    ),
+                  ),
                 ),
               ),
             ),

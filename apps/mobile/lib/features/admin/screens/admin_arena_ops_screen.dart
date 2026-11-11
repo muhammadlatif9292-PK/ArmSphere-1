@@ -1006,7 +1006,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           RefreshIndicator(
             color: AppTheme.goldPrimary,
@@ -1015,9 +1015,9 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
+                145,
                 16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
+                mainShellBottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 AdminAuthorityHeader(

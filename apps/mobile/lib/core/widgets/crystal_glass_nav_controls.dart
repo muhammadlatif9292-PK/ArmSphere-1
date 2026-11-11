@@ -27,26 +27,16 @@ class CrystalNavCapsuleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = accentBorderColor ?? const Color(0x47FFFFFF);
+    final borderColor = accentBorderColor ?? const Color(0x26FFFFFF);
     return Container(
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: const Color(0x990B101B),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0x99070A11),
+        shape: BoxShape.circle,
         border: Border.all(
           color: borderColor,
           width: 1.0,
-        ),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          stops: [0.0, 0.48, 1.0],
-          colors: [
-            Color(0x2EFFFFFF),
-            Color(0x12FFFFFF),
-            Color(0x06FFFFFF),
-          ],
         ),
         boxShadow: [
           BoxShadow(
@@ -57,16 +47,90 @@ class CrystalNavCapsuleIcon extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Center(
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: iconColor,
-            ),
+      child: Center(
+        child: Icon(
+          icon,
+          size: iconSize,
+          color: iconColor,
+        ),
+      ),
+    );
+  }
+}
+
+/// Reusable 38x38px circular smoked-crystal icon pill button (`#99070A11` fill, `1px #26FFFFFF` border)
+/// for top header actions (search, notifications, settings, refresh, role switch).
+class CrystalIconPillButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final Color iconColor;
+  final double iconSize;
+  final Color? borderColor;
+  final Widget? badgeOverlay;
+
+  const CrystalIconPillButton({
+    super.key,
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+    this.iconColor = AppTheme.textPure,
+    this.iconSize = 18.0,
+    this.borderColor,
+    this.badgeOverlay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget pill = Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: const Color(0x99070A11),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: borderColor ?? const Color(0x26FFFFFF),
+          width: 1.0,
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            icon,
+            size: iconSize,
+            color: iconColor,
+          ),
+          if (badgeOverlay != null) badgeOverlay!,
+        ],
+      ),
+    );
+
+    return Semantics(
+      button: true,
+      label: tooltip,
+      tooltip: tooltip,
+      excludeSemantics: tooltip != null,
+      onTap: onPressed == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              onPressed!();
+            },
+      child: Tooltip(
+        message: tooltip ?? '',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed == null
+              ? null
+              : () {
+                  HapticFeedback.selectionClick();
+                  onPressed!();
+                },
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(child: pill),
           ),
         ),
       ),
@@ -389,7 +453,7 @@ class CrystalActionButton extends StatelessWidget {
         isPrimary ? accentColor : AppTheme.textSecondary;
     final Widget buttonBody = Container(
       width: fullWidth ? double.infinity : null,
-      constraints: const BoxConstraints(minHeight: 46),
+      constraints: const BoxConstraints(minHeight: 48),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
@@ -414,7 +478,7 @@ class CrystalActionButton extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             padding: padding ??
-                const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               color: const Color(0xCC0B101C),
               borderRadius: BorderRadius.circular(14),
@@ -471,28 +535,27 @@ class CrystalActionButton extends StatelessWidget {
                     ),
                   )
                 else
-                  Row(
-                    mainAxisSize:
-                        fullWidth ? MainAxisSize.max : MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(
-                          icon,
-                          size: 17,
-                          color:
-                              isPrimary ? effectiveAccent : AppTheme.textPure,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Flexible(
-                        child: Text(
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (icon != null) ...[
+                          Icon(
+                            icon,
+                            size: 17,
+                            color:
+                                isPrimary ? effectiveAccent : AppTheme.textPure,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
                           label,
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.4,
                             color: isPrimary
@@ -500,8 +563,8 @@ class CrystalActionButton extends StatelessWidget {
                                 : AppTheme.textSecondary,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -686,7 +749,7 @@ class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = true,
     this.showHomeButton = true,
     this.centerTitle = false,
-    this.backgroundColor = AppTheme.voidBackground,
+    this.backgroundColor = Colors.transparent,
     this.elevation = 0,
   });
 

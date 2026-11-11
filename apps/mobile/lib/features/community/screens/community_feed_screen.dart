@@ -57,20 +57,37 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(
-          domain: ArmSphereStageDomain.community,
-        ),
-        titleSpacing: 16,
+        scrolledUnderElevation: 0,
+        titleSpacing: 14,
         title: Row(
           children: [
-            const ArmSphereImage(
-              assetPath: ArmSphereAssets.sealFed,
-              width: 18,
-              height: 18,
-              semanticLabel: 'Official Federation Community Arena',
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0x99070A11),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: const Color(0x4DD4AF37),
+                  width: 1.0,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Image.asset(
+                  ArmSphereAssets.teamCrestDefault,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  semanticLabel: 'Official Federation Community Arena',
+                ),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -78,16 +95,19 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'COMMUNITY ARENA',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: AppTheme.textPrimary,
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'COMMUNITY ARENA',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -118,17 +138,17 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ],
         ),
         actions: [
-          // Mode Toggle: Stream vs Vertical Clips
-          IconButton(
-            visualDensity: VisualDensity.compact,
+          // Mode Toggle: Stream vs Vertical Clips inside 38x38 circular smoked-crystal pill
+          CrystalIconPillButton(
             tooltip: _isVerticalClipsMode ? 'Stream Card View' : 'Vertical Clip Reels',
-            icon: Icon(
-              _isVerticalClipsMode ? Icons.view_agenda_outlined : Icons.play_lesson_outlined,
-              color: _isVerticalClipsMode ? AppTheme.goldPrimary : AppTheme.textSecondary,
-              size: 21,
-            ),
+            icon: _isVerticalClipsMode
+                ? Icons.view_agenda_outlined
+                : Icons.play_lesson_outlined,
+            iconColor: _isVerticalClipsMode
+                ? AppTheme.goldPrimary
+                : AppTheme.textPure,
+            iconSize: 18,
             onPressed: () {
-              HapticFeedback.selectionClick();
               setState(() {
                 _isVerticalClipsMode = !_isVerticalClipsMode;
               });
@@ -148,13 +168,8 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: Container(
+          child: SizedBox(
             height: 48,
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppTheme.borderSubtle, width: 1),
-              ),
-            ),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -175,12 +190,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppTheme.goldPrimary.withValues(alpha: 0.16)
-                          : Colors.white.withValues(alpha: 0.04),
+                          : const Color(0x99070A11),
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: Border.all(
                         color: isSelected
                             ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-                            : Colors.white.withValues(alpha: 0.22),
+                            : const Color(0x26FFFFFF),
                         width: isSelected ? 1.2 : 1.0,
                       ),
                     ),
@@ -208,92 +223,103 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
           ),
-          feedAsync.when(
-            loading: () => ListView.separated(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                MainShellScope.bottomClearance(context, additionalPadding: 16),
-              ),
-          itemCount: 4,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
-          itemBuilder: (_, __) => const RepaintBoundary(
-            child: SkeletonPlaceholder(height: 280),
-          ),
-        ),
-        error: (error, _) => AppErrorView(
-          error: error,
-          title: 'Could not load feed',
-          onRetry: () => ref.invalidate(communityFeedProvider),
-          showSecondaryAction: false,
-          onSessionExpired: () => ref.read(authProvider.notifier).logout(),
-        ),
-        data: (allPosts) {
-          final posts = _selectedCategory == 'ALL'
-              ? allPosts
-              : allPosts.where((p) {
-                  final cat = p['category']?.toString().toUpperCase() ?? '';
-                  return cat.contains(_selectedCategory);
-                }).toList();
-
-          if (posts.isEmpty) {
-            return AppEmptyState(
-              icon: Icons.videocam_off_outlined,
-              title: 'No clips found',
-              subtitle: _selectedCategory == 'ALL'
-                  ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
-                  : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
-              ctaLabel: 'Share a video',
-              onCtaTap: () => context.push('/community/post/create'),
-            );
-          }
-
-          if (_isVerticalClipsMode) {
-            return _VerticalClipsFeed(
-              posts: posts,
-              onRefresh: () => ref.read(communityFeedProvider.notifier).refresh(),
-              onLoadMore: () => ref.read(communityFeedProvider.notifier).loadMore(),
-            );
-          }
-
-          return RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async {
-              try {
-                await ref.read(communityFeedProvider.notifier).refresh();
-              } catch (_) {}
-            },
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (scrollInfo) {
-                if (scrollInfo.metrics.pixels >=
-                    scrollInfo.metrics.maxScrollExtent - 400) {
-                  ref
-                      .read(communityFeedProvider.notifier)
-                      .loadMore()
-                      .catchError((_) {});
-                }
-                return false;
-              },
-              child: ListView.separated(
-                key: const ValueKey<String>('community_feed_list_view'),
+          SafeArea(
+            bottom: false,
+            child: feedAsync.when(
+              loading: () => ListView.separated(
                 padding: EdgeInsets.fromLTRB(
                   16,
+                  140,
                   16,
-                  16,
-                  MainShellScope.bottomClearance(context, additionalPadding: 16),
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
                 ),
-                itemCount: posts.length,
+                itemCount: 4,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final post = posts[index];
-                  return _TacticalFeedCard(post: post);
-                },
+                itemBuilder: (_, __) => const RepaintBoundary(
+                  child: SkeletonPlaceholder(height: 280),
+                ),
               ),
+            error: (error, _) => AppErrorView(
+              error: error,
+              title: 'Could not load feed',
+              onRetry: () => ref.invalidate(communityFeedProvider),
+              showSecondaryAction: false,
+              onSessionExpired: () => ref.read(authProvider.notifier).logout(),
             ),
-          );
+            data: (allPosts) {
+              final posts = _selectedCategory == 'ALL'
+                  ? allPosts
+                  : allPosts.where((p) {
+                      final cat = p['category']?.toString().toUpperCase() ?? '';
+                      return cat.contains(_selectedCategory);
+                    }).toList();
+
+              if (posts.isEmpty) {
+                return SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    8,
+                    140,
+                    8,
+                    MainShellScope.bottomClearance(context, additionalPadding: 44),
+                  ),
+                  child: AppEmptyState(
+                    icon: Icons.videocam_off_outlined,
+                    title: 'No clips found',
+                    subtitle: _selectedCategory == 'ALL'
+                        ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
+                        : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
+                    ctaLabel: 'Share a video',
+                    onCtaTap: () => context.push('/community/post/create'),
+                  ),
+                );
+              }
+
+              if (_isVerticalClipsMode) {
+                return _VerticalClipsFeed(
+                  posts: posts,
+                  onRefresh: () => ref.read(communityFeedProvider.notifier).refresh(),
+                  onLoadMore: () => ref.read(communityFeedProvider.notifier).loadMore(),
+                );
+              }
+
+              return RefreshIndicator(
+                color: AppTheme.goldPrimary,
+                backgroundColor: AppTheme.cardSurface,
+                onRefresh: () async {
+                  try {
+                    await ref.read(communityFeedProvider.notifier).refresh();
+                  } catch (_) {}
+                },
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (scrollInfo) {
+                    if (scrollInfo.metrics.pixels >=
+                        scrollInfo.metrics.maxScrollExtent - 400) {
+                      ref
+                          .read(communityFeedProvider.notifier)
+                          .loadMore()
+                          .catchError((_) {});
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    key: const ValueKey<String>('community_feed_list_view'),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      140,
+                      16,
+                      MainShellScope.bottomClearance(context, additionalPadding: 44),
+                    ),
+                    itemCount: posts.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final post = posts[index];
+                      return _TacticalFeedCard(post: post);
+                    },
+                  ),
+                ),
+              );
             },
+            ),
           ),
         ],
       ),
@@ -324,25 +350,12 @@ class _TacticalFeedCard extends StatelessWidget {
     final ytId = EmbedUrlBuilder.extractYouTubeId(rawUrl);
     final thumbnailUrl = ytId != null ? 'https://img.youtube.com/vi/$ytId/hqdefault.jpg' : null;
     final fallbackCombatAsset = (category == 'SPARRING' || category == 'TECHNIQUE')
-        ? ArmSphereAssets.heroGrip
-        : ArmSphereAssets.heroArena;
+        ? ArmSphereAssets.clipFallbackSparring
+        : ArmSphereAssets.clipFallbackMatch;
 
     return RepaintBoundary(
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
-          gradient: AppTheme.machinedTitaniumGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 24,
-              spreadRadius: -2,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+        decoration: AppTheme.machinedTitaniumDecoration(radius: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -516,15 +529,21 @@ class _TacticalFeedCard extends StatelessWidget {
                                 : 'Combat video preview',
                           ),
                         ),
-                        // Subtle grid background texture
-                        CustomPaint(
-                          size: const Size(double.infinity, 190),
-                          painter: _GridTexturePainter(),
-                        ),
-                        // Dark 4-stop hero scrim
-                        Positioned.fill(
+                        // Directional horizontal left-to-right scrim (x: 0.0 -> 0.62)
+                        const Positioned.fill(
                           child: DecoratedBox(
-                            decoration: AppTheme.heroScrim(),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                stops: [0.0, 0.62, 1.0],
+                                colors: [
+                                  Color(0xE6070A11),
+                                  Color(0x00070A11),
+                                  Color(0x00070A11),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                         // Platform Tag in Top-Left
@@ -814,10 +833,6 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                                   ? 'Combat clip: $caption'
                                   : 'Combat video background',
                             ),
-                          ),
-                          CustomPaint(
-                            size: const Size(double.infinity, double.infinity),
-                            painter: _GridTexturePainter(),
                           ),
                           Positioned.fill(
                             child: DecoratedBox(
@@ -1160,27 +1175,6 @@ class _ScaleBounceLikeButtonState extends ConsumerState<_ScaleBounceLikeButton>
       ),
     );
   }
-}
-
-/// Subtle tactical knurling grid pattern for video placeholder scrims
-class _GridTexturePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF1E293B).withValues(alpha: 0.15)
-      ..strokeWidth = 0.5;
-
-    const step = 20.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 Color _getCategoryColor(String cat) {

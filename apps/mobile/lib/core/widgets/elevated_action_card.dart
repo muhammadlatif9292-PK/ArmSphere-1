@@ -26,7 +26,7 @@ class ElevatedActionCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppTheme.space16),
     this.margin,
-    this.borderRadius = AppTheme.radiusLarge,
+    this.borderRadius = 18.0,
     this.borderColor,
     this.backgroundColor,
     this.gradient,
@@ -38,26 +38,43 @@ class ElevatedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveBorderColor = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x26FFFFFF);
+    final effectiveShadows = boxShadow ??
+        customShadow ??
+        const [
+          BoxShadow(
+            color: Color(0x99000000),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ];
+
     Widget cardContent = Container(
       padding: padding,
       margin: margin,
-      decoration: gradient != null
-          ? BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(borderRadius),
-            )
-          : (backgroundColor != null
-              ? BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  border: borderColor != null
-                      ? Border.all(color: borderColor!)
-                      : null,
-                )
-              : null),
-      color: (gradient == null && backgroundColor == null)
-          ? Colors.transparent
-          : null,
+      decoration: BoxDecoration(
+        gradient: backgroundColor != null
+            ? null
+            : (gradient ??
+                const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xD9101520),
+                    Color(0xF0070A11),
+                  ],
+                )),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: effectiveBorderColor,
+          width: 1.0,
+        ),
+        boxShadow: effectiveShadows,
+      ),
       child: child,
     );
 

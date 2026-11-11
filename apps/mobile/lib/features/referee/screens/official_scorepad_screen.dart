@@ -278,8 +278,8 @@ class _OfficialScorepadScreenState
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 12.0),
+                  padding: const EdgeInsets.fromLTRB(
+                      16.0, 150.0, 16.0, 120.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

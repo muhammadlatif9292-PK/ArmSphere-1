@@ -95,52 +95,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
-          // Substrate: L0 Canvas (#070A11) + Subtle Magnesium Chalk Grain
+          // Full-Bleed 9:16 Walkout Stage Backdrop at 100% Opacity
           Positioned.fill(
-            child: Container(
-              color: AppTheme.voidBackground,
-              child: CustomPaint(
-                painter: _MagnesiumChalkGrainPainter(),
-              ),
-            ),
-          ),
-
-          // Environmental Hero Visual Anchor (M1-HERO-GRIP) with Downward Void Scrim
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 280,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Opacity(
-                  opacity: 0.68,
-                  child: ArmSphereImage(
-                    assetPath: ArmSphereAssets.resolveSemanticAsset(
-                      ArmSphereAssets.semanticAuthWelcomeHeroBanner,
-                    ),
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0.0, -0.25),
-                    width: double.infinity,
-                    height: 280,
-                    fallbackAsset: ArmSphereAssets.heroGrip,
-                    excludeFromSemantics: true,
-                  ),
+                const ColoredBox(color: AppTheme.voidBackground),
+                const ArmSphereImage(
+                  assetPath: ArmSphereAssets.stageAuthWalkout,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  width: double.infinity,
+                  height: double.infinity,
+                  excludeFromSemantics: true,
+                  showLoadingIndicator: false,
                 ),
-                // 4-stop vertical bottom fade into #070A11
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
+                      stops: [0.0, 0.36, 0.62, 1.0],
                       colors: [
-                        Color(0x2E070A11),
-                        Color(0x59070A11),
-                        Color(0xB8070A11),
-                        Color(0xFF070A11),
+                        Color(0x00070A11),
+                        Color(0x14070A11),
+                        Color(0xBF070A11),
+                        Color(0xF5070A11),
                       ],
-                      stops: [0.0, 0.42, 0.78, 1.0],
                     ),
                   ),
                 ),
@@ -148,19 +129,41 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             ),
           ),
 
-          // Ambient Gold Horizon Scrim
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.0, -0.75),
-                  radius: 1.2,
-                  colors: [
-                    Color(0x24D4AF37), // 14% subtle ambient gold halo
-                    Colors.transparent,
-                  ],
+          // Environmental Hero Visual Anchor (M1-HERO-WELCOME-GRIP) at 100% Opacity
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 310,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ArmSphereImage(
+                  assetPath: ArmSphereAssets.welcomeGripHero,
+                  fit: BoxFit.cover,
+                  alignment: Alignment(0.0, -0.20),
+                  width: double.infinity,
+                  height: 310,
+                  fallbackAsset: ArmSphereAssets.welcomeGripHero,
+                  excludeFromSemantics: true,
                 ),
-              ),
+                // Bottom-only fade into #070A11 so silver chiaroscuro locked grip and crimson smoke pop at 100% clarity
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x00070A11),
+                        Color(0x00070A11),
+                        Color(0xD9070A11),
+                        Color(0xFF070A11),
+                      ],
+                      stops: [0.0, 0.62, 0.86, 1.0],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -169,7 +172,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: (constraints.maxHeight - 48).clamp(0.0, double.infinity),
@@ -181,48 +184,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // ── Hero Layer: M0 Icon Gold Master Emblem (0–300ms fade-in) ──
+                            // ── Open Upper Hero Showcase Spacer (zero circular seal overlay over locked hands) ──
+                            const SizedBox(height: 220),
                             FadeTransition(
                               opacity: _heroFadeAnimation,
-                              child: Column(
+                              child: const Column(
                                 children: [
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    width: 96,
-                                    height: 96,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppTheme.cardSurface,
-                                      border: Border.all(
-                                        color: AppTheme.goldPrimary,
-                                        width: 2.0,
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: AppTheme.goldGlow,
-                                          blurRadius: 36,
-                                          spreadRadius: 4,
-                                        ),
-                                        BoxShadow(
-                                          color: Colors.black,
-                                          blurRadius: 16,
-                                          offset: Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipOval(
-                                      child: ArmSphereImage(
-                                        assetPath: ArmSphereAssets.iconGold,
-                                        width: 96,
-                                        height: 96,
-                                        fit: BoxFit.cover,
-                                        semanticLabel: 'ArmSphere Official Federation Emblem',
-                                        fallbackIcon: Icons.sports_kabaddi,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  const Text(
+                                  Text(
                                     'ARMSPHERE',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
@@ -233,8 +201,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                       color: AppTheme.goldPrimary,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  const Text(
+                                  SizedBox(height: 6),
+                                  Text(
                                     'THE INTERNATIONAL ARMWRESTLING FEDERATION SYSTEM',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
@@ -249,7 +217,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               ),
                             ),
 
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 28),
 
                             // ── Content Slide Ingress (300–550ms) ──────────────────
                             AnimatedBuilder(
@@ -599,25 +567,4 @@ class _RoleCardData {
     required this.subtitle,
     required this.icon,
   });
-}
-
-/// Subtle 1.5% opacity magnesium chalk grain painter for L0 Canvas
-class _MagnesiumChalkGrainPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.015)
-      ..strokeWidth = 1.0;
-
-    // Fixed procedural chalk distribution without expensive noise library
-    for (double y = 15; y < size.height; y += 45) {
-      for (double x = 12; x < size.width; x += 40) {
-        final offset = (x * 7 + y * 13) % 20;
-        canvas.drawCircle(Offset(x + offset, y), 0.8, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

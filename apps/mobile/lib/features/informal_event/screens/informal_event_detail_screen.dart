@@ -10,6 +10,7 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/crystal_toast.dart';
@@ -80,7 +81,7 @@ class _InformalEventDetailScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         leading: const CrystalBackButton(fallbackRoute: '/informal-events'),
@@ -157,7 +158,12 @@ class _InformalEventDetailScreenState
                 participantCount >= maxParticipants.toInt();
 
             return ListView(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                155,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
               children: [
                 // 1. Session Overview Card
                 ElevatedActionCard(

@@ -95,7 +95,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           Center(
             child: SingleChildScrollView(
