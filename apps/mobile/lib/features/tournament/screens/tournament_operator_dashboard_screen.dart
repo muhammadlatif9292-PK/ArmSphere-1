@@ -56,7 +56,7 @@ class _TournamentOperatorDashboardScreenState
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,14 +125,14 @@ class _TournamentOperatorDashboardScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
           tournamentsAsync.when(
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
+            145,
             AppTheme.space16,
-            AppTheme.space16,
-            MainShellScope.bottomClearance(context, additionalPadding: 16),
+            MainShellScope.bottomClearance(context, additionalPadding: 44),
           ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space16),
@@ -188,9 +188,9 @@ class _TournamentOperatorDashboardScreenState
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                145,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // 1. Tournament Selector & War Room Banner

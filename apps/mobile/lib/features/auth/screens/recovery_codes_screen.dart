@@ -81,7 +81,7 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SafeArea(
             child: Padding(

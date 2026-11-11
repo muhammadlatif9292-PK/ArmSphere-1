@@ -143,7 +143,7 @@ void main() {
         (widget) =>
             widget is ArmSphereImage &&
             widget.assetPath == ArmSphereAssets.stageArena9x16 &&
-            widget.alignment == const Alignment(0.0, -0.55) &&
+            widget.alignment == Alignment.topCenter &&
             widget.excludeFromSemantics == true,
       );
       expect(arenaStageFinder, findsAtLeastNWidgets(1));

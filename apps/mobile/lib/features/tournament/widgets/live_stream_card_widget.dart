@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/pulse_indicator.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/crystal_toast.dart';
@@ -176,31 +178,44 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                   height: 160,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: const Color(0xFF131D33),
-                    image: (streamThumbnail != null && streamThumbnail.isNotEmpty)
-                        ? DecorationImage(
-                            image: NetworkImage(streamThumbnail),
-                            fit: BoxFit.cover,
-                            colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.darken),
-                          )
-                        : null,
-                    gradient: (streamThumbnail == null || streamThumbnail.isEmpty)
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              const Color(0xFF1E293B),
-                              const Color(0xFF0F172A),
-                              const Color(0xFFFF2A6D).withValues(alpha: 0.15),
-                            ],
-                          )
-                        : null,
+                    color: AppTheme.voidBackground,
                     border: Border.all(color: Colors.white12),
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Center Play Overlay Icon
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned.fill(
+                          child: ArmSphereImage(
+                            imageUrl: (streamThumbnail != null && streamThumbnail.isNotEmpty)
+                                ? streamThumbnail
+                                : null,
+                            assetPath: (streamThumbnail == null || streamThumbnail.isEmpty)
+                                ? ArmSphereAssets.cardLiveBroadcast
+                                : null,
+                            fallbackAsset: ArmSphereAssets.cardLiveBroadcast,
+                            fit: BoxFit.cover,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                        const Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                stops: [0.0, 0.62, 1.0],
+                                colors: [
+                                  Color(0xE6070A11),
+                                  Color(0x00070A11),
+                                  Color(0x00070A11),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Center Play Overlay Icon
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -261,7 +276,8 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                           ),
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },

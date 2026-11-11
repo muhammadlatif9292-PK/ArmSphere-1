@@ -82,7 +82,7 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(AppTheme.space24),

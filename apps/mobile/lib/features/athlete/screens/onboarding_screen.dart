@@ -228,7 +228,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SafeArea(
             child: Column(

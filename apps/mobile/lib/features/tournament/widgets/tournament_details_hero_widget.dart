@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_indicator.dart';
-import 'floating_particles_painter.dart';
 class TournamentDetailsHeroWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -140,13 +139,6 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                         ],
                       ),
                     ),
-                  ),
-                ),
-
-                // 3. Tiny Floating Particles Effect
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: FloatingParticlesPainter(progress: animVal),
                   ),
                 ),
 

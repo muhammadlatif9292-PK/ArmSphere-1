@@ -627,9 +627,9 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
+                145,
                 16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
+                mainShellBottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // 1. Authority Header
@@ -929,88 +929,83 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
+                        const SizedBox(height: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: CrystalActionButton(
-                                label: 'RUN DUE JOBS',
-                                icon: Icons.play_circle_outline_rounded,
-                                accentColor: AppTheme.info,
-                                onTap: () async {
-                                  HapticFeedback.mediumImpact();
-                                  try {
-                                    await ref
-                                        .read(adminRepositoryProvider)
-                                        .runScheduledJobs();
-                                    _refreshAll();
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: const Text(
-                                            'Scheduled federation jobs executed and telemetry refreshed.',
-                                          ),
-                                          backgroundColor: AppTheme.success,
+                            CrystalActionButton(
+                              label: 'RUN DUE SYNC',
+                              icon: Icons.play_circle_outline_rounded,
+                              fullWidth: true,
+                              accentColor: AppTheme.info,
+                              onTap: () async {
+                                HapticFeedback.mediumImpact();
+                                try {
+                                  await ref
+                                      .read(adminRepositoryProvider)
+                                      .runScheduledJobs();
+                                  _refreshAll();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: const Text(
+                                          'Scheduled federation jobs executed and telemetry refreshed.',
                                         ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: Text(
-                                            'Job dispatch queued: $e',
-                                          ),
-                                          backgroundColor: AppTheme.warning,
-                                        ),
-                                      );
-                                    }
+                                        backgroundColor: AppTheme.success,
+                                      ),
+                                    );
                                   }
-                                },
-                              ),
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: Text(
+                                          'Job dispatch queued: $e',
+                                        ),
+                                        backgroundColor: AppTheme.warning,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: CrystalActionButton(
-                                label: 'RECOMPUTE PRESTIGE',
-                                icon: Icons.workspace_premium_rounded,
-                                accentColor: AppTheme.goldPrimary,
-                                onTap: () async {
-                                  HapticFeedback.mediumImpact();
-                                  try {
-                                    await ref
-                                        .read(adminRepositoryProvider)
-                                        .recomputePrestigeScores();
-                                    await AdminCrossAppSync
-                                        .syncChampionshipMutations(ref);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: const Text(
-                                            'Pound-for-pound prestige ratings recalculated.',
-                                          ),
-                                          backgroundColor: AppTheme.success,
+                            const SizedBox(height: 10),
+                            CrystalActionButton(
+                              label: 'RECOMPUTE ELO',
+                              icon: Icons.workspace_premium_rounded,
+                              fullWidth: true,
+                              accentColor: AppTheme.goldPrimary,
+                              onTap: () async {
+                                HapticFeedback.mediumImpact();
+                                try {
+                                  await ref
+                                      .read(adminRepositoryProvider)
+                                      .recomputePrestigeScores();
+                                  await AdminCrossAppSync
+                                      .syncChampionshipMutations(ref);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: const Text(
+                                          'Pound-for-pound prestige ratings recalculated.',
                                         ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: Text(
-                                            'Prestige recompute failed: $e',
-                                          ),
-                                          backgroundColor: AppTheme.warning,
-                                        ),
-                                      );
-                                    }
+                                        backgroundColor: AppTheme.success,
+                                      ),
+                                    );
                                   }
-                                },
-                              ),
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: Text(
+                                          'Prestige recompute failed: $e',
+                                        ),
+                                        backgroundColor: AppTheme.warning,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
                             ),
                           ],
                         ),

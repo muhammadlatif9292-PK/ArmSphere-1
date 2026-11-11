@@ -89,7 +89,7 @@ class _GovernanceDashboardScreenState
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.governance),
         elevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
@@ -117,15 +117,15 @@ class _GovernanceDashboardScreenState
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           disputesAsync.when(
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
+            145,
             AppTheme.space16,
-            AppTheme.space16,
-            MainShellScope.bottomClearance(context, additionalPadding: 16),
+            MainShellScope.bottomClearance(context, additionalPadding: 44),
           ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -143,16 +143,24 @@ class _GovernanceDashboardScreenState
         ),
         data: (disputes) {
           if (disputes.isEmpty) {
-            return AppEmptyState(
-              icon: Icons.balance_outlined,
-              title: 'No disputes filed',
-              subtitle:
-                  'Open arbitration cases will appear here once submitted.',
-              ctaLabel: 'File a complaint',
-              onCtaTap: () {
-                HapticFeedback.lightImpact();
-                context.push('/governance/submit-complaint');
-              },
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                8,
+                145,
+                8,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
+              child: AppEmptyState(
+                icon: Icons.balance_outlined,
+                title: 'No disputes filed',
+                subtitle:
+                    'Open arbitration cases will appear here once submitted.',
+                ctaLabel: 'File a complaint',
+                onCtaTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/governance/submit-complaint');
+                },
+              ),
             );
           }
 
@@ -182,9 +190,9 @@ class _GovernanceDashboardScreenState
               key: const ValueKey<String>('governance_disputes_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                145,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // Top Operational Metrics Ribbon
@@ -815,7 +823,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.governance),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -834,7 +842,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           disputesAsync.when(
         loading: () => const CrystalScreenLoadingView(

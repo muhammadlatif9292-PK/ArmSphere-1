@@ -445,7 +445,14 @@ void main() {
         expect(find.text('7'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);
         expect(find.text('GRANT ROLE'), findsOneWidget);
-        expect(find.text('EXPORT REPORT'), findsOneWidget);
+        final exportReportFinder = find.text('EXPORT REPORT');
+        await tester.scrollUntilVisible(
+          exportReportFinder,
+          250,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        expect(exportReportFinder, findsOneWidget);
       },
     );
 
@@ -666,7 +673,14 @@ void main() {
           find.text('SHA-256 Hash Chain Integrity: VALID'),
           findsOneWidget,
         );
-        expect(find.text('DISPUTE_RESOLVED'), findsOneWidget);
+        final disputeResolvedFinder = find.text('DISPUTE_RESOLVED');
+        await tester.scrollUntilVisible(
+          disputeResolvedFinder,
+          250,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        expect(disputeResolvedFinder, findsOneWidget);
       },
     );
   });

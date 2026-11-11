@@ -167,7 +167,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           Center(
             child: SingleChildScrollView(
