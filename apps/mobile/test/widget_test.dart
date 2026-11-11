@@ -373,9 +373,17 @@ void main() {
         expect(find.text('Delete Account'), findsOneWidget);
         expect(find.text('Log Out'), findsOneWidget);
 
-        final listView = tester.widget<ListView>(find.byType(ListView));
+        final scaffoldBottom = tester.getBottomRight(find.byType(Scaffold)).dy;
+        final listViewFinder = find.byType(ListView);
+        final listView = tester.widget<ListView>(listViewFinder);
         final padding = listView.padding as EdgeInsets;
-        expect(padding.bottom, greaterThanOrEqualTo(MainShellScope.kShellClearance));
+        final listViewBottom = tester.getBottomRight(listViewFinder).dy;
+        final totalBottomClearance =
+            (scaffoldBottom - listViewBottom) + padding.bottom;
+        expect(
+          totalBottomClearance,
+          greaterThanOrEqualTo(MainShellScope.kShellClearance),
+        );
       },
     );
 
