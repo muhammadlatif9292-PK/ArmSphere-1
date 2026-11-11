@@ -284,37 +284,25 @@ class _IntentCard extends StatelessWidget {
         duration: AppTheme.animationNormal,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0x1AD4AF37) : AppTheme.glassSurface,
-          gradient: selected ? null : AppTheme.machinedTitaniumGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
-            width: selected ? 1.6 : 1.0,
+            color: selected ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+            width: selected ? 1.2 : 1.0,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.2),
-                    blurRadius: 14,
-                    spreadRadius: 0,
-                  ),
-                  AppTheme.titaniumShadow(),
-                ]
-              : [AppTheme.titaniumShadow()],
+          boxShadow: const [],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected
-                    ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.silverPlane,
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.transparent,
                 border: Border.all(
                   color: selected
-                      ? AppTheme.goldPrimary
-                      : AppTheme.borderTitanium,
+                      ? const Color(0x73D4AF37)
+                      : const Color(0x38FFFFFF),
                 ),
               ),
               child: Icon(

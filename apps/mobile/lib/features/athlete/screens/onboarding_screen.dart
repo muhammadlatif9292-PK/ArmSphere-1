@@ -316,10 +316,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xCC0B0F19),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: const Color(0x26FFFFFF),
+                color: const Color(0x38FFFFFF),
                 width: 1.0,
               ),
             ),
@@ -555,9 +555,9 @@ class _SpecSlider extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppTheme.glassSurface,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45)),
+                border: Border.all(color: const Color(0x73D4AF37)),
               ),
               child: Text(
                 '${value.toStringAsFixed(decimals)} $suffix',

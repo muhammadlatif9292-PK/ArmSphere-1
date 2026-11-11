@@ -41,7 +41,7 @@ class VoidStageScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = true,
     this.extendBody = true,
     this.resizeToAvoidBottomInset,
-    this.scrimStops = const [0.0, 0.36, 0.62, 1.0],
+    this.scrimStops = const [0.0, 0.45, 0.78, 1.0],
     this.scrimColors,
   });
 
@@ -52,10 +52,10 @@ class VoidStageScaffold extends StatelessWidget {
     final effectiveBody = body ?? child ?? const SizedBox.shrink();
     final effectiveScrimColors = scrimColors ??
         const [
-          Color(0x00070A11), // 0% opacity — 100% crystal-clear top 3D showcase
-          Color(0x14070A11), // 8% opacity — subtle transition
-          Color(0xBF070A11), // 75% opacity — smooth text-readability anchor
-          Color(0xF5070A11), // 96% opacity — deep pitch-black obsidian UI floor
+          Color(0x00000000),
+          Color(0x00000000),
+          Color(0x40000000),
+          Color(0x73000000),
         ];
 
     return Scaffold(
@@ -250,11 +250,28 @@ class SmokedGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveBorder = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x38FFFFFF);
     Widget container = Container(
       margin: margin,
       padding: padding,
-      color: Colors.transparent,
-      child: child,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: effectiveBorder,
+          width: 1.0,
+        ),
+        boxShadow: const [],
+      ),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: AppTheme.crystalTextShadows,
+        ),
+        child: child,
+      ),
     );
 
     if (onTap != null) {

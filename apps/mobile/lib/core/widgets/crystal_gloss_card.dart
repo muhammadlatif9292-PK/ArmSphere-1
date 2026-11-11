@@ -49,35 +49,18 @@ class CrystalGlossCard extends StatelessWidget {
     final effectiveBorderColor = (borderColor != null &&
             borderColor != Colors.transparent)
         ? borderColor!
-        : const Color(0x26FFFFFF);
+        : const Color(0x38FFFFFF);
 
     Widget cardBody = Container(
       margin: margin,
       decoration: BoxDecoration(
-        // Pillar 2: Unified Smoked-Obsidian Crystal Glass
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xD9101520),
-            Color(0xF0070A11),
-          ],
-        ),
+        color: Colors.transparent,
         borderRadius: effectiveRadius,
-        // Pillar 3: Specular Light-Catching Border
         border: Border.all(
           color: effectiveBorderColor,
           width: borderWidth,
         ),
-        // Pillar 4: Levitating Y-Axis Drop Shadow
-        boxShadow: customShadows ??
-            const [
-              BoxShadow(
-                color: Color(0x99000000),
-                offset: Offset(0, 10),
-                blurRadius: 20,
-              ),
-            ],
+        boxShadow: const [],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(
@@ -91,29 +74,7 @@ class CrystalGlossCard extends StatelessWidget {
                 child: IgnorePointer(child: backgroundArt!),
               ),
 
-            // Top specular rim highlight (1px light-catching crest)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 1,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.06),
-                        Colors.white.withValues(alpha: 0.40),
-                        Colors.white.withValues(alpha: 0.06),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Pillar 5: High-Contrast Foreground Envelope
+            // High-Contrast Foreground Envelope with Crisp Text Shadow
             Padding(
               padding: padding,
               child: DefaultTextStyle.merge(
@@ -121,9 +82,9 @@ class CrystalGlossCard extends StatelessWidget {
                   color: Color(0xFFFFFFFF),
                   shadows: [
                     Shadow(
-                      color: Color(0xBD000000),
-                      offset: Offset(0, 1.5),
-                      blurRadius: 4.0,
+                      color: Color(0xE6000000),
+                      offset: Offset(0, 1),
+                      blurRadius: 6.0,
                     ),
                   ],
                 ),

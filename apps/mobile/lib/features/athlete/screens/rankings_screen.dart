@@ -106,10 +106,10 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
           margin: EdgeInsets.only(top: isFirst ? 0 : 12),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xCC0B0F19),
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: color.withValues(alpha: isFirst ? 0.65 : 0.40),
+              color: color.withValues(alpha: isFirst ? 0.65 : 0.45),
               width: isFirst ? 1.5 : 1.0,
             ),
           ),
@@ -231,6 +231,10 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                 showSelectedIcon: false,
                 style: SegmentedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
+                  backgroundColor: Colors.transparent,
+                  selectedBackgroundColor: Colors.transparent,
+                  selectedForegroundColor: AppTheme.goldPrimary,
+                  foregroundColor: const Color(0xFFCBD5E1),
                   textStyle: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.bold,
@@ -264,20 +268,24 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,
-                    color: isSelected ? Colors.black : AppTheme.textSecondary,
+                    color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
                   ),
                 ),
                 selected: isSelected,
-                selectedColor: AppTheme.goldPrimary,
-                backgroundColor: AppTheme.cardSurface,
+                selectedColor: Colors.transparent,
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
                 showCheckmark: false,
                 visualDensity: VisualDensity.compact,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                   side: BorderSide(
                     color: isSelected
-                        ? AppTheme.goldPrimary
-                        : AppTheme.cardBorder,
+                        ? const Color(0x73D4AF37)
+                        : const Color(0x2EFFFFFF),
+                    width: isSelected ? 1.2 : 1.0,
                   ),
                 ),
                 onSelected: (_) {
@@ -295,9 +303,9 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppTheme.space12, vertical: AppTheme.space6),
               decoration: BoxDecoration(
-                color: AppTheme.cardSurface,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.cardBorder),
+                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
@@ -332,11 +340,14 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                   HapticFeedback.lightImpact();
                   ref.read(rankingsProvinceProvider.notifier).state = '';
                 },
-                backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                backgroundColor: Colors.transparent,
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                elevation: 0,
                 deleteIconColor: AppTheme.primaryRed,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  side: BorderSide(color: AppTheme.primaryRed.withValues(alpha: 0.3)),
+                  side: const BorderSide(color: Color(0x80E23B3B), width: 1.0),
                 ),
               ),
             ],
@@ -519,13 +530,12 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                     width: 38,
                                     height: 38,
                                     decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(
-                                          AppTheme.radiusSmall),
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
                                         color: color.withValues(
-                                            alpha: rank <= 3 ? 0.4 : 0.2),
-                                        width: rank <= 3 ? 1.5 : 1,
+                                            alpha: rank <= 3 ? 0.55 : 0.30),
+                                        width: rank <= 3 ? 1.2 : 1.0,
                                       ),
                                     ),
                                     child: Center(

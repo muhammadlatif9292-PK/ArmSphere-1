@@ -46,19 +46,13 @@ class AdminAuthorityHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                  color: const Color(0x73D4AF37),
                   width: 1.0,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    spreadRadius: -2,
-                  ),
-                ],
+                boxShadow: const [],
               ),
               child: Icon(
                 AdminPermissions.roleIcon(activeRole),
@@ -84,6 +78,7 @@ class AdminAuthorityHeader extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: AppTheme.textPure,
                           letterSpacing: -0.3,
+                          shadows: AppTheme.crystalTextShadows,
                         ),
                       ),
                       Container(
@@ -92,10 +87,11 @@ class AdminAuthorityHeader extends StatelessWidget {
                           vertical: 2.5,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.crimson.withValues(alpha: 0.16),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: AppTheme.crimson.withValues(alpha: 0.45),
+                            color: const Color(0x80E23B3B),
+                            width: 1.0,
                           ),
                         ),
                         child: Text(
@@ -106,6 +102,7 @@ class AdminAuthorityHeader extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.7,
                             color: AppTheme.textPure,
+                            shadows: AppTheme.crystalTextShadows,
                           ),
                         ),
                       ),
@@ -118,6 +115,7 @@ class AdminAuthorityHeader extends StatelessWidget {
                       fontSize: 12,
                       color: AppTheme.textSecondary,
                       height: 1.3,
+                      shadows: AppTheme.crystalTextShadows,
                     ),
                   ),
                 ],
@@ -167,10 +165,11 @@ class AdminJurisdictionBanner extends StatelessWidget {
       key: const ValueKey<String>('admin_locked_jurisdiction_banner'),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.goldPrimary.withValues(alpha: 0.10),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppTheme.goldPrimary.withValues(alpha: 0.38),
+          color: const Color(0x73D4AF37),
+          width: 1.0,
         ),
       ),
       child: Row(
@@ -190,6 +189,7 @@ class AdminJurisdictionBanner extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: AppTheme.goldLight,
                 letterSpacing: 0.3,
+                shadows: AppTheme.crystalTextShadows,
               ),
             ),
           ),
@@ -267,25 +267,15 @@ class AdminSegmentedDeck extends StatelessWidget {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.crimson.withValues(alpha: 0.18)
-              : Colors.transparent,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? AppTheme.crimson.withValues(alpha: 0.50)
-                : Colors.transparent,
-            width: 1.0,
+                ? const Color(0x80E23B3B)
+                : const Color(0x2EFFFFFF),
+            width: isSelected ? 1.2 : 1.0,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.crimson.withValues(alpha: 0.22),
-                    blurRadius: 10,
-                    spreadRadius: -2,
-                  ),
-                ]
-              : null,
+          boxShadow: const [],
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
@@ -296,7 +286,7 @@ class AdminSegmentedDeck extends StatelessWidget {
               Icon(
                 item.icon,
                 size: isDense ? 13.5 : 15,
-                color: isSelected ? AppTheme.crimson : AppTheme.textMuted,
+                color: isSelected ? AppTheme.crimson : const Color(0xFFCBD5E1),
               ),
               SizedBox(width: isDense ? 3.5 : 5),
               Text(
@@ -305,7 +295,8 @@ class AdminSegmentedDeck extends StatelessWidget {
                   fontFamily: AppTheme.fontDisplay,
                   fontSize: isDense ? 11.0 : 11.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected ? AppTheme.textPure : AppTheme.textSecondary,
+                  color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
+                  shadows: AppTheme.crystalTextShadows,
                 ),
               ),
               if (item.count != null) ...[
@@ -316,10 +307,14 @@ class AdminSegmentedDeck extends StatelessWidget {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.crimson
-                        : Colors.white.withValues(alpha: 0.08),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0x80E23B3B)
+                          : const Color(0x2EFFFFFF),
+                      width: 1.0,
+                    ),
                   ),
                   child: Text(
                     '${item.count}',
@@ -327,8 +322,9 @@ class AdminSegmentedDeck extends StatelessWidget {
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? Colors.white : AppTheme.textMuted,
+                      color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
                       fontFeatures: const [FontFeature.tabularFigures()],
+                      shadows: AppTheme.crystalTextShadows,
                     ),
                   ),
                 ),
@@ -369,60 +365,56 @@ class AdminCrystalSearchBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              onTapOutside: (_) =>
-                  CrystalModalSheet.unfocusActiveInput(context),
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 13.5,
-              ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: const TextStyle(
-                  color: AppTheme.textMuted,
-                  fontSize: 13,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  size: 19,
-                  color: AppTheme.goldPrimary,
-                ),
-                suffixIcon: controller.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          size: 18,
-                          color: AppTheme.textSecondary,
-                        ),
-                        onPressed: () {
-                          CrystalModalSheet.unfocusActiveInput(context);
-                          onClear();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: const Color(0xCC05070C),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0x14FFFFFF)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(
-                    color: AppTheme.goldPrimary,
-                    width: 1.3,
-                  ),
-                ),
+        TextField(
+          controller: controller,
+          onChanged: onChanged,
+          onTapOutside: (_) =>
+              CrystalModalSheet.unfocusActiveInput(context),
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 13.5,
+            shadows: AppTheme.crystalTextShadows,
+          ),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: AppTheme.textMuted,
+              fontSize: 13,
+              shadows: AppTheme.crystalTextShadows,
+            ),
+            prefixIcon: const Icon(
+              Icons.search_rounded,
+              size: 19,
+              color: AppTheme.goldPrimary,
+            ),
+            suffixIcon: controller.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: AppTheme.textSecondary,
+                    ),
+                    onPressed: () {
+                      CrystalModalSheet.unfocusActiveInput(context);
+                      onClear();
+                    },
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: AppTheme.goldPrimary,
+                width: 1.3,
               ),
             ),
           ),
@@ -489,14 +481,13 @@ class AdminCrystalSearchBar extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-              : const Color(0x990D1322),
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
-                ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-                : const Color(0x28FFFFFF),
+                ? const Color(0x73D4AF37)
+                : const Color(0x2EFFFFFF),
+            width: isSelected ? 1.2 : 1.0,
           ),
         ),
         child: Text(
@@ -505,8 +496,9 @@ class AdminCrystalSearchBar extends StatelessWidget {
             fontFamily: AppTheme.fontDisplay,
             fontSize: 10.5,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.textSecondary,
+            color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
             letterSpacing: 0.35,
+            shadows: AppTheme.crystalTextShadows,
           ),
         ),
       ),
@@ -539,7 +531,7 @@ class AdminKpiCrystalCard extends StatelessWidget {
       onTap: onTap,
       child: ElevatedActionCard(
         padding: const EdgeInsets.all(14),
-        borderColor: accentColor.withValues(alpha: 0.36),
+        borderColor: accentColor.withValues(alpha: 0.45),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -568,10 +560,11 @@ class AdminKpiCrystalCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: accentColor.withValues(alpha: 0.38),
+                      color: accentColor.withValues(alpha: 0.55),
+                      width: 1.0,
                     ),
                   ),
                   child: Icon(icon, size: 14, color: accentColor),

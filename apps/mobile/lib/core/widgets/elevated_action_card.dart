@@ -41,41 +41,26 @@ class ElevatedActionCard extends StatelessWidget {
     final effectiveBorderColor = (borderColor != null &&
             borderColor != Colors.transparent)
         ? borderColor!
-        : const Color(0x26FFFFFF);
-    final effectiveShadows = boxShadow ??
-        customShadow ??
-        const [
-          BoxShadow(
-            color: Color(0x99000000),
-            blurRadius: 20,
-            offset: Offset(0, 10),
-          ),
-        ];
+        : const Color(0x38FFFFFF);
 
     Widget cardContent = Container(
       padding: padding,
       margin: margin,
       decoration: BoxDecoration(
-        gradient: backgroundColor != null
-            ? null
-            : (gradient ??
-                const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xD9101520),
-                    Color(0xF0070A11),
-                  ],
-                )),
-        color: backgroundColor,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: effectiveBorderColor,
           width: 1.0,
         ),
-        boxShadow: effectiveShadows,
+        boxShadow: const [],
       ),
-      child: child,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: AppTheme.crystalTextShadows,
+        ),
+        child: child,
+      ),
     );
 
     if (onTap != null) {

@@ -107,14 +107,25 @@ class BiometricSettingsTile extends ConsumerWidget {
                   message: isNotEnrolled
                       ? 'Enroll biometrics in device settings'
                       : 'Biometric hardware unsupported',
-                  child: const Switch(
+                  child: Switch(
                     value: false,
                     onChanged: null,
+                    trackColor: WidgetStateProperty.all(Colors.transparent),
+                    trackOutlineColor: WidgetStateProperty.all(
+                      const Color(0x59FFFFFF),
+                    ),
                   ),
                 )
               : Switch(
                   value: isEnabled,
                   activeColor: AppTheme.goldPrimary,
+                  trackColor: WidgetStateProperty.all(Colors.transparent),
+                  trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const Color(0x73D4AF37);
+                    }
+                    return const Color(0x59FFFFFF);
+                  }),
                   onChanged: isBusy
                       ? null
                       : (newVal) async {

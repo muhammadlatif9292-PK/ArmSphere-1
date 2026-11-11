@@ -699,27 +699,18 @@ class _RefereeScorepadHeroCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryRed,
-                  Color(0xFF8A0000),
-                ],
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0x80E23B3B),
+                width: 1.0,
               ),
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryRed.withValues(alpha: 0.4),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+              boxShadow: const [],
             ),
             child: const Icon(
               Icons.sports_score_rounded,
               size: 26,
-              color: Colors.white,
+              color: AppTheme.primaryRed,
             ),
           ),
           const SizedBox(width: AppTheme.space16),
@@ -746,11 +737,11 @@ class _RefereeScorepadHeroCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryRed.withValues(alpha: 0.15),
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: AppTheme.primaryRed.withValues(alpha: 0.4),
-                          width: 1,
+                          color: const Color(0x80E23B3B),
+                          width: 1.0,
                         ),
                       ),
                       child: const Text(
@@ -804,7 +795,7 @@ class _RefCard extends StatelessWidget {
         onTap();
       },
       borderRadius: 18,
-      borderColor: const Color(0x26FFFFFF),
+      borderColor: const Color(0x38FFFFFF),
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.space8, vertical: AppTheme.space12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -812,11 +803,11 @@ class _RefCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppTheme.space8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryRed.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: AppTheme.primaryRed.withValues(alpha: 0.25),
-                width: 1,
+                color: const Color(0x80E23B3B),
+                width: 1.0,
               ),
             ),
             child: Icon(icon, size: 22, color: AppTheme.primaryRed),
@@ -913,10 +904,10 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141B26),
-                        shape: BoxShape.circle,
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0x4DE23B3B),
+                          color: const Color(0x80E23B3B),
                           width: 1.0,
                         ),
                       ),
@@ -973,11 +964,11 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(AppTheme.space10),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: AppTheme.goldPrimary.withValues(alpha: 0.3),
-                            width: 1,
+                            color: const Color(0x73D4AF37),
+                            width: 1.0,
                           ),
                         ),
                         child: const Icon(Icons.verified, size: 24, color: AppTheme.goldPrimary),
@@ -1287,32 +1278,30 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Mode Toggle Bar with Competition Crimson (#E23B3B) active state
+            // Mode Toggle Bar with Competition Crimson (#E23B3B) active border and transparent interior
             Container(
               margin: const EdgeInsets.only(bottom: AppTheme.space16),
               child: SegmentedButton<bool>(
                 style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const Color(0xFFE23B3B);
-                    }
-                    return const Color(0xFF0A0E17);
-                  }),
+                  backgroundColor: WidgetStateProperty.all(Colors.transparent),
                   foregroundColor: WidgetStateProperty.resolveWith((states) {
                     if (states.contains(WidgetState.selected)) {
                       return Colors.white;
                     }
-                    return AppTheme.textSecondary;
+                    return const Color(0xFFCBD5E1);
                   }),
                   iconColor: WidgetStateProperty.resolveWith((states) {
                     if (states.contains(WidgetState.selected)) {
                       return const Color(0xFFD4AF37);
                     }
-                    return AppTheme.textSecondary;
+                    return const Color(0xFFCBD5E1);
                   }),
-                  side: WidgetStateProperty.all(
-                    const BorderSide(color: Color(0x4DE23B3B), width: 1.0),
-                  ),
+                  side: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const BorderSide(color: Color(0x80E23B3B), width: 1.2);
+                    }
+                    return const BorderSide(color: Color(0x2EFFFFFF), width: 1.0);
+                  }),
                 ),
                 segments: const [
                   ButtonSegment(
@@ -1341,14 +1330,14 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                   padding: const EdgeInsets.all(AppTheme.space24),
                   child: Column(
                     children: [
-                      // Dark obsidian glass circle (#141B26) bordered in 1px crimson (#4DE23B3B) with Gold icon
+                      // 100% transparent crystal wireframe icon badge bordered in 1px crimson with Gold icon
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF141B26),
-                          shape: BoxShape.circle,
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: const Color(0x4DE23B3B),
+                            color: const Color(0x80E23B3B),
                             width: 1.0,
                           ),
                         ),
@@ -1431,21 +1420,19 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                     const SizedBox(height: AppTheme.space20),
                     SegmentedButton<String>(
                       style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return const Color(0xFFE23B3B);
-                          }
-                          return const Color(0xFF0A0E17);
-                        }),
+                        backgroundColor: WidgetStateProperty.all(Colors.transparent),
                         foregroundColor: WidgetStateProperty.resolveWith((states) {
                           if (states.contains(WidgetState.selected)) {
                             return Colors.white;
                           }
-                          return AppTheme.textSecondary;
+                          return const Color(0xFFCBD5E1);
                         }),
-                        side: WidgetStateProperty.all(
-                          const BorderSide(color: Color(0x4DE23B3B), width: 1.0),
-                        ),
+                        side: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return const BorderSide(color: Color(0x80E23B3B), width: 1.2);
+                          }
+                          return const BorderSide(color: Color(0x2EFFFFFF), width: 1.0);
+                        }),
                       ),
                       segments: const [
                         ButtonSegment(value: 'RIGHT', label: Text('Right Arm')),
@@ -1460,21 +1447,19 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                     const SizedBox(height: AppTheme.space16),
                     SegmentedButton<String>(
                       style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.resolveWith((states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return const Color(0xFFE23B3B);
-                          }
-                          return const Color(0xFF0A0E17);
-                        }),
+                        backgroundColor: WidgetStateProperty.all(Colors.transparent),
                         foregroundColor: WidgetStateProperty.resolveWith((states) {
                           if (states.contains(WidgetState.selected)) {
                             return Colors.white;
                           }
-                          return AppTheme.textSecondary;
+                          return const Color(0xFFCBD5E1);
                         }),
-                        side: WidgetStateProperty.all(
-                          const BorderSide(color: Color(0x4DE23B3B), width: 1.0),
-                        ),
+                        side: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return const BorderSide(color: Color(0x80E23B3B), width: 1.2);
+                          }
+                          return const BorderSide(color: Color(0x2EFFFFFF), width: 1.0);
+                        }),
                       ),
                       segments: [
                         ButtonSegment(value: 'challenger', label: Text(_challenger?['displayName']?.toString() ?? 'Challenger wins')),
@@ -1646,9 +1631,18 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
                               padding: const EdgeInsets.all(AppTheme.space12),
                               child: Row(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 18,
-                                    backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0x80E23B3B),
+                                        width: 1.0,
+                                      ),
+                                    ),
                                     child: Text(
                                       (item['displayName']?.toString() ?? 'A').substring(0, 1).toUpperCase(),
                                       style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
@@ -1802,9 +1796,18 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
                               padding: const EdgeInsets.all(AppTheme.space14),
                               child: Row(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.15),
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0x80E23B3B),
+                                        width: 1.0,
+                                      ),
+                                    ),
                                     child: Text(
                                       (item['displayName']?.toString() ?? 'A').substring(0, 1).toUpperCase(),
                                       style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
@@ -1913,14 +1916,14 @@ class EvidenceUploadScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Dark obsidian glass circle (#141B26) bordered in 1px crimson (#4DE23B3B) with Crimson icon
+                  // 100% transparent crystal wireframe icon badge bordered in 1px crimson with Crimson icon
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF141B26),
-                      shape: BoxShape.circle,
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: const Color(0x4DE23B3B),
+                        color: const Color(0x80E23B3B),
                         width: 1.0,
                       ),
                     ),

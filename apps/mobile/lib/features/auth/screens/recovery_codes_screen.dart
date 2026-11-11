@@ -95,19 +95,13 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.glassSurface,
+                      color: Colors.transparent,
                       border: Border.all(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                        color: const Color(0x73D4AF37),
                         width: 1.5,
                       ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.goldGlow,
-                      blurRadius: 16,
-                      spreadRadius: 1,
+                      boxShadow: const [],
                     ),
-                  ],
-                ),
                 child: const Icon(
                   Icons.save_outlined,
                   size: 32,
@@ -157,10 +151,10 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                           alignment: Alignment.center,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                             border: Border.all(
-                              color: AppTheme.borderTitanium,
+                              color: const Color(0x38FFFFFF),
                               width: 1,
                             ),
                           ),
@@ -189,18 +183,13 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                   height: 50,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _isCopied ? AppTheme.elevatedSurface : AppTheme.goldPrimary,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: _isCopied ? Border.all(color: AppTheme.goldPrimary) : null,
-                    boxShadow: _isCopied
-                        ? null
-                        : [
-                            BoxShadow(
-                              color: AppTheme.goldGlow,
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: _isCopied ? const Color(0x6610B981) : const Color(0x73D4AF37),
+                      width: 1.2,
+                    ),
+                    boxShadow: const [],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -208,7 +197,7 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                       Icon(
                         _isCopied ? Icons.check : Icons.copy_rounded,
                         size: 18,
-                        color: _isCopied ? AppTheme.goldPrimary : const Color(0xFF0B0F19),
+                        color: _isCopied ? AppTheme.success : AppTheme.goldPrimary,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -218,7 +207,7 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                           fontWeight: FontWeight.w800,
                           fontSize: 14,
                           letterSpacing: 0.8,
-                          color: _isCopied ? AppTheme.goldPrimary : const Color(0xFF0B0F19),
+                          color: _isCopied ? AppTheme.success : AppTheme.goldPrimary,
                         ),
                       ),
                     ],
@@ -236,10 +225,9 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppTheme.glassSurface,
-                    gradient: AppTheme.machinedTitaniumGradient,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.borderTitanium),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0x38FFFFFF)),
                   ),
                   child: const Text(
                     'Continue to Dashboard',

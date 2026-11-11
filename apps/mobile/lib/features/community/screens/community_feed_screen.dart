@@ -70,10 +70,10 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0x99070A11),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: const Color(0x4DD4AF37),
+                  color: const Color(0x73D4AF37),
                   width: 1.0,
                 ),
               ),
@@ -188,14 +188,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppTheme.goldPrimary.withValues(alpha: 0.16)
-                          : const Color(0x99070A11),
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: Border.all(
                         color: isSelected
-                            ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-                            : const Color(0x26FFFFFF),
+                            ? const Color(0x73D4AF37)
+                            : const Color(0x2EFFFFFF),
                         width: isSelected ? 1.2 : 1.0,
                       ),
                     ),
@@ -206,8 +204,9 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                         fontFamily: 'Space Grotesk',
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
+                        color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
                         letterSpacing: 0.5,
+                        shadows: AppTheme.crystalTextShadows,
                       ),
                     ),
                   ),
@@ -406,9 +405,9 @@ class _TacticalFeedCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                               decoration: BoxDecoration(
-                                color: AppTheme.elevatedSurface,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(3),
-                                border: Border.all(color: AppTheme.borderSubtle, width: 0.5),
+                                border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
                               ),
                               child: Text(
                                 country,
@@ -439,10 +438,10 @@ class _TacticalFeedCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.elevatedSurface,
-                      borderRadius: BorderRadius.circular(4),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: _getCategoryColor(category).withValues(alpha: 0.6),
+                        color: _getCategoryColor(category).withValues(alpha: 0.65),
                         width: 1.0,
                       ),
                     ),
@@ -510,8 +509,10 @@ class _TacticalFeedCard extends StatelessWidget {
                     height: 190,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF060910),
-                      border: Border.all(color: AppTheme.borderSubtle, width: 0.8),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+                      boxShadow: const [],
                     ),
                     child: Stack(
                       alignment: Alignment.center,
@@ -529,18 +530,18 @@ class _TacticalFeedCard extends StatelessWidget {
                                 : 'Combat video preview',
                           ),
                         ),
-                        // Directional horizontal left-to-right scrim (x: 0.0 -> 0.62)
+                        // Subtle pure-black legibility fade (x: 0.0 -> 0.55)
                         const Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
-                                stops: [0.0, 0.62, 1.0],
+                                stops: [0.0, 0.55, 1.0],
                                 colors: [
-                                  Color(0xE6070A11),
-                                  Color(0x00070A11),
-                                  Color(0x00070A11),
+                                  Color(0x80000000),
+                                  Color(0x00000000),
+                                  Color(0x00000000),
                                 ],
                               ),
                             ),
@@ -553,11 +554,11 @@ class _TacticalFeedCard extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.75),
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: _getPlatformColor(platform).withValues(alpha: 0.6),
-                                width: 0.8,
+                                color: _getPlatformColor(platform).withValues(alpha: 0.7),
+                                width: 1.0,
                               ),
                             ),
                             child: Row(
@@ -577,6 +578,7 @@ class _TacticalFeedCard extends StatelessWidget {
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
                                     color: _getPlatformColor(platform),
+                                    shadows: AppTheme.crystalTextShadows,
                                   ),
                                 ),
                               ],
@@ -589,15 +591,9 @@ class _TacticalFeedCard extends StatelessWidget {
                           height: 54,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF070A11).withValues(alpha: 0.85),
-                            border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                                blurRadius: 14,
-                                spreadRadius: 1.5,
-                              ),
-                            ],
+                            color: Colors.transparent,
+                            border: Border.all(color: const Color(0x73D4AF37), width: 1.5),
+                            boxShadow: const [],
                           ),
                           child: const Center(
                             child: Icon(
@@ -640,8 +636,9 @@ class _TacticalFeedCard extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(2),
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(3),
+                                    border: Border.all(color: const Color(0x6638BDF8), width: 1.0),
                                   ),
                                   child: const Text(
                                     '1080P HD',
@@ -650,6 +647,7 @@ class _TacticalFeedCard extends StatelessWidget {
                                       fontSize: 8,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.info,
+                                      shadows: AppTheme.crystalTextShadows,
                                     ),
                                   ),
                                 ),
@@ -898,19 +896,13 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF070A11).withValues(alpha: 0.65),
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: const Color(0x38FFFFFF),
                         width: 1.0,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: const [],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -1005,9 +997,9 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _getCategoryColor(category).withValues(alpha: 0.2),
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: _getCategoryColor(category), width: 0.8),
+                              border: Border.all(color: _getCategoryColor(category), width: 1.0),
                             ),
                             child: Text(
                               category,

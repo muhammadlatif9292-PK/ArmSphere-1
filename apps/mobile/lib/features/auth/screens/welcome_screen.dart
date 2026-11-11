@@ -115,12 +115,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: [0.0, 0.36, 0.62, 1.0],
+                      stops: [0.0, 0.45, 0.78, 1.0],
                       colors: [
-                        Color(0x00070A11),
-                        Color(0x14070A11),
-                        Color(0xBF070A11),
-                        Color(0xF5070A11),
+                        Color(0x00000000),
+                        Color(0x00000000),
+                        Color(0x40000000),
+                        Color(0x73000000),
                       ],
                     ),
                   ),
@@ -147,17 +147,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   fallbackAsset: ArmSphereAssets.welcomeGripHero,
                   excludeFromSemantics: true,
                 ),
-                // Bottom-only fade into #070A11 so silver chiaroscuro locked grip and crimson smoke pop at 100% clarity
+                // Bottom-only pure-black fade so silver chiaroscuro locked grip and crimson smoke pop at 100% clarity
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0x00070A11),
-                        Color(0x00070A11),
-                        Color(0xD9070A11),
-                        Color(0xFF070A11),
+                        Color(0x00000000),
+                        Color(0x00000000),
+                        Color(0x80000000),
+                        Color(0xB3000000),
                       ],
                       stops: [0.0, 0.62, 0.86, 1.0],
                     ),
@@ -366,27 +366,13 @@ class _RoleSelectCard extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.goldPrimary.withValues(alpha: 0.12)
-              : AppTheme.titanium,
-          gradient: isSelected
-              ? null
-              : AppTheme.brushedSteelGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
-            width: isSelected ? 1.5 : 1.0,
+            color: isSelected ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+            width: isSelected ? 1.2 : 1.0,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.25),
-                    blurRadius: 14,
-                    spreadRadius: 0.5,
-                  ),
-                  AppTheme.titaniumShadow(),
-                ]
-              : [AppTheme.titaniumShadow()],
+          boxShadow: const [],
         ),
         child: Row(
           children: [
@@ -394,12 +380,10 @@ class _RoleSelectCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.silverPlane,
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                  color: isSelected ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
                   width: 1.0,
                 ),
               ),
@@ -422,6 +406,9 @@ class _RoleSelectCard extends StatelessWidget {
                       fontSize: 13,
                       letterSpacing: 0.5,
                       color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
+                      shadows: const [
+                        Shadow(color: Color(0xE6000000), blurRadius: 6, offset: Offset(0, 1)),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -431,6 +418,9 @@ class _RoleSelectCard extends StatelessWidget {
                       fontFamily: 'Inter',
                       fontSize: 11,
                       color: AppTheme.textMuted,
+                      shadows: [
+                        Shadow(color: Color(0xE6000000), blurRadius: 6, offset: Offset(0, 1)),
+                      ],
                     ),
                   ),
                 ],
@@ -442,14 +432,14 @@ class _RoleSelectCard extends StatelessWidget {
               height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppTheme.goldPrimary : Colors.transparent,
+                color: Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                  color: isSelected ? AppTheme.goldPrimary : const Color(0x38FFFFFF),
                   width: 1.5,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 13, color: Colors.black)
+                  ? const Icon(Icons.check, size: 13, color: AppTheme.goldPrimary)
                   : null,
             ),
           ],
@@ -512,20 +502,13 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
         child: Container(
           height: 52,
           decoration: BoxDecoration(
-            gradient: AppTheme.championshipGoldGradient,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: AppTheme.glassBorderSpecular,
-              width: 1.0,
+              color: const Color(0x73D4AF37),
+              width: 1.2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                blurRadius: 16,
-                spreadRadius: 1,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            boxShadow: const [],
           ),
           alignment: Alignment.center,
           child: const Row(
@@ -537,7 +520,7 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
                   fontFamily: 'Space Grotesk',
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF070A11),
+                  color: AppTheme.goldPrimary,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -545,7 +528,7 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 18,
-                color: Color(0xFF070A11),
+                color: AppTheme.goldPrimary,
               ),
             ],
           ),

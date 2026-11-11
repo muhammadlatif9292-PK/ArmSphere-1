@@ -121,19 +121,25 @@ void main() {
         );
         final deco = pill.decoration! as BoxDecoration;
         expect(
-          deco.gradient,
-          const LinearGradient(
-            colors: [
-              Color(0x4DE23B3B),
-              Color(0x1AE23B3B),
-            ],
-          ),
-          reason: '${tab.label} pill gradient',
+          deco.color,
+          Colors.transparent,
+          reason: '${tab.label} pill fill',
         );
         expect(
-          (deco.border! as Border).top.color,
+          deco.gradient,
+          isNull,
+          reason: '${tab.label} pill gradient',
+        );
+        final topBorder = (deco.border! as Border).top;
+        expect(
+          topBorder.color,
           const Color(0x80E23B3B),
           reason: '${tab.label} pill border',
+        );
+        expect(
+          topBorder.width,
+          1.2,
+          reason: '${tab.label} pill border width',
         );
       }
     });
@@ -150,9 +156,9 @@ void main() {
           expect(style.color, const Color(0xFFFFFFFF));
           expect(style.fontWeight, FontWeight.w700);
         } else {
-          expect(style.color, const Color(0xFF94A3B8));
+          expect(style.color, const Color(0xFFCBD5E1));
           expect(style.fontWeight, FontWeight.w600);
-          expect(_iconFor(tester, tab.icon).color, const Color(0xFF94A3B8));
+          expect(_iconFor(tester, tab.icon).color, const Color(0xFFCBD5E1));
         }
         expect(style.fontFamily, AppTheme.fontDisplay);
       }

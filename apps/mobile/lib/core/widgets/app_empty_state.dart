@@ -178,26 +178,13 @@ class _AppEmptyStateState extends State<AppEmptyState>
                 Container(
                   height: 162,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xD9101520),
-                        Color(0xF0070A11),
-                      ],
-                    ),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: const Color(0x26FFFFFF),
+                      color: const Color(0x38FFFFFF),
                       width: 1.0,
                     ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x99000000),
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
+                    boxShadow: const [],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(17),
@@ -216,12 +203,11 @@ class _AppEmptyStateState extends State<AppEmptyState>
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                              stops: [0.0, 0.55, 0.72, 1.0],
+                              stops: [0.0, 0.55, 1.0],
                               colors: [
-                                Color(0xF2070A11),
-                                Color(0xD9070A11),
-                                Color(0x00070A11),
-                                Color(0x00070A11),
+                                Color(0x80000000),
+                                Color(0x00000000),
+                                Color(0x00000000),
                               ],
                             ),
                           ),
@@ -259,6 +245,7 @@ class _AppEmptyStateState extends State<AppEmptyState>
                                             fontWeight: FontWeight.w700,
                                             letterSpacing: 0.8,
                                             color: AppTheme.goldPrimary,
+                                            shadows: AppTheme.crystalTextShadows,
                                           ),
                                         ),
                                       ),
@@ -280,6 +267,7 @@ class _AppEmptyStateState extends State<AppEmptyState>
                                           fontFamily: AppTheme.fontDisplay,
                                           letterSpacing: -0.3,
                                           height: 1.15,
+                                          shadows: AppTheme.crystalTextShadows,
                                         ),
                                       ),
                                       const SizedBox(height: 3),
@@ -296,6 +284,7 @@ class _AppEmptyStateState extends State<AppEmptyState>
                                             color: AppTheme.textSecondary,
                                             fontSize: 11.5,
                                             height: 1.3,
+                                            shadows: AppTheme.crystalTextShadows,
                                           ),
                                         ),
                                     ],

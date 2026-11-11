@@ -110,9 +110,9 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xCC060911),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x28FFFFFF)),
+                  border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                 ),
                 child: SelectableText(
                   prettyMetadata,
@@ -232,8 +232,8 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                     },
                     tooltip: 'Settings Hub',
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xCC0D1320),
-                      side: const BorderSide(color: Color(0x38FFFFFF)),
+                      backgroundColor: Colors.transparent,
+                      side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -250,7 +250,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                 // 2. Official Federation Credential Card
                 ElevatedActionCard(
                   padding: const EdgeInsets.all(16),
-                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                  borderColor: const Color(0x73D4AF37),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -260,12 +260,11 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                             width: 52,
                             height: 52,
                             decoration: BoxDecoration(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(14),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: AppTheme.goldPrimary
-                                    .withValues(alpha: 0.55),
+                                color: const Color(0x73D4AF37),
+                                width: 1.0,
                               ),
                             ),
                             child: Icon(
@@ -398,11 +397,14 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: (isChainValid
-                                    ? AppTheme.success
-                                    : AppTheme.crimson)
-                                .withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isChainValid
+                                  ? const Color(0x6610B981)
+                                  : const Color(0x80E23B3B),
+                              width: 1.0,
+                            ),
                           ),
                           child: Icon(
                             isChainValid
@@ -576,8 +578,12 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0x73D4AF37),
+                      width: 1.0,
+                    ),
                   ),
                   child: const Icon(
                     Icons.fingerprint_rounded,

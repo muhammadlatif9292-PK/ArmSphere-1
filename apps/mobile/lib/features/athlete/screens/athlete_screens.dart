@@ -389,18 +389,12 @@ class _AthleteDashboardScreenState
                       height: 40,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
-                        color: const Color(0x99070A11),
+                        color: Colors.transparent,
                         border: Border.all(
-                          color: const Color(0x4DD4AF37),
+                          color: const Color(0x73D4AF37),
                           width: 1.0,
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x99000000),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: const [],
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(9),
@@ -511,15 +505,9 @@ class _AthleteDashboardScreenState
               height: 38,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0x99070A11),
-                border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x80000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+                color: Colors.transparent,
+                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+                boxShadow: const [],
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -590,18 +578,13 @@ class _AthleteDashboardScreenState
       constraints: const BoxConstraints(minHeight: 96),
       width: double.infinity,
       decoration: BoxDecoration(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.borderTitanium,
+          color: const Color(0x38FFFFFF),
           width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: const [],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
@@ -621,7 +604,7 @@ class _AthleteDashboardScreenState
                 excludeFromSemantics: true,
               ),
             ),
-            // Horizontal left-to-right directional scrim (x: 0.0 -> 0.58):
+            // Subtle pure-black legibility fade (x: 0.0 -> 0.55):
             // Protects left-side text while keeping the right 3D table subject 100% crystal-clear.
             const Positioned.fill(
               child: DecoratedBox(
@@ -629,11 +612,11 @@ class _AthleteDashboardScreenState
                   gradient: LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    stops: [0.0, 0.58, 1.0],
+                    stops: [0.0, 0.55, 1.0],
                     colors: [
-                      Color(0xE6070A11),
-                      Color(0x00070A11),
-                      Color(0x00070A11),
+                      Color(0x80000000),
+                      Color(0x00000000),
+                      Color(0x00000000),
                     ],
                   ),
                 ),
@@ -757,29 +740,15 @@ class _AthleteDashboardScreenState
       key: const ValueKey('profile.athlete.dashboard_hero'),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.smokedCardSurface,
-        gradient: AppTheme.cinematicBannerGradient,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isPodium
-              ? AppTheme.goldPrimary.withValues(alpha: 0.42)
-              : AppTheme.borderTitanium,
+              ? const Color(0x73D4AF37)
+              : const Color(0x38FFFFFF),
           width: 1.0,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.56),
-            blurRadius: 28,
-            spreadRadius: -2,
-            offset: const Offset(0, 12),
-          ),
-          if (isPodium)
-            BoxShadow(
-              color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-              blurRadius: 18,
-              spreadRadius: -4,
-            ),
-        ],
+        boxShadow: const [],
       ),
       child: Stack(
         fit: StackFit.passthrough,
@@ -887,17 +856,17 @@ class _AthleteDashboardScreenState
 
                     // 2A. Left-to-Right Directional Readability Scrim:
                     // Keeps the left athlete 3D subject zone (0%–45%) 100% crystal-clear with zero haze
-                    // while anchoring the right-side 55% athlete dossier text.
+                    // while anchoring the right-side 55% athlete dossier text with pure-black legibility fade.
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                           colors: [
-                            Color(0x00070A11),
-                            Color(0x00070A11),
-                            Color(0xD9070A11),
-                            Color(0xD9070A11),
+                            Color(0x00000000),
+                            Color(0x00000000),
+                            Color(0x80000000),
+                            Color(0x99000000),
                           ],
                           stops: [0.0, 0.45, 0.56, 1.0],
                         ),
@@ -911,9 +880,9 @@ class _AthleteDashboardScreenState
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Color(0x00070A11),
-                            Color(0x00070A11),
-                            Color(0xE6070A11),
+                            Color(0x00000000),
+                            Color(0x00000000),
+                            Color(0x99000000),
                           ],
                           stops: [0.0, 0.65, 1.0],
                         ),
@@ -994,10 +963,10 @@ class _AthleteDashboardScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: ShapeDecoration(
-                        color: const Color(0x99070A11),
+                        color: Colors.transparent,
                         shape: BeveledRectangleBorder(
-                          side: BorderSide(
-                            color: AppTheme.emerald.withValues(alpha: 0.45),
+                          side: const BorderSide(
+                            color: Color(0x6610B981),
                             width: 1.0,
                           ),
                           borderRadius: BorderRadius.circular(4.0),
@@ -1029,10 +998,10 @@ class _AthleteDashboardScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: ShapeDecoration(
-                        color: const Color(0x99070A11),
+                        color: Colors.transparent,
                         shape: BeveledRectangleBorder(
-                          side: BorderSide(
-                            color: AppTheme.goldPrimary.withValues(alpha: 0.48),
+                          side: const BorderSide(
+                            color: Color(0x73D4AF37),
                             width: 1.0,
                           ),
                           borderRadius: BorderRadius.circular(4.0),
@@ -1105,10 +1074,10 @@ class _AthleteDashboardScreenState
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5.5, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.07),
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                  color: AppTheme.borderSubtle, width: 1.0),
+                                  color: const Color(0x26FFFFFF), width: 1.0),
                             ),
                             child: Text(
                               country,
@@ -1268,12 +1237,10 @@ class _AthleteDashboardScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
       decoration: BoxDecoration(
-        color: const Color(0xB80B0F17),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isPodium
-              ? AppTheme.goldPrimary.withValues(alpha: 0.42)
-              : AppTheme.borderHighlight,
+          color: const Color(0x73D4AF37),
           width: 1.0,
         ),
       ),
@@ -1329,19 +1296,15 @@ class _AthleteDashboardScreenState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
             decoration: BoxDecoration(
-              color: hasDelta
-                  ? (isPositive
-                      ? AppTheme.emerald.withValues(alpha: 0.14)
-                      : AppTheme.crimson.withValues(alpha: 0.16))
-                  : AppTheme.goldPrimary.withValues(alpha: 0.12),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(5),
               border: Border.all(
                 color: hasDelta
                     ? (isPositive
-                        ? AppTheme.emerald.withValues(alpha: 0.38)
-                        : AppTheme.crimson.withValues(alpha: 0.40))
-                    : AppTheme.goldPrimary.withValues(alpha: 0.35),
-                width: 0.8,
+                        ? const Color(0x6610B981)
+                        : const Color(0x80E23B3B))
+                    : const Color(0x73D4AF37),
+                width: 1.0,
               ),
             ),
             child: hasDelta
@@ -1433,8 +1396,10 @@ class _AthleteDashboardScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1),
                   decoration: BoxDecoration(
-                    color: AppTheme.emerald.withValues(alpha: 0.12),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(3),
+                    border: Border.all(
+                        color: const Color(0x6610B981), width: 1.0),
                   ),
                   child: Text(
                     delta,
@@ -1580,11 +1545,14 @@ class _AthleteDashboardScreenState
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 3),
                             decoration: ShapeDecoration(
-                              color: (eloDelta >= 0
-                                      ? AppTheme.emerald
-                                      : AppTheme.crimson)
-                                  .withValues(alpha: 0.12),
+                              color: Colors.transparent,
                               shape: BeveledRectangleBorder(
+                                side: BorderSide(
+                                  color: eloDelta >= 0
+                                      ? const Color(0x6610B981)
+                                      : const Color(0x80E23B3B),
+                                  width: 1.0,
+                                ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -1621,8 +1589,10 @@ class _AthleteDashboardScreenState
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 3),
                             decoration: ShapeDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: Colors.transparent,
                               shape: BeveledRectangleBorder(
+                                side: const BorderSide(
+                                    color: Color(0x26FFFFFF), width: 1.0),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -1786,12 +1756,10 @@ class _AthleteDashboardScreenState
                                     width: 38,
                                     height: 38,
                                     decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppTheme.emerald
-                                          .withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Colors.transparent,
                                       border: Border.all(
-                                          color: AppTheme.emerald
-                                              .withValues(alpha: 0.4),
+                                          color: const Color(0x6610B981),
                                           width: 1.0),
                                     ),
                                     child: const Center(
@@ -1860,9 +1828,9 @@ class _AthleteDashboardScreenState
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.04),
-            border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.transparent,
+            border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
           ),
           child: const Center(
             child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
@@ -1923,15 +1891,13 @@ class _AthleteDashboardScreenState
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
           decoration: ShapeDecoration(
-            color: isActive
-                ? AppTheme.crimson.withValues(alpha: 0.12)
-                : Colors.transparent,
+            color: Colors.transparent,
             shape: BeveledRectangleBorder(
               side: BorderSide(
                 color: isActive
-                    ? AppTheme.crimson.withValues(alpha: 0.35)
-                    : Colors.transparent,
-                width: 1.0,
+                    ? const Color(0x80E23B3B)
+                    : const Color(0x2EFFFFFF),
+                width: isActive ? 1.2 : 1.0,
               ),
               borderRadius: BorderRadius.circular(6),
             ),
@@ -1965,9 +1931,9 @@ class _AthleteDashboardScreenState
       loading: () => Container(
         height: 100,
         decoration: BoxDecoration(
-          color: AppTheme.glassSurfaceHeavy,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+          border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
         ),
         child: const Center(
           child: CircularProgressIndicator(
@@ -2064,10 +2030,10 @@ class _AthleteDashboardScreenState
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: ShapeDecoration(
-              color: const Color(0x66070A11),
+              color: Colors.transparent,
               shape: BeveledRectangleBorder(
                 side: const BorderSide(
-                    color: AppTheme.borderTitanium, width: 1.0),
+                    color: Color(0x38FFFFFF), width: 1.0),
                 borderRadius: BorderRadius.circular(7),
               ),
             ),
@@ -2082,10 +2048,10 @@ class _AthleteDashboardScreenState
         final vsBadge = Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: ShapeDecoration(
-            color: AppTheme.silverPlane,
+            color: Colors.transparent,
             shape: BeveledRectangleBorder(
               side:
-                  const BorderSide(color: AppTheme.borderHighlight, width: 1.0),
+                  const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
               borderRadius: BorderRadius.circular(5),
             ),
           ),
@@ -2141,23 +2107,17 @@ class _AthleteDashboardScreenState
         return Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            gradient: AppTheme.upcomingMatchGradient,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-                color: AppTheme.crimson.withValues(alpha: 0.28), width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.32),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
+                color: const Color(0x80E23B3B), width: 1.0),
+            boxShadow: const [],
           ),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               // Per-card internal fight-stage imagery (`m1_card_supermatch_vs.webp` at 100% opacity
-              // with edge-only readability vignette keeping center x: 32%–68% crystal clear)
+              // with pure-black edge-only readability vignette keeping center x: 32%–68% crystal clear)
               Positioned.fill(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14),
@@ -2179,11 +2139,11 @@ class _AthleteDashboardScreenState
                               end: Alignment.centerRight,
                               stops: [0.0, 0.32, 0.50, 0.68, 1.0],
                               colors: [
-                                Color(0xCC070A11),
-                                Color(0x00070A11),
-                                Color(0x00070A11),
-                                Color(0x00070A11),
-                                Color(0xCC070A11),
+                                Color(0x80000000),
+                                Color(0x00000000),
+                                Color(0x00000000),
+                                Color(0x00000000),
+                                Color(0x80000000),
                               ],
                             ),
                           ),
@@ -2256,10 +2216,10 @@ class _AthleteDashboardScreenState
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: ShapeDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
+                            color: Colors.transparent,
                             shape: BeveledRectangleBorder(
                               side: const BorderSide(
-                                  color: AppTheme.borderTitanium, width: 1.0),
+                                  color: Color(0x38FFFFFF), width: 1.0),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -2319,8 +2279,10 @@ class _AthleteDashboardScreenState
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 14),
                               decoration: ShapeDecoration(
-                                color: AppTheme.crimson,
+                                color: Colors.transparent,
                                 shape: BeveledRectangleBorder(
+                                  side: const BorderSide(
+                                      color: Color(0x80E23B3B), width: 1.2),
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                               ),
@@ -2358,16 +2320,10 @@ class _AthleteDashboardScreenState
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.glassSurfaceHeavy,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(17),
@@ -2389,11 +2345,11 @@ class _AthleteDashboardScreenState
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          stops: [0.0, 0.58, 1.0],
+                          stops: [0.0, 0.55, 1.0],
                           colors: [
-                            Color(0xF2070A11),
-                            Color(0xCC070A11),
-                            Color(0x00070A11),
+                            Color(0x80000000),
+                            Color(0x00000000),
+                            Color(0x00000000),
                           ],
                         ),
                       ),
@@ -2446,10 +2402,10 @@ class _AthleteDashboardScreenState
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.06),
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(5),
                               border: Border.all(
-                                  color: AppTheme.borderTitanium, width: 1.0),
+                                  color: const Color(0x38FFFFFF), width: 1.0),
                             ),
                             child: const Text(
                               'STANDBY',
@@ -2556,7 +2512,7 @@ class _AthleteDashboardScreenState
                 },
               ),
               const SizedBox(height: 12),
-              const Divider(height: 1, color: Color(0x14FFFFFF)),
+              const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
               const SizedBox(height: 8),
 
               // Deck Tab Content
@@ -2609,7 +2565,7 @@ class _AthleteDashboardScreenState
                       children: [
                         for (int i = 0; i < recent.length; i++) ...[
                           if (i > 0)
-                            const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                            const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                           _buildDynamicIntelRow(recent[i], myProfileId),
                         ],
                       ],
@@ -2670,7 +2626,7 @@ class _AthleteDashboardScreenState
                       children: [
                         for (int i = 0; i < list.length; i++) ...[
                           if (i > 0)
-                            const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                            const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                           _buildTournamentRowItem(context, list[i]),
                         ],
                       ],
@@ -2726,7 +2682,7 @@ class _AthleteDashboardScreenState
                       children: [
                         for (int i = 0; i < top3.length; i++) ...[
                           if (i > 0)
-                            const Divider(height: 1, color: Color(0x0FFFFFFF)),
+                            const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                           _buildRankingRowItem(top3[i], i + 1),
                         ],
                       ],
@@ -2768,11 +2724,11 @@ class _AthleteDashboardScreenState
             constraints: const BoxConstraints(minWidth: 40),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             decoration: ShapeDecoration(
-              color: Colors.black.withValues(alpha: 0.30),
+              color: Colors.transparent,
               shape: BeveledRectangleBorder(
                 side: const BorderSide(
-                    color: AppTheme.borderTitanium, width: 1.0),
-                borderRadius: BorderRadius.circular(6),
+                    color: Color(0x38FFFFFF), width: 1.0),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             child: Column(
@@ -2909,8 +2865,8 @@ class _AthleteDashboardScreenState
             width: 26,
             height: 26,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: badgeColor.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.transparent,
               border: Border.all(
                   color: badgeColor.withValues(alpha: 0.5), width: 1.0),
             ),
@@ -3071,13 +3027,13 @@ class _AthleteDashboardScreenState
             width: 28,
             height: 28,
             decoration: ShapeDecoration(
-              color: effectiveAccent.withValues(alpha: 0.16),
+              color: Colors.transparent,
               shape: BeveledRectangleBorder(
                 side: BorderSide(
-                  color: effectiveAccent.withValues(alpha: 0.35),
+                  color: effectiveAccent.withValues(alpha: 0.45),
                   width: 1.0,
                 ),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             child: Center(
@@ -3389,15 +3345,13 @@ class IntelligenceDeckTabBar extends StatelessWidget {
           // Same active treatment as the verified navigation dock, now with the
           // bevelled plate shape used by the badges and the arm selector.
           decoration: ShapeDecoration(
-            color: isSelected
-                ? AppTheme.crimson.withValues(alpha: 0.12)
-                : Colors.transparent,
+            color: Colors.transparent,
             shape: BeveledRectangleBorder(
               side: BorderSide(
                 color: isSelected
-                    ? AppTheme.crimson.withValues(alpha: 0.35)
-                    : const Color(0x1FFFFFFF),
-                width: _borderWidth,
+                    ? const Color(0x80E23B3B)
+                    : const Color(0x2EFFFFFF),
+                width: isSelected ? 1.2 : 1.0,
               ),
               borderRadius: BorderRadius.circular(9),
             ),
@@ -3433,8 +3387,12 @@ class _ShortcutButton extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: color.withValues(alpha: 0.45),
+                width: 1.0,
+              ),
             ),
             child: Icon(icon, color: color, size: 18),
           ),
@@ -3486,19 +3444,19 @@ class DualRolePersonaSwitcher extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppTheme.smokedCardSurface,
-          gradient: AppTheme.machinedTitaniumGradient,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-          boxShadow: [AppTheme.cardShadow()],
+          border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+          boxShadow: const [],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
               ),
               child: const Icon(Icons.verified_user_outlined,
                   size: 16, color: AppTheme.goldPrimary),
@@ -3550,9 +3508,9 @@ class DualRolePersonaSwitcher extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppTheme.voidBackground,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: AppTheme.borderSubtle),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
       ),
       child: Row(
         children: [
@@ -3568,24 +3526,15 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                 curve: Curves.easeInOutCubic,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: !isOfficialActive
-                      ? AppTheme.elevatedSurface
-                      : Colors.transparent,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
-                  border: !isOfficialActive
-                      ? Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                          width: 1)
-                      : null,
-                  boxShadow: !isOfficialActive
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
+                  border: Border.all(
+                    color: !isOfficialActive
+                        ? const Color(0x73D4AF37)
+                        : const Color(0x2EFFFFFF),
+                    width: !isOfficialActive ? 1.2 : 1.0,
+                  ),
+                  boxShadow: const [],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -3630,23 +3579,15 @@ class DualRolePersonaSwitcher extends StatelessWidget {
                 curve: Curves.easeInOutCubic,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: isOfficialActive
-                      ? AppTheme.elevatedSurface
-                      : Colors.transparent,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
-                  border: isOfficialActive
-                      ? Border.all(
-                          color: AppTheme.info.withValues(alpha: 0.5), width: 1)
-                      : null,
-                  boxShadow: isOfficialActive
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
+                  border: Border.all(
+                    color: isOfficialActive
+                        ? const Color(0x80E23B3B)
+                        : const Color(0x2EFFFFFF),
+                    width: isOfficialActive ? 1.2 : 1.0,
+                  ),
+                  boxShadow: const [],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -3890,16 +3831,12 @@ class AthleteProfileScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 3.5),
                         decoration: BoxDecoration(
-                          color: (isOfficial
-                                  ? AppTheme.crimson
-                                  : AppTheme.goldPrimary)
-                              .withValues(alpha: 0.16),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
-                            color: (isOfficial
-                                    ? AppTheme.crimson
-                                    : AppTheme.goldPrimary)
-                                .withValues(alpha: 0.55),
+                            color: isOfficial
+                                ? const Color(0x80E23B3B)
+                                : const Color(0x73D4AF37),
                             width: 1.0,
                           ),
                         ),
@@ -4043,7 +3980,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                           : '/settings');
                     },
                   ),
-                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   _WorkspaceTile(
                     icon: Icons.military_tech_outlined,
                     iconColor: AppTheme.goldPrimary,
@@ -4054,7 +3991,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                       context.push('/athlete/achievements');
                     },
                   ),
-                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   _WorkspaceTile(
                     icon: Icons.groups_outlined,
                     iconColor: AppTheme.cyan,
@@ -4065,7 +4002,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                       context.push('/teams');
                     },
                   ),
-                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   _WorkspaceTile(
                     icon: Icons.emoji_events_outlined,
                     iconColor: AppTheme.goldPrimary,
@@ -4076,7 +4013,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                       context.push('/championship/titles');
                     },
                   ),
-                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   _WorkspaceTile(
                     icon: Icons.settings_outlined,
                     iconColor: AppTheme.textSecondary,
@@ -4087,7 +4024,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                       context.push('/settings');
                     },
                   ),
-                  const Divider(height: 1, color: AppTheme.borderSubtle),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   _WorkspaceTile(
                     icon: Icons.logout,
                     iconColor: AppTheme.error,
@@ -4151,7 +4088,7 @@ class AthleteProfileScreen extends ConsumerWidget {
           if (hasArmBiometrics) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 10),
-              child: Divider(height: 1, color: AppTheme.borderSubtle),
+              child: Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -4734,7 +4671,7 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
             const SizedBox(height: 14),
 
             // 1px Hairline Structural Divider
-            const Divider(height: 1, color: AppTheme.borderSubtle),
+            const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
             const SizedBox(height: 10),
 
             // Secondary Arm Fast-Affordance Strip
@@ -4787,7 +4724,10 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+      decoration: AppTheme.recessedObsidianWellDecoration(
+        radius: 14,
+        borderColor: const Color(0x73D4AF37),
+      ),
       child: Column(
         children: [
           Row(
@@ -4870,13 +4810,14 @@ class _ArmSelectorTab extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? activeColor.withValues(alpha: 0.15)
-              : Colors.transparent,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(6),
-          border: isSelected
-              ? Border.all(color: activeColor.withValues(alpha: 0.5), width: 1)
-              : null,
+          border: Border.all(
+            color: isSelected
+                ? activeColor.withValues(alpha: 0.65)
+                : const Color(0x2EFFFFFF),
+            width: isSelected ? 1.2 : 1.0,
+          ),
         ),
         child: Text(
           label,
@@ -4954,14 +4895,12 @@ class _WorkspaceTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDestructive
-                    ? AppTheme.error.withValues(alpha: 0.12)
-                    : Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isDestructive
-                      ? AppTheme.error.withValues(alpha: 0.35)
-                      : Colors.white.withValues(alpha: 0.20),
+                      ? const Color(0x80E23B3B)
+                      : const Color(0x38FFFFFF),
                   width: 1.0,
                 ),
               ),

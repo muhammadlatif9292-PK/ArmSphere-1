@@ -226,9 +226,9 @@ class _NotificationsListScreenState
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: priority.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: priority.withValues(alpha: 0.4)),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: priority.withValues(alpha: 0.65), width: 1.0),
                             ),
                             child: Icon(
                               _categoryIcon(n['category']?.toString()),

@@ -1209,10 +1209,11 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.crimson.withValues(alpha: 0.16),
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppTheme.crimson.withValues(alpha: 0.45),
+                              color: const Color(0x80E23B3B),
+                              width: 1.0,
                             ),
                           ),
                           child: Text(
@@ -1367,8 +1368,12 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0x73D4AF37),
+                          width: 1.0,
+                        ),
                       ),
                       child: const Icon(
                         Icons.workspace_premium_rounded,

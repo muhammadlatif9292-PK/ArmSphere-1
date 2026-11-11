@@ -29,17 +29,17 @@ class AppTheme {
   /// Precision Machined Titanium container (#151B24) - For primary cards and panels.
   static const Color titanium = Color(0xFF151B24);
 
-  /// Smoked-Obsidian Crystal Glass card surface (#D9101520 -> #F0070A11).
-  static const Color cardSurface = Color(0xD9101520);
+  /// Smoked-Obsidian Crystal Glass card surface -> 100% Pure Crystal Transparent.
+  static const Color cardSurface = Colors.transparent;
 
   /// Primary surface token (mapped to cardSurface).
-  static const Color surface = Color(0xD9101520);
+  static const Color surface = Colors.transparent;
 
-  /// Elevated action cell / secondary interactive container (#05070C recessed obsidian well).
-  static const Color elevatedSurface = Color(0xCC05070C);
+  /// Elevated action cell / secondary interactive container -> 100% Pure Crystal Transparent.
+  static const Color elevatedSurface = Colors.transparent;
 
   /// Backward-compatible alias for elevatedSurface.
-  static const Color surfaceElevated = Color(0xCC05070C);
+  static const Color surfaceElevated = Colors.transparent;
 
   /// Silver Plane structural substrate (#202832).
   static const Color silverPlane = Color(0xFF202832);
@@ -47,35 +47,35 @@ class AppTheme {
   /// Dark brushed steel surface (#1A2330).
   static const Color brushedSteel = Color(0xFF1A2330);
 
-  /// Recessed obsidian well container (#CC05070C) for inputs, stat cells, and inner wells.
-  static const Color recessedSurface = Color(0xCC05070C);
+  /// Recessed inner well container -> 100% Pure Crystal Transparent.
+  static const Color recessedSurface = Colors.transparent;
 
-  /// Crystal Glassmorphic Specular Card Border (15% white = 0x26FFFFFF).
-  static const Color borderTitanium = Color(0x26FFFFFF);
+  /// Crystal Wireframe Card Boundary (22% white = 0x38FFFFFF).
+  static const Color borderTitanium = Color(0x38FFFFFF);
 
   /// Metallic specular upper-edge highlight border (rgba(255, 255, 255, 0.36) = 0x5CFFFFFF).
   static const Color borderHighlight = Color(0x5CFFFFFF);
 
-  /// Structural card and divider border (15% white = 0x26FFFFFF).
-  static const Color border = Color(0x26FFFFFF);
+  /// Structural card and container border (22% white = 0x38FFFFFF).
+  static const Color border = Color(0x38FFFFFF);
 
-  /// Muted structural divider for subtle separators (8% white = 0x14FFFFFF).
-  static const Color borderMuted = Color(0x14FFFFFF);
+  /// Muted structural divider for internal row separators (13% white = 0x22FFFFFF).
+  static const Color borderMuted = Color(0x22FFFFFF);
 
-  /// Subtle structural divider for secondary separators & recessed inner wells (8% white = 0x14FFFFFF).
-  static const Color borderSubtle = Color(0x14FFFFFF);
+  /// Subtle structural divider for secondary separators & recessed inner wells (15% white = 0x26FFFFFF).
+  static const Color borderSubtle = Color(0x26FFFFFF);
 
   /// Elevated bright divider for focused states.
-  static const Color borderLight = Color(0x47FFFFFF);
+  static const Color borderLight = Color(0x59FFFFFF);
 
   /// Backward-compatible alias for structural card border.
   static const Color cardBorder = border;
 
-  /// Obsidian rim border token (15% white specular sheen).
-  static const Color obsidianRimBorder = Color(0x26FFFFFF);
+  /// Obsidian rim border token (22% white specular sheen).
+  static const Color obsidianRimBorder = Color(0x38FFFFFF);
 
-  /// Smoked obsidian glass surface token.
-  static const Color smokedObsidianGlass = Color(0xF0070A11);
+  /// Smoked obsidian glass surface token -> 100% Pure Crystal Transparent.
+  static const Color smokedObsidianGlass = Colors.transparent;
 
   /// Backward-compatible alias for cardSurface.
   static const Color cardBackground = cardSurface;
@@ -140,29 +140,38 @@ class AppTheme {
   static const Color highlightPurple = Color(0xFFC084FC);
 
   // ---------------------------------------------------------------------------
-  // 3. Crystal Glassmorphic / Glossmorphic Surface Tokens
+  // 3. Crystal Glassmorphic / Glossmorphic Surface Tokens (100% Transparent)
   // ---------------------------------------------------------------------------
-  /// Rich Smoked-Obsidian Crystal Glass surface for main content cards & image cards.
-  static const Color smokedCardSurface = Color(0xF0070A11);
+  /// Pure Crystal Transparent card surface.
+  static const Color smokedCardSurface = Colors.transparent;
 
-  /// Elevated Smoked-Obsidian Crystal Glass surface for prominent headers & podium cards.
-  static const Color smokedCardSurfaceElevated = Color(0xD9101520);
+  /// Pure Crystal Transparent elevated card surface.
+  static const Color smokedCardSurfaceElevated = Colors.transparent;
 
-  /// Deep recessed obsidian inner well surface (#CC05070C) for inputs, stat boxes & empty wells.
-  static const Color glassSurface = Color(0xCC05070C);
+  /// Pure Crystal Transparent inner well surface for inputs, stat boxes & empty wells.
+  static const Color glassSurface = Colors.transparent;
 
-  /// Elevated recessed obsidian surface plane (#CC05070C).
-  static const Color glassSurfaceHeavy = Color(0xCC05070C);
+  /// Pure Crystal Transparent surface plane.
+  static const Color glassSurfaceHeavy = Colors.transparent;
   static const Color glassSurfaceHigh = glassSurfaceHeavy;
 
-  /// Ultra-light floating crystal plane (#CC05070C).
-  static const Color glassSurfaceLight = Color(0xCC05070C);
+  /// Pure Crystal Transparent floating plane.
+  static const Color glassSurfaceLight = Colors.transparent;
 
-  /// Crisp light-catching specular border (15% white reflection = 0x26FFFFFF).
-  static const Color glassBorder = Color(0x26FFFFFF);
+  /// Crisp light-catching wireframe border (22% white reflection = 0x38FFFFFF).
+  static const Color glassBorder = Color(0x38FFFFFF);
 
   /// Upper-crest specular glass highlight line (38% white reflection = 0x61FFFFFF).
   static const Color glassBorderSpecular = Color(0x61FFFFFF);
+
+  /// Universal crisp text shadow for 100% readability over transparent wireframe cards.
+  static const List<Shadow> crystalTextShadows = [
+    Shadow(
+      color: Color(0xE6000000),
+      blurRadius: 6,
+      offset: Offset(0, 1),
+    ),
+  ];
 
   // ---------------------------------------------------------------------------
   // 4. Neutral Typography & Readability (WCAG AAA >= 7.0:1 / AA >= 4.5:1)
@@ -263,132 +272,135 @@ class AppTheme {
   static const String fontMono = 'SpaceGrotesk';
 
   // ---------------------------------------------------------------------------
-  // 9. Shadows & Directional Halos
+  // 9. Shadows & Directional Halos (BlurStyle.outer for transparent cards)
   // ---------------------------------------------------------------------------
-  /// Active / Live card glow.
+  /// Active / Live card outer rim glow.
   static BoxShadow liveGlow() {
     return BoxShadow(
       color: primaryAccent.withValues(alpha: 0.3),
       blurRadius: 8.0,
       spreadRadius: 1.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Restrained Champagne Gold halo for championship cards.
+  /// Restrained Champagne Gold outer halo for championship cards.
   static BoxShadow goldHalo() {
     return BoxShadow(
       color: goldPrimary.withValues(alpha: 0.25),
       blurRadius: 16.0,
       spreadRadius: 1.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Restrained Luminous Cyan halo for active table telemetry.
+  /// Restrained Luminous Cyan outer halo for active table telemetry.
   static BoxShadow cyanHalo() {
     return BoxShadow(
       color: cyanAccent.withValues(alpha: 0.25),
       blurRadius: 12.0,
       spreadRadius: 1.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Competition Crimson halo for active bouts and critical actions.
+  /// Competition Crimson outer halo for active bouts and critical actions.
   static BoxShadow crimsonHalo() {
     return BoxShadow(
       color: crimson.withValues(alpha: 0.28),
       blurRadius: 14.0,
       spreadRadius: 1.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Verified Emerald halo for cleared states and certifications.
+  /// Verified Emerald outer halo for cleared states and certifications.
   static BoxShadow emeraldHalo() {
     return BoxShadow(
       color: emerald.withValues(alpha: 0.25),
       blurRadius: 12.0,
       spreadRadius: 1.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Standard Smoked-Obsidian Crystal Glass levitating Y-axis drop shadow.
+  /// Zero-fill outer shadow for transparent cards (prevents BoxShadow grey-fill bug).
   static BoxShadow cardShadow() {
     return const BoxShadow(
-      color: Color(0x99000000),
-      blurRadius: 20.0,
-      offset: Offset(0, 10),
+      color: Colors.transparent,
+      blurRadius: 0.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Smoked-Obsidian Crystal Glass architectural floating card shadow.
+  /// Zero-fill outer shadow for transparent cards.
   static BoxShadow titaniumShadow() {
     return const BoxShadow(
-      color: Color(0x99000000),
-      blurRadius: 20.0,
-      offset: Offset(0, 10),
+      color: Colors.transparent,
+      blurRadius: 0.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
-  /// Deep floating crystal dock elevation shadow.
+  /// Zero-fill outer shadow for floating crystal dock.
   static BoxShadow glassDockShadow() {
     return const BoxShadow(
-      color: Color(0x99000000),
-      blurRadius: 20.0,
-      offset: Offset(0, 10),
+      color: Colors.transparent,
+      blurRadius: 0.0,
+      blurStyle: BlurStyle.outer,
     );
   }
 
   // ---------------------------------------------------------------------------
-  // 10. Smoked-Obsidian Crystal Glass Gradients & Surface Shaders
+  // 10. Pure Crystal Transparent Gradients & Surface Shaders
   // ---------------------------------------------------------------------------
-  /// Unified Smoked-Obsidian Crystal Glass outer card surface gradient.
+  /// 100% Transparent gradient token (backward-compatible constant).
   static const LinearGradient machinedTitaniumGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9101520),
-      Color(0xF0070A11),
+      Colors.transparent,
+      Colors.transparent,
     ],
   );
 
-  /// Secondary Smoked-Obsidian Crystal Glass gradient for compact cards & sub-panels.
+  /// 100% Transparent secondary gradient token.
   static const LinearGradient brushedSteelGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9101520),
-      Color(0xF0070A11),
+      Colors.transparent,
+      Colors.transparent,
     ],
   );
 
-  /// Immersive Smoked-Obsidian Crystal Glass athlete hero banner gradient.
+  /// 100% Transparent hero banner gradient token.
   static const LinearGradient cinematicBannerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9101520),
-      Color(0xF0070A11),
+      Colors.transparent,
+      Colors.transparent,
     ],
   );
 
-  /// Broadcast fight card / Supermatch Smoked-Obsidian Crystal Glass stage gradient.
+  /// 100% Transparent upcoming match gradient token.
   static const LinearGradient upcomingMatchGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xD9101520),
-      Color(0xF0070A11),
+      Colors.transparent,
+      Colors.transparent,
     ],
   );
 
-  /// Smoked optical glass sheen gradient with top-left specular highlight.
+  /// 100% Transparent glass sheen gradient token.
   static const LinearGradient glassSheenGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    stops: [0.0, 0.45, 1.0],
     colors: [
-      Color(0x22FFFFFF), // 13% specular reflection at top-left
-      Color(0x06FFFFFF),
-      Color(0x00000000),
+      Colors.transparent,
+      Colors.transparent,
     ],
   );
 
@@ -428,7 +440,7 @@ class AppTheme {
     ],
   );
 
-  /// Unified Smoked-Obsidian Crystal Glass Outer Card Box Decoration.
+  /// 100% Crystal-Transparent Wireframe Card Box Decoration.
   static BoxDecoration machinedTitaniumDecoration({
     double radius = 18.0,
     Color? borderColor,
@@ -436,42 +448,34 @@ class AppTheme {
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      gradient: customBackground != null ? null : machinedTitaniumGradient,
-      color: customBackground,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? const Color(0x26FFFFFF),
+        color: borderColor ?? const Color(0x38FFFFFF),
         width: 1.0,
       ),
-      boxShadow: customShadow ??
-          const [
-            BoxShadow(
-              color: Color(0x99000000),
-              blurRadius: 20.0,
-              offset: Offset(0, 10),
-            ),
-          ],
+      boxShadow: const [],
     );
   }
 
-  /// Dark Brushed Steel / Recessed Obsidian Box Decoration for compact cards & controls.
+  /// 100% Crystal-Transparent Wireframe Box Decoration for compact cards & controls.
   static BoxDecoration brushedSteelDecoration({
     double radius = 14.0,
     Color? borderColor,
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      color: const Color(0xCC05070C),
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? const Color(0x14FFFFFF),
+        color: borderColor ?? const Color(0x26FFFFFF),
         width: 1.0,
       ),
-      boxShadow: customShadow,
+      boxShadow: const [],
     );
   }
 
-  /// Smoked-Obsidian Crystal Glass Outer Card Box Decoration.
+  /// 100% Crystal-Transparent Wireframe Outer Card Box Decoration.
   static BoxDecoration smokedGlassDecoration({
     double radius = 18.0,
     Color? borderColor,
@@ -479,54 +483,47 @@ class AppTheme {
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      gradient: surfaceColor != null ? null : machinedTitaniumGradient,
-      color: surfaceColor,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? const Color(0x26FFFFFF),
+        color: borderColor ?? const Color(0x38FFFFFF),
         width: 1.0,
       ),
-      boxShadow: customShadow ??
-          const [
-            BoxShadow(
-              color: Color(0x99000000),
-              blurRadius: 20.0,
-              offset: Offset(0, 10),
-            ),
-          ],
+      boxShadow: const [],
     );
   }
 
-  /// Deep Recessed Obsidian Inner Well Decoration (`#CC05070C`, `radius: 14`, `1px #14FFFFFF` border).
+  /// 100% Crystal-Transparent Inner Well Decoration (`Colors.transparent`, `radius: 14`, `1px #26FFFFFF` border).
   static BoxDecoration recessedObsidianWellDecoration({
     double radius = 14.0,
     Color? borderColor,
   }) {
     return BoxDecoration(
-      color: const Color(0xCC05070C),
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? const Color(0x14FFFFFF),
+        color: borderColor ?? const Color(0x26FFFFFF),
         width: 1.0,
       ),
+      boxShadow: const [],
     );
   }
 
   // ---------------------------------------------------------------------------
   // 11. Gradient Scrims (docs/design/35_MEDIA_ART_DIRECTION.md)
   // ---------------------------------------------------------------------------
-  /// Directional 4-stop hero gradient scrim for guaranteed text legibility over photography.
+  /// Directional 4-stop hero gradient scrim so 9:16 stage artwork shines through transparent cards.
   static BoxDecoration heroScrim() {
-    return BoxDecoration(
+    return const BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        stops: const [0.0, 0.40, 0.75, 1.0],
+        stops: [0.0, 0.45, 0.78, 1.0],
         colors: [
-          Color(0x00070A11), // 0% opacity at top
-          Color(0x33070A11), // 20% opacity at 40% height
-          Color(0xCC070A11), // 80% opacity at 75% height
-          Color(0xFF070A11), // 100% solid background at bottom
+          Color(0x00000000),
+          Color(0x00000000),
+          Color(0x40000000),
+          Color(0x73000000),
         ],
       ),
     );
@@ -534,15 +531,15 @@ class AppTheme {
 
   /// Radial vignette scrim for athlete profile cutouts and Tale of the Tape.
   static BoxDecoration cutoutRadialScrim() {
-    return BoxDecoration(
+    return const BoxDecoration(
       gradient: RadialGradient(
-        center: const Alignment(0.0, -0.2),
+        center: Alignment(0.0, -0.2),
         radius: 0.85,
-        stops: const [0.30, 0.70, 1.0],
+        stops: [0.30, 0.70, 1.0],
         colors: [
-          Color(0x000B0F19),
-          Color(0x880B0F19),
-          Color(0xFF0B0F19),
+          Color(0x00000000),
+          Color(0x40000000),
+          Color(0x73000000),
         ],
       ),
     );
@@ -558,20 +555,21 @@ class AppTheme {
       scaffoldBackgroundColor: background,
       primaryColor: goldPrimary,
       colorScheme: const ColorScheme.dark(
-        surface: cardSurface,
-        surfaceContainer: elevatedSurface,
+        surface: Colors.transparent,
+        surfaceContainer: Colors.transparent,
         primary: goldPrimary,
         secondary: secondaryAccent,
         error: error,
         onSurface: textPrimary,
-        onPrimary: voidBackground,
-        onSecondary: voidBackground,
+        onPrimary: textPure,
+        onSecondary: textPure,
         outline: border,
       ),
-      dividerColor: border,
+      dividerColor: const Color(0x22FFFFFF),
       dividerTheme: const DividerThemeData(
-        color: border,
+        color: Color(0x22FFFFFF),
         thickness: 1.0,
+        height: 1.0,
         space: 1.0,
       ),
       textTheme: const TextTheme(
@@ -581,6 +579,7 @@ class AppTheme {
           fontSize: 32.0,
           color: textPrimary,
           letterSpacing: -0.5,
+          shadows: crystalTextShadows,
         ),
         displayMedium: TextStyle(
           fontFamily: fontDisplay,
@@ -588,48 +587,56 @@ class AppTheme {
           fontSize: 28.0,
           color: textPrimary,
           letterSpacing: -0.5,
+          shadows: crystalTextShadows,
         ),
         displaySmall: TextStyle(
           fontFamily: fontDisplay,
           fontWeight: FontWeight.bold,
           fontSize: 24.0,
           color: textPrimary,
+          shadows: crystalTextShadows,
         ),
         headlineLarge: TextStyle(
           fontFamily: fontDisplay,
           fontWeight: FontWeight.w700,
           fontSize: 22.0,
           color: textPrimary,
+          shadows: crystalTextShadows,
         ),
         headlineMedium: TextStyle(
           fontFamily: fontDisplay,
           fontWeight: FontWeight.w600,
           fontSize: 20.0,
           color: textPrimary,
+          shadows: crystalTextShadows,
         ),
         headlineSmall: TextStyle(
           fontFamily: fontDisplay,
           fontWeight: FontWeight.w600,
           fontSize: 18.0,
           color: textPrimary,
+          shadows: crystalTextShadows,
         ),
         titleLarge: TextStyle(
           fontFamily: fontBody,
           fontWeight: FontWeight.w600,
           fontSize: 16.0,
           color: textPrimary,
+          shadows: crystalTextShadows,
         ),
         titleMedium: TextStyle(
           fontFamily: fontBody,
           fontWeight: FontWeight.w500,
           fontSize: 15.0,
           color: textPrimary,
+          shadows: crystalTextShadows,
         ),
         titleSmall: TextStyle(
           fontFamily: fontBody,
           fontWeight: FontWeight.w500,
           fontSize: 13.0,
           color: textSecondary,
+          shadows: crystalTextShadows,
         ),
         bodyLarge: TextStyle(
           fontFamily: fontBody,
@@ -637,6 +644,7 @@ class AppTheme {
           fontSize: 16.0,
           color: textPrimary,
           height: 1.5,
+          shadows: crystalTextShadows,
         ),
         bodyMedium: TextStyle(
           fontFamily: fontBody,
@@ -644,6 +652,7 @@ class AppTheme {
           fontSize: 14.0,
           color: textSecondary,
           height: 1.4,
+          shadows: crystalTextShadows,
         ),
         bodySmall: TextStyle(
           fontFamily: fontBody,
@@ -651,6 +660,7 @@ class AppTheme {
           fontSize: 12.0,
           color: textMuted,
           height: 1.3,
+          shadows: crystalTextShadows,
         ),
         labelLarge: TextStyle(
           fontFamily: fontBody,
@@ -658,111 +668,129 @@ class AppTheme {
           fontSize: 14.0,
           color: textPrimary,
           letterSpacing: 0.1,
+          shadows: crystalTextShadows,
         ),
         labelMedium: TextStyle(
           fontFamily: fontBody,
           fontWeight: FontWeight.w500,
           fontSize: 12.0,
           color: textSecondary,
+          shadows: crystalTextShadows,
         ),
         labelSmall: TextStyle(
           fontFamily: fontBody,
           fontWeight: FontWeight.normal,
           fontSize: 11.0,
           color: textMuted,
+          shadows: crystalTextShadows,
         ),
       ),
       cardTheme: CardThemeData(
-        color: smokedCardSurface,
-        shadowColor: Colors.black.withValues(alpha: 0.45),
+        color: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusLarge),
-          side: const BorderSide(color: borderTitanium, width: 1.0),
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: glassSurface,
+        fillColor: Colors.transparent,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: borderTitanium, width: 1.0),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: borderTitanium, width: 1.0),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: cyan, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: goldPrimary, width: 1.2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: error, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: error, width: 1.2),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
-          borderSide: const BorderSide(color: error, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: error, width: 1.2),
         ),
         labelStyle: const TextStyle(
           fontFamily: fontBody,
           color: textSecondary,
           fontSize: 14.0,
+          shadows: crystalTextShadows,
         ),
         hintStyle: const TextStyle(
           fontFamily: fontBody,
           color: textMuted,
           fontSize: 14.0,
+          shadows: crystalTextShadows,
         ),
         errorStyle: const TextStyle(
           fontFamily: fontBody,
           color: error,
           fontSize: 12.0,
+          shadows: crystalTextShadows,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: goldPrimary,
-          foregroundColor: voidBackground,
-          disabledBackgroundColor: glassSurfaceHeavy,
+          backgroundColor: Colors.transparent,
+          foregroundColor: goldPrimary,
+          disabledBackgroundColor: Colors.transparent,
           disabledForegroundColor: textMuted,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+          side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMedium),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontFamily: fontBody,
             fontWeight: FontWeight.w600,
             fontSize: 15.0,
             letterSpacing: 0.2,
+            shadows: crystalTextShadows,
           ),
           elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.transparent,
           foregroundColor: textPrimary,
           disabledForegroundColor: textMuted,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
-          side: const BorderSide(color: borderTitanium, width: 1.0),
+          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMedium),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontFamily: fontBody,
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
+            shadows: crystalTextShadows,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: info,
+          backgroundColor: Colors.transparent,
+          foregroundColor: goldPrimary,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           minimumSize: const Size(48, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           shape: RoundedRectangleBorder(
@@ -772,35 +800,57 @@ class AppTheme {
             fontFamily: fontBody,
             fontWeight: FontWeight.w500,
             fontSize: 14.0,
+            shadows: crystalTextShadows,
           ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: glassSurface,
-        disabledColor: glassSurfaceLight,
-        selectedColor: info.withValues(alpha: 0.18),
-        secondarySelectedColor: goldPrimary.withValues(alpha: 0.18),
+        backgroundColor: Colors.transparent,
+        disabledColor: Colors.transparent,
+        selectedColor: Colors.transparent,
+        secondarySelectedColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         labelStyle: const TextStyle(
           fontFamily: fontBody,
           color: textPrimary,
           fontSize: 12.0,
+          shadows: crystalTextShadows,
         ),
         secondaryLabelStyle: const TextStyle(
           fontFamily: fontBody,
-          color: goldLight,
+          color: goldPrimary,
           fontSize: 12.0,
+          shadows: crystalTextShadows,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusSmall),
-          side: const BorderSide(color: borderTitanium, width: 1.0),
+          side: const BorderSide(color: Color(0x2EFFFFFF), width: 1.0),
         ),
+      ),
+      switchTheme: SwitchThemeData(
+        trackColor: WidgetStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(0x73D4AF37);
+          }
+          return const Color(0x59FFFFFF);
+        }),
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return goldPrimary;
+          }
+          return textSecondary;
+        }),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: const Color(0xEB0B0F19),
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusLarge),
-          side: const BorderSide(color: borderTitanium, width: 1.0),
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -817,9 +867,11 @@ class AppTheme {
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: const Color(0xEB0B0F19),
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
-          side: const BorderSide(color: borderTitanium, width: 1.0),
+          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
         ),
       ),
       actionIconTheme: ActionIconThemeData(
@@ -843,6 +895,7 @@ class AppTheme {
           fontSize: 20,
           color: textPrimary,
           letterSpacing: -0.2,
+          shadows: crystalTextShadows,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -852,27 +905,28 @@ class AppTheme {
         insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: goldPrimary.withValues(alpha: 0.55), width: 1.2),
+          side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
         ),
         contentTextStyle: const TextStyle(
           fontFamily: fontBody,
           fontSize: 13.5,
           fontWeight: FontWeight.w600,
           color: textPure,
+          shadows: crystalTextShadows,
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: const Color(0xD90B101C),
+        backgroundColor: Colors.transparent,
         foregroundColor: goldPrimary,
         elevation: 0,
         highlightElevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: goldPrimary.withValues(alpha: 0.68), width: 1.3),
+          side: const BorderSide(color: Color(0x73D4AF37), width: 1.2),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: cardSurface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         selectedItemColor: goldPrimary,
         unselectedItemColor: textMuted,
@@ -880,11 +934,13 @@ class AppTheme {
           fontFamily: fontBody,
           fontWeight: FontWeight.w600,
           fontSize: 11.0,
+          shadows: crystalTextShadows,
         ),
         unselectedLabelStyle: TextStyle(
           fontFamily: fontBody,
           fontWeight: FontWeight.normal,
           fontSize: 11.0,
+          shadows: crystalTextShadows,
         ),
         type: BottomNavigationBarType.fixed,
       ),

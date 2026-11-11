@@ -255,9 +255,9 @@ class _TournamentOperatorDashboardScreenState
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.glassSurface,
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          border: Border.all(color: AppTheme.borderTitanium),
+                          border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -305,8 +305,9 @@ class _TournamentOperatorDashboardScreenState
                           Container(
                             padding: const EdgeInsets.all(AppTheme.space10),
                             decoration: BoxDecoration(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                             ),
                             child: const Icon(
                               Icons.stadium_outlined,
@@ -374,7 +375,7 @@ class _TournamentOperatorDashboardScreenState
                         ],
                       ),
                       const SizedBox(height: AppTheme.space16),
-                      const Divider(height: 1, color: AppTheme.cardBorder),
+                      const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       const SizedBox(height: AppTheme.space16),
 
                       // Primary Launch Button
@@ -383,12 +384,15 @@ class _TournamentOperatorDashboardScreenState
                         height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.goldPrimary,
-                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: AppTheme.goldPrimary,
+                            shadowColor: Colors.transparent,
+                            surfaceTintColor: Colors.transparent,
+                            elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                              side: const BorderSide(color: Color(0x73D4AF37), width: 1.2),
                             ),
-                            elevation: 2,
                           ),
                           icon: const Icon(Icons.dashboard_customize_outlined, size: 20),
                           label: const Text(
@@ -444,10 +448,11 @@ class _TournamentOperatorDashboardScreenState
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0x6638BDF8), width: 1.0),
                                     ),
-                                    child: const Icon(Icons.table_restaurant_outlined, color: Colors.blueAccent, size: 22),
+                                    child: const Icon(Icons.table_restaurant_outlined, color: Color(0xFF38BDF8), size: 22),
                                   ),
                                   const SizedBox(width: AppTheme.space10),
                                   Column(
@@ -516,10 +521,11 @@ class _TournamentOperatorDashboardScreenState
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                                     ),
-                                    child: const Icon(Icons.scale_outlined, color: Colors.amber, size: 22),
+                                    child: const Icon(Icons.scale_outlined, color: AppTheme.goldPrimary, size: 22),
                                   ),
                                   const SizedBox(width: AppTheme.space10),
                                   Column(
@@ -543,8 +549,12 @@ class _TournamentOperatorDashboardScreenState
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.goldPrimary,
-                                  foregroundColor: Colors.black,
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: AppTheme.goldPrimary,
+                                  shadowColor: Colors.transparent,
+                                  surfaceTintColor: Colors.transparent,
+                                  elevation: 0,
+                                  side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   minimumSize: const Size(0, 32),
                                 ),
@@ -736,23 +746,23 @@ class _TournamentOperatorDashboardScreenState
   }
 
   Widget _buildMetricPill(String label, String value, StatusType type) {
-    Color bg;
+    Color borderColor;
     Color fg;
     switch (type) {
       case StatusType.success:
-        bg = AppTheme.success.withValues(alpha: 0.15);
+        borderColor = const Color(0x6610B981);
         fg = AppTheme.success;
         break;
       case StatusType.warning:
-        bg = Colors.amber.withValues(alpha: 0.15);
-        fg = Colors.amber;
+        borderColor = const Color(0x73D4AF37);
+        fg = AppTheme.goldPrimary;
         break;
       case StatusType.info:
-        bg = Colors.blue.withValues(alpha: 0.15);
-        fg = Colors.blueAccent;
+        borderColor = const Color(0x6638BDF8);
+        fg = const Color(0xFF38BDF8);
         break;
       default:
-        bg = AppTheme.glassSurface;
+        borderColor = const Color(0x38FFFFFF);
         fg = AppTheme.textSecondary;
     }
 
@@ -760,8 +770,9 @@ class _TournamentOperatorDashboardScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: bg,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          border: Border.all(color: borderColor, width: 1.0),
         ),
         child: Column(
           children: [
@@ -781,7 +792,7 @@ class _TournamentOperatorDashboardScreenState
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
-                color: fg.withValues(alpha: 0.8),
+                color: fg.withValues(alpha: 0.85),
                 letterSpacing: 0.3,
               ),
               maxLines: 1,

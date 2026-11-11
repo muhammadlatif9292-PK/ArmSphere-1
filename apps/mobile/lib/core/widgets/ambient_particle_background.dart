@@ -75,12 +75,12 @@ class AmbientParticleBackground extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              stops: [0.0, 0.36, 0.62, 1.0],
+              stops: [0.0, 0.45, 0.78, 1.0],
               colors: [
-                Color(0x00070A11), // 0% opacity — 100% crystal-clear top 3D showcase
-                Color(0x14070A11), // 8% opacity — subtle transition
-                Color(0xBF070A11), // 75% opacity — smooth text-readability anchor
-                Color(0xF5070A11), // 96% opacity — deep pitch-black obsidian UI floor
+                Color(0x00000000),
+                Color(0x00000000),
+                Color(0x40000000),
+                Color(0x73000000),
               ],
             ),
           ),

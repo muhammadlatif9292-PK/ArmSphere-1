@@ -177,9 +177,9 @@ class _InformalEventDetailScreenState
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.glassSurface,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppTheme.goldPrimary),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                             ),
                             child: const Icon(
                               Icons.sports_martial_arts,
@@ -238,7 +238,7 @@ class _InformalEventDetailScreenState
                       ],
                       if (description.isNotEmpty) ...[
                         const SizedBox(height: AppTheme.space12),
-                        const Divider(height: 1, color: AppTheme.border),
+                        const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                         const SizedBox(height: AppTheme.space12),
                         Text(
                           description,
@@ -277,10 +277,9 @@ class _InformalEventDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space20),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
-                      gradient: AppTheme.machinedTitaniumGradient,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: const Center(
                       child: Text(
@@ -304,20 +303,26 @@ class _InformalEventDetailScreenState
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: AppTheme.elevatedSurface,
-                                backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                                child: photo.isEmpty
-                                    ? Text(
-                                        athleteName.isNotEmpty ? athleteName[0].toUpperCase() : '?',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          color: AppTheme.textPrimary,
-                                        ),
-                                      )
-                                    : null,
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                                  child: photo.isEmpty
+                                      ? Text(
+                                          athleteName.isNotEmpty ? athleteName[0].toUpperCase() : '?',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        )
+                                      : null,
+                                ),
                               ),
                               const SizedBox(width: AppTheme.space12),
                               Expanded(
@@ -350,11 +355,14 @@ class _InformalEventDetailScreenState
                 else if (isCreator)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.error,
-                      foregroundColor: AppTheme.textPrimary,
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: AppTheme.error,
+                      shadowColor: Colors.transparent,
+                      elevation: 0,
+                      side: const BorderSide(color: Color(0x80E23B3B), width: 1.0),
                       minimumSize: const Size.fromHeight(50),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
                     onPressed: () => _runAction(
@@ -382,7 +390,7 @@ class _InformalEventDetailScreenState
                       side: const BorderSide(color: AppTheme.error),
                       minimumSize: const Size.fromHeight(50),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
                     onPressed: () => _runAction(
@@ -405,11 +413,14 @@ class _InformalEventDetailScreenState
                 else if (!isFull)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.goldPrimary,
-                      foregroundColor: AppTheme.voidBackground,
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: AppTheme.goldPrimary,
+                      shadowColor: Colors.transparent,
+                      elevation: 0,
+                      side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                       minimumSize: const Size.fromHeight(50),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
                     onPressed: () => _runAction(
@@ -433,10 +444,9 @@ class _InformalEventDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space14),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
-                      gradient: AppTheme.machinedTitaniumGradient,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: const Center(
                       child: Text(

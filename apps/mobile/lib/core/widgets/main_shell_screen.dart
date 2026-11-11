@@ -693,162 +693,110 @@ class _MainShellScreenState extends State<MainShellScreen> {
                             key: const ValueKey('crystal_floating_nav_dock'),
                             height: kFloatingDockHeight,
                             decoration: BoxDecoration(
-                              color: const Color(0xE6070A11),
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: const Color(0x29FFFFFF),
+                                color: const Color(0x38FFFFFF),
                                 width: 1.0,
                               ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0xCC000000),
-                                  blurRadius: 24,
-                                  offset: Offset(0, 8),
-                                ),
-                              ],
+                              boxShadow: const [],
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(27),
-                              child: BackdropFilter(
-                                filter:
-                                    ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    // Top specular crystal rim reflection line
-                                    Positioned(
-                                      top: 0,
-                                      left: 24,
-                                      right: 24,
-                                      height: 1.0,
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.white
-                                                  .withValues(alpha: 0.0),
-                                              Colors.white
-                                                  .withValues(alpha: 0.55),
-                                              Colors.white
-                                                  .withValues(alpha: 0.0),
-                                            ],
-                                          ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: isAdminMode
+                                    ? [
+                                        _buildNavItem(
+                                          context,
+                                          index: 0,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.space_dashboard_outlined,
+                                          activeIcon:
+                                              Icons.space_dashboard_rounded,
+                                          label: 'Command',
                                         ),
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: isAdminMode
-                                          ? [
-                                              _buildNavItem(
-                                                context,
-                                                index: 0,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .space_dashboard_outlined,
-                                                activeIcon: Icons
-                                                    .space_dashboard_rounded,
-                                                label: 'Command',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 1,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.badge_outlined,
-                                                activeIcon: Icons.badge_rounded,
-                                                label: 'Roster',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 2,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon:
-                                                    Icons.emoji_events_outlined,
-                                                activeIcon:
-                                                    Icons.emoji_events_rounded,
-                                                label: 'Arena Ops',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 3,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.gavel_outlined,
-                                                activeIcon: Icons.gavel_rounded,
-                                                label: 'Governance',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 4,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .admin_panel_settings_outlined,
-                                                activeIcon: Icons
-                                                    .admin_panel_settings_rounded,
-                                                label: 'Dossier',
-                                              ),
-                                            ]
-                                          : [
-                                              _buildNavItem(
-                                                context,
-                                                index: 0,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.home_outlined,
-                                                activeIcon: Icons.home_rounded,
-                                                label: 'Arena',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 1,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .travel_explore_outlined,
-                                                activeIcon: Icons
-                                                    .travel_explore_rounded,
-                                                label: 'Discover',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 2,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon:
-                                                    Icons.emoji_events_outlined,
-                                                activeIcon:
-                                                    Icons.emoji_events_rounded,
-                                                label: 'Events',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 3,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.forum_outlined,
-                                                activeIcon: Icons.forum_rounded,
-                                                label: 'Community',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 4,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .person_outline_rounded,
-                                                activeIcon:
-                                                    Icons.person_rounded,
-                                                label: 'Passport',
-                                              ),
-                                            ],
-                                    ),
-                                  ],
-                                ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 1,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.badge_outlined,
+                                          activeIcon: Icons.badge_rounded,
+                                          label: 'Roster',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 2,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.emoji_events_outlined,
+                                          activeIcon:
+                                              Icons.emoji_events_rounded,
+                                          label: 'Arena Ops',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 3,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.gavel_outlined,
+                                          activeIcon: Icons.gavel_rounded,
+                                          label: 'Governance',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 4,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons
+                                              .admin_panel_settings_outlined,
+                                          activeIcon:
+                                              Icons.admin_panel_settings_rounded,
+                                          label: 'Dossier',
+                                        ),
+                                      ]
+                                    : [
+                                        _buildNavItem(
+                                          context,
+                                          index: 0,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.home_outlined,
+                                          activeIcon: Icons.home_rounded,
+                                          label: 'Arena',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 1,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.travel_explore_outlined,
+                                          activeIcon:
+                                              Icons.travel_explore_rounded,
+                                          label: 'Discover',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 2,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.emoji_events_outlined,
+                                          activeIcon:
+                                              Icons.emoji_events_rounded,
+                                          label: 'Events',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 3,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.forum_outlined,
+                                          activeIcon: Icons.forum_rounded,
+                                          label: 'Community',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 4,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.person_outline_rounded,
+                                          activeIcon: Icons.person_rounded,
+                                          label: 'Passport',
+                                        ),
+                                      ],
                               ),
                             ),
                           ),
@@ -871,9 +819,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
     required String label,
   }) {
     final isSelected = activeTabIndex == index;
-    // Owner directive: crimson is the single active-navigation accent for all
-    // five tabs. Gold stays reserved for championship/achievement cues.
-    const activeColor = AppTheme.crimson;
 
     return Expanded(
       child: Semantics(
@@ -883,8 +828,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
         label: '$label tab',
         tooltip: label,
         onTap: () => _onTap(context, index),
-        // The visible icon/label are replaced by the single label above so
-        // screen readers do not announce the tab twice.
         excludeSemantics: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -898,37 +841,22 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [
-                            Color(0x4DE23B3B),
-                            Color(0x1AE23B3B),
-                          ],
-                        )
-                      : null,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
                         ? const Color(0x80E23B3B)
                         : Colors.transparent,
-                    width: 1.0,
+                    width: isSelected ? 1.2 : 1.0,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: activeColor.withValues(alpha: 0.28),
-                            blurRadius: 12,
-                            spreadRadius: -2,
-                          ),
-                        ]
-                      : null,
+                  boxShadow: const [],
                 ),
                 child: Icon(
                   isSelected ? activeIcon : icon,
                   size: 22,
                   color: isSelected
                       ? const Color(0xFFFFFFFF)
-                      : const Color(0xFF94A3B8),
+                      : const Color(0xFFCBD5E1),
                 ),
               ),
               const SizedBox(height: 3),
@@ -946,7 +874,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
                       letterSpacing: 0.3,
                       color: isSelected
                           ? const Color(0xFFFFFFFF)
-                          : const Color(0xFF94A3B8),
+                          : const Color(0xFFCBD5E1),
+                      shadows: AppTheme.crystalTextShadows,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

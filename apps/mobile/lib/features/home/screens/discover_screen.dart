@@ -137,10 +137,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryAccent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppTheme.primaryAccent.withValues(alpha: 0.35),
+                          color: const Color(0x80E23B3B),
+                          width: 1.0,
                         ),
                       ),
                       child: const Icon(
@@ -203,14 +204,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.primaryAccent.withValues(alpha: 0.12)
-                              : AppTheme.cardSurface,
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                           border: Border.all(
                             color: isSelected
-                                ? AppTheme.primaryAccent.withValues(alpha: 0.5)
-                                : AppTheme.border,
+                                ? const Color(0x80E23B3B)
+                                : const Color(0x2EFFFFFF),
+                            width: isSelected ? 1.2 : 1.0,
                           ),
                         ),
                         child: Row(
@@ -339,9 +339,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
-          color: AppTheme.cardSurface,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          border: Border.all(color: AppTheme.border),
+          border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -386,11 +386,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: AppTheme.primaryAccent.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: AppTheme.primaryAccent.withValues(alpha: 0.35),
-                  width: 1,
+                  color: const Color(0x80E23B3B),
+                  width: 1.0,
                 ),
               ),
               child: const Icon(
@@ -525,8 +525,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         decoration: AppTheme.recessedObsidianWellDecoration(
           radius: 14,
           borderColor: _activeQuery.isNotEmpty
-              ? AppTheme.primaryAccent
-              : const Color(0x14FFFFFF),
+              ? const Color(0x80E23B3B)
+              : const Color(0x38FFFFFF),
         ),
         child: TextField(
           controller: _searchController,
@@ -576,11 +576,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryAccent : AppTheme.background,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                 border: Border.all(
-                  color: isSelected ? AppTheme.primaryAccent : AppTheme.border,
-                  width: 1.0,
+                  color: isSelected ? const Color(0x80E23B3B) : const Color(0x2EFFFFFF),
+                  width: isSelected ? 1.2 : 1.0,
                 ),
               ),
               child: Row(
@@ -589,7 +589,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   Icon(
                     category.icon,
                     size: 13,
-                    color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
+                    color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -598,7 +598,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       fontFamily: AppTheme.fontDisplay,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       fontSize: 11,
-                      color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
+                      color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -666,9 +666,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               margin: const EdgeInsets.only(bottom: AppTheme.space16),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.cardSurface,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
               ),
               child: Row(
                 children: [
@@ -774,10 +774,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 17,
-            backgroundColor: AppTheme.elevatedSurface,
-            child: Icon(Icons.person, color: AppTheme.textSecondary, size: 19),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+            ),
+            child: const Icon(Icons.person, color: AppTheme.textSecondary, size: 19),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1011,9 +1016,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xB3070A11),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: const Color(0x26FFFFFF)),
+                    border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1066,20 +1071,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Container(
         constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
-          color: const Color(0xFF070A11),
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0x26FFFFFF),
+            color: const Color(0x38FFFFFF),
             width: 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.52),
-              blurRadius: 22,
-              spreadRadius: -2,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          boxShadow: const [],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(15),
@@ -1104,9 +1102,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             end: Alignment.bottomCenter,
                             stops: [0.0, 0.58, 1.0],
                             colors: [
-                              Color(0x00070A11),
-                              Color(0x00070A11),
-                              Color(0xF0070A11),
+                              Color(0x00000000),
+                              Color(0x00000000),
+                              Color(0x99000000),
                             ],
                           ),
                         ),
@@ -1148,10 +1146,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xCC070A11),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: item.color.withValues(alpha: 0.45),
+                            color: item.color.withValues(alpha: 0.55),
+                            width: 1.0,
                           ),
                         ),
                         child: Text(
@@ -1287,9 +1286,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppTheme.background,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                       ),
                       child: Text(
                         '$scoreA  -  $scoreB',
@@ -1519,10 +1518,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppTheme.primaryAccent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                  color: AppTheme.primaryAccent.withValues(alpha: 0.3)),
+                  color: const Color(0x80E23B3B), width: 1.0),
             ),
             child: const Icon(
               Icons.emoji_events_outlined,
@@ -1632,10 +1631,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppTheme.secondaryAccent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                  color: AppTheme.secondaryAccent.withValues(alpha: 0.3)),
+                  color: const Color(0x73D4AF37), width: 1.0),
             ),
             child: const Icon(
               Icons.storefront_outlined,
@@ -1731,11 +1730,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
                 return ElevatedActionCard(
                   margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                  backgroundColor: const Color(0xCC05070C),
+                  backgroundColor: Colors.transparent,
                   borderRadius: 14,
                   borderColor: idx == 0
-                      ? const Color(0x4DD4AF37)
-                      : const Color(0x14FFFFFF),
+                      ? const Color(0x73D4AF37)
+                      : const Color(0x38FFFFFF),
                   boxShadow: const [],
                   onTap: () {
                     if (athleteId != null) {
@@ -1755,15 +1754,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         height: 30,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: idx < 3
-                              ? AppTheme.secondaryAccent.withValues(alpha: 0.16)
-                              : const Color(0xCC05070C),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.radiusSmall),
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: idx < 3
-                                ? AppTheme.secondaryAccent
-                                : AppTheme.border,
+                                ? const Color(0x73D4AF37)
+                                : const Color(0x38FFFFFF),
+                            width: 1.0,
                           ),
                         ),
                         child: Text(
@@ -1990,12 +1987,12 @@ class _FramedDirectorySection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 11),
             decoration: const BoxDecoration(
-              color: Color(0x6605070C),
+              color: Colors.transparent,
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(17),
               ),
               border: Border(
-                bottom: BorderSide(color: Color(0x14FFFFFF), width: 1.0),
+                bottom: BorderSide(color: Color(0x22FFFFFF), width: 1.0),
               ),
             ),
             child: Row(
@@ -2007,10 +2004,11 @@ class _FramedDirectorySection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: accentColor.withValues(alpha: 0.3),
+                        color: accentColor.withValues(alpha: 0.55),
+                        width: 1.0,
                       ),
                     ),
                     child: Icon(icon, size: 15, color: accentColor),
@@ -2059,9 +2057,14 @@ class _FramedDirectorySection extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(
+                          color: accentColor == AppTheme.secondaryAccent
+                              ? const Color(0x73D4AF37)
+                              : accentColor.withValues(alpha: 0.55),
+                          width: 1.0,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -2134,10 +2137,11 @@ class _CompactEmptyBanner extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: accentColor.withValues(alpha: 0.3),
+                    color: accentColor.withValues(alpha: 0.45),
+                    width: 1.0,
                   ),
                 ),
                 child: Icon(icon, color: accentColor, size: 17),
@@ -2185,13 +2189,14 @@ class _CompactEmptyBanner extends StatelessWidget {
                 ),
                 style: TextButton.styleFrom(
                   foregroundColor: accentColor,
-                  backgroundColor: accentColor.withValues(alpha: 0.12),
+                  backgroundColor: Colors.transparent,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                     side: BorderSide(
-                      color: accentColor.withValues(alpha: 0.38),
+                      color: accentColor.withValues(alpha: 0.55),
+                      width: 1.0,
                     ),
                   ),
                 ),
@@ -2253,22 +2258,12 @@ class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(
-            sigmaX: isPinnedActive ? 20.0 : 0.0,
-            sigmaY: isPinnedActive ? 20.0 : 0.0,
+            sigmaX: isPinnedActive ? 14.0 : 0.0,
+            sigmaY: isPinnedActive ? 14.0 : 0.0,
           ),
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: isPinnedActive
-                  ? const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xF2070A11),
-                        Color(0xD9070A11),
-                      ],
-                    )
-                  : null,
-              color: isPinnedActive ? null : Colors.transparent,
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

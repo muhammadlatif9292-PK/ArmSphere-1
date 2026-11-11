@@ -212,10 +212,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(22.0),
                     decoration: BoxDecoration(
-                      color: const Color(0xCC0B0F19),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0x26FFFFFF),
+                        color: const Color(0x38FFFFFF),
                         width: 1.0,
                       ),
                     ),
@@ -293,25 +293,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Container(
                         height: 50,
                         decoration: BoxDecoration(
-                          gradient: AppTheme.championshipGoldGradient,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: AppTheme.glassBorderSpecular,
-                            width: 1.0,
+                            color: const Color(0x73D4AF37),
+                            width: 1.2,
                           ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: AppTheme.goldGlow,
-                              blurRadius: 16,
-                              spreadRadius: 1,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
+                          boxShadow: const [],
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            borderRadius: BorderRadius.circular(18),
                             onTap: _isLoading
                                 ? null
                                 : () {
@@ -325,7 +318,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2.2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.goldPrimary),
                                       ),
                                     )
                                   : const Text(
@@ -334,7 +327,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         fontFamily: 'Space Grotesk',
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.black,
+                                        color: AppTheme.goldPrimary,
                                         letterSpacing: 0.3,
                                       ),
                                     ),

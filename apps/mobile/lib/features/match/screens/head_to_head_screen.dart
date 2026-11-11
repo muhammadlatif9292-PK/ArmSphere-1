@@ -384,7 +384,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.headToHead),
         elevation: 0,
         leading: const CrystalBackButton(),
@@ -434,10 +435,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                   height: 32,
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.90),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF334155),
+                      color: const Color(0x38FFFFFF),
                       width: 1.0,
                     ),
                   ),
@@ -454,24 +455,15 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _isRightArm
-                                ? const Color(0xFF1E293B)
-                                : Colors.transparent,
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: _isRightArm
-                                  ? AppTheme.goldPrimary
+                                  ? const Color(0x73D4AF37)
                                   : Colors.transparent,
-                              width: 1.5,
+                              width: 1.2,
                             ),
-                            boxShadow: _isRightArm
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
+                            boxShadow: const [],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -491,8 +483,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: _isRightArm
-                                      ? Colors.white
-                                      : const Color(0xFF94A3B8),
+                                      ? AppTheme.goldPrimary
+                                      : const Color(0xFFCBD5E1),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -511,24 +503,15 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: !_isRightArm
-                                ? const Color(0xFF1E293B)
-                                : Colors.transparent,
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: !_isRightArm
-                                  ? AppTheme.goldPrimary
+                                  ? const Color(0x73D4AF37)
                                   : Colors.transparent,
-                              width: 1.5,
+                              width: 1.2,
                             ),
-                            boxShadow: !_isRightArm
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
+                            boxShadow: const [],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -548,8 +531,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: !_isRightArm
-                                      ? Colors.white
-                                      : const Color(0xFF94A3B8),
+                                      ? AppTheme.goldPrimary
+                                      : const Color(0xFFCBD5E1),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -624,8 +607,13 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                       if (effectiveId1 == null || effectiveId2 == null)
                         Container(
                           width: double.infinity,
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          color: const Color(0xCC0B0F19),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+                          ),
                           child: Row(
                             children: [
                               const Icon(Icons.sports_mma_outlined, size: 16, color: AppTheme.goldPrimary),
@@ -735,15 +723,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     clipper: _LeftDiagonalClipper(),
                     child: Container(
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xD91A080A), // Deep Obsidian-Crimson Corner Safe Zone
-                            Color(0xE60B0F19),
-                            Color(0xF5070A11),
-                          ],
-                        ),
+                        color: Colors.transparent,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.only(left: 20, top: 18, right: 60),
@@ -777,12 +757,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(color: const Color(0xFFE23B3B), width: 2.0),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFE23B3B).withValues(alpha: 0.35),
-                                        blurRadius: 12,
-                                      ),
-                                    ],
+                                    boxShadow: const [],
                                   ),
                                   child: ArmSphereImage.avatar(
                                     imageUrl: red['avatarUrl']?.toString(),
@@ -850,15 +825,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     clipper: _RightDiagonalClipper(),
                     child: Container(
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                            Color(0xD90E1726), // Deep Obsidian-Titanium Corner Safe Zone
-                            Color(0xE60B0F19),
-                            Color(0xF5070A11),
-                          ],
-                        ),
+                        color: Colors.transparent,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.only(right: 20, top: 18, left: 60),
@@ -892,12 +859,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(color: const Color(0xFF94A3B8), width: 2.0),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF94A3B8).withValues(alpha: 0.35),
-                                        blurRadius: 12,
-                                      ),
-                                    ],
+                                    boxShadow: const [],
                                   ),
                                   child: ArmSphereImage.avatar(
                                     imageUrl: blue['avatarUrl']?.toString(),
@@ -985,15 +947,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF070A11),
+                      color: Colors.transparent,
                       border: Border.all(color: AppTheme.goldPrimary, width: 2.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                      boxShadow: const [],
                     ),
                     alignment: Alignment.center,
                     child: const Text(
@@ -1020,9 +976,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.55), width: 1.0),
       ),
       child: Text(
         label,
@@ -1051,11 +1007,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.brushedSteelGradient,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1089,8 +1044,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
             ),
             child: Text(
               '+$eloDiff PTS FAVOR',
@@ -1120,11 +1076,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1165,7 +1120,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: Color(0xFF334155), height: 1),
+          const Divider(color: Color(0x22FFFFFF), height: 1, thickness: 1),
           const SizedBox(height: 12),
 
           // 1. Forearm Circumference
@@ -1384,11 +1339,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.brushedSteelGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1487,11 +1441,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1564,7 +1517,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: Color(0xFF334155), height: 1),
+          const Divider(color: Color(0x22FFFFFF), height: 1, thickness: 1),
           const SizedBox(height: 12),
           Row(
             children: [

@@ -138,13 +138,14 @@ class _ChampionshipsListScreenState
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.6,
                                 color: isSelected
-                                    ? AppTheme.voidBackground
-                                    : AppTheme.textSecondary,
+                                    ? AppTheme.goldPrimary
+                                    : const Color(0xFFCBD5E1),
                               ),
                             ),
                             selected: isSelected,
-                            selectedColor: AppTheme.goldPrimary,
-                            backgroundColor: const Color(0xCC0B0F19),
+                            selectedColor: Colors.transparent,
+                            backgroundColor: Colors.transparent,
+                            surfaceTintColor: Colors.transparent,
                             showCheckmark: false,
                             visualDensity: VisualDensity.compact,
                             shape: RoundedRectangleBorder(
@@ -152,8 +153,9 @@ class _ChampionshipsListScreenState
                                   BorderRadius.circular(AppTheme.radiusSmall),
                               side: BorderSide(
                                 color: isSelected
-                                    ? AppTheme.goldPrimary
-                                    : const Color(0x26FFFFFF),
+                                    ? const Color(0x73D4AF37)
+                                    : const Color(0x2EFFFFFF),
+                                width: isSelected ? 1.2 : 1.0,
                               ),
                             ),
                             onSelected: (_) {
@@ -205,20 +207,12 @@ class _ChampionshipsListScreenState
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.glassSurface,
-                                      borderRadius: BorderRadius.circular(
-                                          AppTheme.radiusSmall),
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                          color: AppTheme.goldPrimary,
-                                          width: 1.5),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppTheme.goldPrimary
-                                              .withValues(alpha: 0.15),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
+                                          color: const Color(0x73D4AF37),
+                                          width: 1.0),
+                                      boxShadow: const [],
                                     ),
                                     child: const Center(
                                       child: Icon(
@@ -375,9 +369,9 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.glassSurface,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppTheme.goldPrimary),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                             ),
                         child: const Icon(Icons.military_tech, color: AppTheme.goldPrimary, size: 24),
                       ),
@@ -411,7 +405,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppTheme.space12),
-                  const Divider(height: 1, color: AppTheme.border),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   const SizedBox(height: AppTheme.space12),
                   Wrap(
                     spacing: AppTheme.space8,
@@ -434,7 +428,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppTheme.space14),
-                  const Divider(height: 1, color: AppTheme.border),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   const SizedBox(height: AppTheme.space12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -497,8 +491,11 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.goldPrimary,
-                          foregroundColor: AppTheme.voidBackground,
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: AppTheme.goldPrimary,
+                          shadowColor: Colors.transparent,
+                          elevation: 0,
+                          side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -673,8 +670,11 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                                             }
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.success,
-                                            foregroundColor: AppTheme.voidBackground,
+                                            backgroundColor: Colors.transparent,
+                                            foregroundColor: AppTheme.success,
+                                            shadowColor: Colors.transparent,
+                                            elevation: 0,
+                                            side: const BorderSide(color: Color(0x6610B981), width: 1.0),
                                             minimumSize: const Size(76, 32),
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           ),
@@ -735,9 +735,9 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(AppTheme.space24),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: const Center(
                       child: Column(
@@ -821,10 +821,10 @@ class _ReignCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isCurrent ? AppTheme.goldPrimary.withValues(alpha: 0.15) : AppTheme.glassSurface,
-                  shape: BoxShape.circle,
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isCurrent ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                    color: isCurrent ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
                     width: 1.0,
                   ),
                 ),

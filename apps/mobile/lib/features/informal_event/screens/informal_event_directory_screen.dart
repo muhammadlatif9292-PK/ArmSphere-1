@@ -149,9 +149,9 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6)),
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                           ),
                           child: const Center(
                             child: Icon(

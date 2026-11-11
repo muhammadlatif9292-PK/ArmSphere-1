@@ -759,8 +759,12 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.success.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0x6610B981),
+                                width: 1.0,
+                              ),
                             ),
                             child: const Icon(
                               Icons.verified_rounded,
@@ -818,12 +822,11 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.goldPrimary
-                                      .withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: AppTheme.goldPrimary
-                                        .withValues(alpha: 0.4),
+                                    color: const Color(0x73D4AF37),
+                                    width: 1.0,
                                   ),
                                 ),
                                 child: Icon(
@@ -1019,14 +1022,18 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 ElevatedActionCard(
                   onTap: () => context.push('/settings/roles'),
                   padding: const EdgeInsets.all(14),
-                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                  borderColor: const Color(0x73D4AF37),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0x73D4AF37),
+                            width: 1.0,
+                          ),
                         ),
                         child: const Icon(
                           Icons.swap_horiz_rounded,
@@ -1255,25 +1262,45 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: rightRatio,
-                            minHeight: 6,
-                            backgroundColor: const Color(0x18FFFFFF),
-                            color: AppTheme.crimson,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(0x26FFFFFF),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: rightRatio,
+                              minHeight: 6,
+                              backgroundColor: Colors.transparent,
+                              color: AppTheme.crimson,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: leftRatio,
-                            minHeight: 6,
-                            backgroundColor: const Color(0x18FFFFFF),
-                            color: AppTheme.goldPrimary,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(0x26FFFFFF),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: leftRatio,
+                              minHeight: 6,
+                              backgroundColor: Colors.transparent,
+                              color: AppTheme.goldPrimary,
+                            ),
                           ),
                         ),
                       ),

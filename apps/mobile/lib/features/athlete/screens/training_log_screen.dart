@@ -112,10 +112,11 @@ class _AthleteTrainingLogScreenState
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.transparent,
                     border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                      color: const Color(0x73D4AF37),
+                      width: 1.0,
                     ),
                   ),
                   child: const Icon(
@@ -279,21 +280,25 @@ class _AthleteTrainingLogScreenState
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: isSelected
-                                    ? AppTheme.voidBackground
-                                    : AppTheme.textSecondary,
+                                    ? AppTheme.goldPrimary
+                                    : const Color(0xFFCBD5E1),
                               ),
                             ),
                             selected: isSelected,
-                            selectedColor: AppTheme.goldPrimary,
-                            backgroundColor: const Color(0xCC0B0F19),
+                            selectedColor: Colors.transparent,
+                            backgroundColor: Colors.transparent,
+                            surfaceTintColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            elevation: 0,
                             showCheckmark: false,
                             visualDensity: VisualDensity.compact,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                               side: BorderSide(
                                 color: isSelected
-                                    ? AppTheme.goldPrimary
-                                    : const Color(0x26FFFFFF),
+                                    ? const Color(0x73D4AF37)
+                                    : const Color(0x2EFFFFFF),
+                                width: isSelected ? 1.2 : 1.0,
                               ),
                             ),
                             onSelected: (_) {
@@ -466,10 +471,10 @@ class _AthleteTrainingLogScreenState
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: _getExerciseColor(exercise).withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.circular(10),
                                           border: Border.all(
-                                            color: _getExerciseColor(exercise).withValues(alpha: 0.5),
+                                            color: _getExerciseColor(exercise).withValues(alpha: 0.55),
                                             width: 1.0,
                                           ),
                                         ),
@@ -565,12 +570,13 @@ class _AthleteTrainingLogScreenState
                         padding: EdgeInsets.only(bottom: index == logs.length - 1 ? 0 : 12),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: const Color(0xFF070A11),
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: const Color(0x26FFFFFF),
+                              color: const Color(0x38FFFFFF),
                               width: 1.0,
                             ),
+                            boxShadow: const [],
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(15),
@@ -594,11 +600,11 @@ class _AthleteTrainingLogScreenState
                                       gradient: LinearGradient(
                                         begin: Alignment.centerLeft,
                                         end: Alignment.centerRight,
-                                        stops: [0.0, 0.56, 1.0],
+                                        stops: [0.0, 0.55, 1.0],
                                         colors: [
-                                          Color(0xF2070A11),
-                                          Color(0xE0070A11),
-                                          Color(0x00070A11),
+                                          Color(0x80000000),
+                                          Color(0x00000000),
+                                          Color(0x00000000),
                                         ],
                                       ),
                                     ),
@@ -618,10 +624,10 @@ class _AthleteTrainingLogScreenState
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: _getExerciseColor(exercise).withValues(alpha: 0.16),
-                                                shape: BoxShape.circle,
+                                                color: Colors.transparent,
+                                                borderRadius: BorderRadius.circular(10),
                                                 border: Border.all(
-                                                  color: _getExerciseColor(exercise).withValues(alpha: 0.5),
+                                                  color: _getExerciseColor(exercise).withValues(alpha: 0.55),
                                                   width: 1.0,
                                                 ),
                                               ),

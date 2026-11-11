@@ -87,18 +87,18 @@ class CrystalStageBackdrop extends ConsumerWidget {
                       excludeFromSemantics: true,
                     ),
 
-              // 3. Crystal-Clear Top Showcase Vignette (Top 38% 100% transparent, fading to obsidian floor)
+              // 3. Lightened Stage Backdrop Scrim so 9:16 artwork shines through transparent cards
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: [0.0, 0.36, 0.62, 1.0],
+                    stops: [0.0, 0.45, 0.78, 1.0],
                     colors: [
-                      Color(0x00070A11), // 0% opacity — 100% crystal-clear top 3D showcase
-                      Color(0x14070A11), // 8% opacity — subtle transition
-                      Color(0xBF070A11), // 75% opacity — smooth text-readability anchor
-                      Color(0xF5070A11), // 96% opacity — deep pitch-black obsidian UI floor
+                      Color(0x00000000),
+                      Color(0x00000000),
+                      Color(0x40000000),
+                      Color(0x73000000),
                     ],
                   ),
                 ),
@@ -217,10 +217,11 @@ class _VisualCustomizationStudioSheet extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                      color: const Color(0x73D4AF37),
+                      width: 1.0,
                     ),
                   ),
                   child: const Icon(
@@ -495,13 +496,13 @@ class _VisualCustomizationStudioSheet extends ConsumerWidget {
                         width: 148,
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isAuto
-                                ? AppTheme.goldPrimary
-                                : Colors.white.withValues(alpha: 0.22),
-                            width: isAuto ? 2.0 : 1.0,
+                                ? const Color(0x73D4AF37)
+                                : const Color(0x38FFFFFF),
+                            width: isAuto ? 1.5 : 1.0,
                           ),
                         ),
                         child: Column(
@@ -616,17 +617,11 @@ class _PresetThumbnailTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
-                ? AppTheme.goldPrimary
-                : Colors.white.withValues(alpha: 0.24),
-            width: isSelected ? 2.0 : 1.0,
+                ? const Color(0x73D4AF37)
+                : const Color(0x38FFFFFF),
+            width: isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              offset: const Offset(0, 6),
-              blurRadius: 14,
-            ),
-          ],
+          boxShadow: const [],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12.5),
