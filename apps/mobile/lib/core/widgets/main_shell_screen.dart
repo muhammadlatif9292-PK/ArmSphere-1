@@ -628,7 +628,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
             onNotification: _handleScrollNotification,
             child: Stack(
               children: [
-                AmbientParticleBackground(tabIndex: effectiveTabIndex),
+                AmbientParticleBackground(
+                  tabIndex: effectiveTabIndex,
+                  isAdminMode: isAdminMode,
+                ),
                 SafeArea(
                   bottom: false,
                   child: widget.navigationShell,

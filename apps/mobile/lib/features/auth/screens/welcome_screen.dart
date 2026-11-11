@@ -95,17 +95,41 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
         children: [
-          // Substrate: L0 Canvas (#070A11) + Subtle Magnesium Chalk Grain
+          // Full-Bleed 9:16 Walkout Stage Backdrop at 100% Opacity
           Positioned.fill(
-            child: Container(
-              color: AppTheme.voidBackground,
-              child: CustomPaint(
-                painter: _MagnesiumChalkGrainPainter(),
-              ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ColoredBox(color: AppTheme.voidBackground),
+                const ArmSphereImage(
+                  assetPath: ArmSphereAssets.stageAuthWalkout,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  width: double.infinity,
+                  height: double.infinity,
+                  excludeFromSemantics: true,
+                  showLoadingIndicator: false,
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: [0.0, 0.36, 0.62, 1.0],
+                      colors: [
+                        Color(0x00070A11),
+                        Color(0x14070A11),
+                        Color(0xBF070A11),
+                        Color(0xF5070A11),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // Environmental Hero Visual Anchor (M1-HERO-GRIP) with Downward Void Scrim
+          // Environmental Hero Visual Anchor (M1-HERO-WELCOME-GRIP) at 100% Opacity
           Positioned(
             top: 0,
             left: 0,
@@ -114,33 +138,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Opacity(
-                  opacity: 0.68,
-                  child: ArmSphereImage(
-                    assetPath: ArmSphereAssets.resolveSemanticAsset(
-                      ArmSphereAssets.semanticAuthWelcomeHeroBanner,
-                    ),
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0.0, -0.25),
-                    width: double.infinity,
-                    height: 280,
-                    fallbackAsset: ArmSphereAssets.heroGrip,
-                    excludeFromSemantics: true,
+                ArmSphereImage(
+                  assetPath: ArmSphereAssets.resolveSemanticAsset(
+                    ArmSphereAssets.semanticAuthWelcomeHeroBanner,
                   ),
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0.0, -0.25),
+                  width: double.infinity,
+                  height: 280,
+                  fallbackAsset: ArmSphereAssets.heroGrip,
+                  excludeFromSemantics: true,
                 ),
-                // 4-stop vertical bottom fade into #070A11
+                // Crystal-clear top showcase fade into #070A11 at bottom of banner
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0x2E070A11),
-                        Color(0x59070A11),
-                        Color(0xB8070A11),
-                        Color(0xFF070A11),
+                        Color(0x00070A11),
+                        Color(0x14070A11),
+                        Color(0xBF070A11),
+                        Color(0xF5070A11),
                       ],
-                      stops: [0.0, 0.42, 0.78, 1.0],
+                      stops: [0.0, 0.36, 0.62, 1.0],
                     ),
                   ),
                 ),
@@ -599,25 +620,4 @@ class _RoleCardData {
     required this.subtitle,
     required this.icon,
   });
-}
-
-/// Subtle 1.5% opacity magnesium chalk grain painter for L0 Canvas
-class _MagnesiumChalkGrainPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.015)
-      ..strokeWidth = 1.0;
-
-    // Fixed procedural chalk distribution without expensive noise library
-    for (double y = 15; y < size.height; y += 45) {
-      for (double x = 12; x < size.width; x += 40) {
-        final offset = (x * 7 + y * 13) % 20;
-        canvas.drawCircle(Offset(x + offset, y), 0.8, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

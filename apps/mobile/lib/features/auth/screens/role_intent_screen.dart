@@ -195,7 +195,7 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SafeArea(
             child: Center(

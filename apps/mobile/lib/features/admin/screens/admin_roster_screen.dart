@@ -969,7 +969,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           RefreshIndicator(
             color: AppTheme.goldPrimary,

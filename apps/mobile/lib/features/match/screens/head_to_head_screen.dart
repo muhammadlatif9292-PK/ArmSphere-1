@@ -385,7 +385,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.headToHead),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: Column(
@@ -569,7 +569,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.headToHead),
           ),
           (comparisonAsync != null && comparisonAsync.isLoading)
           ? const CrystalScreenLoadingView(

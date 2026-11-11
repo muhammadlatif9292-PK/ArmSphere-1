@@ -21,6 +21,9 @@ enum ArmSphereStageDomain {
   venues,
   referee,
   governance,
+  headToHead,
+  teams,
+  authWalkout,
 }
 
 /// Target customization slot for the Visual Customization Studio sheet.
@@ -67,7 +70,7 @@ class AthleteHeroImageConfig {
     this.subjectAlignment = const Alignment(0.0, -0.32),
     this.backgroundFit = BoxFit.cover,
     this.subjectFit = BoxFit.cover,
-    this.backgroundOpacity = 0.94,
+    this.backgroundOpacity = 1.0,
     this.scrimIntensity = 1.0,
     this.mode = AthleteHeroPresentationMode.fullBleedContinuous,
   });
@@ -92,78 +95,148 @@ class ArmSphereVisualPreset {
     this.secondaryTextureAsset,
     required this.primaryGlowColor,
     required this.secondaryGlowColor,
-    this.defaultFocalAlignment = const Alignment(-0.45, -0.20),
+    this.defaultFocalAlignment = Alignment.topCenter,
   });
 }
 
-/// Canonical catalog of High-Class Pro Presets for instant selection.
+/// Canonical catalog of High-Class Pro Presets mapped strictly to the 28 Master Assets.
 const List<ArmSphereVisualPreset> kArmSphereProPresets = [
   ArmSphereVisualPreset(
     id: 'championship_arena',
     title: 'Championship Main Stage',
     subtitle: 'Overhead lighting truss, jumbotron canopy & glossy stage floor',
-    primaryAsset: ArmSphereAssets.stageArena9x16,
-    secondaryTextureAsset: ArmSphereAssets.texChalk,
+    primaryAsset: ArmSphereAssets.stageArena,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.crimson,
     secondaryGlowColor: AppTheme.goldPrimary,
-    defaultFocalAlignment: Alignment(0.0, -0.55),
+    defaultFocalAlignment: Alignment.topCenter,
   ),
   ArmSphereVisualPreset(
-    id: 'crimson_grip_clash',
-    title: 'Crimson Grip & Chalk Clash',
-    subtitle: 'Macro forearm combat, strap tension & magnesium smoke',
-    primaryAsset: ArmSphereAssets.heroGrip,
-    secondaryTextureAsset: ArmSphereAssets.texChalk,
+    id: 'discover_hub_stage',
+    title: 'Global Discover Hub',
+    subtitle: 'World ecosystem radar & sanctioning discovery stage',
+    primaryAsset: ArmSphereAssets.stageDiscover,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.crimson,
     secondaryGlowColor: AppTheme.cyan,
-    defaultFocalAlignment: Alignment(-0.40, -0.15),
+    defaultFocalAlignment: Alignment.topCenter,
   ),
   ArmSphereVisualPreset(
     id: 'grand_prix_poster',
-    title: 'Grand Prix Championship',
-    subtitle: 'Gold title prestige, sanctioned bracket stage & pyrotechnics',
-    primaryAsset: ArmSphereAssets.defaultTournament,
-    secondaryTextureAsset: ArmSphereAssets.texChalk,
+    title: 'Championship Belts & Events',
+    subtitle: 'Gold title prestige, sanctioned bracket stage & championship belts',
+    primaryAsset: ArmSphereAssets.stageChampionshipBelts,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.goldPrimary,
     secondaryGlowColor: AppTheme.crimson,
-    defaultFocalAlignment: Alignment(0.0, -0.20),
+    defaultFocalAlignment: Alignment.topCenter,
   ),
   ArmSphereVisualPreset(
-    id: 'underground_iron_club',
-    title: 'Underground Iron Club',
-    subtitle: 'Raw gym practice table, chalked pads & club camaraderie',
-    primaryAsset: ArmSphereAssets.defaultClub,
-    secondaryTextureAsset: ArmSphereAssets.texKnurl,
+    id: 'community_arena_stage',
+    title: 'Community Arena & Broadcast',
+    subtitle: 'Social arena stage, match clips & federation dispatches',
+    primaryAsset: ArmSphereAssets.stageCommunity,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.emerald,
     secondaryGlowColor: AppTheme.goldPrimary,
-    defaultFocalAlignment: Alignment(-0.30, -0.15),
+    defaultFocalAlignment: Alignment.topCenter,
   ),
   ArmSphereVisualPreset(
-    id: 'titanium_knurl_vault',
-    title: 'Titanium Knurl & Chalk Vault',
-    subtitle: 'Precision machined steel grid with high-contrast studio rim light',
-    primaryAsset: ArmSphereAssets.heroArena,
-    secondaryTextureAsset: ArmSphereAssets.texKnurl,
+    id: 'passport_vault_stage',
+    title: 'Athlete Passport Vault',
+    subtitle: 'Biometric federation identity & official dossier vault',
+    primaryAsset: ArmSphereAssets.stagePassportVault,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.cyan,
     secondaryGlowColor: AppTheme.goldPrimary,
-    defaultFocalAlignment: Alignment(-0.35, -0.15),
+    defaultFocalAlignment: Alignment.topCenter,
   ),
   ArmSphereVisualPreset(
     id: 'strength_training_lab',
     title: 'Strength & Performance Lab',
-    subtitle: 'Table pulley rig, wrist wrench, weight stack & chalk dust',
-    primaryAsset: ArmSphereAssets.stageTrainingLab9x16,
-    secondaryTextureAsset: ArmSphereAssets.texChalk,
+    subtitle: 'Table pulley rig, wrist wrench, weight stack & PR vault',
+    primaryAsset: ArmSphereAssets.stageTrainingLab,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.crimson,
     secondaryGlowColor: AppTheme.goldPrimary,
-    defaultFocalAlignment: Alignment(0.0, -0.45),
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'referee_command_stage',
+    title: 'Referee Command & Scorepad',
+    subtitle: 'Sanctioned table officiating, foul matrix & certification stage',
+    primaryAsset: ArmSphereAssets.stageReferee,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.goldPrimary,
+    secondaryGlowColor: AppTheme.crimson,
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'admin_governance_stage',
+    title: 'Federation Governance & Ops',
+    subtitle: 'Executive tribunal, roster authority & arena operations',
+    primaryAsset: ArmSphereAssets.stageAdminGovernance,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.goldPrimary,
+    secondaryGlowColor: AppTheme.cyan,
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'elo_rankings_stage',
+    title: 'Global ELO Rankings Ladder',
+    subtitle: 'World tier standings, division points & nominations',
+    primaryAsset: ArmSphereAssets.stageRankings,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.goldPrimary,
+    secondaryGlowColor: AppTheme.crimson,
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'head_to_head_stage',
+    title: 'Head-to-Head Tale of the Tape',
+    subtitle: 'Biometric matchup comparison & combat radar stage',
+    primaryAsset: ArmSphereAssets.stageHeadToHead,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.crimson,
+    secondaryGlowColor: AppTheme.cyan,
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'teams_clubs_stage',
+    title: 'Clubs & Teams Roster Stage',
+    subtitle: 'Sanctioned armwrestling clubs, chapters & team crests',
+    primaryAsset: ArmSphereAssets.stageTeams,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.emerald,
+    secondaryGlowColor: AppTheme.goldPrimary,
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'venues_pickup_stage',
+    title: 'Training Venues & Pickup Pulls',
+    subtitle: 'Verified practice tables, gyms & live sparring sessions',
+    primaryAsset: ArmSphereAssets.stageVenues,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.cyan,
+    secondaryGlowColor: AppTheme.emerald,
+    defaultFocalAlignment: Alignment.topCenter,
+  ),
+  ArmSphereVisualPreset(
+    id: 'auth_walkout_stage',
+    title: 'Championship Walkout Tunnel',
+    subtitle: 'Arena walkout entrance for authentication & onboarding',
+    primaryAsset: ArmSphereAssets.stageAuthWalkout,
+    secondaryTextureAsset: null,
+    primaryGlowColor: AppTheme.crimson,
+    secondaryGlowColor: AppTheme.goldPrimary,
+    defaultFocalAlignment: Alignment.topCenter,
   ),
   ArmSphereVisualPreset(
     id: ArmSphereAssets.semanticProfileAthleteDashboardHero,
     title: 'Shadowed Hero in Crimson Smoke',
     subtitle: 'Official Void athlete silhouette & crimson atmospheric smoke stage',
     primaryAsset: ArmSphereAssets.heroAthleteDashboard,
-    secondaryTextureAsset: ArmSphereAssets.texChalk,
+    secondaryTextureAsset: null,
     primaryGlowColor: AppTheme.crimson,
     secondaryGlowColor: AppTheme.goldPrimary,
     defaultFocalAlignment: Alignment(-0.55, -0.24),
@@ -293,21 +366,9 @@ class VisualPreferencesState {
                 : null;
 
     final widescreenHeroAssets = <String>{
-      ArmSphereAssets.heroAthleteDashboard,
-      ArmSphereAssets.heroArena,
-      ArmSphereAssets.heroGrip,
-      ArmSphereAssets.defaultTournament,
-      ArmSphereAssets.defaultClub,
-      ArmSphereAssets.cardArenaRadar,
-      ArmSphereAssets.cardSupermatchVs,
-      ArmSphereAssets.bentoVenues,
-      ArmSphereAssets.bentoPickupSparring,
-      ArmSphereAssets.bentoCommunityFeed,
-      ArmSphereAssets.bentoEloRankings,
-      ArmSphereAssets.heroWelcomeGrip,
-      ArmSphereAssets.stageArena9x16,
-      ArmSphereAssets.stageTrainingLab9x16,
+      ...ArmSphereAssets.canonical28Assets,
     };
+    widescreenHeroAssets.remove(ArmSphereAssets.avatarNeutralDark);
 
     final resolvedPortrait = candidatePortrait != null
         ? ArmSphereAssets.resolveSemanticAsset(candidatePortrait)
@@ -325,8 +386,8 @@ class VisualPreferencesState {
       subjectAlignment: const Alignment(0.0, -0.32),
       backgroundFit: BoxFit.cover,
       subjectFit: BoxFit.cover,
-      backgroundOpacity: hasDistinctPortraitSubject ? 0.78 : 0.94,
-      scrimIntensity: hasDistinctPortraitSubject ? 1.05 : 1.0,
+      backgroundOpacity: 1.0,
+      scrimIntensity: 1.0,
       mode: hasDistinctPortraitSubject
           ? AthleteHeroPresentationMode.portraitSubjectWithStage
           : AthleteHeroPresentationMode.fullBleedContinuous,
@@ -353,22 +414,31 @@ class VisualPreferencesState {
       ArmSphereStageDomain domain) {
     switch (domain) {
       case ArmSphereStageDomain.arena:
-        return kArmSphereProPresets[0]; // Championship Main Stage (stageArena9x16)
-      case ArmSphereStageDomain.training:
-        return kArmSphereProPresets[5]; // Strength & Performance Lab (stageTrainingLab9x16)
+        return kArmSphereProPresets[0]; // stageArena9x16
       case ArmSphereStageDomain.discover:
-        return kArmSphereProPresets[1]; // Crimson Grip & Chalk Clash (heroGrip)
+        return kArmSphereProPresets[1]; // stageDiscover9x16
       case ArmSphereStageDomain.events:
-        return kArmSphereProPresets[2]; // Grand Prix Championship (defaultTournament)
+        return kArmSphereProPresets[2]; // stageChampionshipBelts9x16
       case ArmSphereStageDomain.community:
-      case ArmSphereStageDomain.venues:
-        return kArmSphereProPresets[3]; // Underground Iron Club (defaultClub)
+        return kArmSphereProPresets[3]; // stageCommunity9x16
       case ArmSphereStageDomain.passport:
-        return kArmSphereProPresets[1]; // Studio Rim-Lit Grip Stage (heroGrip)
-      case ArmSphereStageDomain.rankings:
+        return kArmSphereProPresets[4]; // stagePassportVault9x16
+      case ArmSphereStageDomain.training:
+        return kArmSphereProPresets[5]; // stageTrainingLab9x16
       case ArmSphereStageDomain.referee:
+        return kArmSphereProPresets[6]; // stageReferee9x16
       case ArmSphereStageDomain.governance:
-        return kArmSphereProPresets[4]; // Titanium Knurl & Chalk Vault
+        return kArmSphereProPresets[7]; // stageAdminGovernance9x16
+      case ArmSphereStageDomain.rankings:
+        return kArmSphereProPresets[8]; // stageRankings9x16
+      case ArmSphereStageDomain.headToHead:
+        return kArmSphereProPresets[9]; // stageHeadToHead9x16
+      case ArmSphereStageDomain.teams:
+        return kArmSphereProPresets[10]; // stageTeams9x16
+      case ArmSphereStageDomain.venues:
+        return kArmSphereProPresets[11]; // stageVenues9x16
+      case ArmSphereStageDomain.authWalkout:
+        return kArmSphereProPresets[12]; // stageAuthWalkout9x16
     }
   }
 }

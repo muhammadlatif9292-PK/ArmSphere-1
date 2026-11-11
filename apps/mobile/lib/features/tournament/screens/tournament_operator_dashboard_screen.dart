@@ -56,7 +56,7 @@ class _TournamentOperatorDashboardScreenState
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +125,7 @@ class _TournamentOperatorDashboardScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
           tournamentsAsync.when(
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
