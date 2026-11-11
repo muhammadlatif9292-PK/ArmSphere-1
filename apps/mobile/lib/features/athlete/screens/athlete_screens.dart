@@ -672,21 +672,20 @@ class _AthleteDashboardScreenState
                 excludeFromSemantics: true,
               ),
             ),
-            // Horizontal left-to-right dark gradient scrim: protects left-side text
-            // while keeping the right-center competition table and spotlight beams vivid.
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
+            // Horizontal left-to-right directional scrim (x: 0.0 -> 0.62):
+            // Protects left-side text while keeping the right 3D table subject 100% crystal-clear.
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
+                    stops: [0.0, 0.62, 1.0],
                     colors: [
-                      Color(0xB8070A11),
-                      Color(0x7A070A11),
-                      Color(0x1F070A11),
-                      Color(0x38070A11),
+                      Color(0xE6070A11),
+                      Color(0x00070A11),
+                      Color(0x00070A11),
                     ],
-                    stops: [0.0, 0.46, 0.78, 1.0],
                   ),
                 ),
               ),
@@ -901,34 +900,31 @@ class _AthleteDashboardScreenState
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // 1A. Continuous Full-Card Background Artwork
+                    // 1A. Continuous Full-Card Background Artwork at 100% Native Opacity
                     // Resolved via semantic ID `profile.athlete.dashboard_hero`
-                    Opacity(
-                      opacity: effectiveConfig.backgroundOpacity,
-                      child: bannerSource.startsWith('assets/')
-                          ? ArmSphereImage(
-                              assetPath: bannerSource,
-                              fit: effectiveConfig.backgroundFit,
-                              alignment: effectiveConfig.backgroundAlignment,
-                              fallbackAsset:
-                                  ArmSphereAssets.heroAthleteDashboard,
-                              semanticLabel: hasPortraitSubject
-                                  ? null
-                                  : 'Athlete Hero Artwork: $displayName',
-                              excludeFromSemantics: hasPortraitSubject,
-                            )
-                          : ArmSphereImage(
-                              imageUrl: bannerSource,
-                              fallbackAsset:
-                                  ArmSphereAssets.heroAthleteDashboard,
-                              fit: effectiveConfig.backgroundFit,
-                              alignment: effectiveConfig.backgroundAlignment,
-                              semanticLabel: hasPortraitSubject
-                                  ? null
-                                  : 'Athlete Hero Artwork: $displayName',
-                              excludeFromSemantics: hasPortraitSubject,
-                            ),
-                    ),
+                    bannerSource.startsWith('assets/')
+                        ? ArmSphereImage(
+                            assetPath: bannerSource,
+                            fit: effectiveConfig.backgroundFit,
+                            alignment: effectiveConfig.backgroundAlignment,
+                            fallbackAsset:
+                                ArmSphereAssets.heroAthleteDashboard,
+                            semanticLabel: hasPortraitSubject
+                                ? null
+                                : 'Athlete Hero Artwork: $displayName',
+                            excludeFromSemantics: hasPortraitSubject,
+                          )
+                        : ArmSphereImage(
+                            imageUrl: bannerSource,
+                            fallbackAsset:
+                                ArmSphereAssets.heroAthleteDashboard,
+                            fit: effectiveConfig.backgroundFit,
+                            alignment: effectiveConfig.backgroundAlignment,
+                            semanticLabel: hasPortraitSubject
+                                ? null
+                                : 'Athlete Hero Artwork: $displayName',
+                            excludeFromSemantics: hasPortraitSubject,
+                          ),
 
                     // 1B. Portrait / Square Athlete Subject Stage (when a distinct
                     // portrait or square athlete photo is supplied). Never stretches
@@ -995,56 +991,37 @@ class _AthleteDashboardScreenState
                         ),
                       ),
 
-                    // 2A. Subtle left-side atmospheric rim glow behind athlete subject
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment(-0.78, -0.22),
-                          radius: 0.95,
-                          colors: [
-                            Color(0x28E23B3B),
-                            Color(0x0EE23B3B),
-                            Color(0x00070A11),
-                          ],
-                          stops: [0.0, 0.52, 1.0],
-                        ),
-                      ),
-                    ),
-
-                    // 2B. Left-to-Right Directional Readability Scrim:
-                    // Keeps the left athlete visual zone vivid while guaranteeing
-                    // crisp contrast for the right-side athlete dossier regardless
-                    // of whether a future image is dark, bright, or busy.
+                    // 2A. Left-to-Right Directional Readability Scrim:
+                    // Keeps the left athlete 3D subject zone (0%–45%) 100% crystal-clear with zero haze
+                    // while anchoring the right-side athlete dossier text.
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                           colors: [
-                            Color(0x14070A11),
-                            Color(0x3D070A11),
-                            Color(0xAD080C14),
-                            Color(0xDE080C14),
-                            Color(0xF0070A11),
+                            Color(0x00070A11),
+                            Color(0x00070A11),
+                            Color(0xBF070A11),
+                            Color(0xE6070A11),
                           ],
-                          stops: [0.0, 0.28, 0.48, 0.70, 1.0],
+                          stops: [0.0, 0.42, 0.65, 1.0],
                         ),
                       ),
                     ),
 
-                    // 2C. Bottom Vignette Scrim protecting the 4-stat performance ribbon
+                    // 2B. Bottom-Third Vignette Scrim protecting the 4-stat performance ribbon
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Color(0x1F070A11),
-                            Color(0x38070A11),
-                            Color(0xBF070A11),
-                            Color(0xF2070A11),
+                            Color(0x00070A11),
+                            Color(0x00070A11),
+                            Color(0xE6070A11),
                           ],
-                          stops: [0.0, 0.50, 0.78, 1.0],
+                          stops: [0.0, 0.65, 1.0],
                         ),
                       ),
                     ),
@@ -2294,63 +2271,26 @@ class _AthleteDashboardScreenState
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Opacity(
-                          opacity: 0.48,
-                          child: ArmSphereImage(
-                            assetPath: ArmSphereAssets.resolveSemanticAsset(
-                              ArmSphereAssets.semanticArenaHomeSupermatchCard,
-                            ),
-                            fit: BoxFit.cover,
-                            alignment: const Alignment(0.0, 0.15),
-                            fallbackAsset: ArmSphereAssets.heroGrip,
-                            excludeFromSemantics: true,
+                        ArmSphereImage(
+                          assetPath: ArmSphereAssets.resolveSemanticAsset(
+                            ArmSphereAssets.semanticArenaHomeSupermatchCard,
                           ),
+                          fit: BoxFit.cover,
+                          alignment: const Alignment(0.0, 0.15),
+                          fallbackAsset: ArmSphereAssets.cardSupermatchVs,
+                          excludeFromSemantics: true,
                         ),
-                        Opacity(
-                          opacity: 0.28,
-                          child: ArmSphereImage(
-                            assetPath: ArmSphereAssets.texChalk,
-                            fit: BoxFit.cover,
-                            excludeFromSemantics: true,
-                          ),
-                        ),
-                        const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment(-0.85, 0.0),
-                              radius: 0.95,
-                              colors: [
-                                Color(0x36E23B3B),
-                                Color(0x00070A11),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment(0.85, 0.0),
-                              radius: 0.95,
-                              colors: [
-                                Color(0x3038BDF8),
-                                Color(0x00070A11),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Top and bottom readability vignette for header badge, VS avatars, and bottom CTA
                         const DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              stops: [0.0, 0.62, 1.0],
                               colors: [
-                                Color(0xA8070A11),
-                                Color(0x38070A11),
-                                Color(0x42070A11),
-                                Color(0xBF070A11),
+                                Color(0xE6070A11),
+                                Color(0x00070A11),
+                                Color(0x00070A11),
                               ],
-                              stops: [0.0, 0.32, 0.68, 1.0],
                             ),
                           ),
                         ),
@@ -2542,31 +2482,21 @@ class _AthleteDashboardScreenState
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Opacity(
-                      opacity: 0.18,
-                      child: ArmSphereImage(
-                        assetPath: ArmSphereAssets.defaultTournament,
-                        fit: BoxFit.cover,
-                        excludeFromSemantics: true,
-                      ),
-                    ),
-                    Opacity(
-                      opacity: 0.32,
-                      child: ArmSphereImage(
-                        assetPath: ArmSphereAssets.texChalk,
-                        fit: BoxFit.cover,
-                        excludeFromSemantics: true,
-                      ),
+                    const ArmSphereImage(
+                      assetPath: ArmSphereAssets.cardStandbyTable,
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
                     ),
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
+                          stops: [0.0, 0.62, 1.0],
                           colors: [
-                            Color(0xE60B0F17),
-                            Color(0xBF0B0F17),
-                            Color(0x990B0F17),
+                            Color(0xE6070A11),
+                            Color(0x00070A11),
+                            Color(0x00070A11),
                           ],
                         ),
                       ),
@@ -2685,39 +2615,6 @@ class _AthleteDashboardScreenState
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Per-card internal chalk dust particle bokeh & corner ambient sheen
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: IgnorePointer(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Opacity(
-                      opacity: 0.36,
-                      child: ArmSphereImage(
-                        assetPath: ArmSphereAssets.texChalk,
-                        fit: BoxFit.cover,
-                        excludeFromSemantics: true,
-                      ),
-                    ),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment(0.85, 0.85),
-                          radius: 0.9,
-                          colors: [
-                            Color(0x2238BDF8),
-                            Color(0x00151B24),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
           // Specular top rim: same lighting language as the banner and fight card.
           const Positioned(
             top: -16,

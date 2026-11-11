@@ -516,15 +516,21 @@ class _TacticalFeedCard extends StatelessWidget {
                                 : 'Combat video preview',
                           ),
                         ),
-                        // Subtle grid background texture
-                        CustomPaint(
-                          size: const Size(double.infinity, 190),
-                          painter: _GridTexturePainter(),
-                        ),
-                        // Dark 4-stop hero scrim
-                        Positioned.fill(
+                        // Directional horizontal left-to-right scrim (x: 0.0 -> 0.62)
+                        const Positioned.fill(
                           child: DecoratedBox(
-                            decoration: AppTheme.heroScrim(),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                stops: [0.0, 0.62, 1.0],
+                                colors: [
+                                  Color(0xE6070A11),
+                                  Color(0x00070A11),
+                                  Color(0x00070A11),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                         // Platform Tag in Top-Left
@@ -814,10 +820,6 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                                   ? 'Combat clip: $caption'
                                   : 'Combat video background',
                             ),
-                          ),
-                          CustomPaint(
-                            size: const Size(double.infinity, double.infinity),
-                            painter: _GridTexturePainter(),
                           ),
                           Positioned.fill(
                             child: DecoratedBox(
@@ -1160,27 +1162,6 @@ class _ScaleBounceLikeButtonState extends ConsumerState<_ScaleBounceLikeButton>
       ),
     );
   }
-}
-
-/// Subtle tactical knurling grid pattern for video placeholder scrims
-class _GridTexturePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF1E293B).withValues(alpha: 0.15)
-      ..strokeWidth = 0.5;
-
-    const step = 20.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 Color _getCategoryColor(String cat) {

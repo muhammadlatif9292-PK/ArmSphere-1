@@ -196,13 +196,13 @@ class _AppEmptyStateState extends State<AppEmptyState>
                         const DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: [0.0, 0.45, 1.0],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              stops: [0.0, 0.62, 1.0],
                               colors: [
-                                Color(0x26070A11),
-                                Color(0x66070A11),
-                                Color(0xD9070A11),
+                                Color(0xE6070A11),
+                                Color(0x00070A11),
+                                Color(0x00070A11),
                               ],
                             ),
                           ),

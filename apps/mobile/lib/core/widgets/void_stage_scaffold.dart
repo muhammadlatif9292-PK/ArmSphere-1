@@ -31,7 +31,7 @@ class VoidStageScaffold extends StatelessWidget {
     super.key,
     this.backgroundAsset,
     this.stageAsset,
-    this.focalAlignment = ArmSphereAssets.stageTopFocal,
+    this.focalAlignment = Alignment.topCenter,
     this.appBar,
     this.body,
     this.child,
@@ -41,7 +41,7 @@ class VoidStageScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = true,
     this.extendBody = true,
     this.resizeToAvoidBottomInset,
-    this.scrimStops = const [0.0, 0.35, 0.70, 1.0],
+    this.scrimStops = const [0.0, 0.36, 0.62, 1.0],
     this.scrimColors,
   });
 
@@ -52,10 +52,10 @@ class VoidStageScaffold extends StatelessWidget {
     final effectiveBody = body ?? child ?? const SizedBox.shrink();
     final effectiveScrimColors = scrimColors ??
         const [
-          Color(0x59070A11), // 35% top protection for status bar & app bar
-          Color(0x4D070A11), // 30% upper-mid clear stage visibility
-          Color(0x80070A11), // 50% lower-mid clear artwork visibility
-          Color(0xB3070A11), // 70% deep obsidian base
+          Color(0x00070A11), // 0% opacity — 100% crystal-clear top 3D showcase
+          Color(0x14070A11), // 8% opacity — subtle transition
+          Color(0xBF070A11), // 75% opacity — smooth text-readability anchor
+          Color(0xF5070A11), // 96% opacity — deep pitch-black obsidian UI floor
         ];
 
     return Scaffold(

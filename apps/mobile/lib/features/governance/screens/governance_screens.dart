@@ -89,7 +89,7 @@ class _GovernanceDashboardScreenState
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.governance),
         elevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
@@ -117,7 +117,7 @@ class _GovernanceDashboardScreenState
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           disputesAsync.when(
         loading: () => ListView.separated(
@@ -815,7 +815,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.governance),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -834,7 +834,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           disputesAsync.when(
         loading: () => const CrystalScreenLoadingView(

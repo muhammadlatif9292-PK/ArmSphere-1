@@ -39,7 +39,7 @@ class TeamsListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(),
         title: const Text(
           'My Teams & Clubs',
@@ -67,7 +67,7 @@ class TeamsListScreen extends ConsumerWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.teams),
           myTeamsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
@@ -608,7 +608,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.voidBackground,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(fallbackRoute: '/teams'),
         title: const Text(
           'Team Dossier',
@@ -679,7 +679,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.teams),
           teamAsync.when(
         loading: () => ListView(
           padding: const EdgeInsets.all(AppTheme.space16),
@@ -1860,7 +1860,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     final clubsAsync = ref.watch(clubsProvider);
 
     return StickyFormScaffold(
-      stageDomain: ArmSphereStageDomain.discover,
+      stageDomain: ArmSphereStageDomain.teams,
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,

@@ -1006,7 +1006,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           RefreshIndicator(
             color: AppTheme.goldPrimary,

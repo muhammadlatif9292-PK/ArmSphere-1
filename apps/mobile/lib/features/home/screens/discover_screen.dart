@@ -1040,60 +1040,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium - 1),
           child: Stack(
             children: [
-              // Per-tile atmospheric background image & radial corner glow
+              // Per-tile 100% crystal-clear artwork & bottom-third title readability gradient
               Positioned.fill(
                 child: IgnorePointer(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Opacity(
-                        opacity: 0.55,
-                        child: ArmSphereImage(
-                          assetPath: item.bgAsset,
-                          fit: BoxFit.cover,
-                          alignment: item.bgAlignment,
-                          excludeFromSemantics: true,
-                        ),
-                      ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(0.85, -0.85),
-                            radius: 1.1,
-                            colors: [
-                              item.color.withValues(alpha: 0.24),
-                              const Color(0x00151B24),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Bottom-left + vertical readability scrim protecting top-left icon/chip
-                      // and bottom-left title/subtitle while keeping right-center subject clear
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                            colors: [
-                              Color(0xD9070A11),
-                              Color(0x8C0B0F17),
-                              Color(0x330B0F17),
-                            ],
-                            stops: [0.0, 0.52, 1.0],
-                          ),
-                        ),
+                      ArmSphereImage(
+                        assetPath: item.bgAsset,
+                        fit: BoxFit.cover,
+                        alignment: item.bgAlignment,
+                        excludeFromSemantics: true,
                       ),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
+                            stops: [0.0, 0.55, 1.0],
                             colors: [
-                              Color(0x47070A11),
-                              Color(0x2E0B0F17),
-                              Color(0x8C070A11),
+                              Color(0x00070A11),
+                              Color(0x00070A11),
+                              Color(0xE6070A11),
                             ],
-                            stops: [0.0, 0.50, 1.0],
                           ),
                         ),
                       ),
