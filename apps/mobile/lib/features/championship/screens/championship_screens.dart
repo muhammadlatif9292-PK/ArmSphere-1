@@ -77,6 +77,7 @@ class _ChampionshipsListScreenState
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           RefreshIndicator(
@@ -340,6 +341,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           RefreshIndicator(

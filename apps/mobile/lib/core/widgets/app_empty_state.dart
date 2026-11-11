@@ -251,43 +251,19 @@ class _AppEmptyStateState extends State<AppEmptyState>
                                       ),
                                     ],
                                   ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        widget.title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppTheme.textPrimary,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 16,
-                                          fontFamily: AppTheme.fontDisplay,
-                                          letterSpacing: -0.3,
-                                          height: 1.15,
-                                          shadows: AppTheme.crystalTextShadows,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      if ((widget.subtitle ??
-                                              widget.description ??
-                                              '')
-                                          .isNotEmpty)
-                                        Text(
-                                          widget.subtitle ??
-                                              widget.description!,
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: AppTheme.textSecondary,
-                                            fontSize: 11.5,
-                                            height: 1.3,
-                                            shadows: AppTheme.crystalTextShadows,
-                                          ),
-                                        ),
-                                    ],
+                                  Text(
+                                    widget.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      fontFamily: AppTheme.fontDisplay,
+                                      letterSpacing: -0.3,
+                                      height: 1.15,
+                                      shadows: AppTheme.crystalTextShadows,
+                                    ),
                                   ),
                                 ],
                               ),

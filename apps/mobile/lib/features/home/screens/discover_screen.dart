@@ -152,27 +152,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     ),
                     const SizedBox(width: 12),
                     const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Directory Navigator',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'Filter Discover view or jump directly to a federation hub',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontBody,
-                              fontSize: 11.5,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Directory Navigator',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
                     ),
                   ],
@@ -222,29 +209,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category.label,
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12.5,
-                                      color: isSelected
-                                          ? AppTheme.textPrimary
-                                          : AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                  Text(
-                                    category.description,
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontBody,
-                                      fontSize: 11,
-                                      color: AppTheme.textMuted,
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                category.label,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.5,
+                                  color: isSelected
+                                      ? AppTheme.textPrimary
+                                      : AppTheme.textSecondary,
+                                ),
                               ),
                             ),
                             if (isSelected)
@@ -1067,7 +1041,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildBentoPortalTile(BuildContext context, _HubItem item) {
     return TactilePressWrapper(
       onTap: () => context.push(item.route),
-      semanticLabel: '${item.title}: ${item.subtitle}',
+      semanticLabel: item.title,
       child: Container(
         constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
@@ -1083,7 +1057,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           borderRadius: BorderRadius.circular(15),
           child: Stack(
             children: [
-              // Per-tile 100% crystal-clear artwork & compact bottom-third readability gradient (y: 0.58 to 1.0)
+              // Per-tile 100% crystal-clear artwork & compact bottom-third readability gradient (y: 0.62 to 1.0)
               Positioned.fill(
                 child: IgnorePointer(
                   child: Stack(
@@ -1100,7 +1074,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            stops: [0.0, 0.58, 1.0],
+                            stops: [0.0, 0.62, 1.0],
                             colors: [
                               Color(0x00000000),
                               Color(0x00000000),
@@ -1132,82 +1106,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Compact top-right pill badge ONLY (top 65% of 3D artwork is unobstructed)
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: item.color.withValues(alpha: 0.55),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Text(
-                          item.tag,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.bold,
-                            color: item.color,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.title,
-                                style: const TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5,
-                                  color: AppTheme.textPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.arrow_outward_rounded,
-                              size: 13,
-                              color: AppTheme.textMuted,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.subtitle,
-                          style: const TextStyle(
-                            fontFamily: AppTheme.fontBody,
-                            fontSize: 11,
-                            color: AppTheme.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ],
+              // Clean bold title ONLY — zero category pills, zero subtexts, zero extra icons
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14.5,
+                    color: AppTheme.textPure,
+                    letterSpacing: -0.1,
+                    shadows: AppTheme.crystalTextShadows,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1219,8 +1134,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildLiveMatchesSection(BuildContext context, List<dynamic> liveMatches) {
     return _FramedDirectorySection(
-      title: 'Live Sanctioned Matches',
-      subtitle: '${liveMatches.length} active table${liveMatches.length == 1 ? '' : 's'} in progress',
+      title: 'Live Matches',
       icon: Icons.sensors_rounded,
       accentColor: AppTheme.primaryAccent,
       leadingBadge: const PulseIndicator(size: 8.0),
@@ -1333,10 +1247,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         showAll ? announcements : announcements.take(3).toList();
 
     return _FramedDirectorySection(
-      title: 'Federation Bulletins',
-      subtitle: announcements.isEmpty
-          ? 'Official notices & rule updates'
-          : '${announcements.length} official announcement${announcements.length == 1 ? '' : 's'}',
+      title: 'Bulletins',
       icon: Icons.campaign_outlined,
       accentColor: AppTheme.secondaryAccent,
       actionLabel: showAll ? 'Notifications' : 'View All',
@@ -1351,9 +1262,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ? _CompactEmptyBanner(
               icon: Icons.campaign_outlined,
               accentColor: AppTheme.secondaryAccent,
-              title: 'No federation bulletins yet',
-              subtitle:
-                  'Official rule updates, weigh-in schedules, and governance notices appear here.',
+              title: 'No bulletins yet',
               actionLabel: 'Bulletins',
               onAction: () => context.push('/notifications'),
             )
@@ -1437,7 +1346,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => CrystalModalSheet(
         title: title.toString(),
-        subtitle: isPinned ? 'Pinned Federation Bulletin' : 'Official Circular',
         headerIcon: isPinned ? Icons.push_pin_rounded : Icons.campaign_outlined,
         primaryActionLabel: 'Close Bulletin',
         onPrimaryAction: () => Navigator.of(ctx).pop(),
@@ -1463,10 +1371,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         showAll ? tournaments : tournaments.take(3).toList();
 
     return _FramedDirectorySection(
-      title: 'Sanctioned Tournaments',
-      subtitle: tournaments.isEmpty
-          ? 'National & regional bracket calendar'
-          : '${tournaments.length} scheduled tournament${tournaments.length == 1 ? '' : 's'}',
+      title: 'Tournaments',
       icon: Icons.emoji_events_outlined,
       accentColor: AppTheme.primaryAccent,
       actionLabel: 'All Events',
@@ -1476,9 +1381,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               icon: Icons.emoji_events_outlined,
               accentColor: AppTheme.secondaryAccent,
               title: 'No tournaments scheduled',
-              subtitle:
-                  'Upcoming sanctioned championship brackets and open qualifiers will appear here.',
-              actionLabel: 'Explore Tournaments',
+              actionLabel: 'Explore',
               onAction: () => context.push('/tournaments'),
             )
           : Column(
@@ -1581,10 +1484,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final displayed = showAll ? venues : venues.take(3).toList();
 
     return _FramedDirectorySection(
-      title: 'Grassroots Training Venues',
-      subtitle: venues.isEmpty
-          ? 'Verified clubs & practice tables'
-          : '${venues.length} verified training location${venues.length == 1 ? '' : 's'}',
+      title: 'Training Venues',
       icon: Icons.storefront_outlined,
       accentColor: AppTheme.success,
       actionLabel: 'Directory',
@@ -1593,10 +1493,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ? _CompactEmptyBanner(
               icon: Icons.storefront_outlined,
               accentColor: AppTheme.secondaryAccent,
-              title: 'No training venues listed yet',
-              subtitle:
-                  'Register a club table or browse regional arm-wrestling training spots.',
-              actionLabel: 'Submit a Venue',
+              title: 'No venues listed yet',
+              actionLabel: 'Venues',
               onAction: () => context.push('/venues'),
             )
           : Column(
@@ -1699,10 +1597,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         showAll ? topAthletes : topAthletes.take(5).toList();
 
     return _FramedDirectorySection(
-      title: 'Top Rankings Leaderboard',
-      subtitle: topAthletes.isEmpty
-          ? 'Official ELO standings'
-          : 'Top ${displayed.length} Sanctioned Puller${displayed.length == 1 ? '' : 's'}',
+      title: 'Top Rankings',
       icon: Icons.leaderboard_outlined,
       accentColor: AppTheme.secondaryAccent,
       actionLabel: 'Full Rankings',
@@ -1712,9 +1607,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               icon: Icons.leaderboard_outlined,
               accentColor: AppTheme.secondaryAccent,
               title: 'Rankings initializing',
-              subtitle:
-                  'Complete sanctioned matches to populate the national ELO leaderboard.',
-              actionLabel: 'View Standings',
+              actionLabel: 'Standings',
               onAction: () => context.push('/rankings'),
             )
           : Column(
@@ -1824,19 +1717,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildRecentMatchesSection(
       BuildContext context, List<dynamic> recentMatches) {
     return _FramedDirectorySection(
-      title: 'Recent Completed Matches',
-      subtitle: recentMatches.isEmpty
-          ? 'Verified table results'
-          : '${recentMatches.length} verified table result${recentMatches.length == 1 ? '' : 's'}',
+      title: 'Recent Matches',
       icon: Icons.history_rounded,
       accentColor: AppTheme.success,
       child: recentMatches.isEmpty
-          ? _CompactEmptyBanner(
+          ? const _CompactEmptyBanner(
               icon: Icons.history_rounded,
               accentColor: AppTheme.textSecondary,
               title: 'No recent match results',
-              subtitle:
-                  'Completed sanctioned table scorelines will be archived here.',
             )
           : Column(
               children: recentMatches.map((m) {
@@ -1885,7 +1773,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Official Scoreline',
+                            'Scoreline',
                             style: TextStyle(
                               fontFamily: AppTheme.fontBody,
                               color: AppTheme.textSecondary,
@@ -1936,7 +1824,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildErrorState(Object error, VoidCallback onRetry) {
     return _FramedDirectorySection(
       title: 'Connection Interrupted',
-      subtitle: 'Unable to synchronize Discover feed',
       icon: Icons.error_outline,
       accentColor: AppTheme.primaryAccent,
       actionLabel: 'Retry',
@@ -1945,7 +1832,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         icon: Icons.wifi_off_rounded,
         accentColor: AppTheme.primaryAccent,
         title: 'Failed to load Discover Feed',
-        subtitle: error.toString(),
         actionLabel: 'Retry',
         onAction: onRetry,
       ),
@@ -1983,7 +1869,7 @@ class _FramedDirectorySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header Bar
+          // Section Header Bar (Clean single-line heading, no verbose subtitle)
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 11),
             decoration: const BoxDecoration(
@@ -2016,34 +1902,17 @@ class _FramedDirectorySection extends StatelessWidget {
                   const SizedBox(width: 10),
                 ],
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        softWrap: true,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: 0.2,
-                          height: 1.2,
-                        ),
-                      ),
-                      if (subtitle != null)
-                        Text(
-                          subtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: AppTheme.fontBody,
-                            fontSize: 11,
-                            color: AppTheme.textMuted,
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
                 if (actionLabel != null && onActionTap != null) ...[
@@ -2103,12 +1972,12 @@ class _FramedDirectorySection extends StatelessWidget {
   }
 }
 
-/// Vertically stacked obsidian glass empty-state card (never squishing text beside a button)
+/// Compact empty-state row (single-line heading + optional action pill, zero verbose filler text)
 class _CompactEmptyBanner extends StatelessWidget {
   final IconData icon;
   final Color accentColor;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onAction;
 
@@ -2116,7 +1985,7 @@ class _CompactEmptyBanner extends StatelessWidget {
     required this.icon,
     required this.accentColor,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     this.actionLabel,
     this.onAction,
   });
@@ -2125,80 +1994,72 @@ class _CompactEmptyBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: accentColor.withValues(alpha: 0.45),
-                    width: 1.0,
-                  ),
-                ),
-                child: Icon(icon, color: accentColor, size: 17),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.45),
+                width: 1.0,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.5,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ),
-            ],
+            ),
+            child: Icon(icon, color: accentColor, size: 16),
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontFamily: AppTheme.fontBody,
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-              height: 1.38,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: AppTheme.textPrimary,
+              ),
             ),
           ),
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: onAction,
-                icon: Icon(Icons.arrow_forward_rounded,
-                    size: 14, color: accentColor),
-                label: Text(
-                  actionLabel!,
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
-                    letterSpacing: 0.3,
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: onAction,
+              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.55),
+                    width: 1.0,
                   ),
                 ),
-                style: TextButton.styleFrom(
-                  foregroundColor: accentColor,
-                  backgroundColor: Colors.transparent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    side: BorderSide(
-                      color: accentColor.withValues(alpha: 0.55),
-                      width: 1.0,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      actionLabel!,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        color: accentColor,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 9,
+                      color: accentColor,
+                    ),
+                  ],
                 ),
               ),
             ),

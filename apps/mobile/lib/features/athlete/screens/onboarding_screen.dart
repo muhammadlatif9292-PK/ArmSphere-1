@@ -182,10 +182,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: const Text(
           'Build Your Athlete Profile',
@@ -226,6 +229,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
@@ -233,8 +237,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Keep top 38% open for the 3D fighter walkout tunnel showcase
-                SizedBox(height: MediaQuery.sizeOf(context).height * 0.20),
+                // Keep top 38% open for the 3D fighter walkout tunnel showcase when keyboard is closed,
+                // and collapse spacer smoothly when keyboard opens so form fields have full room while the background stays locked
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  height: isKeyboardOpen
+                      ? 4.0
+                      : MediaQuery.sizeOf(context).height * 0.20,
+                ),
                 // Fixed top stepper bar in the lower 62% safe zone
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

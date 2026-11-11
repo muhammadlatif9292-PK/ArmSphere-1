@@ -55,7 +55,6 @@ class SettingsHubScreen extends ConsumerWidget {
                 _SettingsTile(
                   icon: Icons.badge_outlined,
                   title: 'Account Roles',
-                  subtitle: 'Manage verified roles and persona',
                   onTap: () => context.push('/settings/roles'),
                 ),
                 const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
@@ -64,7 +63,6 @@ class SettingsHubScreen extends ConsumerWidget {
                 _SettingsTile(
                   icon: Icons.shield_outlined,
                   title: 'Security & Active Sessions',
-                  subtitle: 'Devices signed in and MFA',
                   onTap: () => context.push('/session'),
                 ),
               ],
@@ -113,7 +111,6 @@ class SettingsHubScreen extends ConsumerWidget {
                 _SettingsTile(
                   icon: Icons.contact_support_outlined,
                   title: 'Support Requests',
-                  subtitle: 'Contact Helpdesk & track inquiries',
                   onTap: () => context.push('/support'),
                 ),
                 const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
@@ -143,7 +140,6 @@ class SettingsHubScreen extends ConsumerWidget {
                   iconColor: AppTheme.error,
                   title: 'Delete Account',
                   titleColor: AppTheme.error,
-                  subtitle: 'Permanently deactivate and anonymize your account',
                   onTap: () => context.push('/settings/deletion'),
                 ),
                 const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),

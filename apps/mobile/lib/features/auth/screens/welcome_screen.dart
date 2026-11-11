@@ -91,41 +91,66 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final view = View.maybeOf(context);
+    final double dpr =
+        view?.devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
+    final Size physicalSize =
+        (view != null && dpr > 0 && view.physicalSize.height > 0)
+            ? (view.physicalSize / dpr)
+            : MediaQuery.sizeOf(context);
+    final double targetWidth =
+        physicalSize.width > 0 ? physicalSize.width : 400.0;
+    final double targetHeight =
+        physicalSize.height > 0 ? physicalSize.height : 840.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Full-Bleed 9:16 Walkout Stage Backdrop at 100% Opacity
+          // Full-Bleed 9:16 Walkout Stage Backdrop at 100% Opacity (locked to physical screen top)
           Positioned.fill(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                const ColoredBox(color: AppTheme.voidBackground),
-                const ArmSphereImage(
-                  assetPath: ArmSphereAssets.stageAuthWalkout,
-                  fit: BoxFit.cover,
+            child: IgnorePointer(
+              child: ClipRect(
+                child: OverflowBox(
                   alignment: Alignment.topCenter,
-                  width: double.infinity,
-                  height: double.infinity,
-                  excludeFromSemantics: true,
-                  showLoadingIndicator: false,
-                ),
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 0.45, 0.78, 1.0],
-                      colors: [
-                        Color(0x00000000),
-                        Color(0x00000000),
-                        Color(0x40000000),
-                        Color(0x73000000),
-                      ],
-                    ),
+                  minWidth: targetWidth,
+                  maxWidth: targetWidth,
+                  minHeight: targetHeight,
+                  maxHeight: targetHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const ColoredBox(color: AppTheme.voidBackground),
+                      const ArmSphereImage(
+                        assetPath: ArmSphereAssets.stageAuthWalkout,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        width: double.infinity,
+                        height: double.infinity,
+                        excludeFromSemantics: true,
+                        showLoadingIndicator: false,
+                      ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: [0.0, 0.45, 0.78, 1.0],
+                            colors: [
+                              Color(0x00000000),
+                              Color(0x00000000),
+                              Color(0x40000000),
+                              Color(0x73000000),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
 
@@ -188,32 +213,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                             const SizedBox(height: 220),
                             FadeTransition(
                               opacity: _heroFadeAnimation,
-                              child: const Column(
-                                children: [
-                                  Text(
-                                    'ARMSPHERE',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 34,
-                                      letterSpacing: 1.5,
-                                      color: AppTheme.goldPrimary,
-                                    ),
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'THE INTERNATIONAL ARMWRESTLING FEDERATION SYSTEM',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.2,
-                                      color: AppTheme.textMuted,
-                                    ),
-                                  ),
-                                ],
+                              child: const Text(
+                                'ARMSPHERE',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 34,
+                                  letterSpacing: 1.5,
+                                  color: AppTheme.goldPrimary,
+                                ),
                               ),
                             ),
 
@@ -313,20 +322,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                     ),
                                     child: const Text('I ALREADY HAVE AN ACCOUNT'),
                                   ),
-
-                                  const SizedBox(height: 20),
-
-                                  // Disclaimer Footer
-                                  const Text(
-                                    'By entering you agree to the ArmSphere Federation Charter\nand Anti-Doping Fair Play Code.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 10.5,
-                                      color: AppTheme.textMuted,
-                                      height: 1.45,
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -395,35 +390,18 @@ class _RoleSelectCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.title,
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      letterSpacing: 0.5,
-                      color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
-                      shadows: const [
-                        Shadow(color: Color(0xE6000000), blurRadius: 6, offset: Offset(0, 1)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.subtitle,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      color: AppTheme.textMuted,
-                      shadows: [
-                        Shadow(color: Color(0xE6000000), blurRadius: 6, offset: Offset(0, 1)),
-                      ],
-                    ),
-                  ),
-                ],
+              child: Text(
+                data.title,
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13.5,
+                  letterSpacing: 0.5,
+                  color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
+                  shadows: const [
+                    Shadow(color: Color(0xE6000000), blurRadius: 6, offset: Offset(0, 1)),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 8),

@@ -108,16 +108,6 @@ class AdminAuthorityHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                      height: 1.3,
-                      shadows: AppTheme.crystalTextShadows,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -182,7 +172,7 @@ class AdminJurisdictionBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'JURISDICTION LOCK: ${jurisdiction.toUpperCase()} — Administrative actions are scoped to your assigned province.',
+              'JURISDICTION: ${jurisdiction.toUpperCase()}',
               style: const TextStyle(
                 fontFamily: AppTheme.fontDisplay,
                 fontSize: 11,

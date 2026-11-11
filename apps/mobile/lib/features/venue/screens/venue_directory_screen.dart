@@ -58,6 +58,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
@@ -139,10 +140,10 @@ class VenueDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isVerified ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                              color: isVerified ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
                               width: 1.0,
                             ),
                           ),

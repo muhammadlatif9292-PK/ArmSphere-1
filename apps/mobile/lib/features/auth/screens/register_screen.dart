@@ -85,13 +85,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: const CrystalBackButton(fallbackRoute: '/welcome'),
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
@@ -118,15 +121,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           fontSize: 30,
                           letterSpacing: -1.0,
                           color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'The competitive platform for armwrestling',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13.5,
-                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ],

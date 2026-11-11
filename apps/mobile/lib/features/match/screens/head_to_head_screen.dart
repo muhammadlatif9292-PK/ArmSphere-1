@@ -550,6 +550,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.headToHead),

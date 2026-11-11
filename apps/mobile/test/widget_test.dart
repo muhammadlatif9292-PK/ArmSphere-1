@@ -312,7 +312,7 @@ void main() {
         await tester.tap(find.widgetWithText(TextButton, 'Sign In'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Sign in to your competitive account'), findsOneWidget);
+        expect(find.text('ArmSphere'), findsOneWidget);
         expect(find.text('Sign In to Account'), findsOneWidget);
       },
     );

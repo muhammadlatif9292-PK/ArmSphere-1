@@ -45,6 +45,7 @@ class VenueDetailScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
@@ -107,10 +108,11 @@ class VenueDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.glassSurface,
-                              shape: BoxShape.circle,
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isVerified ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                                color: isVerified ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+                                width: 1.0,
                               ),
                             ),
                             child: Icon(
@@ -188,7 +190,7 @@ class VenueDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: AppTheme.space12),
-                        const Divider(height: 1, color: AppTheme.border),
+                        const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                         const SizedBox(height: AppTheme.space12),
                         Text(
                           contactInfo,
@@ -228,7 +230,7 @@ class VenueDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: AppTheme.space12),
-                        const Divider(height: 1, color: AppTheme.border),
+                        const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                         const SizedBox(height: AppTheme.space12),
                         Text(
                           description,

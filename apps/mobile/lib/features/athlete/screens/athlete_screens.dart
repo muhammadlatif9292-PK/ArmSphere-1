@@ -149,6 +149,7 @@ class _AthleteDashboardScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           // Full-Screen Crystal-Clear Functional Arena Backdrop (Zero Blur, 100% Sharp)
           const Positioned.fill(
@@ -427,22 +428,6 @@ class _AthleteDashboardScreenState
                               ),
                             ),
                           ),
-                          SizedBox(height: 3),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'PRO COMBAT OPERATING SYSTEM',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.0,
-                                color: AppTheme.textMuted,
-                                height: 1.0,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -671,14 +656,6 @@ class _AthleteDashboardScreenState
                           fontWeight: FontWeight.w800,
                           color: AppTheme.textPure,
                           letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Official tournament brackets & table calls',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -2421,23 +2398,14 @@ class _AthleteDashboardScreenState
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'NO UPCOMING BOUTS SCHEDULED',
+                        'No Upcoming Bouts',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 13.5,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.textPure,
                           letterSpacing: 0.2,
                           height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Register for sanctioned tournaments to compete in official brackets.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.textSecondary,
-                          height: 1.3,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -2550,12 +2518,6 @@ class _AthleteDashboardScreenState
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.textSecondary,
                                     fontSize: 12)),
-                            SizedBox(height: 2),
-                            Text(
-                                'Compete in sanctioned bouts to build verified records.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: AppTheme.textMuted, fontSize: 10)),
                           ],
                         ),
                       );
@@ -2612,12 +2574,6 @@ class _AthleteDashboardScreenState
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.textSecondary,
                                     fontSize: 12)),
-                            SizedBox(height: 2),
-                            Text(
-                                'Upcoming sanctioned events will appear here.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: AppTheme.textMuted, fontSize: 10)),
                           ],
                         ),
                       );
@@ -2668,12 +2624,6 @@ class _AthleteDashboardScreenState
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.textSecondary,
                                     fontSize: 12)),
-                            SizedBox(height: 2),
-                            Text(
-                                'Standings update as sanctioned events conclude.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: AppTheme.textMuted, fontSize: 10)),
                           ],
                         ),
                       );
@@ -3973,8 +3923,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                   _WorkspaceTile(
                     icon: Icons.fitness_center,
                     iconColor: AppTheme.goldPrimary,
-                    title: 'Training Log & PR Tracker',
-                    subtitle: 'Cupping, pronation & rising personal records',
+                    title: 'Training Log & PRs',
+                    subtitle: null,
                     onTap: () {
                       HapticFeedback.selectionClick();
                       context.push(myProfileId != null
@@ -3986,8 +3936,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                   _WorkspaceTile(
                     icon: Icons.military_tech_outlined,
                     iconColor: AppTheme.goldPrimary,
-                    title: 'Athletic Honors & Achievements',
-                    subtitle: 'Certified championship medals and trophies',
+                    title: 'Athletic Honors',
+                    subtitle: null,
                     onTap: () {
                       HapticFeedback.selectionClick();
                       context.push('/athlete/achievements');
@@ -3997,8 +3947,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                   _WorkspaceTile(
                     icon: Icons.groups_outlined,
                     iconColor: AppTheme.cyan,
-                    title: 'Teams & Club Affiliations',
-                    subtitle: 'Federation clubs, rosters and team standings',
+                    title: 'Teams & Clubs',
+                    subtitle: null,
                     onTap: () {
                       HapticFeedback.selectionClick();
                       context.push('/teams');
@@ -4008,8 +3958,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                   _WorkspaceTile(
                     icon: Icons.emoji_events_outlined,
                     iconColor: AppTheme.goldPrimary,
-                    title: 'National Championship Titles',
-                    subtitle: 'Official division title holders and lineage',
+                    title: 'Championship Titles',
+                    subtitle: null,
                     onTap: () {
                       HapticFeedback.selectionClick();
                       context.push('/championship/titles');
@@ -4019,8 +3969,8 @@ class AthleteProfileScreen extends ConsumerWidget {
                   _WorkspaceTile(
                     icon: Icons.settings_outlined,
                     iconColor: AppTheme.textSecondary,
-                    title: 'Account & Security Settings',
-                    subtitle: 'Security, notifications, payments and privacy',
+                    title: 'Account & Settings',
+                    subtitle: null,
                     onTap: () {
                       HapticFeedback.selectionClick();
                       context.push('/settings');
@@ -4757,29 +4707,6 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
                   fontWeight: FontWeight.w700,
                   color: AppTheme.textMuted,
                   letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: accentColor,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Official $armLabel Competitive Rating',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],

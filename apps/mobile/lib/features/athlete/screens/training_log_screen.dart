@@ -216,6 +216,7 @@ class _AthleteTrainingLogScreenState
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(

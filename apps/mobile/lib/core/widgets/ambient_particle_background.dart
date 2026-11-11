@@ -57,31 +57,61 @@ class AmbientParticleBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedAsset = _resolvePrimaryAsset();
+    final view = View.maybeOf(context);
+    final double dpr =
+        view?.devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
+    final Size physicalSize =
+        (view != null && dpr > 0 && view.physicalSize.height > 0)
+            ? (view.physicalSize / dpr)
+            : MediaQuery.sizeOf(context);
+    final double targetWidth =
+        physicalSize.width > 0 ? physicalSize.width : 400.0;
+    final double targetHeight =
+        physicalSize.height > 0 ? physicalSize.height : 840.0;
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        const ColoredBox(color: AppTheme.voidBackground),
-        ArmSphereImage(
-          assetPath: resolvedAsset,
-          fit: BoxFit.cover,
-          alignment: Alignment.topCenter,
-          width: double.infinity,
-          height: double.infinity,
-          excludeFromSemantics: true,
-          showLoadingIndicator: false,
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.0, 0.45, 0.78, 1.0],
-              colors: [
-                Color(0x00000000),
-                Color(0x00000000),
-                Color(0x40000000),
-                Color(0x73000000),
-              ],
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.topCenter,
+                minWidth: targetWidth,
+                maxWidth: targetWidth,
+                minHeight: targetHeight,
+                maxHeight: targetHeight,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: AppTheme.voidBackground),
+                    ArmSphereImage(
+                      assetPath: resolvedAsset,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      height: double.infinity,
+                      excludeFromSemantics: true,
+                      showLoadingIndicator: false,
+                    ),
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.0, 0.45, 0.78, 1.0],
+                          colors: [
+                            Color(0x00000000),
+                            Color(0x00000000),
+                            Color(0x40000000),
+                            Color(0x73000000),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

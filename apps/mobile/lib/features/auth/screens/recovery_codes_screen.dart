@@ -62,6 +62,7 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text(
@@ -75,10 +76,12 @@ class _RecoveryCodesScreenState extends State<RecoveryCodesScreen> {
         ),
         actions: const [CrystalHomeButton()],
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),

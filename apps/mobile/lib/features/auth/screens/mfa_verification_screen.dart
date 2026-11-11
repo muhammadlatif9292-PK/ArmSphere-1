@@ -75,6 +75,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text(
           'MFA Verification',
@@ -86,6 +87,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
           ),
         ),
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: CrystalBackButton(
           fallbackRoute: '/login',
@@ -93,6 +95,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
         ),
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),

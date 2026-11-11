@@ -275,6 +275,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -1297,6 +1298,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -1380,6 +1382,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -1499,6 +1502,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),

@@ -158,12 +158,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: const CrystalBackButton(fallbackRoute: '/welcome'),
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
@@ -181,28 +184,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 // Lower 62% Safe-Zone Header below the 3D Walkout Tunnel Octagonal Light
                 const Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        'ArmSphere',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontWeight: FontWeight.w800,
-                          fontSize: 30,
-                          letterSpacing: -1.0,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Sign in to your competitive account',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13.5,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'ArmSphere',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 30,
+                      letterSpacing: -1.0,
+                      color: AppTheme.goldPrimary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

@@ -23,12 +23,14 @@ class CrystalStageBackdrop extends ConsumerWidget {
   final ArmSphereStageDomain domain;
   final String? customImageOverride;
   final Alignment viewportAlignment;
+  final bool isHeaderBar;
 
   const CrystalStageBackdrop({
     super.key,
     required this.domain,
     this.customImageOverride,
-    this.viewportAlignment = Alignment.bottomCenter,
+    this.viewportAlignment = Alignment.topCenter,
+    this.isHeaderBar = false,
   });
 
   @override
@@ -48,62 +50,87 @@ class CrystalStageBackdrop extends ConsumerWidget {
             ? prefs.customScreenBackdropImage
             : null);
 
-    final Size screenSize = MediaQuery.sizeOf(context);
-    final double targetWidth = screenSize.width > 0 ? screenSize.width : 400.0;
-    final double targetHeight = screenSize.height > 0 ? screenSize.height : 840.0;
+    // Lock stage dimensions to physical display size so keyboard insets or viewport resizing never scale or shift the stage artwork
+    final view = View.maybeOf(context);
+    final double dpr =
+        view?.devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
+    final Size physicalSize =
+        (view != null && dpr > 0 && view.physicalSize.height > 0)
+            ? (view.physicalSize / dpr)
+            : MediaQuery.sizeOf(context);
+    final double targetWidth =
+        physicalSize.width > 0 ? physicalSize.width : 400.0;
+    final double targetHeight =
+        physicalSize.height > 0 ? physicalSize.height : 840.0;
+
+    final scaffold = Scaffold.maybeOf(context);
+    final bool isBelowAppBar = !isHeaderBar &&
+        scaffold != null &&
+        scaffold.widget.appBar != null &&
+        !scaffold.widget.extendBodyBehindAppBar;
+    final double topOffset = isBelowAppBar
+        ? (scaffold.appBarMaxHeight ??
+            (MediaQuery.paddingOf(context).top + kToolbarHeight))
+        : 0.0;
 
     return IgnorePointer(
-      child: ClipRect(
-        child: OverflowBox(
-          alignment: viewportAlignment,
-          minWidth: targetWidth,
-          maxWidth: targetWidth,
-          minHeight: targetHeight,
-          maxHeight: targetHeight,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // 1. Deep void base canvas
-              const ColoredBox(color: AppTheme.voidBackground),
+      child: SizedBox.expand(
+        child: ClipRect(
+          child: Transform.translate(
+            offset: Offset(0, -topOffset),
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              minWidth: targetWidth,
+              maxWidth: targetWidth,
+              minHeight: targetHeight,
+              maxHeight: targetHeight,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 1. Deep void base canvas
+                  const ColoredBox(color: AppTheme.voidBackground),
 
-              // 2. Full-Screen Crystal-Clear Primary Functional Image (100% native opacity, NO BLUR)
-              (customImg != null && customImg.trim().isNotEmpty)
-                  ? ArmSphereImage(
-                      imageUrl: ArmSphereAssets.resolveSemanticAsset(customImg),
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fallbackAsset: preset.primaryAsset,
-                      excludeFromSemantics: true,
-                    )
-                  : ArmSphereImage(
-                      assetPath: ArmSphereAssets.resolveSemanticAsset(
-                          preset.primaryAsset),
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      width: double.infinity,
-                      height: double.infinity,
-                      excludeFromSemantics: true,
+                  // 2. Full-Screen Crystal-Clear Primary Functional Image (100% native opacity, NO BLUR)
+                  (customImg != null && customImg.trim().isNotEmpty)
+                      ? ArmSphereImage(
+                          imageUrl:
+                              ArmSphereAssets.resolveSemanticAsset(customImg),
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fallbackAsset: preset.primaryAsset,
+                          excludeFromSemantics: true,
+                        )
+                      : ArmSphereImage(
+                          assetPath: ArmSphereAssets.resolveSemanticAsset(
+                              preset.primaryAsset),
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          width: double.infinity,
+                          height: double.infinity,
+                          excludeFromSemantics: true,
+                        ),
+
+                  // 3. Lightened Stage Backdrop Scrim so 9:16 artwork shines through transparent cards
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.0, 0.45, 0.78, 1.0],
+                        colors: [
+                          Color(0x00000000),
+                          Color(0x00000000),
+                          Color(0x40000000),
+                          Color(0x73000000),
+                        ],
+                      ),
                     ),
-
-              // 3. Lightened Stage Backdrop Scrim so 9:16 artwork shines through transparent cards
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.0, 0.45, 0.78, 1.0],
-                    colors: [
-                      Color(0x00000000),
-                      Color(0x00000000),
-                      Color(0x40000000),
-                      Color(0x73000000),
-                    ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -140,6 +167,7 @@ class CrystalHeaderStageBar extends StatelessWidget {
             domain: domain,
             customImageOverride: customImageOverride,
             viewportAlignment: Alignment.topCenter,
+            isHeaderBar: true,
           ),
         ],
       ),

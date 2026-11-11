@@ -48,7 +48,6 @@ class BiometricSettingsTile extends ConsumerWidget {
       loading: () => const ListTile(
         leading: Icon(Icons.fingerprint),
         title: Text('Biometric Unlock'),
-        subtitle: Text('Checking hardware capability...'),
         trailing: SizedBox(
           width: 18,
           height: 18,
@@ -58,7 +57,6 @@ class BiometricSettingsTile extends ConsumerWidget {
       error: (_, __) => const ListTile(
         leading: Icon(Icons.fingerprint, color: AppTheme.textMuted),
         title: Text('Biometric Unlock'),
-        subtitle: Text('Hardware check unavailable'),
       ),
       data: (capability) {
         final isAvailable = capability == BiometricCapability.available;
@@ -69,26 +67,16 @@ class BiometricSettingsTile extends ConsumerWidget {
         final isBusy = enabledAsync.isLoading;
 
         Widget iconWidget;
-        String subtitleText;
-        Color? subtitleColor;
 
         if (isUnsupported) {
           iconWidget = const Icon(Icons.fingerprint, color: AppTheme.textMuted);
-          subtitleText = 'Not supported on this device';
-          subtitleColor = AppTheme.textMuted;
         } else if (isNotEnrolled) {
           iconWidget = const Icon(Icons.fingerprint, color: Colors.orangeAccent);
-          subtitleText = 'Not enrolled — tap to configure';
-          subtitleColor = Colors.orangeAccent;
         } else {
           iconWidget = Icon(
             Icons.fingerprint,
             color: isEnabled ? AppTheme.goldPrimary : AppTheme.textMuted,
           );
-          subtitleText = isEnabled
-              ? 'Active — sign in quickly with Face ID / Fingerprint'
-              : 'Disabled — standard password entry required';
-          subtitleColor = isEnabled ? AppTheme.textSecondary : AppTheme.textMuted;
         }
 
         return ListTile(
@@ -96,10 +84,6 @@ class BiometricSettingsTile extends ConsumerWidget {
           title: const Text(
             'Biometric Unlock',
             style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            subtitleText,
-            style: TextStyle(fontSize: 12, color: subtitleColor),
           ),
           onTap: isNotEnrolled ? () => _showNotEnrolledDialog(context) : null,
           trailing: isUnsupported || isNotEnrolled

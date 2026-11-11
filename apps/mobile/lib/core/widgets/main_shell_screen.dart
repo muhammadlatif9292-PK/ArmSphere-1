@@ -651,9 +651,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
         child: Scaffold(
           backgroundColor: AppTheme.voidBackground,
           extendBody: true,
+          resizeToAvoidBottomInset: false,
           body: NotificationListener<ScrollNotification>(
             onNotification: _handleScrollNotification,
             child: Stack(
+              fit: StackFit.expand,
               children: [
                 AmbientParticleBackground(
                   tabIndex: effectiveTabIndex,
