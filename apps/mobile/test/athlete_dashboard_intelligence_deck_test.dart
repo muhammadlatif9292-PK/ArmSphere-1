@@ -784,13 +784,17 @@ void main() {
     });
 
     testWidgets(
-        'Arena Schedule STANDBY tag aligns with right boundary and enforces inter-element gap',
+        'Arena Schedule header and STANDBY tag stay inside left 58% safe zone without overlapping',
         (tester) async {
       await _pumpDashboard(tester, width: 360);
 
       final standbyFinder = find.text('STANDBY');
       await tester.ensureVisible(standbyFinder);
       await tester.pump();
+
+      final cardRect = tester.getRect(
+        find.ancestor(of: standbyFinder, matching: find.byType(ClipRRect)).first,
+      );
 
       final standbyWrapFinder =
           find.ancestor(of: standbyFinder, matching: find.byType(Wrap)).first;
@@ -808,18 +812,14 @@ void main() {
           .ancestor(of: standbyFinder, matching: find.byType(Container))
           .first);
 
-      // Verify intended ordering: header precedes standby tag
-      expect(scheduleHeaderRect.right, lessThan(standbyBadgeRect.left));
+      // Both header and STANDBY tag stay strictly inside the left 58% dark safe zone
+      final safeZoneRightEdge = cardRect.left + cardRect.width * 0.60;
+      expect(scheduleHeaderRect.right, lessThanOrEqualTo(safeZoneRightEdge));
+      expect(standbyBadgeRect.right, lessThanOrEqualTo(safeZoneRightEdge));
 
-      // Assert meaningful minimum gap between header and badge (Claude threshold > 8.5dp).
-      // If the Wrap shrink-wrapped, the gap would only be spacing: 8.0dp.
-      expect(
-          standbyBadgeRect.left - scheduleHeaderRect.right, greaterThan(8.5));
-
-      // Header aligns with left edge of wrap
+      // Header aligns with left edge of wrap and never overlaps STANDBY badge
       expect(scheduleHeaderRect.left - standbyWrapRect.left, lessThan(5.0));
-      // Standby badge aligns with right edge of wrap
-      expect(standbyWrapRect.right - standbyBadgeRect.right, lessThan(5.0));
+      expect(scheduleHeaderRect.overlaps(standbyBadgeRect), isFalse);
 
       expect(tester.takeException(), isNull);
       await _disposeDashboard(tester);
