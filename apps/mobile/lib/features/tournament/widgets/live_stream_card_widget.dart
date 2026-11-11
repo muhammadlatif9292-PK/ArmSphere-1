@@ -175,7 +175,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
 
                 return Container(
                   width: double.infinity,
-                  height: 160,
+                  height: 176,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     color: AppTheme.voidBackground,
@@ -184,7 +184,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
                     child: Stack(
-                      alignment: Alignment.center,
+                      fit: StackFit.expand,
                       children: [
                         Positioned.fill(
                           child: ArmSphereImage(
@@ -196,6 +196,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                                 : null,
                             fallbackAsset: ArmSphereAssets.cardLiveBroadcast,
                             fit: BoxFit.cover,
+                            alignment: const Alignment(0.40, 0.0),
                             excludeFromSemantics: true,
                           ),
                         ),
@@ -205,77 +206,93 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                               gradient: LinearGradient(
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
-                                stops: [0.0, 0.62, 1.0],
+                                stops: [0.0, 0.55, 1.0],
                                 colors: [
-                                  Color(0xE6070A11),
-                                  Color(0x00070A11),
+                                  Color(0xF0070A11),
+                                  Color(0xB3070A11),
                                   Color(0x00070A11),
                                 ],
                               ),
                             ),
                           ),
                         ),
-                        // Center Play Overlay Icon
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF2A6D).withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF2A6D).withValues(alpha: 0.5),
-                              blurRadius: 16,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.play_arrow_rounded, size: 36, color: Colors.white),
-                      ),
-
-                      // Bottom Info Overlay Bar
-                      Positioned(
-                        bottom: 12,
-                        left: 12,
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.sports_mma_rounded, color: AppTheme.goldPrimary, size: 14),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        currentMatch,
-                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                        overflow: TextOverflow.ellipsis,
+                        // Left 55% Safe-Zone Content (keeps 3D camera rig at x: 55%–100% 100% clear)
+                        FractionallySizedBox(
+                          widthFactor: 0.55,
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xCC070A11),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: AppTheme.crimson.withValues(alpha: 0.65)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const PulseIndicator(size: 5.5, color: AppTheme.crimson),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        viewers != null ? 'LIVE BROADCAST • $viewers' : 'LIVE BROADCAST',
+                                        style: const TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              if (viewers != null)
-                                Row(
-                                  children: [
-                                    const Icon(Icons.remove_red_eye_rounded, color: Color(0xFF00E5FF), size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      viewers,
-                                      style: const TextStyle(color: Color(0xFF00E5FF), fontSize: 10, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
+                                Text(
+                                  currentMatch,
+                                  maxLines: 2,
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.2,
+                                  ),
                                 ),
-                            ],
+                                TactilePressWrapper(
+                                  onTap: () => _openYouTubeLiveStream(context),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.crimson,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.play_arrow_rounded, size: 15, color: Colors.white),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'ENTER STREAM',
+                                          style: TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: 0.6,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                       ],
                     ),
                   ),

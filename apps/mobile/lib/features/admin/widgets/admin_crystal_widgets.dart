@@ -129,25 +129,14 @@ class AdminAuthorityHeader extends StatelessWidget {
             ],
             if (onRefresh != null) ...[
               const SizedBox(width: 8),
-              IconButton(
+              CrystalIconPillButton(
+                icon: Icons.refresh_rounded,
+                iconColor: AppTheme.goldPrimary,
+                tooltip: 'Synchronize Data',
                 onPressed: () {
-                  HapticFeedback.lightImpact();
                   CrystalModalSheet.unfocusActiveInput(context);
                   onRefresh!();
                 },
-                tooltip: 'Synchronize Data',
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xCC0D1320),
-                  side: const BorderSide(color: Color(0x38FFFFFF)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                  size: 18,
-                  color: AppTheme.goldPrimary,
-                ),
               ),
             ],
           ],
@@ -243,11 +232,7 @@ class AdminSegmentedDeck extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xCC0A0F1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x33FFFFFF), width: 1.0),
-      ),
+      decoration: AppTheme.recessedObsidianWellDecoration(radius: 16),
       child: Row(
         children: [
           for (int i = 0; i < segments.length; i++) ...[
@@ -422,14 +407,14 @@ class AdminCrystalSearchBar extends StatelessWidget {
                       )
                     : null,
                 filled: true,
-                fillColor: const Color(0xCC0D1322),
+                fillColor: const Color(0xCC05070C),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 12,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0x36FFFFFF)),
+                  borderSide: const BorderSide(color: Color(0x14FFFFFF)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),

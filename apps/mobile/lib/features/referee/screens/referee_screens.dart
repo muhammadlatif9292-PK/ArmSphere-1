@@ -266,9 +266,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text('Referee Panel'),
         actions: [
@@ -538,24 +541,11 @@ class _AssignmentCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.space16),
-      decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        border: Border.all(
-          color: isCalled ? AppTheme.cyan.withValues(alpha: 0.65) : AppTheme.borderTitanium,
-          width: isCalled ? 1.5 : 1.0,
-        ),
-        boxShadow: isCalled
-            ? [
-                BoxShadow(
-                  color: AppTheme.cyanGlow,
-                  blurRadius: 14.0,
-                  spreadRadius: 1.0,
-                ),
-                AppTheme.titaniumShadow(),
-              ]
-            : [AppTheme.titaniumShadow()],
+      decoration: AppTheme.machinedTitaniumDecoration(
+        radius: 18,
+        borderColor: isCalled
+            ? const Color(0x4DD4AF37)
+            : const Color(0x26FFFFFF),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,10 +803,8 @@ class _RefCard extends StatelessWidget {
         HapticFeedback.lightImpact();
         onTap();
       },
-      backgroundColor: AppTheme.glassSurface,
-      gradient: AppTheme.machinedTitaniumGradient,
-      borderColor: AppTheme.borderTitanium,
-      customShadow: [AppTheme.titaniumShadow()],
+      borderRadius: 18,
+      borderColor: const Color(0x26FFFFFF),
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.space8, vertical: AppTheme.space12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -863,9 +851,12 @@ class RefereeCertificationsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: const CrystalBackButton(),
         title: const Text('Certifications'),
         actions: const [CrystalHomeButton()],
@@ -1253,9 +1244,12 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: const CrystalBackButton(),
         titleSpacing: 8,
         title: const FittedBox(
@@ -1267,11 +1261,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
           ),
         ),
         actions: [
-          IconButton(
+          CrystalIconPillButton(
             tooltip: _isLiveScorepadMode ? 'Switch to Form View' : 'Switch to Table Scorepad',
-            icon: Icon(_isLiveScorepadMode ? Icons.edit_note : Icons.sports),
+            icon: _isLiveScorepadMode ? Icons.edit_note : Icons.sports,
             onPressed: () {
-              HapticFeedback.lightImpact();
               setState(() => _isLiveScorepadMode = !_isLiveScorepadMode);
             },
           ),
@@ -1743,9 +1736,12 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: const CrystalBackButton(),
         title: const Text('Search Athletes'),
         actions: const [CrystalHomeButton()],
@@ -1889,9 +1885,12 @@ class EvidenceUploadScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: const CrystalBackButton(),
         title: const Text('Evidence Upload'),
         actions: const [CrystalHomeButton()],

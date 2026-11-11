@@ -19,6 +19,8 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 
 /// Domain 10 / Stage 6 Convergence: Teams List Screen
 ///
@@ -37,7 +39,7 @@ class TeamsListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(),
@@ -112,9 +114,9 @@ class TeamsListScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('teams_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                155,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // Top Roster Overview Ribbon
@@ -164,10 +166,10 @@ class TeamsListScreen extends ConsumerWidget {
                         onTap: () => context.push('/teams/${t['id']}'),
                         child: Row(
                           children: [
-                            // Team Emblem Placeholder
+                            // Team Emblem Crest (team_crest_default.webp at 100% opacity)
                             Container(
-                              width: 44,
-                              height: 44,
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
                                 color: AppTheme.glassSurface,
                                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -176,12 +178,13 @@ class TeamsListScreen extends ConsumerWidget {
                                   width: isCaptain ? 1.5 : 1.0,
                                 ),
                               ),
-                              child: Center(
-                                child: Icon(
-                                  isCaptain ? Icons.shield_outlined : Icons.groups_outlined,
-                                  color: isCaptain ? AppTheme.goldPrimary : AppTheme.textSecondary,
-                                  size: 22,
-                                ),
+                              clipBehavior: Clip.antiAlias,
+                              child: ArmSphereImage(
+                                imageUrl: t['logoUrl']?.toString(),
+                                assetPath: ArmSphereAssets.teamCrestDefault,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
                               ),
                             ),
                             const SizedBox(width: AppTheme.space12),
@@ -198,8 +201,7 @@ class TeamsListScreen extends ConsumerWidget {
                                       fontSize: 16,
                                       color: AppTheme.textPrimary,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
@@ -606,7 +608,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(fallbackRoute: '/teams'),
@@ -720,7 +722,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               ref.invalidate(sparringInvitesProvider(widget.teamId));
             },
             child: ListView(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                155,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
               children: [
                 // 1. Team Dossier Header Card
                 ElevatedActionCard(
@@ -729,8 +736,29 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppTheme.glassSurface,
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                              border: Border.all(
+                                color: canManage ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                                width: 1.5,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: ArmSphereImage(
+                              imageUrl: team['logoUrl']?.toString(),
+                              assetPath: ArmSphereAssets.teamCrestDefault,
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.space12),
                           Expanded(
                             child: Text(
                               team['name']?.toString() ?? 'Team',
@@ -740,6 +768,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.textPrimary,
                               ),
+                              maxLines: 2,
                             ),
                           ),
                           if (canManage) ...[

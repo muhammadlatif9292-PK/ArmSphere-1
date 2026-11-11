@@ -127,6 +127,10 @@ class CrystalHeaderStageBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold != null && scaffold.widget.extendBodyBehindAppBar) {
+      return const SizedBox.expand();
+    }
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
@@ -136,16 +140,6 @@ class CrystalHeaderStageBar extends StatelessWidget {
             domain: domain,
             customImageOverride: customImageOverride,
             viewportAlignment: Alignment.topCenter,
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0x1AFFFFFF),
-                  width: 1.0,
-                ),
-              ),
-            ),
           ),
         ],
       ),

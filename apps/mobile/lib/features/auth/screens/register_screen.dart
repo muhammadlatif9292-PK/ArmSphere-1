@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
-import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
@@ -97,74 +96,59 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 76,
-                          height: 76,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppTheme.glassSurface,
-                            border: Border.all(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                              width: 2,
-                            ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppTheme.goldGlow,
-                            blurRadius: 28,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.sports_kabaddi,
-                          size: 38,
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24.0,
+              MediaQuery.sizeOf(context).height * 0.28,
+              24.0,
+              120.0,
+            ),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Join ArmSphere',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 30,
+                          letterSpacing: -1.0,
                           color: AppTheme.goldPrimary,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Join ArmSphere',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 30,
-                        letterSpacing: -1.0,
-                        color: AppTheme.goldPrimary,
+                      SizedBox(height: 4),
+                      Text(
+                        'The competitive platform for armwrestling',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13.5,
+                          color: AppTheme.textSecondary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'The competitive platform for armwrestling',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13.5,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 20),
 
-              Form(
-                key: _formKey,
-                child: ElevatedActionCard(
-                  padding: const EdgeInsets.all(22.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                Form(
+                  key: _formKey,
+                  child: Container(
+                    padding: const EdgeInsets.all(22.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC0B0F19),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0x26FFFFFF),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                       // Full Name Field
                       TextFormField(
                         controller: _nameController,
@@ -342,10 +326,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -199,7 +199,10 @@ void main() {
       );
       expect(sealFinder, findsOneWidget);
 
-      // 2. Verify bounded avatar memory decode (cacheWidth: 80, cacheHeight: 80) in list
+      // 2. Scroll to ensure leaderboard list rows are built, then verify bounded avatars (40x40, cache 80x80)
+      await tester.ensureVisible(find.text('1950'));
+      await tester.pumpAndSettle();
+
       final avatarFinders = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
@@ -211,10 +214,10 @@ void main() {
       );
       expect(avatarFinders, findsNWidgets(2));
 
-      // 3. Verify rank numbers and competitor names
+      // 3. Verify rank numbers and competitor names (rendered in podium and leaderboard list)
       expect(find.text('Leaderboard & Rankings'), findsOneWidget);
-      expect(find.text('Hamza Iron'), findsOneWidget);
-      expect(find.text('Bilal Steel'), findsOneWidget);
+      expect(find.text('Hamza Iron'), findsAtLeastNWidgets(1));
+      expect(find.text('Bilal Steel'), findsAtLeastNWidgets(1));
       expect(find.text('1950'), findsOneWidget);
       expect(find.text('1880'), findsOneWidget);
 

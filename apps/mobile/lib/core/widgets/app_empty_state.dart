@@ -144,10 +144,6 @@ class _AppEmptyStateState extends State<AppEmptyState>
         widget.icon == Icons.forum_outlined) {
       return ArmSphereAssets.clipFallbackSparring;
     }
-    if (widget.icon == Icons.emoji_events_outlined ||
-        widget.icon == Icons.military_tech_outlined) {
-      return ArmSphereAssets.tournamentPoster;
-    }
     if (widget.icon == Icons.storefront_outlined ||
         widget.icon == Icons.location_on_outlined) {
       return ArmSphereAssets.bentoVenues;
@@ -179,10 +175,32 @@ class _AppEmptyStateState extends State<AppEmptyState>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    height: 158,
+                Container(
+                  height: 162,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xD9101520),
+                        Color(0xF0070A11),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0x26FFFFFF),
+                      width: 1.0,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x99000000),
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(17),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -198,21 +216,21 @@ class _AppEmptyStateState extends State<AppEmptyState>
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                              stops: [0.0, 0.65, 1.0],
+                              stops: [0.0, 0.55, 0.72, 1.0],
                               colors: [
                                 Color(0xF2070A11),
+                                Color(0xD9070A11),
                                 Color(0x00070A11),
                                 Color(0x00070A11),
                               ],
                             ),
                           ),
                         ),
-                        // Constrain STANDBY badge, heading, and subtitle strictly to left 54% width
-                        // so white text never overlaps the bright white chalked forearms on the right.
+                        // Constrain STANDBY badge, heading, and subtitle strictly to left 55% safe zone
                         Align(
                           alignment: Alignment.centerLeft,
                           child: FractionallySizedBox(
-                            widthFactor: 0.54,
+                            widthFactor: 0.55,
                             alignment: Alignment.centerLeft,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),

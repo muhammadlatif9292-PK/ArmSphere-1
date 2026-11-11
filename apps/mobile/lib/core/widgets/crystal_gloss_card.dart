@@ -33,7 +33,7 @@ class CrystalGlossCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16.0),
     this.margin,
-    this.borderRadius = 16.0,
+    this.borderRadius = 18.0,
     this.borderColor,
     this.borderWidth = 1.0,
     this.surfaceOpacity = 0.04,
@@ -46,23 +46,22 @@ class CrystalGlossCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveRadius = BorderRadius.circular(borderRadius);
-    final effectiveBorderColor =
-        borderColor ?? Colors.white.withValues(alpha: 0.22);
+    final effectiveBorderColor = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x26FFFFFF);
 
     Widget cardBody = Container(
       margin: margin,
       decoration: BoxDecoration(
-        // Pillar 2: Rich Smoked Dark Glass (~82% dark obsidian + subtle titanium sheen)
-        color: const Color(0xD10B101C),
+        // Pillar 2: Unified Smoked-Obsidian Crystal Glass
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xD9141E30),
-            Color(0xD10D1320),
-            Color(0xCC080C15),
+            Color(0xD9101520),
+            Color(0xF0070A11),
           ],
-          stops: [0.0, 0.45, 1.0],
         ),
         borderRadius: effectiveRadius,
         // Pillar 3: Specular Light-Catching Border
@@ -72,18 +71,11 @@ class CrystalGlossCard extends StatelessWidget {
         ),
         // Pillar 4: Levitating Y-Axis Drop Shadow
         boxShadow: customShadows ??
-            [
+            const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.45),
-                offset: const Offset(0, 10),
-                blurRadius: 24,
-                spreadRadius: -2,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                offset: const Offset(0, 4),
-                blurRadius: 8,
-                spreadRadius: 0,
+                color: Color(0x99000000),
+                offset: Offset(0, 10),
+                blurRadius: 20,
               ),
             ],
       ),

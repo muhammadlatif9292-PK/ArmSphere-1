@@ -57,22 +57,39 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(
-          domain: ArmSphereStageDomain.community,
-        ),
+        scrolledUnderElevation: 0,
         titleSpacing: 14,
         title: Row(
           children: [
-            const ArmSphereImage(
-              assetPath: ArmSphereAssets.sealFed,
-              width: 18,
-              height: 18,
-              semanticLabel: 'Official Federation Community Arena',
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0x99070A11),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: const Color(0x4DD4AF37),
+                  width: 1.0,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Image.asset(
+                  ArmSphereAssets.teamCrestDefault,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  semanticLabel: 'Official Federation Community Arena',
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,17 +138,17 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ],
         ),
         actions: [
-          // Mode Toggle: Stream vs Vertical Clips
-          IconButton(
-            visualDensity: VisualDensity.compact,
+          // Mode Toggle: Stream vs Vertical Clips inside 38x38 circular smoked-crystal pill
+          CrystalIconPillButton(
             tooltip: _isVerticalClipsMode ? 'Stream Card View' : 'Vertical Clip Reels',
-            icon: Icon(
-              _isVerticalClipsMode ? Icons.view_agenda_outlined : Icons.play_lesson_outlined,
-              color: _isVerticalClipsMode ? AppTheme.goldPrimary : AppTheme.textSecondary,
-              size: 21,
-            ),
+            icon: _isVerticalClipsMode
+                ? Icons.view_agenda_outlined
+                : Icons.play_lesson_outlined,
+            iconColor: _isVerticalClipsMode
+                ? AppTheme.goldPrimary
+                : AppTheme.textPure,
+            iconSize: 18,
             onPressed: () {
-              HapticFeedback.selectionClick();
               setState(() {
                 _isVerticalClipsMode = !_isVerticalClipsMode;
               });
@@ -151,13 +168,8 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: Container(
+          child: SizedBox(
             height: 48,
-            decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppTheme.borderSubtle, width: 1),
-              ),
-            ),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -178,12 +190,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppTheme.goldPrimary.withValues(alpha: 0.16)
-                          : Colors.white.withValues(alpha: 0.04),
+                          : const Color(0x99070A11),
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: Border.all(
                         color: isSelected
                             ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-                            : Colors.white.withValues(alpha: 0.22),
+                            : const Color(0x26FFFFFF),
                         width: isSelected ? 1.2 : 1.0,
                       ),
                     ),
@@ -211,20 +223,22 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
           ),
-          feedAsync.when(
-            loading: () => ListView.separated(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                140,
-                16,
-                MainShellScope.bottomClearance(context, additionalPadding: 44),
+          SafeArea(
+            bottom: false,
+            child: feedAsync.when(
+              loading: () => ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  140,
+                  16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
+                itemCount: 4,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (_, __) => const RepaintBoundary(
+                  child: SkeletonPlaceholder(height: 280),
+                ),
               ),
-              itemCount: 4,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (_, __) => const RepaintBoundary(
-                child: SkeletonPlaceholder(height: 280),
-              ),
-            ),
             error: (error, _) => AppErrorView(
               error: error,
               title: 'Could not load feed',
@@ -305,6 +319,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                 ),
               );
             },
+            ),
           ),
         ],
       ),
@@ -340,20 +355,7 @@ class _TacticalFeedCard extends StatelessWidget {
 
     return RepaintBoundary(
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
-          gradient: AppTheme.machinedTitaniumGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 24,
-              spreadRadius: -2,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+        decoration: AppTheme.machinedTitaniumDecoration(radius: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

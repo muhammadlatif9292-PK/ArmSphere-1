@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../constants/asset_paths.dart';
 import '../security/admin_permissions.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
@@ -270,6 +271,31 @@ class _MainShellScreenState extends State<MainShellScreen> {
   bool? _lastObservedAdminMode;
   bool _isSteppingBackTab = false;
   bool _isRedirectingPushedTab = false;
+  bool _didPrecacheStageAssets = false;
+
+  static const List<String> _kStartupPrecacheAssets = <String>[
+    ArmSphereAssets.stageArena,
+    ArmSphereAssets.stageDiscover,
+    ArmSphereAssets.stageChampionshipBelts,
+    ArmSphereAssets.stageCommunity,
+    ArmSphereAssets.stagePassportVault,
+    ArmSphereAssets.stageReferee,
+    ArmSphereAssets.stageAdminGovernance,
+    ArmSphereAssets.stageAuthWalkout,
+    ArmSphereAssets.athleteDashboardHero,
+    ArmSphereAssets.arenaRadarCard,
+    ArmSphereAssets.cardStandbyTable,
+    ArmSphereAssets.avatarNeutralDark,
+    ArmSphereAssets.teamCrestDefault,
+  ];
+
+  void _precachePrimaryAssets() {
+    if (_didPrecacheStageAssets) return;
+    _didPrecacheStageAssets = true;
+    for (final path in _kStartupPrecacheAssets) {
+      precacheImage(AssetImage(path), context).catchError((_) {});
+    }
+  }
 
   bool _resolveIsAdminMode(BuildContext context) {
     if (widget.isAdminModeOverride != null) {
@@ -298,6 +324,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _precachePrimaryAssets();
     final router = GoRouter.maybeOf(context);
     final newInfoProvider = router?.routeInformationProvider;
     final newDelegate = router?.routerDelegate;
@@ -666,40 +693,22 @@ class _MainShellScreenState extends State<MainShellScreen> {
                             key: const ValueKey('crystal_floating_nav_dock'),
                             height: kFloatingDockHeight,
                             decoration: BoxDecoration(
-                              color: const Color(0xB8080C15),
-                              borderRadius: BorderRadius.circular(26),
+                              color: const Color(0xE6070A11),
+                              borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: const Color(0x42FFFFFF),
+                                color: const Color(0x29FFFFFF),
                                 width: 1.0,
                               ),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                stops: [0.0, 0.45, 1.0],
-                                colors: [
-                                  Color(0x28FFFFFF),
-                                  Color(0x10FFFFFF),
-                                  Color(0x06FFFFFF),
-                                ],
-                              ),
-                              boxShadow: [
+                              boxShadow: const [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.56),
-                                  offset: const Offset(0, 10),
-                                  blurRadius: 28,
-                                  spreadRadius: -2,
-                                ),
-                                BoxShadow(
-                                  color:
-                                      AppTheme.crimson.withValues(alpha: 0.08),
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 18,
-                                  spreadRadius: -4,
+                                  color: Color(0xCC000000),
+                                  blurRadius: 24,
+                                  offset: Offset(0, 8),
                                 ),
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(27),
                               child: BackdropFilter(
                                 filter:
                                     ImageFilter.blur(sigmaX: 28, sigmaY: 28),
@@ -888,16 +897,19 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 curve: Curves.easeOutCubic,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                // Border is always present (transparent when idle) so the
-                // label does not shift 2dp down when a tab becomes active.
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? activeColor.withValues(alpha: 0.16)
-                      : Colors.transparent,
+                  gradient: isSelected
+                      ? const LinearGradient(
+                          colors: [
+                            Color(0x4DE23B3B),
+                            Color(0x1AE23B3B),
+                          ],
+                        )
+                      : null,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? activeColor.withValues(alpha: 0.45)
+                        ? const Color(0x80E23B3B)
                         : Colors.transparent,
                     width: 1.0,
                   ),
@@ -914,13 +926,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 child: Icon(
                   isSelected ? activeIcon : icon,
                   size: 22,
-                  color: isSelected ? activeColor : AppTheme.textMuted,
+                  color: isSelected
+                      ? const Color(0xFFFFFFFF)
+                      : const Color(0xFF94A3B8),
                 ),
               ),
               const SizedBox(height: 3),
-              // Fixed-height dock: cap label scaling at 1.3x and shrink a
-              // too-wide label to fit rather than showing "Communi...".
-              // The tab's semantics label/tooltip carry the full name.
               MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.3,
                 child: FittedBox(
@@ -930,15 +941,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 10.5,
-                      // SpaceGrotesk bundles w400-w700 only; w800 would be synthesized.
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w600,
                       letterSpacing: 0.3,
-                      // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
-                      // active label uses titanium white; crimson stays on icon + pill.
                       color: isSelected
-                          ? AppTheme.textPrimary
-                          : AppTheme.textMuted,
+                          ? const Color(0xFFFFFFFF)
+                          : const Color(0xFF94A3B8),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

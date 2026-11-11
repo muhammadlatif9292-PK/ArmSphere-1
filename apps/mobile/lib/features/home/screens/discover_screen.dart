@@ -19,6 +19,7 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
+import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 
 /// Federation Discovery Segment Categories
@@ -377,6 +378,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         titleSpacing: AppTheme.space16,
         title: Row(
@@ -430,32 +432,26 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
           ],
         ),
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(
-          domain: ArmSphereStageDomain.discover,
-        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.tune_rounded,
-              color: AppTheme.textSecondary,
-              size: 20,
-            ),
+          CrystalIconPillButton(
+            icon: Icons.tune_rounded,
+            iconColor: AppTheme.textPure,
+            iconSize: 18,
             tooltip: 'Directory Navigator',
             onPressed: () => _showDirectoryQuickDrawer(context),
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: AppTheme.textSecondary,
-              size: 21,
-            ),
+          CrystalIconPillButton(
+            icon: Icons.notifications_outlined,
+            iconColor: AppTheme.textPure,
+            iconSize: 19,
             tooltip: 'Notifications',
             onPressed: () => context.push('/notifications'),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -526,15 +522,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       padding: const EdgeInsets.fromLTRB(AppTheme.space16, 6, AppTheme.space16, 6),
       child: Container(
         height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          border: Border.all(
-            color: _activeQuery.isNotEmpty
-                ? AppTheme.primaryAccent
-                : Colors.white.withValues(alpha: 0.22),
-            width: 1.0,
-          ),
+        decoration: AppTheme.recessedObsidianWellDecoration(
+          radius: 14,
+          borderColor: _activeQuery.isNotEmpty
+              ? AppTheme.primaryAccent
+              : const Color(0x14FFFFFF),
         ),
         child: TextField(
           controller: _searchController,
@@ -1739,6 +1731,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
                 return ElevatedActionCard(
                   margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                  backgroundColor: const Color(0xCC05070C),
+                  borderRadius: 14,
+                  borderColor: idx == 0
+                      ? const Color(0x4DD4AF37)
+                      : const Color(0x14FFFFFF),
+                  boxShadow: const [],
                   onTap: () {
                     if (athleteId != null) {
                       context.push('/athlete/$athleteId');
@@ -1759,7 +1757,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         decoration: BoxDecoration(
                           color: idx < 3
                               ? AppTheme.secondaryAccent.withValues(alpha: 0.16)
-                              : AppTheme.background,
+                              : const Color(0xCC05070C),
                           borderRadius:
                               BorderRadius.circular(AppTheme.radiusSmall),
                           border: Border.all(
@@ -1984,23 +1982,7 @@ class _FramedDirectorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.smokedCardSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.22),
-          width: 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.48),
-            offset: const Offset(0, 10),
-            blurRadius: 24,
-            spreadRadius: -2,
-          ),
-        ],
-      ),
+      decoration: AppTheme.machinedTitaniumDecoration(radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2008,12 +1990,12 @@ class _FramedDirectorySection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(14, 12, 12, 11),
             decoration: const BoxDecoration(
-              color: AppTheme.smokedCardSurfaceElevated,
+              color: Color(0x6605070C),
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(AppTheme.radiusLarge - 1),
+                top: Radius.circular(17),
               ),
               border: Border(
-                bottom: BorderSide(color: AppTheme.border, width: 1.0),
+                bottom: BorderSide(color: Color(0x14FFFFFF), width: 1.0),
               ),
             ),
             child: Row(
@@ -2141,14 +2123,7 @@ class _CompactEmptyBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A0E17),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.20),
-          width: 1.0,
-        ),
-      ),
+      decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
@@ -53,10 +54,12 @@ class _TournamentOperatorDashboardScreenState
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
+        scrolledUnderElevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,11 +100,11 @@ class _TournamentOperatorDashboardScreenState
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.goldPrimary),
+          CrystalIconPillButton(
+            icon: Icons.refresh,
+            iconColor: AppTheme.goldPrimary,
             tooltip: 'Refresh Arena Status',
             onPressed: () {
-              HapticFeedback.lightImpact();
               ref.invalidate(tournamentProvider);
               if (_selectedTournamentId != null) {
                 ref.invalidate(eventDetailProvider(_selectedTournamentId!));
@@ -111,88 +114,130 @@ class _TournamentOperatorDashboardScreenState
               }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.shield_outlined, color: AppTheme.textSecondary),
+          CrystalIconPillButton(
+            icon: Icons.shield_outlined,
+            iconColor: AppTheme.textSecondary,
             tooltip: 'Account Roles',
             onPressed: () {
-              HapticFeedback.lightImpact();
               context.push('/settings/roles');
             },
           ),
           if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
+          const SizedBox(width: 6),
         ],
       ),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
-          tournamentsAsync.when(
-        loading: () => ListView.separated(
-          padding: EdgeInsets.fromLTRB(
-            AppTheme.space16,
-            145,
-            AppTheme.space16,
-            MainShellScope.bottomClearance(context, additionalPadding: 44),
+          const CrystalStageBackdrop(
+            domain: ArmSphereStageDomain.arena,
+            customImageOverride: ArmSphereAssets.stageArena,
           ),
-          itemCount: 4,
-          separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space16),
-          itemBuilder: (_, __) => const SkeletonPlaceholder(
-            height: 120,
-            borderRadius: AppTheme.radiusMedium,
-          ),
-        ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
-          title: 'Could not load tournaments',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(tournamentProvider),
-        ),
-        data: (tournaments) {
-          if (tournaments.isEmpty) {
-            return AppEmptyState(
-              icon: Icons.table_chart_outlined,
-              title: 'No Tournaments Available',
-              subtitle:
-                  'There are no active or sanctioned tournaments assigned for operations yet.',
-              ctaLabel: 'Browse Competitions',
-              onCtaTap: () => context.push('/tournaments'),
-            );
-          }
-
-          final effectiveId = (_selectedTournamentId != null &&
-                  tournaments.any((t) => t['id']?.toString() == _selectedTournamentId))
-              ? _selectedTournamentId!
-              : tournaments.first['id'].toString();
-
-          final currentTournament = tournaments.firstWhere(
-            (t) => t['id']?.toString() == effectiveId,
-            orElse: () => tournaments.first,
-          );
-
-          final tablesAsync = ref.watch(eventMatchTablesProvider(effectiveId));
-          final registrationsAsync = ref.watch(eventRegistrationsProvider(effectiveId));
-          final bracketsAsync = ref.watch(eventBracketsProvider(effectiveId));
-
-          return RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async {
-              HapticFeedback.mediumImpact();
-              ref.invalidate(tournamentProvider);
-              ref.invalidate(eventDetailProvider(effectiveId));
-              ref.invalidate(eventMatchTablesProvider(effectiveId));
-              ref.invalidate(eventRegistrationsProvider(effectiveId));
-              ref.invalidate(eventBracketsProvider(effectiveId));
-            },
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.space16,
-                145,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: 44),
+          SafeArea(
+            bottom: false,
+            child: tournamentsAsync.when(
+              loading: () => ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  155,
+                  AppTheme.space16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
+                itemCount: 4,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppTheme.space16),
+                itemBuilder: (_, __) => const SkeletonPlaceholder(
+                  height: 120,
+                  borderRadius: AppTheme.radiusMedium,
+                ),
               ),
-              children: [
+              error: (error, _) => ListView(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  155,
+                  AppTheme.space16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
+                children: [
+                  AppEmptyState(
+                    icon: Icons.error_outline,
+                    title: 'Could not load tournaments',
+                    subtitle: error.toString(),
+                    bannerAsset: ArmSphereAssets.cardStandbyTable,
+                    bannerAlignment: Alignment.centerRight,
+                    ctaLabel: 'Retry',
+                    onCtaTap: () => ref.invalidate(tournamentProvider),
+                  ),
+                ],
+              ),
+              data: (tournaments) {
+                if (tournaments.isEmpty) {
+                  return ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      155,
+                      AppTheme.space16,
+                      MainShellScope.bottomClearance(
+                        context,
+                        additionalPadding: 44,
+                      ),
+                    ),
+                    children: [
+                      AppEmptyState(
+                        icon: Icons.table_chart_outlined,
+                        title: 'No Tournaments Available',
+                        subtitle:
+                            'There are no active or sanctioned tournaments assigned for operations yet.',
+                        bannerAsset: ArmSphereAssets.cardStandbyTable,
+                        bannerAlignment: Alignment.centerRight,
+                        ctaLabel: 'Browse Competitions',
+                        onCtaTap: () => context.push('/tournaments'),
+                      ),
+                    ],
+                  );
+                }
+
+                final effectiveId = (_selectedTournamentId != null &&
+                        tournaments.any(
+                          (t) => t['id']?.toString() == _selectedTournamentId,
+                        ))
+                    ? _selectedTournamentId!
+                    : tournaments.first['id'].toString();
+
+                final currentTournament = tournaments.firstWhere(
+                  (t) => t['id']?.toString() == effectiveId,
+                  orElse: () => tournaments.first,
+                );
+
+                final tablesAsync =
+                    ref.watch(eventMatchTablesProvider(effectiveId));
+                final registrationsAsync =
+                    ref.watch(eventRegistrationsProvider(effectiveId));
+                final bracketsAsync =
+                    ref.watch(eventBracketsProvider(effectiveId));
+
+                return RefreshIndicator(
+                  color: AppTheme.goldPrimary,
+                  backgroundColor: AppTheme.cardSurface,
+                  onRefresh: () async {
+                    HapticFeedback.mediumImpact();
+                    ref.invalidate(tournamentProvider);
+                    ref.invalidate(eventDetailProvider(effectiveId));
+                    ref.invalidate(eventMatchTablesProvider(effectiveId));
+                    ref.invalidate(eventRegistrationsProvider(effectiveId));
+                    ref.invalidate(eventBracketsProvider(effectiveId));
+                  },
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      155,
+                      AppTheme.space16,
+                      MainShellScope.bottomClearance(
+                        context,
+                        additionalPadding: 44,
+                      ),
+                    ),
+                    children: [
                 // 1. Tournament Selector & War Room Banner
                 if (tournaments.length > 1) ...[
                   Row(
@@ -683,7 +728,8 @@ class _TournamentOperatorDashboardScreenState
             ),
           );
         },
-      ),
+            ),
+          ),
         ],
       ),
     );
