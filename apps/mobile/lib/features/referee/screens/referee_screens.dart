@@ -7,6 +7,7 @@ import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -264,6 +265,11 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     final myUserId = auth.userProfile?['id']?.toString();
     final eventsAsync = ref.watch(tournamentProvider);
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       extendBodyBehindAppBar: true,
@@ -284,14 +290,18 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              AppTheme.space16,
-              150,
-              AppTheme.space16,
-              MainShellScope.bottomClearance(context, additionalPadding: 44),
-            ),
-            child: Column(
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  100,
+                  AppTheme.space16,
+                  28,
+                ),
+                child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
@@ -422,6 +432,8 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
           ],
         ),
       ),
+            ),
+          ),
         ],
       ),
     );

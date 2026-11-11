@@ -94,39 +94,39 @@ abstract final class ArmSphereAssets {
 
   /// 12. Athlete H2H Comparison & Tale of the Tape (Alignment.topCenter)
   static const String stageHeadToHead9x16 =
-      'assets/images/heroes/m1_stage_head_to_head_9x16.webp';
+      'assets/images/heroes/m1_stage_rankings_9x16.webp';
 
   /// 13. Tournament Awards & Ceremony Screen (stageTopFocal)
   static const String stageChampionshipBelts9x16 =
-      'assets/images/heroes/m1_stage_championship_belts_9x16.webp';
+      'assets/images/heroes/m1_stage_referee_9x16.webp';
 
   /// 14. Global Leaderboards & Tier Ladders (stageTopFocal)
   static const String stageRankings9x16 =
-      'assets/images/heroes/m1_stage_rankings_9x16.webp';
+      'assets/images/heroes/m1_stage_admin_governance_9x16.webp';
 
   /// 15. Referee Match Controller & Official Scorepad (walkoutFocal)
   static const String stageReferee9x16 =
-      'assets/images/heroes/m1_stage_referee_9x16.webp';
+      'assets/images/heroes/m1_stage_teams_9x16.webp';
 
   /// 16. Federation Governance, Dispute Logs & Roster (stageTopFocal)
   static const String stageAdminGovernance9x16 =
-      'assets/images/heroes/m1_stage_admin_governance_9x16.webp';
+      'assets/images/heroes/m1_stage_venues_9x16.webp';
 
   /// 17. Team Directory & Club Roster Hub (stageTopFocal)
   static const String stageTeams9x16 =
-      'assets/images/heroes/m1_stage_teams_9x16.webp';
+      'assets/images/heroes/m1_stage_discover_9x16.webp';
 
   /// 18. Venue & Table Locator (stageTopFocal)
   static const String stageVenues9x16 =
-      'assets/images/heroes/m1_stage_venues_9x16.webp';
+      'assets/images/heroes/m1_stage_passport_vault_9x16.webp';
 
   /// 19. Discover Screen Custom Scroll Canvas (stageTopFocal)
   static const String stageDiscover9x16 =
-      'assets/images/heroes/m1_stage_discover_9x16.webp';
+      'assets/images/heroes/m1_stage_auth_walkout_9x16.webp';
 
   /// 20. Athlete Passport & Biometric Security Screen (stageTopFocal)
   static const String stagePassportVault9x16 =
-      'assets/images/heroes/m1_stage_passport_vault_9x16.webp';
+      'assets/images/heroes/m1_stage_community_9x16.webp';
 
   /// 21. Login, Register, MFA & Password Screens (walkoutFocal)
   static const String stageAuthWalkout9x16 =
@@ -177,19 +177,19 @@ abstract final class ArmSphereAssets {
     bentoPickupSparring,
     bentoCommunityFeed,
     bentoEloRankings,
-    stageArena9x16,
-    stageTrainingLab9x16,
-    stageHeadToHead9x16,
-    stageChampionshipBelts9x16,
-    stageRankings9x16,
-    stageReferee9x16,
-    stageAdminGovernance9x16,
-    stageTeams9x16,
-    stageVenues9x16,
-    stageDiscover9x16,
-    stagePassportVault9x16,
-    stageAuthWalkout9x16,
-    stageCommunity9x16,
+    'assets/images/heroes/m1_stage_arena_9x16.webp',
+    'assets/images/heroes/m1_stage_training_lab_9x16.webp',
+    'assets/images/heroes/m1_stage_head_to_head_9x16.webp',
+    'assets/images/heroes/m1_stage_championship_belts_9x16.webp',
+    'assets/images/heroes/m1_stage_rankings_9x16.webp',
+    'assets/images/heroes/m1_stage_referee_9x16.webp',
+    'assets/images/heroes/m1_stage_admin_governance_9x16.webp',
+    'assets/images/heroes/m1_stage_teams_9x16.webp',
+    'assets/images/heroes/m1_stage_venues_9x16.webp',
+    'assets/images/heroes/m1_stage_discover_9x16.webp',
+    'assets/images/heroes/m1_stage_passport_vault_9x16.webp',
+    'assets/images/heroes/m1_stage_auth_walkout_9x16.webp',
+    'assets/images/heroes/m1_stage_community_9x16.webp',
     cardStandbyTable,
     cardLiveBroadcast,
     clipFallbackSparring,

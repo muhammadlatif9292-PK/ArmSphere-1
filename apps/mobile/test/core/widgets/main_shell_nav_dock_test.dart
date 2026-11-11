@@ -100,7 +100,7 @@ void main() {
       expect(xs, orderedEquals([...xs]..sort()));
     });
 
-    testWidgets('every tab uses the crimson accent when active, never gold',
+    testWidgets('every tab uses gold icon, crimson border, and white label when active',
         (tester) async {
       await _pumpShell(tester);
 
@@ -110,8 +110,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final icon = _iconFor(tester, tab.activeIcon);
-        expect(icon.color, const Color(0xFFFFFFFF), reason: '${tab.label} icon');
-        expect(icon.color, isNot(AppTheme.goldPrimary));
+        expect(icon.color, const Color(0xFFD4AF37), reason: '${tab.label} icon');
 
         final pill = tester.widget<AnimatedContainer>(
           find.ancestor(
@@ -133,18 +132,18 @@ void main() {
         final topBorder = (deco.border! as Border).top;
         expect(
           topBorder.color,
-          const Color(0x80E23B3B),
+          const Color(0xFFE23B3B),
           reason: '${tab.label} pill border',
         );
         expect(
           topBorder.width,
-          1.2,
+          1.3,
           reason: '${tab.label} pill border width',
         );
       }
     });
 
-    testWidgets('active label is white, inactive labels are brushed slate',
+    testWidgets('active label is white, inactive labels are crisp ice-slate',
         (tester) async {
       await _pumpShell(tester);
       await tester.tap(find.text('Events'));
@@ -156,9 +155,9 @@ void main() {
           expect(style.color, const Color(0xFFFFFFFF));
           expect(style.fontWeight, FontWeight.w700);
         } else {
-          expect(style.color, const Color(0xFFCBD5E1));
+          expect(style.color, const Color(0xFFF1F5F9));
           expect(style.fontWeight, FontWeight.w600);
-          expect(_iconFor(tester, tab.icon).color, const Color(0xFFCBD5E1));
+          expect(_iconFor(tester, tab.icon).color, const Color(0xFFF1F5F9));
         }
         expect(style.fontFamily, AppTheme.fontDisplay);
       }

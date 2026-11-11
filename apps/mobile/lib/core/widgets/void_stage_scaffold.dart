@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import '../constants/asset_paths.dart';
 import '../theme/app_theme.dart';
 import 'armsphere_image.dart';
+import 'crystal_slash_painter.dart';
+import 'main_shell_screen.dart';
 import 'tactical_command_sheet.dart';
 import 'tactile_press_wrapper.dart';
 
@@ -26,6 +28,7 @@ class VoidStageScaffold extends StatelessWidget {
   final bool? resizeToAvoidBottomInset;
   final List<double> scrimStops;
   final List<Color>? scrimColors;
+  final bool enableVaporDissolve;
 
   const VoidStageScaffold({
     super.key,
@@ -43,6 +46,7 @@ class VoidStageScaffold extends StatelessWidget {
     this.resizeToAvoidBottomInset = false,
     this.scrimStops = const [0.0, 0.45, 0.78, 1.0],
     this.scrimColors,
+    this.enableVaporDissolve = true,
   });
 
   @override
@@ -69,6 +73,11 @@ class VoidStageScaffold extends StatelessWidget {
         physicalSize.width > 0 ? physicalSize.width : 400.0;
     final double targetHeight =
         physicalSize.height > 0 ? physicalSize.height : 840.0;
+
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -124,7 +133,11 @@ class VoidStageScaffold extends StatelessWidget {
           SafeArea(
             top: appBar != null ? extendBodyBehindAppBar : true,
             bottom: false,
-            child: effectiveBody,
+            child: CrystalVaporDissolve(
+              enabled: enableVaporDissolve,
+              bottomMargin: bottomDockGap,
+              child: effectiveBody,
+            ),
           ),
         ],
       ),

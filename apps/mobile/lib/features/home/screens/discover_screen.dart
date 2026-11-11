@@ -1,6 +1,5 @@
 // lib/features/home/screens/discover_screen.dart
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +18,7 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
-import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 
 /// Federation Discovery Segment Categories
@@ -346,141 +345,84 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final venuesAsync = ref.watch(venueListProvider);
     final athleteSearchResults = ref.watch(athleteSearchProvider);
 
-    final bottomClearance = MainShellScope.isInsideShell(context)
-        ? MainShellScope.bottomClearance(context, additionalPadding: 36)
-        : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36;
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        titleSpacing: AppTheme.space16,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: const Color(0x80E23B3B),
-                  width: 1.0,
-                ),
-              ),
-              child: const Icon(
-                Icons.explore_outlined,
-                color: AppTheme.primaryAccent,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'ArmSphere Discover',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: AppTheme.textPrimary,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  Text(
-                    'Sanctioned Federation Hub',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontBody,
-                      fontSize: 10.5,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          CrystalIconPillButton(
-            icon: Icons.tune_rounded,
-            iconColor: AppTheme.textPure,
-            iconSize: 18,
-            tooltip: 'Directory Navigator',
-            onPressed: () => _showDirectoryQuickDrawer(context),
-          ),
-          CrystalIconPillButton(
-            icon: Icons.notifications_outlined,
-            iconColor: AppTheme.textPure,
-            iconSize: 19,
-            tooltip: 'Notifications',
-            onPressed: () => context.push('/notifications'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
           ),
-          RefreshIndicator(
-            color: AppTheme.primaryAccent,
-            backgroundColor: AppTheme.elevatedSurface,
-            onRefresh: _handleRefresh,
-            child: CustomScrollView(
-              key: const ValueKey<String>('discover_scroll_view'),
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                // 110px open stage header so the 3D Titanium Compass Globe in
-                // m1_stage_discover_9x16.webp shines clearly at the top
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 110),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // Fixed Unified Top Search & Action Bar (48px height, padded 12px from top, 16px horizontal)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: _buildTopSearchAndActionBar(context),
                 ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _StickySearchHeaderDelegate(
-                    searchBar: _buildSearchBar(),
-                    filterChips: _buildFilterChips(),
-                    height: 108.0,
-                  ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppTheme.space16,
-                    AppTheme.space16,
-                    AppTheme.space16,
-                    bottomClearance,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: _activeQuery.isNotEmpty
-                        ? _buildSearchResults(
-                            context,
-                            athleteSearchResults,
-                            tournamentsAsync,
-                            venuesAsync,
-                          )
-                        : discoverAsync.when(
-                            data: (feed) => _buildFeedContent(
-                              context,
-                              feed,
-                              tournamentsAsync,
-                              venuesAsync,
+                // Scrollable Body wrapped in 3D Vapor Dissolve & bounded 10px above Floating Bottom Nav Pill
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.primaryAccent,
+                      backgroundColor: AppTheme.elevatedSurface,
+                      onRefresh: _handleRefresh,
+                      child: CustomScrollView(
+                        key: const ValueKey<String>('discover_scroll_view'),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: _buildFilterChips(),
                             ),
-                            loading: () => _buildLoadingState(),
-                            error: (err, stack) =>
-                                _buildErrorState(err, _handleRefresh),
                           ),
+                          // 90px open 3D stage showcase window above Federation Hub
+                          if (_activeQuery.isEmpty)
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 90),
+                            ),
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppTheme.space16,
+                              AppTheme.space12,
+                              AppTheme.space16,
+                              28.0,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: _activeQuery.isNotEmpty
+                                  ? _buildSearchResults(
+                                      context,
+                                      athleteSearchResults,
+                                      tournamentsAsync,
+                                      venuesAsync,
+                                    )
+                                  : discoverAsync.when(
+                                      data: (feed) => _buildFeedContent(
+                                        context,
+                                        feed,
+                                        tournamentsAsync,
+                                        venuesAsync,
+                                      ),
+                                      loading: () => _buildLoadingState(),
+                                      error: (err, stack) =>
+                                          _buildErrorState(err, _handleRefresh),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -491,40 +433,153 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppTheme.space16, 6, AppTheme.space16, 6),
-      child: Container(
-        height: 44,
-        decoration: AppTheme.recessedObsidianWellDecoration(
-          radius: 14,
-          borderColor: _activeQuery.isNotEmpty
-              ? const Color(0x80E23B3B)
-              : const Color(0x38FFFFFF),
-        ),
-        child: TextField(
-          controller: _searchController,
-          style: const TextStyle(
-            fontFamily: AppTheme.fontBody,
-            color: AppTheme.textPrimary,
-            fontSize: 13,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Search athletes, tournaments, clubs...',
-            hintStyle: const TextStyle(
-              fontFamily: AppTheme.fontBody,
-              color: AppTheme.textMuted,
-              fontSize: 12.5,
+  Widget _buildTopSearchAndActionBar(BuildContext context) {
+    final BorderRadius searchRadius = BorderRadius.circular(24);
+    return SizedBox(
+      height: 48,
+      child: Row(
+        children: [
+          // 1. Expanded Crystal Search Bar (height: 48px, radius: 24, diagonal crimson/obsidian slash inside)
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: searchRadius,
+                border: Border.all(
+                  color: _activeQuery.isNotEmpty
+                      ? const Color(0x99E23B3B)
+                      : const Color(0x45FFFFFF),
+                  width: 1.0,
+                ),
+                boxShadow: const [],
+              ),
+              child: CrystalSlashWrapper.sequentialRow(
+                rowIndex: 0,
+                intensity: 0.85,
+                borderRadius: searchRadius,
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    shadows: AppTheme.crystalTextShadows,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search athletes, tournaments, clubs...',
+                    hintStyle: const TextStyle(
+                      fontFamily: AppTheme.fontBody,
+                      color: Color(0xFFCBD5E1),
+                      fontSize: 12.5,
+                      shadows: AppTheme.crystalTextShadows,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFFF1F5F9),
+                      size: 19,
+                    ),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: AppTheme.textSecondary,
+                              size: 16,
+                            ),
+                            onPressed: _clearSearch,
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                ),
+              ),
             ),
-            prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary, size: 18),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close, color: AppTheme.textMuted, size: 16),
-                    onPressed: _clearSearch,
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          const SizedBox(width: 8),
+          // 2. Circular Filter Icon Button (42x42)
+          _buildTopCircleActionButton(
+            icon: Icons.tune_rounded,
+            tooltip: 'Directory Navigator',
+            onTap: () => _showDirectoryQuickDrawer(context),
+          ),
+          const SizedBox(width: 8),
+          // 3. Circular Notification Bell Icon Button (42x42, with crimson notification dot)
+          _buildTopCircleActionButton(
+            icon: Icons.notifications_outlined,
+            tooltip: 'Notifications',
+            showCrimsonDot: true,
+            onTap: () => context.push('/notifications'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopCircleActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    bool showCrimsonDot = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: TactilePressWrapper(
+        onTap: onTap,
+        semanticLabel: tooltip,
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0x45FFFFFF),
+              width: 1.0,
+            ),
+            boxShadow: const [],
+          ),
+          child: CrystalSlashWrapper.sequentialRow(
+            rowIndex: showCrimsonDot ? 2 : 1,
+            intensity: 0.75,
+            borderRadius: BorderRadius.circular(21),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 19,
+                  color: const Color(0xFFF1F5F9),
+                  shadows: const [
+                    Shadow(
+                      color: Color(0xFF000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                if (showCrimsonDot)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      width: 7.5,
+                      height: 7.5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE23B3B),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF05070C),
+                          width: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -542,41 +597,60 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         itemBuilder: (context, index) {
           final category = DiscoverCategory.values[index];
           final isSelected = _selectedCategory == category;
+          final chipRadius = BorderRadius.circular(AppTheme.radiusSmall);
 
           return InkWell(
             onTap: () => _selectCategory(category),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            borderRadius: chipRadius,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 5.0),
               decoration: BoxDecoration(
                 color: Colors.transparent,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                borderRadius: chipRadius,
                 border: Border.all(
-                  color: isSelected ? const Color(0x80E23B3B) : const Color(0x2EFFFFFF),
+                  color: isSelected
+                      ? const Color(0xFFE23B3B)
+                      : const Color(0x38FFFFFF),
                   width: isSelected ? 1.2 : 1.0,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    category.icon,
-                    size: 13,
-                    color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
+              child: CrystalSlashWrapper.sequentialRow(
+                rowIndex: index,
+                intensity: isSelected ? 0.95 : 0.55,
+                borderRadius: chipRadius,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSelected ? 11.8 : 12.0,
+                    vertical: isSelected ? 4.8 : 5.0,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    category.label,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      fontSize: 11,
-                      color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
-                      letterSpacing: 0.3,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        category.icon,
+                        size: 13,
+                        color: isSelected
+                            ? const Color(0xFFD4AF37)
+                            : const Color(0xFFF1F5F9),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        category.label,
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w600,
+                          fontSize: 11,
+                          color: isSelected
+                              ? AppTheme.textPure
+                              : const Color(0xFFF1F5F9),
+                          letterSpacing: 0.3,
+                          shadows: AppTheme.crystalTextShadows,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           );
@@ -741,6 +815,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return ElevatedActionCard(
       margin: const EdgeInsets.only(bottom: 8),
+      slashVariant: const CrystalSlashVariant.sequentialRow(0),
       onTap: () {
         if (id != null) context.push('/athlete/$id');
       },
@@ -1406,6 +1481,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return ElevatedActionCard(
       margin: const EdgeInsets.only(bottom: 8),
+      slashVariant: const CrystalSlashVariant.sequentialRow(1),
       onTap: () {
         if (id != null) {
           context.push('/tournaments/$id');
@@ -1514,6 +1590,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return ElevatedActionCard(
       margin: const EdgeInsets.only(bottom: 8),
+      slashVariant: const CrystalSlashVariant.sequentialRow(2),
       onTap: () {
         if (id != null) {
           context.push('/venues/$id');
@@ -1625,6 +1702,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
                   backgroundColor: Colors.transparent,
                   borderRadius: 14,
+                  slashVariant: CrystalSlashVariant.sequentialRow(idx),
                   borderColor: idx == 0
                       ? const Color(0x73D4AF37)
                       : const Color(0x38FFFFFF),
@@ -1992,79 +2070,87 @@ class _CompactEmptyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final BorderRadius bannerRadius = BorderRadius.circular(14);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(
-                color: accentColor.withValues(alpha: 0.45),
-                width: 1.0,
-              ),
-            ),
-            child: Icon(icon, color: accentColor, size: 16),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: onAction,
-              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: CrystalSlashWrapper.sequentialRow(
+        rowIndex: title.hashCode % 4,
+        borderRadius: bannerRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  borderRadius: BorderRadius.circular(9),
                   border: Border.all(
-                    color: accentColor.withValues(alpha: 0.55),
+                    color: accentColor.withValues(alpha: 0.45),
                     width: 1.0,
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      actionLabel!,
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                        color: accentColor,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 9,
-                      color: accentColor,
-                    ),
-                  ],
+                child: Icon(icon, color: accentColor, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: AppTheme.textPrimary,
+                    shadows: AppTheme.crystalTextShadows,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ],
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: onAction,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      border: Border.all(
+                        color: accentColor.withValues(alpha: 0.55),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          actionLabel!,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                            color: accentColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 9,
+                          color: accentColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -2091,58 +2177,4 @@ class _HubItem {
     required this.bgAsset,
     this.bgAlignment = Alignment.center,
   });
-}
-
-/// Sticky search bar + filter chips delegate with bottom border & scroll shadow
-class _StickySearchHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget searchBar;
-  final Widget filterChips;
-  final double height;
-
-  _StickySearchHeaderDelegate({
-    required this.searchBar,
-    required this.filterChips,
-    this.height = 108.0,
-  });
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final isPinnedActive = overlapsContent || shrinkOffset > 0;
-    return SizedBox.expand(
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: isPinnedActive ? 14.0 : 0.0,
-            sigmaY: isPinnedActive ? 14.0 : 0.0,
-          ),
-          child: DecoratedBox(
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                searchBar,
-                filterChips,
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _StickySearchHeaderDelegate oldDelegate) {
-    return oldDelegate.height != height ||
-        oldDelegate.searchBar != searchBar ||
-        oldDelegate.filterChips != filterChips;
-  }
 }

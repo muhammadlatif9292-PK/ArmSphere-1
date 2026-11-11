@@ -20,6 +20,7 @@ import '../../../core/providers/rankings_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 
@@ -43,6 +44,7 @@ String _fmtDate(dynamic iso) {
   if (d == null) return '';
   return '${d.day} ${_months[d.month] ?? ''} ${d.year}';
 }
+
 
 /// Athlete Dashboard Screen (Canary 2 Specification)
 ///
@@ -146,8 +148,14 @@ class _AthleteDashboardScreenState
       visualPrefs = const VisualPreferencesState();
     }
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -155,41 +163,44 @@ class _AthleteDashboardScreenState
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
           ),
-          RefreshIndicator(
-            color: AppTheme.crimson,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async {
-              HapticFeedback.mediumImpact();
-              ref.invalidate(athleteProfileProvider);
-              ref.invalidate(liveMatchesProvider);
-              ref.invalidate(tournamentProvider);
-              ref.invalidate(rankingsProvider);
-              if (myProfileId != null) {
-                ref.invalidate(trainingLogProvider(myProfileId));
-                ref.invalidate(trainingLogPRsProvider(myProfileId));
-              }
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ========================================================
-                  // TOP MINIMAL BRAND HEADER (TITANIUM LUXE)
-                  // ========================================================
-                  _buildBrandHeader(context, profile, displayName),
-                  const SizedBox(height: AppTheme.space16),
-
-              // ========================================================
-              // SANCTIONED ARENA RADAR (ENVIRONMENTAL ANCHOR)
-              // ========================================================
-              _buildSanctionedArenaRadar(context),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // ========================================================
+                // TOP MINIMAL BRAND HEADER (FIXED ABOVE VAPOR SCROLL VIEWPORT)
+                // ========================================================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: _buildBrandHeader(context, profile, displayName),
+                ),
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.crimson,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async {
+                        HapticFeedback.mediumImpact();
+                        ref.invalidate(athleteProfileProvider);
+                        ref.invalidate(liveMatchesProvider);
+                        ref.invalidate(tournamentProvider);
+                        ref.invalidate(rankingsProvider);
+                        if (myProfileId != null) {
+                          ref.invalidate(trainingLogProvider(myProfileId));
+                          ref.invalidate(trainingLogPRsProvider(myProfileId));
+                        }
+                      },
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ========================================================
+                            // SANCTIONED ARENA RADAR (ENVIRONMENTAL ANCHOR)
+                            // ========================================================
+                            _buildSanctionedArenaRadar(context),
               const SizedBox(height: AppTheme.space16),
 
               // ========================================================
@@ -359,10 +370,15 @@ class _AthleteDashboardScreenState
                 },
                 orElse: () => const SizedBox.shrink(),
               ),
-            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
         ],
       ),
     );
@@ -1447,16 +1463,19 @@ class _AthleteDashboardScreenState
           Expanded(
             flex: 6,
             child: Container(
-              padding: const EdgeInsets.all(14),
               decoration: AppTheme.machinedTitaniumDecoration(
                 radius: 18,
                 borderColor: AppTheme.borderTitanium,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'DYNAMIC ELO',
+              child: CrystalSlashWrapper.crossedCard(
+                borderRadius: BorderRadius.circular(18),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'DYNAMIC ELO',
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 8.5,
@@ -1630,6 +1649,8 @@ class _AthleteDashboardScreenState
                   ],
                 ],
               ),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1646,15 +1667,18 @@ class _AthleteDashboardScreenState
               child: GestureDetector(
                 onTap: onRecoveryTap,
                 child: Container(
-                  padding: const EdgeInsets.all(14),
                   decoration: AppTheme.machinedTitaniumDecoration(
                     radius: 18,
                     borderColor: AppTheme.borderTitanium,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                  child: CrystalSlashWrapper.crossedCard(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
@@ -1788,6 +1812,8 @@ class _AthleteDashboardScreenState
                         ),
                       ),
                     ],
+                  ),
+                    ),
                   ),
                 ),
               ),
@@ -2440,88 +2466,97 @@ class _AthleteDashboardScreenState
     required String? myProfileId,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: AppTheme.machinedTitaniumDecoration(
         radius: 18,
         borderColor: AppTheme.borderTitanium,
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Specular top rim: same lighting language as the banner and fight card.
-          const Positioned(
-            top: -16,
-            left: -3,
-            right: -3,
-            height: 1,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0x00DAE2EB),
-                    Color(0x40DAE2EB),
-                    Color(0x00DAE2EB),
-                  ],
-                  stops: [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: CrystalSlashWrapper.crossedCard(
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              // Deck Navigation Tabs (adaptive: single row when it fits, wraps otherwise)
-              IntelligenceDeckTabBar(
-                labels: const ['Recent Bouts', 'Tournaments', 'Global Top 3'],
-                selectedIndex: _intelDeckTab,
-                onSelected: (index) {
-                  HapticFeedback.selectionClick();
-                  setState(() => _intelDeckTab = index);
-                },
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-              const SizedBox(height: 8),
-
-              // Deck Tab Content
-              if (_intelDeckTab == 0) ...[
-                matchesAsync.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: CircularProgressIndicator(
-                          color: AppTheme.crimson, strokeWidth: 2),
+              // Specular top rim: same lighting language as the banner and fight card.
+              const Positioned(
+                top: -16,
+                left: -3,
+                right: -3,
+                height: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x00DAE2EB),
+                        Color(0x40DAE2EB),
+                        Color(0x00DAE2EB),
+                      ],
+                      stops: [0.0, 0.5, 1.0],
                     ),
                   ),
-                  error: (err, _) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Could not load bouts: $err',
-                        style: const TextStyle(
-                            color: AppTheme.textMuted, fontSize: 11)),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Deck Navigation Tabs (adaptive: single row when it fits, wraps otherwise)
+                  IntelligenceDeckTabBar(
+                    labels: const ['Recent Bouts', 'Tournaments', 'Global Top 3'],
+                    selectedIndex: _intelDeckTab,
+                    onSelected: (index) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _intelDeckTab = index);
+                    },
                   ),
-                  data: (matches) {
-                    if (matches.isEmpty) {
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 18, horizontal: 14),
-                        decoration:
-                            AppTheme.recessedObsidianWellDecoration(radius: 14),
-                        child: Column(
-                          children: const [
-                            Icon(Icons.sports_kabaddi_outlined,
-                                color: AppTheme.textMuted, size: 24),
-                            SizedBox(height: 6),
-                            Text('No verified bouts yet',
-                                style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 12)),
-                          ],
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                  const SizedBox(height: 8),
+
+                  // Deck Tab Content
+                  if (_intelDeckTab == 0) ...[
+                    matchesAsync.when(
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(
+                              color: AppTheme.crimson, strokeWidth: 2),
                         ),
-                      );
-                    }
+                      ),
+                      error: (err, _) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text('Could not load bouts: $err',
+                            style: const TextStyle(
+                                color: AppTheme.textMuted, fontSize: 11)),
+                      ),
+                      data: (matches) {
+                        if (matches.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            decoration:
+                                AppTheme.recessedObsidianWellDecoration(radius: 14),
+                            child: CrystalSlashWrapper.sequentialRow(
+                              rowIndex: 0,
+                              borderRadius: BorderRadius.circular(14),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 18, horizontal: 14),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.sports_kabaddi_outlined,
+                                        color: AppTheme.textMuted, size: 24),
+                                    SizedBox(height: 6),
+                                    Text('No verified bouts yet',
+                                        style: TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.textSecondary,
+                                            fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
                     final recent = matches.take(3).toList();
                     return Column(
                       children: [
@@ -2643,6 +2678,8 @@ class _AthleteDashboardScreenState
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -3077,6 +3114,7 @@ class _AthleteDashboardScreenState
       children: [
         if (isOfficial)
           _ShortcutButton(
+            rowIndex: 0,
             icon: Icons.sports,
             label: 'Referee Console',
             color: AppTheme.cyan,
@@ -3086,6 +3124,7 @@ class _AthleteDashboardScreenState
             },
           ),
         _ShortcutButton(
+          rowIndex: 1,
           icon: Icons.sports_kabaddi,
           label: 'Scorepad Entry',
           color: AppTheme.crimson,
@@ -3095,6 +3134,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
+          rowIndex: 2,
           icon: Icons.emoji_events_outlined,
           label: 'Tournaments',
           color: AppTheme.goldPrimary,
@@ -3104,6 +3144,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
+          rowIndex: 3,
           icon: Icons.fitness_center,
           label: 'Training Log',
           color: AppTheme.emerald,
@@ -3117,6 +3158,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
+          rowIndex: 4,
           icon: Icons.group_outlined,
           label: 'Clubs & Teams',
           color: AppTheme.cyan,
@@ -3126,6 +3168,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
+          rowIndex: 5,
           icon: Icons.inbox_outlined,
           label: 'Messages',
           color: AppTheme.textSecondary,
@@ -3317,12 +3360,14 @@ class IntelligenceDeckTabBar extends StatelessWidget {
 
 /// Helper Shortcut Button with ElevatedActionCard styling & Tactile Feedback
 class _ShortcutButton extends StatelessWidget {
+  final int rowIndex;
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
 
   const _ShortcutButton({
+    this.rowIndex = 0,
     required this.icon,
     required this.label,
     required this.color,
@@ -3333,6 +3378,7 @@ class _ShortcutButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedActionCard(
       onTap: onTap,
+      slashVariant: CrystalSlashVariant.sequentialRow(rowIndex),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
@@ -3677,21 +3723,26 @@ class AthleteProfileScreen extends ConsumerWidget {
           ),
           SafeArea(
             bottom: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                8,
-                16,
-                MainShellScope.isInsideShell(context)
-                    ? MainShellScope.bottomClearance(context,
-                        additionalPadding: 44)
-                    : kFloatingDockTotalHeight +
-                        MediaQuery.paddingOf(context).bottom +
-                        44,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+            child: CrystalVaporDissolve(
+              bottomMargin: MainShellScope.isInsideShell(context)
+                  ? (kFloatingDockTotalHeight +
+                      MediaQuery.paddingOf(context).bottom +
+                      10.0)
+                  : 0.0,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  MainShellScope.isInsideShell(context)
+                      ? 28.0
+                      : kFloatingDockTotalHeight +
+                          MediaQuery.paddingOf(context).bottom +
+                          44,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
             // 1. Top Vault Hero Header (height: 290px) aligned with the 3D Titanium Vault Ring
             // on m1_stage_passport_vault_9x16.webp (zero rectangular box, zero neon-cyan ring)
             ConstrainedBox(
@@ -3918,84 +3969,95 @@ class AthleteProfileScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             ElevatedActionCard(
               padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  _WorkspaceTile(
-                    icon: Icons.fitness_center,
-                    iconColor: AppTheme.goldPrimary,
-                    title: 'Training Log & PRs',
-                    subtitle: null,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push(myProfileId != null
-                          ? '/athlete/$myProfileId/training-log'
-                          : '/settings');
-                    },
-                  ),
-                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                  _WorkspaceTile(
-                    icon: Icons.military_tech_outlined,
-                    iconColor: AppTheme.goldPrimary,
-                    title: 'Athletic Honors',
-                    subtitle: null,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/athlete/achievements');
-                    },
-                  ),
-                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                  _WorkspaceTile(
-                    icon: Icons.groups_outlined,
-                    iconColor: AppTheme.cyan,
-                    title: 'Teams & Clubs',
-                    subtitle: null,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/teams');
-                    },
-                  ),
-                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                  _WorkspaceTile(
-                    icon: Icons.emoji_events_outlined,
-                    iconColor: AppTheme.goldPrimary,
-                    title: 'Championship Titles',
-                    subtitle: null,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/championship/titles');
-                    },
-                  ),
-                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                  _WorkspaceTile(
-                    icon: Icons.settings_outlined,
-                    iconColor: AppTheme.textSecondary,
-                    title: 'Account & Settings',
-                    subtitle: null,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/settings');
-                    },
-                  ),
-                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                  _WorkspaceTile(
-                    icon: Icons.logout,
-                    iconColor: AppTheme.error,
-                    title: 'Log Out',
-                    subtitle: null,
-                    isDestructive: true,
-                    onTap: () async {
-                      HapticFeedback.heavyImpact();
-                      await ref.read(authProvider.notifier).logout();
-                      if (context.mounted) {
-                        context.go('/login');
-                      }
-                    },
-                  ),
-                ],
+              enableSlashes: false,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(17),
+                child: Column(
+                  children: [
+                    _WorkspaceTile(
+                      rowIndex: 0,
+                      icon: Icons.fitness_center,
+                      iconColor: AppTheme.goldPrimary,
+                      title: 'Training Log & PRs',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push(myProfileId != null
+                            ? '/athlete/$myProfileId/training-log'
+                            : '/settings');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 1,
+                      icon: Icons.military_tech_outlined,
+                      iconColor: AppTheme.goldPrimary,
+                      title: 'Athletic Honors',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/athlete/achievements');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 2,
+                      icon: Icons.groups_outlined,
+                      iconColor: AppTheme.cyan,
+                      title: 'Teams & Clubs',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/teams');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 3,
+                      icon: Icons.emoji_events_outlined,
+                      iconColor: AppTheme.goldPrimary,
+                      title: 'Championship Titles',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/championship/titles');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 4,
+                      icon: Icons.settings_outlined,
+                      iconColor: AppTheme.textSecondary,
+                      title: 'Account & Settings',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/settings');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 5,
+                      icon: Icons.logout,
+                      iconColor: AppTheme.error,
+                      title: 'Log Out',
+                      subtitle: null,
+                      isDestructive: true,
+                      onTap: () async {
+                        HapticFeedback.heavyImpact();
+                        await ref.read(authProvider.notifier).logout();
+                        if (context.mounted) {
+                          context.go('/login');
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -4797,6 +4859,7 @@ class _SpecItem extends StatelessWidget {
 }
 
 class _WorkspaceTile extends StatelessWidget {
+  final int rowIndex;
   final IconData icon;
   final Color iconColor;
   final String title;
@@ -4805,6 +4868,7 @@ class _WorkspaceTile extends StatelessWidget {
   final bool isDestructive;
 
   const _WorkspaceTile({
+    this.rowIndex = 0,
     required this.icon,
     required this.iconColor,
     required this.title,
@@ -4815,60 +4879,65 @@ class _WorkspaceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TactilePressWrapper(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDestructive
-                      ? const Color(0x80E23B3B)
-                      : const Color(0x38FFFFFF),
-                  width: 1.0,
+    return CrystalSlashWrapper.sequentialRow(
+      rowIndex: rowIndex,
+      borderRadius: BorderRadius.zero,
+      child: TactilePressWrapper(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDestructive
+                        ? const Color(0x80E23B3B)
+                        : const Color(0x38FFFFFF),
+                    width: 1.0,
+                  ),
+                ),
+                child: Icon(icon, size: 20, color: iconColor),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color:
+                            isDestructive ? AppTheme.error : AppTheme.textPrimary,
+                        shadows: AppTheme.crystalTextShadows,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(
+                            fontSize: 12, color: AppTheme.textMuted),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              child: Icon(icon, size: 20, color: iconColor),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color:
-                          isDestructive ? AppTheme.error : AppTheme.textPrimary,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: const TextStyle(
-                          fontSize: 12, color: AppTheme.textMuted),
-                    ),
-                  ],
-                ],
+              Icon(
+                Icons.chevron_right,
+                color: isDestructive
+                    ? AppTheme.error.withValues(alpha: 0.6)
+                    : AppTheme.textMuted,
+                size: 20,
               ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: isDestructive
-                  ? AppTheme.error.withValues(alpha: 0.6)
-                  : AppTheme.textMuted,
-              size: 20,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

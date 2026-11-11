@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
 /// Configures biometric unlock with zero dead-end device compatibility.
@@ -11,7 +12,12 @@ import '../../../core/widgets/crystal_toast.dart';
 /// - [BiometricCapability.notEnrolled]: hardware supported, but user has not enrolled biometrics.
 /// - [BiometricCapability.available]: hardware and credentials ready; allows toggle with verification.
 class BiometricSettingsTile extends ConsumerWidget {
-  const BiometricSettingsTile({super.key});
+  final int rowIndex;
+
+  const BiometricSettingsTile({
+    super.key,
+    this.rowIndex = 1,
+  });
 
   void _showNotEnrolledDialog(BuildContext context) {
     showDialog(
@@ -44,7 +50,7 @@ class BiometricSettingsTile extends ConsumerWidget {
     final capabilityAsync = ref.watch(biometricCapabilityProvider);
     final enabledAsync = ref.watch(biometricEnabledProvider);
 
-    return capabilityAsync.when(
+    final Widget tileContent = capabilityAsync.when(
       loading: () => const ListTile(
         leading: Icon(Icons.fingerprint),
         title: Text('Biometric Unlock'),
@@ -59,7 +65,6 @@ class BiometricSettingsTile extends ConsumerWidget {
         title: Text('Biometric Unlock'),
       ),
       data: (capability) {
-        final isAvailable = capability == BiometricCapability.available;
         final isNotEnrolled = capability == BiometricCapability.notEnrolled;
         final isUnsupported = capability == BiometricCapability.unsupported;
 
@@ -143,6 +148,12 @@ class BiometricSettingsTile extends ConsumerWidget {
                 ),
         );
       },
+    );
+
+    return CrystalSlashWrapper.sequentialRow(
+      rowIndex: rowIndex,
+      borderRadius: BorderRadius.zero,
+      child: tileContent,
     );
   }
 }

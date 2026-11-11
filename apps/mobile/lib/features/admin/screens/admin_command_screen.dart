@@ -8,6 +8,7 @@ import '../../../core/providers/admin_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -612,27 +613,37 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
       ),
     );
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => _refreshAll(),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                145,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 44),
-              ),
-              children: [
-                // 1. Authority Header
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: RefreshIndicator(
+                color: AppTheme.goldPrimary,
+                backgroundColor: AppTheme.cardSurface,
+                onRefresh: () async => _refreshAll(),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    115,
+                    16,
+                    28,
+                  ),
+                  children: [
+                    // 1. Authority Header
                 AdminAuthorityHeader(
                   title: 'Executive Command',
                   subtitle:
@@ -1076,6 +1087,8 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
               ],
             ),
           ),
+        ),
+      ),
         ],
       ),
     );

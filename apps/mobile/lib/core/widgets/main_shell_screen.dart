@@ -8,6 +8,7 @@ import '../constants/asset_paths.dart';
 import '../security/admin_permissions.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
+import '../widgets/crystal_slash_painter.dart';
 
 /// Dimensions and footprint metrics for the floating bottom navigation dock.
 const double kFloatingDockHeight = 64.0;
@@ -695,15 +696,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
                             key: const ValueKey('crystal_floating_nav_dock'),
                             height: kFloatingDockHeight,
                             decoration: BoxDecoration(
-                              color: Colors.transparent,
+                              color: const Color(0x2605070C),
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: const Color(0x38FFFFFF),
+                                color: const Color(0x4DFFFFFF),
                                 width: 1.0,
                               ),
                               boxShadow: const [],
                             ),
-                            child: ClipRRect(
+                            child: CrystalSlashWrapper.sequentialRow(
+                              rowIndex: effectiveTabIndex,
+                              intensity: 0.65,
                               borderRadius: BorderRadius.circular(27),
                               child: Row(
                                 mainAxisAlignment:
@@ -840,28 +843,43 @@ class _MainShellScreenState extends State<MainShellScreen> {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                // Keep padding + borderWidth constant so the 1.2px active rim never shifts label layout.
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSelected ? 11.8 : 12.0,
-                  vertical: isSelected ? 3.8 : 4.0,
-                ),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0x80E23B3B)
+                        ? const Color(0xFFE23B3B)
                         : Colors.transparent,
-                    width: isSelected ? 1.2 : 1.0,
+                    width: isSelected ? 1.3 : 1.0,
                   ),
                   boxShadow: const [],
                 ),
-                child: Icon(
-                  isSelected ? activeIcon : icon,
-                  size: 22,
-                  color: isSelected
-                      ? const Color(0xFFFFFFFF)
-                      : const Color(0xFFCBD5E1),
+                child: CrystalSlashWrapper.sequentialRow(
+                  rowIndex: index,
+                  intensity: 0.85,
+                  enabled: isSelected,
+                  borderRadius: BorderRadius.circular(11),
+                  child: Padding(
+                    // Keep padding + borderWidth constant so the 1.3px active rim never shifts label layout.
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isSelected ? 11.7 : 12.0,
+                      vertical: isSelected ? 3.7 : 4.0,
+                    ),
+                    child: Icon(
+                      isSelected ? activeIcon : icon,
+                      size: 22,
+                      color: isSelected
+                          ? const Color(0xFFD4AF37)
+                          : const Color(0xFFF1F5F9),
+                      shadows: const [
+                        Shadow(
+                          color: Color(0xFF000000),
+                          blurRadius: 6,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 3),
@@ -879,8 +897,14 @@ class _MainShellScreenState extends State<MainShellScreen> {
                       letterSpacing: 0.3,
                       color: isSelected
                           ? const Color(0xFFFFFFFF)
-                          : const Color(0xFFCBD5E1),
-                      shadows: AppTheme.crystalTextShadows,
+                          : const Color(0xFFF1F5F9),
+                      shadows: const [
+                        Shadow(
+                          color: Color(0xFF000000),
+                          blurRadius: 6,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
