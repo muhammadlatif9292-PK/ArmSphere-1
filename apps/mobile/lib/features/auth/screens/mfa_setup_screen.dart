@@ -72,17 +72,20 @@ class _MfaSetupScreenState extends ConsumerState<MfaSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: const CrystalBackButton(fallbackRoute: '/settings'),
         title: const Text('Setup Two-Factor Auth'),
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(AppTheme.space24),

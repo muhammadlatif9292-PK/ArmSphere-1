@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
@@ -53,10 +54,12 @@ class _TournamentOperatorDashboardScreenState
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
+        scrolledUnderElevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,11 +100,11 @@ class _TournamentOperatorDashboardScreenState
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.goldPrimary),
+          CrystalIconPillButton(
+            icon: Icons.refresh,
+            iconColor: AppTheme.goldPrimary,
             tooltip: 'Refresh Arena Status',
             onPressed: () {
-              HapticFeedback.lightImpact();
               ref.invalidate(tournamentProvider);
               if (_selectedTournamentId != null) {
                 ref.invalidate(eventDetailProvider(_selectedTournamentId!));
@@ -111,88 +114,130 @@ class _TournamentOperatorDashboardScreenState
               }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.shield_outlined, color: AppTheme.textSecondary),
+          CrystalIconPillButton(
+            icon: Icons.shield_outlined,
+            iconColor: AppTheme.textSecondary,
             tooltip: 'Account Roles',
             onPressed: () {
-              HapticFeedback.lightImpact();
               context.push('/settings/roles');
             },
           ),
           if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
+          const SizedBox(width: 6),
         ],
       ),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
-          tournamentsAsync.when(
-        loading: () => ListView.separated(
-          padding: EdgeInsets.fromLTRB(
-            AppTheme.space16,
-            AppTheme.space16,
-            AppTheme.space16,
-            MainShellScope.bottomClearance(context, additionalPadding: 16),
+          const CrystalStageBackdrop(
+            domain: ArmSphereStageDomain.arena,
+            customImageOverride: ArmSphereAssets.stageArena,
           ),
-          itemCount: 4,
-          separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space16),
-          itemBuilder: (_, __) => const SkeletonPlaceholder(
-            height: 120,
-            borderRadius: AppTheme.radiusMedium,
-          ),
-        ),
-        error: (error, _) => AppEmptyState(
-          icon: Icons.error_outline,
-          title: 'Could not load tournaments',
-          subtitle: error.toString(),
-          ctaLabel: 'Retry',
-          onCtaTap: () => ref.invalidate(tournamentProvider),
-        ),
-        data: (tournaments) {
-          if (tournaments.isEmpty) {
-            return AppEmptyState(
-              icon: Icons.table_chart_outlined,
-              title: 'No Tournaments Available',
-              subtitle:
-                  'There are no active or sanctioned tournaments assigned for operations yet.',
-              ctaLabel: 'Browse Competitions',
-              onCtaTap: () => context.push('/tournaments'),
-            );
-          }
-
-          final effectiveId = (_selectedTournamentId != null &&
-                  tournaments.any((t) => t['id']?.toString() == _selectedTournamentId))
-              ? _selectedTournamentId!
-              : tournaments.first['id'].toString();
-
-          final currentTournament = tournaments.firstWhere(
-            (t) => t['id']?.toString() == effectiveId,
-            orElse: () => tournaments.first,
-          );
-
-          final tablesAsync = ref.watch(eventMatchTablesProvider(effectiveId));
-          final registrationsAsync = ref.watch(eventRegistrationsProvider(effectiveId));
-          final bracketsAsync = ref.watch(eventBracketsProvider(effectiveId));
-
-          return RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async {
-              HapticFeedback.mediumImpact();
-              ref.invalidate(tournamentProvider);
-              ref.invalidate(eventDetailProvider(effectiveId));
-              ref.invalidate(eventMatchTablesProvider(effectiveId));
-              ref.invalidate(eventRegistrationsProvider(effectiveId));
-              ref.invalidate(eventBracketsProvider(effectiveId));
-            },
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                AppTheme.space16,
-                AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+          SafeArea(
+            bottom: false,
+            child: tournamentsAsync.when(
+              loading: () => ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  155,
+                  AppTheme.space16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
+                itemCount: 4,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppTheme.space16),
+                itemBuilder: (_, __) => const SkeletonPlaceholder(
+                  height: 120,
+                  borderRadius: AppTheme.radiusMedium,
+                ),
               ),
-              children: [
+              error: (error, _) => ListView(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  155,
+                  AppTheme.space16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
+                children: [
+                  AppEmptyState(
+                    icon: Icons.error_outline,
+                    title: 'Could not load tournaments',
+                    subtitle: error.toString(),
+                    bannerAsset: ArmSphereAssets.cardStandbyTable,
+                    bannerAlignment: Alignment.centerRight,
+                    ctaLabel: 'Retry',
+                    onCtaTap: () => ref.invalidate(tournamentProvider),
+                  ),
+                ],
+              ),
+              data: (tournaments) {
+                if (tournaments.isEmpty) {
+                  return ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      155,
+                      AppTheme.space16,
+                      MainShellScope.bottomClearance(
+                        context,
+                        additionalPadding: 44,
+                      ),
+                    ),
+                    children: [
+                      AppEmptyState(
+                        icon: Icons.table_chart_outlined,
+                        title: 'No Tournaments Available',
+                        subtitle:
+                            'There are no active or sanctioned tournaments assigned for operations yet.',
+                        bannerAsset: ArmSphereAssets.cardStandbyTable,
+                        bannerAlignment: Alignment.centerRight,
+                        ctaLabel: 'Browse Competitions',
+                        onCtaTap: () => context.push('/tournaments'),
+                      ),
+                    ],
+                  );
+                }
+
+                final effectiveId = (_selectedTournamentId != null &&
+                        tournaments.any(
+                          (t) => t['id']?.toString() == _selectedTournamentId,
+                        ))
+                    ? _selectedTournamentId!
+                    : tournaments.first['id'].toString();
+
+                final currentTournament = tournaments.firstWhere(
+                  (t) => t['id']?.toString() == effectiveId,
+                  orElse: () => tournaments.first,
+                );
+
+                final tablesAsync =
+                    ref.watch(eventMatchTablesProvider(effectiveId));
+                final registrationsAsync =
+                    ref.watch(eventRegistrationsProvider(effectiveId));
+                final bracketsAsync =
+                    ref.watch(eventBracketsProvider(effectiveId));
+
+                return RefreshIndicator(
+                  color: AppTheme.goldPrimary,
+                  backgroundColor: AppTheme.cardSurface,
+                  onRefresh: () async {
+                    HapticFeedback.mediumImpact();
+                    ref.invalidate(tournamentProvider);
+                    ref.invalidate(eventDetailProvider(effectiveId));
+                    ref.invalidate(eventMatchTablesProvider(effectiveId));
+                    ref.invalidate(eventRegistrationsProvider(effectiveId));
+                    ref.invalidate(eventBracketsProvider(effectiveId));
+                  },
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      155,
+                      AppTheme.space16,
+                      MainShellScope.bottomClearance(
+                        context,
+                        additionalPadding: 44,
+                      ),
+                    ),
+                    children: [
                 // 1. Tournament Selector & War Room Banner
                 if (tournaments.length > 1) ...[
                   Row(
@@ -210,9 +255,9 @@ class _TournamentOperatorDashboardScreenState
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.glassSurface,
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                          border: Border.all(color: AppTheme.borderTitanium),
+                          border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -260,8 +305,9 @@ class _TournamentOperatorDashboardScreenState
                           Container(
                             padding: const EdgeInsets.all(AppTheme.space10),
                             decoration: BoxDecoration(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                             ),
                             child: const Icon(
                               Icons.stadium_outlined,
@@ -329,7 +375,7 @@ class _TournamentOperatorDashboardScreenState
                         ],
                       ),
                       const SizedBox(height: AppTheme.space16),
-                      const Divider(height: 1, color: AppTheme.cardBorder),
+                      const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       const SizedBox(height: AppTheme.space16),
 
                       // Primary Launch Button
@@ -338,12 +384,15 @@ class _TournamentOperatorDashboardScreenState
                         height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.goldPrimary,
-                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: AppTheme.goldPrimary,
+                            shadowColor: Colors.transparent,
+                            surfaceTintColor: Colors.transparent,
+                            elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                              side: const BorderSide(color: Color(0x73D4AF37), width: 1.2),
                             ),
-                            elevation: 2,
                           ),
                           icon: const Icon(Icons.dashboard_customize_outlined, size: 20),
                           label: const Text(
@@ -399,10 +448,11 @@ class _TournamentOperatorDashboardScreenState
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0x6638BDF8), width: 1.0),
                                     ),
-                                    child: const Icon(Icons.table_restaurant_outlined, color: Colors.blueAccent, size: 22),
+                                    child: const Icon(Icons.table_restaurant_outlined, color: Color(0xFF38BDF8), size: 22),
                                   ),
                                   const SizedBox(width: AppTheme.space10),
                                   Column(
@@ -471,10 +521,11 @@ class _TournamentOperatorDashboardScreenState
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                                     ),
-                                    child: const Icon(Icons.scale_outlined, color: Colors.amber, size: 22),
+                                    child: const Icon(Icons.scale_outlined, color: AppTheme.goldPrimary, size: 22),
                                   ),
                                   const SizedBox(width: AppTheme.space10),
                                   Column(
@@ -498,8 +549,12 @@ class _TournamentOperatorDashboardScreenState
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.goldPrimary,
-                                  foregroundColor: Colors.black,
+                                  backgroundColor: Colors.transparent,
+                                  foregroundColor: AppTheme.goldPrimary,
+                                  shadowColor: Colors.transparent,
+                                  surfaceTintColor: Colors.transparent,
+                                  elevation: 0,
+                                  side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   minimumSize: const Size(0, 32),
                                 ),
@@ -683,30 +738,31 @@ class _TournamentOperatorDashboardScreenState
             ),
           );
         },
-      ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildMetricPill(String label, String value, StatusType type) {
-    Color bg;
+    Color borderColor;
     Color fg;
     switch (type) {
       case StatusType.success:
-        bg = AppTheme.success.withValues(alpha: 0.15);
+        borderColor = const Color(0x6610B981);
         fg = AppTheme.success;
         break;
       case StatusType.warning:
-        bg = Colors.amber.withValues(alpha: 0.15);
-        fg = Colors.amber;
+        borderColor = const Color(0x73D4AF37);
+        fg = AppTheme.goldPrimary;
         break;
       case StatusType.info:
-        bg = Colors.blue.withValues(alpha: 0.15);
-        fg = Colors.blueAccent;
+        borderColor = const Color(0x6638BDF8);
+        fg = const Color(0xFF38BDF8);
         break;
       default:
-        bg = AppTheme.glassSurface;
+        borderColor = const Color(0x38FFFFFF);
         fg = AppTheme.textSecondary;
     }
 
@@ -714,8 +770,9 @@ class _TournamentOperatorDashboardScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: bg,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          border: Border.all(color: borderColor, width: 1.0),
         ),
         child: Column(
           children: [
@@ -735,7 +792,7 @@ class _TournamentOperatorDashboardScreenState
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
-                color: fg.withValues(alpha: 0.8),
+                color: fg.withValues(alpha: 0.85),
                 letterSpacing: 0.3,
               ),
               maxLines: 1,

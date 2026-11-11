@@ -221,27 +221,15 @@ class _OlympicMedalBadgeState extends State<OlympicMedalBadge>
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xDD121622),
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: item.isRecent
-                ? AppTheme.goldPrimary.withValues(alpha: 0.5)
-                : AppTheme.goldPrimary.withValues(alpha: 0.15),
+                ? const Color(0x73D4AF37)
+                : const Color(0x38FFFFFF),
             width: 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-            if (item.isRecent)
-              BoxShadow(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                blurRadius: 14,
-                spreadRadius: -2,
-              ),
-          ],
+          boxShadow: const [],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -538,10 +526,10 @@ class _AchievementsSectionState extends State<AchievementsSection> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1B202D),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: const Color(0x26FFFFFF),
                     ),
                   ),
                   child: Text(
@@ -685,13 +673,18 @@ class _AchievementsSectionState extends State<AchievementsSection> {
         const SizedBox(height: 8),
 
         // Overall Completion Progress Bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: SizedBox(
-            height: 4,
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: overallRatio,
-              backgroundColor: const Color(0xFF1B202D),
+              backgroundColor: Colors.transparent,
               valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.goldPrimary),
             ),
           ),

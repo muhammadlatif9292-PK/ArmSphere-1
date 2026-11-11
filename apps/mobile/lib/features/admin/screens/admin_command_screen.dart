@@ -8,6 +8,7 @@ import '../../../core/providers/admin_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -612,27 +613,37 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
       ),
     );
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => _refreshAll(),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
-              ),
-              children: [
-                // 1. Authority Header
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: RefreshIndicator(
+                color: AppTheme.goldPrimary,
+                backgroundColor: AppTheme.cardSurface,
+                onRefresh: () async => _refreshAll(),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    115,
+                    16,
+                    28,
+                  ),
+                  children: [
+                    // 1. Authority Header
                 AdminAuthorityHeader(
                   title: 'Executive Command',
                   subtitle:
@@ -759,8 +770,12 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.success.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0x6610B981),
+                                width: 1.0,
+                              ),
                             ),
                             child: const Icon(
                               Icons.verified_rounded,
@@ -818,12 +833,11 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.goldPrimary
-                                      .withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: AppTheme.goldPrimary
-                                        .withValues(alpha: 0.4),
+                                    color: const Color(0x73D4AF37),
+                                    width: 1.0,
                                   ),
                                 ),
                                 child: Icon(
@@ -929,88 +943,83 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
+                        const SizedBox(height: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: CrystalActionButton(
-                                label: 'RUN DUE JOBS',
-                                icon: Icons.play_circle_outline_rounded,
-                                accentColor: AppTheme.info,
-                                onTap: () async {
-                                  HapticFeedback.mediumImpact();
-                                  try {
-                                    await ref
-                                        .read(adminRepositoryProvider)
-                                        .runScheduledJobs();
-                                    _refreshAll();
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: const Text(
-                                            'Scheduled federation jobs executed and telemetry refreshed.',
-                                          ),
-                                          backgroundColor: AppTheme.success,
+                            CrystalActionButton(
+                              label: 'RUN DUE SYNC',
+                              icon: Icons.play_circle_outline_rounded,
+                              fullWidth: true,
+                              accentColor: AppTheme.info,
+                              onTap: () async {
+                                HapticFeedback.mediumImpact();
+                                try {
+                                  await ref
+                                      .read(adminRepositoryProvider)
+                                      .runScheduledJobs();
+                                  _refreshAll();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: const Text(
+                                          'Scheduled federation jobs executed and telemetry refreshed.',
                                         ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: Text(
-                                            'Job dispatch queued: $e',
-                                          ),
-                                          backgroundColor: AppTheme.warning,
-                                        ),
-                                      );
-                                    }
+                                        backgroundColor: AppTheme.success,
+                                      ),
+                                    );
                                   }
-                                },
-                              ),
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: Text(
+                                          'Job dispatch queued: $e',
+                                        ),
+                                        backgroundColor: AppTheme.warning,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: CrystalActionButton(
-                                label: 'RECOMPUTE PRESTIGE',
-                                icon: Icons.workspace_premium_rounded,
-                                accentColor: AppTheme.goldPrimary,
-                                onTap: () async {
-                                  HapticFeedback.mediumImpact();
-                                  try {
-                                    await ref
-                                        .read(adminRepositoryProvider)
-                                        .recomputePrestigeScores();
-                                    await AdminCrossAppSync
-                                        .syncChampionshipMutations(ref);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: const Text(
-                                            'Pound-for-pound prestige ratings recalculated.',
-                                          ),
-                                          backgroundColor: AppTheme.success,
+                            const SizedBox(height: 10),
+                            CrystalActionButton(
+                              label: 'RECOMPUTE ELO',
+                              icon: Icons.workspace_premium_rounded,
+                              fullWidth: true,
+                              accentColor: AppTheme.goldPrimary,
+                              onTap: () async {
+                                HapticFeedback.mediumImpact();
+                                try {
+                                  await ref
+                                      .read(adminRepositoryProvider)
+                                      .recomputePrestigeScores();
+                                  await AdminCrossAppSync
+                                      .syncChampionshipMutations(ref);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: const Text(
+                                          'Pound-for-pound prestige ratings recalculated.',
                                         ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        CrystalSnackBar(
-                                          content: Text(
-                                            'Prestige recompute failed: $e',
-                                          ),
-                                          backgroundColor: AppTheme.warning,
-                                        ),
-                                      );
-                                    }
+                                        backgroundColor: AppTheme.success,
+                                      ),
+                                    );
                                   }
-                                },
-                              ),
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: Text(
+                                          'Prestige recompute failed: $e',
+                                        ),
+                                        backgroundColor: AppTheme.warning,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -1024,14 +1033,18 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 ElevatedActionCard(
                   onTap: () => context.push('/settings/roles'),
                   padding: const EdgeInsets.all(14),
-                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                  borderColor: const Color(0x73D4AF37),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(9),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0x73D4AF37),
+                            width: 1.0,
+                          ),
                         ),
                         child: const Icon(
                           Icons.swap_horiz_rounded,
@@ -1074,6 +1087,8 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
               ],
             ),
           ),
+        ),
+      ),
         ],
       ),
     );
@@ -1260,25 +1275,45 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: rightRatio,
-                            minHeight: 6,
-                            backgroundColor: const Color(0x18FFFFFF),
-                            color: AppTheme.crimson,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(0x26FFFFFF),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: rightRatio,
+                              minHeight: 6,
+                              backgroundColor: Colors.transparent,
+                              color: AppTheme.crimson,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: leftRatio,
-                            minHeight: 6,
-                            backgroundColor: const Color(0x18FFFFFF),
-                            color: AppTheme.goldPrimary,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: const Color(0x26FFFFFF),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: LinearProgressIndicator(
+                              value: leftRatio,
+                              minHeight: 6,
+                              backgroundColor: Colors.transparent,
+                              color: AppTheme.goldPrimary,
+                            ),
                           ),
                         ),
                       ),

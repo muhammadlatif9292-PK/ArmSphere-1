@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/pulse_indicator.dart';
-import 'floating_particles_painter.dart';
 class TournamentDetailsHeroWidget extends StatefulWidget {
   final Map<String, dynamic> tournament;
 
@@ -77,27 +78,31 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
             borderRadius: BorderRadius.circular(22),
             child: Stack(
               children: [
-                // 1. Moving Championship Gradients Background
+                // 1. 100% Full-HD Tournament Poster (`tournament_poster.webp`) with Bottom-Only Gradient (y: 0.55 -> 1.0)
                 Positioned.fill(
-                  child: Container(
+                  child: ArmSphereImage(
+                    imageUrl: t['imageUrl']?.toString(),
+                    assetPath: (t['imageUrl'] == null ||
+                            t['imageUrl'].toString().isEmpty)
+                        ? ArmSphereAssets.tournamentPoster
+                        : null,
+                    fallbackAsset: ArmSphereAssets.tournamentPoster,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0.0, -0.20),
+                    excludeFromSemantics: true,
+                  ),
+                ),
+                const Positioned.fill(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment(
-                          -1.0 + math.cos(gradientAngle) * 0.4,
-                          -1.0 + math.sin(gradientAngle) * 0.4,
-                        ),
-                        end: Alignment(
-                          1.0 - math.cos(gradientAngle) * 0.4,
-                          1.0 - math.sin(gradientAngle) * 0.4,
-                        ),
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.0, 0.55, 1.0],
                         colors: [
-                          const Color(0xFF0D1424),
-                          Color.lerp(
-                            const Color(0xFF131D33),
-                            const Color(0xFF1E2B47),
-                            animVal,
-                          )!,
-                          const Color(0xFF090D18),
+                          Color(0x00070A11),
+                          Color(0x00070A11),
+                          Color(0xF2070A11),
                         ],
                       ),
                     ),
@@ -140,13 +145,6 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                         ],
                       ),
                     ),
-                  ),
-                ),
-
-                // 3. Tiny Floating Particles Effect
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: FloatingParticlesPainter(progress: animVal),
                   ),
                 ),
 

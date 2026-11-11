@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
+import 'crystal_slash_painter.dart';
 import 'tactile_press_wrapper.dart';
 
-/// Invisible Interactive Floating Container
+/// Crystal-Transparent Wireframe Action Card with Diagonal Crimson/Titanium Slashes
 ///
-/// Renders zero visible background slab, border, or shadow so text, icons,
-/// avatars, and badges float directly over the 9:16 stage artwork while
-/// preserving full container bounds and tactile hit-target responsiveness.
+/// Renders a 100% transparent interior (`Colors.transparent`) with crisp boundary
+/// lines and diagonal crimson/obsidian-titanium stripes (`CrystalSlashWrapper`)
+/// clipped to [borderRadius].
 class ElevatedActionCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -20,13 +21,15 @@ class ElevatedActionCard extends StatelessWidget {
   final String? semanticLabel;
   final List<BoxShadow>? customShadow;
   final List<BoxShadow>? boxShadow;
+  final CrystalSlashVariant? slashVariant;
+  final bool enableSlashes;
 
   const ElevatedActionCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppTheme.space16),
     this.margin,
-    this.borderRadius = AppTheme.radiusLarge,
+    this.borderRadius = 18.0,
     this.borderColor,
     this.backgroundColor,
     this.gradient,
@@ -34,31 +37,51 @@ class ElevatedActionCard extends StatelessWidget {
     this.semanticLabel,
     this.customShadow,
     this.boxShadow,
+    this.slashVariant,
+    this.enableSlashes = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget cardContent = Container(
+    final effectiveBorderColor = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x38FFFFFF);
+
+    final radius = BorderRadius.circular(borderRadius);
+    final effectiveVariant =
+        slashVariant ?? const CrystalSlashVariant.crossedCard();
+
+    Widget innerContent = Padding(
       padding: padding,
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: AppTheme.crystalTextShadows,
+        ),
+        child: child,
+      ),
+    );
+
+    if (enableSlashes) {
+      innerContent = CrystalSlashWrapper(
+        variant: effectiveVariant,
+        borderRadius: radius,
+        child: innerContent,
+      );
+    }
+
+    Widget cardContent = Container(
       margin: margin,
-      decoration: gradient != null
-          ? BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(borderRadius),
-            )
-          : (backgroundColor != null
-              ? BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  border: borderColor != null
-                      ? Border.all(color: borderColor!)
-                      : null,
-                )
-              : null),
-      color: (gradient == null && backgroundColor == null)
-          ? Colors.transparent
-          : null,
-      child: child,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: radius,
+        border: Border.all(
+          color: effectiveBorderColor,
+          width: 1.0,
+        ),
+        boxShadow: const [],
+      ),
+      child: innerContent,
     );
 
     if (onTap != null) {

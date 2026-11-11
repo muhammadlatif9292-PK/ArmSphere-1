@@ -23,8 +23,11 @@ class BlockedUsersScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
         title: const Text('Blocked Users'),
@@ -82,7 +85,7 @@ class BlockedUsersScreen extends ConsumerWidget {
             return ListView.separated(
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
-                AppTheme.space16,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
                 AppTheme.space16,
                 MainShellScope.bottomClearance(context, additionalPadding: 24),
               ),
@@ -102,9 +105,14 @@ class BlockedUsersScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppTheme.error.withValues(alpha: 0.12),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0x80E23B3B), width: 1.0),
+                          ),
                           child: const Icon(Icons.block, size: 20, color: AppTheme.error),
                         ),
                         const SizedBox(width: AppTheme.space14),
@@ -163,8 +171,11 @@ class MyTicketsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
         title: const Text('My Tickets & Passes'),
@@ -222,7 +233,7 @@ class MyTicketsScreen extends ConsumerWidget {
             return ListView.separated(
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
-                AppTheme.space16,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
                 AppTheme.space16,
                 MainShellScope.bottomClearance(context, additionalPadding: 24),
               ),
@@ -254,11 +265,11 @@ class MyTicketsScreen extends ConsumerWidget {
                                 Container(
                                   padding: const EdgeInsets.all(AppTheme.space8),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: AppTheme.goldPrimary.withValues(alpha: 0.3),
-                                      width: 1,
+                                      color: const Color(0x73D4AF37),
+                                      width: 1.0,
                                     ),
                                   ),
                                   child: const Icon(Icons.confirmation_number, size: 20, color: AppTheme.goldPrimary),
@@ -303,7 +314,7 @@ class MyTicketsScreen extends ConsumerWidget {
                           ),
                         ],
                         const SizedBox(height: AppTheme.space14),
-                        const Divider(color: AppTheme.cardBorder, height: 1),
+                        const Divider(color: Color(0x22FFFFFF), height: 1, thickness: 1),
                         const SizedBox(height: AppTheme.space10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

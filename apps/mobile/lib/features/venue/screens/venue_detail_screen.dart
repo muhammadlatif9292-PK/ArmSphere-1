@@ -8,6 +8,7 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -29,7 +30,7 @@ class VenueDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         elevation: 0,
         leading: const CrystalBackButton(fallbackRoute: '/venues'),
@@ -44,6 +45,7 @@ class VenueDetailScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
@@ -86,7 +88,12 @@ class VenueDetailScreen extends ConsumerWidget {
             final isVerified = verificationStatus == 'VERIFIED';
 
             return ListView(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                155,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
               children: [
                 // 1. Venue Header Dossier Card
                 ElevatedActionCard(
@@ -101,10 +108,11 @@ class VenueDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.glassSurface,
-                              shape: BoxShape.circle,
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isVerified ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                                color: isVerified ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+                                width: 1.0,
                               ),
                             ),
                             child: Icon(
@@ -182,7 +190,7 @@ class VenueDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: AppTheme.space12),
-                        const Divider(height: 1, color: AppTheme.border),
+                        const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                         const SizedBox(height: AppTheme.space12),
                         Text(
                           contactInfo,
@@ -222,7 +230,7 @@ class VenueDetailScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: AppTheme.space12),
-                        const Divider(height: 1, color: AppTheme.border),
+                        const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                         const SizedBox(height: AppTheme.space12),
                         Text(
                           description,

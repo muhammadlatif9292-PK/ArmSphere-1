@@ -100,7 +100,7 @@ void main() {
       expect(xs, orderedEquals([...xs]..sort()));
     });
 
-    testWidgets('every tab uses the crimson accent when active, never gold',
+    testWidgets('every tab uses gold icon, crimson border, and white label when active',
         (tester) async {
       await _pumpShell(tester);
 
@@ -110,8 +110,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final icon = _iconFor(tester, tab.activeIcon);
-        expect(icon.color, AppTheme.crimson, reason: '${tab.label} icon');
-        expect(icon.color, isNot(AppTheme.goldPrimary));
+        expect(icon.color, const Color(0xFFD4AF37), reason: '${tab.label} icon');
 
         final pill = tester.widget<AnimatedContainer>(
           find.ancestor(
@@ -120,15 +119,31 @@ void main() {
           ),
         );
         final deco = pill.decoration! as BoxDecoration;
-        expect(deco.color, AppTheme.crimson.withValues(alpha: 0.16),
-            reason: '${tab.label} pill fill');
-        expect((deco.border! as Border).top.color,
-            AppTheme.crimson.withValues(alpha: 0.45),
-            reason: '${tab.label} pill border');
+        expect(
+          deco.color,
+          Colors.transparent,
+          reason: '${tab.label} pill fill',
+        );
+        expect(
+          deco.gradient,
+          isNull,
+          reason: '${tab.label} pill gradient',
+        );
+        final topBorder = (deco.border! as Border).top;
+        expect(
+          topBorder.color,
+          const Color(0xFFE23B3B),
+          reason: '${tab.label} pill border',
+        );
+        expect(
+          topBorder.width,
+          1.3,
+          reason: '${tab.label} pill border width',
+        );
       }
     });
 
-    testWidgets('active label is titanium white, inactive labels are muted',
+    testWidgets('active label is white, inactive labels are crisp ice-slate',
         (tester) async {
       await _pumpShell(tester);
       await tester.tap(find.text('Events'));
@@ -137,12 +152,12 @@ void main() {
       for (final tab in _tabs) {
         final style = _labelFor(tester, tab.label).style!;
         if (tab.label == 'Events') {
-          expect(style.color, AppTheme.textPrimary);
+          expect(style.color, const Color(0xFFFFFFFF));
           expect(style.fontWeight, FontWeight.w700);
         } else {
-          expect(style.color, AppTheme.textMuted);
+          expect(style.color, const Color(0xFFF1F5F9));
           expect(style.fontWeight, FontWeight.w600);
-          expect(_iconFor(tester, tab.icon).color, AppTheme.textMuted);
+          expect(_iconFor(tester, tab.icon).color, const Color(0xFFF1F5F9));
         }
         expect(style.fontFamily, AppTheme.fontDisplay);
       }

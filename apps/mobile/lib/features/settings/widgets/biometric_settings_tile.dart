@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
 /// Configures biometric unlock with zero dead-end device compatibility.
@@ -11,7 +12,12 @@ import '../../../core/widgets/crystal_toast.dart';
 /// - [BiometricCapability.notEnrolled]: hardware supported, but user has not enrolled biometrics.
 /// - [BiometricCapability.available]: hardware and credentials ready; allows toggle with verification.
 class BiometricSettingsTile extends ConsumerWidget {
-  const BiometricSettingsTile({super.key});
+  final int rowIndex;
+
+  const BiometricSettingsTile({
+    super.key,
+    this.rowIndex = 1,
+  });
 
   void _showNotEnrolledDialog(BuildContext context) {
     showDialog(
@@ -44,11 +50,10 @@ class BiometricSettingsTile extends ConsumerWidget {
     final capabilityAsync = ref.watch(biometricCapabilityProvider);
     final enabledAsync = ref.watch(biometricEnabledProvider);
 
-    return capabilityAsync.when(
+    final Widget tileContent = capabilityAsync.when(
       loading: () => const ListTile(
         leading: Icon(Icons.fingerprint),
         title: Text('Biometric Unlock'),
-        subtitle: Text('Checking hardware capability...'),
         trailing: SizedBox(
           width: 18,
           height: 18,
@@ -58,10 +63,8 @@ class BiometricSettingsTile extends ConsumerWidget {
       error: (_, __) => const ListTile(
         leading: Icon(Icons.fingerprint, color: AppTheme.textMuted),
         title: Text('Biometric Unlock'),
-        subtitle: Text('Hardware check unavailable'),
       ),
       data: (capability) {
-        final isAvailable = capability == BiometricCapability.available;
         final isNotEnrolled = capability == BiometricCapability.notEnrolled;
         final isUnsupported = capability == BiometricCapability.unsupported;
 
@@ -69,26 +72,16 @@ class BiometricSettingsTile extends ConsumerWidget {
         final isBusy = enabledAsync.isLoading;
 
         Widget iconWidget;
-        String subtitleText;
-        Color? subtitleColor;
 
         if (isUnsupported) {
           iconWidget = const Icon(Icons.fingerprint, color: AppTheme.textMuted);
-          subtitleText = 'Not supported on this device';
-          subtitleColor = AppTheme.textMuted;
         } else if (isNotEnrolled) {
           iconWidget = const Icon(Icons.fingerprint, color: Colors.orangeAccent);
-          subtitleText = 'Not enrolled — tap to configure';
-          subtitleColor = Colors.orangeAccent;
         } else {
           iconWidget = Icon(
             Icons.fingerprint,
             color: isEnabled ? AppTheme.goldPrimary : AppTheme.textMuted,
           );
-          subtitleText = isEnabled
-              ? 'Active — sign in quickly with Face ID / Fingerprint'
-              : 'Disabled — standard password entry required';
-          subtitleColor = isEnabled ? AppTheme.textSecondary : AppTheme.textMuted;
         }
 
         return ListTile(
@@ -97,24 +90,31 @@ class BiometricSettingsTile extends ConsumerWidget {
             'Biometric Unlock',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: Text(
-            subtitleText,
-            style: TextStyle(fontSize: 12, color: subtitleColor),
-          ),
           onTap: isNotEnrolled ? () => _showNotEnrolledDialog(context) : null,
           trailing: isUnsupported || isNotEnrolled
               ? Tooltip(
                   message: isNotEnrolled
                       ? 'Enroll biometrics in device settings'
                       : 'Biometric hardware unsupported',
-                  child: const Switch(
+                  child: Switch(
                     value: false,
                     onChanged: null,
+                    trackColor: WidgetStateProperty.all(Colors.transparent),
+                    trackOutlineColor: WidgetStateProperty.all(
+                      const Color(0x59FFFFFF),
+                    ),
                   ),
                 )
               : Switch(
                   value: isEnabled,
                   activeColor: AppTheme.goldPrimary,
+                  trackColor: WidgetStateProperty.all(Colors.transparent),
+                  trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const Color(0x73D4AF37);
+                    }
+                    return const Color(0x59FFFFFF);
+                  }),
                   onChanged: isBusy
                       ? null
                       : (newVal) async {
@@ -148,6 +148,12 @@ class BiometricSettingsTile extends ConsumerWidget {
                 ),
         );
       },
+    );
+
+    return CrystalSlashWrapper.sequentialRow(
+      rowIndex: rowIndex,
+      borderRadius: BorderRadius.zero,
+      child: tileContent,
     );
   }
 }

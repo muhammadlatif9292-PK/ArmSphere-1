@@ -42,7 +42,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         leading: const CrystalBackButton(),
@@ -70,6 +70,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.venues),
@@ -119,9 +120,9 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('informal_event_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                155,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               itemCount: events.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -149,9 +150,9 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6)),
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                           ),
                           child: const Center(
                             child: Icon(
@@ -175,8 +176,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
                                   fontSize: 16,
                                   color: AppTheme.textPrimary,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
                               const SizedBox(height: 6),
                               Row(

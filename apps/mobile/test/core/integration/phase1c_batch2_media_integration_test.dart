@@ -72,23 +72,15 @@ void main() {
       final avatarFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.width == 72 &&
-            widget.height == 72 &&
+            widget.width == 112 &&
+            widget.height == 112 &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
             widget.semanticLabel == 'Athlete Avatar for Sultan Khan',
       );
       expect(avatarFinder, findsOneWidget);
 
-      // 2. Verify division badge is rendered for Heavyweight competitor
-      final badgeFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.badgeHeavy &&
-            widget.width == 20 &&
-            widget.height == 20 &&
-            widget.semanticLabel == 'Division Category Badge',
-      );
-      expect(badgeFinder, findsOneWidget);
+      // 2. Verify centered vault role pill is rendered
+      expect(find.text('ATHLETE'), findsOneWidget);
 
       // 3. Verify competitor identity texts
       expect(find.text('Sultan Khan'), findsOneWidget);
@@ -207,7 +199,10 @@ void main() {
       );
       expect(sealFinder, findsOneWidget);
 
-      // 2. Verify bounded avatar memory decode (cacheWidth: 80, cacheHeight: 80) in list
+      // 2. Scroll to ensure leaderboard list rows are built, then verify bounded avatars (40x40, cache 80x80)
+      await tester.ensureVisible(find.text('1950'));
+      await tester.pumpAndSettle();
+
       final avatarFinders = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
@@ -219,10 +214,10 @@ void main() {
       );
       expect(avatarFinders, findsNWidgets(2));
 
-      // 3. Verify rank numbers and competitor names
+      // 3. Verify rank numbers and competitor names (rendered in podium and leaderboard list)
       expect(find.text('Leaderboard & Rankings'), findsOneWidget);
-      expect(find.text('Hamza Iron'), findsOneWidget);
-      expect(find.text('Bilal Steel'), findsOneWidget);
+      expect(find.text('Hamza Iron'), findsAtLeastNWidgets(1));
+      expect(find.text('Bilal Steel'), findsAtLeastNWidgets(1));
       expect(find.text('1950'), findsOneWidget);
       expect(find.text('1880'), findsOneWidget);
 

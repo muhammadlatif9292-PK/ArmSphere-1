@@ -83,7 +83,7 @@ class TournamentsListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.events,
@@ -152,9 +152,9 @@ class TournamentsListScreen extends ConsumerWidget {
               key: const ValueKey<String>('tournaments_list_view'),
               padding: EdgeInsets.fromLTRB(
                 16,
-                20,
+                155,
                 16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               itemCount: visible.length,
               separatorBuilder: (_, __) => const SizedBox(height: 14),
@@ -223,9 +223,9 @@ class TournamentsListScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppTheme.elevatedSurface,
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                              border: Border.all(color: AppTheme.borderSubtle, width: 1),
+                              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                             ),
                             child: Text(
                               formatEventFee(t['registrationFeeCents']),
@@ -405,13 +405,14 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // 1. Background Image or Dynamic Arena Fallback (`events.tournament.detail_hero`)
+                      // 1. Background Image or Dynamic Arena Fallback (`tournament_poster.webp` at 100% opacity)
                       ArmSphereImage(
                         imageUrl: event['imageUrl']?.toString(),
-                        fallbackAsset: ArmSphereAssets.resolveSemanticAsset(
-                          ArmSphereAssets.semanticEventsTournamentDetailHero,
-                          fallback: ArmSphereAssets.defaultTournament,
-                        ),
+                        assetPath: (event['imageUrl'] == null ||
+                                event['imageUrl'].toString().isEmpty)
+                            ? ArmSphereAssets.tournamentPoster
+                            : null,
+                        fallbackAsset: ArmSphereAssets.tournamentPoster,
                         fit: BoxFit.cover,
                         alignment: const Alignment(0.0, -0.20),
                         semanticLabel: event['name'] != null
@@ -419,10 +420,21 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             : 'Tournament banner',
                       ),
 
-                      // 2. Canonical 4-Stop Hero Scrim Gradient (AppTheme.heroScrim)
-                      Positioned.fill(
+                      // 2. Bottom-Only Pure-Black Gradient (y: 0.55 to 1.0) preserving 100% clarity of the 3D Grand Prix stage, table, and trophies
+                      const Positioned.fill(
                         child: DecoratedBox(
-                          decoration: AppTheme.heroScrim(),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              stops: [0.0, 0.55, 1.0],
+                              colors: [
+                                Color(0x00000000),
+                                Color(0x00000000),
+                                Color(0x99000000),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
 
@@ -443,11 +455,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.65),
+                                      color: Colors.transparent,
                                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                                       border: Border.all(
-                                        color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                                        width: 1,
+                                        color: const Color(0x73D4AF37),
+                                        width: 1.0,
                                       ),
                                     ),
                                     child: Row(
@@ -548,7 +560,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                 ),
                               ],
                             ),
-                            const Divider(height: 24, color: AppTheme.borderSubtle),
+                            const Divider(height: 24, thickness: 1, color: Color(0x22FFFFFF)),
                             Row(
                               children: [
                                 Expanded(
@@ -637,8 +649,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                                 ),
                                 child: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.goldPrimary, size: 22),
                               ),
@@ -685,8 +698,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                                 ),
                                 child: const Icon(Icons.workspace_premium_rounded, color: AppTheme.goldPrimary, size: 24),
                               ),
@@ -925,13 +939,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-                        : AppTheme.elevatedSurface,
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                     border: Border.all(
-                      color: isSelected ? AppTheme.goldPrimary : AppTheme.borderSubtle,
-                      width: isSelected ? 1.5 : 1.0,
+                      color: isSelected ? const Color(0x73D4AF37) : const Color(0x2EFFFFFF),
+                      width: isSelected ? 1.2 : 1.0,
                     ),
                   ),
                   child: Center(
@@ -942,7 +954,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
-                        color: isSelected ? AppTheme.goldPrimary : AppTheme.textSecondary,
+                        color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -1033,7 +1045,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               ),
               const SizedBox(height: 12),
               for (int i = 0; i < tiers.length; i++) ...[
-                if (i > 0) const Divider(height: 18, color: AppTheme.borderSubtle),
+                if (i > 0) const Divider(height: 18, thickness: 1, color: Color(0x22FFFFFF)),
                 Builder(
                   builder: (context) {
                     final tier = tiers[i];
@@ -1109,8 +1121,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                   }
                                 },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.goldPrimary,
-                            foregroundColor: AppTheme.voidBackground,
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: AppTheme.goldPrimary,
+                            shadowColor: Colors.transparent,
+                            elevation: 0,
+                            side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             minimumSize: const Size(88, 34),
                             shape: RoundedRectangleBorder(
@@ -1152,9 +1167,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             Container(
               height: 110,
               decoration: BoxDecoration(
-                color: AppTheme.elevatedSurface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                border: Border.all(color: AppTheme.borderSubtle),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
               ),
               child: const Center(
                 child: SizedBox(
@@ -1179,9 +1194,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.elevatedSurface,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                border: Border.all(color: AppTheme.borderSubtle),
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
               ),
               child: Row(
                 children: [
@@ -1223,9 +1238,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppTheme.elevatedSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.borderSubtle),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                   ),
                   child: Column(
                     children: [
@@ -1254,9 +1269,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppTheme.elevatedSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.borderSubtle),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                   ),
                   child: Column(
                     children: [
@@ -1330,11 +1345,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: badgeColor.withValues(alpha: 0.12),
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             border: Border.all(
-              color: badgeColor.withValues(alpha: 0.4),
-              width: 1,
+              color: badgeColor.withValues(alpha: 0.45),
+              width: 1.0,
             ),
           ),
           child: Row(
@@ -1414,22 +1429,13 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppTheme.elevatedSurface,
-          gradient: isLive ? AppTheme.machinedTitaniumGradient : null,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isLive ? AppTheme.verifiedEmerald.withValues(alpha: 0.6) : AppTheme.borderTitanium,
-            width: isLive ? 1.5 : 1.0,
+            color: isLive ? const Color(0x6610B981) : const Color(0x38FFFFFF),
+            width: isLive ? 1.2 : 1.0,
           ),
-          boxShadow: isLive
-              ? [
-                  BoxShadow(
-                    color: AppTheme.verifiedEmerald.withValues(alpha: 0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [AppTheme.titaniumShadow()],
+          boxShadow: const [],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1442,9 +1448,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.background,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(color: AppTheme.borderTitanium, width: 1),
+                        border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                       ),
                       child: Text(
                         tableNumber,
@@ -1471,9 +1477,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.5), width: 1),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.55), width: 1.0),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1619,7 +1625,8 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
@@ -1716,7 +1723,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
               // Bracket selector — one chip per category bracket.
               Container(
                 height: 52,
-                color: AppTheme.cardSurface,
+                color: Colors.transparent,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1730,17 +1737,23 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
                             style: TextStyle(
                               fontFamily: 'Space Grotesk',
                               fontSize: 12,
+                              color: b['id']?.toString() == selected
+                                  ? AppTheme.goldPrimary
+                                  : const Color(0xFFCBD5E1),
                               fontWeight: b['id']?.toString() == selected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
                             ),
                           ),
                           selected: b['id']?.toString() == selected,
-                          selectedColor: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                          backgroundColor: Colors.transparent,
+                          selectedColor: Colors.transparent,
+                          surfaceTintColor: Colors.transparent,
                           side: BorderSide(
                             color: b['id']?.toString() == selected
-                                ? AppTheme.goldPrimary
-                                : AppTheme.borderSubtle,
+                                ? const Color(0x73D4AF37)
+                                : const Color(0x2EFFFFFF),
+                            width: b['id']?.toString() == selected ? 1.2 : 1.0,
                           ),
                           onSelected: (_) {
                             HapticFeedback.selectionClick();
@@ -1854,9 +1867,9 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.elevatedSurface,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.3)),
+                      border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                     ),
                     child: Text(
                       bracket['format']?.toString() == 'DOUBLE_ELIMINATION'
@@ -1959,7 +1972,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
               ],
             ),
           ],
-          const Divider(height: 16, color: AppTheme.borderSubtle),
+          const Divider(height: 16, thickness: 1, color: Color(0x22FFFFFF)),
           Row(
             children: [
               Icon(

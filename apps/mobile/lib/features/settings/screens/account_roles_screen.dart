@@ -171,8 +171,11 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace:
             const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
@@ -202,7 +205,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
-                AppTheme.space16,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
                 AppTheme.space16,
                 MainShellScope.isInsideShell(context)
                     ? MainShellScope.bottomClearance(
@@ -218,8 +221,8 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                 ElevatedActionCard(
                   padding: const EdgeInsets.all(AppTheme.space16),
                   borderColor: isInAdminMode
-                      ? AppTheme.crimson.withValues(alpha: 0.45)
-                      : AppTheme.goldPrimary.withValues(alpha: 0.40),
+                      ? const Color(0x80E23B3B)
+                      : const Color(0x73D4AF37),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -228,9 +231,12 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppTheme.space10),
                             decoration: BoxDecoration(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0x73D4AF37),
+                                width: 1.0,
+                              ),
                             ),
                             child: Icon(
                               _roleIcon(activeRole),
@@ -330,7 +336,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: verifiedRoles.length,
                       separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: AppTheme.cardBorder),
+                          const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       itemBuilder: (context, index) {
                         final role = verifiedRoles[index];
                         final isCurrentActive =
@@ -436,7 +442,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: pendingApplications.length,
                       separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: AppTheme.cardBorder),
+                          const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       itemBuilder: (context, index) {
                         final app = pendingApplications[index];
                         final appRole = app['role']?.toString() ?? 'ROLE';

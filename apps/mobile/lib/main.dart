@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
+import 'core/constants/asset_paths.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/dependency_providers.dart';
@@ -43,12 +44,41 @@ class ArmSphereApp extends ConsumerStatefulWidget {
 }
 
 class _ArmSphereAppState extends ConsumerState<ArmSphereApp> {
+  bool _didPrecacheAssets = false;
+
+  static const List<String> _kStartupPrecacheAssets = <String>[
+    ArmSphereAssets.stageArena,
+    ArmSphereAssets.stageDiscover,
+    ArmSphereAssets.stageChampionshipBelts,
+    ArmSphereAssets.stageCommunity,
+    ArmSphereAssets.stagePassportVault,
+    ArmSphereAssets.stageReferee,
+    ArmSphereAssets.stageAdminGovernance,
+    ArmSphereAssets.stageAuthWalkout,
+    ArmSphereAssets.athleteDashboardHero,
+    ArmSphereAssets.arenaRadarCard,
+    ArmSphereAssets.cardStandbyTable,
+    ArmSphereAssets.avatarNeutralDark,
+    ArmSphereAssets.teamCrestDefault,
+  ];
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(pushNotificationManagerProvider).initialize(ref);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didPrecacheAssets) {
+      _didPrecacheAssets = true;
+      for (final path in _kStartupPrecacheAssets) {
+        precacheImage(AssetImage(path), context).catchError((_) {});
+      }
+    }
   }
 
   @override

@@ -49,9 +49,7 @@ class StickyBottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBgColor = backgroundColor ?? const Color(0xD9080C15);
-    final effectiveBorderColor =
-        borderColor ?? Colors.white.withValues(alpha: 0.26);
+    final effectiveBorderColor = borderColor ?? const Color(0x38FFFFFF);
 
     final Widget content = child ?? _buildDefaultContent(context);
 
@@ -62,48 +60,27 @@ class StickyBottomActionBar extends StatelessWidget {
     final shellClearance =
         (isInsideShell && !keyboardOpen) ? kFloatingDockTotalHeight : 0.0;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: effectiveBgColor,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0x22FFFFFF),
-                Color(0x0EFFFFFF),
-                Color(0x05FFFFFF),
-              ],
-            ),
-            border: Border(
-              top: BorderSide(color: effectiveBorderColor, width: 1.0),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.52),
-                blurRadius: 24,
-                spreadRadius: -2,
-                offset: const Offset(0, -6),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: EdgeInsets.only(bottom: shellClearance),
-              child: Align(
-                alignment: Alignment.center,
-                heightFactor: 1.0,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: Padding(
-                    padding: padding,
-                    child: content,
-                  ),
-                ),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        border: Border(
+          top: BorderSide(color: effectiveBorderColor, width: 1.0),
+        ),
+        boxShadow: const [],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: shellClearance),
+          child: Align(
+            alignment: Alignment.center,
+            heightFactor: 1.0,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Padding(
+                padding: padding,
+                child: content,
               ),
             ),
           ),
@@ -126,6 +103,7 @@ class StickyBottomActionBar extends StatelessWidget {
               fontFamily: AppTheme.fontBody,
               fontSize: 11.5,
               color: AppTheme.textMuted,
+              shadows: AppTheme.crystalTextShadows,
             ),
           ),
           const SizedBox(height: 8),
@@ -149,39 +127,15 @@ class StickyBottomActionBar extends StatelessWidget {
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(
-                    color: onPrimaryAction == null
-                        ? const Color(0x990D121C)
-                        : const Color(0xCC0D1320),
-                    gradient: onPrimaryAction != null
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            stops: const [0.0, 0.5, 1.0],
-                            colors: [
-                              AppTheme.goldPrimary.withValues(alpha: 0.32),
-                              AppTheme.goldPrimary.withValues(alpha: 0.16),
-                              const Color(0x14FFFFFF),
-                            ],
-                          )
-                        : null,
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: onPrimaryAction == null
-                          ? AppTheme.borderTitanium
-                          : AppTheme.goldPrimary.withValues(alpha: 0.68),
+                          ? const Color(0x38FFFFFF)
+                          : const Color(0x73D4AF37),
                       width: onPrimaryAction == null ? 1.0 : 1.2,
                     ),
-                    boxShadow: onPrimaryAction != null
-                        ? [
-                            BoxShadow(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.25),
-                              blurRadius: 16,
-                              spreadRadius: -2,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
+                    boxShadow: const [],
                   ),
                   alignment: Alignment.center,
                   child: isLoading
@@ -220,6 +174,7 @@ class StickyBottomActionBar extends StatelessWidget {
                                       ? AppTheme.textMuted
                                       : AppTheme.textPure,
                                   letterSpacing: 0.5,
+                                  shadows: AppTheme.crystalTextShadows,
                                 ),
                               ),
                             ),

@@ -233,18 +233,18 @@ void main() {
 
       // Verify all 4 Federation Hub portals render simultaneously in the 2x2 bento grid
       expect(find.text('Federation Hub'), findsOneWidget);
-      expect(find.text('Training Venues'), findsOneWidget);
+      expect(find.text('Training Venues'), findsWidgets);
       expect(find.text('Pickup Meetups'), findsOneWidget);
       expect(find.text('Community Feed'), findsOneWidget);
       expect(find.text('ELO Rankings'), findsOneWidget);
 
-      // Verify active Top Rankings Leaderboard section is prioritized above empty sections
-      expect(find.text('Top Rankings Leaderboard'), findsOneWidget);
+      // Verify active Top Rankings section is prioritized above empty sections
+      expect(find.text('Top Rankings'), findsOneWidget);
       expect(find.text('Muhammad Latif'), findsOneWidget);
       expect(find.text('1000 ELO'), findsOneWidget);
 
       // Verify framed empty state banners render cleanly
-      expect(find.text('Sanctioned Tournaments'), findsOneWidget);
+      expect(find.text('Tournaments'), findsWidgets);
       expect(find.text('No tournaments scheduled'), findsOneWidget);
     });
   });
