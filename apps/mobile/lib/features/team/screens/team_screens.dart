@@ -19,6 +19,8 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/constants/asset_paths.dart';
+import '../../../core/widgets/armsphere_image.dart';
 
 /// Domain 10 / Stage 6 Convergence: Teams List Screen
 ///
@@ -37,9 +39,9 @@ class TeamsListScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(),
         title: const Text(
           'My Teams & Clubs',
@@ -67,7 +69,7 @@ class TeamsListScreen extends ConsumerWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.teams),
           myTeamsAsync.when(
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(AppTheme.space16),
@@ -112,18 +114,18 @@ class TeamsListScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('teams_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                155,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // Top Roster Overview Ribbon
                 Container(
                   padding: const EdgeInsets.all(AppTheme.space12),
                   decoration: BoxDecoration(
-                    color: AppTheme.glassSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -133,13 +135,13 @@ class TeamsListScreen extends ConsumerWidget {
                         count: teams.length,
                         color: AppTheme.textPrimary,
                       ),
-                      Container(width: 1, height: 28, color: AppTheme.borderTitanium),
+                      Container(width: 1, height: 28, color: const Color(0x22FFFFFF)),
                       _OverviewMetric(
                         label: 'CAPTAIN OF',
                         count: captainCount,
                         color: AppTheme.goldPrimary,
                       ),
-                      Container(width: 1, height: 28, color: AppTheme.borderTitanium),
+                      Container(width: 1, height: 28, color: const Color(0x22FFFFFF)),
                       _OverviewMetric(
                         label: 'MEMBER OF',
                         count: teams.length - captainCount,
@@ -164,24 +166,25 @@ class TeamsListScreen extends ConsumerWidget {
                         onTap: () => context.push('/teams/${t['id']}'),
                         child: Row(
                           children: [
-                            // Team Emblem Placeholder
+                            // Team Emblem Crest (team_crest_default.webp at 100% opacity)
                             Container(
-                              width: 44,
-                              height: 44,
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: AppTheme.glassSurface,
-                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: isCaptain ? AppTheme.goldPrimary : AppTheme.borderTitanium,
-                                  width: isCaptain ? 1.5 : 1.0,
+                                  color: isCaptain ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+                                  width: isCaptain ? 1.2 : 1.0,
                                 ),
                               ),
-                              child: Center(
-                                child: Icon(
-                                  isCaptain ? Icons.shield_outlined : Icons.groups_outlined,
-                                  color: isCaptain ? AppTheme.goldPrimary : AppTheme.textSecondary,
-                                  size: 22,
-                                ),
+                              clipBehavior: Clip.antiAlias,
+                              child: ArmSphereImage(
+                                imageUrl: t['logoUrl']?.toString(),
+                                assetPath: ArmSphereAssets.teamCrestDefault,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
                               ),
                             ),
                             const SizedBox(width: AppTheme.space12),
@@ -198,8 +201,7 @@ class TeamsListScreen extends ConsumerWidget {
                                       fontSize: 16,
                                       color: AppTheme.textPrimary,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
@@ -606,9 +608,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.discover),
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(fallbackRoute: '/teams'),
         title: const Text(
           'Team Dossier',
@@ -679,7 +681,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.teams),
           teamAsync.when(
         loading: () => ListView(
           padding: const EdgeInsets.all(AppTheme.space16),
@@ -720,7 +722,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
               ref.invalidate(sparringInvitesProvider(widget.teamId));
             },
             child: ListView(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                155,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
               children: [
                 // 1. Team Dossier Header Card
                 ElevatedActionCard(
@@ -729,8 +736,29 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: canManage ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+                                width: 1.2,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: ArmSphereImage(
+                              imageUrl: team['logoUrl']?.toString(),
+                              assetPath: ArmSphereAssets.teamCrestDefault,
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.space12),
                           Expanded(
                             child: Text(
                               team['name']?.toString() ?? 'Team',
@@ -740,6 +768,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.textPrimary,
                               ),
+                              maxLines: 2,
                             ),
                           ),
                           if (canManage) ...[
@@ -768,7 +797,7 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                         ),
                       ],
                       const SizedBox(height: AppTheme.space12),
-                      const Divider(height: 1, color: AppTheme.border),
+                      const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       const SizedBox(height: AppTheme.space12),
                       Wrap(
                         spacing: AppTheme.space8,
@@ -777,9 +806,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.glassSurface,
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                              border: Border.all(color: AppTheme.borderTitanium),
+                              border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -797,9 +826,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: AppTheme.glassSurface,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                border: Border.all(color: AppTheme.borderTitanium),
+                                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -844,9 +873,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: AppTheme.borderTitanium),
+                            border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                           ),
                           child: Text(
                             members.length.toString(),
@@ -890,9 +919,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppTheme.space24),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: const Center(
                       child: Text(
@@ -916,31 +945,31 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                           child: Row(
                             children: [
                               // Avatar with Role Ring
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isMemberCaptain ? AppTheme.goldPrimary : AppTheme.border,
-                                    width: isMemberCaptain ? 2.0 : 1.0,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isMemberCaptain ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+                                      width: isMemberCaptain ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Colors.transparent,
+                                    backgroundImage: member['profilePhoto'] != null
+                                        ? NetworkImage(member['profilePhoto'].toString())
+                                        : null,
+                                    child: member['profilePhoto'] == null
+                                        ? Text(
+                                            (member['displayName']?.toString() ?? '?')[0].toUpperCase(),
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: isMemberCaptain ? AppTheme.goldPrimary : AppTheme.textPrimary,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                 ),
-                                child: CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: AppTheme.elevatedSurface,
-                                  backgroundImage: member['profilePhoto'] != null
-                                      ? NetworkImage(member['profilePhoto'].toString())
-                                      : null,
-                                  child: member['profilePhoto'] == null
-                                      ? Text(
-                                          (member['displayName']?.toString() ?? '?')[0].toUpperCase(),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: isMemberCaptain ? AppTheme.goldPrimary : AppTheme.textPrimary,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                              ),
                               const SizedBox(width: AppTheme.space12),
                               // Name and Role
                               Expanded(
@@ -966,8 +995,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                             decoration: BoxDecoration(
-                                              color: AppTheme.elevatedSurface,
+                                              color: Colors.transparent,
                                               borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                                             ),
                                             child: const Text(
                                               'YOU',
@@ -1083,9 +1113,9 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                         return Container(
                           padding: const EdgeInsets.all(AppTheme.space16),
                           decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            border: Border.all(color: AppTheme.borderTitanium),
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                           ),
                           child: const Text(
                             'No sparring invites sent or received for this squad yet. Challenge another club or team to open a dedicated sparring coordination thread.',
@@ -1169,8 +1199,11 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                                           const SizedBox(width: 8),
                                           ElevatedButton(
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppTheme.goldPrimary,
-                                              foregroundColor: AppTheme.voidBackground,
+                                              backgroundColor: Colors.transparent,
+                                              foregroundColor: AppTheme.goldPrimary,
+                                              shadowColor: Colors.transparent,
+                                              elevation: 0,
+                                              side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                                             ),
                                             onPressed: _busy
                                                 ? null
@@ -1860,7 +1893,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     final clubsAsync = ref.watch(clubsProvider);
 
     return StickyFormScaffold(
-      stageDomain: ArmSphereStageDomain.discover,
+      stageDomain: ArmSphereStageDomain.teams,
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -1931,10 +1964,14 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                     hintText: 'e.g. Lahore Iron Grip',
                     hintStyle: const TextStyle(color: AppTheme.textMuted),
                     filled: true,
-                    fillColor: AppTheme.glassSurface,
+                    fillColor: Colors.transparent,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                      borderSide: const BorderSide(color: Color(0x38FFFFFF)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: Color(0x38FFFFFF)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -1960,10 +1997,14 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                     hintText: 'Training philosophy, club goals...',
                     hintStyle: const TextStyle(color: AppTheme.textMuted),
                     filled: true,
-                    fillColor: AppTheme.glassSurface,
+                    fillColor: Colors.transparent,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                      borderSide: const BorderSide(color: Color(0x38FFFFFF)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      borderSide: const BorderSide(color: Color(0x38FFFFFF)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -1981,9 +2022,9 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                   error: (error, _) => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: Row(
                       children: [
@@ -2010,10 +2051,14 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                       labelText: 'Affiliated Club (optional)',
                       labelStyle: const TextStyle(color: AppTheme.textSecondary),
                       filled: true,
-                      fillColor: AppTheme.glassSurface,
+                      fillColor: Colors.transparent,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                        borderSide: const BorderSide(color: Color(0x38FFFFFF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        borderSide: const BorderSide(color: Color(0x38FFFFFF)),
                       ),
                     ),
                     items: clubs
@@ -2033,9 +2078,9 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

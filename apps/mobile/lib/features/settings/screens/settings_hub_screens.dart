@@ -19,8 +19,11 @@ class SettingsHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -37,7 +40,7 @@ class SettingsHubScreen extends ConsumerWidget {
           ListView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.isInsideShell(context)
                   ? MainShellScope.bottomClearance(context, additionalPadding: 36)
@@ -55,9 +58,9 @@ class SettingsHubScreen extends ConsumerWidget {
                   subtitle: 'Manage verified roles and persona',
                   onTap: () => context.push('/settings/roles'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 const BiometricSettingsTile(),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.shield_outlined,
                   title: 'Security & Active Sessions',
@@ -79,19 +82,19 @@ class SettingsHubScreen extends ConsumerWidget {
                   title: 'Notifications',
                   onTap: () => context.push('/notifications'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.payment,
                   title: 'Payment Methods',
                   onTap: () => context.push('/settings/payment-methods'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.confirmation_number_outlined,
                   title: 'My Tickets & Passes',
                   onTap: () => context.push('/settings/tickets'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.block_flipped,
                   title: 'Blocked Users',
@@ -113,13 +116,13 @@ class SettingsHubScreen extends ConsumerWidget {
                   subtitle: 'Contact Helpdesk & track inquiries',
                   onTap: () => context.push('/support'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.description_outlined,
                   title: 'Terms of Service',
                   onTap: () => context.push('/settings/terms'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.privacy_tip_outlined,
                   title: 'Privacy Policy',
@@ -143,7 +146,7 @@ class SettingsHubScreen extends ConsumerWidget {
                   subtitle: 'Permanently deactivate and anonymize your account',
                   onTap: () => context.push('/settings/deletion'),
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
+                const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                 _SettingsTile(
                   icon: Icons.logout,
                   iconColor: AppTheme.error,
@@ -194,9 +197,9 @@ class SettingsHubScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(AppTheme.space14),
                 decoration: BoxDecoration(
-                  color: const Color(0x8012192A),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x2EFFFFFF)),
+                  border: Border.all(color: const Color(0x38FFFFFF)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,10 +310,10 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: const Color(0xEB0B0F19),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          side: const BorderSide(color: AppTheme.cardBorder),
+          side: const BorderSide(color: Color(0x38FFFFFF)),
         ),
         title: const Row(
           children: [
@@ -377,8 +380,11 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -395,7 +401,7 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
           SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.bottomClearance(context, additionalPadding: 24),
             ),
@@ -412,8 +418,9 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
                       Container(
                         padding: const EdgeInsets.all(AppTheme.space8),
                         decoration: BoxDecoration(
-                          color: AppTheme.error.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x80E23B3B)),
                         ),
                         child: const Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 24),
                       ),
@@ -468,8 +475,17 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
             const SizedBox(height: AppTheme.space16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.error,
+                backgroundColor: Colors.transparent,
+                disabledBackgroundColor: Colors.transparent,
                 foregroundColor: Colors.white,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                side: BorderSide(
+                  color: (_acknowledged && !_deleting)
+                      ? const Color(0x80E23B3B)
+                      : const Color(0x2EFFFFFF),
+                  width: (_acknowledged && !_deleting) ? 1.2 : 1.0,
+                ),
               ),
               onPressed: (_acknowledged && !_deleting) ? _confirmAndDeleteAccount : null,
               child: _deleting
@@ -497,8 +513,11 @@ class TermsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -515,7 +534,7 @@ class TermsScreen extends StatelessWidget {
           ListView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.bottomClearance(context, additionalPadding: 24),
             ),
@@ -579,8 +598,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -597,7 +619,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ListView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.bottomClearance(context, additionalPadding: 24),
             ),

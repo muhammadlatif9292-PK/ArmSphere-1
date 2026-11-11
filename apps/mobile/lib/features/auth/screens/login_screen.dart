@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/services/biometric_service.dart';
-import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/theme/app_theme.dart';
@@ -167,77 +166,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Logo Header
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 76,
-                          height: 76,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppTheme.glassSurface,
-                            border: Border.all(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                              width: 2,
-                            ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppTheme.goldGlow,
-                            blurRadius: 28,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.sports_kabaddi,
-                          size: 38,
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24.0,
+              MediaQuery.sizeOf(context).height * 0.28,
+              24.0,
+              120.0,
+            ),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Lower 62% Safe-Zone Header below the 3D Walkout Tunnel Octagonal Light
+                const Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        'ArmSphere',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 30,
+                          letterSpacing: -1.0,
                           color: AppTheme.goldPrimary,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'ArmSphere',
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontWeight: FontWeight.w800,
-                        fontSize: 30,
-                        letterSpacing: -1.0,
-                        color: AppTheme.goldPrimary,
+                      SizedBox(height: 4),
+                      Text(
+                        'Sign in to your competitive account',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13.5,
+                          color: AppTheme.textSecondary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Sign in to your competitive account',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13.5,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 20),
 
-              Form(
-                key: _formKey,
-                child: ElevatedActionCard(
-                  padding: const EdgeInsets.all(22.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                Form(
+                  key: _formKey,
+                  child: Container(
+                    padding: const EdgeInsets.all(22.0),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: const Color(0x38FFFFFF),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                       // Email Field
                       TextFormField(
                         controller: _emailController,
@@ -309,25 +293,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Container(
                         height: 50,
                         decoration: BoxDecoration(
-                          gradient: AppTheme.championshipGoldGradient,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: AppTheme.glassBorderSpecular,
-                            width: 1.0,
+                            color: const Color(0x73D4AF37),
+                            width: 1.2,
                           ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: AppTheme.goldGlow,
-                              blurRadius: 16,
-                              spreadRadius: 1,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
+                          boxShadow: const [],
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            borderRadius: BorderRadius.circular(18),
                             onTap: _isLoading
                                 ? null
                                 : () {
@@ -341,7 +318,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2.2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.goldPrimary),
                                       ),
                                     )
                                   : const Text(
@@ -350,7 +327,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         fontFamily: 'Space Grotesk',
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.black,
+                                        color: AppTheme.goldPrimary,
                                         letterSpacing: 0.3,
                                       ),
                                     ),
@@ -409,10 +386,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
+                ],
+              ),
+            ),
         ],
       ),
     );

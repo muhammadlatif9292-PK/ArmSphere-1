@@ -144,10 +144,6 @@ class _AppEmptyStateState extends State<AppEmptyState>
         widget.icon == Icons.forum_outlined) {
       return ArmSphereAssets.clipFallbackSparring;
     }
-    if (widget.icon == Icons.emoji_events_outlined ||
-        widget.icon == Icons.military_tech_outlined) {
-      return ArmSphereAssets.tournamentPoster;
-    }
     if (widget.icon == Icons.storefront_outlined ||
         widget.icon == Icons.location_on_outlined) {
       return ArmSphereAssets.bentoVenues;
@@ -179,10 +175,19 @@ class _AppEmptyStateState extends State<AppEmptyState>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    height: 150,
+                Container(
+                  height: 162,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0x38FFFFFF),
+                      width: 1.0,
+                    ),
+                    boxShadow: const [],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(17),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -196,75 +201,97 @@ class _AppEmptyStateState extends State<AppEmptyState>
                         const DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: [0.0, 0.45, 1.0],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              stops: [0.0, 0.55, 1.0],
                               colors: [
-                                Color(0x26070A11),
-                                Color(0x66070A11),
-                                Color(0xD9070A11),
+                                Color(0x80000000),
+                                Color(0x00000000),
+                                Color(0x00000000),
                               ],
                             ),
                           ),
                         ),
-                        Positioned(
-                          top: 12,
-                          left: 12,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                widget.icon,
-                                size: 14,
-                                color: AppTheme.goldPrimary,
-                              ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'STANDBY',
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
-                                  color: AppTheme.goldPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          left: 14,
-                          right: 14,
-                          bottom: 12,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppTheme.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 17,
-                                  fontFamily: AppTheme.fontDisplay,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              if ((widget.subtitle ?? widget.description ?? '').isNotEmpty)
-                                Text(
-                                  widget.subtitle ?? widget.description!,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 12,
-                                    height: 1.35,
+                        // Constrain STANDBY badge, heading, and subtitle strictly to left 55% safe zone
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: 0.55,
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        widget.icon,
+                                        size: 14,
+                                        color: AppTheme.goldPrimary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Flexible(
+                                        child: Text(
+                                          'STANDBY',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.8,
+                                            color: AppTheme.goldPrimary,
+                                            shadows: AppTheme.crystalTextShadows,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                            ],
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        widget.title,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: AppTheme.textPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                          fontFamily: AppTheme.fontDisplay,
+                                          letterSpacing: -0.3,
+                                          height: 1.15,
+                                          shadows: AppTheme.crystalTextShadows,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      if ((widget.subtitle ??
+                                              widget.description ??
+                                              '')
+                                          .isNotEmpty)
+                                        Text(
+                                          widget.subtitle ??
+                                              widget.description!,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: AppTheme.textSecondary,
+                                            fontSize: 11.5,
+                                            height: 1.3,
+                                            shadows: AppTheme.crystalTextShadows,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],

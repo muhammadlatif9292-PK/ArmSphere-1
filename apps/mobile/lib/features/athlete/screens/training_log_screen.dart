@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -19,14 +21,58 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 
 /// Athlete Training Log & Personal Records (PR) Screen
 ///
-/// Upgraded to Canonical Stage 2 Specification (Slice 11 / [P1-04] / Debt 69):
-/// - ElevatedActionCard list rows with zero raster overhead.
-/// - Tactile PR ceremonial feedback (`pr_achieved.wav` + heavy haptic).
-/// - Space Grotesk typography for weights and performance metrics.
-class AthleteTrainingLogScreen extends ConsumerWidget {
+/// Upgraded to Stage-First Living Screen Architecture (Step 3):
+/// - Backdrop: `ArmSphereAssets.stageTrainingLab` (`m1_stage_training_lab_9x16.webp`).
+/// - `155px` open top 3D Pulley Rig showcase below the transparent AppBar.
+/// - Lower Safe-Zone PR Deck with static strength discipline selector
+///   (Rise, Pronation, Back Pressure, Side Pressure, Cupping/Containment).
+/// - Training clips without custom thumbnails fall back to `ArmSphereAssets.clipFallbackSparring`
+///   at 100% opacity with text locked to the left 54% safe zone.
+class AthleteTrainingLogScreen extends ConsumerStatefulWidget {
   final String athleteId;
 
   const AthleteTrainingLogScreen({super.key, required this.athleteId});
+
+  @override
+  ConsumerState<AthleteTrainingLogScreen> createState() =>
+      _AthleteTrainingLogScreenState();
+}
+
+class _AthleteTrainingLogScreenState
+    extends ConsumerState<AthleteTrainingLogScreen> {
+  static const List<({String id, String label})> _disciplines = [
+    (id: 'ALL', label: 'All Lifts'),
+    (id: 'RISE', label: 'Rise'),
+    (id: 'PRONATION', label: 'Pronation'),
+    (id: 'BACK PRESSURE', label: 'Back Pressure'),
+    (id: 'SIDE PRESSURE', label: 'Side Pressure'),
+    (id: 'CUPPING', label: 'Cupping / Containment'),
+  ];
+
+  String _selectedDiscipline = 'ALL';
+
+  String get athleteId => widget.athleteId;
+
+  bool _matchesDiscipline(String exerciseType) {
+    if (_selectedDiscipline == 'ALL') return true;
+    final upper = exerciseType.toUpperCase();
+    switch (_selectedDiscipline) {
+      case 'RISE':
+        return upper.contains('RIS');
+      case 'PRONATION':
+        return upper.contains('PRONAT');
+      case 'BACK PRESSURE':
+        return upper.contains('BACK') || upper.contains('BICEP');
+      case 'SIDE PRESSURE':
+        return upper.contains('SIDE');
+      case 'CUPPING':
+        return upper.contains('CUP') ||
+            upper.contains('WRIST') ||
+            upper.contains('CONTAIN');
+      default:
+        return true;
+    }
+  }
 
   String _formatDate(String iso) {
     final dt = DateTime.tryParse(iso);
@@ -51,7 +97,12 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
   Widget _errorView(BuildContext context, WidgetRef ref, Object e) {
     if (_isForbiddenError(e)) {
       return ListView(
-        padding: EdgeInsets.fromLTRB(20, 40, 20, MainShellScope.bottomClearance(context)),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          155,
+          20,
+          MainShellScope.bottomClearance(context, additionalPadding: 44),
+        ),
         children: [
           ElevatedActionCard(
             padding: const EdgeInsets.all(24),
@@ -61,10 +112,11 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.transparent,
                     border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                      color: const Color(0x73D4AF37),
+                      width: 1.0,
                     ),
                   ),
                   child: const Icon(
@@ -139,7 +191,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final prsAsync = ref.watch(trainingLogPRsProvider(athleteId));
     final logsAsync = ref.watch(trainingLogProvider(athleteId));
     final myProfile = ref.watch(athleteProfileProvider).value;
@@ -149,7 +201,7 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.training,
         ),
@@ -171,37 +223,94 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
             ),
           ),
           RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(trainingLogPRsProvider(athleteId));
-          ref.invalidate(trainingLogProvider(athleteId));
-        },
-        child: logsAsync.when(
-          loading: () => const CrystalScreenLoadingView(
-            itemCount: 4,
-            cardHeight: 88,
-          ),
-          error: (e, _) => _errorView(context, ref, e),
-          data: (logs) {
-            final prsList = prsAsync.value ?? const <Map<String, dynamic>>[];
-            num peakWeight = 0;
-            for (final pr in prsList) {
-              final w = pr['weightKg'] as num? ?? 0;
-              if (w > peakWeight) peakWeight = w;
-            }
-            for (final l in logs) {
-              final w = l['weightKg'] as num? ?? 0;
-              if (w > peakWeight) peakWeight = w;
-            }
-
-            return ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                20,
-                16,
-                MainShellScope.bottomClearance(context, additionalPadding: 80),
+            onRefresh: () async {
+              ref.invalidate(trainingLogPRsProvider(athleteId));
+              ref.invalidate(trainingLogProvider(athleteId));
+            },
+            child: logsAsync.when(
+              loading: () => const CrystalScreenLoadingView(
+                itemCount: 4,
+                cardHeight: 88,
               ),
-              children: [
-                // Titanium Luxe Summary Ribbon
+              error: (e, _) => _errorView(context, ref, e),
+              data: (allLogs) {
+                final allPrs = prsAsync.value ?? const <Map<String, dynamic>>[];
+                final prsList = allPrs
+                    .where((pr) => _matchesDiscipline(
+                        pr['exerciseType']?.toString() ?? ''))
+                    .toList();
+                final logs = allLogs
+                    .where((l) => _matchesDiscipline(
+                        l['exerciseType']?.toString() ?? ''))
+                    .toList();
+
+                num peakWeight = 0;
+                for (final pr in prsList) {
+                  final w = pr['weightKg'] as num? ?? 0;
+                  if (w > peakWeight) peakWeight = w;
+                }
+                for (final l in logs) {
+                  final w = l['weightKg'] as num? ?? 0;
+                  if (w > peakWeight) peakWeight = w;
+                }
+
+                return ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    155,
+                    16,
+                    MainShellScope.bottomClearance(context, additionalPadding: 80),
+                  ),
+                  children: [
+                    // Static Strength Discipline Selector (Rise, Pronation, Back Pressure, Side Pressure, Cupping)
+                    SizedBox(
+                      height: 36,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _disciplines.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, idx) {
+                          final d = _disciplines[idx];
+                          final isSelected = _selectedDiscipline == d.id;
+                          return ChoiceChip(
+                            label: Text(
+                              d.label,
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected
+                                    ? AppTheme.goldPrimary
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: Colors.transparent,
+                            backgroundColor: Colors.transparent,
+                            surfaceTintColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            elevation: 0,
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? const Color(0x73D4AF37)
+                                    : const Color(0x2EFFFFFF),
+                                width: isSelected ? 1.2 : 1.0,
+                              ),
+                            ),
+                            onSelected: (_) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selectedDiscipline = d.id);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Titanium Luxe Summary Ribbon
                 ElevatedActionCard(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.space16,
@@ -362,10 +471,10 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: _getExerciseColor(exercise).withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.circular(10),
                                           border: Border.all(
-                                            color: _getExerciseColor(exercise).withValues(alpha: 0.5),
+                                            color: _getExerciseColor(exercise).withValues(alpha: 0.55),
                                             width: 1.0,
                                           ),
                                         ),
@@ -443,67 +552,142 @@ class AthleteTrainingLogScreen extends ConsumerWidget {
                         : null,
                   )
                 else
-                  ElevatedActionCard(
-                    padding: EdgeInsets.zero,
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: logs.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppTheme.borderSubtle),
-                      itemBuilder: (context, index) {
-                        final log = logs[index];
-                        final exercise = log['exerciseType']?.toString() ?? 'Session';
-                        final caption = log['caption']?.toString() ?? '';
-                        final weight = log['weightKg'] as num?;
-                        final reps = log['reps'] as num?;
-                        final details = [
-                          if (weight != null) '$weight kg',
-                          if (reps != null) '$reps reps',
-                        ].join(' x ');
-                        final time = _formatDate(log['createdAt']?.toString() ?? '');
+                  Column(
+                    children: List.generate(logs.length, (index) {
+                      final log = logs[index];
+                      final exercise = log['exerciseType']?.toString() ?? 'Session';
+                      final caption = log['caption']?.toString() ?? '';
+                      final weight = log['weightKg'] as num?;
+                      final reps = log['reps'] as num?;
+                      final details = [
+                        if (weight != null) '$weight kg',
+                        if (reps != null) '$reps reps',
+                      ].join(' x ');
+                      final time = _formatDate(log['createdAt']?.toString() ?? '');
+                      final thumbUrl = (log['thumbnailUrl'] ?? log['mediaUrl'] ?? log['imageUrl'])?.toString();
 
-                        return ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _getExerciseColor(exercise).withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: _getExerciseColor(exercise).withValues(alpha: 0.4),
-                                width: 1.0,
-                              ),
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: index == logs.length - 1 ? 0 : 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0x38FFFFFF),
+                              width: 1.0,
                             ),
-                            child: Icon(_getExerciseIcon(exercise), size: 16, color: _getExerciseColor(exercise)),
+                            boxShadow: const [],
                           ),
-                          title: Text(
-                            exercise,
-                            style: const TextStyle(
-                              fontFamily: 'Space Grotesk',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: AppTheme.textPrimary,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: ArmSphereImage(
+                                    imageUrl: (thumbUrl != null && thumbUrl.isNotEmpty) ? thumbUrl : null,
+                                    assetPath: (thumbUrl == null || thumbUrl.isEmpty)
+                                        ? ArmSphereAssets.clipFallbackSparring
+                                        : null,
+                                    fallbackAsset: ArmSphereAssets.clipFallbackSparring,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.centerRight,
+                                    excludeFromSemantics: true,
+                                  ),
+                                ),
+                                const Positioned.fill(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        stops: [0.0, 0.55, 1.0],
+                                        colors: [
+                                          Color(0x80000000),
+                                          Color(0x00000000),
+                                          Color(0x00000000),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: FractionallySizedBox(
+                                    widthFactor: 0.54,
+                                    alignment: Alignment.centerLeft,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.transparent,
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: _getExerciseColor(exercise).withValues(alpha: 0.55),
+                                                  width: 1.0,
+                                                ),
+                                              ),
+                                              child: Icon(
+                                                _getExerciseIcon(exercise),
+                                                size: 14,
+                                                color: _getExerciseColor(exercise),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                exercise,
+                                                style: const TextStyle(
+                                                  fontFamily: 'Space Grotesk',
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (details.isNotEmpty || caption.isNotEmpty) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            caption.isNotEmpty && details.isNotEmpty
+                                                ? '$caption ($details)'
+                                                : caption.isNotEmpty
+                                                    ? caption
+                                                    : details,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.textSecondary,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ],
+                                        if (time.isNotEmpty) ...[
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            time,
+                                            style: const TextStyle(
+                                              fontFamily: 'Space Grotesk',
+                                              fontSize: 11,
+                                              fontFeatures: [FontFeature.tabularFigures()],
+                                              color: AppTheme.textMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          subtitle: Text(
-                            caption.isNotEmpty && details.isNotEmpty
-                                ? '$caption ($details)'
-                                : caption.isNotEmpty
-                                    ? caption
-                                    : details,
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                          ),
-                          trailing: Text(
-                            time,
-                            style: const TextStyle(
-                              fontFamily: 'Space Grotesk',
-                              fontSize: 11,
-                              fontFeatures: [FontFeature.tabularFigures()],
-                              color: AppTheme.textMuted,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    }),
                   ),
               ],
             );

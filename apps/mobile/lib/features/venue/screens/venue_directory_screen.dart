@@ -30,7 +30,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         elevation: 0,
         leading: const CrystalBackButton(),
@@ -107,9 +107,9 @@ class VenueDirectoryScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('venue_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                155,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: AppTheme.space16),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               itemCount: venues.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -168,12 +168,12 @@ class VenueDirectoryScreen extends ConsumerWidget {
                                   fontSize: 16,
                                   color: AppTheme.textPrimary,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
                               if (addressLine.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Icon(
                                       Icons.place_outlined,
@@ -188,8 +188,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
                                           fontSize: 12,
                                           color: AppTheme.textSecondary,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
                                       ),
                                     ),
                                   ],

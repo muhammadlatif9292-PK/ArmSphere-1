@@ -70,7 +70,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('WelcomeScreen integrates ArmSphereAssets.heroWelcomeGrip and iconGold via ArmSphereImage', (WidgetTester tester) async {
+    testWidgets('WelcomeScreen integrates unobstructed ArmSphereAssets.heroWelcomeGrip and stageAuthWalkout via ArmSphereImage', (WidgetTester tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -81,24 +81,22 @@ void main() {
 
       await tester.pump();
 
-      // Verify heroWelcomeGrip (auth.welcome.hero_banner) environmental anchor is present with Alignment(0.0, -0.25)
+      // Verify heroWelcomeGrip environmental anchor is present at 100% opacity
       final gripHeroFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
             widget.assetPath == ArmSphereAssets.heroWelcomeGrip &&
-            widget.alignment == const Alignment(0.0, -0.25) &&
             widget.excludeFromSemantics == true,
       );
       expect(gripHeroFinder, findsOneWidget);
 
-      // Verify iconGold official emblem is present with accessibility semantic label
+      // Verify circular iconGold seal overlay is removed so the locked grip is 100% unobstructed
       final emblemFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.iconGold &&
-            widget.semanticLabel == 'ArmSphere Official Federation Emblem',
+            widget.assetPath == ArmSphereAssets.iconGold,
       );
-      expect(emblemFinder, findsOneWidget);
+      expect(emblemFinder, findsNothing);
 
       // Verify core action buttons are present and interactive
       expect(find.text('ENTER ARENA'), findsOneWidget);
@@ -143,7 +141,7 @@ void main() {
         (widget) =>
             widget is ArmSphereImage &&
             widget.assetPath == ArmSphereAssets.stageArena9x16 &&
-            widget.alignment == const Alignment(0.0, -0.55) &&
+            widget.alignment == Alignment.topCenter &&
             widget.excludeFromSemantics == true,
       );
       expect(arenaStageFinder, findsAtLeastNWidgets(1));

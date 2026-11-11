@@ -144,14 +144,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppTheme.goldPrimary, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.2),
-                              blurRadius: 16,
-                              spreadRadius: 2,
-                            ),
-                          ],
+                          color: Colors.transparent,
+                          border: Border.all(color: const Color(0x73D4AF37), width: 1.5),
+                          boxShadow: const [],
                         ),
                         child: ArmSphereImage.avatar(
                           imageUrl: photo.isNotEmpty ? photo : null,
@@ -232,9 +227,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 vertical: AppTheme.space8,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.cardSurface,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                border: Border.all(color: AppTheme.cardBorder),
+                                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -276,9 +271,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 vertical: AppTheme.space8,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.cardSurface,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                border: Border.all(color: AppTheme.cardBorder),
+                                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -446,20 +441,20 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         label: 'Weight Category',
                         value: (weightClass == null || weightClass.isEmpty) ? '—' : weightClass,
                       ),
-                      const Divider(height: 20, color: AppTheme.cardBorder),
+                      const Divider(height: 20, color: Color(0x22FFFFFF)),
                       _SpecRow(
                         label: 'Dominant Arm',
                         value: (dominantArm == null || dominantArm.isEmpty)
                             ? '—'
                             : (dominantArm == 'LEFT' ? 'Left Arm' : 'Right Arm'),
                       ),
-                      const Divider(height: 20, color: AppTheme.cardBorder),
+                      const Divider(height: 20, color: Color(0x22FFFFFF)),
                       _SpecRow(
                         label: 'Competition Weight',
                         value: weightVal != null ? '$weightVal kg' : '—',
                         isTabular: true,
                       ),
-                      const Divider(height: 20, color: AppTheme.cardBorder),
+                      const Divider(height: 20, color: Color(0x22FFFFFF)),
                       _SpecRow(
                         label: 'Height / Wingspan',
                         value: (heightVal != null || reachVal != null)
@@ -468,7 +463,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         isTabular: true,
                       ),
                       if (forearmVal != null || bicepVal != null || handVal != null) ...[
-                        const Divider(height: 20, color: AppTheme.cardBorder),
+                        const Divider(height: 20, color: Color(0x22FFFFFF)),
                         _SpecRow(
                           label: 'Forearm / Bicep / Hand',
                           value: [

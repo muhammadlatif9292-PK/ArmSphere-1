@@ -31,7 +31,7 @@ class VoidStageScaffold extends StatelessWidget {
     super.key,
     this.backgroundAsset,
     this.stageAsset,
-    this.focalAlignment = ArmSphereAssets.stageTopFocal,
+    this.focalAlignment = Alignment.topCenter,
     this.appBar,
     this.body,
     this.child,
@@ -41,7 +41,7 @@ class VoidStageScaffold extends StatelessWidget {
     this.extendBodyBehindAppBar = true,
     this.extendBody = true,
     this.resizeToAvoidBottomInset,
-    this.scrimStops = const [0.0, 0.35, 0.70, 1.0],
+    this.scrimStops = const [0.0, 0.45, 0.78, 1.0],
     this.scrimColors,
   });
 
@@ -52,10 +52,10 @@ class VoidStageScaffold extends StatelessWidget {
     final effectiveBody = body ?? child ?? const SizedBox.shrink();
     final effectiveScrimColors = scrimColors ??
         const [
-          Color(0x59070A11), // 35% top protection for status bar & app bar
-          Color(0x4D070A11), // 30% upper-mid clear stage visibility
-          Color(0x80070A11), // 50% lower-mid clear artwork visibility
-          Color(0xB3070A11), // 70% deep obsidian base
+          Color(0x00000000),
+          Color(0x00000000),
+          Color(0x40000000),
+          Color(0x73000000),
         ];
 
     return Scaffold(
@@ -104,15 +104,15 @@ class VoidStageScaffold extends StatelessWidget {
     );
   }
 
-  /// Standard bottom clearance (112dp + safe area bottom inset) so scrollable
+  /// Standard bottom clearance (120dp + safe area bottom inset) so scrollable
   /// lists clear the floating smoked-glass pill dock without occlusion.
   static double bottomClearance(BuildContext context) =>
-      MediaQuery.paddingOf(context).bottom + 112.0;
+      MediaQuery.paddingOf(context).bottom + 120.0;
 }
 
 /// Global helper for floating navigation dock bottom clearance.
 double mainShellBottomClearance(BuildContext context) =>
-    MediaQuery.paddingOf(context).bottom + 112.0;
+    MediaQuery.paddingOf(context).bottom + 120.0;
 
 /// Standardized ArmSphere Top AppBar for VoidStageScaffold Screens
 ///
@@ -250,11 +250,28 @@ class SmokedGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveBorder = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x38FFFFFF);
     Widget container = Container(
       margin: margin,
       padding: padding,
-      color: Colors.transparent,
-      child: child,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: effectiveBorder,
+          width: 1.0,
+        ),
+        boxShadow: const [],
+      ),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: AppTheme.crystalTextShadows,
+        ),
+        child: child,
+      ),
     );
 
     if (onTap != null) {

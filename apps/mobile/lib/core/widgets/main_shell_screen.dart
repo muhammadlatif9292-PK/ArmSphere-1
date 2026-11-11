@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../constants/asset_paths.dart';
 import '../security/admin_permissions.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
@@ -22,7 +23,7 @@ const double kFloatingDockTotalHeight =
 /// If outside the shell: returns `safeArea.bottom + additionalPadding`.
 double mainShellBottomClearance(
   BuildContext context, {
-  double additionalPadding = 16.0,
+  double additionalPadding = 44.0,
 }) {
   return MainShellScope.bottomClearance(
     context,
@@ -127,7 +128,7 @@ class MainShellScope extends InheritedWidget {
   /// - If outside the shell or on a non-root route: returns `safeArea.bottom + additionalPadding`.
   static double bottomClearance(
     BuildContext context, {
-    double additionalPadding = 16.0,
+    double additionalPadding = 44.0,
   }) {
     final scope = maybeOf(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -270,6 +271,31 @@ class _MainShellScreenState extends State<MainShellScreen> {
   bool? _lastObservedAdminMode;
   bool _isSteppingBackTab = false;
   bool _isRedirectingPushedTab = false;
+  bool _didPrecacheStageAssets = false;
+
+  static const List<String> _kStartupPrecacheAssets = <String>[
+    ArmSphereAssets.stageArena,
+    ArmSphereAssets.stageDiscover,
+    ArmSphereAssets.stageChampionshipBelts,
+    ArmSphereAssets.stageCommunity,
+    ArmSphereAssets.stagePassportVault,
+    ArmSphereAssets.stageReferee,
+    ArmSphereAssets.stageAdminGovernance,
+    ArmSphereAssets.stageAuthWalkout,
+    ArmSphereAssets.athleteDashboardHero,
+    ArmSphereAssets.arenaRadarCard,
+    ArmSphereAssets.cardStandbyTable,
+    ArmSphereAssets.avatarNeutralDark,
+    ArmSphereAssets.teamCrestDefault,
+  ];
+
+  void _precachePrimaryAssets() {
+    if (_didPrecacheStageAssets) return;
+    _didPrecacheStageAssets = true;
+    for (final path in _kStartupPrecacheAssets) {
+      precacheImage(AssetImage(path), context).catchError((_) {});
+    }
+  }
 
   bool _resolveIsAdminMode(BuildContext context) {
     if (widget.isAdminModeOverride != null) {
@@ -298,6 +324,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _precachePrimaryAssets();
     final router = GoRouter.maybeOf(context);
     final newInfoProvider = router?.routeInformationProvider;
     final newDelegate = router?.routerDelegate;
@@ -628,7 +655,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
             onNotification: _handleScrollNotification,
             child: Stack(
               children: [
-                AmbientParticleBackground(tabIndex: effectiveTabIndex),
+                AmbientParticleBackground(
+                  tabIndex: effectiveTabIndex,
+                  isAdminMode: isAdminMode,
+                ),
                 SafeArea(
                   bottom: false,
                   child: widget.navigationShell,
@@ -663,180 +693,110 @@ class _MainShellScreenState extends State<MainShellScreen> {
                             key: const ValueKey('crystal_floating_nav_dock'),
                             height: kFloatingDockHeight,
                             decoration: BoxDecoration(
-                              color: const Color(0xB8080C15),
-                              borderRadius: BorderRadius.circular(26),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: const Color(0x42FFFFFF),
+                                color: const Color(0x38FFFFFF),
                                 width: 1.0,
                               ),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                stops: [0.0, 0.45, 1.0],
-                                colors: [
-                                  Color(0x28FFFFFF),
-                                  Color(0x10FFFFFF),
-                                  Color(0x06FFFFFF),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.56),
-                                  offset: const Offset(0, 10),
-                                  blurRadius: 28,
-                                  spreadRadius: -2,
-                                ),
-                                BoxShadow(
-                                  color:
-                                      AppTheme.crimson.withValues(alpha: 0.08),
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 18,
-                                  spreadRadius: -4,
-                                ),
-                              ],
+                              boxShadow: const [],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(25),
-                              child: BackdropFilter(
-                                filter:
-                                    ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    // Top specular crystal rim reflection line
-                                    Positioned(
-                                      top: 0,
-                                      left: 24,
-                                      right: 24,
-                                      height: 1.0,
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.white
-                                                  .withValues(alpha: 0.0),
-                                              Colors.white
-                                                  .withValues(alpha: 0.55),
-                                              Colors.white
-                                                  .withValues(alpha: 0.0),
-                                            ],
-                                          ),
+                              borderRadius: BorderRadius.circular(27),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: isAdminMode
+                                    ? [
+                                        _buildNavItem(
+                                          context,
+                                          index: 0,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.space_dashboard_outlined,
+                                          activeIcon:
+                                              Icons.space_dashboard_rounded,
+                                          label: 'Command',
                                         ),
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: isAdminMode
-                                          ? [
-                                              _buildNavItem(
-                                                context,
-                                                index: 0,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .space_dashboard_outlined,
-                                                activeIcon: Icons
-                                                    .space_dashboard_rounded,
-                                                label: 'Command',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 1,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.badge_outlined,
-                                                activeIcon: Icons.badge_rounded,
-                                                label: 'Roster',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 2,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon:
-                                                    Icons.emoji_events_outlined,
-                                                activeIcon:
-                                                    Icons.emoji_events_rounded,
-                                                label: 'Arena Ops',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 3,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.gavel_outlined,
-                                                activeIcon: Icons.gavel_rounded,
-                                                label: 'Governance',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 4,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .admin_panel_settings_outlined,
-                                                activeIcon: Icons
-                                                    .admin_panel_settings_rounded,
-                                                label: 'Dossier',
-                                              ),
-                                            ]
-                                          : [
-                                              _buildNavItem(
-                                                context,
-                                                index: 0,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.home_outlined,
-                                                activeIcon: Icons.home_rounded,
-                                                label: 'Arena',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 1,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .travel_explore_outlined,
-                                                activeIcon: Icons
-                                                    .travel_explore_rounded,
-                                                label: 'Discover',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 2,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon:
-                                                    Icons.emoji_events_outlined,
-                                                activeIcon:
-                                                    Icons.emoji_events_rounded,
-                                                label: 'Events',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 3,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.forum_outlined,
-                                                activeIcon: Icons.forum_rounded,
-                                                label: 'Community',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 4,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .person_outline_rounded,
-                                                activeIcon:
-                                                    Icons.person_rounded,
-                                                label: 'Passport',
-                                              ),
-                                            ],
-                                    ),
-                                  ],
-                                ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 1,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.badge_outlined,
+                                          activeIcon: Icons.badge_rounded,
+                                          label: 'Roster',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 2,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.emoji_events_outlined,
+                                          activeIcon:
+                                              Icons.emoji_events_rounded,
+                                          label: 'Arena Ops',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 3,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.gavel_outlined,
+                                          activeIcon: Icons.gavel_rounded,
+                                          label: 'Governance',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 4,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons
+                                              .admin_panel_settings_outlined,
+                                          activeIcon:
+                                              Icons.admin_panel_settings_rounded,
+                                          label: 'Dossier',
+                                        ),
+                                      ]
+                                    : [
+                                        _buildNavItem(
+                                          context,
+                                          index: 0,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.home_outlined,
+                                          activeIcon: Icons.home_rounded,
+                                          label: 'Arena',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 1,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.travel_explore_outlined,
+                                          activeIcon:
+                                              Icons.travel_explore_rounded,
+                                          label: 'Discover',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 2,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.emoji_events_outlined,
+                                          activeIcon:
+                                              Icons.emoji_events_rounded,
+                                          label: 'Events',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 3,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.forum_outlined,
+                                          activeIcon: Icons.forum_rounded,
+                                          label: 'Community',
+                                        ),
+                                        _buildNavItem(
+                                          context,
+                                          index: 4,
+                                          activeTabIndex: effectiveTabIndex,
+                                          icon: Icons.person_outline_rounded,
+                                          activeIcon: Icons.person_rounded,
+                                          label: 'Passport',
+                                        ),
+                                      ],
                               ),
                             ),
                           ),
@@ -859,9 +819,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
     required String label,
   }) {
     final isSelected = activeTabIndex == index;
-    // Owner directive: crimson is the single active-navigation accent for all
-    // five tabs. Gold stays reserved for championship/achievement cues.
-    const activeColor = AppTheme.crimson;
 
     return Expanded(
       child: Semantics(
@@ -871,8 +828,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
         label: '$label tab',
         tooltip: label,
         onTap: () => _onTap(context, index),
-        // The visible icon/label are replaced by the single label above so
-        // screen readers do not announce the tab twice.
         excludeSemantics: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -883,41 +838,31 @@ class _MainShellScreenState extends State<MainShellScreen> {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                // Border is always present (transparent when idle) so the
-                // label does not shift 2dp down when a tab becomes active.
+                // Keep padding + borderWidth constant so the 1.2px active rim never shifts label layout.
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 11.8 : 12.0,
+                  vertical: isSelected ? 3.8 : 4.0,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? activeColor.withValues(alpha: 0.16)
-                      : Colors.transparent,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? activeColor.withValues(alpha: 0.45)
+                        ? const Color(0x80E23B3B)
                         : Colors.transparent,
-                    width: 1.0,
+                    width: isSelected ? 1.2 : 1.0,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: activeColor.withValues(alpha: 0.28),
-                            blurRadius: 12,
-                            spreadRadius: -2,
-                          ),
-                        ]
-                      : null,
+                  boxShadow: const [],
                 ),
                 child: Icon(
                   isSelected ? activeIcon : icon,
                   size: 22,
-                  color: isSelected ? activeColor : AppTheme.textMuted,
+                  color: isSelected
+                      ? const Color(0xFFFFFFFF)
+                      : const Color(0xFFCBD5E1),
                 ),
               ),
               const SizedBox(height: 3),
-              // Fixed-height dock: cap label scaling at 1.3x and shrink a
-              // too-wide label to fit rather than showing "Communi...".
-              // The tab's semantics label/tooltip carry the full name.
               MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.3,
                 child: FittedBox(
@@ -927,15 +872,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 10.5,
-                      // SpaceGrotesk bundles w400-w700 only; w800 would be synthesized.
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w600,
                       letterSpacing: 0.3,
-                      // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
-                      // active label uses titanium white; crimson stays on icon + pill.
                       color: isSelected
-                          ? AppTheme.textPrimary
-                          : AppTheme.textMuted,
+                          ? const Color(0xFFFFFFFF)
+                          : const Color(0xFFCBD5E1),
+                      shadows: AppTheme.crystalTextShadows,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

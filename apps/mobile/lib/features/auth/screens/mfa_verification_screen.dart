@@ -95,7 +95,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
       body: Stack(
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           Center(
             child: SingleChildScrollView(
@@ -112,19 +112,13 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                             height: 72,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppTheme.glassSurface,
+                              color: Colors.transparent,
                               border: Border.all(
-                                color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                                width: 2,
+                                color: const Color(0x73D4AF37),
+                                width: 1.5,
                               ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.goldGlow,
-                              blurRadius: 18,
-                              spreadRadius: 2,
+                              boxShadow: const [],
                             ),
-                          ],
-                        ),
                         child: const Icon(
                           Icons.security_outlined,
                           size: 36,
@@ -186,10 +180,10 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                           alignLabelWithHint: true,
                           counterText: '',
                           filled: true,
-                          fillColor: AppTheme.glassSurface,
+                          fillColor: Colors.transparent,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                            borderSide: const BorderSide(color: Color(0x38FFFFFF)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -213,17 +207,10 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                           height: 50,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: _isLoading
-                                ? AppTheme.goldPrimary.withValues(alpha: 0.5)
-                                : AppTheme.goldPrimary,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.goldGlow,
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0x73D4AF37), width: 1.2),
+                            boxShadow: const [],
                           ),
                           child: _isLoading
                               ? const SizedBox(
@@ -231,7 +218,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                                   height: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0B0F19)),
+                                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.goldPrimary),
                                   ),
                                 )
                               : const Text(
@@ -241,7 +228,7 @@ class _MfaVerificationScreenState extends ConsumerState<MfaVerificationScreen> {
                                     fontWeight: FontWeight.w800,
                                     fontSize: 14,
                                     letterSpacing: 1.0,
-                                    color: Color(0xFF0B0F19),
+                                    color: AppTheme.goldPrimary,
                                   ),
                                 ),
                         ),

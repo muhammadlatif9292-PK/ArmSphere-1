@@ -66,87 +66,40 @@ class CrystalStageBackdrop extends ConsumerWidget {
               // 1. Deep void base canvas
               const ColoredBox(color: AppTheme.voidBackground),
 
-              // 2. Full-Screen Crystal-Clear Primary Functional Image (NO BLUR, 100% sharp)
-              Opacity(
-                opacity: 0.46,
-                child: (customImg != null && customImg.trim().isNotEmpty)
-                    ? ArmSphereImage(
-                        imageUrl: ArmSphereAssets.resolveSemanticAsset(customImg),
-                        fit: BoxFit.cover,
-                        alignment: preset.defaultFocalAlignment,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fallbackAsset: preset.primaryAsset,
-                        excludeFromSemantics: true,
-                      )
-                    : ArmSphereImage(
-                        assetPath: ArmSphereAssets.resolveSemanticAsset(
-                            preset.primaryAsset),
-                        fit: BoxFit.cover,
-                        alignment: preset.defaultFocalAlignment,
-                        width: double.infinity,
-                        height: double.infinity,
-                        excludeFromSemantics: true,
-                      ),
-              ),
+              // 2. Full-Screen Crystal-Clear Primary Functional Image (100% native opacity, NO BLUR)
+              (customImg != null && customImg.trim().isNotEmpty)
+                  ? ArmSphereImage(
+                      imageUrl: ArmSphereAssets.resolveSemanticAsset(customImg),
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fallbackAsset: preset.primaryAsset,
+                      excludeFromSemantics: true,
+                    )
+                  : ArmSphereImage(
+                      assetPath: ArmSphereAssets.resolveSemanticAsset(
+                          preset.primaryAsset),
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      width: double.infinity,
+                      height: double.infinity,
+                      excludeFromSemantics: true,
+                    ),
 
-              // 3. Full-Screen Secondary Atmospheric Texture (Chalk Dust / Knurled Steel)
-              if (preset.secondaryTextureAsset != null)
-                Opacity(
-                  opacity: 0.32,
-                  child: ArmSphereImage(
-                    assetPath: preset.secondaryTextureAsset,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    excludeFromSemantics: true,
-                  ),
-                ),
-
-              // 4. Domain-Specific Top-Left & Bottom-Right Optical Spotlights
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(-0.75, -0.65),
-                    radius: 1.15,
-                    colors: [
-                      preset.primaryGlowColor.withValues(alpha: 0.20),
-                      preset.primaryGlowColor.withValues(alpha: 0.06),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0.80, 0.55),
-                    radius: 1.15,
-                    colors: [
-                      preset.secondaryGlowColor.withValues(alpha: 0.16),
-                      preset.secondaryGlowColor.withValues(alpha: 0.04),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-              ),
-
-              // 5. Ultra-Light Cinema Contrast Vignette (keeps full image visible top-to-bottom
-              //    while ensuring WCAG AAA white text legibility inside transparent cards)
+              // 3. Lightened Stage Backdrop Scrim so 9:16 artwork shines through transparent cards
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
+                    stops: [0.0, 0.45, 0.78, 1.0],
                     colors: [
-                      Color(0x52070A11), // 32% top header contrast
-                      Color(0x38070A11), // 22% crystal-clear middle window
-                      Color(0x47070A11), // 28% lower stage window
-                      Color(0x66070A11), // 40% dock grounding
+                      Color(0x00000000),
+                      Color(0x00000000),
+                      Color(0x40000000),
+                      Color(0x73000000),
                     ],
-                    stops: [0.0, 0.35, 0.72, 1.0],
                   ),
                 ),
               ),
@@ -161,9 +114,7 @@ class CrystalStageBackdrop extends ConsumerWidget {
 /// Full-Bleed Crystal Stage Top Header Scrim for `AppBar.flexibleSpace`.
 ///
 /// Renders the top slice of the full-viewport [CrystalStageBackdrop] aligned seamlessly
-/// with the screen body, sealed over an opaque `#070A11` void base with a protective
-/// top-down readability scrim and a `1px` specular bottom hairline border.
-/// Guarantees zero bleed-through from underlying routes or scrolling body content.
+/// with the screen body, preserving 100% clarity in the top 38% 3D showcase zone.
 class CrystalHeaderStageBar extends StatelessWidget {
   final ArmSphereStageDomain domain;
   final String? customImageOverride;
@@ -176,6 +127,10 @@ class CrystalHeaderStageBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold != null && scaffold.widget.extendBodyBehindAppBar) {
+      return const SizedBox.expand();
+    }
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
@@ -185,24 +140,6 @@ class CrystalHeaderStageBar extends StatelessWidget {
             domain: domain,
             customImageOverride: customImageOverride,
             viewportAlignment: Alignment.topCenter,
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xB8070A11),
-                  Color(0x6B070A11),
-                ],
-              ),
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0x22FFFFFF),
-                  width: 1.0,
-                ),
-              ),
-            ),
           ),
         ],
       ),
@@ -280,10 +217,11 @@ class _VisualCustomizationStudioSheet extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                      color: const Color(0x73D4AF37),
+                      width: 1.0,
                     ),
                   ),
                   child: const Icon(
@@ -558,13 +496,13 @@ class _VisualCustomizationStudioSheet extends ConsumerWidget {
                         width: 148,
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isAuto
-                                ? AppTheme.goldPrimary
-                                : Colors.white.withValues(alpha: 0.22),
-                            width: isAuto ? 2.0 : 1.0,
+                                ? const Color(0x73D4AF37)
+                                : const Color(0x38FFFFFF),
+                            width: isAuto ? 1.5 : 1.0,
                           ),
                         ),
                         child: Column(
@@ -679,17 +617,11 @@ class _PresetThumbnailTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
-                ? AppTheme.goldPrimary
-                : Colors.white.withValues(alpha: 0.24),
-            width: isSelected ? 2.0 : 1.0,
+                ? const Color(0x73D4AF37)
+                : const Color(0x38FFFFFF),
+            width: isSelected ? 1.5 : 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              offset: const Offset(0, 6),
-              blurRadius: 14,
-            ),
-          ],
+          boxShadow: const [],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12.5),
