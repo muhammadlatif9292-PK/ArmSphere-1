@@ -670,12 +670,15 @@ void main() {
     });
   });
 
-  group('Full-width badge and ribbon space-between alignment', () {
+  group('Right-column badge and full-width ribbon alignment', () {
     testWidgets(
-        'PAFF badge right edge aligns with card wrap boundary and enforces inter-element gap',
+        'VERIFIED and PAFF COMPETITOR badges sit inside the right 55% dossier zone leaving left 45% subject stage unobstructed',
         (tester) async {
       await _pumpDashboard(tester, width: 412);
 
+      final heroCardRect = tester.getRect(
+        find.byKey(const ValueKey('profile.athlete.dashboard_hero')),
+      );
       final verifiedFinder = find.text('VERIFIED');
       final paffFinder = find.text('PAFF COMPETITOR');
 
@@ -689,17 +692,16 @@ void main() {
           .ancestor(of: paffFinder, matching: find.byType(Container))
           .first);
 
-      // Verify intended ordering: left badge precedes right badge
-      expect(verifiedBadgeRect.right, lessThan(paffBadgeRect.left));
-
-      // Assert meaningful minimum gap between neighboring badges (Claude threshold > 8.5dp).
-      // If the parent Wrap shrink-wrapped instead of double.infinity, the gap would only be spacing: 8.0dp.
-      expect(paffBadgeRect.left - verifiedBadgeRect.right, greaterThan(8.5));
-
-      // Verified is pinned to the left edge of the parent Wrap
+      // Both badges sit strictly on the right 55% dossier column (leaving left 45% silhouette unobstructed)
+      expect(
+        verifiedBadgeRect.left,
+        greaterThanOrEqualTo(heroCardRect.left + heroCardRect.width * 0.42),
+      );
+      expect(
+        paffBadgeRect.left,
+        greaterThanOrEqualTo(heroCardRect.left + heroCardRect.width * 0.42),
+      );
       expect(verifiedBadgeRect.left - wrapRect.left, lessThan(5.0));
-      // PAFF COMPETITOR is pinned to the right edge of the parent Wrap
-      expect(wrapRect.right - paffBadgeRect.right, lessThan(5.0));
 
       expect(tester.takeException(), isNull);
       await _disposeDashboard(tester);

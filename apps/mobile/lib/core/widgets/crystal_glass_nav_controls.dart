@@ -389,7 +389,7 @@ class CrystalActionButton extends StatelessWidget {
         isPrimary ? accentColor : AppTheme.textSecondary;
     final Widget buttonBody = Container(
       width: fullWidth ? double.infinity : null,
-      constraints: const BoxConstraints(minHeight: 46),
+      constraints: const BoxConstraints(minHeight: 48),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
@@ -414,7 +414,7 @@ class CrystalActionButton extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             padding: padding ??
-                const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
               color: const Color(0xCC0B101C),
               borderRadius: BorderRadius.circular(14),
@@ -471,28 +471,27 @@ class CrystalActionButton extends StatelessWidget {
                     ),
                   )
                 else
-                  Row(
-                    mainAxisSize:
-                        fullWidth ? MainAxisSize.max : MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(
-                          icon,
-                          size: 17,
-                          color:
-                              isPrimary ? effectiveAccent : AppTheme.textPure,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Flexible(
-                        child: Text(
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (icon != null) ...[
+                          Icon(
+                            icon,
+                            size: 17,
+                            color:
+                                isPrimary ? effectiveAccent : AppTheme.textPure,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
                           label,
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontSize: 13,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.4,
                             color: isPrimary
@@ -500,8 +499,8 @@ class CrystalActionButton extends StatelessWidget {
                                 : AppTheme.textSecondary,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
               ],
             ),

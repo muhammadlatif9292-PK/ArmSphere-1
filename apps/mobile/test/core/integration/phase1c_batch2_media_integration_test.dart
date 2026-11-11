@@ -72,23 +72,15 @@ void main() {
       final avatarFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.width == 72 &&
-            widget.height == 72 &&
+            widget.width == 112 &&
+            widget.height == 112 &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
             widget.semanticLabel == 'Athlete Avatar for Sultan Khan',
       );
       expect(avatarFinder, findsOneWidget);
 
-      // 2. Verify division badge is rendered for Heavyweight competitor
-      final badgeFinder = find.byWidgetPredicate(
-        (widget) =>
-            widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.badgeHeavy &&
-            widget.width == 20 &&
-            widget.height == 20 &&
-            widget.semanticLabel == 'Division Category Badge',
-      );
-      expect(badgeFinder, findsOneWidget);
+      // 2. Verify centered vault role pill is rendered
+      expect(find.text('ATHLETE'), findsOneWidget);
 
       // 3. Verify competitor identity texts
       expect(find.text('Sultan Khan'), findsOneWidget);

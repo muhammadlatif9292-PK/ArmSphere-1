@@ -212,9 +212,9 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
+                145,
                 16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
+                mainShellBottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // 1. Header with Settings Quick Button
@@ -315,23 +315,24 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: CrystalActionButton(
-                              key: const ValueKey(
-                                'admin_dossier_switch_persona_btn',
-                              ),
-                              label: 'SWITCH ROLE',
-                              icon: Icons.swap_horiz_rounded,
-                              accentColor: AppTheme.goldPrimary,
-                              onTap: () => context.push('/settings/roles'),
+                          CrystalActionButton(
+                            key: const ValueKey(
+                              'admin_dossier_switch_persona_btn',
                             ),
+                            label: 'SWITCH ROLE',
+                            icon: Icons.swap_horiz_rounded,
+                            fullWidth: true,
+                            accentColor: AppTheme.goldPrimary,
+                            onTap: () => context.push('/settings/roles'),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(height: 10),
                           CrystalActionButton(
                             label: 'SETTINGS',
                             icon: Icons.tune_rounded,
+                            fullWidth: true,
                             isPrimary: false,
                             onTap: () => context.push('/settings'),
                           ),

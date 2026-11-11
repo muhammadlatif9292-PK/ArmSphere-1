@@ -22,7 +22,7 @@ const double kFloatingDockTotalHeight =
 /// If outside the shell: returns `safeArea.bottom + additionalPadding`.
 double mainShellBottomClearance(
   BuildContext context, {
-  double additionalPadding = 16.0,
+  double additionalPadding = 44.0,
 }) {
   return MainShellScope.bottomClearance(
     context,
@@ -127,7 +127,7 @@ class MainShellScope extends InheritedWidget {
   /// - If outside the shell or on a non-root route: returns `safeArea.bottom + additionalPadding`.
   static double bottomClearance(
     BuildContext context, {
-    double additionalPadding = 16.0,
+    double additionalPadding = 44.0,
   }) {
     final scope = maybeOf(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;

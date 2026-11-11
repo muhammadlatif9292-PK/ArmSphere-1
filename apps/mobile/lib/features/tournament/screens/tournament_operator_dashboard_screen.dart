@@ -130,9 +130,9 @@ class _TournamentOperatorDashboardScreenState
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
+            145,
             AppTheme.space16,
-            AppTheme.space16,
-            MainShellScope.bottomClearance(context, additionalPadding: 16),
+            MainShellScope.bottomClearance(context, additionalPadding: 44),
           ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space16),
@@ -188,9 +188,9 @@ class _TournamentOperatorDashboardScreenState
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                145,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // 1. Tournament Selector & War Room Banner

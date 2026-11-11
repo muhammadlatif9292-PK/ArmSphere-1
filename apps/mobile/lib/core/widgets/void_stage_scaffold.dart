@@ -104,15 +104,15 @@ class VoidStageScaffold extends StatelessWidget {
     );
   }
 
-  /// Standard bottom clearance (112dp + safe area bottom inset) so scrollable
+  /// Standard bottom clearance (120dp + safe area bottom inset) so scrollable
   /// lists clear the floating smoked-glass pill dock without occlusion.
   static double bottomClearance(BuildContext context) =>
-      MediaQuery.paddingOf(context).bottom + 112.0;
+      MediaQuery.paddingOf(context).bottom + 120.0;
 }
 
 /// Global helper for floating navigation dock bottom clearance.
 double mainShellBottomClearance(BuildContext context) =>
-    MediaQuery.paddingOf(context).bottom + 112.0;
+    MediaQuery.paddingOf(context).bottom + 120.0;
 
 /// Standardized ArmSphere Top AppBar for VoidStageScaffold Screens
 ///

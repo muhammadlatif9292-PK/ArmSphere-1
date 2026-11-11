@@ -113,7 +113,7 @@ void main() {
         (widget) =>
             widget is ArmSphereImage &&
             widget.imageUrl == 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg' &&
-            widget.fallbackAsset == ArmSphereAssets.heroGrip &&
+            widget.fallbackAsset == ArmSphereAssets.clipFallbackSparring &&
             widget.fit == BoxFit.cover,
       );
       expect(thumbnailFinder, findsOneWidget);

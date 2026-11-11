@@ -979,9 +979,9 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
+                145,
                 16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
+                mainShellBottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 AdminAuthorityHeader(

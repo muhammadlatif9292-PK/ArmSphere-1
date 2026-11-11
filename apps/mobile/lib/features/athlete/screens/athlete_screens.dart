@@ -44,20 +44,6 @@ String _fmtDate(dynamic iso) {
   return '${d.day} ${_months[d.month] ?? ''} ${d.year}';
 }
 
-String _getDivisionBadge(dynamic weightVal, dynamic weightClassStr) {
-  final cls = weightClassStr?.toString().toLowerCase() ?? '';
-  if (cls.contains('heavy') || cls.contains('open') || cls.contains('+'))
-    return ArmSphereAssets.badgeHeavy;
-  if (cls.contains('light')) return ArmSphereAssets.badgeLight;
-  if (cls.contains('junior')) return ArmSphereAssets.badgeJunior;
-  if (cls.contains('master')) return ArmSphereAssets.badgeMasters;
-  final w = (weightVal is num)
-      ? weightVal.toDouble()
-      : double.tryParse(weightVal?.toString() ?? '') ?? 85.0;
-  if (w >= 95) return ArmSphereAssets.badgeHeavy;
-  if (w >= 75) return ArmSphereAssets.badgeMiddle;
-  return ArmSphereAssets.badgeLight;
-}
 
 /// Athlete Dashboard Screen (Canary 2 Specification)
 ///
@@ -672,7 +658,7 @@ class _AthleteDashboardScreenState
                 excludeFromSemantics: true,
               ),
             ),
-            // Horizontal left-to-right directional scrim (x: 0.0 -> 0.62):
+            // Horizontal left-to-right directional scrim (x: 0.0 -> 0.58):
             // Protects left-side text while keeping the right 3D table subject 100% crystal-clear.
             const Positioned.fill(
               child: DecoratedBox(
@@ -680,7 +666,7 @@ class _AthleteDashboardScreenState
                   gradient: LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    stops: [0.0, 0.62, 1.0],
+                    stops: [0.0, 0.58, 1.0],
                     colors: [
                       Color(0xE6070A11),
                       Color(0x00070A11),
@@ -690,128 +676,73 @@ class _AthleteDashboardScreenState
                 ),
               ),
             ),
-            // Content overlay (non-positioned: it sizes the card)
+            // Content overlay constrained to left 58% dark safe zone so the 3D spotlighted
+            // table and jumbotron on the right remain completely visible.
             Align(
-              alignment: Alignment.center,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: isStacked
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: isStacked ? 1.0 : 0.58,
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppTheme.goldPrimary,
-                                ),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Flexible(
+                            child: Text(
+                              'SANCTIONED ARENA RADAR',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                letterSpacing: 0.8,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 9.5,
+                                color: AppTheme.goldPrimary,
                               ),
-                              const SizedBox(width: 6),
-                              const Flexible(
-                                child: Text(
-                                  'SANCTIONED ARENA RADAR',
-                                  style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    letterSpacing: 0.8,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 9.5,
-                                    color: AppTheme.goldPrimary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          const Text(
-                            'Championship Arena Active',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.textPure,
-                              letterSpacing: -0.2,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Official tournament brackets & table calls',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: exploreButton,
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppTheme.goldPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Flexible(
-                                      child: Text(
-                                        'SANCTIONED ARENA RADAR',
-                                        style: TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          letterSpacing: 0.8,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 9.5,
-                                          color: AppTheme.goldPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
-                                const Text(
-                                  'Championship Arena Active',
-                                  style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppTheme.textPure,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                const Text(
-                                  'Official tournament brackets & table calls',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          exploreButton,
                         ],
                       ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Championship Arena Active',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textPure,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Official tournament brackets & table calls',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: exploreButton,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -993,7 +924,7 @@ class _AthleteDashboardScreenState
 
                     // 2A. Left-to-Right Directional Readability Scrim:
                     // Keeps the left athlete 3D subject zone (0%–45%) 100% crystal-clear with zero haze
-                    // while anchoring the right-side athlete dossier text.
+                    // while anchoring the right-side 55% athlete dossier text.
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -1002,10 +933,10 @@ class _AthleteDashboardScreenState
                           colors: [
                             Color(0x00070A11),
                             Color(0x00070A11),
-                            Color(0xBF070A11),
-                            Color(0xE6070A11),
+                            Color(0xD9070A11),
+                            Color(0xD9070A11),
                           ],
-                          stops: [0.0, 0.42, 0.65, 1.0],
+                          stops: [0.0, 0.45, 0.56, 1.0],
                         ),
                       ),
                     ),
@@ -1088,13 +1019,95 @@ class _AthleteDashboardScreenState
                 final isCompactStacked =
                     cardInnerWidth < 290.0 || textScale >= 1.65;
                 final leftVisualStageWidth = (cardInnerWidth *
-                        (textScale > 1.25 ? 0.31 : 0.38))
-                    .clamp(96.0, 184.0);
+                        (textScale > 1.25 ? 0.36 : 0.45))
+                    .clamp(96.0, 210.0);
+
+                final credentialBadgesRow = Wrap(
+                  alignment: WrapAlignment.start,
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: ShapeDecoration(
+                        color: const Color(0x99070A11),
+                        shape: BeveledRectangleBorder(
+                          side: BorderSide(
+                            color: AppTheme.emerald.withValues(alpha: 0.45),
+                            width: 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_outline_rounded,
+                                size: 11, color: AppTheme.emerald),
+                            SizedBox(width: 4),
+                            Text(
+                              'VERIFIED',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: AppTheme.emerald,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: ShapeDecoration(
+                        color: const Color(0x99070A11),
+                        shape: BeveledRectangleBorder(
+                          side: BorderSide(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.48),
+                            width: 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.workspace_premium_rounded,
+                                size: 12, color: AppTheme.goldPrimary),
+                            SizedBox(width: 4),
+                            Text(
+                              'PAFF COMPETITOR',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
 
                 final dossierColumn = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // 0. Credential Badges Row inside right 55% column (leaving left 45% silhouette 100% clear)
+                    credentialBadgesRow,
+                    const SizedBox(height: 8),
+
                     // 1. Athlete Name (Primary Hierarchy Anchor)
                     Text(
                       displayName,
@@ -1193,91 +1206,6 @@ class _AthleteDashboardScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Top Credential Badges Row (wraps cleanly at large text scales)
-                    SizedBox(
-                      width: double.infinity,
-                      child: Wrap(
-                        alignment: WrapAlignment.spaceBetween,
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 4.5),
-                            decoration: ShapeDecoration(
-                              color: const Color(0x99070A11),
-                              shape: BeveledRectangleBorder(
-                                side: BorderSide(
-                                  color:
-                                      AppTheme.emerald.withValues(alpha: 0.45),
-                                  width: 1.0,
-                                ),
-                                borderRadius: BorderRadius.circular(4.0),
-                              ),
-                            ),
-                            child: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.check_circle_outline_rounded,
-                                      size: 11, color: AppTheme.emerald),
-                                  SizedBox(width: 4.5),
-                                  Text(
-                                    'VERIFIED',
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.8,
-                                      color: AppTheme.emerald,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 4.5),
-                            decoration: ShapeDecoration(
-                              color: const Color(0x99070A11),
-                              shape: BeveledRectangleBorder(
-                                side: BorderSide(
-                                  color: AppTheme.goldPrimary
-                                      .withValues(alpha: 0.48),
-                                  width: 1.0,
-                                ),
-                                borderRadius: BorderRadius.circular(4.0),
-                              ),
-                            ),
-                            child: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.workspace_premium_rounded,
-                                      size: 12, color: AppTheme.goldPrimary),
-                                  SizedBox(width: 4.5),
-                                  Text(
-                                    'PAFF COMPETITOR',
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.8,
-                                      color: AppTheme.goldPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
                     // Integrated Athlete Identity Composition (Tap -> Profile)
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -1299,18 +1227,18 @@ class _AthleteDashboardScreenState
                               ],
                             )
                           : ConstrainedBox(
-                              constraints: const BoxConstraints(minHeight: 128),
+                              constraints: const BoxConstraints(minHeight: 138),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  // Left portion: Open visual stage letting the
+                                  // Left 45% portion: Open visual stage letting the
                                   // athlete figure command presence in the card.
                                   SizedBox(
                                     width: leftVisualStageWidth,
-                                    height: 128,
+                                    height: 138,
                                   ),
-                                  const SizedBox(width: 10),
-                                  // Right portion: Structured Athlete Dossier
+                                  const SizedBox(width: 8),
+                                  // Right 55% portion: Structured Athlete Dossier
                                   Expanded(child: dossierColumn),
                                 ],
                               ),
@@ -2459,25 +2387,27 @@ class _AthleteDashboardScreenState
   }
 
   Widget _buildNoUpcomingBoutsCard(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
+    final isExtremeScale = textScale >= 1.5;
+
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.glassSurfaceHeavy,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Stack(
+          children: [
+            Positioned.fill(
               child: IgnorePointer(
                 child: Stack(
                   fit: StackFit.expand,
@@ -2485,6 +2415,7 @@ class _AthleteDashboardScreenState
                     const ArmSphereImage(
                       assetPath: ArmSphereAssets.cardStandbyTable,
                       fit: BoxFit.cover,
+                      alignment: Alignment.centerRight,
                       excludeFromSemantics: true,
                     ),
                     const DecoratedBox(
@@ -2492,10 +2423,10 @@ class _AthleteDashboardScreenState
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          stops: [0.0, 0.62, 1.0],
+                          stops: [0.0, 0.58, 1.0],
                           colors: [
-                            Color(0xE6070A11),
-                            Color(0x00070A11),
+                            Color(0xF2070A11),
+                            Color(0xCC070A11),
                             Color(0x00070A11),
                           ],
                         ),
@@ -2505,93 +2436,105 @@ class _AthleteDashboardScreenState
                 ),
               ),
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  runSpacing: 6,
-              children: [
-                const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
+            // Constrain label, heading, subtitle, and button to the left 58% dark obsidian safe zone
+            // so the spotlighted 3D table and coiled strap on the right (x: 58%–100%) remain clear.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: isExtremeScale ? 1.0 : 0.58,
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.calendar_today_outlined,
-                          size: 14, color: AppTheme.goldPrimary),
-                      SizedBox(width: 6),
-                      Text(
-                        'ARENA SCHEDULE',
+                      Wrap(
+                        alignment: WrapAlignment.start,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.calendar_today_outlined,
+                                    size: 13, color: AppTheme.goldPrimary),
+                                SizedBox(width: 5),
+                                Text(
+                                  'ARENA SCHEDULE',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.8,
+                                    color: AppTheme.goldPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                  color: AppTheme.borderTitanium, width: 1.0),
+                            ),
+                            child: const Text(
+                              'STANDBY',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'NO UPCOMING BOUTS SCHEDULED',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          color: AppTheme.goldPrimary,
+                          color: AppTheme.textPure,
+                          letterSpacing: 0.2,
+                          height: 1.2,
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Register for sanctioned tournaments to compete in official brackets.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.textSecondary,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      CrystalActionButton(
+                        label: 'BROWSE TOURNAMENTS',
+                        icon: Icons.emoji_events_outlined,
+                        expand: true,
+                        onPressed: () {
+                          MainShellScope.goToMainTabByPath(
+                              context, '/tournaments');
+                        },
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(6),
-                    border:
-                        Border.all(color: AppTheme.borderTitanium, width: 1.0),
-                  ),
-                  child: const Text(
-                    'STANDBY',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'NO UPCOMING BOUTS SCHEDULED',
-            style: TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPure,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Register for sanctioned tournaments to compete in official brackets.',
-            style: TextStyle(
-              fontSize: 11,
-              color: AppTheme.textMuted,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 14),
-          CrystalActionButton(
-            label: 'BROWSE TOURNAMENTS',
-            icon: Icons.emoji_events_outlined,
-            expand: true,
-            onPressed: () {
-              MainShellScope.goToMainTabByPath(context, '/tournaments');
-            },
-          ),
-        ],
-      ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -3868,56 +3811,46 @@ class AthleteProfileScreen extends ConsumerWidget {
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                 16,
-                18,
+                8,
                 16,
                 MainShellScope.isInsideShell(context)
                     ? MainShellScope.bottomClearance(context,
-                        additionalPadding: 36)
+                        additionalPadding: 44)
                     : kFloatingDockTotalHeight +
                         MediaQuery.paddingOf(context).bottom +
-                        36,
+                        44,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-            // 1. Athlete Identity Header with Smoked Dark Glass Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.smokedCardSurface,
-                gradient: AppTheme.machinedTitaniumGradient,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  width: 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.48),
-                    blurRadius: 24,
-                    spreadRadius: -2,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Row(
+            // 1. Top Vault Hero Header (height: 290px) aligned with the 3D Titanium Vault Ring
+            // on m1_stage_passport_vault_9x16.webp (zero rectangular box, zero neon-cyan ring)
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 290),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 18),
+                  // Circular Athlete Avatar (112x112) centered directly inside the 3D Titanium Vault Ring aperture
                   Container(
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color:
-                            isOfficial ? AppTheme.cyan : AppTheme.goldPrimary,
-                        width: 2.0,
+                        color: const Color(0xFFD4AF37), // #D4AF37 Championship Gold
+                        width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (isOfficial
-                                  ? AppTheme.cyan
-                                  : AppTheme.goldPrimary)
-                              .withValues(alpha: 0.25),
-                          blurRadius: 12,
-                          spreadRadius: 1,
+                          color: Colors.black.withValues(alpha: 0.65),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFF94A3B8).withValues(alpha: 0.22),
+                          blurRadius: 10,
+                          spreadRadius: 0.5,
                         ),
                       ],
                     ),
@@ -3927,82 +3860,118 @@ class AthleteProfileScreen extends ConsumerWidget {
                                   mergedProfile['avatarUrl'])
                               ?.toString(),
                       initial: displayName,
-                      size: 72,
-                      fallbackAsset: ArmSphereAssets.defaultAvatar,
+                      size: 112,
+                      fallbackAsset: ArmSphereAssets.avatarNeutralDark,
                       semanticLabel: 'Athlete Avatar for $displayName',
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                displayName,
-                                style: const TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 20,
-                                  color: AppTheme.textPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            StatusChip.info(label: role),
-                          ],
+                  const SizedBox(height: 20),
+                  // Athlete full name in 22sp bold white (maxLines: 2, centered, never truncated with ...)
+                  Text(
+                    displayName,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    softWrap: true,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                      color: AppTheme.textPure,
+                      height: 1.15,
+                      shadows: [
+                        Shadow(
+                          color: Color(0xE6000000),
+                          blurRadius: 12,
+                          offset: Offset(0, 2),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          [
-                            if (clubName != null && clubName.isNotEmpty) clubName,
-                            if (location.isNotEmpty) location,
-                            if ((clubName == null || clubName.isEmpty) && location.isEmpty)
-                              (email.isEmpty ? 'Federation Member' : email),
-                          ].join(' • '),
-                          style: const TextStyle(
-                              fontSize: 12, color: AppTheme.textMuted),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Role & location subtitle + compact SYSTEM ADMIN / CERTIFIED OFFICIAL pill badge in gold/crimson
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Text(
+                        [
+                          if (clubName != null && clubName.isNotEmpty) clubName,
+                          if (location.isNotEmpty) location,
+                          if ((clubName == null || clubName.isEmpty) &&
+                              location.isEmpty)
+                            (email.isEmpty ? 'Federation Member' : email),
+                        ].join(' • '),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textSecondary,
                         ),
-                        const SizedBox(height: 5),
-                        Row(
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: (isOfficial
+                                  ? AppTheme.crimson
+                                  : AppTheme.goldPrimary)
+                              .withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: (isOfficial
+                                    ? AppTheme.crimson
+                                    : AppTheme.goldPrimary)
+                                .withValues(alpha: 0.55),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            ArmSphereImage(
-                              assetPath: isOfficial
-                                  ? ArmSphereAssets.refNat
-                                  : _getDivisionBadge(
-                                      mergedProfile['weightKg'] ?? mergedProfile['weight'],
-                                      mergedProfile['weightClass']?.toString()),
-                              width: 20,
-                              height: 20,
-                              semanticLabel: isOfficial
-                                  ? 'Certified Referee Insignia'
-                                  : 'Division Category Badge',
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
+                            Icon(
                               isOfficial
-                                  ? 'Certified Federation Official'
-                                  : (mergedProfile['weightClass'] != null &&
-                                          mergedProfile['weightClass'].toString().isNotEmpty
-                                      ? 'Official PAFF • ${mergedProfile['weightClass']}'
-                                      : 'Official PAFF Competitor'),
+                                  ? Icons.verified_user_rounded
+                                  : Icons.workspace_premium_rounded,
+                              size: 12,
+                              color: isOfficial
+                                  ? AppTheme.crimson
+                                  : AppTheme.goldPrimary,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              role.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.7,
                                 color: isOfficial
-                                    ? AppTheme.cyan
+                                    ? AppTheme.crimson
                                     : AppTheme.goldPrimary,
                               ),
                             ),
                           ],
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isOfficial
+                        ? 'Certified Federation Official'
+                        : (mergedProfile['weightClass'] != null &&
+                                mergedProfile['weightClass']
+                                    .toString()
+                                    .isNotEmpty
+                            ? 'Official PAFF • ${mergedProfile['weightClass']}'
+                            : 'Official PAFF Competitor'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.goldPrimary,
                     ),
                   ),
                 ],
