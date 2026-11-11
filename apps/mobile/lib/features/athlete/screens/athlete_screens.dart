@@ -3338,9 +3338,11 @@ class IntelligenceDeckTabBar extends StatelessWidget {
           curve: Curves.easeOutCubic,
           constraints: const BoxConstraints(minHeight: _minTouchHeight),
           alignment: expand ? Alignment.center : null,
+          // Keep padding + borderWidth constant so the 1.2px active border never reflows tab rects.
           padding: EdgeInsets.symmetric(
-            horizontal: expand ? _segmentPadding : _pillPadding,
-            vertical: 6,
+            horizontal: (expand ? _segmentPadding : _pillPadding) -
+                (isSelected ? 0.2 : 0.0),
+            vertical: 6.0 - (isSelected ? 0.2 : 0.0),
           ),
           // Same active treatment as the verified navigation dock, now with the
           // bevelled plate shape used by the badges and the arm selector.
