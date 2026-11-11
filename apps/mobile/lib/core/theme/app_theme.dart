@@ -569,7 +569,6 @@ class AppTheme {
       dividerTheme: const DividerThemeData(
         color: Color(0x22FFFFFF),
         thickness: 1.0,
-        height: 1.0,
         space: 1.0,
       ),
       textTheme: const TextTheme(
