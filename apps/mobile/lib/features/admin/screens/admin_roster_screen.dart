@@ -969,7 +969,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.discover),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           RefreshIndicator(
             color: AppTheme.goldPrimary,
@@ -979,9 +979,9 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 16,
+                145,
                 16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
+                mainShellBottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 AdminAuthorityHeader(
@@ -1126,10 +1126,11 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                          color: const Color(0x73D4AF37),
+                          width: 1.0,
                         ),
                       ),
                       child: Center(
@@ -1265,8 +1266,12 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0x73D4AF37),
+                          width: 1.0,
+                        ),
                       ),
                       child: const Icon(
                         Icons.sports_rounded,

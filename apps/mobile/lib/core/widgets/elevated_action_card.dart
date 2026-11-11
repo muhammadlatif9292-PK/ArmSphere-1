@@ -26,7 +26,7 @@ class ElevatedActionCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppTheme.space16),
     this.margin,
-    this.borderRadius = AppTheme.radiusLarge,
+    this.borderRadius = 18.0,
     this.borderColor,
     this.backgroundColor,
     this.gradient,
@@ -38,27 +38,29 @@ class ElevatedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveBorderColor = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x38FFFFFF);
+
     Widget cardContent = Container(
       padding: padding,
       margin: margin,
-      decoration: gradient != null
-          ? BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(borderRadius),
-            )
-          : (backgroundColor != null
-              ? BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  border: borderColor != null
-                      ? Border.all(color: borderColor!)
-                      : null,
-                )
-              : null),
-      color: (gradient == null && backgroundColor == null)
-          ? Colors.transparent
-          : null,
-      child: child,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: effectiveBorderColor,
+          width: 1.0,
+        ),
+        boxShadow: const [],
+      ),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: AppTheme.crystalTextShadows,
+        ),
+        child: child,
+      ),
     );
 
     if (onTap != null) {

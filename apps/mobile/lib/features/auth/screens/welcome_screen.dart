@@ -91,76 +91,104 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final view = View.maybeOf(context);
+    final double dpr =
+        view?.devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
+    final Size physicalSize =
+        (view != null && dpr > 0 && view.physicalSize.height > 0)
+            ? (view.physicalSize / dpr)
+            : MediaQuery.sizeOf(context);
+    final double targetWidth =
+        physicalSize.width > 0 ? physicalSize.width : 400.0;
+    final double targetHeight =
+        physicalSize.height > 0 ? physicalSize.height : 840.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Substrate: L0 Canvas (#070A11) + Subtle Magnesium Chalk Grain
+          // Full-Bleed 9:16 Walkout Stage Backdrop at 100% Opacity (locked to physical screen top)
           Positioned.fill(
-            child: Container(
-              color: AppTheme.voidBackground,
-              child: CustomPaint(
-                painter: _MagnesiumChalkGrainPainter(),
+            child: IgnorePointer(
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  minWidth: targetWidth,
+                  maxWidth: targetWidth,
+                  minHeight: targetHeight,
+                  maxHeight: targetHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const ColoredBox(color: AppTheme.voidBackground),
+                      const ArmSphereImage(
+                        assetPath: ArmSphereAssets.stageAuthWalkout,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        width: double.infinity,
+                        height: double.infinity,
+                        excludeFromSemantics: true,
+                        showLoadingIndicator: false,
+                      ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: [0.0, 0.45, 0.78, 1.0],
+                            colors: [
+                              Color(0x00000000),
+                              Color(0x00000000),
+                              Color(0x40000000),
+                              Color(0x73000000),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
 
-          // Environmental Hero Visual Anchor (M1-HERO-GRIP) with Downward Void Scrim
+          // Environmental Hero Visual Anchor (M1-HERO-WELCOME-GRIP) at 100% Opacity
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 280,
+            height: 310,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Opacity(
-                  opacity: 0.68,
-                  child: ArmSphereImage(
-                    assetPath: ArmSphereAssets.resolveSemanticAsset(
-                      ArmSphereAssets.semanticAuthWelcomeHeroBanner,
-                    ),
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0.0, -0.25),
-                    width: double.infinity,
-                    height: 280,
-                    fallbackAsset: ArmSphereAssets.heroGrip,
-                    excludeFromSemantics: true,
-                  ),
+                const ArmSphereImage(
+                  assetPath: ArmSphereAssets.welcomeGripHero,
+                  fit: BoxFit.cover,
+                  alignment: Alignment(0.0, -0.20),
+                  width: double.infinity,
+                  height: 310,
+                  fallbackAsset: ArmSphereAssets.welcomeGripHero,
+                  excludeFromSemantics: true,
                 ),
-                // 4-stop vertical bottom fade into #070A11
+                // Bottom-only pure-black fade so silver chiaroscuro locked grip and crimson smoke pop at 100% clarity
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0x2E070A11),
-                        Color(0x59070A11),
-                        Color(0xB8070A11),
-                        Color(0xFF070A11),
+                        Color(0x00000000),
+                        Color(0x00000000),
+                        Color(0x80000000),
+                        Color(0xB3000000),
                       ],
-                      stops: [0.0, 0.42, 0.78, 1.0],
+                      stops: [0.0, 0.62, 0.86, 1.0],
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Ambient Gold Horizon Scrim
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.0, -0.75),
-                  radius: 1.2,
-                  colors: [
-                    Color(0x24D4AF37), // 14% subtle ambient gold halo
-                    Colors.transparent,
-                  ],
-                ),
-              ),
             ),
           ),
 
@@ -169,7 +197,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: (constraints.maxHeight - 48).clamp(0.0, double.infinity),
@@ -181,75 +209,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // ── Hero Layer: M0 Icon Gold Master Emblem (0–300ms fade-in) ──
+                            // ── Open Upper Hero Showcase Spacer (zero circular seal overlay over locked hands) ──
+                            const SizedBox(height: 220),
                             FadeTransition(
                               opacity: _heroFadeAnimation,
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    width: 96,
-                                    height: 96,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppTheme.cardSurface,
-                                      border: Border.all(
-                                        color: AppTheme.goldPrimary,
-                                        width: 2.0,
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: AppTheme.goldGlow,
-                                          blurRadius: 36,
-                                          spreadRadius: 4,
-                                        ),
-                                        BoxShadow(
-                                          color: Colors.black,
-                                          blurRadius: 16,
-                                          offset: Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipOval(
-                                      child: ArmSphereImage(
-                                        assetPath: ArmSphereAssets.iconGold,
-                                        width: 96,
-                                        height: 96,
-                                        fit: BoxFit.cover,
-                                        semanticLabel: 'ArmSphere Official Federation Emblem',
-                                        fallbackIcon: Icons.sports_kabaddi,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  const Text(
-                                    'ARMSPHERE',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 34,
-                                      letterSpacing: 1.5,
-                                      color: AppTheme.goldPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  const Text(
-                                    'THE INTERNATIONAL ARMWRESTLING FEDERATION SYSTEM',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.2,
-                                      color: AppTheme.textMuted,
-                                    ),
-                                  ),
-                                ],
+                              child: const Text(
+                                'ARMSPHERE',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 34,
+                                  letterSpacing: 1.5,
+                                  color: AppTheme.goldPrimary,
+                                ),
                               ),
                             ),
 
-                            const SizedBox(height: 32),
+                            const SizedBox(height: 28),
 
                             // ── Content Slide Ingress (300–550ms) ──────────────────
                             AnimatedBuilder(
@@ -345,20 +322,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                     ),
                                     child: const Text('I ALREADY HAVE AN ACCOUNT'),
                                   ),
-
-                                  const SizedBox(height: 20),
-
-                                  // Disclaimer Footer
-                                  const Text(
-                                    'By entering you agree to the ArmSphere Federation Charter\nand Anti-Doping Fair Play Code.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 10.5,
-                                      color: AppTheme.textMuted,
-                                      height: 1.45,
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -398,27 +361,13 @@ class _RoleSelectCard extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.goldPrimary.withValues(alpha: 0.12)
-              : AppTheme.titanium,
-          gradient: isSelected
-              ? null
-              : AppTheme.brushedSteelGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
-            width: isSelected ? 1.5 : 1.0,
+            color: isSelected ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+            width: isSelected ? 1.2 : 1.0,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.25),
-                    blurRadius: 14,
-                    spreadRadius: 0.5,
-                  ),
-                  AppTheme.titaniumShadow(),
-                ]
-              : [AppTheme.titaniumShadow()],
+          boxShadow: const [],
         ),
         child: Row(
           children: [
@@ -426,12 +375,10 @@ class _RoleSelectCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.silverPlane,
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                  color: isSelected ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
                   width: 1.0,
                 ),
               ),
@@ -443,29 +390,18 @@ class _RoleSelectCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.title,
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      letterSpacing: 0.5,
-                      color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.subtitle,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                ],
+              child: Text(
+                data.title,
+                style: TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13.5,
+                  letterSpacing: 0.5,
+                  color: isSelected ? AppTheme.goldPrimary : AppTheme.textPrimary,
+                  shadows: const [
+                    Shadow(color: Color(0xE6000000), blurRadius: 6, offset: Offset(0, 1)),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -474,14 +410,14 @@ class _RoleSelectCard extends StatelessWidget {
               height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppTheme.goldPrimary : Colors.transparent,
+                color: Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                  color: isSelected ? AppTheme.goldPrimary : const Color(0x38FFFFFF),
                   width: 1.5,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, size: 13, color: Colors.black)
+                  ? const Icon(Icons.check, size: 13, color: AppTheme.goldPrimary)
                   : null,
             ),
           ],
@@ -544,20 +480,13 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
         child: Container(
           height: 52,
           decoration: BoxDecoration(
-            gradient: AppTheme.championshipGoldGradient,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: AppTheme.glassBorderSpecular,
-              width: 1.0,
+              color: const Color(0x73D4AF37),
+              width: 1.2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                blurRadius: 16,
-                spreadRadius: 1,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            boxShadow: const [],
           ),
           alignment: Alignment.center,
           child: const Row(
@@ -569,7 +498,7 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
                   fontFamily: 'Space Grotesk',
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF070A11),
+                  color: AppTheme.goldPrimary,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -577,7 +506,7 @@ class _TactileEnterArenaButtonState extends State<_TactileEnterArenaButton>
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 18,
-                color: Color(0xFF070A11),
+                color: AppTheme.goldPrimary,
               ),
             ],
           ),
@@ -599,25 +528,4 @@ class _RoleCardData {
     required this.subtitle,
     required this.icon,
   });
-}
-
-/// Subtle 1.5% opacity magnesium chalk grain painter for L0 Canvas
-class _MagnesiumChalkGrainPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.015)
-      ..strokeWidth = 1.0;
-
-    // Fixed procedural chalk distribution without expensive noise library
-    for (double y = 15; y < size.height; y += 45) {
-      for (double x = 12; x < size.width; x += 40) {
-        final offset = (x * 7 + y * 13) % 20;
-        canvas.drawCircle(Offset(x + offset, y), 0.8, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -79,16 +79,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: const CrystalBackButton(fallbackRoute: '/login'),
         title: const Text('Reset Password'),
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           Center(
             child: SingleChildScrollView(

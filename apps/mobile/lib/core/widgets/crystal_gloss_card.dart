@@ -33,7 +33,7 @@ class CrystalGlossCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16.0),
     this.margin,
-    this.borderRadius = 16.0,
+    this.borderRadius = 18.0,
     this.borderColor,
     this.borderWidth = 1.0,
     this.surfaceOpacity = 0.04,
@@ -46,46 +46,21 @@ class CrystalGlossCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveRadius = BorderRadius.circular(borderRadius);
-    final effectiveBorderColor =
-        borderColor ?? Colors.white.withValues(alpha: 0.22);
+    final effectiveBorderColor = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x38FFFFFF);
 
     Widget cardBody = Container(
       margin: margin,
       decoration: BoxDecoration(
-        // Pillar 2: Rich Smoked Dark Glass (~82% dark obsidian + subtle titanium sheen)
-        color: const Color(0xD10B101C),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xD9141E30),
-            Color(0xD10D1320),
-            Color(0xCC080C15),
-          ],
-          stops: [0.0, 0.45, 1.0],
-        ),
+        color: Colors.transparent,
         borderRadius: effectiveRadius,
-        // Pillar 3: Specular Light-Catching Border
         border: Border.all(
           color: effectiveBorderColor,
           width: borderWidth,
         ),
-        // Pillar 4: Levitating Y-Axis Drop Shadow
-        boxShadow: customShadows ??
-            [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.45),
-                offset: const Offset(0, 10),
-                blurRadius: 24,
-                spreadRadius: -2,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                offset: const Offset(0, 4),
-                blurRadius: 8,
-                spreadRadius: 0,
-              ),
-            ],
+        boxShadow: const [],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(
@@ -99,29 +74,7 @@ class CrystalGlossCard extends StatelessWidget {
                 child: IgnorePointer(child: backgroundArt!),
               ),
 
-            // Top specular rim highlight (1px light-catching crest)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 1,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.06),
-                        Colors.white.withValues(alpha: 0.40),
-                        Colors.white.withValues(alpha: 0.06),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Pillar 5: High-Contrast Foreground Envelope
+            // High-Contrast Foreground Envelope with Crisp Text Shadow
             Padding(
               padding: padding,
               child: DefaultTextStyle.merge(
@@ -129,9 +82,9 @@ class CrystalGlossCard extends StatelessWidget {
                   color: Color(0xFFFFFFFF),
                   shadows: [
                     Shadow(
-                      color: Color(0xBD000000),
-                      offset: Offset(0, 1.5),
-                      blurRadius: 4.0,
+                      color: Color(0xE6000000),
+                      offset: Offset(0, 1),
+                      blurRadius: 6.0,
                     ),
                   ],
                 ),

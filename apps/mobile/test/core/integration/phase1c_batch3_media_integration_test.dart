@@ -158,8 +158,8 @@ void main() {
       final redAvatarFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.width == 52 &&
-            widget.height == 52 &&
+            widget.width == 56 &&
+            widget.height == 56 &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
             widget.semanticLabel == 'Red corner competitor avatar for Red Corner Contender',
       );
@@ -169,8 +169,8 @@ void main() {
       final blueAvatarFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.width == 52 &&
-            widget.height == 52 &&
+            widget.width == 56 &&
+            widget.height == 56 &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
             widget.semanticLabel == 'Blue corner competitor avatar for Blue Corner Contender',
       );
@@ -253,7 +253,7 @@ void main() {
         (widget) =>
             widget is ArmSphereImage &&
             widget.imageUrl == 'https://storage.armsphere.com/avatars/rashid.jpg' &&
-            widget.width == 52 &&
+            widget.width == 56 &&
             widget.semanticLabel == 'Red corner competitor avatar for Rashid "The Bull" Qureshi',
       );
       expect(redDynFinder, findsOneWidget);
@@ -263,7 +263,7 @@ void main() {
         (widget) =>
             widget is ArmSphereImage &&
             widget.imageUrl == 'https://storage.armsphere.com/avatars/bilal.jpg' &&
-            widget.width == 52 &&
+            widget.width == 56 &&
             widget.semanticLabel == 'Blue corner competitor avatar for Bilal "The Anvil" Butt',
       );
       expect(blueDynFinder, findsOneWidget);

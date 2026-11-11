@@ -68,14 +68,14 @@ void main() {
       );
     }
 
-    testWidgets('Renders prominent Live Table Scorepad hero card with title, LIVE badge and subtitle', (tester) async {
+    testWidgets('Renders prominent Live Table Scorepad hero card with title and LIVE badge', (tester) async {
       await tester.pumpWidget(buildRefereeDashboardApp());
       await tester.pumpAndSettle();
 
       expect(find.text('OFFICIAL ACTIONS'), findsOneWidget);
       expect(find.text('Live Table Scorepad'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
-      expect(find.text('Launch table-side scoring & foul console'), findsOneWidget);
+      expect(find.text('Launch table-side scoring & foul console'), findsNothing);
       expect(find.byIcon(Icons.sports_score_rounded), findsOneWidget);
     });
 

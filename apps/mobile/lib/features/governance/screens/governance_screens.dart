@@ -88,8 +88,9 @@ class _GovernanceDashboardScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.governance),
         elevation: 0,
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: const Text(
@@ -117,15 +118,15 @@ class _GovernanceDashboardScreenState
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           disputesAsync.when(
         loading: () => ListView.separated(
           padding: EdgeInsets.fromLTRB(
             AppTheme.space16,
+            145,
             AppTheme.space16,
-            AppTheme.space16,
-            MainShellScope.bottomClearance(context, additionalPadding: 16),
+            MainShellScope.bottomClearance(context, additionalPadding: 44),
           ),
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
@@ -143,16 +144,24 @@ class _GovernanceDashboardScreenState
         ),
         data: (disputes) {
           if (disputes.isEmpty) {
-            return AppEmptyState(
-              icon: Icons.balance_outlined,
-              title: 'No disputes filed',
-              subtitle:
-                  'Open arbitration cases will appear here once submitted.',
-              ctaLabel: 'File a complaint',
-              onCtaTap: () {
-                HapticFeedback.lightImpact();
-                context.push('/governance/submit-complaint');
-              },
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                8,
+                145,
+                8,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
+              child: AppEmptyState(
+                icon: Icons.balance_outlined,
+                title: 'No disputes filed',
+                subtitle:
+                    'Open arbitration cases will appear here once submitted.',
+                ctaLabel: 'File a complaint',
+                onCtaTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/governance/submit-complaint');
+                },
+              ),
             );
           }
 
@@ -182,20 +191,19 @@ class _GovernanceDashboardScreenState
               key: const ValueKey<String>('governance_disputes_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
+                145,
                 AppTheme.space16,
-                AppTheme.space16,
-                MainShellScope.bottomClearance(context, additionalPadding: 20),
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
               children: [
                 // Top Operational Metrics Ribbon
                 Container(
                   padding: const EdgeInsets.all(AppTheme.space12),
                   decoration: BoxDecoration(
-                    color: AppTheme.glassSurface,
-                    gradient: AppTheme.machinedTitaniumGradient,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
-                    boxShadow: [AppTheme.titaniumShadow()],
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+                    boxShadow: const [],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -206,21 +214,21 @@ class _GovernanceDashboardScreenState
                         color: AppTheme.textPrimary,
                       ),
                       Container(
-                          width: 1, height: 28, color: AppTheme.border),
+                          width: 1, height: 28, color: const Color(0x22FFFFFF)),
                       _MetricItem(
                         label: 'OPEN',
                         count: openCount,
                         color: AppTheme.secondaryAccent,
                       ),
                       Container(
-                          width: 1, height: 28, color: AppTheme.border),
+                          width: 1, height: 28, color: const Color(0x22FFFFFF)),
                       _MetricItem(
                         label: 'ESCALATED',
                         count: escalatedCount,
                         color: AppTheme.primaryAccent,
                       ),
                       Container(
-                          width: 1, height: 28, color: AppTheme.border),
+                          width: 1, height: 28, color: const Color(0x22FFFFFF)),
                       _MetricItem(
                         label: 'RESOLVED',
                         count: resolvedCount,
@@ -323,11 +331,11 @@ class _GovernanceDashboardScreenState
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.elevatedSurface,
+                                      color: Colors.transparent,
                                       borderRadius: BorderRadius.circular(
                                           AppTheme.radiusSmall),
                                       border: Border.all(
-                                          color: AppTheme.border, width: 1.0),
+                                          color: const Color(0x73D4AF37), width: 1.0),
                                     ),
                                     child: Text(
                                       '#DISP-$shortId',
@@ -486,13 +494,11 @@ class _FilterTab extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.goldPrimary.withValues(alpha: 0.15)
-              : AppTheme.glassSurface,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
-            width: 1.0,
+            color: isSelected ? const Color(0x73D4AF37) : const Color(0x2EFFFFFF),
+            width: isSelected ? 1.2 : 1.0,
           ),
         ),
         child: Row(
@@ -506,18 +512,20 @@ class _FilterTab extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.6,
                 color: isSelected
-                    ? AppTheme.goldLight
-                    : AppTheme.textSecondary,
+                    ? AppTheme.goldPrimary
+                    : const Color(0xFFCBD5E1),
               ),
             ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.goldPrimary
-                    : AppTheme.elevatedSurface,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isSelected ? const Color(0x73D4AF37) : const Color(0x2EFFFFFF),
+                  width: 1.0,
+                ),
               ),
               child: Text(
                 count.toString(),
@@ -525,7 +533,7 @@ class _FilterTab extends StatelessWidget {
                   fontFamily: AppTheme.fontDisplay,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: isSelected ? AppTheme.voidBackground : AppTheme.textMuted,
+                  color: isSelected ? AppTheme.goldPrimary : AppTheme.textMuted,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
@@ -814,8 +822,9 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.governance),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -834,7 +843,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
           disputesAsync.when(
         loading: () => const CrystalScreenLoadingView(
@@ -894,11 +903,11 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.elevatedSurface,
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(
                                   AppTheme.radiusSmall),
                               border: Border.all(
-                                  color: AppTheme.border, width: 1.0),
+                                  color: const Color(0x73D4AF37), width: 1.0),
                             ),
                             child: Text(
                               '#DISP-$shortId',
@@ -979,7 +988,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                         ],
                       ),
                       const SizedBox(height: AppTheme.space12),
-                      const Divider(height: 1, color: AppTheme.border),
+                      const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       const SizedBox(height: AppTheme.space12),
                       Text(
                         d['description']?.toString() ?? 'No description provided.',
@@ -998,9 +1007,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                   const SizedBox(height: AppTheme.space16),
                   ElevatedActionCard(
                     padding: const EdgeInsets.all(AppTheme.space16),
-                    borderColor: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                    backgroundColor:
-                        AppTheme.goldPrimary.withValues(alpha: 0.05),
+                    borderColor: const Color(0x73D4AF37),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1025,7 +1032,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: AppTheme.space12),
-                        const Divider(height: 1, color: AppTheme.border),
+                        const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                         const SizedBox(height: AppTheme.space12),
                         Text(
                           d['resolutionDetails'].toString(),
@@ -1056,12 +1063,15 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                       widget.disputeId, reason),
                             ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.secondaryAccent,
-                      foregroundColor: AppTheme.voidBackground,
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: AppTheme.goldPrimary,
+                      shadowColor: Colors.transparent,
+                      elevation: 0,
+                      side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                       minimumSize: const Size.fromHeight(50),
                       shape: RoundedRectangleBorder(
                         borderRadius:
-                            BorderRadius.circular(AppTheme.radiusMedium),
+                            BorderRadius.circular(18),
                       ),
                     ),
                     icon: const Icon(Icons.trending_up, size: 18),

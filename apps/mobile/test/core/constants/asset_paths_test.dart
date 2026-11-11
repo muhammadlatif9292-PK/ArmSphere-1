@@ -18,10 +18,10 @@ void main() {
     });
 
     test('M1 Textures & Heroes have valid paths and webp extensions', () {
-      expect(ArmSphereAssets.texKnurl, startsWith('assets/images/textures/'));
+      expect(ArmSphereAssets.texKnurl, startsWith('assets/images/heroes/'));
       expect(ArmSphereAssets.texKnurl, endsWith('.webp'));
 
-      expect(ArmSphereAssets.texChalk, startsWith('assets/images/textures/'));
+      expect(ArmSphereAssets.texChalk, startsWith('assets/images/heroes/'));
       expect(ArmSphereAssets.texChalk, endsWith('.webp'));
 
       expect(ArmSphereAssets.heroArena, startsWith('assets/images/heroes/'));
