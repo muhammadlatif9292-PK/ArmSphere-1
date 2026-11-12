@@ -40,38 +40,39 @@ class AdminAuthorityHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: const Color(0x73D4AF37),
-                  width: 1.0,
+        SizedBox(
+          height: 56,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0x73D4AF37),
+                    width: 1.0,
+                  ),
+                  boxShadow: const [],
                 ),
-                boxShadow: const [],
+                child: Icon(
+                  AdminPermissions.roleIcon(activeRole),
+                  color: AppTheme.goldPrimary,
+                  size: 19,
+                ),
               ),
-              child: Icon(
-                AdminPermissions.roleIcon(activeRole),
-                color: AppTheme.goldPrimary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+              const SizedBox(width: 10),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         title,
+                        maxLines: 1,
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 20,
@@ -81,9 +82,10 @@ class AdminAuthorityHeader extends StatelessWidget {
                           shadows: AppTheme.crystalTextShadows,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
+                          horizontal: 7,
                           vertical: 2.5,
                         ),
                         decoration: BoxDecoration(
@@ -96,6 +98,7 @@ class AdminAuthorityHeader extends StatelessWidget {
                         ),
                         child: Text(
                           badgeText,
+                          maxLines: 1,
                           style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 9.5,
@@ -108,31 +111,31 @@ class AdminAuthorityHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-            if (trailingAction != null) ...[
-              const SizedBox(width: 8),
-              trailingAction!,
+              if (trailingAction != null) ...[
+                const SizedBox(width: 6),
+                trailingAction!,
+              ],
+              if (onRefresh != null) ...[
+                const SizedBox(width: 6),
+                CrystalIconPillButton(
+                  icon: Icons.refresh_rounded,
+                  iconColor: AppTheme.goldPrimary,
+                  tooltip: 'Synchronize Data',
+                  onPressed: () {
+                    CrystalModalSheet.unfocusActiveInput(context);
+                    onRefresh!();
+                  },
+                ),
+              ],
             ],
-            if (onRefresh != null) ...[
-              const SizedBox(width: 8),
-              CrystalIconPillButton(
-                icon: Icons.refresh_rounded,
-                iconColor: AppTheme.goldPrimary,
-                tooltip: 'Synchronize Data',
-                onPressed: () {
-                  CrystalModalSheet.unfocusActiveInput(context);
-                  onRefresh!();
-                },
-              ),
-            ],
-          ],
+          ),
         ),
         if (isProvincial &&
             jurisdiction != null &&
             jurisdiction!.trim().isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           AdminJurisdictionBanner(jurisdiction: jurisdiction!),
         ],
       ],
@@ -239,6 +242,10 @@ class AdminSegmentedDeck extends StatelessWidget {
   Widget _buildSegment(BuildContext context, int index, AdminSegmentItem item) {
     final bool isSelected = index == selectedIndex;
     final bool isDense = segments.length >= 4;
+    final String compositeLabel = item.count != null
+        ? '${item.label} ${item.count}'
+        : item.label;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -269,58 +276,71 @@ class AdminSegmentedDeck extends StatelessWidget {
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                item.icon,
-                size: isDense ? 13.5 : 15,
-                color: isSelected ? AppTheme.crimson : const Color(0xFFCBD5E1),
-              ),
-              SizedBox(width: isDense ? 3.5 : 5),
-              Text(
-                item.label,
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: isDense ? 11.0 : 11.5,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
-                  shadows: AppTheme.crystalTextShadows,
-                ),
-              ),
-              if (item.count != null) ...[
-                SizedBox(width: isDense ? 3.5 : 5),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDense ? 4 : 5,
-                    vertical: 1,
+          child: isDense
+              ? Text(
+                  compositeLabel,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 12.0,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    shadows: AppTheme.crystalTextShadows,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: isSelected
-                          ? const Color(0x80E23B3B)
-                          : const Color(0x2EFFFFFF),
-                      width: 1.0,
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: 15,
+                      color: isSelected ? AppTheme.crimson : const Color(0xFFCBD5E1),
                     ),
-                  ),
-                  child: Text(
-                    '${item.count}',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                      shadows: AppTheme.crystalTextShadows,
+                    const SizedBox(width: 5),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12.0,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        color: isSelected ? AppTheme.textPure : const Color(0xFFCBD5E1),
+                        shadows: AppTheme.crystalTextShadows,
+                      ),
                     ),
-                  ),
+                    if (item.count != null) ...[
+                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0x80E23B3B)
+                                : const Color(0x2EFFFFFF),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Text(
+                          '${item.count}',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            shadows: AppTheme.crystalTextShadows,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ],
-          ),
         ),
       ),
     );
@@ -413,6 +433,8 @@ class AdminCrystalSearchBar extends StatelessWidget {
           const SizedBox(height: 10),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.only(right: 16),
             child: Row(
               children: [
                 for (int i = 0; i < filterOptions.length; i++) ...[
@@ -445,7 +467,7 @@ class AdminCrystalSearchBar extends StatelessWidget {
       case 'MATCH_OVERRIDE':
         return 'MATCH OVERRIDE';
       case 'DISPUTE_RESOLVED':
-        return 'DISPUTE RULING';
+        return 'DISPUTE';
       case 'ROLE_GRANTED':
         return 'ROLE GRANT';
       case 'ATHLETE_SUSPENDED':

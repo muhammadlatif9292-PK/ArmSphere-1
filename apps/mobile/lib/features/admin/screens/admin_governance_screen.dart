@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -616,91 +617,104 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
     final venuesAsync = ref.watch(adminVenuesProvider);
     final ticketsAsync = ref.watch(adminSupportTicketsProvider(supportFilter));
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async =>
-                _refreshSegment(selectedSegment, supportFilter),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
-              ),
-              children: [
-                AdminAuthorityHeader(
-                  title: 'Federation Governance',
-                  subtitle:
-                      'Arbitration dockets, video moderation, partner gyms, and member helpdesk',
-                  activeRole: activeRole,
-                  jurisdiction: jurisdiction,
-                  onRefresh: () =>
-                      _refreshSegment(selectedSegment, supportFilter),
-                ),
-                const SizedBox(height: 14),
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: RefreshIndicator(
+                color: AppTheme.goldPrimary,
+                backgroundColor: AppTheme.cardSurface,
+                onRefresh: () async =>
+                    _refreshSegment(selectedSegment, supportFilter),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    28,
+                  ),
+                  children: [
+                    AdminAuthorityHeader(
+                      title: 'Federation Governance',
+                      subtitle:
+                          'Arbitration dockets, video moderation, partner gyms, and member helpdesk',
+                      activeRole: activeRole,
+                      jurisdiction: jurisdiction,
+                      onRefresh: () =>
+                          _refreshSegment(selectedSegment, supportFilter),
+                    ),
+                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
+                    const SizedBox(height: 120),
 
-                AdminSegmentedDeck(
-                  selectedIndex: selectedSegment,
-                  onChanged: (idx) =>
-                      ref.read(adminGovernanceSegmentProvider.notifier).state =
-                          idx,
-                  segments: [
-                    AdminSegmentItem(
-                      label: 'Disputes',
-                      icon: Icons.gavel_rounded,
-                      count: disputesAsync.valueOrNull?.length,
+                    AdminSegmentedDeck(
+                      selectedIndex: selectedSegment,
+                      onChanged: (idx) =>
+                          ref.read(adminGovernanceSegmentProvider.notifier).state =
+                              idx,
+                      segments: [
+                        AdminSegmentItem(
+                          label: 'Disputes',
+                          icon: Icons.gavel_rounded,
+                          count: disputesAsync.valueOrNull?.length,
+                        ),
+                        AdminSegmentItem(
+                          label: 'Moderation',
+                          icon: Icons.ondemand_video_rounded,
+                          count: pendingLinksAsync.valueOrNull?.length,
+                        ),
+                        AdminSegmentItem(
+                          label: 'Gyms',
+                          icon: Icons.fitness_center_rounded,
+                          count: venuesAsync.valueOrNull?.length,
+                        ),
+                        AdminSegmentItem(
+                          label: 'Helpdesk',
+                          icon: Icons.support_agent_rounded,
+                          count: ticketsAsync.valueOrNull?.length,
+                        ),
+                      ],
                     ),
-                    AdminSegmentItem(
-                      label: 'Moderation',
-                      icon: Icons.ondemand_video_rounded,
-                      count: pendingLinksAsync.valueOrNull?.length,
-                    ),
-                    AdminSegmentItem(
-                      label: 'Gyms',
-                      icon: Icons.fitness_center_rounded,
-                      count: venuesAsync.valueOrNull?.length,
-                    ),
-                    AdminSegmentItem(
-                      label: 'Helpdesk',
-                      icon: Icons.support_agent_rounded,
-                      count: ticketsAsync.valueOrNull?.length,
-                    ),
+                    const SizedBox(height: 14),
+
+                    if (selectedSegment == 0)
+                      _buildDisputesSegment(
+                        disputesAsync: disputesAsync,
+                        activeRole: activeRole,
+                      )
+                    else if (selectedSegment == 1)
+                      _buildModerationSegment(
+                        pendingLinksAsync: pendingLinksAsync,
+                        activeRole: activeRole,
+                      )
+                    else if (selectedSegment == 2)
+                      _buildPartnerGymsSegment(
+                        venuesAsync: venuesAsync,
+                        activeRole: activeRole,
+                        jurisdiction: jurisdiction,
+                      )
+                    else
+                      _buildHelpdeskSegment(
+                        ticketsAsync: ticketsAsync,
+                        currentUserId: currentUserId,
+                        supportFilter: supportFilter,
+                      ),
                   ],
                 ),
-                const SizedBox(height: 14),
-
-                if (selectedSegment == 0)
-                  _buildDisputesSegment(
-                    disputesAsync: disputesAsync,
-                    activeRole: activeRole,
-                  )
-                else if (selectedSegment == 1)
-                  _buildModerationSegment(
-                    pendingLinksAsync: pendingLinksAsync,
-                    activeRole: activeRole,
-                  )
-                else if (selectedSegment == 2)
-                  _buildPartnerGymsSegment(
-                    venuesAsync: venuesAsync,
-                    activeRole: activeRole,
-                    jurisdiction: jurisdiction,
-                  )
-                else
-                  _buildHelpdeskSegment(
-                    ticketsAsync: ticketsAsync,
-                    currentUserId: currentUserId,
-                    supportFilter: supportFilter,
-                  ),
-              ],
+              ),
             ),
           ),
         ],

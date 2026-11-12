@@ -488,15 +488,28 @@ class TacticalCommandSheet extends ConsumerWidget {
     required bool isVerified,
   }) async {
     HapticFeedback.selectionClick();
-    if (isVerified) {
-      try {
-        await ref.read(authProvider.notifier).switchActiveRole(roleKey);
-      } catch (_) {}
-    }
+    final router = GoRouter.maybeOf(context);
+    final authNotifier = ref.read(authProvider.notifier);
     if (context.mounted) {
       Navigator.of(context).pop();
-      context.push(targetRoute);
     }
+    if (isVerified) {
+      try {
+        await authNotifier.switchActiveRole(roleKey);
+      } catch (_) {}
+      if (router != null) {
+        int safety = 0;
+        try {
+          while (router.canPop() && safety < 24) {
+            router.pop();
+            safety++;
+          }
+        } catch (_) {}
+        router.go('/home');
+      }
+      return;
+    }
+    router?.push('/settings/roles');
   }
 
   Widget _buildSectionHeader({

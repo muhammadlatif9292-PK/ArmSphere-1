@@ -638,21 +638,22 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(
                     16,
-                    115,
+                    8,
                     16,
                     28,
                   ),
                   children: [
-                    // 1. Authority Header
-                AdminAuthorityHeader(
-                  title: 'Executive Command',
-                  subtitle:
-                      'Federation oversight, role credentials, and ecosystem telemetry',
-                  activeRole: activeRole,
-                  jurisdiction: jurisdiction,
-                  onRefresh: _refreshAll,
-                ),
-                const SizedBox(height: 16),
+                    // 1. Compact 56px Authority Header
+                    AdminAuthorityHeader(
+                      title: 'Executive Command',
+                      subtitle:
+                          'Federation oversight, role credentials, and ecosystem telemetry',
+                      activeRole: activeRole,
+                      jurisdiction: jurisdiction,
+                      onRefresh: _refreshAll,
+                    ),
+                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
+                    const SizedBox(height: 120),
 
                 // 2. Actionable Backlog Triage Grid (2x2)
                 Row(

@@ -8,6 +8,7 @@ import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -135,109 +136,107 @@ class _TournamentOperatorDashboardScreenState
           ),
           SafeArea(
             bottom: false,
-            child: tournamentsAsync.when(
-              loading: () => ListView.separated(
-                padding: EdgeInsets.fromLTRB(
-                  AppTheme.space16,
-                  155,
-                  AppTheme.space16,
-                  MainShellScope.bottomClearance(context, additionalPadding: 44),
-                ),
-                itemCount: 4,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppTheme.space16),
-                itemBuilder: (_, __) => const SkeletonPlaceholder(
-                  height: 120,
-                  borderRadius: AppTheme.radiusMedium,
-                ),
-              ),
-              error: (error, _) => ListView(
-                padding: EdgeInsets.fromLTRB(
-                  AppTheme.space16,
-                  155,
-                  AppTheme.space16,
-                  MainShellScope.bottomClearance(context, additionalPadding: 44),
-                ),
-                children: [
-                  AppEmptyState(
-                    icon: Icons.error_outline,
-                    title: 'Could not load tournaments',
-                    subtitle: error.toString(),
-                    bannerAsset: ArmSphereAssets.cardStandbyTable,
-                    bannerAlignment: Alignment.centerRight,
-                    ctaLabel: 'Retry',
-                    onCtaTap: () => ref.invalidate(tournamentProvider),
+            child: CrystalVaporDissolve(
+              bottomMargin: MainShellScope.isInsideShell(context)
+                  ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+                  : 12.0,
+              child: tournamentsAsync.when(
+                loading: () => ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.space16,
+                    191,
+                    AppTheme.space16,
+                    28,
                   ),
-                ],
-              ),
-              data: (tournaments) {
-                if (tournaments.isEmpty) {
-                  return ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      AppTheme.space16,
-                      155,
-                      AppTheme.space16,
-                      MainShellScope.bottomClearance(
-                        context,
-                        additionalPadding: 44,
-                      ),
+                  itemCount: 4,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppTheme.space16),
+                  itemBuilder: (_, __) => const SkeletonPlaceholder(
+                    height: 120,
+                    borderRadius: AppTheme.radiusMedium,
+                  ),
+                ),
+                error: (error, _) => ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.space16,
+                    191,
+                    AppTheme.space16,
+                    28,
+                  ),
+                  children: [
+                    AppEmptyState(
+                      icon: Icons.error_outline,
+                      title: 'Could not load tournaments',
+                      subtitle: error.toString(),
+                      bannerAsset: ArmSphereAssets.cardStandbyTable,
+                      bannerAlignment: Alignment.centerRight,
+                      ctaLabel: 'Retry',
+                      onCtaTap: () => ref.invalidate(tournamentProvider),
                     ),
-                    children: [
-                      AppEmptyState(
-                        icon: Icons.table_chart_outlined,
-                        title: 'No Tournaments Available',
-                        subtitle:
-                            'There are no active or sanctioned tournaments assigned for operations yet.',
-                        bannerAsset: ArmSphereAssets.cardStandbyTable,
-                        bannerAlignment: Alignment.centerRight,
-                        ctaLabel: 'Browse Competitions',
-                        onCtaTap: () => context.push('/tournaments'),
+                  ],
+                ),
+                data: (tournaments) {
+                  if (tournaments.isEmpty) {
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.space16,
+                        191,
+                        AppTheme.space16,
+                        28,
                       ),
-                    ],
+                      children: [
+                        AppEmptyState(
+                          icon: Icons.table_chart_outlined,
+                          title: 'No Tournaments Available',
+                          subtitle:
+                              'There are no active or sanctioned tournaments assigned for operations yet.',
+                          bannerAsset: ArmSphereAssets.cardStandbyTable,
+                          bannerAlignment: Alignment.centerRight,
+                          ctaLabel: 'Browse Competitions',
+                          onCtaTap: () => context.push('/tournaments'),
+                        ),
+                      ],
+                    );
+                  }
+
+                  final effectiveId = (_selectedTournamentId != null &&
+                          tournaments.any(
+                            (t) => t['id']?.toString() == _selectedTournamentId,
+                          ))
+                      ? _selectedTournamentId!
+                      : tournaments.first['id'].toString();
+
+                  final currentTournament = tournaments.firstWhere(
+                    (t) => t['id']?.toString() == effectiveId,
+                    orElse: () => tournaments.first,
                   );
-                }
 
-                final effectiveId = (_selectedTournamentId != null &&
-                        tournaments.any(
-                          (t) => t['id']?.toString() == _selectedTournamentId,
-                        ))
-                    ? _selectedTournamentId!
-                    : tournaments.first['id'].toString();
+                  final tablesAsync =
+                      ref.watch(eventMatchTablesProvider(effectiveId));
+                  final registrationsAsync =
+                      ref.watch(eventRegistrationsProvider(effectiveId));
+                  final bracketsAsync =
+                      ref.watch(eventBracketsProvider(effectiveId));
 
-                final currentTournament = tournaments.firstWhere(
-                  (t) => t['id']?.toString() == effectiveId,
-                  orElse: () => tournaments.first,
-                );
-
-                final tablesAsync =
-                    ref.watch(eventMatchTablesProvider(effectiveId));
-                final registrationsAsync =
-                    ref.watch(eventRegistrationsProvider(effectiveId));
-                final bracketsAsync =
-                    ref.watch(eventBracketsProvider(effectiveId));
-
-                return RefreshIndicator(
-                  color: AppTheme.goldPrimary,
-                  backgroundColor: AppTheme.cardSurface,
-                  onRefresh: () async {
-                    HapticFeedback.mediumImpact();
-                    ref.invalidate(tournamentProvider);
-                    ref.invalidate(eventDetailProvider(effectiveId));
-                    ref.invalidate(eventMatchTablesProvider(effectiveId));
-                    ref.invalidate(eventRegistrationsProvider(effectiveId));
-                    ref.invalidate(eventBracketsProvider(effectiveId));
-                  },
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(
-                      AppTheme.space16,
-                      155,
-                      AppTheme.space16,
-                      MainShellScope.bottomClearance(
-                        context,
-                        additionalPadding: 44,
+                  return RefreshIndicator(
+                    color: AppTheme.goldPrimary,
+                    backgroundColor: AppTheme.cardSurface,
+                    onRefresh: () async {
+                      HapticFeedback.mediumImpact();
+                      ref.invalidate(tournamentProvider);
+                      ref.invalidate(eventDetailProvider(effectiveId));
+                      ref.invalidate(eventMatchTablesProvider(effectiveId));
+                      ref.invalidate(eventRegistrationsProvider(effectiveId));
+                      ref.invalidate(eventBracketsProvider(effectiveId));
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.space16,
+                        191,
+                        AppTheme.space16,
+                        28,
                       ),
-                    ),
-                    children: [
+                      children: [
                 // 1. Tournament Selector & War Room Banner
                 if (tournaments.length > 1) ...[
                   Row(
@@ -738,6 +737,7 @@ class _TournamentOperatorDashboardScreenState
             ),
           );
         },
+              ),
             ),
           ),
         ],

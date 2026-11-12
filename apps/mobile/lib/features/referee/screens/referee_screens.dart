@@ -297,21 +297,23 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
                   AppTheme.space16,
-                  100,
+                  kToolbarHeight + 8,
                   AppTheme.space16,
                   28,
                 ),
                 child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'OFFICIAL ACTIONS',
-              style: theme.textTheme.labelMedium?.copyWith(
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textSecondary,
-              ),
-            ),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 155px open 3D Referee Control Console stage showcase spacer
+                    const SizedBox(height: 155),
+                    Text(
+                      'OFFICIAL ACTIONS',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
             const SizedBox(height: AppTheme.space12),
             _RefereeScorepadHeroCard(
               onTap: () => context.push('/referee/submit-scorepad'),
@@ -798,7 +800,7 @@ class _RefCard extends StatelessWidget {
       },
       borderRadius: 18,
       borderColor: const Color(0x38FFFFFF),
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space8, vertical: AppTheme.space12),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: AppTheme.space12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -815,17 +817,19 @@ class _RefCard extends StatelessWidget {
             child: Icon(icon, size: 22, color: AppTheme.primaryRed),
           ),
           const SizedBox(height: AppTheme.space8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-              color: AppTheme.textPrimary,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -860,172 +864,189 @@ class RefereeCertificationsScreen extends ConsumerWidget {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
-          certsAsync.when(
-        loading: () => const CrystalScreenLoadingView(
-          itemCount: 3,
-          cardHeight: 96,
-        ),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: ElevatedActionCard(
-              padding: const EdgeInsets.all(AppTheme.space24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, size: 40, color: AppTheme.error),
-                  const SizedBox(height: AppTheme.space12),
-                  Text('Could not load certifications', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: AppTheme.space16),
-                  ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      ref.invalidate(refereeCertificationsProvider);
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        data: (certs) {
-          if (certs.isEmpty) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppTheme.space24,
-                150,
-                AppTheme.space24,
-                120,
-              ),
-              child: ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0x80E23B3B),
-                          width: 1.0,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.workspace_premium_outlined,
-                        size: 36,
-                        color: Color(0xFFD4AF37),
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.space12),
-                    const Text(
-                      'No certifications on file.',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.space8),
-                    const Text(
-                      'Official licenses and credentials are confirmed and issued directly by national federation administrators.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: 12.0,
+              child: certsAsync.when(
+                loading: () => const CrystalScreenLoadingView(
+                  itemCount: 3,
+                  cardHeight: 96,
                 ),
-              ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.space16,
-              150,
-              AppTheme.space16,
-              120,
-            ),
-            itemCount: certs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
-            itemBuilder: (context, index) {
-              final c = certs[index];
-              final status = c['status']?.toString() ?? 'UNKNOWN';
-              final expires = c['expiresAt']?.toString();
-              return RepaintBoundary(
-                child: ElevatedActionCard(
-                  padding: const EdgeInsets.all(AppTheme.space16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppTheme.space10),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: const Color(0x73D4AF37),
-                            width: 1.0,
+                error: (e, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppTheme.space24),
+                    child: ElevatedActionCard(
+                      slashVariant: const CrystalSlashVariant.crossedCard(),
+                      padding: const EdgeInsets.all(AppTheme.space24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline, size: 40, color: AppTheme.error),
+                          const SizedBox(height: AppTheme.space12),
+                          Text('Could not load certifications', style: theme.textTheme.titleSmall),
+                          const SizedBox(height: AppTheme.space16),
+                          ElevatedButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              ref.invalidate(refereeCertificationsProvider);
+                            },
+                            child: const Text('Retry'),
                           ),
-                        ),
-                        child: const Icon(Icons.verified, size: 24, color: AppTheme.goldPrimary),
+                        ],
                       ),
-                      const SizedBox(width: AppTheme.space14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              c['certificationLevel']?.toString() ?? 'Certification',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: AppTheme.space4),
-                            Text(
-                              c['issuingBody']?.toString() ?? 'Federation Official Board',
-                              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-                            ),
-                            const SizedBox(height: AppTheme.space8),
-                            Row(
+                    ),
+                  ),
+                ),
+                data: (certs) {
+                  if (certs.isEmpty) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppTheme.space24,
+                        kToolbarHeight + 8,
+                        AppTheme.space24,
+                        120,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 155),
+                          ElevatedActionCard(
+                            slashVariant: const CrystalSlashVariant.crossedCard(),
+                            padding: const EdgeInsets.all(AppTheme.space24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.event_outlined, size: 13, color: AppTheme.textMuted),
-                                const SizedBox(width: AppTheme.space4),
-                                Text(
-                                  expires == null || expires.isEmpty || expires == 'null'
-                                      ? 'Permanent License'
-                                      : 'Expires ${expires.split('T').first}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.textMuted,
-                                    fontFeatures: [FontFeature.tabularFigures()],
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0x80E23B3B),
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.workspace_premium_outlined,
+                                    size: 36,
+                                    color: Color(0xFFD4AF37),
+                                  ),
+                                ),
+                                const SizedBox(height: AppTheme.space12),
+                                const Text(
+                                  'No certifications on file.',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: AppTheme.space8),
+                                const Text(
+                                  'Official licenses and credentials are confirmed and issued directly by national federation administrators.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppTheme.textSecondary,
+                                    height: 1.4,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      kToolbarHeight + 163,
+                      AppTheme.space16,
+                      120,
+                    ),
+                    itemCount: certs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
+                    itemBuilder: (context, index) {
+                      final c = certs[index];
+                      final status = c['status']?.toString() ?? 'UNKNOWN';
+                      final expires = c['expiresAt']?.toString();
+                      return RepaintBoundary(
+                        child: ElevatedActionCard(
+                          slashVariant: index == 0
+                              ? const CrystalSlashVariant.crossedCard()
+                              : CrystalSlashVariant.sequentialRow(index),
+                          padding: const EdgeInsets.all(AppTheme.space16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(AppTheme.space10),
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: const Color(0x73D4AF37),
+                                    width: 1.0,
+                                  ),
+                                ),
+                                child: const Icon(Icons.verified, size: 24, color: AppTheme.goldPrimary),
+                              ),
+                              const SizedBox(width: AppTheme.space14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      c['certificationLevel']?.toString() ?? 'Certification',
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppTheme.space4),
+                                    Text(
+                                      c['issuingBody']?.toString() ?? 'Federation Official Board',
+                                      style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                                    ),
+                                    const SizedBox(height: AppTheme.space8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.event_outlined, size: 13, color: AppTheme.textMuted),
+                                        const SizedBox(width: AppTheme.space4),
+                                        Text(
+                                          expires == null || expires.isEmpty || expires == 'null'
+                                              ? 'Permanent License'
+                                              : 'Expires ${expires.split('T').first}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textMuted,
+                                            fontFeatures: [FontFeature.tabularFigures()],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              StatusChip(
+                                label: status.toUpperCase(),
+                                type: _resolveCertStatusType(status),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      StatusChip(
-                        label: status.toUpperCase(),
-                        type: _resolveCertStatusType(status),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1270,67 +1291,74 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.space16,
-              150,
-              AppTheme.space16,
-              120,
-            ),
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Mode Toggle Bar with Competition Crimson (#E23B3B) active border and transparent interior
-            Container(
-              margin: const EdgeInsets.only(bottom: AppTheme.space16),
-              child: SegmentedButton<bool>(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return Colors.white;
-                    }
-                    return const Color(0xFFCBD5E1);
-                  }),
-                  iconColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const Color(0xFFD4AF37);
-                    }
-                    return const Color(0xFFCBD5E1);
-                  }),
-                  side: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const BorderSide(color: Color(0x80E23B3B), width: 1.2);
-                    }
-                    return const BorderSide(color: Color(0x2EFFFFFF), width: 1.0);
-                  }),
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: 12.0,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  kToolbarHeight + 8,
+                  AppTheme.space16,
+                  120,
                 ),
-                segments: const [
-                  ButtonSegment(
-                    value: true,
-                    label: Text('Table Scorepad'),
-                    icon: Icon(Icons.touch_app, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: false,
-                    label: Text('Quick Entry'),
-                    icon: Icon(Icons.list_alt, size: 16),
-                  ),
-                ],
-                selected: {_isLiveScorepadMode},
-                onSelectionChanged: (v) {
-                  HapticFeedback.lightImpact();
-                  setState(() => _isLiveScorepadMode = v.first);
-                },
-              ),
-            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 155px open 3D Referee Control Console stage showcase spacer
+                    const SizedBox(height: 155),
+                    // Mode Toggle Bar with Competition Crimson (#E23B3B) active border and transparent interior
+                    Container(
+                      margin: const EdgeInsets.only(bottom: AppTheme.space16),
+                      child: SegmentedButton<bool>(
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                          foregroundColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return Colors.white;
+                            }
+                            return const Color(0xFFCBD5E1);
+                          }),
+                          iconColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return const Color(0xFFD4AF37);
+                            }
+                            return const Color(0xFFCBD5E1);
+                          }),
+                          side: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return const BorderSide(color: Color(0x80E23B3B), width: 1.2);
+                            }
+                            return const BorderSide(color: Color(0x2EFFFFFF), width: 1.0);
+                          }),
+                        ),
+                        segments: const [
+                          ButtonSegment(
+                            value: true,
+                            label: Text('Table Scorepad'),
+                            icon: Icon(Icons.touch_app, size: 16),
+                          ),
+                          ButtonSegment(
+                            value: false,
+                            label: Text('Quick Entry'),
+                            icon: Icon(Icons.list_alt, size: 16),
+                          ),
+                        ],
+                        selected: {_isLiveScorepadMode},
+                        onSelectionChanged: (v) {
+                          HapticFeedback.lightImpact();
+                          setState(() => _isLiveScorepadMode = v.first);
+                        },
+                      ),
+                    ),
 
-            if (_isLiveScorepadMode) ...[
-              // Live Scorepad View
-              if (_challenger == null || _opponent == null)
-                ElevatedActionCard(
-                  padding: const EdgeInsets.all(AppTheme.space24),
-                  child: Column(
+                    if (_isLiveScorepadMode) ...[
+                      // Live Scorepad View
+                      if (_challenger == null || _opponent == null)
+                        ElevatedActionCard(
+                          slashVariant: const CrystalSlashVariant.crossedCard(),
+                          padding: const EdgeInsets.all(AppTheme.space24),
+                          child: Column(
                     children: [
                       // 100% transparent crystal wireframe icon badge bordered in 1px crimson with Gold icon
                       Container(
@@ -1412,6 +1440,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             ] else ...[
               // Standard Manual Result Form
               ElevatedActionCard(
+                slashVariant: const CrystalSlashVariant.crossedCard(),
                 padding: const EdgeInsets.all(AppTheme.space20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1507,6 +1536,8 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
           ],
         ),
       ),
+            ),
+          ),
         ],
       ),
     );
@@ -1626,6 +1657,7 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
                           if (widget.excludeId != null && widget.excludeId == id) return const SizedBox.shrink();
                           return RepaintBoundary(
                             child: ElevatedActionCard(
+                              slashVariant: CrystalSlashVariant.sequentialRow(index),
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 Navigator.of(context).pop(item);
@@ -1748,106 +1780,111 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.space16,
-              150,
-              AppTheme.space16,
-              120,
-            ),
-            child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Enter Ring / Real Name',
-                suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _search),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                kToolbarHeight + 8,
+                AppTheme.space16,
+                24,
               ),
-              onSubmitted: (_) => _search(),
-            ),
-            const SizedBox(height: AppTheme.space16),
-            if (_isLoading)
-              const Expanded(
-                child: CrystalScreenLoadingView(
-                  itemCount: 4,
-                  cardHeight: 74,
-                  padding: EdgeInsets.zero,
-                ),
-              )
-            else
-              Expanded(
-                child: _results.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty
-                              ? 'Enter athlete name to verify roster eligibility.'
-                              : 'No matching athletes found.',
-                          style: const TextStyle(color: AppTheme.textSecondary),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.only(bottom: 120),
-                        itemCount: _results.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
-                        itemBuilder: (context, index) {
-                          final item = _results[index];
-                          final weightClass = item['weightClass']?.toString();
-                          final province = item['province']?.toString();
-                          return RepaintBoundary(
-                            child: ElevatedActionCard(
-                              padding: const EdgeInsets.all(AppTheme.space14),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: const Color(0x80E23B3B),
-                                        width: 1.0,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      (item['displayName']?.toString() ?? 'A').substring(0, 1).toUpperCase(),
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppTheme.space14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                children: [
+                  const SizedBox(height: 155),
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Enter Ring / Real Name',
+                      suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: _search),
+                    ),
+                    onSubmitted: (_) => _search(),
+                  ),
+                  const SizedBox(height: AppTheme.space16),
+                  if (_isLoading)
+                    const Expanded(
+                      child: CrystalScreenLoadingView(
+                        itemCount: 4,
+                        cardHeight: 74,
+                        padding: EdgeInsets.zero,
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: _results.isEmpty
+                          ? Center(
+                              child: Text(
+                                _searchController.text.isEmpty
+                                    ? 'Enter athlete name to verify roster eligibility.'
+                                    : 'No matching athletes found.',
+                                style: const TextStyle(color: AppTheme.textSecondary),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.only(bottom: 120),
+                              itemCount: _results.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space10),
+                              itemBuilder: (context, index) {
+                                final item = _results[index];
+                                final weightClass = item['weightClass']?.toString();
+                                final province = item['province']?.toString();
+                                return RepaintBoundary(
+                                  child: ElevatedActionCard(
+                                    slashVariant: CrystalSlashVariant.sequentialRow(index),
+                                    padding: const EdgeInsets.all(AppTheme.space14),
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          item['displayName'] ?? '',
-                                          style: const TextStyle(
-                                            fontFamily: AppTheme.fontDisplay,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                            color: AppTheme.textPrimary,
+                                        Container(
+                                          width: 40,
+                                          height: 40,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(
+                                              color: const Color(0x80E23B3B),
+                                              width: 1.0,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            (item['displayName']?.toString() ?? 'A').substring(0, 1).toUpperCase(),
+                                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
                                           ),
                                         ),
-                                        const SizedBox(height: AppTheme.space4),
-                                        Text(
-                                          [weightClass, province].where((p) => p != null && p.isNotEmpty).join(' • '),
-                                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                        const SizedBox(width: AppTheme.space14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item['displayName'] ?? '',
+                                                style: const TextStyle(
+                                                  fontFamily: AppTheme.fontDisplay,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 15,
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                              const SizedBox(height: AppTheme.space4),
+                                              Text(
+                                                [weightClass, province].where((p) => p != null && p.isNotEmpty).join(' • '),
+                                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                        const Icon(Icons.chevron_right, color: AppTheme.textMuted),
                                       ],
                                     ),
                                   ),
-                                  const Icon(Icons.chevron_right, color: AppTheme.textMuted),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
-      ),
+            ),
+          ),
         ],
       ),
     );
@@ -1906,61 +1943,74 @@ class EvidenceUploadScreen extends StatelessWidget {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
           ),
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.space24,
-              150,
-              AppTheme.space24,
-              120,
-            ),
-            child: ElevatedActionCard(
-              padding: const EdgeInsets.all(AppTheme.space28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 100% transparent crystal wireframe icon badge bordered in 1px crimson with Crimson icon
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.space16),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0x80E23B3B),
-                        width: 1.0,
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: 12.0,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.space24,
+                  kToolbarHeight + 8,
+                  AppTheme.space24,
+                  120,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 155),
+                    ElevatedActionCard(
+                      slashVariant: const CrystalSlashVariant.crossedCard(),
+                      padding: const EdgeInsets.all(AppTheme.space28),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 100% transparent crystal wireframe icon badge bordered in 1px crimson with Crimson icon
+                          Container(
+                            padding: const EdgeInsets.all(AppTheme.space16),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0x80E23B3B),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.videocam_off_outlined,
+                              size: 44,
+                              color: Color(0xFFE23B3B),
+                            ),
+                          ),
+                          const SizedBox(height: AppTheme.space20),
+                          const Text(
+                            'Video Evidence Upload',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: AppTheme.space8),
+                          const Text(
+                            'High-bandwidth match video ingest is currently restricted to federation head tables and broadcast feeds.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+                          ),
+                          const SizedBox(height: AppTheme.space24),
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.info_outline, size: 18),
+                            label: const Text('Storage Policy & Protocol'),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _explainUnsupported(context);
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                    child: const Icon(
-                      Icons.videocam_off_outlined,
-                      size: 44,
-                      color: Color(0xFFE23B3B),
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.space20),
-                  const Text(
-                    'Video Evidence Upload',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.space8),
-                  const Text(
-                    'High-bandwidth match video ingest is currently restricted to federation head tables and broadcast feeds.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
-                  ),
-                  const SizedBox(height: AppTheme.space24),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.info_outline, size: 18),
-                    label: const Text('Storage Policy & Protocol'),
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      _explainUnsupported(context);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

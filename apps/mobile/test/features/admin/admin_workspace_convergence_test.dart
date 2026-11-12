@@ -604,10 +604,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Federation Governance'), findsOneWidget);
-        expect(find.text('Disputes'), findsOneWidget);
-        expect(find.text('Moderation'), findsOneWidget);
-        expect(find.text('Gyms'), findsOneWidget);
-        expect(find.text('Helpdesk'), findsOneWidget);
+        expect(find.text('Disputes 1'), findsOneWidget);
+        expect(find.text('Moderation 0'), findsOneWidget);
+        expect(find.text('Gyms 0'), findsOneWidget);
+        expect(find.text('Helpdesk 0'), findsOneWidget);
         expect(find.textContaining('Protest on early elbow slip'), findsOneWidget);
       },
     );
@@ -673,7 +673,7 @@ void main() {
           find.text('SHA-256 Hash Chain Integrity: VALID'),
           findsOneWidget,
         );
-        final disputeResolvedFinder = find.text('DISPUTE_RESOLVED');
+        final disputeResolvedFinder = find.text('Arbitration Dispute Ruling');
         await tester.scrollUntilVisible(
           disputeResolvedFinder,
           250,
@@ -681,6 +681,8 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(disputeResolvedFinder, findsOneWidget);
+        expect(find.text('DISPUTE'), findsAtLeastNWidgets(1));
+        expect(find.textContaining('#a94f820b'), findsOneWidget);
       },
     );
   });

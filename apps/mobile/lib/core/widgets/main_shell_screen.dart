@@ -178,6 +178,7 @@ class MainShellScope extends InheritedWidget {
 class MainShellScreen extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
   final bool? isAdminModeOverride;
+  final String? activeRole;
 
   /// Canonical root tab paths where the bottom navigation dock is permitted to appear.
   static const Set<String> kRootTabPaths = <String>{
@@ -253,6 +254,7 @@ class MainShellScreen extends StatefulWidget {
     super.key,
     required this.navigationShell,
     this.isAdminModeOverride,
+    this.activeRole,
   });
 
   @override
@@ -270,6 +272,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
   late int _lastRecordedTabIndex;
   String? _lastObservedTopPath;
   bool? _lastObservedAdminMode;
+  String? _lastObservedRole;
+  bool _isResettingForRoleChange = false;
   bool _isSteppingBackTab = false;
   bool _isRedirectingPushedTab = false;
   bool _didPrecacheStageAssets = false;
@@ -298,9 +302,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
     }
   }
 
-  bool _resolveIsAdminMode(BuildContext context) {
-    if (widget.isAdminModeOverride != null) {
-      return widget.isAdminModeOverride!;
+  String _resolveEffectiveRole(BuildContext context) {
+    if (widget.activeRole != null && widget.activeRole!.trim().isNotEmpty) {
+      return widget.activeRole!.trim().toUpperCase();
     }
     try {
       final container = ProviderScope.containerOf(context);
@@ -310,10 +314,52 @@ class _MainShellScreenState extends State<MainShellScreen> {
           (authState.verifiedRoles.length == 1
               ? authState.verifiedRoles.first
               : (profileRole ?? 'ATHLETE'));
-      return AdminPermissions.isAdminWorkspaceRole(effectiveRole);
+      return effectiveRole.trim().toUpperCase();
     } catch (_) {
-      return false;
+      return (widget.isAdminModeOverride ?? false) ? 'SYSTEM_ADMIN' : 'ATHLETE';
     }
+  }
+
+  bool _resolveIsAdminMode(BuildContext context) {
+    if (widget.isAdminModeOverride != null) {
+      return widget.isAdminModeOverride!;
+    }
+    return AdminPermissions.isAdminWorkspaceRole(
+      _resolveEffectiveRole(context),
+    );
+  }
+
+  /// Pops all imperatively pushed routes on [router] so no sub-screens
+  /// (such as `/settings` or `/settings/roles`) remain stranded on top of
+  /// any shell branch stack.
+  void _popAllImperativeRoutes(GoRouter? router) {
+    if (router == null) return;
+    int safetyCounter = 0;
+    try {
+      while (router.canPop() && safetyCounter < 24) {
+        router.pop();
+        safetyCounter++;
+      }
+    } catch (_) {}
+  }
+
+  /// Walks descendant [NavigatorState]s inside the shell's branch `IndexedStack`
+  /// and pops each branch navigator back to its root route (`route.isFirst`).
+  void _resetAllBranchNavigators() {
+    if (!mounted) return;
+    void visitor(Element element) {
+      if (element is StatefulElement && element.state is NavigatorState) {
+        final navState = element.state as NavigatorState;
+        try {
+          navState.popUntil((route) => route.isFirst);
+        } catch (_) {}
+      }
+      element.visitChildren(visitor);
+    }
+
+    try {
+      context.visitChildElements(visitor);
+    } catch (_) {}
   }
 
   @override
@@ -359,8 +405,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
     // If a main tab route (e.g. '/athlete/profile', '/discover', '/tournaments')
     // was imperatively pushed on top of a different shell branch via context.push(),
-    // pop the duplicate pushed route and switch the shell branch cleanly so the
-    // bottom navigation dock highlights the target tab and history is preserved.
+    // pop ALL pushed routes and switch the shell branch cleanly so the
+    // bottom navigation dock highlights the target tab and no stale sub-routes remain.
     if (pathTabIdx != null &&
         pathTabIdx != widget.navigationShell.currentIndex &&
         !_isRedirectingPushedTab) {
@@ -376,12 +422,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           try {
-            try {
-              if (router?.canPop() ?? false) {
-                router?.pop();
-              }
-            } catch (_) {}
-            _navigateToTabInternal(pathTabIdx, recordHistory: true);
+            _popAllImperativeRoutes(router);
+            _resetAllBranchNavigators();
+            _navigateToTabInternal(
+              pathTabIdx,
+              recordHistory: !_isResettingForRoleChange,
+            );
           } finally {
             _isRedirectingPushedTab = false;
           }
@@ -401,7 +447,25 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   void didUpdateWidget(covariant MainShellScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final bool roleChanged =
+        (oldWidget.activeRole != null &&
+            widget.activeRole != null &&
+            oldWidget.activeRole != widget.activeRole) ||
+        (oldWidget.isAdminModeOverride != null &&
+            widget.isAdminModeOverride != null &&
+            oldWidget.isAdminModeOverride != widget.isAdminModeOverride);
+
     final int newIndex = widget.navigationShell.currentIndex;
+    if (roleChanged || _isResettingForRoleChange) {
+      _tabHistory.clear();
+      _lastRecordedTabIndex = newIndex;
+      _isDockVisible = true;
+      _scrollDeltaAccumulator = 0.0;
+      _resetAllBranchNavigators();
+      _resetScrollPositionsToTop();
+      return;
+    }
+
     if (oldWidget.navigationShell.currentIndex != newIndex) {
       if (!_isSteppingBackTab && _lastRecordedTabIndex != newIndex) {
         if (_tabHistory.isEmpty || _tabHistory.last != _lastRecordedTabIndex) {
@@ -556,7 +620,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   void _navigateToTabInternal(int index, {required bool recordHistory}) {
     final int currentIdx = widget.navigationShell.currentIndex;
-    if (recordHistory && index != currentIdx) {
+    if (recordHistory && index != currentIdx && !_isResettingForRoleChange) {
       if (_tabHistory.isEmpty || _tabHistory.last != currentIdx) {
         _tabHistory.add(currentIdx);
       }
@@ -570,9 +634,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
     } else {
       _scrollDeltaAccumulator = 0.0;
     }
+
+    // Clear any stale imperative routes or branch sub-routes so tapping a bottom
+    // navigation tab always lands cleanly on that tab's canonical root screen.
+    _popAllImperativeRoutes(GoRouter.maybeOf(context));
+    _resetAllBranchNavigators();
+
     widget.navigationShell.goBranch(
       index,
-      initialLocation: index == currentIdx,
+      initialLocation: true,
     );
     _resetScrollPositionsToTop();
   }
@@ -619,15 +689,32 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String effectiveRole = _resolveEffectiveRole(context);
     final bool isAdminMode = _resolveIsAdminMode(context);
-    if (_lastObservedAdminMode != null &&
-        _lastObservedAdminMode != isAdminMode) {
+    final bool roleOrModeChanged =
+        (_lastObservedAdminMode != null &&
+            _lastObservedAdminMode != isAdminMode) ||
+        (_lastObservedRole != null && _lastObservedRole != effectiveRole);
+
+    if (roleOrModeChanged) {
+      _isResettingForRoleChange = true;
       _tabHistory.clear();
+      _lastRecordedTabIndex = 0;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
+      _resetAllBranchNavigators();
       _resetScrollPositionsToTop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _popAllImperativeRoutes(GoRouter.maybeOf(context));
+        _resetAllBranchNavigators();
+        _tabHistory.clear();
+        _lastRecordedTabIndex = widget.navigationShell.currentIndex;
+        _isResettingForRoleChange = false;
+      });
     }
     _lastObservedAdminMode = isAdminMode;
+    _lastObservedRole = effectiveRole;
 
     final bool isRootTab = _isRootTabRoute(context);
     final int effectiveTabIndex = _resolveEffectiveTabIndex(context);

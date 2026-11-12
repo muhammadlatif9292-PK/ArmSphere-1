@@ -15,6 +15,7 @@ enum ArmSphereStageDomain {
   training,
   discover,
   events,
+  championships,
   community,
   passport,
   rankings,
@@ -400,8 +401,7 @@ class VisualPreferencesState {
   /// the user has explicitly uploaded or chosen a custom screen backdrop.
   ArmSphereVisualPreset presetForDomain(ArmSphereStageDomain domain) {
     if (selectedScreenPresetId != null &&
-        (domain == ArmSphereStageDomain.arena ||
-            domain == ArmSphereStageDomain.passport)) {
+        domain == ArmSphereStageDomain.arena) {
       return kArmSphereProPresets.firstWhere(
         (p) => p.id == selectedScreenPresetId,
         orElse: () => _defaultPresetForDomain(domain),
@@ -418,6 +418,7 @@ class VisualPreferencesState {
       case ArmSphereStageDomain.discover:
         return kArmSphereProPresets[1]; // stageDiscover9x16
       case ArmSphereStageDomain.events:
+      case ArmSphereStageDomain.championships:
         return kArmSphereProPresets[2]; // stageChampionshipBelts9x16
       case ArmSphereStageDomain.community:
         return kArmSphereProPresets[3]; // stageCommunity9x16

@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -197,64 +198,76 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
         (eventsAsync.valueOrNull?.length ?? 0);
     final String? failureReason = report?.failureReason;
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
           ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => _refreshLedger(auditFilter),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                145,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 44),
-              ),
-              children: [
-                // 1. Header with Settings Quick Button
-                AdminAuthorityHeader(
-                  title: 'Official Dossier & Audit',
-                  subtitle:
-                      'Federation credential passport, persona switcher, and SHA-256 ledger',
-                  activeRole: activeRole,
-                  jurisdiction: jurisdiction,
-                  onRefresh: () => _refreshLedger(auditFilter),
-                  trailingAction: IconButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      context.push('/settings');
-                    },
-                    tooltip: 'Settings Hub',
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: RefreshIndicator(
+                color: AppTheme.goldPrimary,
+                backgroundColor: AppTheme.cardSurface,
+                onRefresh: () async => _refreshLedger(auditFilter),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    28,
+                  ),
+                  children: [
+                    // 1. Compact 56px Header with Settings Quick Button
+                    AdminAuthorityHeader(
+                      title: 'Official Dossier & Audit',
+                      subtitle:
+                          'Federation credential passport, persona switcher, and SHA-256 ledger',
+                      activeRole: activeRole,
+                      jurisdiction: jurisdiction,
+                      onRefresh: () => _refreshLedger(auditFilter),
+                      trailingAction: IconButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          context.push('/settings');
+                        },
+                        tooltip: 'Settings Hub',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.settings_rounded,
+                          size: 18,
+                          color: AppTheme.textPure,
+                        ),
                       ),
                     ),
-                    icon: const Icon(
-                      Icons.settings_rounded,
-                      size: 18,
-                      color: AppTheme.textPure,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                    // Open 3D Vault Ring Stage Showcase Window
+                    const SizedBox(height: 120),
 
-                // 2. Official Federation Credential Card
-                ElevatedActionCard(
-                  padding: const EdgeInsets.all(16),
-                  borderColor: const Color(0x73D4AF37),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    // 2. Official Federation Credential Card
+                    ElevatedActionCard(
+                      padding: const EdgeInsets.all(16),
+                      borderColor: const Color(0x73D4AF37),
+                      slashVariant: const CrystalSlashVariant.crossedCard(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                         children: [
                           Container(
                             width: 52,
@@ -348,16 +361,20 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Expanded(
-                        child: Text(
-                          'CRYPTOGRAPHIC SHA-256 AUDIT LEDGER',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.7,
-                            color: AppTheme.goldPrimary,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'CRYPTOGRAPHIC SHA-256 AUDIT',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.7,
+                              color: AppTheme.goldPrimary,
+                              shadows: AppTheme.crystalTextShadows,
+                            ),
                           ),
                         ),
                       ),
@@ -389,6 +406,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                   const SizedBox(height: 10),
                   ElevatedActionCard(
                     padding: const EdgeInsets.all(14),
+                    slashVariant: const CrystalSlashVariant.crossedCard(),
                     borderColor: isChainValid
                         ? AppTheme.success.withValues(alpha: 0.45)
                         : AppTheme.crimson.withValues(alpha: 0.65),
@@ -479,6 +497,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                 ] else
                   const ElevatedActionCard(
                     padding: EdgeInsets.all(16),
+                    slashVariant: CrystalSlashVariant.crossedCard(),
                     child: Text(
                       'Cryptographic SHA-256 Audit Ledger inspection is reserved for System Admin, National Director, and Compliance Officer roles.',
                       style: TextStyle(
@@ -490,6 +509,8 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
               ],
             ),
           ),
+        ),
+      ),
         ],
       ),
     );
@@ -551,21 +572,24 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
     }
 
     return Column(
-      children: events.map((ev) {
+      children: events.asMap().entries.map((entry) {
+        final int index = entry.key;
+        final Map<String, dynamic> ev = entry.value;
         final actionType =
             ev['actionType']?.toString() ?? ev['action']?.toString() ?? 'EVENT';
         final readableTitle = _formatAuditActionLabel(actionType);
+        final String categoryCode = _resolveAuditCategoryBadge(actionType);
         final actorId =
             ev['actorId']?.toString() ?? ev['userId']?.toString() ?? 'System';
-        final shortActor = actorId.length > 14
+        final shortActor = actorId.length > 10
             ? '${actorId.substring(0, 8)}…'
             : actorId;
         final currentHash = ev['eventHash']?.toString() ??
             ev['currentHash']?.toString() ??
             ev['hash']?.toString() ??
             '';
-        final shortHash = currentHash.length > 10
-            ? '${currentHash.substring(0, 10)}…'
+        final shortHash = currentHash.length > 8
+            ? currentHash.substring(0, 8)
             : (currentHash.isEmpty ? 'SHA-256' : currentHash);
 
         return Padding(
@@ -573,6 +597,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
           child: ElevatedActionCard(
             onTap: () => _openAuditEventSheet(ev),
             padding: const EdgeInsets.all(14),
+            slashVariant: CrystalSlashVariant.sequentialRow(index),
             child: Row(
               children: [
                 Container(
@@ -598,6 +623,8 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                     children: [
                       Text(
                         readableTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 13.5,
@@ -605,28 +632,29 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                           color: AppTheme.textPure,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
-                          Flexible(
+                          Text(
+                            categoryCode,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                          Expanded(
                             child: Text(
-                              actionType,
+                              ' • Actor: $shortActor • #$shortHash',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.goldPrimary,
+                                fontSize: 11,
+                                color: AppTheme.textSecondary,
+                                fontFeatures: [FontFeature.tabularFigures()],
                               ),
-                            ),
-                          ),
-                          Text(
-                            ' • Actor: $shortActor • #$shortHash',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.textSecondary,
-                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
                           ),
                         ],
@@ -645,5 +673,15 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
         );
       }).toList(),
     );
+  }
+
+  String _resolveAuditCategoryBadge(String actionType) {
+    final upper = actionType.toUpperCase();
+    if (upper.startsWith('AUTH')) return 'AUTH';
+    if (upper.startsWith('MATCH')) return 'MATCH';
+    if (upper.startsWith('DISPUTE')) return 'DISPUTE';
+    if (upper.startsWith('ROLE')) return 'ROLE';
+    if (upper.startsWith('ATHLETE')) return 'ROSTER';
+    return 'AUDIT';
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/routing/app_router.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -117,20 +118,32 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
 
     if (confirm != true) return;
 
+    final router = GoRouter.maybeOf(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+
     setState(() => _isLoading = true);
     try {
       await ref.read(authProvider.notifier).switchActiveRole(targetRole);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (mounted || router != null) {
+        messenger?.showSnackBar(
           CrystalSnackBar(
             content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
             backgroundColor: AppTheme.goldPrimary,
           ),
         );
-        // Navigate cleanly to the home root tab so the newly selected Athlete
-        // or Admin 5-tab workspace is immediately visible starting at the top.
-        final router = GoRouter.maybeOf(context);
+        // Pop all pushed routes (e.g., /settings/roles and /settings) from the
+        // current branch stack before navigating to /home so that tapping the 5th
+        // bottom navigation button (Dossier / Passport) opens the root profile
+        // screen of the new role instead of a leftover Settings screen.
         if (router != null) {
+          int safety = 0;
+          try {
+            while (router.canPop() && safety < 24) {
+              router.pop();
+              safety++;
+            }
+          } catch (_) {}
+          resetAllShellBranchStacks();
           router.go('/home');
         }
       }

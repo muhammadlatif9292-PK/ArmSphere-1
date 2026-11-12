@@ -738,6 +738,122 @@ void main() {
       expect(find.text('All alerts marked as read'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+        'switching role from Passport -> Settings -> Account Roles and tapping 5th tab (Dossier) resets branch stack and never shows stale Settings screen',
+        (tester) async {
+      bool isAdmin = false;
+      late StateSetter updateShellMode;
+
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return StatefulBuilder(
+                builder: (ctx, setState) {
+                  updateShellMode = setState;
+                  return MainShellScreen(
+                    navigationShell: navigationShell,
+                    activeRole: isAdmin ? 'SYSTEM_ADMIN' : 'ATHLETE',
+                    isAdminModeOverride: isAdmin,
+                  );
+                },
+              );
+            },
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => Center(
+                      child: Text(isAdmin ? 'Admin Command Root' : 'Athlete Arena Root'),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/discover',
+                    builder: (context, state) => const Center(child: Text('Discover Root')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/tournaments',
+                    builder: (context, state) => const Center(child: Text('Events Root')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/community/feed',
+                    builder: (context, state) => const Center(child: Text('Community Root')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/athlete/profile',
+                    builder: (context, state) => Center(
+                      child: Text(isAdmin ? 'Admin Dossier Root' : 'Athlete Passport Root'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('Stale Athlete Settings'))),
+          ),
+          GoRoute(
+            path: '/settings/roles',
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('Account Roles Switcher'))),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      // 1. Navigate to 5th tab (Passport) in Athlete Mode
+      await tester.tap(find.text('Passport'));
+      await tester.pumpAndSettle();
+      expect(find.text('Athlete Passport Root'), findsOneWidget);
+
+      // 2. Push /settings and /settings/roles on top of Tab 4
+      router.push('/settings');
+      await tester.pumpAndSettle();
+      expect(find.text('Stale Athlete Settings'), findsOneWidget);
+
+      router.push('/settings/roles');
+      await tester.pumpAndSettle();
+      expect(find.text('Account Roles Switcher'), findsOneWidget);
+
+      // 3. Switch role to Admin and redirect to /home (popping pushed routes)
+      updateShellMode(() => isAdmin = true);
+      while (router.canPop()) {
+        router.pop();
+      }
+      router.go('/home');
+      await tester.pumpAndSettle();
+      expect(find.text('Admin Command Root'), findsOneWidget);
+
+      // 4. Tap the 5th bottom navigation button (Dossier) -> must show Admin Dossier Root, never Stale Athlete Settings
+      await tester.tap(find.text('Dossier'));
+      await tester.pumpAndSettle();
+      expect(find.text('Admin Dossier Root'), findsOneWidget);
+      expect(find.text('Stale Athlete Settings'), findsNothing);
+    });
   });
 }
 

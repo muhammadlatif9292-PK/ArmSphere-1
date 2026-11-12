@@ -45,8 +45,7 @@ class CrystalStageBackdrop extends ConsumerWidget {
 
     // Determine primary image source: explicit override -> user custom screen upload -> domain preset
     final String? customImg = customImageOverride ??
-        ((domain == ArmSphereStageDomain.arena ||
-                domain == ArmSphereStageDomain.passport)
+        (domain == ArmSphereStageDomain.arena
             ? prefs.customScreenBackdropImage
             : null);
 

@@ -990,7 +990,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(
                     16,
-                    115,
+                    8,
                     16,
                     28,
                   ),
@@ -1004,7 +1004,8 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                       onRefresh: () =>
                           _refreshCurrentSegment(selectedSegment, athleteFilter),
                     ),
-                    const SizedBox(height: 14),
+                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
+                    const SizedBox(height: 120),
 
                     AdminSegmentedDeck(
                       selectedIndex: selectedSegment,
