@@ -596,7 +596,9 @@ void main() {
               ]),
               adminPendingCommunityLinksProvider.overrideWith((ref) async => const []),
               adminVenuesProvider.overrideWith((ref) async => const []),
-              adminSupportTicketsProvider(const AdminSupportFilter()).overrideWith((ref) async => const []),
+              adminSupportTicketsProvider(
+                const AdminSupportFilter(currentUserId: 'comp_1'),
+              ).overrideWith((ref) async => const []),
             ],
             child: const MaterialApp(home: AdminGovernanceScreen()),
           ),

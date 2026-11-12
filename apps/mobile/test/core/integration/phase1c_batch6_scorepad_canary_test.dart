@@ -334,6 +334,8 @@ void main() {
 
       // Increment Red Corner to 3 points (Win)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.ensureVisible(pointButtons.first);
+      await tester.pumpAndSettle();
       await tester.tap(pointButtons.first);
       await tester.pump();
       await tester.tap(pointButtons.first);
@@ -403,6 +405,8 @@ void main() {
 
       // Reach conclusion (3 points)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.ensureVisible(pointButtons.first);
+      await tester.pumpAndSettle();
       await tester.tap(pointButtons.first);
       await tester.pump();
       await tester.tap(pointButtons.first);

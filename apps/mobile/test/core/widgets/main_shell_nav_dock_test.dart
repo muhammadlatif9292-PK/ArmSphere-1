@@ -742,17 +742,17 @@ void main() {
     testWidgets(
         'switching role from Passport -> Settings -> Account Roles and tapping 5th tab (Dossier) resets branch stack and never shows stale Settings screen',
         (tester) async {
-      bool isAdmin = false;
-      late StateSetter updateShellMode;
+      final isAdminNotifier = ValueNotifier<bool>(false);
+      addTearDown(isAdminNotifier.dispose);
 
       final router = GoRouter(
         initialLocation: '/home',
         routes: [
           StatefulShellRoute.indexedStack(
             builder: (context, state, navigationShell) {
-              return StatefulBuilder(
-                builder: (ctx, setState) {
-                  updateShellMode = setState;
+              return ValueListenableBuilder<bool>(
+                valueListenable: isAdminNotifier,
+                builder: (ctx, isAdmin, _) {
                   return MainShellScreen(
                     navigationShell: navigationShell,
                     activeRole: isAdmin ? 'SYSTEM_ADMIN' : 'ATHLETE',
@@ -766,8 +766,11 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/home',
-                    builder: (context, state) => Center(
-                      child: Text(isAdmin ? 'Admin Command Root' : 'Athlete Arena Root'),
+                    builder: (context, state) => ValueListenableBuilder<bool>(
+                      valueListenable: isAdminNotifier,
+                      builder: (context, isAdmin, _) => Center(
+                        child: Text(isAdmin ? 'Admin Command Root' : 'Athlete Arena Root'),
+                      ),
                     ),
                   ),
                 ],
@@ -800,8 +803,11 @@ void main() {
                 routes: [
                   GoRoute(
                     path: '/athlete/profile',
-                    builder: (context, state) => Center(
-                      child: Text(isAdmin ? 'Admin Dossier Root' : 'Athlete Passport Root'),
+                    builder: (context, state) => ValueListenableBuilder<bool>(
+                      valueListenable: isAdminNotifier,
+                      builder: (context, isAdmin, _) => Center(
+                        child: Text(isAdmin ? 'Admin Dossier Root' : 'Athlete Passport Root'),
+                      ),
                     ),
                   ),
                 ],
@@ -840,7 +846,7 @@ void main() {
       expect(find.text('Account Roles Switcher'), findsOneWidget);
 
       // 3. Switch role to Admin and redirect to /home (popping pushed routes)
-      updateShellMode(() => isAdmin = true);
+      isAdminNotifier.value = true;
       while (router.canPop()) {
         router.pop();
       }
