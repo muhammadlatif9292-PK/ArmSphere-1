@@ -485,6 +485,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
   void _resetScrollPositionsToTop() {
     if (!mounted) return;
     void visitor(Element element) {
+      if (element is StatefulElement && element.state is ScaffoldState) {
+        StageScrollDimmerController.resetForScaffold(
+          element.state as ScaffoldState,
+        );
+      }
       if (element is StatefulElement && element.state is ScrollableState) {
         final scrollableState = element.state as ScrollableState;
         final position = scrollableState.position;
@@ -578,42 +583,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification.metrics.axis != Axis.vertical) {
-      return false;
+    // Keep the floating Bottom Navigation Pill permanently visible across all scroll states.
+    if (!_isDockVisible) {
+      setState(() => _isDockVisible = true);
     }
-
-    // Always reveal the dock when at or near the top of the scroll view.
-    if (notification.metrics.pixels <= 16.0) {
-      _scrollDeltaAccumulator = 0.0;
-      if (!_isDockVisible) {
-        setState(() => _isDockVisible = true);
-      }
-      return false;
-    }
-
-    if (notification is ScrollUpdateNotification) {
-      // Only auto-hide or reveal on user drag gestures, never on programmatic jumpTo
-      if (notification.dragDetails == null) {
-        return false;
-      }
-      final delta = notification.scrollDelta ?? 0.0;
-      if ((delta > 0 && _scrollDeltaAccumulator < 0) ||
-          (delta < 0 && _scrollDeltaAccumulator > 0)) {
-        _scrollDeltaAccumulator = 0.0;
-      }
-      _scrollDeltaAccumulator += delta;
-
-      // Scrolling down past threshold -> auto-hide dock
-      if (_scrollDeltaAccumulator > 10.0 &&
-          notification.metrics.pixels > 24.0 &&
-          _isDockVisible) {
-        _scrollDeltaAccumulator = 0.0;
-        setState(() => _isDockVisible = false);
-      } else if (_scrollDeltaAccumulator < -8.0 && !_isDockVisible) {
-        // Scrolling up -> reveal dock
-        _scrollDeltaAccumulator = 0.0;
-        setState(() => _isDockVisible = true);
-      }
+    if (notification.metrics.axis == Axis.vertical) {
+      StageScrollDimmerController.updateFromScroll(
+        notification.context ?? context,
+        notification.metrics.pixels,
+      );
     }
     return false;
   }
@@ -718,7 +696,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
     final bool isRootTab = _isRootTabRoute(context);
     final int effectiveTabIndex = _resolveEffectiveTabIndex(context);
-    final bool showDock = isRootTab && _isDockVisible;
+    final bool showDock = isRootTab;
     final bool canInterceptBack =
         _tabHistory.isNotEmpty || widget.navigationShell.currentIndex != 0;
 
@@ -779,116 +757,117 @@ class _MainShellScreenState extends State<MainShellScreen> {
                             18,
                             kFloatingDockBottomMargin,
                           ),
-                          child: Container(
-                            key: const ValueKey('crystal_floating_nav_dock'),
-                            height: kFloatingDockHeight,
-                            decoration: BoxDecoration(
-                              color: const Color(0x2605070C),
-                              borderRadius: BorderRadius.circular(28),
-                              border: Border.all(
-                                color: const Color(0x4DFFFFFF),
-                                width: 1.0,
-                              ),
-                              boxShadow: const [],
-                            ),
-                            child: CrystalSlashWrapper.sequentialRow(
-                              rowIndex: effectiveTabIndex,
-                              intensity: 0.65,
-                              borderRadius: BorderRadius.circular(27),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: isAdminMode
-                                    ? [
-                                        _buildNavItem(
-                                          context,
-                                          index: 0,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.space_dashboard_outlined,
-                                          activeIcon:
-                                              Icons.space_dashboard_rounded,
-                                          label: 'Command',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 1,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.badge_outlined,
-                                          activeIcon: Icons.badge_rounded,
-                                          label: 'Roster',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 2,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.emoji_events_outlined,
-                                          activeIcon:
-                                              Icons.emoji_events_rounded,
-                                          label: 'Arena Ops',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 3,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.gavel_outlined,
-                                          activeIcon: Icons.gavel_rounded,
-                                          label: 'Governance',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 4,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons
-                                              .admin_panel_settings_outlined,
-                                          activeIcon:
-                                              Icons.admin_panel_settings_rounded,
-                                          label: 'Dossier',
-                                        ),
-                                      ]
-                                    : [
-                                        _buildNavItem(
-                                          context,
-                                          index: 0,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.home_outlined,
-                                          activeIcon: Icons.home_rounded,
-                                          label: 'Arena',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 1,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.travel_explore_outlined,
-                                          activeIcon:
-                                              Icons.travel_explore_rounded,
-                                          label: 'Discover',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 2,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.emoji_events_outlined,
-                                          activeIcon:
-                                              Icons.emoji_events_rounded,
-                                          label: 'Events',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 3,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.forum_outlined,
-                                          activeIcon: Icons.forum_rounded,
-                                          label: 'Community',
-                                        ),
-                                        _buildNavItem(
-                                          context,
-                                          index: 4,
-                                          activeTabIndex: effectiveTabIndex,
-                                          icon: Icons.person_outline_rounded,
-                                          activeIcon: Icons.person_rounded,
-                                          label: 'Passport',
-                                        ),
-                                      ],
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                              child: Container(
+                                key: const ValueKey('crystal_floating_nav_dock'),
+                                height: kFloatingDockHeight,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xB305070C),
+                                  borderRadius: BorderRadius.circular(28),
+                                  border: Border.all(
+                                    color: const Color(0x45FFFFFF),
+                                    width: 1.0,
+                                  ),
+                                  boxShadow: const [],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: isAdminMode
+                                      ? [
+                                          _buildNavItem(
+                                            context,
+                                            index: 0,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.space_dashboard_outlined,
+                                            activeIcon:
+                                                Icons.space_dashboard_rounded,
+                                            label: 'Command',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 1,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.badge_outlined,
+                                            activeIcon: Icons.badge_rounded,
+                                            label: 'Roster',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 2,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.emoji_events_outlined,
+                                            activeIcon:
+                                                Icons.emoji_events_rounded,
+                                            label: 'Arena Ops',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 3,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.gavel_outlined,
+                                            activeIcon: Icons.gavel_rounded,
+                                            label: 'Governance',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 4,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons
+                                                .admin_panel_settings_outlined,
+                                            activeIcon:
+                                                Icons.admin_panel_settings_rounded,
+                                            label: 'Dossier',
+                                          ),
+                                        ]
+                                      : [
+                                          _buildNavItem(
+                                            context,
+                                            index: 0,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.home_outlined,
+                                            activeIcon: Icons.home_rounded,
+                                            label: 'Arena',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 1,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.travel_explore_outlined,
+                                            activeIcon:
+                                                Icons.travel_explore_rounded,
+                                            label: 'Discover',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 2,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.emoji_events_outlined,
+                                            activeIcon:
+                                                Icons.emoji_events_rounded,
+                                            label: 'Events',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 3,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.forum_outlined,
+                                            activeIcon: Icons.forum_rounded,
+                                            label: 'Community',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 4,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.person_outline_rounded,
+                                            activeIcon: Icons.person_rounded,
+                                            label: 'Passport',
+                                          ),
+                                        ],
+                                ),
                               ),
                             ),
                           ),
@@ -930,8 +909,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
+                // Keep padding + borderWidth constant so the 1.3px active rim never shifts label layout.
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 11.7 : 12.0,
+                  vertical: isSelected ? 3.7 : 4.0,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
+                  color: isSelected
+                      ? const Color(0x24E23B3B)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
@@ -941,32 +927,19 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   ),
                   boxShadow: const [],
                 ),
-                child: CrystalSlashWrapper.sequentialRow(
-                  rowIndex: index,
-                  intensity: 0.85,
-                  enabled: isSelected,
-                  borderRadius: BorderRadius.circular(11),
-                  child: Padding(
-                    // Keep padding + borderWidth constant so the 1.3px active rim never shifts label layout.
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSelected ? 11.7 : 12.0,
-                      vertical: isSelected ? 3.7 : 4.0,
+                child: Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 22,
+                  color: isSelected
+                      ? const Color(0xFFD4AF37)
+                      : const Color(0xFFF1F5F9),
+                  shadows: const [
+                    Shadow(
+                      color: Color(0xFF000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 1),
                     ),
-                    child: Icon(
-                      isSelected ? activeIcon : icon,
-                      size: 22,
-                      color: isSelected
-                          ? const Color(0xFFD4AF37)
-                          : const Color(0xFFF1F5F9),
-                      shadows: const [
-                        Shadow(
-                          color: Color(0xFF000000),
-                          blurRadius: 6,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
               const SizedBox(height: 3),

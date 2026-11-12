@@ -1017,73 +1017,83 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
           ),
           SafeArea(
             bottom: false,
-            child: CrystalVaporDissolve(
-              bottomMargin: bottomDockGap,
-              child: RefreshIndicator(
-                color: AppTheme.goldPrimary,
-                backgroundColor: AppTheme.cardSurface,
-                onRefresh: () async => _refreshSegment(selectedSegment),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    28,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AdminAuthorityHeader(
+                    title: 'Arena Operations',
+                    subtitle:
+                        'Sanctioned bout score overrides, championship belts, and tournament desks',
+                    activeRole: activeRole,
+                    jurisdiction: jurisdiction,
+                    onRefresh: () => _refreshSegment(selectedSegment),
                   ),
-                  children: [
-                    AdminAuthorityHeader(
-                      title: 'Arena Operations',
-                      subtitle:
-                          'Sanctioned bout score overrides, championship belts, and tournament desks',
-                      activeRole: activeRole,
-                      jurisdiction: jurisdiction,
-                      onRefresh: () => _refreshSegment(selectedSegment),
-                    ),
-                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
-                    const SizedBox(height: 120),
-
-                    AdminSegmentedDeck(
-                      selectedIndex: selectedSegment,
-                      onChanged: (idx) =>
-                          ref.read(adminArenaOpsSegmentProvider.notifier).state =
-                              idx,
-                      segments: [
-                        AdminSegmentItem(
-                          label: 'Match Oversight',
-                          icon: Icons.sports_mma_rounded,
-                          count: matchesAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Belt Titles',
-                          icon: Icons.workspace_premium_rounded,
-                          count: titlesAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Tournaments',
-                          icon: Icons.emoji_events_rounded,
-                          count: tournamentsAsync.valueOrNull?.length,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    if (selectedSegment == 0)
-                      _buildMatchOversightSegment(
-                        matchesAsync: matchesAsync,
-                        activeRole: activeRole,
-                        jurisdiction: jurisdiction,
-                      )
-                    else if (selectedSegment == 1)
-                      _buildBeltTitlesSegment(
-                        titlesAsync: titlesAsync,
-                        challengesAsync: challengesAsync,
-                        canManageChampionships: canManageChampionships,
-                      )
-                    else
-                      _buildTournamentsSegment(tournamentsAsync: tournamentsAsync),
-                  ],
                 ),
-              ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.goldPrimary,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async => _refreshSegment(selectedSegment),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          28,
+                        ),
+                        children: [
+                          AdminSegmentedDeck(
+                            selectedIndex: selectedSegment,
+                            onChanged: (idx) => ref
+                                .read(adminArenaOpsSegmentProvider.notifier)
+                                .state = idx,
+                            segments: [
+                              AdminSegmentItem(
+                                label: 'Match Oversight',
+                                icon: Icons.sports_mma_rounded,
+                                count: matchesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Belt Titles',
+                                icon: Icons.workspace_premium_rounded,
+                                count: titlesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Tournaments',
+                                icon: Icons.emoji_events_rounded,
+                                count: tournamentsAsync.valueOrNull?.length,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          if (selectedSegment == 0)
+                            _buildMatchOversightSegment(
+                              matchesAsync: matchesAsync,
+                              activeRole: activeRole,
+                              jurisdiction: jurisdiction,
+                            )
+                          else if (selectedSegment == 1)
+                            _buildBeltTitlesSegment(
+                              titlesAsync: titlesAsync,
+                              challengesAsync: challengesAsync,
+                              canManageChampionships: canManageChampionships,
+                            )
+                          else
+                            _buildTournamentsSegment(
+                              tournamentsAsync: tournamentsAsync,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

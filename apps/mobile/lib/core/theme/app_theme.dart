@@ -440,7 +440,7 @@ class AppTheme {
     ],
   );
 
-  /// 100% Crystal-Transparent Wireframe Card Box Decoration.
+  /// Whisper-Dark Optical Crystal Lens Card Box Decoration (`Color(0x4704060B)`).
   static BoxDecoration machinedTitaniumDecoration({
     double radius = 18.0,
     Color? borderColor,
@@ -448,7 +448,7 @@ class AppTheme {
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      color: Colors.transparent,
+      color: const Color(0x4704060B),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: borderColor ?? const Color(0x38FFFFFF),
@@ -458,14 +458,14 @@ class AppTheme {
     );
   }
 
-  /// 100% Crystal-Transparent Wireframe Box Decoration for compact cards & controls.
+  /// Whisper-Dark Optical Crystal Lens Box Decoration for compact cards & controls.
   static BoxDecoration brushedSteelDecoration({
     double radius = 14.0,
     Color? borderColor,
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      color: Colors.transparent,
+      color: const Color(0x4704060B),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: borderColor ?? const Color(0x26FFFFFF),
@@ -475,7 +475,7 @@ class AppTheme {
     );
   }
 
-  /// 100% Crystal-Transparent Wireframe Outer Card Box Decoration.
+  /// Whisper-Dark Optical Crystal Lens Outer Card Box Decoration.
   static BoxDecoration smokedGlassDecoration({
     double radius = 18.0,
     Color? borderColor,
@@ -483,7 +483,7 @@ class AppTheme {
     List<BoxShadow>? customShadow,
   }) {
     return BoxDecoration(
-      color: Colors.transparent,
+      color: const Color(0x4704060B),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: borderColor ?? const Color(0x38FFFFFF),
@@ -493,13 +493,13 @@ class AppTheme {
     );
   }
 
-  /// 100% Crystal-Transparent Inner Well Decoration (`Colors.transparent`, `radius: 14`, `1px #26FFFFFF` border).
+  /// Whisper-Dark Optical Crystal Inner Well Decoration (`Color(0x4704060B)`, `radius: 14`, `1px #26FFFFFF` border).
   static BoxDecoration recessedObsidianWellDecoration({
     double radius = 14.0,
     Color? borderColor,
   }) {
     return BoxDecoration(
-      color: Colors.transparent,
+      color: const Color(0x4704060B),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
         color: borderColor ?? const Color(0x26FFFFFF),

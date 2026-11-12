@@ -633,88 +633,96 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
           ),
           SafeArea(
             bottom: false,
-            child: CrystalVaporDissolve(
-              bottomMargin: bottomDockGap,
-              child: RefreshIndicator(
-                color: AppTheme.goldPrimary,
-                backgroundColor: AppTheme.cardSurface,
-                onRefresh: () async =>
-                    _refreshSegment(selectedSegment, supportFilter),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    28,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AdminAuthorityHeader(
+                    title: 'Federation Governance',
+                    subtitle:
+                        'Arbitration dockets, video moderation, partner gyms, and member helpdesk',
+                    activeRole: activeRole,
+                    jurisdiction: jurisdiction,
+                    onRefresh: () =>
+                        _refreshSegment(selectedSegment, supportFilter),
                   ),
-                  children: [
-                    AdminAuthorityHeader(
-                      title: 'Federation Governance',
-                      subtitle:
-                          'Arbitration dockets, video moderation, partner gyms, and member helpdesk',
-                      activeRole: activeRole,
-                      jurisdiction: jurisdiction,
-                      onRefresh: () =>
-                          _refreshSegment(selectedSegment, supportFilter),
-                    ),
-                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
-                    const SizedBox(height: 120),
-
-                    AdminSegmentedDeck(
-                      selectedIndex: selectedSegment,
-                      onChanged: (idx) =>
-                          ref.read(adminGovernanceSegmentProvider.notifier).state =
-                              idx,
-                      segments: [
-                        AdminSegmentItem(
-                          label: 'Disputes',
-                          icon: Icons.gavel_rounded,
-                          count: disputesAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Moderation',
-                          icon: Icons.ondemand_video_rounded,
-                          count: pendingLinksAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Gyms',
-                          icon: Icons.fitness_center_rounded,
-                          count: venuesAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Helpdesk',
-                          icon: Icons.support_agent_rounded,
-                          count: ticketsAsync.valueOrNull?.length,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    if (selectedSegment == 0)
-                      _buildDisputesSegment(
-                        disputesAsync: disputesAsync,
-                        activeRole: activeRole,
-                      )
-                    else if (selectedSegment == 1)
-                      _buildModerationSegment(
-                        pendingLinksAsync: pendingLinksAsync,
-                        activeRole: activeRole,
-                      )
-                    else if (selectedSegment == 2)
-                      _buildPartnerGymsSegment(
-                        venuesAsync: venuesAsync,
-                        activeRole: activeRole,
-                        jurisdiction: jurisdiction,
-                      )
-                    else
-                      _buildHelpdeskSegment(
-                        ticketsAsync: ticketsAsync,
-                        currentUserId: currentUserId,
-                        supportFilter: supportFilter,
-                      ),
-                  ],
                 ),
-              ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.goldPrimary,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async =>
+                          _refreshSegment(selectedSegment, supportFilter),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          28,
+                        ),
+                        children: [
+                          AdminSegmentedDeck(
+                            selectedIndex: selectedSegment,
+                            onChanged: (idx) => ref
+                                .read(adminGovernanceSegmentProvider.notifier)
+                                .state = idx,
+                            segments: [
+                              AdminSegmentItem(
+                                label: 'Disputes',
+                                icon: Icons.gavel_rounded,
+                                count: disputesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Moderation',
+                                icon: Icons.ondemand_video_rounded,
+                                count: pendingLinksAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Gyms',
+                                icon: Icons.fitness_center_rounded,
+                                count: venuesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Helpdesk',
+                                icon: Icons.support_agent_rounded,
+                                count: ticketsAsync.valueOrNull?.length,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          if (selectedSegment == 0)
+                            _buildDisputesSegment(
+                              disputesAsync: disputesAsync,
+                              activeRole: activeRole,
+                            )
+                          else if (selectedSegment == 1)
+                            _buildModerationSegment(
+                              pendingLinksAsync: pendingLinksAsync,
+                              activeRole: activeRole,
+                            )
+                          else if (selectedSegment == 2)
+                            _buildPartnerGymsSegment(
+                              venuesAsync: venuesAsync,
+                              activeRole: activeRole,
+                              jurisdiction: jurisdiction,
+                            )
+                          else
+                            _buildHelpdeskSegment(
+                              ticketsAsync: ticketsAsync,
+                              currentUserId: currentUserId,
+                              supportFilter: supportFilter,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

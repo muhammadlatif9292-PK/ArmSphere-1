@@ -706,6 +706,7 @@ class _RefereeScorepadHeroCard extends StatelessWidget {
         onTap();
       },
       borderColor: AppTheme.primaryRed.withValues(alpha: 0.45),
+      watermark: ForgedWatermarkType.refereeStrap,
       padding: const EdgeInsets.all(AppTheme.space16),
       child: Row(
         children: [
@@ -800,6 +801,7 @@ class _RefCard extends StatelessWidget {
       },
       borderRadius: 18,
       borderColor: const Color(0x38FFFFFF),
+      watermark: ForgedWatermarkType.refereeStrap,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: AppTheme.space12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1356,7 +1358,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                       // Live Scorepad View
                       if (_challenger == null || _opponent == null)
                         ElevatedActionCard(
-                          slashVariant: const CrystalSlashVariant.crossedCard(),
+                          watermark: ForgedWatermarkType.refereeStrap,
+                          slashVariant: const CrystalSlashVariant.crossedCard(
+                            watermark: ForgedWatermarkType.refereeStrap,
+                          ),
                           padding: const EdgeInsets.all(AppTheme.space24),
                           child: Column(
                     children: [
@@ -1440,7 +1445,10 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
             ] else ...[
               // Standard Manual Result Form
               ElevatedActionCard(
-                slashVariant: const CrystalSlashVariant.crossedCard(),
+                watermark: ForgedWatermarkType.refereeStrap,
+                slashVariant: const CrystalSlashVariant.crossedCard(
+                  watermark: ForgedWatermarkType.refereeStrap,
+                ),
                 padding: const EdgeInsets.all(AppTheme.space20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,

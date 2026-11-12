@@ -125,12 +125,6 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     try {
       await ref.read(authProvider.notifier).switchActiveRole(targetRole);
       if (mounted || router != null) {
-        messenger?.showSnackBar(
-          CrystalSnackBar(
-            content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
-            backgroundColor: AppTheme.goldPrimary,
-          ),
-        );
         // Pop all pushed routes (e.g., /settings/roles and /settings) from the
         // current branch stack before navigating to /home so that tapping the 5th
         // bottom navigation button (Dossier / Passport) opens the root profile
@@ -146,6 +140,15 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
           resetAllShellBranchStacks();
           router.go('/home');
         }
+        messenger
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(
+            CrystalSnackBar(
+              duration: const Duration(milliseconds: 2200),
+              content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
+              backgroundColor: AppTheme.goldPrimary,
+            ),
+          );
       }
     } catch (e) {
       if (mounted) {

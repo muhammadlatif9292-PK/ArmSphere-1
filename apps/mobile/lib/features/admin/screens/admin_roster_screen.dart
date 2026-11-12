@@ -980,80 +980,89 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
           ),
           SafeArea(
             bottom: false,
-            child: CrystalVaporDissolve(
-              bottomMargin: bottomDockGap,
-              child: RefreshIndicator(
-                color: AppTheme.goldPrimary,
-                backgroundColor: AppTheme.cardSurface,
-                onRefresh: () async =>
-                    _refreshCurrentSegment(selectedSegment, athleteFilter),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    28,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AdminAuthorityHeader(
+                    title: 'Federation Roster',
+                    subtitle:
+                        'Athlete verification, referee licensing, and talent scouting pipeline',
+                    activeRole: activeRole,
+                    jurisdiction: jurisdiction,
+                    onRefresh: () =>
+                        _refreshCurrentSegment(selectedSegment, athleteFilter),
                   ),
-                  children: [
-                    AdminAuthorityHeader(
-                      title: 'Federation Roster',
-                      subtitle:
-                          'Athlete verification, referee licensing, and talent scouting pipeline',
-                      activeRole: activeRole,
-                      jurisdiction: jurisdiction,
-                      onRefresh: () =>
-                          _refreshCurrentSegment(selectedSegment, athleteFilter),
-                    ),
-                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
-                    const SizedBox(height: 120),
-
-                    AdminSegmentedDeck(
-                      selectedIndex: selectedSegment,
-                      onChanged: (idx) =>
-                          ref.read(adminRosterSegmentProvider.notifier).state = idx,
-                      segments: [
-                        AdminSegmentItem(
-                          label: 'Athletes',
-                          icon: Icons.people_alt_rounded,
-                          count: athletesAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Referees',
-                          icon: Icons.sports_rounded,
-                          count: refereesAsync.valueOrNull?.length,
-                        ),
-                        AdminSegmentItem(
-                          label: 'Scouting',
-                          icon: Icons.auto_awesome_rounded,
-                          count: nominationsAsync.valueOrNull?.length,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    if (selectedSegment == 0)
-                      _buildAthletesSegment(
-                        athletesAsync: athletesAsync,
-                        activeRole: activeRole,
-                        jurisdiction: jurisdiction,
-                        statusFilter: statusFilter,
-                        athleteFilter: athleteFilter,
-                      )
-                    else if (selectedSegment == 1)
-                      _buildRefereesSegment(
-                        refereesAsync: refereesAsync,
-                        activeRole: activeRole,
-                        jurisdiction: jurisdiction,
-                      )
-                    else
-                      _buildScoutingSegment(
-                        nominationsAsync: nominationsAsync,
-                        activeRole: activeRole,
-                        jurisdiction: jurisdiction,
-                      ),
-                  ],
                 ),
-              ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.goldPrimary,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async =>
+                          _refreshCurrentSegment(selectedSegment, athleteFilter),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          28,
+                        ),
+                        children: [
+                          AdminSegmentedDeck(
+                            selectedIndex: selectedSegment,
+                            onChanged: (idx) => ref
+                                .read(adminRosterSegmentProvider.notifier)
+                                .state = idx,
+                            segments: [
+                              AdminSegmentItem(
+                                label: 'Athletes',
+                                icon: Icons.people_alt_rounded,
+                                count: athletesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Referees',
+                                icon: Icons.sports_rounded,
+                                count: refereesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Scouting',
+                                icon: Icons.auto_awesome_rounded,
+                                count: nominationsAsync.valueOrNull?.length,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          if (selectedSegment == 0)
+                            _buildAthletesSegment(
+                              athletesAsync: athletesAsync,
+                              activeRole: activeRole,
+                              jurisdiction: jurisdiction,
+                              statusFilter: statusFilter,
+                              athleteFilter: athleteFilter,
+                            )
+                          else if (selectedSegment == 1)
+                            _buildRefereesSegment(
+                              refereesAsync: refereesAsync,
+                              activeRole: activeRole,
+                              jurisdiction: jurisdiction,
+                            )
+                          else
+                            _buildScoutingSegment(
+                              nominationsAsync: nominationsAsync,
+                              activeRole: activeRole,
+                              jurisdiction: jurisdiction,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1075,7 +1084,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
       children: [
         AdminCrystalSearchBar(
           controller: _athleteSearchCtrl,
-          hintText: 'Search athletes by name, city, or weight class...',
+          hintText: 'Search by name, city, or weight...',
           onChanged: (v) => setState(() => _athleteSearch = v),
           onClear: () {
             _athleteSearchCtrl.clear();

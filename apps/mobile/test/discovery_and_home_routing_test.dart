@@ -238,14 +238,14 @@ void main() {
       expect(find.text('Community Feed'), findsOneWidget);
       expect(find.text('ELO Rankings'), findsOneWidget);
 
-      // Verify active Top Rankings section is prioritized above empty sections
+      // Verify active Top Rankings Leaderboard section is prioritized above empty sections
       expect(find.text('Top Rankings'), findsOneWidget);
       expect(find.text('Muhammad Latif'), findsOneWidget);
       expect(find.text('1000 ELO'), findsOneWidget);
 
       // Verify framed empty state banners render cleanly
       expect(find.text('Tournaments'), findsWidgets);
-      expect(find.text('No tournaments scheduled'), findsOneWidget);
+      expect(find.text('No upcoming tournaments'), findsOneWidget);
     });
   });
 }

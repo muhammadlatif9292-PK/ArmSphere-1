@@ -629,33 +629,39 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
           ),
           SafeArea(
             bottom: false,
-            child: CrystalVaporDissolve(
-              bottomMargin: bottomDockGap,
-              child: RefreshIndicator(
-                color: AppTheme.goldPrimary,
-                backgroundColor: AppTheme.cardSurface,
-                onRefresh: () async => _refreshAll(),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    28,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. Compact 48px Transparent Top Title Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AdminAuthorityHeader(
+                    title: 'Executive Command',
+                    subtitle:
+                        'Federation oversight, role credentials, and ecosystem telemetry',
+                    activeRole: activeRole,
+                    jurisdiction: jurisdiction,
+                    onRefresh: _refreshAll,
                   ),
-                  children: [
-                    // 1. Compact 56px Authority Header
-                    AdminAuthorityHeader(
-                      title: 'Executive Command',
-                      subtitle:
-                          'Federation oversight, role credentials, and ecosystem telemetry',
-                      activeRole: activeRole,
-                      jurisdiction: jurisdiction,
-                      onRefresh: _refreshAll,
-                    ),
-                    // 120px open 3D Executive War Room & World Bracket Map stage showcase window
-                    const SizedBox(height: 120),
-
-                // 2. Actionable Backlog Triage Grid (2x2)
+                ),
+                const SizedBox(height: 8),
+                // 2. Expanded Scrollable Body with Top & Bottom 3D Vapor-Dissolve
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.goldPrimary,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async => _refreshAll(),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          28,
+                        ),
+                        children: [
+                          // Actionable Backlog Triage Grid (2x2)
                 Row(
                   children: [
                     Expanded(
@@ -766,6 +772,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                   if (pendingRoleApps.isEmpty)
                     ElevatedActionCard(
                       padding: const EdgeInsets.all(16),
+                      watermark: ForgedWatermarkType.adminOctagonShield,
                       child: Row(
                         children: [
                           Container(
@@ -829,6 +836,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                         child: ElevatedActionCard(
                           onTap: () => _openReviewRoleApplicationSheet(appItem),
                           padding: const EdgeInsets.all(14),
+                          watermark: ForgedWatermarkType.adminOctagonShield,
                           child: Row(
                             children: [
                               Container(
@@ -921,6 +929,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                     activeRole == 'FEDERATION_ADMIN') ...[
                   ElevatedActionCard(
                     padding: const EdgeInsets.all(14),
+                    watermark: ForgedWatermarkType.adminOctagonShield,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1034,7 +1043,13 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                 ElevatedActionCard(
                   onTap: () => context.push('/settings/roles'),
                   padding: const EdgeInsets.all(14),
-                  borderColor: const Color(0x73D4AF37),
+                  borderRadius: 16.0,
+                  borderColor: const Color(0x38FFFFFF),
+                  slashVariant: const CrystalSlashVariant.sequentialRow(
+                    0,
+                    1.0,
+                    AppTheme.goldPrimary,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -1085,11 +1100,14 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                     ],
                   ),
                 ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ),
         ],
       ),
     );
@@ -1189,6 +1207,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
 
     return ElevatedActionCard(
       padding: const EdgeInsets.all(16),
+      watermark: ForgedWatermarkType.pinPadAndPeg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

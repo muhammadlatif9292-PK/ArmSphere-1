@@ -121,7 +121,7 @@ void main() {
         final deco = pill.decoration! as BoxDecoration;
         expect(
           deco.color,
-          Colors.transparent,
+          const Color(0x24E23B3B),
           reason: '${tab.label} pill fill',
         );
         expect(
@@ -262,7 +262,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('auto-hides dock when scrolling down and reveals when scrolling up',
+    testWidgets('keeps floating dock permanently visible when scrolling down and up',
         (tester) async {
       final router = GoRouter(
         initialLocation: '/home',
@@ -311,12 +311,12 @@ void main() {
 
       expect(dockOpacity().opacity, 1.0);
 
-      // Drag up to scroll down -> dock auto-hides
+      // Drag up to scroll down -> dock remains permanently visible
       await tester.drag(find.byType(ListView), const Offset(0, -180));
       await tester.pumpAndSettle();
-      expect(dockOpacity().opacity, 0.0);
+      expect(dockOpacity().opacity, 1.0);
 
-      // Drag down to scroll up -> dock reveals
+      // Drag down to scroll up -> dock remains permanently visible
       await tester.drag(find.byType(ListView), const Offset(0, 120));
       await tester.pumpAndSettle();
       expect(dockOpacity().opacity, 1.0);

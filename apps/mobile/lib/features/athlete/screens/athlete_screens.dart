@@ -1469,6 +1469,8 @@ class _AthleteDashboardScreenState
               ),
               child: CrystalSlashWrapper.crossedCard(
                 borderRadius: BorderRadius.circular(18),
+                watermark: ForgedWatermarkType.pinPadAndPeg,
+                paintOpticalLens: false,
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Column(
@@ -1673,6 +1675,8 @@ class _AthleteDashboardScreenState
                   ),
                   child: CrystalSlashWrapper.crossedCard(
                     borderRadius: BorderRadius.circular(18),
+                    watermark: ForgedWatermarkType.pulleyAndStrap,
+                    paintOpticalLens: false,
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(
@@ -2472,6 +2476,8 @@ class _AthleteDashboardScreenState
       ),
       child: CrystalSlashWrapper.crossedCard(
         borderRadius: BorderRadius.circular(18),
+        watermark: ForgedWatermarkType.refereeStrap,
+        paintOpticalLens: false,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Stack(
@@ -4082,6 +4088,7 @@ class AthleteProfileScreen extends ConsumerWidget {
 
     return ElevatedActionCard(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      watermark: ForgedWatermarkType.caliperTicks,
       child: Column(
         children: [
           Row(
@@ -4604,6 +4611,7 @@ class _ArmSwitchEloCardState extends State<ArmSwitchEloCard>
       child: ElevatedActionCard(
         padding: const EdgeInsets.all(18),
         borderColor: activeAccentColor.withValues(alpha: 0.35),
+        watermark: ForgedWatermarkType.pinPadAndPeg,
         child: Column(
           children: [
             // Top Row: Division Chip + Tactical Arm Switch Pills
@@ -4833,26 +4841,36 @@ class _SpecItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: AppTheme.textPrimary,
-              fontFeatures: [FontFeature.tabularFigures()],
-            ),
+      child: CrystalSlashWrapper.crossedCard(
+        borderRadius: BorderRadius.circular(14),
+        watermark: ForgedWatermarkType.caliperTicks,
+        paintOpticalLens: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: AppTheme.textPrimary,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10.5, color: AppTheme.textMuted),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -4881,7 +4899,9 @@ class _WorkspaceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return CrystalSlashWrapper.sequentialRow(
       rowIndex: rowIndex,
+      accentColor: iconColor,
       borderRadius: BorderRadius.zero,
+      paintOpticalLens: false,
       child: TactilePressWrapper(
         onTap: onTap,
         child: Padding(

@@ -58,6 +58,20 @@ void main() {
         ArmSphereAssets.resolveClipFallback('TOURNAMENT'),
         equals(ArmSphereAssets.clipFallbackMatch),
       );
+
+      expect(ArmSphereAssets.stageArena, equals('assets/images/heroes/m1_stage_arena_9x16.webp'));
+      expect(ArmSphereAssets.stageTrainingLab, equals('assets/images/heroes/m1_stage_training_lab_9x16.webp'));
+      expect(ArmSphereAssets.stageHeadToHead, equals('assets/images/heroes/m1_stage_head_to_head_9x16.webp'));
+      expect(ArmSphereAssets.stageChampionshipBelts, equals('assets/images/heroes/m1_stage_championship_belts_9x16.webp'));
+      expect(ArmSphereAssets.stageRankings, equals('assets/images/heroes/m1_stage_rankings_9x16.webp'));
+      expect(ArmSphereAssets.stageReferee, equals('assets/images/heroes/m1_stage_referee_9x16.webp'));
+      expect(ArmSphereAssets.stageAdminGovernance, equals('assets/images/heroes/m1_stage_admin_governance_9x16.webp'));
+      expect(ArmSphereAssets.stageTeams, equals('assets/images/heroes/m1_stage_teams_9x16.webp'));
+      expect(ArmSphereAssets.stageVenues, equals('assets/images/heroes/m1_stage_venues_9x16.webp'));
+      expect(ArmSphereAssets.stageDiscover, equals('assets/images/heroes/m1_stage_discover_9x16.webp'));
+      expect(ArmSphereAssets.stagePassportVault, equals('assets/images/heroes/m1_stage_passport_vault_9x16.webp'));
+      expect(ArmSphereAssets.stageAuthWalkout, equals('assets/images/heroes/m1_stage_auth_walkout_9x16.webp'));
+      expect(ArmSphereAssets.stageCommunity, equals('assets/images/heroes/m1_stage_community_9x16.webp'));
     });
 
     test('Semantic catalog maps approved slot IDs and normalizes legacy .png paths', () {

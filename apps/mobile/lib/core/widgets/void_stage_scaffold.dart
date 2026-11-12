@@ -124,6 +124,7 @@ class VoidStageScaffold extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const StageScrollContrastVeil(),
                     ],
                   ),
                 ),
@@ -133,10 +134,21 @@ class VoidStageScaffold extends StatelessWidget {
           SafeArea(
             top: appBar != null ? extendBodyBehindAppBar : true,
             bottom: false,
-            child: CrystalVaporDissolve(
-              enabled: enableVaporDissolve,
-              bottomMargin: bottomDockGap,
-              child: effectiveBody,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification notification) {
+                if (notification.metrics.axis == Axis.vertical) {
+                  StageScrollDimmerController.updateFromScroll(
+                    notification.context ?? context,
+                    notification.metrics.pixels,
+                  );
+                }
+                return false;
+              },
+              child: CrystalVaporDissolve(
+                enabled: enableVaporDissolve,
+                bottomMargin: bottomDockGap,
+                child: effectiveBody,
+              ),
             ),
           ),
         ],

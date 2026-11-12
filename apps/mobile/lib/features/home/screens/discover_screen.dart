@@ -382,20 +382,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: _buildFilterChips(),
+                            child: _buildFilterChips(),
+                          ),
+                          // Balanced 26px vertical gap between Filter Chips row and Federation Hub
+                          SliverToBoxAdapter(
+                            child: SizedBox(
+                              height: _activeQuery.isEmpty ? 26.0 : 14.0,
                             ),
                           ),
-                          // 90px open 3D stage showcase window above Federation Hub
-                          if (_activeQuery.isEmpty)
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 90),
-                            ),
                           SliverPadding(
                             padding: const EdgeInsets.fromLTRB(
                               AppTheme.space16,
-                              AppTheme.space12,
+                              0.0,
                               AppTheme.space16,
                               28.0,
                             ),
@@ -439,12 +437,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       height: 48,
       child: Row(
         children: [
-          // 1. Expanded Crystal Search Bar (height: 48px, radius: 24, diagonal crimson/obsidian slash inside)
+          // 1. Expanded Crystal Search Bar (height: 48px, radius: 24, whisper-dark optical crystal lens)
           Expanded(
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.transparent,
+                color: const Color(0x4704060B),
                 borderRadius: searchRadius,
                 border: Border.all(
                   color: _activeQuery.isNotEmpty
@@ -454,46 +452,48 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ),
                 boxShadow: const [],
               ),
-              child: CrystalSlashWrapper.sequentialRow(
-                rowIndex: 0,
-                intensity: 0.85,
-                borderRadius: searchRadius,
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontBody,
+                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                  shadows: AppTheme.crystalTextShadows,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search athletes, events, clubs...',
+                  hintStyle: const TextStyle(
                     fontFamily: AppTheme.fontBody,
-                    color: AppTheme.textPrimary,
+                    color: Color(0xFFCBD5E1),
                     fontSize: 13,
                     shadows: AppTheme.crystalTextShadows,
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Search athletes, tournaments, clubs...',
-                    hintStyle: const TextStyle(
-                      fontFamily: AppTheme.fontBody,
-                      color: Color(0xFFCBD5E1),
-                      fontSize: 12.5,
-                      shadows: AppTheme.crystalTextShadows,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFFF1F5F9),
-                      size: 19,
-                    ),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: AppTheme.textSecondary,
-                              size: 16,
-                            ),
-                            onPressed: _clearSearch,
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: Color(0xFFF1F5F9),
+                    size: 18,
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: AppTheme.textSecondary,
+                            size: 16,
+                          ),
+                          onPressed: _clearSearch,
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 13,
                   ),
                 ),
               ),
@@ -534,7 +534,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            color: const Color(0x4704060B),
             shape: BoxShape.circle,
             border: Border.all(
               color: const Color(0x45FFFFFF),
@@ -542,44 +542,39 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ),
             boxShadow: const [],
           ),
-          child: CrystalSlashWrapper.sequentialRow(
-            rowIndex: showCrimsonDot ? 2 : 1,
-            intensity: 0.75,
-            borderRadius: BorderRadius.circular(21),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 19,
-                  color: const Color(0xFFF1F5F9),
-                  shadows: const [
-                    Shadow(
-                      color: Color(0xFF000000),
-                      blurRadius: 6,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-                ),
-                if (showCrimsonDot)
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      width: 7.5,
-                      height: 7.5,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE23B3B),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF05070C),
-                          width: 1.2,
-                        ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: const Color(0xFFF1F5F9),
+                shadows: const [
+                  Shadow(
+                    color: Color(0xFF000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              if (showCrimsonDot)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 7.5,
+                    height: 7.5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE23B3B),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF05070C),
+                        width: 1.2,
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -588,10 +583,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildFilterChips() {
     return SizedBox(
-      height: 42,
+      height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(AppTheme.space16, 2, AppTheme.space16, 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
         itemCount: DiscoverCategory.values.length,
         separatorBuilder: (_, __) => const SizedBox(width: AppTheme.space8),
         itemBuilder: (context, index) {
@@ -604,8 +599,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             borderRadius: chipRadius,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
+              padding: EdgeInsets.symmetric(
+                horizontal: isSelected ? 11.8 : 12.0,
+                vertical: isSelected ? 4.8 : 5.0,
+              ),
               decoration: BoxDecoration(
-                color: Colors.transparent,
+                color: isSelected
+                    ? const Color(0x33E23B3B)
+                    : const Color(0x4704060B),
                 borderRadius: chipRadius,
                 border: Border.all(
                   color: isSelected
@@ -614,43 +615,32 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   width: isSelected ? 1.2 : 1.0,
                 ),
               ),
-              child: CrystalSlashWrapper.sequentialRow(
-                rowIndex: index,
-                intensity: isSelected ? 0.95 : 0.55,
-                borderRadius: chipRadius,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isSelected ? 11.8 : 12.0,
-                    vertical: isSelected ? 4.8 : 5.0,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    category.icon,
+                    size: 13,
+                    color: isSelected
+                        ? const Color(0xFFD4AF37)
+                        : const Color(0xFFF1F5F9),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        category.icon,
-                        size: 13,
-                        color: isSelected
-                            ? const Color(0xFFD4AF37)
-                            : const Color(0xFFF1F5F9),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        category.label,
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w600,
-                          fontSize: 11,
-                          color: isSelected
-                              ? AppTheme.textPure
-                              : const Color(0xFFF1F5F9),
-                          letterSpacing: 0.3,
-                          shadows: AppTheme.crystalTextShadows,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 6),
+                  Text(
+                    category.label,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 11,
+                      color: isSelected
+                          ? AppTheme.textPure
+                          : const Color(0xFFF1F5F9),
+                      letterSpacing: 0.3,
+                      shadows: AppTheme.crystalTextShadows,
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           );
@@ -1118,7 +1108,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       onTap: () => context.push(item.route),
       semanticLabel: item.title,
       child: Container(
-        height: 132,
+        constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -1455,7 +1445,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ? _CompactEmptyBanner(
               icon: Icons.emoji_events_outlined,
               accentColor: AppTheme.secondaryAccent,
-              title: 'No tournaments scheduled',
+              title: 'No upcoming tournaments',
               actionLabel: 'Explore',
               onAction: () => context.push('/tournaments'),
             )
@@ -1717,7 +1707,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   semanticLabel:
                       'Rank $rank: $name, $division division, $elo ELO',
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                      const EdgeInsets.fromLTRB(12, 11, 8, 11),
                   child: Row(
                     children: [
                       Container(
@@ -1746,21 +1736,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              name.toString(),
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontBody,
-                                color: AppTheme.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name.toString(),
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontBody,
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                             Text(
                               division.toString().toUpperCase(),
@@ -1774,11 +1770,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 6),
                       StatusChip(
                         label: '$elo ELO',
                         type: StatusType.info,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 2),
                       const Icon(
                         Icons.chevron_right,
                         color: AppTheme.textMuted,

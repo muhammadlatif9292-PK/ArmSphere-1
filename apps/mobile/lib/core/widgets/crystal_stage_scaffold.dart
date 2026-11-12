@@ -7,6 +7,7 @@ import '../providers/visual_preferences_provider.dart';
 import '../theme/app_theme.dart';
 import 'armsphere_image.dart';
 import 'crystal_gloss_card.dart';
+import 'crystal_slash_painter.dart';
 
 export '../providers/visual_preferences_provider.dart'
     show ArmSphereStageDomain, VisualCustomizeSlot;
@@ -127,6 +128,9 @@ class CrystalStageBackdrop extends ConsumerWidget {
                       ),
                     ),
                   ),
+
+                  // 4. Smart Scroll-Linked Stage Spotlight Dimmer (10px -> 70px -> Color(0x7304060B))
+                  if (!isHeaderBar) const StageScrollContrastVeil(),
                 ],
               ),
             ),

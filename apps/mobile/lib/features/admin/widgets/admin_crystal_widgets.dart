@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 
@@ -41,14 +42,14 @@ class AdminAuthorityHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 56,
+          height: 48,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(9),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
+                  color: const Color(0x4704060B),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: const Color(0x73D4AF37),
@@ -411,7 +412,7 @@ class AdminCrystalSearchBar extends StatelessWidget {
                   )
                 : null,
             filled: true,
-            fillColor: Colors.transparent,
+            fillColor: const Color(0x4704060B),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 12,
@@ -431,17 +432,36 @@ class AdminCrystalSearchBar extends StatelessWidget {
         ),
         if (filterOptions.isNotEmpty && onFilterSelected != null) ...[
           const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            padding: const EdgeInsets.only(right: 16),
-            child: Row(
-              children: [
-                for (int i = 0; i < filterOptions.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 8),
-                  _buildFilterChip(context, filterOptions[i]),
-                ],
-              ],
+          SizedBox(
+            height: 34,
+            width: double.infinity,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double screenWidth = MediaQuery.sizeOf(context).width;
+                final double bleedWidth = (constraints.maxWidth.isFinite &&
+                        screenWidth > constraints.maxWidth)
+                    ? screenWidth
+                    : constraints.maxWidth;
+                return OverflowBox(
+                  alignment: Alignment.center,
+                  minWidth: bleedWidth,
+                  maxWidth: bleedWidth,
+                  minHeight: 34,
+                  maxHeight: 34,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < filterOptions.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          _buildFilterChip(context, filterOptions[i]),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -493,7 +513,9 @@ class AdminCrystalSearchBar extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: isSelected
+              ? const Color(0x28D4AF37)
+              : const Color(0x4704060B),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
@@ -544,6 +566,7 @@ class AdminKpiCrystalCard extends StatelessWidget {
       child: ElevatedActionCard(
         padding: const EdgeInsets.all(14),
         borderColor: accentColor.withValues(alpha: 0.45),
+        watermark: ForgedWatermarkType.adminOctagonShield,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

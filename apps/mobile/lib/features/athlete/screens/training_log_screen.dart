@@ -313,6 +313,7 @@ class _AthleteTrainingLogScreenState
                     const SizedBox(height: 16),
                     // Titanium Luxe Summary Ribbon
                 ElevatedActionCard(
+                  watermark: ForgedWatermarkType.pulleyAndStrap,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.space16,
                     vertical: AppTheme.space14,
@@ -449,6 +450,7 @@ class _AthleteTrainingLogScreenState
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: ElevatedActionCard(
+                              watermark: ForgedWatermarkType.pulleyAndStrap,
                               onTap: () {
                                 SensoryFeedbackService.instance.playSensoryCeremony(
                                   audioEvent: ArmSphereAudioEvent.prAchieved,
