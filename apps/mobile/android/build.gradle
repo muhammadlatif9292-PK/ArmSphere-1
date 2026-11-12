@@ -12,6 +12,20 @@ subprojects {
     def newSubprojectBuildDir = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
+subprojects { subproject ->
+    subproject.plugins.withId("com.android.library") {
+        def androidComponents = subproject.extensions.findByName("androidComponents")
+        if (androidComponents != null) {
+            androidComponents.finalizeDsl { extension ->
+                if (extension.compileSdk == null || extension.compileSdk < 36) {
+                    extension.compileSdk = 36
+                }
+            }
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
