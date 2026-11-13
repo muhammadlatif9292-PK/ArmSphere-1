@@ -20,6 +20,8 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
 import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
+import '../../../core/widgets/championship_name_marquee.dart';
 
 /// Opens or creates a private 1-on-1 direct message thread with the athlete who posted [post].
 Future<void> _openDirectMessageWithAthlete(
@@ -112,181 +114,16 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
   @override
   Widget build(BuildContext context) {
     final feedAsync = ref.watch(communityFeedProvider);
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight +
+            MediaQuery.paddingOf(context).bottom +
+            10.0)
+        : 12.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        titleSpacing: 14,
-        title: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: const Color(0x73D4AF37),
-                  width: 1.0,
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(9),
-                child: Image.asset(
-                  ArmSphereAssets.teamCrestDefault,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                  semanticLabel: 'Official Federation Community Arena',
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'COMMUNITY ARENA',
-                      maxLines: 1,
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const PulseIndicator(size: 5.0, color: AppTheme.goldPrimary),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          'LIVE FEED',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            color: AppTheme.goldPrimary.withValues(alpha: 0.95),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 9.5,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Direct 1-on-1 Messages Inbox shortcut
-          CrystalIconPillButton(
-            tooltip: 'Direct 1-on-1 Messages',
-            icon: Icons.forum_outlined,
-            iconColor: AppTheme.goldPrimary,
-            iconSize: 18,
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              context.push('/messages');
-            },
-          ),
-          // Mode Toggle: Stream vs Vertical Clips inside 38x38 circular smoked-crystal pill
-          CrystalIconPillButton(
-            tooltip: _isVerticalClipsMode ? 'Stream Card View' : 'Vertical Clip Reels',
-            icon: _isVerticalClipsMode
-                ? Icons.view_agenda_outlined
-                : Icons.play_lesson_outlined,
-            iconColor: _isVerticalClipsMode
-                ? AppTheme.goldPrimary
-                : AppTheme.textPure,
-            iconSize: 18,
-            onPressed: () {
-              _activeVideoPostId.value = null;
-              setState(() {
-                _isVerticalClipsMode = !_isVerticalClipsMode;
-              });
-            },
-          ),
-          // Create Post CTA
-          Padding(
-            padding: const EdgeInsets.only(right: 14, left: 2),
-            child: Center(
-              child: CrystalHeaderActionPill(
-                label: 'POST CLIP',
-                icon: Icons.add,
-                onTap: () => context.push('/community/post/create'),
-              ),
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: SizedBox(
-            height: 48,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final cat = _categories[index];
-                final isSelected = cat == _selectedCategory;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    _activeVideoPostId.value = null;
-                    setState(() {
-                      _selectedCategory = cat;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0x73D4AF37)
-                            : const Color(0x2EFFFFFF),
-                        width: isSelected ? 1.2 : 1.0,
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      cat,
-                      style: TextStyle(
-                        fontFamily: 'Space Grotesk',
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                        color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
-                        letterSpacing: 0.5,
-                        shadows: AppTheme.crystalTextShadows,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -295,105 +132,336 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ),
           SafeArea(
             bottom: false,
-            child: feedAsync.when(
-              loading: () => ListView.separated(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  140,
-                  16,
-                  MainShellScope.bottomClearance(context, additionalPadding: 44),
-                ),
-                itemCount: 4,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (_, __) => const RepaintBoundary(
-                  child: SkeletonPlaceholder(height: 280),
-                ),
-              ),
-              error: (error, _) => AppErrorView(
-                error: error,
-                title: 'Could not load feed',
-                onRetry: () => ref.invalidate(communityFeedProvider),
-                showSecondaryAction: false,
-                onSessionExpired: () => ref.read(authProvider.notifier).logout(),
-              ),
-              data: (allPosts) {
-                final posts = _selectedCategory == 'ALL'
-                    ? allPosts
-                    : allPosts.where((p) {
-                        final cat = p['category']?.toString().toUpperCase() ?? '';
-                        return cat.contains(_selectedCategory);
-                      }).toList();
-
-                if (posts.isEmpty) {
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      8,
-                      140,
-                      8,
-                      MainShellScope.bottomClearance(context, additionalPadding: 44),
-                    ),
-                    child: AppEmptyState(
-                      icon: Icons.videocam_off_outlined,
-                      title: 'No clips found',
-                      subtitle: _selectedCategory == 'ALL'
-                          ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
-                          : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
-                      ctaLabel: 'Share a video',
-                      onCtaTap: () => context.push('/community/post/create'),
-                    ),
-                  );
-                }
-
-                if (_isVerticalClipsMode) {
-                  return _VerticalClipsFeed(
-                    posts: posts,
-                    activeVideoPostId: _activeVideoPostId,
-                    onRefresh: () => ref.read(communityFeedProvider.notifier).refresh(),
-                    onLoadMore: () => ref.read(communityFeedProvider.notifier).loadMore(),
-                  );
-                }
-
-                return RefreshIndicator(
-                  color: AppTheme.goldPrimary,
-                  backgroundColor: AppTheme.cardSurface,
-                  onRefresh: () async {
-                    _activeVideoPostId.value = null;
-                    try {
-                      await ref.read(communityFeedProvider.notifier).refresh();
-                    } catch (_) {}
-                  },
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (scrollInfo) {
-                      if (scrollInfo.metrics.pixels >=
-                          scrollInfo.metrics.maxScrollExtent - 400) {
-                        ref
-                            .read(communityFeedProvider.notifier)
-                            .loadMore()
-                            .catchError((_) {});
-                      }
-                      return false;
-                    },
-                    child: ListView.separated(
-                      key: const ValueKey<String>('community_feed_list_view'),
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        140,
-                        16,
-                        MainShellScope.bottomClearance(context, additionalPadding: 44),
+            child: Column(
+              children: [
+                // ========================================================
+                // TOP MINIMAL BRAND HEADER + CATEGORY STRIP (FIXED ABOVE VAPOR SCROLL VIEWPORT)
+                // ========================================================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0x73D4AF37),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: Image.asset(
+                            ArmSphereAssets.teamCrestDefault,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                            semanticLabel:
+                                'Official Federation Community Arena',
+                          ),
+                        ),
                       ),
-                      itemCount: posts.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final post = posts[index];
-                        return _TacticalFeedCard(
-                          post: post,
-                          activeVideoPostId: _activeVideoPostId,
-                        );
-                      },
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'COMMUNITY ARENA',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const PulseIndicator(
+                                    size: 5.0, color: AppTheme.goldPrimary),
+                                const SizedBox(width: 5),
+                                Flexible(
+                                  child: Text(
+                                    'LIVE FEED',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: 'Space Grotesk',
+                                      color: AppTheme.goldPrimary
+                                          .withValues(alpha: 0.95),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 9.5,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Direct 1-on-1 Messages Inbox shortcut
+                      CrystalIconPillButton(
+                        tooltip: 'Direct 1-on-1 Messages',
+                        icon: Icons.forum_outlined,
+                        iconColor: AppTheme.goldPrimary,
+                        iconSize: 18,
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          context.push('/messages');
+                        },
+                      ),
+                      // Mode Toggle: Stream vs Vertical Clips inside 38x38 circular smoked-crystal pill
+                      CrystalIconPillButton(
+                        tooltip: _isVerticalClipsMode
+                            ? 'Stream Card View'
+                            : 'Vertical Clip Reels',
+                        icon: _isVerticalClipsMode
+                            ? Icons.view_agenda_outlined
+                            : Icons.play_lesson_outlined,
+                        iconColor: _isVerticalClipsMode
+                            ? AppTheme.goldPrimary
+                            : AppTheme.textPure,
+                        iconSize: 18,
+                        onPressed: () {
+                          _activeVideoPostId.value = null;
+                          setState(() {
+                            _isVerticalClipsMode = !_isVerticalClipsMode;
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 2),
+                      CrystalHeaderActionPill(
+                        label: 'POST CLIP',
+                        icon: Icons.add,
+                        onTap: () => context.push('/community/post/create'),
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+                SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 3),
+                    itemCount: _categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final cat = _categories[index];
+                      final isSelected = cat == _selectedCategory;
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          _activeVideoPostId.value = null;
+                          setState(() {
+                            _selectedCategory = cat;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0x1FD4AF37)
+                                : Colors.transparent,
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0x73D4AF37)
+                                  : const Color(0x2EFFFFFF),
+                              width: isSelected ? 1.2 : 1.0,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontSize: 11,
+                              fontWeight: isSelected
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? AppTheme.goldPrimary
+                                  : const Color(0xFFCBD5E1),
+                              letterSpacing: 0.5,
+                              shadows: AppTheme.crystalTextShadows,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // ========================================================
+                // VAPOR-DISSOLVE SCROLL VIEWPORT (TOP & BOTTOM SCROLL HIDING BORDERS)
+                // ========================================================
+                Expanded(
+                  child: _isVerticalClipsMode
+                      ? feedAsync.when(
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                          error: (error, _) => AppErrorView(
+                            error: error,
+                            title: 'Could not load feed',
+                            onRetry: () =>
+                                ref.invalidate(communityFeedProvider),
+                            showSecondaryAction: false,
+                            onSessionExpired: () =>
+                                ref.read(authProvider.notifier).logout(),
+                          ),
+                          data: (allPosts) {
+                            final posts = _selectedCategory == 'ALL'
+                                ? allPosts
+                                : allPosts.where((p) {
+                                    final cat = p['category']
+                                            ?.toString()
+                                            .toUpperCase() ??
+                                        '';
+                                    return cat.contains(_selectedCategory);
+                                  }).toList();
+                            if (posts.isEmpty) {
+                              return Center(
+                                child: AppEmptyState(
+                                  icon: Icons.videocam_off_outlined,
+                                  title: 'No clips found',
+                                  subtitle: _selectedCategory == 'ALL'
+                                      ? 'Be the first to share a training or match video.'
+                                      : 'No clips currently tagged with $_selectedCategory.',
+                                  ctaLabel: 'Share a video',
+                                  onCtaTap: () =>
+                                      context.push('/community/post/create'),
+                                ),
+                              );
+                            }
+                            return _VerticalClipsFeed(
+                              posts: posts,
+                              activeVideoPostId: _activeVideoPostId,
+                              onRefresh: () => ref
+                                  .read(communityFeedProvider.notifier)
+                                  .refresh(),
+                              onLoadMore: () => ref
+                                  .read(communityFeedProvider.notifier)
+                                  .loadMore(),
+                            );
+                          },
+                        )
+                      : CrystalVaporDissolve(
+                          bottomMargin: bottomDockGap,
+                          child: feedAsync.when(
+                            loading: () => ListView.separated(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 10, 16, 28),
+                              itemCount: 4,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (_, __) => const RepaintBoundary(
+                                child: SkeletonPlaceholder(height: 280),
+                              ),
+                            ),
+                            error: (error, _) => AppErrorView(
+                              error: error,
+                              title: 'Could not load feed',
+                              onRetry: () =>
+                                  ref.invalidate(communityFeedProvider),
+                              showSecondaryAction: false,
+                              onSessionExpired: () =>
+                                  ref.read(authProvider.notifier).logout(),
+                            ),
+                            data: (allPosts) {
+                              final posts = _selectedCategory == 'ALL'
+                                  ? allPosts
+                                  : allPosts.where((p) {
+                                      final cat = p['category']
+                                              ?.toString()
+                                              .toUpperCase() ??
+                                          '';
+                                      return cat.contains(_selectedCategory);
+                                    }).toList();
+
+                              if (posts.isEmpty) {
+                                return SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      8, 24, 8, 28),
+                                  child: AppEmptyState(
+                                    icon: Icons.videocam_off_outlined,
+                                    title: 'No clips found',
+                                    subtitle: _selectedCategory == 'ALL'
+                                        ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
+                                        : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
+                                    ctaLabel: 'Share a video',
+                                    onCtaTap: () => context
+                                        .push('/community/post/create'),
+                                  ),
+                                );
+                              }
+
+                              return RefreshIndicator(
+                                color: AppTheme.goldPrimary,
+                                backgroundColor: AppTheme.cardSurface,
+                                onRefresh: () async {
+                                  _activeVideoPostId.value = null;
+                                  try {
+                                    await ref
+                                        .read(communityFeedProvider.notifier)
+                                        .refresh();
+                                  } catch (_) {}
+                                },
+                                child:
+                                    NotificationListener<ScrollNotification>(
+                                  onNotification: (scrollInfo) {
+                                    if (scrollInfo.metrics.pixels >=
+                                        scrollInfo.metrics.maxScrollExtent -
+                                            400) {
+                                      ref
+                                          .read(communityFeedProvider.notifier)
+                                          .loadMore()
+                                          .catchError((_) {});
+                                    }
+                                    return false;
+                                  },
+                                  child: ListView.separated(
+                                    key: const PageStorageKey<String>(
+                                        'community_feed_list_view'),
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 10, 16, 28),
+                                    itemCount: posts.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 16),
+                                    itemBuilder: (context, index) {
+                                      final post = posts[index];
+                                      return _TacticalFeedCard(
+                                        post: post,
+                                        activeVideoPostId: _activeVideoPostId,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         ],
@@ -481,10 +549,8 @@ class _TacticalFeedCard extends ConsumerWidget {
                                 Row(
                                   children: [
                                     Flexible(
-                                      child: Text(
-                                        athleteName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      child: ChampionshipNameMarquee(
+                                        name: athleteName,
                                         style: const TextStyle(
                                           fontFamily: 'Space Grotesk',
                                           fontSize: 13,

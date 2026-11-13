@@ -64,6 +64,7 @@ class MainShellScope extends InheritedWidget {
   final bool isRootTab;
   final int activeTabIndex;
   final bool canStepBackTab;
+  final int discoverResetEpoch;
   final ValueChanged<int>? onNavigateToTab;
   final bool Function()? onStepBackTab;
 
@@ -74,6 +75,7 @@ class MainShellScope extends InheritedWidget {
     this.isRootTab = true,
     this.activeTabIndex = 0,
     this.canStepBackTab = false,
+    this.discoverResetEpoch = 0,
     this.onNavigateToTab,
     this.onStepBackTab,
     required super.child,
@@ -163,7 +165,8 @@ class MainShellScope extends InheritedWidget {
       dockBottomMargin != oldWidget.dockBottomMargin ||
       isRootTab != oldWidget.isRootTab ||
       activeTabIndex != oldWidget.activeTabIndex ||
-      canStepBackTab != oldWidget.canStepBackTab;
+      canStepBackTab != oldWidget.canStepBackTab ||
+      discoverResetEpoch != oldWidget.discoverResetEpoch;
 }
 
 /// Primary Navigation Shell for ArmSphere
@@ -270,6 +273,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   /// Chronological stack of previously visited root tab indices (`0..4`).
   final List<int> _tabHistory = <int>[];
   late int _lastRecordedTabIndex;
+  int _discoverResetEpoch = 0;
   String? _lastObservedTopPath;
   bool? _lastObservedAdminMode;
   String? _lastObservedRole;
@@ -438,7 +442,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
     if (pathChanged) {
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
-      _resetScrollPositionsToTop();
+      // Do NOT reset scroll positions here: when a feature route is pushed via
+      // context.push(...) or popped via Back navigation, the previous screen
+      // must preserve its exact scroll offset in history while the newly pushed
+      // route naturally starts at offset 0.0.
     }
 
     setState(() {});
@@ -459,10 +466,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
     if (roleChanged || _isResettingForRoleChange) {
       _tabHistory.clear();
       _lastRecordedTabIndex = newIndex;
+      _discoverResetEpoch++;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
       _resetAllBranchNavigators();
-      _resetScrollPositionsToTop();
+      _resetScrollPositionsToTop(activeTabOnly: false);
       return;
     }
 
@@ -471,20 +479,33 @@ class _MainShellScreenState extends State<MainShellScreen> {
         if (_tabHistory.isEmpty || _tabHistory.last != _lastRecordedTabIndex) {
           _tabHistory.add(_lastRecordedTabIndex);
         }
+        if (newIndex == 1 || _lastRecordedTabIndex == 1) {
+          _discoverResetEpoch++;
+        }
       }
       _lastRecordedTabIndex = newIndex;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
-      _resetScrollPositionsToTop();
+      if (!_isSteppingBackTab) {
+        _resetScrollPositionsToTop(activeTabOnly: true);
+      }
     }
   }
 
-  /// Walks the descendant element tree and resets all active vertical
-  /// [ScrollPosition]s to offset `0.0` so newly opened or switched tabs always
-  /// start cleanly at the top.
-  void _resetScrollPositionsToTop() {
+  /// Resets vertical [ScrollPosition]s to offset `0.0`.
+  ///
+  /// When [activeTabOnly] is `true` (default for forward tab switches), skips
+  /// `Offstage(offstage: true)` subtrees inside `IndexedStack` so that previous
+  /// tabs preserve their scroll history when the user navigates back, while the
+  /// newly entered (next) tab starts cleanly from the top.
+  void _resetScrollPositionsToTop({bool activeTabOnly = true}) {
     if (!mounted) return;
     void visitor(Element element) {
+      if (activeTabOnly &&
+          element.widget is Offstage &&
+          (element.widget as Offstage).offstage) {
+        return;
+      }
       if (element is StatefulElement && element.state is ScaffoldState) {
         StageScrollDimmerController.resetForScaffold(
           element.state as ScaffoldState,
@@ -505,31 +526,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
     }
 
     try {
-      final primary = PrimaryScrollController.maybeOf(context);
-      if (primary != null && primary.hasClients) {
-        for (final pos in primary.positions) {
-          if (pos.axis == Axis.vertical && pos.hasPixels && pos.pixels > 0.0) {
-            try {
-              pos.jumpTo(0.0);
-            } catch (_) {}
-          }
-        }
-      }
       context.visitChildElements(visitor);
     } catch (_) {}
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       try {
-        final primary = PrimaryScrollController.maybeOf(context);
-        if (primary != null && primary.hasClients) {
-          for (final pos in primary.positions) {
-            if (pos.axis == Axis.vertical && pos.hasPixels && pos.pixels > 0.0) {
-              try {
-                pos.jumpTo(0.0);
-              } catch (_) {}
-            }
-          }
-        }
         context.visitChildElements(visitor);
       } catch (_) {}
     });
@@ -596,12 +597,19 @@ class _MainShellScreenState extends State<MainShellScreen> {
     return false;
   }
 
-  void _navigateToTabInternal(int index, {required bool recordHistory}) {
+  void _navigateToTabInternal(
+    int index, {
+    required bool recordHistory,
+    bool resetTargetToTop = true,
+  }) {
     final int currentIdx = widget.navigationShell.currentIndex;
     if (recordHistory && index != currentIdx && !_isResettingForRoleChange) {
       if (_tabHistory.isEmpty || _tabHistory.last != currentIdx) {
         _tabHistory.add(currentIdx);
       }
+    }
+    if (resetTargetToTop && (index == 1 || currentIdx == 1)) {
+      _discoverResetEpoch++;
     }
     _lastRecordedTabIndex = index;
     if (!_isDockVisible) {
@@ -622,7 +630,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
       index,
       initialLocation: true,
     );
-    _resetScrollPositionsToTop();
+    if (resetTargetToTop) {
+      _resetScrollPositionsToTop(activeTabOnly: true);
+    }
+    setState(() {});
   }
 
   /// Steps back one tab in `_tabHistory`. Returns `true` if a step back was performed.
@@ -637,7 +648,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _isSteppingBackTab = true;
       try {
         HapticFeedback.selectionClick();
-        _navigateToTabInternal(previousTab, recordHistory: false);
+        _navigateToTabInternal(
+          previousTab,
+          recordHistory: false,
+          resetTargetToTop: false,
+        );
       } finally {
         _isSteppingBackTab = false;
       }
@@ -648,7 +663,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _isSteppingBackTab = true;
       try {
         HapticFeedback.selectionClick();
-        _navigateToTabInternal(0, recordHistory: false);
+        _navigateToTabInternal(
+          0,
+          recordHistory: false,
+          resetTargetToTop: false,
+        );
       } finally {
         _isSteppingBackTab = false;
       }
@@ -662,7 +681,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
     if (index != widget.navigationShell.currentIndex) {
       HapticFeedback.selectionClick();
     }
-    _navigateToTabInternal(index, recordHistory: true);
+    _navigateToTabInternal(
+      index,
+      recordHistory: true,
+      resetTargetToTop: true,
+    );
   }
 
   @override
@@ -678,10 +701,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _isResettingForRoleChange = true;
       _tabHistory.clear();
       _lastRecordedTabIndex = 0;
+      _discoverResetEpoch++;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
       _resetAllBranchNavigators();
-      _resetScrollPositionsToTop();
+      _resetScrollPositionsToTop(activeTabOnly: false);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _popAllImperativeRoutes(GoRouter.maybeOf(context));
@@ -704,8 +728,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
       isRootTab: isRootTab,
       activeTabIndex: effectiveTabIndex,
       canStepBackTab: canInterceptBack,
-      onNavigateToTab: (index) =>
-          _navigateToTabInternal(index, recordHistory: true),
+      discoverResetEpoch: _discoverResetEpoch,
+      onNavigateToTab: (index) => _navigateToTabInternal(
+        index,
+        recordHistory: true,
+        resetTargetToTop: true,
+      ),
       onStepBackTab: _stepBackTab,
       child: PopScope(
         canPop: !canInterceptBack,

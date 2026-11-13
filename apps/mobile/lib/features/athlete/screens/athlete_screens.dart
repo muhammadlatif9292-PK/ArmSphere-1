@@ -23,6 +23,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
+import '../../../core/widgets/championship_name_marquee.dart';
 
 const Map<int, String> _months = {
   1: 'Jan',
@@ -206,6 +207,8 @@ class _AthleteDashboardScreenState
                         }
                       },
                       child: SingleChildScrollView(
+                        key: const PageStorageKey<String>(
+                            'athlete_dashboard_scroll_view'),
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
                         child: Column(
@@ -2894,16 +2897,14 @@ class _AthleteDashboardScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name.toString(),
+                ChampionshipNameMarquee(
+                  name: name.toString(),
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (club != null) ...[
                   const SizedBox(height: 1),
@@ -3073,16 +3074,14 @@ class _AthleteDashboardScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
+                ChampionshipNameMarquee(
+                  name: title,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 1),
@@ -3761,6 +3760,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                       10.0)
                   : 0.0,
               child: SingleChildScrollView(
+                key: const PageStorageKey<String>('athlete_profile_scroll_view'),
                 padding: EdgeInsets.fromLTRB(
                   16,
                   8,
@@ -3980,7 +3980,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             profileAsync.when(
-              loading: () => const SkeletonPlaceholder(height: 82),
+              loading: () => const SkeletonPlaceholder(height: 112),
               error: (_, __) => _buildBiometricsCard(mergedProfile),
               data: (p) => _buildBiometricsCard(p),
             ),
@@ -4098,62 +4098,7 @@ class AthleteProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildBiometricsCard(Map<String, dynamic> profile) {
-    final measurements = profile['measurements'] as Map<String, dynamic>?;
-    final biometrics = profile['biometrics'] as Map<String, dynamic>?;
-    final weight = profile['weightKg'] ?? profile['weight'] ?? measurements?['weight'];
-    final height = profile['heightCm'] ?? profile['height'] ?? measurements?['height'];
-    final reach = profile['reachCm'] ?? profile['reach'] ?? measurements?['reach'];
-    final dominance = profile['armDominance']?.toString() ??
-        profile['dominantArm']?.toString();
-
-    final forearm = biometrics?['forearmCircumference'];
-    final bicep = biometrics?['bicepCircumference'];
-    final handLength = biometrics?['handLength'] ?? biometrics?['handWidth'];
-    final hasArmBiometrics = forearm != null || bicep != null || handLength != null;
-
-    return ElevatedActionCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      watermark: ForgedWatermarkType.caliperTicks,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _SpecItem(
-                  label: 'Weight', value: weight != null ? '${weight}kg' : '--'),
-              _SpecItem(
-                  label: 'Height', value: height != null ? '${height}cm' : '--'),
-              _SpecItem(label: 'Reach', value: reach != null ? '${reach}cm' : '--'),
-              _SpecItem(
-                  label: 'Dominance',
-                  value: dominance != null && dominance.isNotEmpty
-                      ? dominance.toUpperCase()
-                      : '--'),
-            ],
-          ),
-          if (hasArmBiometrics) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _SpecItem(
-                    label: 'Forearm',
-                    value: forearm != null ? '${forearm}cm' : '--'),
-                _SpecItem(
-                    label: 'Bicep',
-                    value: bicep != null ? '${bicep}cm' : '--'),
-                _SpecItem(
-                    label: 'Hand Span',
-                    value: handLength != null ? '${handLength}cm' : '--'),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
+    return BiometricsHorizontalCarousel(profile: profile);
   }
 
   Future<void> _showEditProfileSheet(
@@ -4840,7 +4785,7 @@ class _ArmSelectorTab extends StatelessWidget {
             color: isSelected
                 ? activeColor.withValues(alpha: 0.65)
                 : const Color(0x2EFFFFFF),
-            width: isSelected ? 1.2 : 1.0,
+            width: _borderWidth,
           ),
         ),
         child: Text(

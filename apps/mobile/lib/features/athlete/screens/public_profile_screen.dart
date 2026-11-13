@@ -19,6 +19,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/championship_name_marquee.dart';
 import 'athlete_screens.dart' show ArmSwitchEloCard;
 
 class PublicAthleteProfileScreen extends ConsumerWidget {
@@ -141,6 +142,8 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                   final matchesAsync = ref.watch(athleteMatchesProvider(resolvedProfileId));
 
                   return SingleChildScrollView(
+                    key: PageStorageKey<String>(
+                        'public_profile_scroll_$resolvedProfileId'),
                     padding: const EdgeInsets.fromLTRB(
                       AppTheme.space16,
                       12,
@@ -444,7 +447,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                 ArmSwitchEloCard(profileData: p),
                 const SizedBox(height: AppTheme.space24),
 
-                // Specs — Biometrics & Specifications
+                // Specs — Biometrics & Specifications Horizontal Telemetry Carousel
                 Text(
                   'BIOMETRICS & SPECIFICATIONS',
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -454,6 +457,8 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppTheme.space10),
+                BiometricsHorizontalCarousel(profile: p),
+                const SizedBox(height: AppTheme.space12),
                 ElevatedActionCard(
                   padding: const EdgeInsets.all(AppTheme.space16),
                   child: Column(
@@ -706,10 +711,8 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            'vs. $opponentName',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                          ChampionshipNameMarquee(
+                                            name: 'vs. $opponentName',
                                             style: const TextStyle(
                                               fontFamily: AppTheme.fontDisplay,
                                               fontWeight: FontWeight.bold,

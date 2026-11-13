@@ -1,5 +1,6 @@
 // lib/features/home/screens/discover_screen.dart
 import 'dart:async';
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/venue_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/championship_name_marquee.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/pulse_indicator.dart';
@@ -44,14 +46,50 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _filterScrollController = ScrollController();
   Timer? _debounceTimer;
   String _activeQuery = '';
   DiscoverCategory _selectedCategory = DiscoverCategory.all;
+  int? _lastDiscoverResetEpoch;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final int? currentEpoch =
+        MainShellScope.maybeOf(context)?.discoverResetEpoch;
+    if (_lastDiscoverResetEpoch != null &&
+        currentEpoch != null &&
+        currentEpoch != _lastDiscoverResetEpoch) {
+      // User switched to another bottom-nav tab (e.g., Arena) and re-entered
+      // Discover: reset category filter to ALL and clear any stale search query.
+      _debounceTimer?.cancel();
+      if (_searchController.text.isNotEmpty) {
+        _searchController.clear();
+      }
+      _activeQuery = '';
+      _selectedCategory = DiscoverCategory.all;
+      if (_filterScrollController.hasClients) {
+        try {
+          _filterScrollController.jumpTo(0.0);
+        } catch (_) {}
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        try {
+          ref.read(athleteSearchQueryProvider.notifier).state = '';
+          if (_filterScrollController.hasClients) {
+            _filterScrollController.jumpTo(0.0);
+          }
+        } catch (_) {}
+      });
+    }
+    _lastDiscoverResetEpoch = currentEpoch;
   }
 
   void _onSearchChanged() {
@@ -90,6 +128,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     _debounceTimer?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _filterScrollController.dispose();
     super.dispose();
   }
 
@@ -378,7 +417,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       backgroundColor: AppTheme.elevatedSurface,
                       onRefresh: _handleRefresh,
                       child: CustomScrollView(
-                        key: const ValueKey<String>('discover_scroll_view'),
+                        key: const PageStorageKey<String>('discover_scroll_view'),
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           SliverToBoxAdapter(
@@ -585,6 +624,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return SizedBox(
       height: 36,
       child: ListView.separated(
+        controller: _filterScrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
         itemCount: DiscoverCategory.values.length,
@@ -828,16 +868,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name.toString(),
+                ChampionshipNameMarquee(
+                  text: name.toString(),
                   style: const TextStyle(
                     fontFamily: AppTheme.fontBody,
                     color: AppTheme.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (division != null || club != null)
                   Text(
@@ -1741,23 +1779,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    name.toString(),
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontBody,
-                                      color: AppTheme.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14.5,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                            ChampionshipNameMarquee(
+                              text: name.toString(),
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontBody,
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.5,
+                              ),
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               division.toString().toUpperCase(),
                               style: const TextStyle(
@@ -1770,12 +1801,36 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      StatusChip(
-                        label: '$elo ELO',
-                        type: StatusType.info,
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: idx == 0
+                                ? const Color(0x73D4AF37)
+                                : const Color(0x5238BDF8),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Text(
+                          '$elo ELO',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            color: idx == 0
+                                ? AppTheme.goldPrimary
+                                : AppTheme.info,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 3),
                       const Icon(
                         Icons.chevron_right,
                         color: AppTheme.textMuted,

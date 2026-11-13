@@ -15,6 +15,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
+import '../../../core/widgets/championship_name_marquee.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});
@@ -155,10 +156,9 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                name,
+              ChampionshipNameMarquee(
+                name: name,
                 textAlign: TextAlign.center,
-                maxLines: 2,
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w700,
@@ -430,7 +430,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                 final rank3 = rankings.length > 2 ? rankings[2] : null;
 
                 return ListView(
-                  key: const ValueKey<String>('rankings_list_view'),
+                  key: const PageStorageKey<String>('rankings_list_view'),
                   padding: EdgeInsets.fromLTRB(
                     AppTheme.space16,
                     160,
@@ -572,15 +572,14 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          name,
+                                        ChampionshipNameMarquee(
+                                          name: name,
                                           style: const TextStyle(
                                             fontFamily: AppTheme.fontDisplay,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                             color: AppTheme.textPrimary,
                                           ),
-                                          maxLines: 2,
                                         ),
                                         const SizedBox(height: AppTheme.space4),
                                         Text(

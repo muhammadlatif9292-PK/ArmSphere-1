@@ -149,7 +149,7 @@ class TournamentsListScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.refresh(tournamentProvider.future),
             child: ListView.separated(
-              key: const ValueKey<String>('tournaments_list_view'),
+              key: const PageStorageKey<String>('tournaments_list_view'),
               padding: EdgeInsets.fromLTRB(
                 16,
                 155,
