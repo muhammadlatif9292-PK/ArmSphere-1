@@ -5,6 +5,7 @@ import '../../../core/providers/state_providers.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/count_up_text.dart';
@@ -175,10 +176,12 @@ class _OfficialScorepadScreenState
       onWillPop: _handleWillPop,
       child: Scaffold(
         backgroundColor: AppTheme.voidBackground,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
-          backgroundColor: AppTheme.voidBackground,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           elevation: 0,
-          flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+          scrolledUnderElevation: 0,
           leading: CrystalBackButton(
             onPressed: () async {
               if (await _handleWillPop()) {
@@ -276,11 +279,13 @@ class _OfficialScorepadScreenState
                   _buildOperationalStatusBanner(),
 
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                      16.0, 150.0, 16.0, 120.0),
-                  child: Column(
+                child: CrystalVaporDissolve(
+                  bottomMargin: 8.0,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                        16.0, 150.0, 16.0, 120.0),
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // PART 1 — OFFICIAL MATCH CONTEXT HEADER
@@ -351,6 +356,7 @@ class _OfficialScorepadScreenState
                     ],
                   ),
                 ),
+              ),
               ),
 
               // PART 15 — PRIMARY CERTIFICATION ACTION BAR

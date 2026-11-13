@@ -14,6 +14,7 @@ import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/messaging_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -50,10 +51,12 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: const CrystalBackButton(),
         title: const Text('Athlete Dossier'),
         actions: const [
@@ -66,97 +69,113 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
           ),
-          profileAsync.when(
-            loading: () => const CrystalScreenLoadingView(
-              itemCount: 4,
-              cardHeight: 112,
-            ),
-            error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: ElevatedActionCard(
-              padding: const EdgeInsets.all(AppTheme.space24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.person_off_outlined, size: 44, color: AppTheme.error),
-                  const SizedBox(height: AppTheme.space12),
-                  Text('Profile unavailable', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: AppTheme.space6),
-                  Text(
-                    '$err',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(height: AppTheme.space16),
-                  ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      ref.invalidate(publicAthleteProfileProvider(athleteId));
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        data: (p) {
-          final displayName = (p['displayName']?.toString().isNotEmpty ?? false)
-              ? p['displayName'].toString()
-              : 'Athlete';
-          final photo = p['profilePhoto']?.toString() ?? '';
-          final location = [
-            p['city']?.toString(),
-            p['province']?.toString(),
-          ].where((v) => v != null && v.isNotEmpty).join(', ');
-          final weightClass = p['weightClass']?.toString();
-          final dominantArm = p['dominantArm']?.toString();
-          final clubName = p['club'] is Map ? p['club']['name']?.toString() : null;
-          final bio = p['biography']?.toString();
-          final biometrics = p['biometrics'] is Map<String, dynamic>
-              ? p['biometrics'] as Map<String, dynamic>
-              : const <String, dynamic>{};
-          final weightVal = p['weight'] ?? p['weightKg'] ?? biometrics['weightKg'];
-          final heightVal = p['height'] ?? p['heightCm'] ?? biometrics['heightCm'];
-          final reachVal = p['reach'] ?? p['reachCm'] ?? biometrics['reachCm'];
-          final forearmVal = p['forearmCircumference'] ?? biometrics['forearmCircumference'];
-          final bicepVal = p['bicepCircumference'] ?? biometrics['bicepCircumference'];
-          final handVal = p['handLength'] ?? biometrics['handLength'] ?? biometrics['handWidth'];
-
-          final followersCount = followersAsync.value?.length ??
-              (p['followersCount'] as num?)?.toInt() ??
-              0;
-          final followingCount = followingAsync.value?.length ??
-              (p['followingCount'] as num?)?.toInt() ??
-              0;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header with 2px Role-Coded Avatar Ring
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.transparent,
-                          border: Border.all(color: const Color(0x73D4AF37), width: 1.5),
-                          boxShadow: const [],
-                        ),
-                        child: ArmSphereImage.avatar(
-                          imageUrl: photo.isNotEmpty ? photo : null,
-                          initial: displayName,
-                          size: 96,
-                          fallbackAsset: ArmSphereAssets.defaultAvatar,
-                          semanticLabel: 'Athlete profile photo for $displayName',
-                        ),
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: 12.0,
+              child: profileAsync.when(
+                loading: () => const CrystalScreenLoadingView(
+                  itemCount: 4,
+                  cardHeight: 112,
+                ),
+                error: (err, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppTheme.space24),
+                    child: ElevatedActionCard(
+                      padding: const EdgeInsets.all(AppTheme.space24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_off_outlined, size: 44, color: AppTheme.error),
+                          const SizedBox(height: AppTheme.space12),
+                          Text('Profile unavailable', style: theme.textTheme.titleSmall),
+                          const SizedBox(height: AppTheme.space6),
+                          Text(
+                            '$err',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          ),
+                          const SizedBox(height: AppTheme.space16),
+                          ElevatedButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              ref.invalidate(publicAthleteProfileProvider(athleteId));
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AppTheme.space16),
+                    ),
+                  ),
+                ),
+                data: (p) {
+                  final displayName = (p['displayName']?.toString().isNotEmpty ?? false)
+                      ? p['displayName'].toString()
+                      : 'Athlete';
+                  final photo = p['profilePhoto']?.toString() ?? '';
+                  final location = [
+                    p['city']?.toString(),
+                    p['province']?.toString(),
+                  ].where((v) => v != null && v.isNotEmpty).join(', ');
+                  final weightClass = p['weightClass']?.toString();
+                  final dominantArm = p['dominantArm']?.toString();
+                  final clubName = p['club'] is Map ? p['club']['name']?.toString() : null;
+                  final bio = p['biography']?.toString();
+                  final biometrics = p['biometrics'] is Map<String, dynamic>
+                      ? p['biometrics'] as Map<String, dynamic>
+                      : const <String, dynamic>{};
+                  final weightVal = p['weight'] ?? p['weightKg'] ?? biometrics['weightKg'];
+                  final heightVal = p['height'] ?? p['heightCm'] ?? biometrics['heightCm'];
+                  final reachVal = p['reach'] ?? p['reachCm'] ?? biometrics['reachCm'];
+                  final forearmVal = p['forearmCircumference'] ?? biometrics['forearmCircumference'];
+                  final bicepVal = p['bicepCircumference'] ?? biometrics['bicepCircumference'];
+                  final handVal = p['handLength'] ?? biometrics['handLength'] ?? biometrics['handWidth'];
+
+                  final followersCount = followersAsync.value?.length ??
+                      (p['followersCount'] as num?)?.toInt() ??
+                      0;
+                  final followingCount = followingAsync.value?.length ??
+                      (p['followingCount'] as num?)?.toInt() ??
+                      0;
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      12,
+                      AppTheme.space16,
+                      36,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header with 2px Role-Coded Avatar Ring crowned by the hanging 24k gold medals
+                        Center(
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 36),
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.transparent,
+                                  border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: ArmSphereImage.avatar(
+                                  imageUrl: photo.isNotEmpty ? photo : null,
+                                  initial: displayName,
+                                  size: 104,
+                                  fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                  semanticLabel: 'Athlete profile photo for $displayName',
+                                ),
+                              ),
+                              const SizedBox(height: AppTheme.space16),
                       Text(
                         displayName,
                         style: const TextStyle(
@@ -595,7 +614,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
               ],
             ),
           );
-            },
+                },
+              ),
+            ),
           ),
         ],
       ),

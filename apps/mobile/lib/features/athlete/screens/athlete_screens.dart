@@ -45,6 +45,21 @@ String _fmtDate(dynamic iso) {
   return '${d.day} ${_months[d.month] ?? ''} ${d.year}';
 }
 
+String _getDivisionBadge(dynamic weightVal, dynamic weightClassStr) {
+  final cls = weightClassStr?.toString().toLowerCase() ?? '';
+  if (cls.contains('heavy') || cls.contains('open') || cls.contains('+'))
+    return ArmSphereAssets.badgeHeavy;
+  if (cls.contains('light')) return ArmSphereAssets.badgeLight;
+  if (cls.contains('junior')) return ArmSphereAssets.badgeJunior;
+  if (cls.contains('master')) return ArmSphereAssets.badgeMasters;
+  final w = (weightVal is num)
+      ? weightVal.toDouble()
+      : double.tryParse(weightVal?.toString() ?? '') ?? 85.0;
+  if (w >= 95) return ArmSphereAssets.badgeHeavy;
+  if (w >= 75) return ArmSphereAssets.badgeMiddle;
+  return ArmSphereAssets.badgeLight;
+}
+
 
 /// Athlete Dashboard Screen (Canary 2 Specification)
 ///
@@ -3749,16 +3764,16 @@ class AthleteProfileScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-            // 1. Top Vault Hero Header (height: 290px) aligned with the 3D Titanium Vault Ring
-            // on m1_stage_passport_vault_9x16.webp (zero rectangular box, zero neon-cyan ring)
+            // 1. Top Sanctuary & Trophy Hall Header (height: 300px) aligned with the overhead arch
+            // and hanging 24k gold medals on m1_stage_passport_vault_9x16.webp so they crown the avatar
             ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 290),
+              constraints: const BoxConstraints(minHeight: 300),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 18),
-                  // Circular Athlete Avatar (112x112) centered directly inside the 3D Titanium Vault Ring aperture
+                  const SizedBox(height: 38),
+                  // Circular Athlete Avatar (112x112) crowned by the overhead arch and hanging 24k gold medals
                   Container(
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(

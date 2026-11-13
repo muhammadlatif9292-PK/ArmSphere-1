@@ -81,7 +81,7 @@ void main() {
 
       await tester.pump();
 
-      // Verify heroWelcomeGrip environmental anchor is present at 100% opacity
+      // Verify heroWelcomeGrip environmental anchor is present at 100% opacity as the sole visual artwork
       final gripHeroFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
@@ -89,6 +89,14 @@ void main() {
             widget.excludeFromSemantics == true,
       );
       expect(gripHeroFinder, findsOneWidget);
+
+      // Verify stageAuthWalkout is NOT rendered behind heroWelcomeGrip on WelcomeScreen (zero double-background bleed)
+      final walkoutStageFinder = find.byWidgetPredicate(
+        (widget) =>
+            widget is ArmSphereImage &&
+            widget.assetPath == ArmSphereAssets.stageAuthWalkout,
+      );
+      expect(walkoutStageFinder, findsNothing);
 
       // Verify circular iconGold seal overlay is removed so the locked grip is 100% unobstructed
       final emblemFinder = find.byWidgetPredicate(
