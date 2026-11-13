@@ -53,7 +53,7 @@ class _OfficialScorepadScreenState
   String _certificationTimestamp = '';
   String _signatureHash = '';
 
-  // Best of format configuration (3 or 5)
+  // Best of format configuration (1, 3, 5, or 7)
   int _maxRounds = 5; // Default Best of 5
   int _targetWins = 3; // First to 3
 
@@ -65,6 +65,8 @@ class _OfficialScorepadScreenState
     3: null,
     4: null,
     5: null,
+    6: null,
+    7: null,
   };
 
   // Fouls list
@@ -93,24 +95,28 @@ class _OfficialScorepadScreenState
   void _loadMatchData() {
     if (widget.match != null) {
       final m = widget.match!;
-      final format = m['format'] ?? m['matchFormat'] ?? 'Best of 5';
-      if (format.toString().contains('3')) {
+      final formatStr = (m['format'] ?? m['matchFormat'] ?? 'Best of 5').toString();
+      if (formatStr.contains('1')) {
+        _maxRounds = 1;
+      } else if (formatStr.contains('3')) {
         _maxRounds = 3;
-        _targetWins = 2;
+      } else if (formatStr.contains('7')) {
+        _maxRounds = 7;
       } else {
         _maxRounds = 5;
-        _targetWins = 3;
       }
+      _targetWins = (_maxRounds ~/ 2) + 1;
 
       if (m['roundWinners'] is Map) {
         final rw = m['roundWinners'] as Map;
         rw.forEach((key, val) {
           final roundNum = int.tryParse(key.toString());
-          if (roundNum != null && roundNum >= 1 && roundNum <= 5) {
+          if (roundNum != null && roundNum >= 1 && roundNum <= 7) {
             _roundWinners[roundNum] = val?.toString();
           }
         });
       }
+      _pruneRoundsAfterDecision();
       if (m['fouls'] is List) {
         _fouls.addAll((m['fouls'] as List).map((f) => Map<String, dynamic>.from(f as Map)));
       }
@@ -125,13 +131,48 @@ class _OfficialScorepadScreenState
     }
   }
 
-  // Calculated Scores
+  /// Returns the round number (1.._maxRounds) where either athlete first reached [_targetWins],
+  /// or null if the match has not yet been decided.
+  int? get _decidingRound {
+    int winsA = 0;
+    int winsB = 0;
+    for (int r = 1; r <= _maxRounds; r++) {
+      final w = _roundWinners[r];
+      if (w == 'A') winsA++;
+      if (w == 'B') winsB++;
+      if (winsA >= _targetWins || winsB >= _targetWins) {
+        return r;
+      }
+    }
+    return null;
+  }
+
+  void _pruneRoundsAfterDecision() {
+    final decidedAt = _decidingRound;
+    for (int r = 1; r <= 7; r++) {
+      if (r > _maxRounds || (decidedAt != null && r > decidedAt)) {
+        _roundWinners[r] = null;
+      }
+    }
+  }
+
+  // Calculated Scores (strictly bounded by _maxRounds and _decidingRound)
   int get _scoreA {
-    return _roundWinners.values.where((w) => w == 'A').length;
+    final limit = _decidingRound ?? _maxRounds;
+    int count = 0;
+    for (int r = 1; r <= limit; r++) {
+      if (_roundWinners[r] == 'A') count++;
+    }
+    return count;
   }
 
   int get _scoreB {
-    return _roundWinners.values.where((w) => w == 'B').length;
+    final limit = _decidingRound ?? _maxRounds;
+    int count = 0;
+    for (int r = 1; r <= limit; r++) {
+      if (_roundWinners[r] == 'B') count++;
+    }
+    return count;
   }
 
   String? get _calculatedWinner {
@@ -951,6 +992,11 @@ class _OfficialScorepadScreenState
   // PART 4: ROUND SCOREPAD (MAIN INTERACTION)
   // ==========================================
   Widget _buildRoundScorepad(String nameA, String nameB) {
+    final decidingRound = _decidingRound;
+    final winnerDisplayName = _scoreA >= _targetWins
+        ? nameA
+        : (_scoreB >= _targetWins ? nameB : null);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -977,8 +1023,10 @@ class _OfficialScorepadScreenState
               ),
               Row(
                 children: [
-                  const Text('Format: ',
-                      style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                  const Text(
+                    'Format: ',
+                    style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
+                  ),
                   DropdownButton<int>(
                     value: _maxRounds,
                     dropdownColor: const Color(0xFF070A11),
@@ -986,21 +1034,41 @@ class _OfficialScorepadScreenState
                     isDense: true,
                     items: const [
                       DropdownMenuItem(
-                          value: 3,
-                          child: Text('Best of 3',
-                              style: TextStyle(
-                                  color: AppTheme.textPrimary, fontSize: 10))),
+                        value: 1,
+                        child: Text(
+                          'Best of 1 (First to 1)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
                       DropdownMenuItem(
-                          value: 5,
-                          child: Text('Best of 5',
-                              style: TextStyle(
-                                  color: AppTheme.textPrimary, fontSize: 10))),
+                        value: 3,
+                        child: Text(
+                          'Best of 3 (First to 2)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 5,
+                        child: Text(
+                          'Best of 5 (First to 3)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 7,
+                        child: Text(
+                          'Best of 7 (First to 4)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
+                        HapticFeedback.selectionClick();
                         setState(() {
                           _maxRounds = val;
-                          _targetWins = val == 3 ? 2 : 3;
+                          _targetWins = (val ~/ 2) + 1;
+                          _pruneRoundsAfterDecision();
                         });
                       }
                     },
@@ -1017,7 +1085,10 @@ class _OfficialScorepadScreenState
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+              border: Border.all(
+                color: _isMatchComplete ? const Color(0x99D4AF37) : const Color(0x38FFFFFF),
+                width: _isMatchComplete ? 1.2 : 1.0,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1044,12 +1115,26 @@ class _OfficialScorepadScreenState
                     ),
                   ],
                 ),
-                const Text(
-                  '—',
-                  style: TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300),
+                Column(
+                  children: [
+                    const Text(
+                      '—',
+                      style: TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    Text(
+                      'FIRST TO $_targetWins',
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
                 ),
                 Column(
                   children: [
@@ -1076,6 +1161,72 @@ class _OfficialScorepadScreenState
               ],
             ),
           ),
+
+          if (_isMatchComplete && winnerDisplayName != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0x26D4AF37),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppTheme.goldPrimary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${winnerDisplayName.toUpperCase()} WINS BOUT!',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                        Text(
+                          'Final Score: $_scoreA — $_scoreB • Decided in Round ${decidingRound ?? _maxRounds} (Best of $_maxRounds)',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (decidingRound != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        setState(() {
+                          _roundWinners[decidingRound] = null;
+                          _pruneRoundsAfterDecision();
+                        });
+                      },
+                      icon: const Icon(Icons.undo_rounded, size: 14, color: AppTheme.goldPrimary),
+                      label: const Text(
+                        'UNDO',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 14),
 
           // ROUND BY ROUND CARDS
@@ -1086,130 +1237,141 @@ class _OfficialScorepadScreenState
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, idx) {
               final rNum = idx + 1;
-              final winner = _roundWinners[rNum];
+              final isLockedByDecision = decidingRound != null && rNum > decidingRound;
+              final winner = isLockedByDecision ? null : _roundWinners[rNum];
 
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: winner == 'A'
-                        ? const Color(0x73D4AF37)
-                        : winner == 'B'
-                            ? const Color(0x80E23B3B)
-                            : const Color(0x2EFFFFFF),
+              return Opacity(
+                opacity: isLockedByDecision ? 0.45 : 1.0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: winner == 'A'
+                          ? const Color(0x73D4AF37)
+                          : winner == 'B'
+                              ? const Color(0x80E23B3B)
+                              : const Color(0x2EFFFFFF),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0x38FFFFFF)),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0x38FFFFFF)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'R$rNum',
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Center(
+                      const SizedBox(width: 10),
+                      Expanded(
                         child: Text(
-                          'R$rNum',
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                          isLockedByDecision
+                              ? 'NOT CONTESTED / MATCH DECIDED'
+                              : (winner == 'A'
+                                  ? '$nameA WINS (Pinfall)'
+                                  : winner == 'B'
+                                      ? '$nameB WINS (Pinfall)'
+                                      : 'Round $rNum Pending Decision'),
+                          style: TextStyle(
+                            color: isLockedByDecision
+                                ? AppTheme.textMuted
+                                : (winner != null ? AppTheme.textPrimary : AppTheme.textMuted),
+                            fontWeight: winner != null ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 11,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        winner == 'A'
-                            ? '$nameA WINS (Pinfall)'
-                            : winner == 'B'
-                                ? '$nameB WINS (Pinfall)'
-                                : 'Round $rNum Pending Decision',
-                        style: TextStyle(
-                          color: winner != null
-                              ? AppTheme.textPrimary
-                              : AppTheme.textMuted,
-                          fontWeight: winner != null
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 11,
-                        ),
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: isLockedByDecision
+                                ? null
+                                : () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() {
+                                      _roundWinners[rNum] =
+                                          _roundWinners[rNum] == 'A' ? null : 'A';
+                                      _pruneRoundsAfterDecision();
+                                    });
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: winner == 'A'
+                                      ? const Color(0x73D4AF37)
+                                      : const Color(0x2EFFFFFF),
+                                  width: winner == 'A' ? 1.2 : 1.0,
+                                ),
+                              ),
+                              child: Text(
+                                'A WINS',
+                                style: TextStyle(
+                                  color: winner == 'A'
+                                      ? AppTheme.goldPrimary
+                                      : AppTheme.textMuted,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: isLockedByDecision
+                                ? null
+                                : () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() {
+                                      _roundWinners[rNum] =
+                                          _roundWinners[rNum] == 'B' ? null : 'B';
+                                      _pruneRoundsAfterDecision();
+                                    });
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: winner == 'B'
+                                      ? const Color(0x80E23B3B)
+                                      : const Color(0x2EFFFFFF),
+                                  width: winner == 'B' ? 1.2 : 1.0,
+                                ),
+                              ),
+                              child: Text(
+                                'B WINS',
+                                style: TextStyle(
+                                  color: winner == 'B'
+                                      ? AppTheme.primaryAccent
+                                      : AppTheme.textMuted,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _roundWinners[rNum] =
-                                _roundWinners[rNum] == 'A' ? null : 'A');
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: winner == 'A'
-                                    ? const Color(0x73D4AF37)
-                                    : const Color(0x2EFFFFFF),
-                                width: winner == 'A' ? 1.2 : 1.0,
-                              ),
-                            ),
-                            child: Text(
-                              'A WINS',
-                              style: TextStyle(
-                                color: winner == 'A'
-                                    ? AppTheme.goldPrimary
-                                    : AppTheme.textMuted,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _roundWinners[rNum] =
-                                _roundWinners[rNum] == 'B' ? null : 'B');
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: winner == 'B'
-                                    ? const Color(0x80E23B3B)
-                                    : const Color(0x2EFFFFFF),
-                                width: winner == 'B' ? 1.2 : 1.0,
-                              ),
-                            ),
-                            child: Text(
-                              'B WINS',
-                              style: TextStyle(
-                                color: winner == 'B'
-                                    ? AppTheme.primaryAccent
-                                    : AppTheme.textMuted,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

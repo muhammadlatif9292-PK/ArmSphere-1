@@ -54,32 +54,61 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
   }
 
   // ===========================================================================
-  // MATCH SCORE OVERRIDE & VOID BOTTOM SHEET
+  // MATCH SCORE PARSER & OVERRIDE / VOID BOTTOM SHEET
   // ===========================================================================
+  int parseScore(dynamic match, int playerIndex) {
+    if (match == null) return 0;
+    if (playerIndex == 0 && match['scoreA'] != null) {
+      return int.tryParse(match['scoreA'].toString()) ?? 0;
+    }
+    if (playerIndex == 1 && match['scoreB'] != null) {
+      return int.tryParse(match['scoreB'].toString()) ?? 0;
+    }
+
+    final scoreLine = match['scoreLine']?.toString() ?? '';
+    final parts = scoreLine.split(RegExp(r'[\s\-:]+'));
+    if (parts.length > playerIndex) {
+      return int.tryParse(parts[playerIndex].trim()) ?? 0;
+    }
+    return 0;
+  }
+
   Future<void> _openMatchOverrideSheet({
     required Map<String, dynamic> match,
     required String activeRole,
     required String? jurisdiction,
   }) async {
     final String matchId = match['id']?.toString() ?? '';
-    final String athleteAId = match['athleteAId']?.toString() ?? 'athlete_a';
-    final String athleteBId = match['athleteBId']?.toString() ?? 'athlete_b';
+    final String athleteAId = match['athleteAId']?.toString() ??
+        match['challengerId']?.toString() ??
+        'athlete_a';
+    final String athleteBId = match['athleteBId']?.toString() ??
+        match['opponentId']?.toString() ??
+        'athlete_b';
     final String athleteAName = match['athleteAName']?.toString() ??
+        match['challengerName']?.toString() ??
         (match['athleteA'] is Map
             ? match['athleteA']['displayName']?.toString()
             : null) ??
+        (match['challenger'] is Map
+            ? match['challenger']['displayName']?.toString()
+            : null) ??
         'Red Corner Athlete';
     final String athleteBName = match['athleteBName']?.toString() ??
+        match['opponentName']?.toString() ??
         (match['athleteB'] is Map
             ? match['athleteB']['displayName']?.toString()
+            : null) ??
+        (match['opponent'] is Map
+            ? match['opponent']['displayName']?.toString()
             : null) ??
         'Blue Corner Athlete';
 
     final scoreACtrl = TextEditingController(
-      text: (match['scoreA'] ?? 0).toString(),
+      text: parseScore(match, 0).toString(),
     );
     final scoreBCtrl = TextEditingController(
-      text: (match['scoreB'] ?? 0).toString(),
+      text: parseScore(match, 1).toString(),
     );
     final reasonCtrl = TextEditingController();
     final weighInRegIdCtrl = TextEditingController(
@@ -1110,12 +1139,16 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         matchesAsync.valueOrNull ?? const <Map<String, dynamic>>[];
     final filtered = allMatches.where((m) {
       final aName = (m['athleteAName'] ??
-              (m['athleteA'] is Map ? m['athleteA']['displayName'] : '') ??
+              m['challengerName'] ??
+              (m['athleteA'] is Map ? m['athleteA']['displayName'] : null) ??
+              (m['challenger'] is Map ? m['challenger']['displayName'] : null) ??
               '')
           .toString()
           .toLowerCase();
       final bName = (m['athleteBName'] ??
-              (m['athleteB'] is Map ? m['athleteB']['displayName'] : '') ??
+              m['opponentName'] ??
+              (m['athleteB'] is Map ? m['athleteB']['displayName'] : null) ??
+              (m['opponent'] is Map ? m['opponent']['displayName'] : null) ??
               '')
           .toString()
           .toLowerCase();
@@ -1123,8 +1156,17 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
       final matchesSearch = _matchSearch.isEmpty ||
           aName.contains(_matchSearch.toLowerCase()) ||
           bName.contains(_matchSearch.toLowerCase());
-      final matchesStatus =
-          _matchStatusFilter.isEmpty || status == _matchStatusFilter;
+      final bool matchesStatus;
+      if (_matchStatusFilter.isEmpty) {
+        matchesStatus = true;
+      } else if (_matchStatusFilter == 'COMPLETED') {
+        matchesStatus = status == 'COMPLETED' || status == 'VERIFIED';
+      } else if (_matchStatusFilter == 'IN_PROGRESS') {
+        matchesStatus =
+            status == 'IN_PROGRESS' || status == 'PENDING_VERIFICATION';
+      } else {
+        matchesStatus = status == _matchStatusFilter;
+      }
       return matchesSearch && matchesStatus;
     }).toList();
 
@@ -1165,17 +1207,25 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         else
           ...filtered.map((match) {
             final aName = match['athleteAName']?.toString() ??
+                match['challengerName']?.toString() ??
                 (match['athleteA'] is Map
                     ? match['athleteA']['displayName']?.toString()
                     : null) ??
+                (match['challenger'] is Map
+                    ? match['challenger']['displayName']?.toString()
+                    : null) ??
                 'Red Corner';
             final bName = match['athleteBName']?.toString() ??
+                match['opponentName']?.toString() ??
                 (match['athleteB'] is Map
                     ? match['athleteB']['displayName']?.toString()
                     : null) ??
+                (match['opponent'] is Map
+                    ? match['opponent']['displayName']?.toString()
+                    : null) ??
                 'Blue Corner';
-            final scoreA = match['scoreA'] ?? 0;
-            final scoreB = match['scoreB'] ?? 0;
+            final scoreA = parseScore(match, 0);
+            final scoreB = parseScore(match, 1);
             final arm = match['arm']?.toString() ?? 'RIGHT';
             final weight = match['weightClass']?.toString() ?? 'Open';
             final status =

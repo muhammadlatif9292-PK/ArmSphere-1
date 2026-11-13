@@ -62,7 +62,7 @@ class _ChampionshipsListScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(
-          domain: ArmSphereStageDomain.events,
+          domain: ArmSphereStageDomain.championships,
         ),
         elevation: 0,
         leading: const CrystalBackButton(),
@@ -79,7 +79,7 @@ class _ChampionshipsListScreenState
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.championships),
           RefreshIndicator(
             color: AppTheme.goldPrimary,
             backgroundColor: AppTheme.cardSurface,
@@ -326,7 +326,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(
-          domain: ArmSphereStageDomain.events,
+          domain: ArmSphereStageDomain.championships,
         ),
         elevation: 0,
         leading: const CrystalBackButton(),
@@ -343,7 +343,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.championships),
           RefreshIndicator(
             color: AppTheme.goldPrimary,
             backgroundColor: AppTheme.cardSurface,

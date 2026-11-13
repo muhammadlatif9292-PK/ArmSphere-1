@@ -599,9 +599,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             borderRadius: chipRadius,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding: EdgeInsets.symmetric(
-                horizontal: isSelected ? 11.8 : 12.0,
-                vertical: isSelected ? 4.8 : 5.0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 5.0,
               ),
               decoration: BoxDecoration(
                 color: isSelected
@@ -1108,7 +1108,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       onTap: () => context.push(item.route),
       semanticLabel: item.title,
       child: Container(
-        height: 132,
+        constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),

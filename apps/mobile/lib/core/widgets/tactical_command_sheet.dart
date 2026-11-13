@@ -489,13 +489,12 @@ class TacticalCommandSheet extends ConsumerWidget {
   }) async {
     HapticFeedback.selectionClick();
     final router = GoRouter.maybeOf(context);
-    final authNotifier = ref.read(authProvider.notifier);
     if (context.mounted) {
       Navigator.of(context).pop();
     }
     if (isVerified) {
       try {
-        await authNotifier.switchActiveRole(roleKey);
+        await ref.read(authProvider.notifier).switchActiveRole(roleKey);
       } catch (_) {}
       if (router != null) {
         int safety = 0;

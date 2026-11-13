@@ -137,6 +137,8 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                   final followingCount = followingAsync.value?.length ??
                       (p['followingCount'] as num?)?.toInt() ??
                       0;
+                  final resolvedProfileId = p['id']?.toString() ?? athleteId;
+                  final matchesAsync = ref.watch(athleteMatchesProvider(resolvedProfileId));
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(
@@ -170,7 +172,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 child: ArmSphereImage.avatar(
                                   imageUrl: photo.isNotEmpty ? photo : null,
                                   initial: displayName,
-                                  size: 96,
+                                  size: 104,
                                   fallbackAsset: ArmSphereAssets.defaultAvatar,
                                   semanticLabel: 'Athlete profile photo for $displayName',
                                 ),
@@ -589,6 +591,180 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                       Icon(Icons.chevron_right, color: AppTheme.textMuted),
                     ],
                   ),
+                ),
+
+                const SizedBox(height: AppTheme.space24),
+                Text(
+                  'OFFICIAL MATCH HISTORY',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space10),
+                matchesAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  error: (err, _) => ElevatedActionCard(
+                    padding: const EdgeInsets.all(AppTheme.space16),
+                    child: Text(
+                      'Match history unavailable: $err',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    ),
+                  ),
+                  data: (matches) {
+                    if (matches.isEmpty) {
+                      return ElevatedActionCard(
+                        padding: const EdgeInsets.all(AppTheme.space16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.sports_kabaddi_outlined, color: AppTheme.textMuted, size: 20),
+                            SizedBox(width: AppTheme.space12),
+                            Expanded(
+                              child: Text(
+                                'No verified sanctioned bouts recorded yet.',
+                                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (int idx = 0; idx < matches.length; idx++) ...[
+                          if (idx > 0) const SizedBox(height: AppTheme.space8),
+                          Builder(
+                            builder: (ctx) {
+                              final m = matches[idx];
+                              final challengerId = m['challengerId']?.toString() ?? m['athleteAId']?.toString() ?? '';
+                              final isChallenger = challengerId == resolvedProfileId || challengerId == athleteId;
+                              final winnerId = m['winnerId']?.toString() ?? '';
+                              final isWin = winnerId.isNotEmpty &&
+                                  (winnerId == resolvedProfileId || winnerId == athleteId);
+                              final opponentName = isChallenger
+                                  ? (m['opponentName'] ?? m['athleteBName'] ?? 'Opponent').toString()
+                                  : (m['challengerName'] ?? m['athleteAName'] ?? 'Challenger').toString();
+                              final armLabel = (m['arm'] ?? 'RIGHT').toString().toUpperCase();
+                              final rawScoreLine = (m['scoreLine'] ?? '').toString().trim();
+                              final parts = rawScoreLine.split(RegExp(r'[\s\-:]+'));
+                              final s0 = m['scoreA']?.toString() ?? (parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : '0');
+                              final s1 = m['scoreB']?.toString() ?? (parts.length > 1 && parts[1].isNotEmpty ? parts[1] : '0');
+                              final formattedScore = isChallenger ? '$s0 — $s1' : '$s1 — $s0';
+                              final rawDelta = m['eloDelta'];
+                              final int? eloDeltaVal = rawDelta is num
+                                  ? rawDelta.toInt()
+                                  : int.tryParse(rawDelta?.toString() ?? '');
+                              final String? eloDeltaLabel = eloDeltaVal != null
+                                  ? '${eloDeltaVal >= 0 ? '+' : ''}$eloDeltaVal ELO'
+                                  : null;
+
+                              return ElevatedActionCard(
+                                slashVariant: CrystalSlashVariant.sequentialRow(idx),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.space14,
+                                  vertical: AppTheme.space12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: (isWin ? AppTheme.success : AppTheme.error).withValues(alpha: 0.14),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isWin ? AppTheme.success : AppTheme.error,
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        isWin ? 'WIN' : 'LOSS',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 9.5,
+                                          color: isWin ? AppTheme.success : AppTheme.error,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppTheme.space12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'vs. $opponentName',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            [
+                                              '$armLabel ARM',
+                                              'VERIFIED BOUT',
+                                              if (eloDeltaLabel != null) eloDeltaLabel,
+                                            ].join(' • '),
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.goldPrimary,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isWin ? const Color(0x80D4AF37) : const Color(0x80E23B3B),
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        formattedScore,
+                                        style: const TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
+                                          color: AppTheme.textPure,
+                                          fontFeatures: [FontFeature.tabularFigures()],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
 
                 if (bio != null && bio.isNotEmpty) ...[

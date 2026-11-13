@@ -909,11 +909,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                // Keep padding + borderWidth constant so the 1.3px active rim never shifts label layout.
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSelected ? 11.7 : 12.0,
-                  vertical: isSelected ? 3.7 : 4.0,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? const Color(0x24E23B3B)

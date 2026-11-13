@@ -60,7 +60,6 @@ String _getDivisionBadge(dynamic weightVal, dynamic weightClassStr) {
   return ArmSphereAssets.badgeLight;
 }
 
-
 /// Athlete Dashboard Screen (Canary 2 Specification)
 ///
 /// Grounded in:
@@ -2960,11 +2959,24 @@ class _AthleteDashboardScreenState
         ? AppTheme.emerald
         : (isLoss ? AppTheme.crimson : AppTheme.textMuted);
 
-    final opponent = match['opponentName'] ??
-        (myProfileId != null && match['athleteAId']?.toString() == myProfileId
-            ? match['athleteBName']
-            : match['athleteAName']) ??
-        'Competitor';
+    final aId = (match['athleteAId'] ?? match['challengerId'])?.toString();
+    final bId = (match['athleteBId'] ?? match['opponentId'])?.toString();
+    final aName = (match['athleteAName'] ?? match['challengerName'])?.toString();
+    final bName = (match['athleteBName'] ?? match['opponentName'])?.toString();
+    final String opponent;
+    if (myProfileId != null &&
+        aId == myProfileId &&
+        bName != null &&
+        bName.isNotEmpty) {
+      opponent = bName;
+    } else if (myProfileId != null &&
+        bId == myProfileId &&
+        aName != null &&
+        aName.isNotEmpty) {
+      opponent = aName;
+    } else {
+      opponent = (bName ?? aName ?? 'Competitor').toString();
+    }
 
     final rawArm = match['arm']?.toString();
     final armLabel = _normalizeArmDiscipline(rawArm);
@@ -3352,11 +3364,9 @@ class IntelligenceDeckTabBar extends StatelessWidget {
           curve: Curves.easeOutCubic,
           constraints: const BoxConstraints(minHeight: _minTouchHeight),
           alignment: expand ? Alignment.center : null,
-          // Keep padding + borderWidth constant so the 1.2px active border never reflows tab rects.
           padding: EdgeInsets.symmetric(
-            horizontal: (expand ? _segmentPadding : _pillPadding) -
-                (isSelected ? 0.2 : 0.0),
-            vertical: 6.0 - (isSelected ? 0.2 : 0.0),
+            horizontal: expand ? _segmentPadding : _pillPadding,
+            vertical: 6,
           ),
           // Same active treatment as the verified navigation dock, now with the
           // bevelled plate shape used by the badges and the arm selector.

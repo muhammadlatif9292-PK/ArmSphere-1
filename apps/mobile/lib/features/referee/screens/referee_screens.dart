@@ -15,7 +15,11 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/referee_provider.dart';
+import '../../../core/providers/admin_provider.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/live_matches_provider.dart';
+import '../../../core/providers/notification_provider.dart';
+import '../../../core/providers/rankings_provider.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../widgets/live_scorepad_controller.dart';
 import '../../../core/widgets/crystal_toast.dart';
@@ -1072,8 +1076,11 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
   String _arm = 'RIGHT';
   String _winnerSide = 'challenger';
   String _score = '3-0';
+  int _formatRounds = 5;
   bool _isLoading = false;
   bool _isLiveScorepadMode = true;
+
+  int get _targetWins => _formatRounds >= 99 ? 999 : (_formatRounds ~/ 2) + 1;
 
   @override
   void initState() {
@@ -1158,6 +1165,16 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
           'scoreLine': _score,
         });
       }
+      ref.invalidate(adminMatchesProvider);
+      ref.invalidate(refereePendingMatchesProvider);
+      ref.invalidate(tournamentProvider);
+      ref.invalidate(athleteProfileProvider);
+      ref.invalidate(publicAthleteProfileProvider(challengerId));
+      ref.invalidate(publicAthleteProfileProvider(opponentId));
+      ref.invalidate(athleteMatchesProvider(challengerId));
+      ref.invalidate(athleteMatchesProvider(opponentId));
+      ref.invalidate(rankingsProvider);
+      ref.invalidate(notificationProvider);
       if (mounted) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1431,6 +1448,59 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: AppTheme.space16),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'PRE-BOUT FORMAT & ARM CONFIGURATION',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final (int rounds, String label) in const [
+                            (1, 'Best of 1'),
+                            (3, 'Best of 3'),
+                            (5, 'Best of 5'),
+                            (7, 'Best of 7'),
+                            (99, 'Supermatch Custom'),
+                          ])
+                            ChoiceChip(
+                              label: Text(
+                                label,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: _formatRounds == rounds
+                                      ? AppTheme.goldPrimary
+                                      : AppTheme.textSecondary,
+                                ),
+                              ),
+                              selected: _formatRounds == rounds,
+                              selectedColor: const Color(0x26D4AF37),
+                              backgroundColor: Colors.transparent,
+                              side: BorderSide(
+                                color: _formatRounds == rounds
+                                    ? AppTheme.goldPrimary
+                                    : const Color(0x38FFFFFF),
+                              ),
+                              onSelected: (_) {
+                                HapticFeedback.selectionClick();
+                                setState(() => _formatRounds = rounds);
+                              },
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 )
@@ -1439,7 +1509,9 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                   challengerName: challengerDisplayName,
                   opponentName: opponentDisplayName,
                   arm: _arm,
-                  maxPoints: 3,
+                  maxPoints: _targetWins,
+                  initialFormatRounds: _formatRounds,
+                  onFormatChanged: (r) => setState(() => _formatRounds = r),
                   onMatchFinished: _handleLiveMatchFinished,
                 ),
             ] else ...[

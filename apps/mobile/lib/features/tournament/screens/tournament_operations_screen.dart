@@ -211,23 +211,32 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
 
   Future<void> _createBracketDialog(List<Map<String, dynamic>> registrations) async {
     HapticFeedback.lightImpact();
-    final available = <String>{};
+    final available = <String>[];
     for (final r in registrations) {
       if ((r['status']?.toString().toUpperCase()) == 'APPROVED') {
-        available.add('${r['division']}|${r['weightClass']}|${r['arm']}');
+        final key = '${r['division']}|${r['weightClass']}|${r['arm']}';
+        if (!available.contains(key)) {
+          available.add(key);
+        }
       }
     }
-    if (available.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
-          content: Text('No approved registrations yet — approve entries first.'),
-          backgroundColor: AppTheme.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    String combo = available.first;
+
+    String division = available.isNotEmpty ? available.first.split('|')[0] : _kDivisions.first;
+    String weightClass = available.isNotEmpty ? available.first.split('|')[1] : _kWeightClasses.first;
+    String arm = available.isNotEmpty ? available.first.split('|')[2] : 'RIGHT';
+    if (arm.toUpperCase() == 'BOTH') arm = 'RIGHT';
+    String format = 'DOUBLE_ELIMINATION';
+
+    const allDivisions = ['SENIOR', 'JUNIOR', 'MASTERS', 'FEMALE'];
+    const allWeights = ['-70kg', '-75kg', '-85kg', '-95kg', '+95kg', 'OPEN'];
+    const allArms = ['RIGHT', 'LEFT'];
+    const allFormats = [
+      ('DOUBLE_ELIMINATION', 'Double Elimination (WAF / PAL Standard)'),
+      ('SINGLE_ELIMINATION', 'Single Elimination Knockout'),
+      ('ROUND_ROBIN', 'Round Robin Pool'),
+      ('SUPERMATCH', '6-Round Supermatch'),
+    ];
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -238,50 +247,116 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             side: const BorderSide(color: AppTheme.cardBorder),
           ),
           title: const Text('Create Official Bracket', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: combo,
-                isExpanded: true,
-                items: [
-                  for (final c in available)
-                    DropdownMenuItem(
-                      value: c,
-                      child: Text(c.split('|').join(' • '), overflow: TextOverflow.ellipsis),
-                    ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (available.isNotEmpty) ...[
+                  const Text(
+                    'Quick Presets from Approved Entries:',
+                    style: TextStyle(fontSize: 11, color: AppTheme.goldPrimary, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final c in available)
+                        ActionChip(
+                          label: Text(
+                            c.split('|').join(' • '),
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          onPressed: () {
+                            final parts = c.split('|');
+                            setDialogState(() {
+                              division = parts[0];
+                              weightClass = parts[1];
+                              arm = parts[2].toUpperCase() == 'BOTH' ? 'RIGHT' : parts[2];
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                 ],
-                onChanged: (v) => setDialogState(() => combo = v ?? combo),
-                decoration: const InputDecoration(labelText: 'Division • Weight • Arm'),
-              ),
-              const SizedBox(height: 8),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Format: Double Elimination Bracket Engine', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-              ),
-            ],
+                DropdownButtonFormField<String>(
+                  initialValue: allDivisions.contains(division) ? division : allDivisions.first,
+                  isExpanded: true,
+                  items: [
+                    for (final d in allDivisions)
+                      DropdownMenuItem(value: d, child: Text(d)),
+                  ],
+                  onChanged: (v) => setDialogState(() => division = v ?? division),
+                  decoration: const InputDecoration(labelText: 'Division'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: allWeights.contains(weightClass) ? weightClass : allWeights.first,
+                  isExpanded: true,
+                  items: [
+                    for (final w in allWeights)
+                      DropdownMenuItem(value: w, child: Text(w)),
+                  ],
+                  onChanged: (v) => setDialogState(() => weightClass = v ?? weightClass),
+                  decoration: const InputDecoration(labelText: 'Weight Class'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: allArms.contains(arm) ? arm : 'RIGHT',
+                  isExpanded: true,
+                  items: [
+                    for (final a in allArms)
+                      DropdownMenuItem(value: a, child: Text('$a ARM')),
+                  ],
+                  onChanged: (v) => setDialogState(() => arm = v ?? arm),
+                  decoration: const InputDecoration(labelText: 'Competition Arm'),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: format,
+                  isExpanded: true,
+                  items: [
+                    for (final (val, label) in allFormats)
+                      DropdownMenuItem(
+                        value: val,
+                        child: Text(label, overflow: TextOverflow.ellipsis),
+                      ),
+                  ],
+                  onChanged: (v) => setDialogState(() => format = v ?? format),
+                  decoration: const InputDecoration(labelText: 'Bracket Format'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
             ),
-            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Create')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.goldPrimary,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Create Bracket', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
           ],
         ),
       ),
     );
     if (confirmed != true || !mounted) return;
-    final p = combo.split('|');
     await _run(
       widget.tournamentId,
       () => ref.read(tournamentRepositoryProvider).createBracket(
             eventId: widget.tournamentId,
-            name: '${p[0]} ${p[1]} ${p[2]}'.trim(),
-            format: 'SINGLE_ELIMINATION',
-            division: p[0],
-            weightClass: p[1],
-            arm: p[2],
+            name: '$division $weightClass $arm'.trim(),
+            format: format,
+            division: division,
+            weightClass: weightClass,
+            arm: arm,
           ),
       successMessage: 'Bracket created — generate seeds next.',
     );
@@ -1300,9 +1375,9 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                       ),
                 ),
                 TextButton.icon(
-                  onPressed: _busy || regsAsync.value == null
+                  onPressed: _busy
                       ? null
-                      : () => _createBracketDialog(regsAsync.value!),
+                      : () => _createBracketDialog(regsAsync.value ?? const []),
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Create Bracket'),
                 ),
@@ -1536,15 +1611,31 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 if (status == 'APPROVED' || status == 'WAITLISTED') ...[
                   OutlinedButton(
                     onPressed: _busy ? null : () => _weighInDialog(reg),
-                    child: const Text('Weigh-In'),
+                    child: const Text('Weigh-In Desk'),
                   ),
                   OutlinedButton(
                     onPressed: _busy
                         ? null
-                        : () => _run(widget.tournamentId,
-                            () => ref.read(tournamentRepositoryProvider).certifyWeighIn(registrationId: regId),
-                            successMessage: 'Weigh-in certified & locked.'),
-                    child: const Text('Certify'),
+                        : () {
+                            final rawWc = reg['weightClass']?.toString() ?? '70';
+                            final numMatch = RegExp(r'\d+').firstMatch(rawWc);
+                            final passWeight = numMatch != null
+                                ? (double.tryParse(numMatch.group(0)!) ?? 70.0) - 0.5
+                                : 70.0;
+                            _run(
+                              widget.tournamentId,
+                              () async {
+                                final repo = ref.read(tournamentRepositoryProvider);
+                                await repo.recordWeighIn(
+                                  registrationId: regId,
+                                  weightKg: passWeight > 0 ? passWeight : 70.0,
+                                );
+                                return await repo.certifyWeighIn(registrationId: regId);
+                              },
+                              successMessage: 'Weigh-in passed (${passWeight.toStringAsFixed(1)} kg) & certified.',
+                            );
+                          },
+                    child: const Text('Quick Pass & Certify'),
                   ),
                   OutlinedButton(
                     onPressed: _busy ? null : () => _reassignDialog(reg),
@@ -2182,6 +2273,24 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                   OutlinedButton(
                     onPressed: _busy ? null : () => _submitResultDialog(m),
                     child: const Text('Record Result'),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.goldPrimary,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            context.push('/referee/submit-scorepad', extra: m);
+                          },
+                    icon: const Icon(Icons.touch_app, size: 15),
+                    label: const Text(
+                      'Open Scorepad',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),

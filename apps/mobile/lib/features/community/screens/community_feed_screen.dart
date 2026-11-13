@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/providers/community_provider.dart';
+import '../../../core/providers/messaging_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/embed_url_builder.dart';
 import '../../../core/widgets/app_empty_state.dart';
@@ -20,17 +21,67 @@ import '../../auth/providers/auth_provider.dart';
 import 'video_player_modal.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
+/// Opens or creates a private 1-on-1 direct message thread with the athlete who posted [post].
+Future<void> _openDirectMessageWithAthlete(
+  BuildContext context,
+  WidgetRef ref,
+  Map<String, dynamic> post,
+) async {
+  HapticFeedback.lightImpact();
+  final athlete = post['athlete'] is Map ? post['athlete'] as Map : null;
+  final athleteId = athlete?['id']?.toString() ?? post['athleteId']?.toString() ?? '';
+  final targetUserId = athlete?['userId']?.toString() ??
+      post['userId']?.toString() ??
+      athleteId;
+
+  if (targetUserId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      CrystalSnackBar(
+        content: const Text('This athlete cannot be messaged yet'),
+        backgroundColor: AppTheme.warning,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    return;
+  }
+
+  final myUserId = ref.read(authProvider).userProfile?['id']?.toString() ?? '';
+  if (myUserId.isNotEmpty && targetUserId == myUserId) {
+    context.push('/messages');
+    return;
+  }
+
+  try {
+    final conversation = await ref
+        .read(conversationsProvider.notifier)
+        .getOrCreateConversation(targetUserId);
+    if (!context.mounted) return;
+    final convId = conversation?['id']?.toString() ?? '';
+    if (convId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text('Could not start private conversation'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    context.push('/messages/$convId');
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text('Could not start private conversation'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+}
+
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
-///
-/// Implements Canary 6 & Stage 6 Convergence Specification:
-/// - Substrate: Pure dark canvas (`#070A11`) with unbundled `#0B0F19` card surfaces.
-/// - Tactical HUD Overlay: Technical combat sports tags (HOOK, TOPROLL, PRESS, DEFENSE).
-/// - Like / Bookmark: Instant scale bounce (0.90 -> 1.15 -> 1.00, 150ms) with `HapticFeedback.lightImpact()`.
-/// - RepaintBoundary raster isolation across all feed items for guaranteed 60fps virtualization.
-/// - Tabular monospace figures (`FontFeature.tabularFigures()`) across like counts, comment counts, and timestamps.
-/// - Tactical Video Player (Cat O) integration with platform badges and modal launch.
-/// - Zero nested `BackdropFilter` inside scrolling list (adhering strictly to Audit Item 2.2).
-/// - 100% preservation of all Riverpod providers and navigation contracts.
 class CommunityFeedScreen extends ConsumerStatefulWidget {
   const CommunityFeedScreen({super.key});
 
@@ -41,6 +92,7 @@ class CommunityFeedScreen extends ConsumerStatefulWidget {
 class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
   String _selectedCategory = 'ALL';
   bool _isVerticalClipsMode = false;
+  final ValueNotifier<String?> _activeVideoPostId = ValueNotifier<String?>(null);
 
   final List<String> _categories = const [
     'ALL',
@@ -50,6 +102,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
     'PODCASTS',
     'REFEREE',
   ];
+
+  @override
+  void dispose() {
+    _activeVideoPostId.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +196,17 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
           ],
         ),
         actions: [
+          // Direct 1-on-1 Messages Inbox shortcut
+          CrystalIconPillButton(
+            tooltip: 'Direct 1-on-1 Messages',
+            icon: Icons.forum_outlined,
+            iconColor: AppTheme.goldPrimary,
+            iconSize: 18,
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.push('/messages');
+            },
+          ),
           // Mode Toggle: Stream vs Vertical Clips inside 38x38 circular smoked-crystal pill
           CrystalIconPillButton(
             tooltip: _isVerticalClipsMode ? 'Stream Card View' : 'Vertical Clip Reels',
@@ -149,6 +218,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                 : AppTheme.textPure,
             iconSize: 18,
             onPressed: () {
+              _activeVideoPostId.value = null;
               setState(() {
                 _isVerticalClipsMode = !_isVerticalClipsMode;
               });
@@ -181,6 +251,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                 return GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
+                    _activeVideoPostId.value = null;
                     setState(() {
                       _selectedCategory = cat;
                     });
@@ -238,86 +309,91 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                   child: SkeletonPlaceholder(height: 280),
                 ),
               ),
-            error: (error, _) => AppErrorView(
-              error: error,
-              title: 'Could not load feed',
-              onRetry: () => ref.invalidate(communityFeedProvider),
-              showSecondaryAction: false,
-              onSessionExpired: () => ref.read(authProvider.notifier).logout(),
-            ),
-            data: (allPosts) {
-              final posts = _selectedCategory == 'ALL'
-                  ? allPosts
-                  : allPosts.where((p) {
-                      final cat = p['category']?.toString().toUpperCase() ?? '';
-                      return cat.contains(_selectedCategory);
-                    }).toList();
+              error: (error, _) => AppErrorView(
+                error: error,
+                title: 'Could not load feed',
+                onRetry: () => ref.invalidate(communityFeedProvider),
+                showSecondaryAction: false,
+                onSessionExpired: () => ref.read(authProvider.notifier).logout(),
+              ),
+              data: (allPosts) {
+                final posts = _selectedCategory == 'ALL'
+                    ? allPosts
+                    : allPosts.where((p) {
+                        final cat = p['category']?.toString().toUpperCase() ?? '';
+                        return cat.contains(_selectedCategory);
+                      }).toList();
 
-              if (posts.isEmpty) {
-                return SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    8,
-                    140,
-                    8,
-                    MainShellScope.bottomClearance(context, additionalPadding: 44),
-                  ),
-                  child: AppEmptyState(
-                    icon: Icons.videocam_off_outlined,
-                    title: 'No clips found',
-                    subtitle: _selectedCategory == 'ALL'
-                        ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
-                        : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
-                    ctaLabel: 'Share a video',
-                    onCtaTap: () => context.push('/community/post/create'),
-                  ),
-                );
-              }
-
-              if (_isVerticalClipsMode) {
-                return _VerticalClipsFeed(
-                  posts: posts,
-                  onRefresh: () => ref.read(communityFeedProvider.notifier).refresh(),
-                  onLoadMore: () => ref.read(communityFeedProvider.notifier).loadMore(),
-                );
-              }
-
-              return RefreshIndicator(
-                color: AppTheme.goldPrimary,
-                backgroundColor: AppTheme.cardSurface,
-                onRefresh: () async {
-                  try {
-                    await ref.read(communityFeedProvider.notifier).refresh();
-                  } catch (_) {}
-                },
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (scrollInfo) {
-                    if (scrollInfo.metrics.pixels >=
-                        scrollInfo.metrics.maxScrollExtent - 400) {
-                      ref
-                          .read(communityFeedProvider.notifier)
-                          .loadMore()
-                          .catchError((_) {});
-                    }
-                    return false;
-                  },
-                  child: ListView.separated(
-                    key: const ValueKey<String>('community_feed_list_view'),
+                if (posts.isEmpty) {
+                  return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
-                      16,
+                      8,
                       140,
-                      16,
+                      8,
                       MainShellScope.bottomClearance(context, additionalPadding: 44),
                     ),
-                    itemCount: posts.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final post = posts[index];
-                      return _TacticalFeedCard(post: post);
+                    child: AppEmptyState(
+                      icon: Icons.videocam_off_outlined,
+                      title: 'No clips found',
+                      subtitle: _selectedCategory == 'ALL'
+                          ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
+                          : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
+                      ctaLabel: 'Share a video',
+                      onCtaTap: () => context.push('/community/post/create'),
+                    ),
+                  );
+                }
+
+                if (_isVerticalClipsMode) {
+                  return _VerticalClipsFeed(
+                    posts: posts,
+                    activeVideoPostId: _activeVideoPostId,
+                    onRefresh: () => ref.read(communityFeedProvider.notifier).refresh(),
+                    onLoadMore: () => ref.read(communityFeedProvider.notifier).loadMore(),
+                  );
+                }
+
+                return RefreshIndicator(
+                  color: AppTheme.goldPrimary,
+                  backgroundColor: AppTheme.cardSurface,
+                  onRefresh: () async {
+                    _activeVideoPostId.value = null;
+                    try {
+                      await ref.read(communityFeedProvider.notifier).refresh();
+                    } catch (_) {}
+                  },
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (scrollInfo) {
+                      if (scrollInfo.metrics.pixels >=
+                          scrollInfo.metrics.maxScrollExtent - 400) {
+                        ref
+                            .read(communityFeedProvider.notifier)
+                            .loadMore()
+                            .catchError((_) {});
+                      }
+                      return false;
                     },
+                    child: ListView.separated(
+                      key: const ValueKey<String>('community_feed_list_view'),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        140,
+                        16,
+                        MainShellScope.bottomClearance(context, additionalPadding: 44),
+                      ),
+                      itemCount: posts.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final post = posts[index];
+                        return _TacticalFeedCard(
+                          post: post,
+                          activeVideoPostId: _activeVideoPostId,
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
             ),
           ),
         ],
@@ -327,17 +403,22 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
 }
 
 /// Tactical Feed Card for Stream View (Canary 6 specification)
-class _TacticalFeedCard extends StatelessWidget {
+class _TacticalFeedCard extends ConsumerWidget {
   final Map<String, dynamic> post;
+  final ValueNotifier<String?> activeVideoPostId;
 
-  const _TacticalFeedCard({required this.post});
+  const _TacticalFeedCard({
+    required this.post,
+    required this.activeVideoPostId,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final athlete = post['athlete'] is Map ? post['athlete'] as Map : null;
+    final athleteId = athlete?['id']?.toString() ?? post['athleteId']?.toString() ?? '';
     final athleteName = athlete?['displayName']?.toString() ?? 'Athlete';
     final athletePhoto = athlete?['profilePhoto']?.toString() ?? '';
-    final country = athlete?['country']?.toString() ?? 'USA';
+    final country = athlete?['country']?.toString() ?? 'PAK';
     final platform = (post['platform']?.toString() ?? 'YOUTUBE').toUpperCase();
     final rawUrl = post['externalUrl']?.toString() ?? '';
     final embedUrl = EmbedUrlBuilder.getEmbedUrl(rawUrl, platform) ?? rawUrl;
@@ -363,77 +444,93 @@ class _TacticalFeedCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  // Athlete Avatar with 1.5px Gold Ring
-                  Container(
-                    padding: const EdgeInsets.all(1.5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
-                    ),
-                    child: ArmSphereImage.avatar(
-                      imageUrl: athletePhoto.isNotEmpty ? athletePhoto : null,
-                      initial: athleteName,
-                      size: 36,
-                      fallbackAsset: ArmSphereAssets.defaultAvatar,
-                      cacheWidth: 108,
-                      cacheHeight: 108,
-                      semanticLabel: 'Profile photo for $athleteName',
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Athlete Details
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                athleteName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontFamily: 'Space Grotesk',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
+                    child: InkWell(
+                      onTap: athleteId.isEmpty
+                          ? null
+                          : () {
+                              HapticFeedback.selectionClick();
+                              context.push('/athlete/public/$athleteId');
+                            },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          // Athlete Avatar with 1.5px Gold Ring
+                          Container(
+                            padding: const EdgeInsets.all(1.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
                             ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(3),
-                                border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
-                              ),
-                              child: Text(
-                                country,
-                                style: const TextStyle(
-                                  fontFamily: 'Space Grotesk',
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textMuted,
-                                ),
-                              ),
+                            child: ArmSphereImage.avatar(
+                              imageUrl: athletePhoto.isNotEmpty ? athletePhoto : null,
+                              initial: athleteName,
+                              size: 36,
+                              fallbackAsset: ArmSphereAssets.defaultAvatar,
+                              cacheWidth: 108,
+                              cacheHeight: 108,
+                              semanticLabel: 'Profile photo for $athleteName',
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          dateDisplay,
-                          style: const TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            fontSize: 10.5,
-                            fontFeatures: [FontFeature.tabularFigures()],
-                            color: AppTheme.textMuted,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          // Athlete Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        athleteName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(3),
+                                        border: Border.all(color: const Color(0x26FFFFFF), width: 1.0),
+                                      ),
+                                      child: Text(
+                                        country,
+                                        style: const TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.textMuted,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  dateDisplay,
+                                  style: const TextStyle(
+                                    fontFamily: 'Space Grotesk',
+                                    fontSize: 10.5,
+                                    fontFeatures: [FontFeature.tabularFigures()],
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   // Tactical Category Badge
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -490,181 +587,24 @@ class _TacticalFeedCard extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Tactical Media Preview Screen (16:9 Aspect Ratio)
+            // Tactical Inline Video Player (16:9 Aspect Ratio — plays directly inside card)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  VideoPlayerModal.show(
-                    context,
-                    embedUrl: embedUrl,
-                    platform: platform,
-                    caption: caption,
-                  );
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  child: Container(
-                    height: 190,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
-                      boxShadow: const [],
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Background combat media or fallback hero
-                        Positioned.fill(
-                          child: ArmSphereImage(
-                            imageUrl: thumbnailUrl,
-                            fallbackAsset: fallbackCombatAsset,
-                            fit: BoxFit.cover,
-                            cacheWidth: 720,
-                            cacheHeight: 405,
-                            semanticLabel: caption.isNotEmpty
-                                ? 'Combat clip: $caption'
-                                : 'Combat video preview',
-                          ),
-                        ),
-                        // Subtle pure-black legibility fade (x: 0.0 -> 0.55)
-                        const Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                stops: [0.0, 0.55, 1.0],
-                                colors: [
-                                  Color(0x80000000),
-                                  Color(0x00000000),
-                                  Color(0x00000000),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Platform Tag in Top-Left
-                        Positioned(
-                          top: 10,
-                          left: 10,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: _getPlatformColor(platform).withValues(alpha: 0.7),
-                                width: 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _getPlatformIcon(platform),
-                                  size: 11,
-                                  color: _getPlatformColor(platform),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  platform,
-                                  style: TextStyle(
-                                    fontFamily: 'Space Grotesk',
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                    color: _getPlatformColor(platform),
-                                    shadows: AppTheme.crystalTextShadows,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Tactical Play Center Medallion
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.transparent,
-                            border: Border.all(color: const Color(0x73D4AF37), width: 1.5),
-                            boxShadow: const [],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.play_arrow_rounded,
-                              size: 34,
-                              color: AppTheme.goldPrimary,
-                            ),
-                          ),
-                        ),
-                        // Bottom Video Scrim Bar
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.85),
-                                ],
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'TAP TO PLAY STREAM',
-                                  style: TextStyle(
-                                    fontFamily: 'Space Grotesk',
-                                    fontSize: 8.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textMuted,
-                                    letterSpacing: 0.6,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(3),
-                                    border: Border.all(color: const Color(0x6638BDF8), width: 1.0),
-                                  ),
-                                  child: const Text(
-                                    '1080P HD',
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.info,
-                                      shadows: AppTheme.crystalTextShadows,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              child: InlineCombatVideoPlayer(
+                postId: postId,
+                embedUrl: embedUrl,
+                rawUrl: rawUrl,
+                platform: platform,
+                caption: caption,
+                thumbnailUrl: thumbnailUrl,
+                fallbackAsset: fallbackCombatAsset,
+                activePostIdNotifier: activeVideoPostId,
               ),
             ),
 
             const SizedBox(height: 8),
 
-            // Card Bottom Action Bar: Like, Comment, Share
+            // Card Bottom Action Bar: Direct 1-on-1 Athlete Message, Athlete Profile & Share Clip
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Row(
@@ -672,41 +612,74 @@ class _TacticalFeedCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      // Like Button with Scale Bounce & Tabular Numbers
-                      _ScaleBounceLikeButton(postId: postId),
-                      const SizedBox(width: 20),
-                      // Comments Trigger
+                      // Direct 1-on-1 Message Athlete Button
                       InkWell(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.push('/community/posts/$postId/comments');
-                        },
-                        borderRadius: BorderRadius.circular(4),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                          child: Row(
+                        onTap: () => _openDirectMessageWithAthlete(context, ref, post),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1AD4AF37),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
-                                Icons.chat_bubble_outline_rounded,
-                                size: 18,
-                                color: AppTheme.textMuted,
+                              Icon(
+                                Icons.send_rounded,
+                                size: 15,
+                                color: AppTheme.goldPrimary,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: 6),
                               Text(
-                                'COMMENTS',
+                                'MESSAGE ATHLETE',
                                 style: TextStyle(
                                   fontFamily: 'Space Grotesk',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                  color: AppTheme.textMuted,
-                                  letterSpacing: 0.4,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.goldPrimary,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
+                      if (athleteId.isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/athlete/public/$athleteId');
+                          },
+                          borderRadius: BorderRadius.circular(6),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 17,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'DOSSIER',
+                                  style: TextStyle(
+                                    fontFamily: 'Space Grotesk',
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.textSecondary,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   // Share Button
@@ -719,10 +692,13 @@ class _TacticalFeedCard extends StatelessWidget {
                     tooltip: 'Share Clip',
                     onPressed: () {
                       HapticFeedback.lightImpact();
+                      if (rawUrl.isNotEmpty) {
+                        Clipboard.setData(ClipboardData(text: rawUrl));
+                      }
                       ScaffoldMessenger.of(context).showSnackBar(
                         CrystalSnackBar(
-                          content: Text('Clip link copied to clipboard'),
-                          duration: Duration(seconds: 2),
+                          content: const Text('Clip link copied to clipboard'),
+                          duration: const Duration(seconds: 2),
                           backgroundColor: AppTheme.elevatedSurface,
                         ),
                       );
@@ -739,22 +715,24 @@ class _TacticalFeedCard extends StatelessWidget {
 }
 
 /// Fullscreen Vertical Snapping Clip Reels Mode (9:16 Canary 6 Spec)
-class _VerticalClipsFeed extends StatefulWidget {
+class _VerticalClipsFeed extends ConsumerStatefulWidget {
   final List<Map<String, dynamic>> posts;
+  final ValueNotifier<String?> activeVideoPostId;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onLoadMore;
 
   const _VerticalClipsFeed({
     required this.posts,
+    required this.activeVideoPostId,
     required this.onRefresh,
     required this.onLoadMore,
   });
 
   @override
-  State<_VerticalClipsFeed> createState() => _VerticalClipsFeedState();
+  ConsumerState<_VerticalClipsFeed> createState() => _VerticalClipsFeedState();
 }
 
-class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
+class _VerticalClipsFeedState extends ConsumerState<_VerticalClipsFeed> {
   late final PageController _pageController;
 
   @override
@@ -777,6 +755,7 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
       physics: const PageScrollPhysics(),
       itemCount: widget.posts.length,
       onPageChanged: (index) {
+        widget.activeVideoPostId.value = null;
         if (index >= widget.posts.length - 2) {
           widget.onLoadMore();
         }
@@ -784,6 +763,7 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
       itemBuilder: (context, index) {
         final post = widget.posts[index];
         final athlete = post['athlete'] is Map ? post['athlete'] as Map : null;
+        final athleteId = athlete?['id']?.toString() ?? post['athleteId']?.toString() ?? '';
         final athleteName = athlete?['displayName']?.toString() ?? 'Athlete';
         final athletePhoto = athlete?['profilePhoto']?.toString() ?? '';
         final platform = (post['platform']?.toString() ?? 'YOUTUBE').toUpperCase();
@@ -803,93 +783,22 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
             color: const Color(0xFF000000),
             child: Stack(
               children: [
-                // Video Launch Scrim Center
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      VideoPlayerModal.show(
-                        context,
-                        embedUrl: embedUrl,
-                        platform: platform,
-                        caption: caption,
-                      );
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      color: const Color(0xFF060910),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned.fill(
-                            child: ArmSphereImage(
-                              imageUrl: thumbnailUrl,
-                              fallbackAsset: fallbackCombatAsset,
-                              fit: BoxFit.cover,
-                              semanticLabel: caption.isNotEmpty
-                                  ? 'Combat clip: $caption'
-                                  : 'Combat video background',
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.5),
-                                    Colors.black.withValues(alpha: 0.2),
-                                    Colors.black.withValues(alpha: 0.85),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 68,
-                            height: 68,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(0xFF070A11).withValues(alpha: 0.8),
-                              border: Border.all(color: AppTheme.goldPrimary, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                                  blurRadius: 18,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.play_arrow_rounded,
-                                size: 44,
-                                color: AppTheme.goldPrimary,
-                              ),
-                            ),
-                          ),
-                          const Positioned(
-                            bottom: 120,
-                            child: Text(
-                              'TAP TO WATCH FULL COMBAT CLIP',
-                              style: TextStyle(
-                                fontFamily: 'Space Grotesk',
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textMuted,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                // Inline Video Player Center
+                Positioned.fill(
+                  child: InlineCombatVideoPlayer(
+                    postId: postId,
+                    embedUrl: embedUrl,
+                    rawUrl: rawUrl,
+                    platform: platform,
+                    caption: caption,
+                    thumbnailUrl: thumbnailUrl,
+                    fallbackAsset: fallbackCombatAsset,
+                    activePostIdNotifier: widget.activeVideoPostId,
+                    isVerticalReel: true,
                   ),
                 ),
 
-                // Right Translucent Action Dock (ISSUE-P3-02: 20dp margin to avoid Android back gestures + touch-absorbing backing container)
+                // Right Translucent Action Dock (Direct 1-on-1 Message, Dossier, Share)
                 Positioned(
                   right: 20,
                   bottom: MainShellScope.bottomClearance(context, additionalPadding: 86),
@@ -907,36 +816,54 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Like Scale Bounce
-                        _ScaleBounceLikeButton(postId: postId, isVertical: true),
-                        const SizedBox(height: 16),
-                        // Comments
+                        // Direct 1-on-1 Message
                         IconButton(
-                          icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 28),
-                          onPressed: () {
-                            HapticFeedback.selectionClick();
-                            context.push('/community/posts/$postId/comments');
-                          },
+                          icon: const Icon(Icons.send_rounded, color: AppTheme.goldPrimary, size: 26),
+                          tooltip: 'Message Athlete',
+                          onPressed: () => _openDirectMessageWithAthlete(context, ref, post),
                         ),
                         const Text(
-                          'CHAT',
+                          'MESSAGE',
                           style: TextStyle(
                             fontFamily: 'Space Grotesk',
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textMuted,
+                            color: AppTheme.goldPrimary,
                           ),
                         ),
+                        if (athleteId.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          IconButton(
+                            icon: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 28),
+                            tooltip: 'Athlete Dossier',
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              context.push('/athlete/public/$athleteId');
+                            },
+                          ),
+                          const Text(
+                            'DOSSIER',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         // Share
                         IconButton(
                           icon: const Icon(Icons.share_outlined, color: Colors.white, size: 26),
                           onPressed: () {
                             HapticFeedback.lightImpact();
+                            if (rawUrl.isNotEmpty) {
+                              Clipboard.setData(ClipboardData(text: rawUrl));
+                            }
                             ScaffoldMessenger.of(context).showSnackBar(
                               CrystalSnackBar(
-                                content: Text('Clip link copied to clipboard'),
-                                duration: Duration(seconds: 2),
+                                content: const Text('Clip link copied to clipboard'),
+                                duration: const Duration(seconds: 2),
                               ),
                             );
                           },
@@ -1038,137 +965,6 @@ class _VerticalClipsFeedState extends State<_VerticalClipsFeed> {
   }
 }
 
-/// Instant Scale Bounce Like Button (Canary 6 specification)
-///
-/// 150ms total duration: 0.90 -> 1.15 -> 1.00 (`Curves.easeOutCubic`)
-/// with `HapticFeedback.lightImpact()` and monospace tabular like count.
-class _ScaleBounceLikeButton extends ConsumerStatefulWidget {
-  final String postId;
-  final bool isVertical;
-
-  const _ScaleBounceLikeButton({
-    required this.postId,
-    this.isVertical = false,
-  });
-
-  @override
-  ConsumerState<_ScaleBounceLikeButton> createState() => _ScaleBounceLikeButtonState();
-}
-
-class _ScaleBounceLikeButtonState extends ConsumerState<_ScaleBounceLikeButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.90).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 30,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.90, end: 1.15).chain(CurveTween(curve: Curves.easeOutCubic)),
-        weight: 40,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.15, end: 1.00).chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 30,
-      ),
-    ]).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleTap() async {
-    HapticFeedback.lightImpact();
-    _controller.forward(from: 0.0);
-    try {
-      await ref.read(postLikeProvider(widget.postId).notifier).toggleLike();
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: Text('Could not update like status'),
-            backgroundColor: AppTheme.error,
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final likedAsync = ref.watch(postLikeProvider(widget.postId));
-    final isLiked = likedAsync.valueOrNull == true;
-
-    return GestureDetector(
-      onTap: _handleTap,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: widget.isVertical
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: isLiked ? AppTheme.error : Colors.white,
-                        size: 30,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isLiked ? '1' : '0',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                          color: isLiked ? AppTheme.error : AppTheme.textMuted,
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 20,
-                        color: isLiked ? AppTheme.error : AppTheme.textMuted,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isLiked ? 'LIKED' : 'LIKE',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                          color: isLiked ? AppTheme.error : AppTheme.textMuted,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ],
-                  ),
-          );
-        },
-      ),
-    );
-  }
-}
-
 Color _getCategoryColor(String cat) {
   switch (cat) {
     case 'HOOK':
@@ -1186,33 +982,8 @@ Color _getCategoryColor(String cat) {
   }
 }
 
-Color _getPlatformColor(String platform) {
-  switch (platform) {
-    case 'YOUTUBE':
-      return const Color(0xFFEF4444);
-    case 'TIKTOK':
-      return const Color(0xFF38BDF8);
-    case 'FACEBOOK':
-      return const Color(0xFF3B82F6);
-    default:
-      return AppTheme.goldPrimary;
-  }
-}
-
-IconData _getPlatformIcon(String platform) {
-  switch (platform) {
-    case 'YOUTUBE':
-      return Icons.play_arrow;
-    case 'TIKTOK':
-      return Icons.music_note;
-    case 'FACEBOOK':
-      return Icons.public;
-    default:
-      return Icons.videocam;
-  }
-}
-
 String _initial(String? name) {
   final n = (name ?? '').trim();
   return n.isEmpty ? '?' : n[0].toUpperCase();
 }
+

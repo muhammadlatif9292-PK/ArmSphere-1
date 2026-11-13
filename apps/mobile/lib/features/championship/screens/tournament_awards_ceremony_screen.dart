@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -45,6 +46,7 @@ class _TournamentAwardsCeremonyScreenState
   late Animation<double> _silverRiseAnim;
   late Animation<double> _goldRiseAnim;
   late Animation<double> _bronzeRiseAnim;
+  late Animation<double> _particleAnim;
   late Animation<double> _trophyGlitterAnim;
 
   int _selectedTierIndex = 0; // 0 = 1st Gold, 1 = 2nd Silver, 2 = 3rd Bronze
@@ -75,6 +77,12 @@ class _TournamentAwardsCeremonyScreenState
     _bronzeRiseAnim = CurvedAnimation(
       parent: _ceremonyController,
       curve: const Interval(0.13, 0.83, curve: Curves.easeOutCubic),
+    );
+
+    // 24 Momentary Gold Particles: 100–600ms (Interval 0.16 – 1.00)
+    _particleAnim = CurvedAnimation(
+      parent: _ceremonyController,
+      curve: const Interval(0.16, 1.00, curve: Curves.easeOut),
     );
 
     // Trophy Shimmer: 350–600ms (Interval 0.58 – 1.00)

@@ -11,7 +11,6 @@ import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/crystal_toast.dart';
-import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
