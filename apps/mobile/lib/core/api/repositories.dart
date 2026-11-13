@@ -683,7 +683,7 @@ class TournamentRepository extends BaseRepository {
       request: (token) => dioClient.dio.post('/tournaments/events', data: data, cancelToken: token),
       parse: _unwrapMap,
     );
-    await hiveStorage.deleteCachedData('tournaments_list');
+    await hiveStorage.evictCache('tournaments_list');
     return result;
   }
 
@@ -699,8 +699,8 @@ class TournamentRepository extends BaseRepository {
       request: (token) => dioClient.dio.patch('/tournaments/events/$eventId', data: data, cancelToken: token),
       parse: _unwrapMap,
     );
-    await hiveStorage.deleteCachedData('tournaments_list');
-    await hiveStorage.deleteCachedData('event_detail_$eventId');
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
     return result;
   }
 
@@ -715,8 +715,8 @@ class TournamentRepository extends BaseRepository {
       request: (token) => dioClient.dio.post('/tournaments/events/$eventId/publish', cancelToken: token),
       parse: _unwrapMap,
     );
-    await hiveStorage.deleteCachedData('tournaments_list');
-    await hiveStorage.deleteCachedData('event_detail_$eventId');
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
     return result;
   }
 
@@ -736,8 +736,8 @@ class TournamentRepository extends BaseRepository {
       ),
       parse: _unwrapMap,
     );
-    await hiveStorage.deleteCachedData('tournaments_list');
-    await hiveStorage.deleteCachedData('event_detail_$eventId');
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
     return result;
   }
 
@@ -752,8 +752,8 @@ class TournamentRepository extends BaseRepository {
       request: (token) => dioClient.dio.post('/tournaments/events/$eventId/complete', cancelToken: token),
       parse: _unwrapMap,
     );
-    await hiveStorage.deleteCachedData('tournaments_list');
-    await hiveStorage.deleteCachedData('event_detail_$eventId');
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
     return result;
   }
 

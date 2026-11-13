@@ -240,7 +240,6 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Requirement 6: 400ms Hold-to-Pin locks pin, triggers heavy feedback, and awards point',
         (WidgetTester tester) async {
-      int finishedScoreChallenger = 0;
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -255,9 +254,7 @@ void main() {
                   required int opponentScore,
                   required String winnerSide,
                   required String scoreLine,
-                }) {
-                  finishedScoreChallenger = challengerScore;
-                },
+                }) {},
               ),
             ),
           ),
