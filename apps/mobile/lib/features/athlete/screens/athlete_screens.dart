@@ -4785,7 +4785,7 @@ class _ArmSelectorTab extends StatelessWidget {
             color: isSelected
                 ? activeColor.withValues(alpha: 0.65)
                 : const Color(0x2EFFFFFF),
-            width: _borderWidth,
+            width: isSelected ? 1.2 : 1.0,
           ),
         ),
         child: Text(
