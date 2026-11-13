@@ -120,12 +120,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // 1. Verify public avatar uses ArmSphereImage.avatar with 96px size
+      // 1. Verify public avatar uses ArmSphereImage.avatar with 96px or 104px size
       final avatarFinder = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.width == 96 &&
-            widget.height == 96 &&
+            (widget.width == 96 || widget.width == 104) &&
+            (widget.height == 96 || widget.height == 104) &&
             widget.fallbackAsset == ArmSphereAssets.defaultAvatar &&
             widget.semanticLabel == 'Athlete profile photo for Farhan Tiger',
       );

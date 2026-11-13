@@ -170,7 +170,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 child: ArmSphereImage.avatar(
                                   imageUrl: photo.isNotEmpty ? photo : null,
                                   initial: displayName,
-                                  size: 104,
+                                  size: 96,
                                   fallbackAsset: ArmSphereAssets.defaultAvatar,
                                   semanticLabel: 'Athlete profile photo for $displayName',
                                 ),
