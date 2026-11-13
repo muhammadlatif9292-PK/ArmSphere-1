@@ -111,6 +111,7 @@ void main() {
                   'club': {'name': 'Lahore Armwrestling Club'},
                   'biography': 'Top-ranked middleweight puller in Punjab.',
                 }),
+            athleteMatchesProvider(athleteId).overrideWith((ref) async => []),
           ],
           child: const MaterialApp(
             home: PublicAthleteProfileScreen(athleteId: athleteId),

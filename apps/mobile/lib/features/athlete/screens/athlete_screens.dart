@@ -3377,7 +3377,7 @@ class IntelligenceDeckTabBar extends StatelessWidget {
                 color: isSelected
                     ? const Color(0x80E23B3B)
                     : const Color(0x2EFFFFFF),
-                width: isSelected ? 1.2 : 1.0,
+                width: _borderWidth,
               ),
               borderRadius: BorderRadius.circular(9),
             ),

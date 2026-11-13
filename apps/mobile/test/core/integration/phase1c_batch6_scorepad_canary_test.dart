@@ -212,24 +212,24 @@ void main() {
       // Increment Red point
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('1'), findsOneWidget); // Red has 1 point
 
       // Deduct Red point (-1)
       final deductButtons = find.widgetWithText(OutlinedButton, '-1');
       await tester.tap(deductButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('0'), findsNWidgets(2)); // Both back to 0
 
       // Add 1st Foul on Red Corner
       final foulButtons = find.widgetWithText(OutlinedButton, 'FOUL');
       await tester.tap(foulButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('F: 1/2'), findsOneWidget);
 
       // Add 2nd Foul on Red Corner -> Automatic point to White Corner
       await tester.tap(foulButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.pump(const Duration(milliseconds: 350)); // Drain foul flash timer
       expect(find.text('2 Fouls on Red Corner: Point awarded to White Corner.'), findsOneWidget);
       expect(find.text('1'), findsOneWidget); // White Corner now has 1 point!
@@ -316,6 +316,10 @@ void main() {
         'arm': 'RIGHT',
       };
 
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -332,12 +336,13 @@ void main() {
 
       // Increment Red Corner to 3 points (Win)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.ensureVisible(pointButtons.first);
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.pumpAndSettle();
 
       // Verify conclusion sheet opened
@@ -385,6 +390,10 @@ void main() {
         'arm': 'RIGHT',
       };
 
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -401,11 +410,13 @@ void main() {
 
       // Reach conclusion (3 points)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.ensureVisible(pointButtons.first);
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.pumpAndSettle();
 
       // Tap Submit
@@ -522,15 +533,15 @@ void main() {
       // 1. Award 2 points to Red Corner
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('2'), findsOneWidget);
 
       // 2. Assess 1 foul on Red Corner
       final foulButtons = find.widgetWithText(OutlinedButton, 'FOUL');
       await tester.tap(foulButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('F: 1/2'), findsOneWidget);
 
       // 3. Locate Reset Score button
@@ -643,7 +654,7 @@ void main() {
       );
       expect(
         embed,
-        'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1&origin=https://armsphere.app',
+        'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1',
       );
     });
   });

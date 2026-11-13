@@ -920,7 +920,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     color: isSelected
                         ? const Color(0xFFE23B3B)
                         : Colors.transparent,
-                    width: isSelected ? 1.3 : 1.0,
+                    width: 1.0,
                   ),
                   boxShadow: const [],
                 ),
