@@ -320,7 +320,8 @@ class _RoleSelectCard extends StatelessWidget {
         child: CrystalSlashWrapper(
           variant: CrystalSlashVariant.sequentialRow(
             rowIndex,
-            accentColor: isSelected ? AppTheme.goldPrimary : AppTheme.crimson,
+            1.0,
+            isSelected ? AppTheme.goldPrimary : AppTheme.crimson,
           ),
           borderRadius: BorderRadius.circular(17),
           child: Padding(
