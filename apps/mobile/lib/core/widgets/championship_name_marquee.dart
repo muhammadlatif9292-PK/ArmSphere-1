@@ -154,6 +154,15 @@ class _ChampionshipNameMarqueeState extends State<ChampionshipNameMarquee> {
         if (overflow <= 2.0) {
           _loopTimer?.cancel();
           _loopTimer = null;
+          if (widget.textAlign == TextAlign.start) {
+            return Text(
+              widget.text,
+              style: widget.style,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: widget.textAlign,
+            );
+          }
           return SizedBox(
             width: availableWidth,
             child: Text(
@@ -366,8 +375,10 @@ class _BiometricsHorizontalCarouselState
             ? '$rawDivision Class'
             : 'Weight Class',
         value: rawWeightClass != null && rawWeightClass.isNotEmpty
-            ? rawWeightClass.toUpperCase()
-            : 'OPEN',
+            ? (rawWeightClass.length > 1
+                ? '${rawWeightClass[0].toUpperCase()}${rawWeightClass.substring(1).toLowerCase()}'
+                : rawWeightClass.toUpperCase())
+            : 'Open',
         icon: Icons.shield_outlined,
         accentColor: AppTheme.emerald,
       ),

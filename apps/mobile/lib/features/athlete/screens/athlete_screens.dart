@@ -3074,14 +3074,16 @@ class _AthleteDashboardScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ChampionshipNameMarquee(
-                  name: title,
+                Text(
+                  title,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 1),
