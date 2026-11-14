@@ -506,11 +506,16 @@ export class TournamentService {
         throw new BadRequestError("Registration window is currently closed for this event.");
       }
 
-      // Eligibility profile check
-      const [athlete] = await tx.select().from(athleteProfiles).where(eq(athleteProfiles.id, athleteId)).limit(1);
+      // Eligibility profile check (resolve by either athleteProfiles.id or athleteProfiles.userId)
+      let [athlete] = await tx.select().from(athleteProfiles).where(eq(athleteProfiles.id, athleteId)).limit(1);
+      if (!athlete) {
+        [athlete] = await tx.select().from(athleteProfiles).where(eq(athleteProfiles.userId, athleteId)).limit(1);
+      }
       if (!athlete || athlete.isDeleted) {
         throw new BadRequestError("Athlete must have an active profile to register.");
       }
+
+      const canonicalAthleteId = athlete.id;
 
       // Caller authorization: only the profile's owner, the event's organizer,
       // or a director/admin may put an athlete profile into the registration list.
@@ -534,7 +539,7 @@ export class TournamentService {
         .where(
           and(
             eq(eventRegistrations.eventId, eventId),
-            eq(eventRegistrations.athleteId, athleteId),
+            eq(eventRegistrations.athleteId, canonicalAthleteId),
             not(eq(eventRegistrations.status, "REJECTED"))
           )
         )
@@ -564,7 +569,7 @@ export class TournamentService {
         .insert(eventRegistrations)
         .values({
           eventId,
-          athleteId,
+          athleteId: canonicalAthleteId,
           division: data.division,
           weightClass: data.weightClass,
           arm: data.arm,
@@ -582,7 +587,7 @@ export class TournamentService {
           currency: "cad",
           metadata: {
             eventId,
-            athleteId,
+            athleteId: canonicalAthleteId,
             registrationId: newReg.id
           }
         });

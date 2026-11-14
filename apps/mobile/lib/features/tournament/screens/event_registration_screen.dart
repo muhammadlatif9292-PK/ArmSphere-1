@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -30,9 +31,16 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
   bool _isLoading = false;
 
   String? _currentAthleteId() {
+    final profile = ref.read(athleteProfileProvider).valueOrNull;
+    final profileId = profile?['id']?.toString();
+    if (profileId != null && profileId.isNotEmpty) {
+      return profileId;
+    }
     final auth = ref.read(authProvider);
     final user = auth.userProfile?['user'] as Map<String, dynamic>? ?? auth.userProfile ?? {};
-    return user['id']?.toString() ?? user['userId']?.toString();
+    return user['athleteProfileId']?.toString() ??
+        user['id']?.toString() ??
+        user['userId']?.toString();
   }
 
   Future<void> _submit() async {
@@ -223,16 +231,24 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
         : int.tryParse('${rawFee ?? ''}') ?? 0;
     final totalFeeCents = baseFeeCents;
 
+    // Warm athlete profile provider so canonical profile ID is ready on submit
+    ref.watch(athleteProfileProvider);
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
-        title: const Text(
-          'Official Event Registration',
-          style: TextStyle(
-            fontFamily: AppTheme.fontDisplay,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Official Event Registration',
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
           ),
         ),
         actions: const [CrystalHomeButton()],

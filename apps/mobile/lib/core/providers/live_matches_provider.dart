@@ -51,3 +51,10 @@ class LiveMatchesNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dyna
 final liveMatchesProvider = AsyncNotifierProvider.autoDispose<LiveMatchesNotifier, List<Map<String, dynamic>>>(() {
   return LiveMatchesNotifier();
 });
+
+final matchDetailProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, matchId) async {
+  if (matchId.isEmpty) return <String, dynamic>{};
+  final repo = ref.watch(matchRepositoryProvider);
+  return repo.getMatchById(matchId);
+});
+

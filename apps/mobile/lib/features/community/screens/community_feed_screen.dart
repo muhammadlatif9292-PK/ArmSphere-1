@@ -23,64 +23,225 @@ import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/championship_name_marquee.dart';
 
-/// Opens or creates a private 1-on-1 direct message thread with the athlete who posted [post].
-Future<void> _openDirectMessageWithAthlete(
-  BuildContext context,
-  WidgetRef ref,
-  Map<String, dynamic> post,
-) async {
-  HapticFeedback.lightImpact();
-  final athlete = post['athlete'] is Map ? post['athlete'] as Map : null;
-  final athleteId = athlete?['id']?.toString() ?? post['athleteId']?.toString() ?? '';
-  final targetUserId = athlete?['userId']?.toString() ??
-      post['userId']?.toString() ??
-      athleteId;
+/// Opens a creative Forged-Crystal Share Sheet for a Community Arena clip.
+void _showCreativeShareSheet(
+  BuildContext context, {
+  required String athleteName,
+  required String category,
+  required String platform,
+  required String caption,
+  required String rawUrl,
+  required String embedUrl,
+  required bool isPortrait,
+}) {
+  HapticFeedback.mediumImpact();
+  final targetUrl = rawUrl.isNotEmpty ? rawUrl : embedUrl;
+  final formattedDispatch = [
+    'Watch $athleteName • $category (${isPortrait ? "9:16 Short" : "16:9 HD"}) on ArmSphere',
+    if (caption.trim().isNotEmpty) '"${caption.trim()}"',
+    if (targetUrl.isNotEmpty) targetUrl,
+  ].join('\n');
 
-  if (targetUserId.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      CrystalSnackBar(
-        content: const Text('This athlete cannot be messaged yet'),
-        backgroundColor: AppTheme.warning,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    return;
-  }
-
-  final myUserId = ref.read(authProvider).userProfile?['id']?.toString() ?? '';
-  if (myUserId.isNotEmpty && targetUserId == myUserId) {
-    context.push('/messages');
-    return;
-  }
-
-  try {
-    final conversation = await ref
-        .read(conversationsProvider.notifier)
-        .getOrCreateConversation(targetUserId);
-    if (!context.mounted) return;
-    final convId = conversation?['id']?.toString() ?? '';
-    if (convId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
-          content: const Text('Could not start private conversation'),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (sheetCtx) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0C1018),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(
+            color: AppTheme.goldPrimary.withValues(alpha: 0.38),
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.textMuted.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1FD4AF37),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0x66D4AF37)),
+                  ),
+                  child: const Icon(
+                    Icons.share_rounded,
+                    color: AppTheme.goldPrimary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'SHARE COMBAT DISPATCH',
+                        style: TextStyle(
+                          fontFamily: 'Space Grotesk',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$athleteName • $category (${isPortrait ? "Vertical Short" : "Widescreen Stream"})',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(sheetCtx).pop(),
+                  icon: const Icon(Icons.close_rounded, color: AppTheme.textMuted, size: 20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Option 1: Copy Formatted ArmSphere Dispatch
+            InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Clipboard.setData(ClipboardData(text: formattedDispatch));
+                Navigator.of(sheetCtx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CrystalSnackBar(
+                    content: const Text('ArmSphere clip dispatch copied — ready to share'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: AppTheme.elevatedSurface,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                decoration: BoxDecoration(
+                  color: const Color(0x19D4AF37),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0x73D4AF37)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, color: AppTheme.goldPrimary, size: 19),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SHARE WITH ATHLETE CAPTION & CARD',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.goldPrimary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Copies athlete name, category badge, caption, and video link',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: AppTheme.goldPrimary, size: 18),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Option 2: Copy Direct Link Only
+            InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Clipboard.setData(ClipboardData(text: targetUrl));
+                Navigator.of(sheetCtx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CrystalSnackBar(
+                    content: const Text('Direct video link copied to clipboard'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: AppTheme.elevatedSurface,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0x33FFFFFF)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.link_rounded, color: AppTheme.textPrimary, size: 19),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'COPY DIRECT VIDEO LINK',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textPrimary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            targetUrl.isNotEmpty ? targetUrl : 'Direct stream URL',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.copy_rounded, color: AppTheme.textSecondary, size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       );
-      return;
-    }
-    context.push('/messages/$convId');
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
-          content: const Text('Could not start private conversation'),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
+    },
+  );
 }
 
 /// Canary 6: Community Media & Clip Feed Screen (`/community`)
@@ -653,7 +814,7 @@ class _TacticalFeedCard extends ConsumerWidget {
 
             const SizedBox(height: 8),
 
-            // Tactical Inline Video Player (16:9 Aspect Ratio — plays directly inside card)
+            // Tactical Inline Video Player (Adaptive 9:16 Portrait Shorts vs 16:9 Widescreen Stream)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: InlineCombatVideoPlayer(
@@ -668,43 +829,63 @@ class _TacticalFeedCard extends ConsumerWidget {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
-            // Card Bottom Action Bar: Direct 1-on-1 Athlete Message, Athlete Profile & Share Clip
+            // Card Bottom Action Bar: Theater View & Creative Share Capsule (MESSAGE ATHLETE & DOSSIER removed)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 12),
+              child: Builder(
+                builder: (context) {
+                  final isPortraitClip = EmbedUrlBuilder.isPortraitVideo(
+                    rawUrl,
+                    platform,
+                    caption: caption,
+                  );
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Direct 1-on-1 Message Athlete Button
+                      // Left: Theater Mode Launch Pill
                       InkWell(
-                        onTap: () => _openDirectMessageWithAthlete(context, ref, post),
-                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          if (activeVideoPostId.value == postId) {
+                            activeVideoPostId.value = null;
+                          }
+                          VideoPlayerModal.show(
+                            context,
+                            embedUrl: embedUrl,
+                            rawUrl: rawUrl,
+                            platform: platform,
+                            caption: caption,
+                            isPortrait: isPortraitClip,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(10),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6.5),
                           decoration: BoxDecoration(
-                            color: const Color(0x1AD4AF37),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
+                            color: Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0x2EFFFFFF)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.send_rounded,
-                                size: 15,
-                                color: AppTheme.goldPrimary,
+                                isPortraitClip
+                                    ? Icons.stay_current_portrait_rounded
+                                    : Icons.theaters_rounded,
+                                size: 14,
+                                color: AppTheme.textSecondary,
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Text(
-                                'MESSAGE ATHLETE',
-                                style: TextStyle(
+                                isPortraitClip ? 'PORTRAIT THEATER' : 'THEATER MODE',
+                                style: const TextStyle(
                                   fontFamily: 'Space Grotesk',
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.goldPrimary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textSecondary,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -712,65 +893,61 @@ class _TacticalFeedCard extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (athleteId.isNotEmpty) ...[
-                        const SizedBox(width: 12),
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            context.push('/athlete/public/$athleteId');
-                          },
-                          borderRadius: BorderRadius.circular(6),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.person_outline_rounded,
-                                  size: 17,
-                                  color: AppTheme.textSecondary,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'DOSSIER',
-                                  style: TextStyle(
-                                    fontFamily: 'Space Grotesk',
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.textSecondary,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
+
+                      // Right: Creative Championship Share Capsule
+                      InkWell(
+                        onTap: () => _showCreativeShareSheet(
+                          context,
+                          athleteName: athleteName,
+                          category: category,
+                          platform: platform,
+                          caption: caption,
+                          rawUrl: rawUrl,
+                          embedUrl: embedUrl,
+                          isPortrait: isPortraitClip,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6.5),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0x26D4AF37),
+                                Color(0x0FD4AF37),
                               ],
                             ),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0x80D4AF37),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.share_rounded,
+                                size: 14,
+                                color: AppTheme.goldPrimary,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'SHARE CLIP',
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.goldPrimary,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ],
-                  ),
-                  // Share Button
-                  IconButton(
-                    icon: const Icon(
-                      Icons.share_outlined,
-                      size: 18,
-                      color: AppTheme.textMuted,
-                    ),
-                    tooltip: 'Share Clip',
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      if (rawUrl.isNotEmpty) {
-                        Clipboard.setData(ClipboardData(text: rawUrl));
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        CrystalSnackBar(
-                          content: const Text('Clip link copied to clipboard'),
-                          duration: const Duration(seconds: 2),
-                          backgroundColor: AppTheme.elevatedSurface,
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -864,75 +1041,36 @@ class _VerticalClipsFeedState extends ConsumerState<_VerticalClipsFeed> {
                   ),
                 ),
 
-                // Right Translucent Action Dock (Direct 1-on-1 Message, Dossier, Share)
+                // Right Translucent Action Dock (Creative Share Capsule)
                 Positioned(
                   right: 20,
                   bottom: MainShellScope.bottomClearance(context, additionalPadding: 86),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.transparent,
+                      color: const Color(0x9904060B),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: const Color(0x38FFFFFF),
+                        color: const Color(0x73D4AF37),
                         width: 1.0,
                       ),
-                      boxShadow: const [],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Direct 1-on-1 Message
                         IconButton(
-                          icon: const Icon(Icons.send_rounded, color: AppTheme.goldPrimary, size: 26),
-                          tooltip: 'Message Athlete',
-                          onPressed: () => _openDirectMessageWithAthlete(context, ref, post),
-                        ),
-                        const Text(
-                          'MESSAGE',
-                          style: TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.goldPrimary,
+                          icon: const Icon(Icons.share_rounded, color: AppTheme.goldPrimary, size: 24),
+                          tooltip: 'Share Clip',
+                          onPressed: () => _showCreativeShareSheet(
+                            context,
+                            athleteName: athleteName,
+                            category: category,
+                            platform: platform,
+                            caption: caption,
+                            rawUrl: rawUrl,
+                            embedUrl: embedUrl,
+                            isPortrait: true,
                           ),
-                        ),
-                        if (athleteId.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          IconButton(
-                            icon: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 28),
-                            tooltip: 'Athlete Dossier',
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              context.push('/athlete/public/$athleteId');
-                            },
-                          ),
-                          const Text(
-                            'DOSSIER',
-                            style: TextStyle(
-                              fontFamily: 'Space Grotesk',
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textMuted,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        // Share
-                        IconButton(
-                          icon: const Icon(Icons.share_outlined, color: Colors.white, size: 26),
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            if (rawUrl.isNotEmpty) {
-                              Clipboard.setData(ClipboardData(text: rawUrl));
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              CrystalSnackBar(
-                                content: const Text('Clip link copied to clipboard'),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
                         ),
                         const Text(
                           'SHARE',
@@ -940,7 +1078,7 @@ class _VerticalClipsFeedState extends ConsumerState<_VerticalClipsFeed> {
                             fontFamily: 'Space Grotesk',
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.textMuted,
+                            color: AppTheme.goldPrimary,
                           ),
                         ),
                       ],

@@ -5,6 +5,13 @@ import {
   matches, 
   eloLedger, 
   athleteProfiles, 
+  athleteClubs,
+  teams,
+  teamMembers,
+  events,
+  brackets,
+  tournamentMatches,
+  matchTables,
   users, 
   auditLogs,
   notifications
@@ -19,6 +26,7 @@ import {
 import { UserRole } from "@armsphere/types";
 import { RefereeCertificationService } from "./refereeCertification.js";
 import { UserRoleService } from "./userRole.js";
+import { RankingsService } from "./rankings.js";
 
 export interface CreateMatchInput {
   challengerId: string;
@@ -205,26 +213,286 @@ export class MatchService {
   }
 
   /**
+   * Enrich raw match rows with athlete names, avatars, weight classes,
+   * team/club affiliations, referee identity, ELO ledger deltas, and tournament/venue context.
+   */
+  static async enrichMatchRecords(rows: any[], targetAthleteId?: string) {
+    if (!rows || rows.length === 0) return [];
+
+    let allProfiles: any[] = [];
+    let allClubs: any[] = [];
+    let allTeams: any[] = [];
+    let allTeamMembers: any[] = [];
+    let allUsers: any[] = [];
+    let allLedgers: any[] = [];
+    let allTournamentMatches: any[] = [];
+    let allBrackets: any[] = [];
+    let allEvents: any[] = [];
+    let allTables: any[] = [];
+
+    try {
+      allProfiles = await db.select().from(athleteProfiles);
+    } catch {}
+    try {
+      allClubs = await db.select().from(athleteClubs);
+    } catch {}
+    try {
+      allTeams = await db.select().from(teams);
+      allTeamMembers = await db.select().from(teamMembers);
+    } catch {}
+    try {
+      allUsers = await db.select().from(users);
+    } catch {}
+    try {
+      allLedgers = await db.select().from(eloLedger);
+    } catch {}
+    try {
+      allTournamentMatches = await db.select().from(tournamentMatches);
+      allBrackets = await db.select().from(brackets);
+      allEvents = await db.select().from(events);
+      allTables = await db.select().from(matchTables);
+    } catch {}
+
+    const resolveAffiliation = (profile: any, fallbackAthleteId?: string): string | null => {
+      const pid = profile?.id ?? fallbackAthleteId;
+      if (pid) {
+        const tm = allTeamMembers.find((m: any) => m.athleteId === pid);
+        if (tm) {
+          const team = allTeams.find((t: any) => t.id === tm.teamId && !t.isDeleted);
+          if (team?.name) return String(team.name);
+        }
+      }
+      if (profile?.clubId) {
+        const club = allClubs.find((c: any) => c.id === profile.clubId && !c.isDeleted);
+        if (club?.name) return String(club.name);
+      }
+      return null;
+    };
+
+    return rows.map((r: any) => {
+      const challenger = allProfiles.find(
+        (p: any) => p.id === r.challengerId || p.userId === r.challengerId
+      );
+      const opponent = allProfiles.find(
+        (p: any) => p.id === r.opponentId || p.userId === r.opponentId
+      );
+
+      const challengerName =
+        (r.challengerName && String(r.challengerName).trim().length > 0
+          ? String(r.challengerName)
+          : null) ??
+        challenger?.displayName ??
+        "Challenger";
+      const opponentName =
+        (r.opponentName && String(r.opponentName).trim().length > 0
+          ? String(r.opponentName)
+          : null) ??
+        opponent?.displayName ??
+        "Opponent";
+
+      const challengerTeamName = resolveAffiliation(challenger, r.challengerId);
+      const opponentTeamName = resolveAffiliation(opponent, r.opponentId);
+
+      const refereeUser = r.refereeId
+        ? allUsers.find((u: any) => u.id === r.refereeId)
+        : null;
+      const refereeName =
+        refereeUser?.fullName ||
+        refereeUser?.username ||
+        "PAFF Certified Referee";
+      const refereeRole = refereeUser?.role || "REFEREE";
+
+      const rawScore = String(r.scoreLine ?? "0-0");
+      const parts = rawScore.split(/[\s\-:]+/);
+      const parsedA = parseInt(parts[0] ?? "0", 10);
+      const parsedB = parseInt(parts[1] ?? "0", 10);
+      const scoreA = Number.isNaN(parsedA) ? 0 : parsedA;
+      const scoreB = Number.isNaN(parsedB) ? 0 : parsedB;
+
+      const winnerName =
+        r.winnerId === r.challengerId
+          ? challengerName
+          : r.winnerId === r.opponentId
+          ? opponentName
+          : null;
+
+      const challengerLedger = allLedgers.find(
+        (l: any) => l.matchId === r.id && l.athleteId === r.challengerId
+      );
+      const opponentLedger = allLedgers.find(
+        (l: any) => l.matchId === r.id && l.athleteId === r.opponentId
+      );
+      const targetLedger = targetAthleteId
+        ? allLedgers.find(
+            (l: any) => l.matchId === r.id && l.athleteId === targetAthleteId
+          )
+        : null;
+
+      const matchedTournamentBout = allTournamentMatches.find(
+        (tm: any) =>
+          tm.id === r.id ||
+          (tm.athlete1Id === r.challengerId && tm.athlete2Id === r.opponentId) ||
+          (tm.athlete1Id === r.opponentId && tm.athlete2Id === r.challengerId)
+      );
+      const bracket = matchedTournamentBout?.bracketId
+        ? allBrackets.find((b: any) => b.id === matchedTournamentBout.bracketId)
+        : null;
+      const event = bracket?.eventId
+        ? allEvents.find((e: any) => e.id === bracket.eventId)
+        : null;
+      const table = matchedTournamentBout?.tableId
+        ? allTables.find((t: any) => t.id === matchedTournamentBout.tableId)
+        : null;
+
+      const effectiveProvince =
+        r.province ??
+        event?.province ??
+        challenger?.province ??
+        opponent?.province ??
+        null;
+      const effectiveCity =
+        event?.city ??
+        challenger?.city ??
+        opponent?.city ??
+        effectiveProvince ??
+        "Pakistan";
+      const effectiveVenue =
+        event?.venueName ??
+        (effectiveProvince
+          ? `${effectiveProvince} Federation Arena`
+          : "PAFF Sanctioned Championship Arena");
+      const weightClass =
+        bracket?.division ??
+        challenger?.weightClass ??
+        opponent?.weightClass ??
+        "Open";
+
+      const armUpper = String(r.arm ?? "RIGHT").toUpperCase();
+      const challengerCurrentElo =
+        armUpper === "LEFT"
+          ? challenger?.leftArmElo ?? 1000
+          : challenger?.rightArmElo ?? 1000;
+      const opponentCurrentElo =
+        armUpper === "LEFT"
+          ? opponent?.leftArmElo ?? 1000
+          : opponent?.rightArmElo ?? 1000;
+
+      return {
+        ...r,
+        challengerName,
+        opponentName,
+        athleteAId: r.challengerId,
+        athleteBId: r.opponentId,
+        athleteAName: challengerName,
+        athleteBName: opponentName,
+        challengerAvatar: challenger?.profilePhoto ?? null,
+        opponentAvatar: opponent?.profilePhoto ?? null,
+        athleteAAvatar: challenger?.profilePhoto ?? null,
+        athleteBAvatar: opponent?.profilePhoto ?? null,
+        challengerWeightClass: challenger?.weightClass ?? null,
+        opponentWeightClass: opponent?.weightClass ?? null,
+        athleteAWeightClass: challenger?.weightClass ?? null,
+        athleteBWeightClass: opponent?.weightClass ?? null,
+        challengerProvince: challenger?.province ?? null,
+        opponentProvince: opponent?.province ?? null,
+        challengerCity: challenger?.city ?? null,
+        opponentCity: opponent?.city ?? null,
+        challengerTeamName,
+        opponentTeamName,
+        athleteATeamName: challengerTeamName,
+        athleteBTeamName: opponentTeamName,
+        challengerElo: challengerLedger?.newElo ?? challengerCurrentElo,
+        opponentElo: opponentLedger?.newElo ?? opponentCurrentElo,
+        challengerEloDelta: challengerLedger?.eloDelta ?? null,
+        challengerPreviousElo: challengerLedger?.previousElo ?? null,
+        challengerNewElo: challengerLedger?.newElo ?? null,
+        opponentEloDelta: opponentLedger?.eloDelta ?? null,
+        opponentPreviousElo: opponentLedger?.previousElo ?? null,
+        opponentNewElo: opponentLedger?.newElo ?? null,
+        refereeName,
+        refereeRole,
+        scoreA,
+        scoreB,
+        winnerName,
+        weightClass,
+        division: weightClass,
+        isEventMatch: Boolean(event),
+        eventId: event?.id ?? null,
+        eventName: event?.name ?? null,
+        tournamentName: event?.name ?? null,
+        bracketId: bracket?.id ?? null,
+        bracketDivision: bracket?.division ?? null,
+        round: matchedTournamentBout?.round ?? null,
+        tableName: table?.name ?? null,
+        venueName: effectiveVenue,
+        city: effectiveCity,
+        province: r.province ?? effectiveProvince,
+        ...(targetLedger
+          ? {
+              eloDelta: targetLedger.eloDelta,
+              previousElo: targetLedger.previousElo,
+              newElo: targetLedger.newElo,
+            }
+          : {}),
+      };
+    });
+  }
+
+  /**
    * Fetch match by ID
    */
   static async getMatchById(matchId: string) {
-    const [match] = await db
+    let [match] = await db
       .select()
       .from(matches)
       .where(eq(matches.id, matchId))
       .limit(1);
 
     if (!match) {
+      try {
+        const [tm] = await db
+          .select()
+          .from(tournamentMatches)
+          .where(eq(tournamentMatches.id, matchId))
+          .limit(1);
+        if (tm && tm.athleteAId && tm.athleteBId) {
+          let arm = "RIGHT";
+          if (tm.bracketId) {
+            const [b] = await db
+              .select()
+              .from(brackets)
+              .where(eq(brackets.id, tm.bracketId))
+              .limit(1);
+            if (b?.arm) arm = String(b.arm).toUpperCase();
+          }
+          match = {
+            id: tm.id,
+            challengerId: tm.athleteAId,
+            opponentId: tm.athleteBId,
+            arm,
+            refereeId: tm.refereeId,
+            winnerId: tm.winnerId,
+            scoreLine: tm.scoreLine || (tm.winnerId ? "3-0" : "0-0"),
+            status:
+              tm.status === "COMPLETED" || tm.status === "VERIFIED"
+                ? "VERIFIED"
+                : tm.status,
+            evidenceUrl: null,
+            province: tm.province ?? null,
+            createdAt: tm.createdAt,
+            verifiedAt: tm.updatedAt || tm.createdAt,
+          } as any;
+        }
+      } catch {}
+    }
+
+    if (!match) {
       throw new NotFoundError("Match not found");
     }
 
-    // Field-level API hygiene, not an access-control change (visibility
-    // review, Step F): idempotencyKey is an internal request-deduplication
-    // implementation detail, not part of the public competitive record.
-    // Every other field here is legitimately public — this endpoint stays
-    // authenticated-readable for any user, per explicit product policy.
     const { idempotencyKey, ...publicMatch } = match as any;
-    return publicMatch;
+    const [enriched] = await MatchService.enrichMatchRecords([publicMatch]);
+    return enriched ?? publicMatch;
   }
 
   /**
@@ -460,6 +728,8 @@ export class MatchService {
           action: "MATCH_VERIFIED",
           details: { matchId, deltaC, deltaO, newRatingC, newRatingO },
         });
+
+        RankingsService.clearCache();
 
         // 8. Dispatch Match Verified & ELO Rating Notifications to both Winner and Loser
         try {
@@ -873,7 +1143,7 @@ export class MatchService {
     const challenger = alias(athleteProfiles, "challenger");
     const opponent = alias(athleteProfiles, "opponent");
 
-    return await db
+    const rows = await db
       .select({
         id: matches.id,
         challengerId: matches.challengerId,
@@ -886,6 +1156,7 @@ export class MatchService {
         scoreLine: matches.scoreLine,
         status: matches.status,
         evidenceUrl: matches.evidenceUrl,
+        province: matches.province,
         createdAt: matches.createdAt,
         verifiedAt: matches.verifiedAt,
       })
@@ -896,6 +1167,50 @@ export class MatchService {
       .orderBy(desc(matches.verifiedAt))
       .limit(limit)
       .offset(offset);
+
+    const combinedRows: any[] = [...rows];
+    if (combinedRows.length < limit) {
+      try {
+        const seenIds = new Set(combinedRows.map((r) => r.id));
+        const allTourney = await db.select().from(tournamentMatches);
+        const allBrackets = await db.select().from(brackets);
+        const completedTourney = allTourney
+          .filter(
+            (tm: any) =>
+              (tm.status === "COMPLETED" || tm.status === "VERIFIED") &&
+              tm.athleteAId &&
+              tm.athleteBId &&
+              !seenIds.has(tm.id)
+          )
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.updatedAt || b.createdAt || 0).getTime() -
+              new Date(a.updatedAt || a.createdAt || 0).getTime()
+          );
+        for (const tm of completedTourney) {
+          if (combinedRows.length >= limit) break;
+          const b = allBrackets.find((br: any) => br.id === tm.bracketId);
+          combinedRows.push({
+            id: tm.id,
+            challengerId: tm.athleteAId,
+            opponentId: tm.athleteBId,
+            challengerName: null,
+            opponentName: null,
+            arm: b?.arm ? String(b.arm).toUpperCase() : "RIGHT",
+            refereeId: tm.refereeId ?? null,
+            winnerId: tm.winnerId ?? null,
+            scoreLine: tm.scoreLine || "3-0",
+            status: "VERIFIED",
+            evidenceUrl: null,
+            province: tm.province ?? null,
+            createdAt: tm.createdAt,
+            verifiedAt: tm.updatedAt || tm.createdAt,
+          });
+        }
+      } catch {}
+    }
+
+    return await MatchService.enrichMatchRecords(combinedRows);
   }
 
   /**
@@ -931,6 +1246,7 @@ export class MatchService {
         scoreLine: matches.scoreLine,
         status: matches.status,
         evidenceUrl: matches.evidenceUrl,
+        province: matches.province,
         createdAt: matches.createdAt,
         verifiedAt: matches.verifiedAt,
       })
@@ -950,48 +1266,50 @@ export class MatchService {
       .limit(limit)
       .offset(offset);
 
-    let ledgerByMatch = new Map<string, { eloDelta: number; previousElo: number; newElo: number }>();
-    try {
-      const ledgerEntries = await db
-        .select()
-        .from(eloLedger)
-        .where(eq(eloLedger.athleteId, targetProfileId));
-      for (const entry of ledgerEntries) {
-        if (entry?.matchId) {
-          ledgerByMatch.set(entry.matchId, {
-            eloDelta: entry.eloDelta,
-            previousElo: entry.previousElo,
-            newElo: entry.newElo,
+    const combinedRows: any[] = [...rows];
+    if (combinedRows.length < limit) {
+      try {
+        const seenIds = new Set(combinedRows.map((r) => r.id));
+        const allTourney = await db.select().from(tournamentMatches);
+        const allBrackets = await db.select().from(brackets);
+        const completedTourney = allTourney
+          .filter(
+            (tm: any) =>
+              (tm.status === "COMPLETED" || tm.status === "VERIFIED") &&
+              (tm.athleteAId === targetProfileId || tm.athleteBId === targetProfileId) &&
+              tm.athleteAId &&
+              tm.athleteBId &&
+              !seenIds.has(tm.id)
+          )
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.updatedAt || b.createdAt || 0).getTime() -
+              new Date(a.updatedAt || a.createdAt || 0).getTime()
+          );
+        for (const tm of completedTourney) {
+          if (combinedRows.length >= limit) break;
+          const b = allBrackets.find((br: any) => br.id === tm.bracketId);
+          combinedRows.push({
+            id: tm.id,
+            challengerId: tm.athleteAId,
+            opponentId: tm.athleteBId,
+            challengerName: null,
+            opponentName: null,
+            arm: b?.arm ? String(b.arm).toUpperCase() : "RIGHT",
+            refereeId: tm.refereeId ?? null,
+            winnerId: tm.winnerId ?? null,
+            scoreLine: tm.scoreLine || "3-0",
+            status: "VERIFIED",
+            evidenceUrl: null,
+            province: tm.province ?? null,
+            createdAt: tm.createdAt,
+            verifiedAt: tm.updatedAt || tm.createdAt,
           });
         }
-      }
-    } catch {
-      // Fallback gracefully if ledger table is unavailable in lightweight mocks
+      } catch {}
     }
 
-    return rows.map((r: any) => {
-      const rawScore = String(r.scoreLine ?? "0-0");
-      const parts = rawScore.split(/[\s\-:]+/);
-      const parsedA = parseInt(parts[0] ?? "0", 10);
-      const parsedB = parseInt(parts[1] ?? "0", 10);
-      const ledger = ledgerByMatch.get(r.id);
-      return {
-        ...r,
-        athleteAId: r.challengerId,
-        athleteBId: r.opponentId,
-        athleteAName: r.challengerName ?? "Challenger",
-        athleteBName: r.opponentName ?? "Opponent",
-        scoreA: Number.isNaN(parsedA) ? 0 : parsedA,
-        scoreB: Number.isNaN(parsedB) ? 0 : parsedB,
-        ...(ledger
-          ? {
-              eloDelta: ledger.eloDelta,
-              previousElo: ledger.previousElo,
-              newElo: ledger.newElo,
-            }
-          : {}),
-      };
-    });
+    return await MatchService.enrichMatchRecords(combinedRows, targetProfileId);
   }
 }
 

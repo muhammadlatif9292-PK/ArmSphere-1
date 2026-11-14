@@ -101,4 +101,10 @@ final athleteMatchesProvider = FutureProvider.autoDispose.family<List<Map<String
 });
 
 
+final athleteMatchesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, athleteId) async {
+  ref.keepAlive();
+  final repo = ref.watch(matchRepositoryProvider);
+  return repo.getMatchHistory(athleteId);
+});
+
 

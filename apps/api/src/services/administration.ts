@@ -574,28 +574,17 @@ export class AdministrationService {
   static async getMatches() {
     logger.info("Fetching matches directory");
     const mRecords = await db.select().from(matches);
-    const profiles = await db.select().from(athleteProfiles);
+    const enriched = await MatchService.enrichMatchRecords(mRecords);
 
-    return mRecords.map(m => {
-      const challenger = profiles.find(p => p.id === m.challengerId);
-      const opponent = profiles.find(p => p.id === m.opponentId);
-      const rawScoreLine = String(m.scoreLine ?? "0-0");
-      const scoreParts = rawScoreLine.split(/[\s\-:]+/);
-      const parsedScoreA = parseInt(scoreParts[0] ?? "0", 10);
-      const parsedScoreB = parseInt(scoreParts[1] ?? "0", 10);
-      const challengerDisplayName = challenger ? challenger.displayName : "Unknown";
-      const opponentDisplayName = opponent ? opponent.displayName : "Unknown";
+    return enriched.map((m: any) => {
+      const challengerDisplayName = m.challengerName === "Challenger" ? "Unknown" : m.challengerName;
+      const opponentDisplayName = m.opponentName === "Opponent" ? "Unknown" : m.opponentName;
       return {
         ...m,
         challengerName: challengerDisplayName,
         opponentName: opponentDisplayName,
-        athleteAId: m.challengerId,
-        athleteBId: m.opponentId,
         athleteAName: challengerDisplayName,
         athleteBName: opponentDisplayName,
-        scoreA: Number.isNaN(parsedScoreA) ? 0 : parsedScoreA,
-        scoreB: Number.isNaN(parsedScoreB) ? 0 : parsedScoreB,
-        weightClass: challenger?.weightClass ?? opponent?.weightClass ?? "Open",
       };
     });
   }

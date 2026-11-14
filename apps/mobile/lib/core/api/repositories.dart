@@ -490,7 +490,7 @@ class MatchRepository extends BaseRepository {
 
   Future<List<Map<String, dynamic>>> getRecentMatches({int? limit, int? offset, CancelToken? cancelToken}) async {
     return executeRequest(
-      cacheKey: 'recent_matches_${limit ?? 20}_${offset ?? 0}',
+      cacheKey: 'recent_matches_v2_${limit ?? 20}_${offset ?? 0}',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get(
         '/matches/recent',
@@ -507,6 +507,68 @@ class MatchRepository extends BaseRepository {
         }
         return [];
       },
+    );
+  }
+
+  Future<Map<String, dynamic>> getMatchById(
+    String matchId, {
+    CancelToken? cancelToken,
+    bool forceRefresh = false,
+  }) async {
+    if (forceRefresh) {
+      await hiveStorage.evictCache('match_detail_$matchId');
+    }
+    return executeRequest(
+      cacheKey: 'match_detail_$matchId',
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get('/matches/$matchId', cancelToken: token),
+      parse: (data) {
+        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+        if (payload is Map) {
+          return Map<String, dynamic>.from(payload);
+        }
+        return <String, dynamic>{};
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> verifyMatch(
+    String matchId, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.post('/matches/$matchId/verify', cancelToken: cancelToken);
+    await hiveStorage.evictCache('match_detail_$matchId');
+    await hiveStorage.evictCache('admin_matches_list');
+    await hiveStorage.evictCache('athlete_profile_self');
+    await hiveStorage.evictCache('notifications_list');
+    await hiveStorage.evictByPrefix('recent_matches_');
+    await hiveStorage.evictByPrefix('match_history_');
+    await hiveStorage.evictByPrefix('athlete_profile_');
+    await hiveStorage.evictByPrefix('leaderboards_');
+    await hiveStorage.evictByPrefix('athlete_compare_');
+    final data = response.data;
+    return Map<String, dynamic>.from(
+      data is Map && data['data'] is Map ? data['data'] as Map : (data is Map ? data : <String, dynamic>{}),
+    );
+  }
+
+  Future<Map<String, dynamic>> disputeMatch(
+    String matchId,
+    String reason, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.post(
+      '/matches/$matchId/dispute',
+      data: {'reason': reason},
+      cancelToken: cancelToken,
+    );
+    await hiveStorage.evictCache('match_detail_$matchId');
+    await hiveStorage.evictCache('admin_matches_list');
+    await hiveStorage.evictByPrefix('recent_matches_');
+    await hiveStorage.evictByPrefix('match_history_');
+    final data = response.data;
+    return Map<String, dynamic>.from(
+      data is Map && data['data'] is Map ? data['data'] as Map : (data is Map ? data : <String, dynamic>{}),
     );
   }
 
@@ -533,6 +595,12 @@ class MatchRepository extends BaseRepository {
       await hiveStorage.evictCache('athlete_profile_self');
       await hiveStorage.evictCache('admin_matches_list');
       await hiveStorage.evictCache('notifications_list');
+      await hiveStorage.evictByPrefix('recent_matches_');
+      await hiveStorage.evictByPrefix('leaderboards_');
+      await hiveStorage.evictByPrefix('athlete_compare_');
+      if (matchId != null && matchId.isNotEmpty) {
+        await hiveStorage.evictCache('match_detail_$matchId');
+      }
       if (challengerId != null && challengerId.isNotEmpty) {
         await hiveStorage.evictCache('athlete_profile_$challengerId');
         await hiveStorage.evictCache('match_history_$challengerId');
@@ -563,12 +631,18 @@ class MatchRepository extends BaseRepository {
     int score, {
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
+    final result = await executeRequest(
       cacheKey: 'certify_match_$matchId',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.post('/matches/$matchId/verify', cancelToken: token),
       parse: (data) => Map<String, dynamic>.from(data is Map && data['data'] is Map ? data['data'] : data),
     );
+    await hiveStorage.evictCache('match_detail_$matchId');
+    await hiveStorage.evictCache('admin_matches_list');
+    await hiveStorage.evictByPrefix('recent_matches_');
+    await hiveStorage.evictByPrefix('leaderboards_');
+    await hiveStorage.evictByPrefix('athlete_compare_');
+    return result;
   }
 }
 
@@ -1198,11 +1272,11 @@ class RankingsRepository extends BaseRepository {
     String arm = 'RIGHT',
     String? province,
     String? search,
-    int limit = 20,
+    int limit = 50,
     CancelToken? cancelToken,
   }) async {
     return executeRequest(
-      cacheKey: 'leaderboards_${arm}_${province ?? 'all'}_${search ?? ''}_$limit',
+      cacheKey: 'leaderboards_v3_${arm}_${province ?? 'all'}_${search ?? ''}_$limit',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get(
         '/rankings/leaderboard',
@@ -2262,6 +2336,7 @@ class CommunityRepository extends BaseRepository {
     double? weightKg,
     int? reps,
     String? matchId,
+    bool isTrainingLogEntry = false,
     CancelToken? cancelToken,
   }) async {
     return executeRequest(
@@ -2277,6 +2352,7 @@ class CommunityRepository extends BaseRepository {
           if (weightKg != null) 'weightKg': weightKg,
           if (reps != null) 'reps': reps,
           if (matchId != null) 'matchId': matchId,
+          if (isTrainingLogEntry) 'isTrainingLogEntry': true,
         },
         cancelToken: token,
       ),

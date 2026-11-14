@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'athlete_provider.dart';
 import 'community_provider.dart';
 import 'state_providers.dart';
 
@@ -42,6 +43,7 @@ class LinkSubmissionNotifier extends AutoDisposeNotifier<LinkSubmissionState> {
     String? exerciseType,
     double? weightKg,
     int? reps,
+    bool isTrainingLogEntry = false,
   }) async {
     state = LinkSubmissionState(status: LinkSubmissionStatus.submitting);
     try {
@@ -53,9 +55,12 @@ class LinkSubmissionNotifier extends AutoDisposeNotifier<LinkSubmissionState> {
         exerciseType: exerciseType,
         weightKg: weightKg,
         reps: reps,
+        isTrainingLogEntry: isTrainingLogEntry,
       );
       state = LinkSubmissionState(status: LinkSubmissionStatus.success);
       ref.invalidate(communityFeedProvider);
+      ref.invalidate(trainingLogProvider);
+      ref.invalidate(trainingLogPRsProvider);
     } catch (e) {
       state = LinkSubmissionState(
         status: LinkSubmissionStatus.failure,

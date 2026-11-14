@@ -33,6 +33,7 @@ import '../../features/session/screens/session_screens.dart';
 import '../../features/championship/screens/championship_screens.dart';
 import '../../features/championship/screens/tournament_awards_ceremony_screen.dart';
 import '../../features/match/screens/head_to_head_screen.dart';
+import '../../features/match/screens/match_detail_screen.dart';
 import '../../features/messaging/screens/messaging_screens.dart';
 import '../../features/messaging/screens/announcement_screens.dart';
 import '../../features/settings/screens/settings_screens.dart';
@@ -893,6 +894,57 @@ final routerProvider = Provider<GoRouter>((ref) {
               matchId: state.uri.queryParameters['matchId'],
               athleteId1: state.uri.queryParameters['athleteId1'],
               athleteId2: state.uri.queryParameters['athleteId2'],
+              initialMatchData: extra,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/matches/:matchId/live',
+        name: 'match_detail_live',
+        pageBuilder: (context, state) {
+          final matchId = state.pathParameters['matchId'] ?? '';
+          final extra = state.extra is Map
+              ? Map<String, dynamic>.from(state.extra as Map)
+              : null;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: MatchDetailScreen(
+              matchId: matchId,
+              initialMatchData: extra,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/matches/:matchId',
+        name: 'match_detail',
+        pageBuilder: (context, state) {
+          final matchId = state.pathParameters['matchId'] ?? '';
+          final extra = state.extra is Map
+              ? Map<String, dynamic>.from(state.extra as Map)
+              : null;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: MatchDetailScreen(
+              matchId: matchId,
+              initialMatchData: extra,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/match/:matchId',
+        name: 'match_detail_singular',
+        pageBuilder: (context, state) {
+          final matchId = state.pathParameters['matchId'] ?? '';
+          final extra = state.extra is Map
+              ? Map<String, dynamic>.from(state.extra as Map)
+              : null;
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: MatchDetailScreen(
+              matchId: matchId,
               initialMatchData: extra,
             ),
           );

@@ -83,6 +83,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         if (!mounted) return;
         try {
           ref.read(athleteSearchQueryProvider.notifier).state = '';
+          ref.read(discoverFeedProvider.notifier).refresh();
           if (_filterScrollController.hasClients) {
             _filterScrollController.jumpTo(0.0);
           }
@@ -1246,17 +1247,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           final match = m as Map<String, dynamic>;
           final matchId = match['id'];
           final status = match['status'] ?? 'LIVE';
-          final athleteA = match['athleteAName'] ?? 'Athlete A';
-          final athleteB = match['athleteBName'] ?? 'Athlete B';
+          final rawA = (match['athleteAName'] ??
+                  match['challengerName'] ??
+                  match['athlete1Name'] ??
+                  '')
+              .toString()
+              .trim();
+          final rawB = (match['athleteBName'] ??
+                  match['opponentName'] ??
+                  match['athlete2Name'] ??
+                  '')
+              .toString()
+              .trim();
+          final athleteA = rawA.isNotEmpty ? rawA : 'Challenger';
+          final athleteB = rawB.isNotEmpty ? rawB : 'Opponent';
           final scoreA = match['scoreA'] ?? 0;
           final scoreB = match['scoreB'] ?? 0;
-          final tableNumber = match['tableNumber'];
+          final tableNumber = match['tableNumber'] ?? match['tableName'];
 
           return ElevatedActionCard(
             margin: const EdgeInsets.only(bottom: 8),
             onTap: () {
               if (matchId != null) {
-                context.push('/matches/$matchId/live');
+                context.push('/matches/$matchId/live', extra: match);
               }
             },
             semanticLabel:
@@ -1860,15 +1873,50 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               children: recentMatches.map((m) {
                 final match = m as Map<String, dynamic>;
                 final matchId = match['id'];
-                final athleteA = match['athleteAName'] ?? 'Athlete A';
-                final athleteB = match['athleteBName'] ?? 'Athlete B';
-                final scoreLine = match['scoreLine'] ?? '3-0';
+                final rawA = (match['athleteAName'] ??
+                        match['challengerName'] ??
+                        match['athlete1Name'] ??
+                        '')
+                    .toString()
+                    .trim();
+                final rawB = (match['athleteBName'] ??
+                        match['opponentName'] ??
+                        match['athlete2Name'] ??
+                        '')
+                    .toString()
+                    .trim();
+                final athleteA = rawA.isNotEmpty ? rawA : 'Challenger';
+                final athleteB = rawB.isNotEmpty ? rawB : 'Opponent';
+                final scoreLine = (match['scoreLine'] ?? '3-0').toString();
+                final arm = (match['arm'] ?? 'RIGHT').toString().toUpperCase();
+                final teamA = (match['athleteATeamName'] ??
+                        match['challengerTeamName'])
+                    ?.toString()
+                    .trim();
+                final teamB = (match['athleteBTeamName'] ??
+                        match['opponentTeamName'])
+                    ?.toString()
+                    .trim();
+                final eventName = (match['eventName'] ?? match['tournamentName'])
+                    ?.toString()
+                    .trim();
+                final venueName = match['venueName']?.toString().trim();
+
+                final teamSummary = (teamA != null && teamA.isNotEmpty) ||
+                        (teamB != null && teamB.isNotEmpty)
+                    ? '${(teamA != null && teamA.isNotEmpty) ? teamA : "Independent"} vs ${(teamB != null && teamB.isNotEmpty) ? teamB : "Independent"}'
+                    : 'Independent • Open';
+                final contextLabel = (eventName != null && eventName.isNotEmpty)
+                    ? eventName
+                    : (venueName != null && venueName.isNotEmpty
+                        ? venueName
+                        : '$arm ARM • $teamSummary');
 
                 return ElevatedActionCard(
                   margin: const EdgeInsets.only(bottom: 8),
                   onTap: () {
                     if (matchId != null) {
-                      context.push('/matches/$matchId/live');
+                      context.push('/matches/$matchId/live', extra: match);
                     }
                   },
                   semanticLabel:
@@ -1881,18 +1929,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(
-                              '$athleteA vs $athleteB',
+                            child: ChampionshipNameMarquee(
+                              text: '$athleteA vs $athleteB',
                               style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 color: AppTheme.textPrimary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.5,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           const StatusChip.success(
                             label: 'FINAL',
                           ),
@@ -1902,16 +1949,21 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Scoreline',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontBody,
-                              color: AppTheme.textSecondary,
-                              fontSize: 11,
+                          Expanded(
+                            child: Text(
+                              contextLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontBody,
+                                color: AppTheme.textSecondary,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
-                            scoreLine.toString(),
+                            'Scoreline  $scoreLine',
                             style: const TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               color: AppTheme.success,

@@ -82,6 +82,66 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
     }
   }
 
+  String _resolveCanonicalWeightClass(Map<String, dynamic> r) {
+    final rawWc = (r['weightClass'] ?? r['division'] ?? '').toString().trim();
+    if (rawWc.isNotEmpty &&
+        rawWc.toUpperCase() != 'OPEN' &&
+        rawWc.toUpperCase() != 'SENIOR' &&
+        rawWc.toUpperCase() != 'JUNIOR' &&
+        rawWc.toUpperCase() != 'FEMALE') {
+      final compact = rawWc.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+      if (compact.contains('105+') ||
+          compact.contains('+105') ||
+          compact.contains('>105')) {
+        return '105kg+';
+      }
+      final match = RegExp(r'(\d+(?:\.\d+)?)').firstMatch(compact);
+      if (match != null) {
+        final val = double.tryParse(match.group(1)!) ?? 0;
+        if (val > 0) {
+          if (val <= 65) return '65kg';
+          if (val <= 75) return '75kg';
+          if (val <= 85) return '85kg';
+          if (val <= 95) return '95kg';
+          if (val <= 105) return '105kg';
+          return '105kg+';
+        }
+      }
+      return rawWc;
+    }
+
+    final rawWeight = r['weight'] ?? r['weightKg'];
+    final numWeight = rawWeight is num
+        ? rawWeight.toDouble()
+        : double.tryParse(rawWeight?.toString() ?? '');
+    if (numWeight != null && numWeight > 0) {
+      if (numWeight <= 65) return '65kg';
+      if (numWeight <= 75) return '75kg';
+      if (numWeight <= 85) return '85kg';
+      if (numWeight <= 95) return '95kg';
+      if (numWeight <= 105) return '105kg';
+      return '105kg+';
+    }
+    return rawWc.isNotEmpty ? rawWc : 'OPEN';
+  }
+
+  bool _matchesWeightClass(
+      Map<String, dynamic> r, String selectedWeightClass) {
+    final filter = selectedWeightClass.trim().toLowerCase();
+    if (filter.isEmpty || filter == 'all') return true;
+    final resolved = _resolveCanonicalWeightClass(r).toLowerCase();
+    return resolved == filter;
+  }
+
+  int _resolveArmElo(Map<String, dynamic> r, String arm) {
+    final isLeft = arm.toUpperCase() == 'LEFT';
+    final raw = isLeft
+        ? (r['leftArmElo'] ?? r['eloRating'] ?? r['points'])
+        : (r['rightArmElo'] ?? r['eloRating'] ?? r['points']);
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw?.toString() ?? '') ?? 0;
+  }
+
   Widget _buildPodiumBadge(
     BuildContext context, {
     required int podiumSlot,
@@ -400,7 +460,20 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
             icon: const Icon(Icons.compare_arrows_rounded, color: AppTheme.goldPrimary),
             onPressed: () {
               HapticFeedback.selectionClick();
-              context.push('/matches/head-to-head');
+              final list = rankingsAsync.valueOrNull ?? const [];
+              final id1 = list.isNotEmpty
+                  ? (list[0]['athleteId'] ?? list[0]['id'])?.toString()
+                  : myProfileId;
+              final id2 = list.length > 1
+                  ? (list[1]['athleteId'] ?? list[1]['id'])?.toString()
+                  : null;
+              if (id1 != null && id1.isNotEmpty && id2 != null && id2.isNotEmpty && id1 != id2) {
+                context.push('/matches/head-to-head?athleteId1=$id1&athleteId2=$id2');
+              } else if (id1 != null && id1.isNotEmpty) {
+                context.push('/matches/head-to-head?athleteId1=$id1');
+              } else {
+                context.push('/matches/head-to-head');
+              }
             },
           ),
           const CrystalHomeButton(),
@@ -416,14 +489,27 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
             onRefresh: () async => ref.invalidate(rankingsProvider),
             child: rankingsAsync.when(
               data: (rawRankings) {
-                final rankings = (selectedWeightClass.isEmpty ||
-                        selectedWeightClass == 'ALL')
-                    ? rawRankings
-                    : rawRankings.where((r) {
-                        final wc =
-                            r['weightClass']?.toString().toLowerCase() ?? '';
-                        return wc == selectedWeightClass.toLowerCase();
-                      }).toList();
+                final filtered = rawRankings
+                    .where((r) => _matchesWeightClass(r, selectedWeightClass))
+                    .map((r) {
+                  final copy = Map<String, dynamic>.from(r);
+                  copy['eloRating'] = _resolveArmElo(r, arm);
+                  final resolvedWc = _resolveCanonicalWeightClass(r);
+                  if (resolvedWc.isNotEmpty) {
+                    copy['weightClass'] = resolvedWc;
+                  }
+                  return copy;
+                }).toList()
+                  ..sort((a, b) => ((b['eloRating'] as int?) ?? 0)
+                      .compareTo((a['eloRating'] as int?) ?? 0));
+
+                final rankings = List<Map<String, dynamic>>.generate(
+                  filtered.length,
+                  (i) => {
+                    ...filtered[i],
+                    'rank': i + 1,
+                  },
+                );
 
                 final rank1 = rankings.isNotEmpty ? rankings[0] : null;
                 final rank2 = rankings.length > 1 ? rankings[1] : null;
@@ -626,8 +712,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                       ),
                                     ],
                                   ),
-                                  if (athleteId.isNotEmpty &&
-                                      athleteId != myProfileId) ...[
+                                  if (athleteId.isNotEmpty) ...[
                                     const SizedBox(width: AppTheme.space8),
                                     IconButton(
                                       visualDensity: VisualDensity.compact,
@@ -639,10 +724,25 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                       ),
                                       onPressed: () {
                                         HapticFeedback.selectionClick();
-                                        final query = myProfileId != null &&
-                                                myProfileId.isNotEmpty
-                                            ? 'athleteId1=$myProfileId&athleteId2=$athleteId'
-                                            : 'athleteId2=$athleteId';
+                                        String? rivalId = (myProfileId != null &&
+                                                myProfileId.isNotEmpty &&
+                                                myProfileId != athleteId)
+                                            ? myProfileId
+                                            : null;
+                                        if (rivalId == null) {
+                                          for (final other in rankings) {
+                                            final candidate = (other['athleteId'] ?? other['id'])?.toString();
+                                            if (candidate != null &&
+                                                candidate.isNotEmpty &&
+                                                candidate != athleteId) {
+                                              rivalId = candidate;
+                                              break;
+                                            }
+                                          }
+                                        }
+                                        final query = (rivalId != null && rivalId.isNotEmpty)
+                                            ? 'athleteId1=$athleteId&athleteId2=$rivalId'
+                                            : 'athleteId1=$athleteId';
                                         context.push(
                                             '/matches/head-to-head?$query');
                                       },

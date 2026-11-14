@@ -1628,14 +1628,20 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        titleSpacing: 4,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
         leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
-        title: const Text(
-          'Tournament Brackets',
-          style: TextStyle(fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Tournament Brackets',
+            style: TextStyle(fontFamily: 'Space Grotesk', fontWeight: FontWeight.w700),
+          ),
         ),
         actions: [
           IconButton(
+            visualDensity: VisualDensity.compact,
             icon: Icon(_isSpatialView ? Icons.view_list_rounded : Icons.account_tree_rounded),
             tooltip: _isSpatialView ? 'Switch to List View' : 'Switch to Spatial Tree',
             onPressed: () {
@@ -1644,6 +1650,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
             },
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
             tooltip: 'Refresh Brackets',
             onPressed: () {
@@ -1659,115 +1666,159 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
           const CrystalHomeButton(),
         ],
       ),
-      body: bracketsAsync.when(
-        loading: () => const CrystalScreenLoadingView(itemCount: 3, cardHeight: 112),
-        error: (e, _) => ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 80),
-            const Center(child: Icon(Icons.error_outline, size: 44, color: AppTheme.error)),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                'Could not load brackets',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: () => ref.invalidate(eventBracketsProvider(widget.tournamentId)),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
-              ),
-            ),
-          ],
-        ),
-        data: (brackets) {
-          if (brackets.isEmpty) {
-            return ListView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const Positioned.fill(
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          ),
+          bracketsAsync.when(
+            loading: () => const CrystalScreenLoadingView(itemCount: 3, cardHeight: 112),
+            error: (e, _) => ListView(
               padding: const EdgeInsets.all(20),
-              children: const [
-                SizedBox(height: 100),
+              children: [
+                const SizedBox(height: 80),
+                const Center(child: Icon(Icons.error_outline, size: 44, color: AppTheme.error)),
+                const SizedBox(height: 12),
                 Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.account_tree_outlined, size: 48, color: AppTheme.textMuted),
-                      SizedBox(height: 12),
-                      Text(
-                        'No brackets published yet.',
-                        style: TextStyle(
-                          fontFamily: 'Space Grotesk',
-                          color: AppTheme.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Matchups will appear once tournament directors generate brackets.',
-                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                      ),
-                    ],
+                  child: Text(
+                    'Could not load brackets',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppTheme.textPrimary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () => ref.invalidate(eventBracketsProvider(widget.tournamentId)),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Retry'),
                   ),
                 ),
               ],
-            );
-          }
-          final selected = _selectedBracketId != null &&
-                  brackets.any((b) => b['id']?.toString() == _selectedBracketId)
-              ? _selectedBracketId!
-              : brackets.first['id']?.toString();
-
-          return Column(
-            children: [
-              // Bracket selector — one chip per category bracket.
-              Container(
-                height: 52,
-                color: Colors.transparent,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            data: (brackets) {
+              if (brackets.isEmpty) {
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 140, 20, 32),
                   children: [
-                    for (final b in brackets)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(
-                            '${b['division'] ?? ''} ${b['weightClass'] ?? ''} ${b['arm'] ?? ''}'.trim(),
-                            style: TextStyle(
-                              fontFamily: 'Space Grotesk',
-                              fontSize: 12,
-                              color: b['id']?.toString() == selected
-                                  ? AppTheme.goldPrimary
-                                  : const Color(0xFFCBD5E1),
-                              fontWeight: b['id']?.toString() == selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
+                    ElevatedActionCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.account_tree_outlined,
+                              size: 38,
+                              color: AppTheme.goldPrimary,
                             ),
                           ),
-                          selected: b['id']?.toString() == selected,
-                          backgroundColor: Colors.transparent,
-                          selectedColor: Colors.transparent,
-                          surfaceTintColor: Colors.transparent,
-                          side: BorderSide(
-                            color: b['id']?.toString() == selected
-                                ? const Color(0x73D4AF37)
-                                : const Color(0x2EFFFFFF),
-                            width: b['id']?.toString() == selected ? 1.2 : 1.0,
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No brackets published yet.',
+                            style: TextStyle(
+                              fontFamily: 'Space Grotesk',
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          onSelected: (_) {
-                            HapticFeedback.selectionClick();
-                            setState(() => _selectedBracketId = b['id']?.toString());
-                          },
-                        ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Matchups will appear once tournament directors generate brackets.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12.5, color: AppTheme.textSecondary),
+                          ),
+                          const SizedBox(height: 18),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              if (effectiveTournamentId.isNotEmpty) {
+                                ref.invalidate(eventBracketsProvider(effectiveTournamentId));
+                              }
+                            },
+                            icon: const Icon(Icons.refresh_rounded, size: 16, color: AppTheme.goldPrimary),
+                            label: const Text(
+                              'SYNC BRACKETS',
+                              style: TextStyle(
+                                fontFamily: 'Space Grotesk',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11.5,
+                                color: AppTheme.goldPrimary,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
                   ],
-                ),
-              ),
-              Expanded(child: _buildBracketMatches(selected)),
-            ],
-          );
-        },
+                );
+              }
+              final selected = _selectedBracketId != null &&
+                      brackets.any((b) => b['id']?.toString() == _selectedBracketId)
+                  ? _selectedBracketId!
+                  : brackets.first['id']?.toString();
+
+              return Column(
+                children: [
+                  // Bracket selector — one chip per category bracket.
+                  Container(
+                    height: 52,
+                    color: Colors.transparent,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      children: [
+                        for (final b in brackets)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(
+                                '${b['division'] ?? ''} ${b['weightClass'] ?? ''} ${b['arm'] ?? ''}'.trim(),
+                                style: TextStyle(
+                                  fontFamily: 'Space Grotesk',
+                                  fontSize: 12,
+                                  color: b['id']?.toString() == selected
+                                      ? AppTheme.goldPrimary
+                                      : const Color(0xFFCBD5E1),
+                                  fontWeight: b['id']?.toString() == selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                              selected: b['id']?.toString() == selected,
+                              backgroundColor: Colors.transparent,
+                              selectedColor: Colors.transparent,
+                              surfaceTintColor: Colors.transparent,
+                              side: BorderSide(
+                                color: b['id']?.toString() == selected
+                                    ? const Color(0x73D4AF37)
+                                    : const Color(0x2EFFFFFF),
+                                width: b['id']?.toString() == selected ? 1.2 : 1.0,
+                              ),
+                              onSelected: (_) {
+                                HapticFeedback.selectionClick();
+                                setState(() => _selectedBracketId = b['id']?.toString());
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(child: _buildBracketMatches(selected)),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }

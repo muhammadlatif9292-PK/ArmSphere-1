@@ -1166,8 +1166,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
         });
       }
       ref.invalidate(adminMatchesProvider);
-      ref.invalidate(refereeProvider);
-      ref.invalidate(liveMatchesProvider);
+      ref.invalidate(refereePendingMatchesProvider);
       ref.invalidate(tournamentProvider);
       ref.invalidate(athleteProfileProvider);
       ref.invalidate(publicAthleteProfileProvider(challengerId));

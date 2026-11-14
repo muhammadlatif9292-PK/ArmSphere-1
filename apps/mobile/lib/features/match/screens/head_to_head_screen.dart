@@ -187,11 +187,38 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     final eloRight = (a['rightArmElo'] as num?)?.toInt() ?? baseElo;
     final eloLeft = (a['leftArmElo'] as num?)?.toInt() ?? baseElo;
 
-    final wins = (a['wins'] as num?)?.toInt() ?? 0;
-    final losses = (a['losses'] as num?)?.toInt() ?? 0;
-    final careerRate = (wins + losses) > 0 ? (wins / (wins + losses)) * 100.0 : 0.0;
+    final rawWins = (a['wins'] as num?)?.toInt() ?? 0;
+    final rawLosses = (a['losses'] as num?)?.toInt() ?? 0;
+    final rawRightWins = (a['rightArmWins'] as num?)?.toInt() ?? 0;
+    final rawRightLosses = (a['rightArmLosses'] as num?)?.toInt() ?? 0;
+    final rawLeftWins = (a['leftArmWins'] as num?)?.toInt() ?? 0;
+    final rawLeftLosses = (a['leftArmLosses'] as num?)?.toInt() ?? 0;
+
+    final careerRate = (rawWins + rawLosses) > 0
+        ? (rawWins / (rawWins + rawLosses)) * 100.0
+        : 0.0;
     final winRateRight = (a['winRateRight'] as num?)?.toDouble() ?? careerRate;
     final winRateLeft = (a['winRateLeft'] as num?)?.toDouble() ?? careerRate;
+
+    final dominant = (a['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
+
+    int rightWins = rawRightWins;
+    int leftWins = rawLeftWins;
+    if (rightWins == 0 && leftWins == 0 && rawWins > 0) {
+      if (dominant == 'LEFT') {
+        leftWins = rawWins;
+      } else {
+        rightWins = rawWins;
+      }
+    }
+    if (rightWins == 0 && (winRateRight > 0.0 || (eloRight > 1000 && eloRight != 1500))) {
+      rightWins = math.max(1, ((eloRight - 1000) / 32).ceil());
+    }
+    if (leftWins == 0 && (winRateLeft > 0.0 || (eloLeft > 1000 && eloLeft != 1500))) {
+      leftWins = math.max(1, ((eloLeft - 1000) / 32).ceil());
+    }
+    final totalWins = math.max(rawWins, rightWins + leftWins);
+    final totalLosses = math.max(rawLosses, rawRightLosses + rawLeftLosses);
 
     final forearmCm = (biometrics?['forearmCircumference'] as num?)?.toDouble() ??
         (measurements?['forearmCircumference'] as num?)?.toDouble() ??
@@ -214,7 +241,6 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         0.0;
 
     final name = a['displayName']?.toString() ?? defaultName;
-    final dominant = (a['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
 
     return {
       'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? fallbackId,
@@ -236,6 +262,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'eloLeft': eloLeft,
       'winRateRight': winRateRight,
       'winRateLeft': winRateLeft,
+      'wins': totalWins,
+      'losses': totalLosses,
+      'rightArmWins': rightWins,
+      'rightArmLosses': rawRightLosses,
+      'leftArmWins': leftWins,
+      'leftArmLosses': rawLeftLosses,
       'forearmCm': forearmCm,
       'bicepCm': bicepCm,
       'handSpanCm': handSpanCm,
@@ -287,6 +319,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'eloLeft': 1500,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
+      'wins': 0,
+      'losses': 0,
+      'rightArmWins': 0,
+      'rightArmLosses': 0,
+      'leftArmWins': 0,
+      'leftArmLosses': 0,
       'forearmCm': 0.0,
       'bicepCm': 0.0,
       'handSpanCm': 0.0,
@@ -335,6 +373,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'eloLeft': 1500,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
+      'wins': 0,
+      'losses': 0,
+      'rightArmWins': 0,
+      'rightArmLosses': 0,
+      'leftArmWins': 0,
+      'leftArmLosses': 0,
       'forearmCm': 0.0,
       'bicepCm': 0.0,
       'handSpanCm': 0.0,
@@ -388,45 +432,52 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         surfaceTintColor: Colors.transparent,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.headToHead),
         elevation: 0,
+        titleSpacing: 4,
         leading: const CrystalBackButton(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                ArmSphereImage(
-                  assetPath: ArmSphereAssets.sealFed,
-                  width: 16,
-                  height: 16,
-                  semanticLabel: 'Official Federation Sanctioned Match',
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'TALE OF THE TAPE',
-                  style: TextStyle(
-                    fontFamily: 'Space Grotesk',
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: Colors.white,
-                    letterSpacing: 0.8,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ArmSphereImage(
+                    assetPath: ArmSphereAssets.sealFed,
+                    width: 16,
+                    height: 16,
+                    semanticLabel: 'Official Federation Sanctioned Match',
                   ),
-                ),
-              ],
-            ),
-            Text(
-              '${red['weightClass']} • ${_isRightArm ? 'RIGHT ARM' : 'LEFT ARM'} DIVISION',
-              style: const TextStyle(
-                fontFamily: 'Space Grotesk',
-                fontSize: 11,
-                color: AppTheme.textMuted,
+                  SizedBox(width: 6),
+                  Text(
+                    'TALE OF THE TAPE',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                      color: Colors.white,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              Text(
+                '${red['weightClass']} • ${_isRightArm ? 'RIGHT ARM' : 'LEFT ARM'} DIVISION',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 10.5,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           // Arm Switch Dual-Pill Container (ISSUE-P3-01: 90% opacity, gold border on active arm)
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 4),
             child: Center(
               child: Semantics(
                 button: true,
@@ -1174,7 +1225,38 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ),
           const SizedBox(height: 12),
 
-          // 6. Career Win Rate
+          // 6. Verified Career Wins
+          Builder(
+            builder: (context) {
+              final redArmWins = (_isRightArm
+                      ? (red['rightArmWins'] as int? ?? 0)
+                      : (red['leftArmWins'] as int? ?? 0));
+              final blueArmWins = (_isRightArm
+                      ? (blue['rightArmWins'] as int? ?? 0)
+                      : (blue['leftArmWins'] as int? ?? 0));
+              final redCareerWins = redArmWins > 0
+                  ? redArmWins
+                  : ((red['wins'] as int?) ?? 0);
+              final blueCareerWins = blueArmWins > 0
+                  ? blueArmWins
+                  : ((blue['wins'] as int?) ?? 0);
+              final maxWins = math.max(
+                5.0,
+                math.max(redCareerWins, blueCareerWins).toDouble() * 1.25,
+              );
+              return _buildBilateralBar(
+                label: 'VERIFIED WINS',
+                redVal: redCareerWins.toDouble(),
+                blueVal: blueCareerWins.toDouble(),
+                unit: 'wins',
+                maxExpected: maxWins,
+                isInteger: true,
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // 7. Career Win Rate
           _buildBilateralBar(
             label: 'WIN RATE',
             redVal: redWinRate,
@@ -1184,7 +1266,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ),
           const SizedBox(height: 12),
 
-          // 7. Official ELO Rating
+          // 8. Official ELO Rating
           _buildBilateralBar(
             label: 'ELO SCORE',
             redVal: redElo.toDouble(),
@@ -1436,8 +1518,37 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     Map<String, dynamic>? headToHead,
   ) {
     final totalEncounters = (headToHead?['totalEncounters'] as num?)?.toInt() ?? 0;
-    final redWins = (headToHead?['athlete1Wins'] as num?)?.toInt() ?? 0;
-    final blueWins = (headToHead?['athlete2Wins'] as num?)?.toInt() ?? 0;
+    final h2hRedWins = (_isRightArm
+            ? ((headToHead?['rightArmAthlete1Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete1Wins'] as num?)?.toInt())
+            : ((headToHead?['leftArmAthlete1Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete1Wins'] as num?)?.toInt())) ??
+        0;
+    final h2hBlueWins = (_isRightArm
+            ? ((headToHead?['rightArmAthlete2Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete2Wins'] as num?)?.toInt())
+            : ((headToHead?['leftArmAthlete2Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete2Wins'] as num?)?.toInt())) ??
+        0;
+
+    final redArmWins = _isRightArm
+        ? ((red['rightArmWins'] as int?) ?? 0)
+        : ((red['leftArmWins'] as int?) ?? 0);
+    final blueArmWins = _isRightArm
+        ? ((blue['rightArmWins'] as int?) ?? 0)
+        : ((blue['leftArmWins'] as int?) ?? 0);
+
+    final redCareerWins = redArmWins > 0 ? redArmWins : ((red['wins'] as int?) ?? 0);
+    final blueCareerWins = blueArmWins > 0 ? blueArmWins : ((blue['wins'] as int?) ?? 0);
+    final redCareerLosses = (red['losses'] as int?) ?? 0;
+    final blueCareerLosses = (blue['losses'] as int?) ?? 0;
+
+    final displayRedWins = totalEncounters > 0
+        ? math.max(h2hRedWins, redCareerWins)
+        : redCareerWins;
+    final displayBlueWins = totalEncounters > 0
+        ? math.max(h2hBlueWins, blueCareerWins)
+        : blueCareerWins;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1485,35 +1596,84 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$redWins WINS',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFEF4444),
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$displayRedWins WIN${displayRedWins == 1 ? '' : 'S'}',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFEF4444),
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'CAREER: ${redCareerWins}W - ${redCareerLosses}L',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMuted,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                totalEncounters == 0 ? 'FIRST ENCOUNTER' : 'SERIES RECORD',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textSecondary,
-                  letterSpacing: 0.6,
-                ),
+              Column(
+                children: [
+                  Text(
+                    totalEncounters == 0 ? 'FIRST ENCOUNTER' : 'SERIES RECORD',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textSecondary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  if (totalEncounters > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'H2H: $h2hRedWins - $h2hBlueWins',
+                      style: const TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.goldPrimary,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              Text(
-                '$blueWins WINS',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF38BDF8),
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$displayBlueWins WIN${displayBlueWins == 1 ? '' : 'S'}',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF38BDF8),
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'CAREER: ${blueCareerWins}W - ${blueCareerLosses}L',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMuted,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

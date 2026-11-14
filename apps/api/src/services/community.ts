@@ -38,19 +38,42 @@ function detectPlatform(url: string): "YOUTUBE" | "TIKTOK" | "FACEBOOK" {
   throw new BadRequestError("Unsupported platform. Only YouTube, TikTok, and Facebook links are allowed.");
 }
 
+const VALID_EXERCISES = [
+  "PRONATION",
+  "RISER",
+  "RISE",
+  "BACK_PRESSURE",
+  "BACK PRESSURE",
+  "SIDE_PRESSURE",
+  "SIDE PRESSURE",
+  "CUPPING",
+  "CONTAINMENT",
+  "HAMMER_CURL",
+  "HAMMER CURL",
+  "CURVE_BICEPS_CURL",
+  "CURVE BICEPS CURL",
+  "LAT_DRAG",
+  "LAT DRAG",
+  "WRIST_CURL",
+  "PRESSOUT",
+  "TOPROLL",
+  "OTHER",
+];
+
 export class CommunityService {
   /**
-   * Submit a community post video link
+   * Submit a community post video link or GYM training log / PR
    */
   static async submitLink(
     athleteId: string,
-    externalUrl: string,
+    externalUrl?: string | null,
     category?: string | null,
     caption?: string | null,
     matchId?: string | null,
     exerciseType?: string | null,
     weightKg?: number | null,
-    reps?: number | null
+    reps?: number | null,
+    isTrainingLogEntry = false
   ) {
     // 1. Verify athlete profile exists and is active (accepting either profile.id or profile.userId)
     const [profile] = await db
@@ -68,8 +91,18 @@ export class CommunityService {
       throw new NotFoundError("Athlete profile not found");
     }
 
-    // 2. Verify platform from URL
-    const platform = detectPlatform(externalUrl);
+    const isGym = category?.toUpperCase() === "GYM";
+    const trimmedUrl = (externalUrl ?? "").trim();
+
+    // 2. Verify platform from URL (Video URL is optional for GYM training logs & PRs)
+    let platform: string;
+    if (trimmedUrl.length > 0) {
+      platform = detectPlatform(trimmedUrl);
+    } else if (isGym) {
+      platform = "GYM_LOG";
+    } else {
+      throw new BadRequestError("External video URL is required for community video posts.");
+    }
 
     // 3. Verify matchId if provided
     if (matchId) {
@@ -90,16 +123,16 @@ export class CommunityService {
     }
 
     // 5. Exercise/GYM Validation & Daily Limit Enforcements
-    if (category?.toUpperCase() !== "GYM") {
-      if (exerciseType || weightKg !== undefined && weightKg !== null || reps !== undefined && reps !== null) {
+    if (!isGym) {
+      if (exerciseType || (weightKg !== undefined && weightKg !== null) || (reps !== undefined && reps !== null)) {
         throw new BadRequestError("Exercise fields are only allowed for posts in the GYM category.");
       }
     } else {
-      if (!exerciseType) {
+      if (!exerciseType || exerciseType.trim().length === 0) {
         throw new BadRequestError("exerciseType is required for GYM category posts.");
       }
-      const VALID_EXERCISES = ['WRIST_CURL', 'HAMMER_CURL', 'PRESSOUT', 'CUPPING', 'TOPROLL', 'SIDE_PRESSURE', 'OTHER'];
-      if (!VALID_EXERCISES.includes(exerciseType.toUpperCase())) {
+      const normalizedExercise = exerciseType.trim().toUpperCase();
+      if (!VALID_EXERCISES.includes(normalizedExercise)) {
         throw new BadRequestError(`Invalid exerciseType. Must be one of: ${VALID_EXERCISES.join(", ")}`);
       }
       if (weightKg !== undefined && weightKg !== null && weightKg < 0) {
@@ -109,39 +142,41 @@ export class CommunityService {
         throw new BadRequestError("reps cannot be negative.");
       }
 
-      // Enforce rolling 24-hour limit of 2 posts for GYM posts
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const recentGymPosts = await db
-        .select()
-        .from(communityPosts)
-        .where(
-          and(
-            eq(communityPosts.athleteId, athleteId),
-            eq(communityPosts.category, "GYM"),
-            eq(communityPosts.isDeleted, false),
-            gte(communityPosts.createdAt, oneDayAgo)
-          )
-        );
+      // Enforce rolling 24-hour limit of 2 posts for public GYM video posts unless logged directly from Training Log
+      if (!isTrainingLogEntry && trimmedUrl.length > 0) {
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentGymPosts = await db
+          .select()
+          .from(communityPosts)
+          .where(
+            and(
+              eq(communityPosts.athleteId, athleteId),
+              eq(communityPosts.category, "GYM"),
+              eq(communityPosts.isDeleted, false),
+              gte(communityPosts.createdAt, oneDayAgo)
+            )
+          );
 
-      if (recentGymPosts && recentGymPosts.length >= 2) {
-        throw new BadRequestError("Daily training post limit exceeded. You can only log up to 2 training posts per day.");
+        if (recentGymPosts && recentGymPosts.length >= 2) {
+          throw new BadRequestError("Daily training post limit exceeded. You can only log up to 2 training posts per day.");
+        }
       }
     }
 
-    // 6. Create post
+    // 6. Create post (GYM training logs & PRs are immediately APPROVED for the athlete's dossier)
     const [post] = await db
       .insert(communityPosts)
       .values({
-        athleteId,
-        externalUrl,
+        athleteId: profile.id,
+        externalUrl: trimmedUrl,
         platform,
         category: category ? (category.toUpperCase() as any) : null,
         caption: caption || null,
         matchId: matchId || null,
-        exerciseType: exerciseType ? exerciseType.toUpperCase() : null,
+        exerciseType: exerciseType ? exerciseType.trim().toUpperCase() : null,
         weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : null,
         reps: reps || null,
-        moderationStatus: "PENDING",
+        moderationStatus: isGym ? "APPROVED" : "PENDING",
         isDeleted: false,
       })
       .returning();

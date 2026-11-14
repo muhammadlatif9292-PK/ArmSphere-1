@@ -1516,6 +1516,8 @@ class _AthleteDashboardScreenState
                             if (!_isRightArm) {
                               HapticFeedback.selectionClick();
                               setState(() => _isRightArm = true);
+                              ref.read(rankingsArmProvider.notifier).state =
+                                  'RIGHT';
                             }
                           }),
                         ),
@@ -1526,6 +1528,8 @@ class _AthleteDashboardScreenState
                             if (_isRightArm) {
                               HapticFeedback.selectionClick();
                               setState(() => _isRightArm = false);
+                              ref.read(rankingsArmProvider.notifier).state =
+                                  'LEFT';
                             }
                           }),
                         ),
@@ -2663,7 +2667,28 @@ class _AthleteDashboardScreenState
                             color: AppTheme.textMuted, fontSize: 11)),
                   ),
                   data: (rankings) {
-                    final top3 = rankings.take(3).toList();
+                    int resolveArmElo(Map<String, dynamic> r) {
+                      final raw = _isRightArm
+                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                      if (raw is num) return raw.toInt();
+                      return int.tryParse(raw?.toString() ?? '') ?? 0;
+                    }
+
+                    final armRankings = rankings.map((r) {
+                      final copy = Map<String, dynamic>.from(r);
+                      final resolved = _isRightArm
+                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                      if (resolved != null) {
+                        copy['eloRating'] = resolved;
+                      }
+                      return copy;
+                    }).toList()
+                      ..sort(
+                          (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
+
+                    final top3 = armRankings.take(3).toList();
                     if (top3.isEmpty) {
                       return Container(
                         width: double.infinity,
