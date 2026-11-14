@@ -283,6 +283,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -599,21 +600,6 @@ class _TournamentAwardsCeremonyScreenState
       alignment: Alignment.bottomCenter,
       clipBehavior: Clip.none,
       children: [
-        // 24 Momentary Gold Particle Burst (skipped when animations disabled)
-        if (!disableAnimations)
-          AnimatedBuilder(
-            animation: _particleAnim,
-            builder: (context, _) {
-              if (_particleAnim.value <= 0.0 || _particleAnim.value >= 1.0) {
-                return const SizedBox.shrink();
-              }
-              return CustomPaint(
-                size: const Size(340, 220),
-                painter: _CeremonyParticlesPainter(progress: _particleAnim.value),
-              );
-            },
-          ),
-
         // The Physical Pedestals
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -1320,6 +1306,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -1403,6 +1390,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -1522,6 +1510,7 @@ class _TournamentAwardsCeremonyScreenState
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           _buildAmbientGoldSheen(context),
@@ -1716,38 +1705,5 @@ class _TournamentAwardsCeremonyScreenState
         ],
       ),
     );
-  }
-}
-
-/// 24 Momentary Gold Ceremony Particles radiating from the center champion pedestal
-class _CeremonyParticlesPainter extends CustomPainter {
-  final double progress;
-
-  _CeremonyParticlesPainter({required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.45);
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    const int particleCount = 24;
-    final double radius = 30.0 + (progress * 90.0);
-    final double alpha = (1.0 - progress).clamp(0.0, 1.0);
-
-    for (int i = 0; i < particleCount; i++) {
-      final double angle = (i * (2 * math.pi / particleCount)) + (i % 2 == 0 ? 0.1 : -0.1);
-      final double x = center.dx + math.cos(angle) * radius * 1.6;
-      final double y = center.dy + math.sin(angle) * radius * 0.8;
-      final double dotSize = (3.5 * (1.0 - progress)).clamp(0.8, 3.5);
-
-      paint.color = (i % 2 == 0 ? const Color(0xFFD4AF37) : const Color(0xFFFFF3B0))
-          .withValues(alpha: alpha * 0.8);
-      canvas.drawCircle(Offset(x, y), dotSize, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CeremonyParticlesPainter oldDelegate) {
-    return oldDelegate.progress != progress;
   }
 }

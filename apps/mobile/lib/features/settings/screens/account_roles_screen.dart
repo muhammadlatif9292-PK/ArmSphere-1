@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/routing/app_router.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -117,22 +118,37 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
 
     if (confirm != true) return;
 
+    final router = GoRouter.maybeOf(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+
     setState(() => _isLoading = true);
     try {
       await ref.read(authProvider.notifier).switchActiveRole(targetRole);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
-            backgroundColor: AppTheme.goldPrimary,
-          ),
-        );
-        // Navigate cleanly to the home root tab so the newly selected Athlete
-        // or Admin 5-tab workspace is immediately visible starting at the top.
-        final router = GoRouter.maybeOf(context);
+      if (mounted || router != null) {
+        // Pop all pushed routes (e.g., /settings/roles and /settings) from the
+        // current branch stack before navigating to /home so that tapping the 5th
+        // bottom navigation button (Dossier / Passport) opens the root profile
+        // screen of the new role instead of a leftover Settings screen.
         if (router != null) {
+          int safety = 0;
+          try {
+            while (router.canPop() && safety < 24) {
+              router.pop();
+              safety++;
+            }
+          } catch (_) {}
+          resetAllShellBranchStacks();
           router.go('/home');
         }
+        messenger
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(
+            CrystalSnackBar(
+              duration: const Duration(milliseconds: 2200),
+              content: Text('Switched persona to ${_formatRoleName(targetRole)}'),
+              backgroundColor: AppTheme.goldPrimary,
+            ),
+          );
       }
     } catch (e) {
       if (mounted) {
@@ -171,8 +187,11 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace:
             const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
@@ -202,7 +221,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
-                AppTheme.space16,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
                 AppTheme.space16,
                 MainShellScope.isInsideShell(context)
                     ? MainShellScope.bottomClearance(
@@ -218,8 +237,8 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                 ElevatedActionCard(
                   padding: const EdgeInsets.all(AppTheme.space16),
                   borderColor: isInAdminMode
-                      ? AppTheme.crimson.withValues(alpha: 0.45)
-                      : AppTheme.goldPrimary.withValues(alpha: 0.40),
+                      ? const Color(0x80E23B3B)
+                      : const Color(0x73D4AF37),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -228,9 +247,12 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                           Container(
                             padding: const EdgeInsets.all(AppTheme.space10),
                             decoration: BoxDecoration(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0x73D4AF37),
+                                width: 1.0,
+                              ),
                             ),
                             child: Icon(
                               _roleIcon(activeRole),
@@ -330,7 +352,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: verifiedRoles.length,
                       separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: AppTheme.cardBorder),
+                          const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       itemBuilder: (context, index) {
                         final role = verifiedRoles[index];
                         final isCurrentActive =
@@ -436,7 +458,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: pendingApplications.length,
                       separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: AppTheme.cardBorder),
+                          const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                       itemBuilder: (context, index) {
                         final app = pendingApplications[index];
                         final appRole = app['role']?.toString() ?? 'ROLE';

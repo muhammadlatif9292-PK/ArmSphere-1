@@ -5,14 +5,38 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    def newSubprojectBuildDir = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
+subprojects { subproject ->
+    if (subproject.name == "stripe_android") {
+        // stripe_android declares compileOnly stripe-android-issuing-push-provisioning:1.1.0, whose
+        // runtime dependency com.google.android.gms:play-services-tapandpay:17.1.2 is not in public Maven.
+        subproject.configurations.configureEach { config ->
+            config.exclude group: "com.google.android.gms", module: "play-services-tapandpay"
+        }
+    }
+    subproject.plugins.withId("com.android.library") {
+        def androidComponents = subproject.extensions.findByName("androidComponents")
+        if (androidComponents != null) {
+            androidComponents.finalizeDsl { extension ->
+                if (extension.compileSdk == null || extension.compileSdk < 36) {
+                    extension.compileSdk = 36
+                }
+            }
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
 
 tasks.register("clean", Delete) {
-    delete rootProject.buildDir
+    delete rootProject.layout.buildDirectory
 }

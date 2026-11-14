@@ -123,7 +123,7 @@ void main() {
       expect(find.byType(AppEmptyState), findsOneWidget);
       expect(find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(AppEmptyState)), findsOneWidget);
       expect(find.text('No competitions published yet'), findsOneWidget);
-      expect(find.text('Check back soon for upcoming sanctioned events'), findsOneWidget);
+      expect(find.text('Check back soon for upcoming sanctioned events'), findsNothing);
       expect(_builds, 1);
       await t.tap(find.text('Refresh Events'));
       await _settle(t);

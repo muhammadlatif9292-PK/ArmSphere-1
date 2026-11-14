@@ -579,10 +579,23 @@ export class AdministrationService {
     return mRecords.map(m => {
       const challenger = profiles.find(p => p.id === m.challengerId);
       const opponent = profiles.find(p => p.id === m.opponentId);
+      const rawScoreLine = String(m.scoreLine ?? "0-0");
+      const scoreParts = rawScoreLine.split(/[\s\-:]+/);
+      const parsedScoreA = parseInt(scoreParts[0] ?? "0", 10);
+      const parsedScoreB = parseInt(scoreParts[1] ?? "0", 10);
+      const challengerDisplayName = challenger ? challenger.displayName : "Unknown";
+      const opponentDisplayName = opponent ? opponent.displayName : "Unknown";
       return {
         ...m,
-        challengerName: challenger ? challenger.displayName : "Unknown",
-        opponentName: opponent ? opponent.displayName : "Unknown",
+        challengerName: challengerDisplayName,
+        opponentName: opponentDisplayName,
+        athleteAId: m.challengerId,
+        athleteBId: m.opponentId,
+        athleteAName: challengerDisplayName,
+        athleteBName: opponentDisplayName,
+        scoreA: Number.isNaN(parsedScoreA) ? 0 : parsedScoreA,
+        scoreB: Number.isNaN(parsedScoreB) ? 0 : parsedScoreB,
+        weightClass: challenger?.weightClass ?? opponent?.weightClass ?? "Open",
       };
     });
   }

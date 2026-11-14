@@ -261,6 +261,7 @@ export class CommunityService {
         updatedAt: communityPosts.updatedAt,
         athlete: {
           id: athleteProfiles.id,
+          userId: athleteProfiles.userId,
           displayName: athleteProfiles.displayName,
           profilePhoto: athleteProfiles.profilePhoto,
         },
@@ -318,6 +319,7 @@ export class CommunityService {
         updatedAt: communityPosts.updatedAt,
         athlete: {
           id: athleteProfiles.id,
+          userId: athleteProfiles.userId,
           displayName: athleteProfiles.displayName,
           profilePhoto: athleteProfiles.profilePhoto,
         },

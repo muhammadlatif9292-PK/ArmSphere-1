@@ -31,7 +31,7 @@ dependencies:
   intl: ^0.18.1
   json_annotation: ^4.9.0
   local_auth: ^2.3.0
-  package_info_plus: ^4.2.0
+  package_info_plus: ^9.0.1
   pretty_dio_logger: ^1.4.0
   riverpod: ^2.6.1
   uuid: ^4.6.0

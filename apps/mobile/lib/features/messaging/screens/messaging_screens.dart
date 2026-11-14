@@ -50,6 +50,7 @@ class ConversationsListScreen extends ConsumerWidget {
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
@@ -159,8 +160,9 @@ class ConversationsListScreen extends ConsumerWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.goldPrimary,
+                                        color: Colors.transparent,
                                         borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                                       ),
                                       child: Text(
                                         unread > 99 ? '99+' : '$unread',
@@ -168,7 +170,7 @@ class ConversationsListScreen extends ConsumerWidget {
                                           fontFamily: AppTheme.fontDisplay,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
-                                          color: AppTheme.voidBackground,
+                                          color: AppTheme.goldPrimary,
                                           fontFeatures: [FontFeature.tabularFigures()],
                                         ),
                                       ),
@@ -299,6 +301,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
@@ -356,12 +359,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           maxWidth: MediaQuery.of(context).size.width * 0.78,
                         ),
                         decoration: BoxDecoration(
-                          color: isDeleted
-                              ? AppTheme.glassSurface
-                              : isMine
-                                  ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-                                  : AppTheme.glassSurface,
-                          gradient: isMine ? null : AppTheme.machinedTitaniumGradient,
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(AppTheme.radiusMedium),
                             topRight: const Radius.circular(AppTheme.radiusMedium),
@@ -370,11 +368,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ),
                           border: Border.all(
                             color: isMine
-                                ? AppTheme.goldPrimary.withValues(alpha: 0.45)
-                                : AppTheme.borderTitanium,
+                                ? const Color(0x73D4AF37)
+                                : const Color(0x38FFFFFF),
                             width: 1.0,
                           ),
-                          boxShadow: [AppTheme.titaniumShadow()],
+                          boxShadow: const [],
                         ),
                         child: Column(
                           crossAxisAlignment: isMine
@@ -417,11 +415,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // Composer Bar
           Container(
             padding: const EdgeInsets.all(AppTheme.space12),
-            decoration: BoxDecoration(
-              color: AppTheme.glassSurface,
-              gradient: AppTheme.machinedTitaniumGradient,
-              border: const Border(top: BorderSide(color: AppTheme.borderTitanium, width: 1.0)),
-              boxShadow: [AppTheme.titaniumShadow()],
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              border: Border(top: BorderSide(color: Color(0x38FFFFFF), width: 1.0)),
+              boxShadow: [],
             ),
             child: SafeArea(
               child: Row(
@@ -437,16 +434,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             : 'Type your message...',
                         hintStyle: const TextStyle(color: AppTheme.textMuted),
                         filled: true,
-                        fillColor: AppTheme.glassSurface,
+                        fillColor: Colors.transparent,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          borderSide: const BorderSide(color: Color(0x38FFFFFF)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                          borderSide: const BorderSide(color: AppTheme.borderTitanium),
+                          borderSide: const BorderSide(color: Color(0x38FFFFFF)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -459,13 +456,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: isDisconnected
-                          ? AppTheme.glassSurface
-                          : AppTheme.goldPrimary,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: isDisconnected
-                          ? Border.all(color: AppTheme.borderTitanium)
-                          : null,
+                      border: Border.all(
+                        color: isDisconnected
+                            ? const Color(0x38FFFFFF)
+                            : const Color(0x73D4AF37),
+                        width: 1.0,
+                      ),
                     ),
                     child: IconButton(
                       icon: _sending
@@ -474,14 +472,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppTheme.voidBackground,
+                                color: AppTheme.goldPrimary,
                               ),
                             )
                           : Icon(
                               Icons.send,
                               color: isDisconnected
                                   ? AppTheme.textMuted
-                                  : AppTheme.voidBackground,
+                                  : AppTheme.goldPrimary,
                               size: 20,
                             ),
                       onPressed: (isDisconnected || _sending) ? null : _send,

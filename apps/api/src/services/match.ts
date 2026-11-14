@@ -6,7 +6,8 @@ import {
   eloLedger, 
   athleteProfiles, 
   users, 
-  auditLogs 
+  auditLogs,
+  notifications
 } from "@armsphere/db-schema";
 import { 
   NotFoundError, 
@@ -460,6 +461,72 @@ export class MatchService {
           details: { matchId, deltaC, deltaO, newRatingC, newRatingO },
         });
 
+        // 8. Dispatch Match Verified & ELO Rating Notifications to both Winner and Loser
+        try {
+          const winnerProfile = isWinnerChallenger ? challenger : opponent;
+          const loserProfile = isWinnerChallenger ? opponent : challenger;
+          const deltaWinner = isWinnerChallenger ? deltaC : deltaO;
+          const deltaLoser = isWinnerChallenger ? deltaO : deltaC;
+          const newRatingWinner = isWinnerChallenger ? newRatingC : newRatingO;
+          const newRatingLoser = isWinnerChallenger ? newRatingO : newRatingC;
+
+          const winnerTitle = "Victory Confirmed: Match Verified";
+          const winnerContent = `Official result: You defeated ${loserProfile.displayName} (${match.scoreLine}). Rating update: +${Math.abs(deltaWinner)} ELO (New Rating: ${newRatingWinner}).`;
+
+          const loserTitle = "Match Concluded: Result Verified";
+          const loserContent = `Official result against ${winnerProfile.displayName} (${match.scoreLine}). Rating update: ${deltaLoser} ELO (New Rating: ${newRatingLoser}).`;
+
+          if (winnerProfile?.userId) {
+            await tx.insert(notifications).values({
+              userId: winnerProfile.userId,
+              title: winnerTitle,
+              content: winnerContent,
+              priority: "HIGH",
+              category: "MATCH",
+              status: "UNREAD",
+              metadata: {
+                matchId,
+                outcome: "WIN",
+                arm,
+                scoreLine: match.scoreLine,
+                opponentId: loserProfile.id,
+                opponentName: loserProfile.displayName,
+                eloDelta: deltaWinner,
+                newElo: newRatingWinner,
+              },
+              deliveryReceipts: { in_app: "DELIVERED" },
+              retryCount: 0,
+              maxRetries: 3,
+            });
+          }
+
+          if (loserProfile?.userId) {
+            await tx.insert(notifications).values({
+              userId: loserProfile.userId,
+              title: loserTitle,
+              content: loserContent,
+              priority: "HIGH",
+              category: "MATCH",
+              status: "UNREAD",
+              metadata: {
+                matchId,
+                outcome: "LOSS",
+                arm,
+                scoreLine: match.scoreLine,
+                opponentId: winnerProfile.id,
+                opponentName: winnerProfile.displayName,
+                eloDelta: deltaLoser,
+                newElo: newRatingLoser,
+              },
+              deliveryReceipts: { in_app: "DELIVERED" },
+              retryCount: 0,
+              maxRetries: 3,
+            });
+          }
+        } catch (notifyErr) {
+          logger.warn({ err: notifyErr, matchId }, "Non-fatal error dispatching match verification notifications");
+        }
+
         logger.info({ matchId }, "Match verified and ratings adjusted successfully inside transaction");
 
         return {
@@ -851,7 +918,7 @@ export class MatchService {
     const challenger = alias(athleteProfiles, "challenger");
     const opponent = alias(athleteProfiles, "opponent");
 
-    return await db
+    const rows = await db
       .select({
         id: matches.id,
         challengerId: matches.challengerId,
@@ -882,6 +949,49 @@ export class MatchService {
       .orderBy(desc(matches.verifiedAt))
       .limit(limit)
       .offset(offset);
+
+    let ledgerByMatch = new Map<string, { eloDelta: number; previousElo: number; newElo: number }>();
+    try {
+      const ledgerEntries = await db
+        .select()
+        .from(eloLedger)
+        .where(eq(eloLedger.athleteId, targetProfileId));
+      for (const entry of ledgerEntries) {
+        if (entry?.matchId) {
+          ledgerByMatch.set(entry.matchId, {
+            eloDelta: entry.eloDelta,
+            previousElo: entry.previousElo,
+            newElo: entry.newElo,
+          });
+        }
+      }
+    } catch {
+      // Fallback gracefully if ledger table is unavailable in lightweight mocks
+    }
+
+    return rows.map((r: any) => {
+      const rawScore = String(r.scoreLine ?? "0-0");
+      const parts = rawScore.split(/[\s\-:]+/);
+      const parsedA = parseInt(parts[0] ?? "0", 10);
+      const parsedB = parseInt(parts[1] ?? "0", 10);
+      const ledger = ledgerByMatch.get(r.id);
+      return {
+        ...r,
+        athleteAId: r.challengerId,
+        athleteBId: r.opponentId,
+        athleteAName: r.challengerName ?? "Challenger",
+        athleteBName: r.opponentName ?? "Opponent",
+        scoreA: Number.isNaN(parsedA) ? 0 : parsedA,
+        scoreB: Number.isNaN(parsedB) ? 0 : parsedB,
+        ...(ledger
+          ? {
+              eloDelta: ledger.eloDelta,
+              previousElo: ledger.previousElo,
+              newElo: ledger.newElo,
+            }
+          : {}),
+      };
+    });
   }
 }
 

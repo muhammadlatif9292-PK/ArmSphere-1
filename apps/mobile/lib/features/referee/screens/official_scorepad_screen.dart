@@ -5,6 +5,7 @@ import '../../../core/providers/state_providers.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/count_up_text.dart';
@@ -52,7 +53,7 @@ class _OfficialScorepadScreenState
   String _certificationTimestamp = '';
   String _signatureHash = '';
 
-  // Best of format configuration (3 or 5)
+  // Best of format configuration (1, 3, 5, or 7)
   int _maxRounds = 5; // Default Best of 5
   int _targetWins = 3; // First to 3
 
@@ -64,6 +65,8 @@ class _OfficialScorepadScreenState
     3: null,
     4: null,
     5: null,
+    6: null,
+    7: null,
   };
 
   // Fouls list
@@ -92,24 +95,28 @@ class _OfficialScorepadScreenState
   void _loadMatchData() {
     if (widget.match != null) {
       final m = widget.match!;
-      final format = m['format'] ?? m['matchFormat'] ?? 'Best of 5';
-      if (format.toString().contains('3')) {
+      final formatStr = (m['format'] ?? m['matchFormat'] ?? 'Best of 5').toString();
+      if (formatStr.contains('1')) {
+        _maxRounds = 1;
+      } else if (formatStr.contains('3')) {
         _maxRounds = 3;
-        _targetWins = 2;
+      } else if (formatStr.contains('7')) {
+        _maxRounds = 7;
       } else {
         _maxRounds = 5;
-        _targetWins = 3;
       }
+      _targetWins = (_maxRounds ~/ 2) + 1;
 
       if (m['roundWinners'] is Map) {
         final rw = m['roundWinners'] as Map;
         rw.forEach((key, val) {
           final roundNum = int.tryParse(key.toString());
-          if (roundNum != null && roundNum >= 1 && roundNum <= 5) {
+          if (roundNum != null && roundNum >= 1 && roundNum <= 7) {
             _roundWinners[roundNum] = val?.toString();
           }
         });
       }
+      _pruneRoundsAfterDecision();
       if (m['fouls'] is List) {
         _fouls.addAll((m['fouls'] as List).map((f) => Map<String, dynamic>.from(f as Map)));
       }
@@ -124,13 +131,48 @@ class _OfficialScorepadScreenState
     }
   }
 
-  // Calculated Scores
+  /// Returns the round number (1.._maxRounds) where either athlete first reached [_targetWins],
+  /// or null if the match has not yet been decided.
+  int? get _decidingRound {
+    int winsA = 0;
+    int winsB = 0;
+    for (int r = 1; r <= _maxRounds; r++) {
+      final w = _roundWinners[r];
+      if (w == 'A') winsA++;
+      if (w == 'B') winsB++;
+      if (winsA >= _targetWins || winsB >= _targetWins) {
+        return r;
+      }
+    }
+    return null;
+  }
+
+  void _pruneRoundsAfterDecision() {
+    final decidedAt = _decidingRound;
+    for (int r = 1; r <= 7; r++) {
+      if (r > _maxRounds || (decidedAt != null && r > decidedAt)) {
+        _roundWinners[r] = null;
+      }
+    }
+  }
+
+  // Calculated Scores (strictly bounded by _maxRounds and _decidingRound)
   int get _scoreA {
-    return _roundWinners.values.where((w) => w == 'A').length;
+    final limit = _decidingRound ?? _maxRounds;
+    int count = 0;
+    for (int r = 1; r <= limit; r++) {
+      if (_roundWinners[r] == 'A') count++;
+    }
+    return count;
   }
 
   int get _scoreB {
-    return _roundWinners.values.where((w) => w == 'B').length;
+    final limit = _decidingRound ?? _maxRounds;
+    int count = 0;
+    for (int r = 1; r <= limit; r++) {
+      if (_roundWinners[r] == 'B') count++;
+    }
+    return count;
   }
 
   String? get _calculatedWinner {
@@ -175,10 +217,12 @@ class _OfficialScorepadScreenState
       onWillPop: _handleWillPop,
       child: Scaffold(
         backgroundColor: AppTheme.voidBackground,
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
-          backgroundColor: AppTheme.voidBackground,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           elevation: 0,
-          flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.referee),
+          scrolledUnderElevation: 0,
           leading: CrystalBackButton(
             onPressed: () async {
               if (await _handleWillPop()) {
@@ -276,11 +320,13 @@ class _OfficialScorepadScreenState
                   _buildOperationalStatusBanner(),
 
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 12.0),
-                  child: Column(
+                child: CrystalVaporDissolve(
+                  bottomMargin: 8.0,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                        16.0, 150.0, 16.0, 120.0),
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // PART 1 — OFFICIAL MATCH CONTEXT HEADER
@@ -352,6 +398,7 @@ class _OfficialScorepadScreenState
                   ),
                 ),
               ),
+              ),
 
               // PART 15 — PRIMARY CERTIFICATION ACTION BAR
               _buildCertificationBottomBar(athleteAName, athleteBName),
@@ -372,9 +419,9 @@ class _OfficialScorepadScreenState
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: const BoxDecoration(
-          color: AppTheme.glassSurface,
+          color: Colors.transparent,
           border: Border(
-            bottom: BorderSide(color: AppTheme.borderTitanium, width: 1),
+            bottom: BorderSide(color: Color(0x38FFFFFF), width: 1),
           ),
         ),
         child: const Row(
@@ -409,7 +456,10 @@ class _OfficialScorepadScreenState
         if (_isOffline)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: AppTheme.warning.withValues(alpha: 0.2),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              border: Border(bottom: BorderSide(color: Color(0x73D4AF37), width: 1)),
+            ),
             child: const Row(
               children: [
                 Icon(Icons.wifi_off, color: AppTheme.warning, size: 16),
@@ -430,7 +480,10 @@ class _OfficialScorepadScreenState
         if (_hasConcurrentConflict)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: AppTheme.error.withValues(alpha: 0.25),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              border: Border(bottom: BorderSide(color: Color(0x80E23B3B), width: 1)),
+            ),
             child: Row(
               children: [
                 const Icon(Icons.warning_amber_rounded,
@@ -476,14 +529,8 @@ class _OfficialScorepadScreenState
 
     return ElevatedActionCard(
       padding: const EdgeInsets.all(14),
-      borderColor: AppTheme.goldPrimary.withValues(alpha: 0.4),
-      boxShadow: [
-        BoxShadow(
-          color: AppTheme.goldPrimary.withValues(alpha: 0.08),
-          blurRadius: 16,
-          spreadRadius: 1,
-        ),
-      ],
+      borderColor: const Color(0x73D4AF37),
+      boxShadow: const [],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -496,10 +543,10 @@ class _OfficialScorepadScreenState
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
+                          color: const Color(0x73D4AF37)),
                     ),
                     child: Text(
                       table.toString().toUpperCase(),
@@ -551,9 +598,9 @@ class _OfficialScorepadScreenState
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.surface,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(color: const Color(0x80E23B3B)),
                 ),
                 child: Text(
                   'Best of $_maxRounds',
@@ -622,9 +669,9 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: chipColor.withValues(alpha: 0.15),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: chipColor.withValues(alpha: 0.4)),
+        border: Border.all(color: chipColor.withValues(alpha: 0.65), width: 1.0),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -652,15 +699,15 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: _isAthletesVerified
-              ? AppTheme.borderTitanium
-              : AppTheme.warning.withValues(alpha: 0.6),
+              ? const Color(0x38FFFFFF)
+              : AppTheme.warning.withValues(alpha: 0.7),
+          width: 1.0,
         ),
-        boxShadow: [AppTheme.titaniumShadow()],
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,16 +734,13 @@ class _OfficialScorepadScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: (_isAthletesVerified
-                            ? AppTheme.success
-                            : AppTheme.warning)
-                        .withValues(alpha: 0.15),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: (_isAthletesVerified
                               ? AppTheme.success
                               : AppTheme.warning)
-                          .withValues(alpha: 0.4),
+                          .withValues(alpha: 0.65),
                     ),
                   ),
                   child: Row(
@@ -736,9 +780,15 @@ class _OfficialScorepadScreenState
               Expanded(
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
+                      ),
+                      alignment: Alignment.center,
                       child: const Text('MA',
                           style: TextStyle(
                               color: AppTheme.goldPrimary,
@@ -795,9 +845,15 @@ class _OfficialScorepadScreenState
               Expanded(
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppTheme.primaryAccent.withValues(alpha: 0.2),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0x80E23B3B), width: 1.0),
+                      ),
+                      alignment: Alignment.center,
                       child: const Text('TK',
                           style: TextStyle(
                               color: AppTheme.primaryAccent,
@@ -852,11 +908,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,12 +959,11 @@ class _OfficialScorepadScreenState
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.goldPrimary
-              : AppTheme.glassSurface,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+            color: isSelected ? const Color(0x73D4AF37) : const Color(0x2EFFFFFF),
+            width: isSelected ? 1.2 : 1.0,
           ),
         ),
         child: Row(
@@ -917,13 +971,13 @@ class _OfficialScorepadScreenState
             Icon(
               icon,
               size: 14,
-              color: isSelected ? AppTheme.background : AppTheme.textSecondary,
+              color: isSelected ? AppTheme.goldPrimary : AppTheme.textSecondary,
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? AppTheme.background : AppTheme.textSecondary,
+                color: isSelected ? AppTheme.goldPrimary : AppTheme.textSecondary,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
@@ -938,14 +992,18 @@ class _OfficialScorepadScreenState
   // PART 4: ROUND SCOREPAD (MAIN INTERACTION)
   // ==========================================
   Widget _buildRoundScorepad(String nameA, String nameB) {
+    final decidingRound = _decidingRound;
+    final winnerDisplayName = _scoreA >= _targetWins
+        ? nameA
+        : (_scoreB >= _targetWins ? nameB : null);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -965,30 +1023,52 @@ class _OfficialScorepadScreenState
               ),
               Row(
                 children: [
-                  const Text('Format: ',
-                      style: TextStyle(color: AppTheme.textMuted, fontSize: 10)),
+                  const Text(
+                    'Format: ',
+                    style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
+                  ),
                   DropdownButton<int>(
                     value: _maxRounds,
-                    dropdownColor: AppTheme.surface,
+                    dropdownColor: const Color(0xFF070A11),
                     underline: const SizedBox.shrink(),
                     isDense: true,
                     items: const [
                       DropdownMenuItem(
-                          value: 3,
-                          child: Text('Best of 3',
-                              style: TextStyle(
-                                  color: AppTheme.textPrimary, fontSize: 10))),
+                        value: 1,
+                        child: Text(
+                          'Best of 1 (First to 1)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
                       DropdownMenuItem(
-                          value: 5,
-                          child: Text('Best of 5',
-                              style: TextStyle(
-                                  color: AppTheme.textPrimary, fontSize: 10))),
+                        value: 3,
+                        child: Text(
+                          'Best of 3 (First to 2)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 5,
+                        child: Text(
+                          'Best of 5 (First to 3)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 7,
+                        child: Text(
+                          'Best of 7 (First to 4)',
+                          style: TextStyle(color: AppTheme.textPrimary, fontSize: 10),
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
+                        HapticFeedback.selectionClick();
                         setState(() {
                           _maxRounds = val;
-                          _targetWins = val == 3 ? 2 : 3;
+                          _targetWins = (val ~/ 2) + 1;
+                          _pruneRoundsAfterDecision();
                         });
                       }
                     },
@@ -1003,9 +1083,12 @@ class _OfficialScorepadScreenState
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: AppTheme.glassSurface,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.borderTitanium),
+              border: Border.all(
+                color: _isMatchComplete ? const Color(0x99D4AF37) : const Color(0x38FFFFFF),
+                width: _isMatchComplete ? 1.2 : 1.0,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1032,12 +1115,26 @@ class _OfficialScorepadScreenState
                     ),
                   ],
                 ),
-                const Text(
-                  '—',
-                  style: TextStyle(
-                      color: AppTheme.textMuted,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300),
+                Column(
+                  children: [
+                    const Text(
+                      '—',
+                      style: TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    Text(
+                      'FIRST TO $_targetWins',
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
                 ),
                 Column(
                   children: [
@@ -1064,6 +1161,72 @@ class _OfficialScorepadScreenState
               ],
             ),
           ),
+
+          if (_isMatchComplete && winnerDisplayName != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0x26D4AF37),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.goldPrimary, width: 1.0),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppTheme.goldPrimary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${winnerDisplayName.toUpperCase()} WINS BOUT!',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                        Text(
+                          'Final Score: $_scoreA — $_scoreB • Decided in Round ${decidingRound ?? _maxRounds} (Best of $_maxRounds)',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (decidingRound != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        setState(() {
+                          _roundWinners[decidingRound] = null;
+                          _pruneRoundsAfterDecision();
+                        });
+                      },
+                      icon: const Icon(Icons.undo_rounded, size: 14, color: AppTheme.goldPrimary),
+                      label: const Text(
+                        'UNDO',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 14),
 
           // ROUND BY ROUND CARDS
@@ -1074,132 +1237,141 @@ class _OfficialScorepadScreenState
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, idx) {
               final rNum = idx + 1;
-              final winner = _roundWinners[rNum];
+              final isLockedByDecision = decidingRound != null && rNum > decidingRound;
+              final winner = isLockedByDecision ? null : _roundWinners[rNum];
 
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppTheme.glassSurface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: winner == 'A'
-                        ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-                        : winner == 'B'
-                            ? AppTheme.primaryAccent.withValues(alpha: 0.65)
-                            : AppTheme.borderTitanium,
+              return Opacity(
+                opacity: isLockedByDecision ? 0.45 : 1.0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: winner == 'A'
+                          ? const Color(0x73D4AF37)
+                          : winner == 'B'
+                              ? const Color(0x80E23B3B)
+                              : const Color(0x2EFFFFFF),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: AppTheme.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.border),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0x38FFFFFF)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'R$rNum',
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Center(
+                      const SizedBox(width: 10),
+                      Expanded(
                         child: Text(
-                          'R$rNum',
-                          style: const TextStyle(
-                            color: AppTheme.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                          isLockedByDecision
+                              ? 'NOT CONTESTED / MATCH DECIDED'
+                              : (winner == 'A'
+                                  ? '$nameA WINS (Pinfall)'
+                                  : winner == 'B'
+                                      ? '$nameB WINS (Pinfall)'
+                                      : 'Round $rNum Pending Decision'),
+                          style: TextStyle(
+                            color: isLockedByDecision
+                                ? AppTheme.textMuted
+                                : (winner != null ? AppTheme.textPrimary : AppTheme.textMuted),
+                            fontWeight: winner != null ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 11,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        winner == 'A'
-                            ? '$nameA WINS (Pinfall)'
-                            : winner == 'B'
-                                ? '$nameB WINS (Pinfall)'
-                                : 'Round $rNum Pending Decision',
-                        style: TextStyle(
-                          color: winner != null
-                              ? AppTheme.textPrimary
-                              : AppTheme.textMuted,
-                          fontWeight: winner != null
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 11,
-                        ),
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: isLockedByDecision
+                                ? null
+                                : () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() {
+                                      _roundWinners[rNum] =
+                                          _roundWinners[rNum] == 'A' ? null : 'A';
+                                      _pruneRoundsAfterDecision();
+                                    });
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: winner == 'A'
+                                      ? const Color(0x73D4AF37)
+                                      : const Color(0x2EFFFFFF),
+                                  width: winner == 'A' ? 1.2 : 1.0,
+                                ),
+                              ),
+                              child: Text(
+                                'A WINS',
+                                style: TextStyle(
+                                  color: winner == 'A'
+                                      ? AppTheme.goldPrimary
+                                      : AppTheme.textMuted,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          InkWell(
+                            onTap: isLockedByDecision
+                                ? null
+                                : () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() {
+                                      _roundWinners[rNum] =
+                                          _roundWinners[rNum] == 'B' ? null : 'B';
+                                      _pruneRoundsAfterDecision();
+                                    });
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: winner == 'B'
+                                      ? const Color(0x80E23B3B)
+                                      : const Color(0x2EFFFFFF),
+                                  width: winner == 'B' ? 1.2 : 1.0,
+                                ),
+                              ),
+                              child: Text(
+                                'B WINS',
+                                style: TextStyle(
+                                  color: winner == 'B'
+                                      ? AppTheme.primaryAccent
+                                      : AppTheme.textMuted,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _roundWinners[rNum] =
-                                _roundWinners[rNum] == 'A' ? null : 'A');
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: winner == 'A'
-                                  ? AppTheme.goldPrimary
-                                  : AppTheme.surface,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: winner == 'A'
-                                    ? AppTheme.goldPrimary
-                                    : AppTheme.border,
-                              ),
-                            ),
-                            child: Text(
-                              'A WINS',
-                              style: TextStyle(
-                                color: winner == 'A'
-                                    ? AppTheme.background
-                                    : AppTheme.textMuted,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _roundWinners[rNum] =
-                                _roundWinners[rNum] == 'B' ? null : 'B');
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: winner == 'B'
-                                  ? AppTheme.primaryAccent
-                                  : AppTheme.surface,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: winner == 'B'
-                                    ? AppTheme.primaryAccent
-                                    : AppTheme.border,
-                              ),
-                            ),
-                            child: Text(
-                              'B WINS',
-                              style: TextStyle(
-                                color: winner == 'B'
-                                    ? AppTheme.textPrimary
-                                    : AppTheme.textMuted,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -1216,11 +1388,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1251,9 +1422,9 @@ class _OfficialScorepadScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.warning.withValues(alpha: 0.15),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.warning.withValues(alpha: 0.4)),
+                    border: Border.all(color: const Color(0x73D4AF37)),
                   ),
                   child: const Row(
                     children: [
@@ -1294,9 +1465,9 @@ class _OfficialScorepadScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppTheme.elevatedSurface,
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: const Color(0x2EFFFFFF)),
                   ),
                   child: Row(
                     children: [
@@ -1304,8 +1475,9 @@ class _OfficialScorepadScreenState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppTheme.warning.withValues(alpha: 0.2),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0x73D4AF37)),
                         ),
                         child: Text(
                           'R${f['round']}',
@@ -1394,11 +1566,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1439,9 +1610,9 @@ class _OfficialScorepadScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.info.withValues(alpha: 0.15),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppTheme.info.withValues(alpha: 0.4)),
+                    border: Border.all(color: const Color(0x6638BDF8)),
                   ),
                   child: const Row(
                     children: [
@@ -1482,9 +1653,9 @@ class _OfficialScorepadScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.elevatedSurface,
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: const Color(0x2EFFFFFF)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1519,11 +1690,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1597,11 +1767,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1622,7 +1791,7 @@ class _OfficialScorepadScreenState
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _timelineEvents.length.clamp(0, 5),
             separatorBuilder: (_, __) =>
-                const Divider(color: AppTheme.border, height: 10),
+                const Divider(color: Color(0x22FFFFFF), height: 10),
             itemBuilder: (context, idx) {
               final ev = _timelineEvents[idx];
               return Row(
@@ -1663,15 +1832,15 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: winner != null
-              ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-              : AppTheme.borderTitanium,
+              ? const Color(0x73D4AF37)
+              : const Color(0x38FFFFFF),
+          width: 1.0,
         ),
-        boxShadow: [AppTheme.titaniumShadow()],
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1716,11 +1885,13 @@ class _OfficialScorepadScreenState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (winner != null
-                          ? AppTheme.goldPrimary
-                          : AppTheme.textMuted)
-                      .withValues(alpha: 0.2),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: winner != null
+                        ? const Color(0x73D4AF37)
+                        : const Color(0x38FFFFFF),
+                  ),
                 ),
                 child: Text(
                   winner != null ? 'OFFICIAL WIN' : 'INCOMPLETE',
@@ -1747,11 +1918,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1792,10 +1962,10 @@ class _OfficialScorepadScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryAccent.withValues(alpha: 0.15),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                        color: AppTheme.primaryAccent.withValues(alpha: 0.4)),
+                        color: const Color(0x80E23B3B)),
                   ),
                   child: const Row(
                     children: [
@@ -1827,9 +1997,9 @@ class _OfficialScorepadScreenState
               return Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.elevatedSurface,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(color: const Color(0x2EFFFFFF)),
                 ),
                 child: Row(
                   children: [
@@ -1875,15 +2045,15 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: errors.isEmpty
-              ? AppTheme.success.withValues(alpha: 0.55)
-              : AppTheme.warning.withValues(alpha: 0.55),
+              ? const Color(0x6610B981)
+              : const Color(0x73D4AF37),
+          width: 1.0,
         ),
-        boxShadow: [AppTheme.titaniumShadow()],
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1959,19 +2129,19 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.goldPrimary.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
             ),
             child: const Icon(Icons.gavel, color: AppTheme.goldLight, size: 20),
           ),
@@ -1995,8 +2165,9 @@ class _OfficialScorepadScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0x73D4AF37)),
                       ),
                       child: const Text(
                         'Class A Chief Referee',
@@ -2026,11 +2197,10 @@ class _OfficialScorepadScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2093,23 +2263,24 @@ class _OfficialScorepadScreenState
     if (_isCertified) {
       return Container(
         padding: const EdgeInsets.all(16),
-        color: AppTheme.glassSurface,
+        color: Colors.transparent,
         child: SizedBox(
           width: double.infinity,
           height: 48,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.success,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              side: const BorderSide(color: Color(0x6610B981), width: 1.2),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
             onPressed: () => context.pop(),
-            icon: const Icon(Icons.check, color: AppTheme.textPrimary),
+            icon: const Icon(Icons.check, color: AppTheme.success),
             label: const Text(
               'RETURN TO ASSIGNED MATCHES',
               style: TextStyle(
-                color: AppTheme.textPrimary,
+                color: AppTheme.success,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
                 fontFamily: AppTheme.fontDisplay,
@@ -2124,11 +2295,10 @@ class _OfficialScorepadScreenState
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        border: const Border(top: BorderSide(color: AppTheme.borderTitanium)),
-        boxShadow: [AppTheme.titaniumShadow()],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
+        border: Border(top: BorderSide(color: Color(0x38FFFFFF))),
+        boxShadow: [],
       ),
       child: _isSubmitting
           ? const Center(
@@ -2136,17 +2306,17 @@ class _OfficialScorepadScreenState
           : SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      canCertify ? AppTheme.goldPrimary : AppTheme.surface,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                   side: BorderSide(
                     color: canCertify
-                        ? AppTheme.goldPrimary
-                        : AppTheme.border,
+                        ? const Color(0x73D4AF37)
+                        : const Color(0x38FFFFFF),
+                    width: canCertify ? 1.2 : 1.0,
                   ),
                 ),
                 onPressed: canCertify
@@ -2163,7 +2333,7 @@ class _OfficialScorepadScreenState
                 icon: Icon(
                   canCertify ? Icons.verified : Icons.lock,
                   color: canCertify
-                      ? AppTheme.background
+                      ? AppTheme.goldPrimary
                       : AppTheme.textMuted,
                   size: 18,
                 ),
@@ -2173,7 +2343,7 @@ class _OfficialScorepadScreenState
                       : 'CERTIFICATION BLOCKED',
                   style: TextStyle(
                     color: canCertify
-                        ? AppTheme.background
+                        ? AppTheme.goldPrimary
                         : AppTheme.textMuted,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -2220,9 +2390,9 @@ class _OfficialScorepadScreenState
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0x8012192A),
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0x2EFFFFFF)),
+                      border: Border.all(color: const Color(0x38FFFFFF)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2332,10 +2502,10 @@ class _OfficialScorepadScreenState
     final shouldLeave = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.glassSurface,
+        backgroundColor: const Color(0xFF070A11),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppTheme.goldPrimary),
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0x73D4AF37)),
         ),
         title: const Text(
           'UNSAVED OFFICIAL DATA',
@@ -2355,13 +2525,14 @@ class _OfficialScorepadScreenState
             child: const Text('Continue Editing',
                 style: TextStyle(color: AppTheme.textMuted)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.goldPrimary,
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              side: const BorderSide(color: Color(0x73D4AF37)),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Save Draft & Exit',
-                style: TextStyle(color: AppTheme.background)),
+                style: TextStyle(color: AppTheme.goldPrimary)),
           ),
         ],
       ),

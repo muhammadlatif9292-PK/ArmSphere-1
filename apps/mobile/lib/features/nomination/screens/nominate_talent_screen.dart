@@ -77,6 +77,12 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
   Widget build(BuildContext context) {
     return StickyFormScaffold(
       stageDomain: ArmSphereStageDomain.rankings,
+      contentPadding: const EdgeInsets.fromLTRB(
+        AppTheme.space16,
+        160,
+        AppTheme.space16,
+        120,
+      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: const CrystalBackButton(fallbackRoute: '/nominations/mine'),

@@ -31,6 +31,33 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     return response;
   }
 
+  Future<Map<String, dynamic>> createEvent({
+    required Map<String, dynamic> data,
+    bool publishImmediately = true,
+    List<String> initialTables = const [],
+  }) async {
+    final repo = ref.read(tournamentRepositoryProvider);
+    var created = await repo.createEvent(data: data);
+    final eventId = created['id']?.toString() ?? '';
+    if (eventId.isNotEmpty) {
+      if (publishImmediately) {
+        try {
+          created = await repo.publishEvent(eventId: eventId);
+        } catch (_) {}
+      }
+      for (final tableName in initialTables) {
+        if (tableName.trim().length >= 2) {
+          try {
+            await repo.createTable(name: tableName.trim(), eventId: eventId);
+          } catch (_) {}
+        }
+      }
+      _refreshEventScopes(eventId);
+    }
+    ref.invalidateSelf();
+    return created;
+  }
+
   Future<bool> patchEvent({
     required String eventId,
     required Map<String, dynamic> data,

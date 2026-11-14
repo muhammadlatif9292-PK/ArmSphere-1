@@ -14,10 +14,12 @@ import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/messaging_provider.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/crystal_toast.dart';
+import '../../../core/widgets/championship_name_marquee.dart';
 import 'athlete_screens.dart' show ArmSwitchEloCard;
 
 class PublicAthleteProfileScreen extends ConsumerWidget {
@@ -50,10 +52,12 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: const CrystalBackButton(),
         title: const Text('Athlete Dossier'),
         actions: const [
@@ -66,102 +70,117 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
           ),
-          profileAsync.when(
-            loading: () => const CrystalScreenLoadingView(
-              itemCount: 4,
-              cardHeight: 112,
-            ),
-            error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: ElevatedActionCard(
-              padding: const EdgeInsets.all(AppTheme.space24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.person_off_outlined, size: 44, color: AppTheme.error),
-                  const SizedBox(height: AppTheme.space12),
-                  Text('Profile unavailable', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: AppTheme.space6),
-                  Text(
-                    '$err',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(height: AppTheme.space16),
-                  ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      ref.invalidate(publicAthleteProfileProvider(athleteId));
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        data: (p) {
-          final displayName = (p['displayName']?.toString().isNotEmpty ?? false)
-              ? p['displayName'].toString()
-              : 'Athlete';
-          final photo = p['profilePhoto']?.toString() ?? '';
-          final location = [
-            p['city']?.toString(),
-            p['province']?.toString(),
-          ].where((v) => v != null && v.isNotEmpty).join(', ');
-          final weightClass = p['weightClass']?.toString();
-          final dominantArm = p['dominantArm']?.toString();
-          final clubName = p['club'] is Map ? p['club']['name']?.toString() : null;
-          final bio = p['biography']?.toString();
-          final biometrics = p['biometrics'] is Map<String, dynamic>
-              ? p['biometrics'] as Map<String, dynamic>
-              : const <String, dynamic>{};
-          final weightVal = p['weight'] ?? p['weightKg'] ?? biometrics['weightKg'];
-          final heightVal = p['height'] ?? p['heightCm'] ?? biometrics['heightCm'];
-          final reachVal = p['reach'] ?? p['reachCm'] ?? biometrics['reachCm'];
-          final forearmVal = p['forearmCircumference'] ?? biometrics['forearmCircumference'];
-          final bicepVal = p['bicepCircumference'] ?? biometrics['bicepCircumference'];
-          final handVal = p['handLength'] ?? biometrics['handLength'] ?? biometrics['handWidth'];
-
-          final followersCount = followersAsync.value?.length ??
-              (p['followersCount'] as num?)?.toInt() ??
-              0;
-          final followingCount = followingAsync.value?.length ??
-              (p['followingCount'] as num?)?.toInt() ??
-              0;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header with 2px Role-Coded Avatar Ring
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppTheme.goldPrimary, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.2),
-                              blurRadius: 16,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: ArmSphereImage.avatar(
-                          imageUrl: photo.isNotEmpty ? photo : null,
-                          initial: displayName,
-                          size: 96,
-                          fallbackAsset: ArmSphereAssets.defaultAvatar,
-                          semanticLabel: 'Athlete profile photo for $displayName',
-                        ),
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: 12.0,
+              child: profileAsync.when(
+                loading: () => const CrystalScreenLoadingView(
+                  itemCount: 4,
+                  cardHeight: 112,
+                ),
+                error: (err, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppTheme.space24),
+                    child: ElevatedActionCard(
+                      padding: const EdgeInsets.all(AppTheme.space24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_off_outlined, size: 44, color: AppTheme.error),
+                          const SizedBox(height: AppTheme.space12),
+                          Text('Profile unavailable', style: theme.textTheme.titleSmall),
+                          const SizedBox(height: AppTheme.space6),
+                          Text(
+                            '$err',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          ),
+                          const SizedBox(height: AppTheme.space16),
+                          ElevatedButton(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              ref.invalidate(publicAthleteProfileProvider(athleteId));
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AppTheme.space16),
+                    ),
+                  ),
+                ),
+                data: (p) {
+                  final displayName = (p['displayName']?.toString().isNotEmpty ?? false)
+                      ? p['displayName'].toString()
+                      : 'Athlete';
+                  final photo = p['profilePhoto']?.toString() ?? '';
+                  final location = [
+                    p['city']?.toString(),
+                    p['province']?.toString(),
+                  ].where((v) => v != null && v.isNotEmpty).join(', ');
+                  final weightClass = p['weightClass']?.toString();
+                  final dominantArm = p['dominantArm']?.toString();
+                  final clubName = p['club'] is Map ? p['club']['name']?.toString() : null;
+                  final bio = p['biography']?.toString();
+                  final biometrics = p['biometrics'] is Map<String, dynamic>
+                      ? p['biometrics'] as Map<String, dynamic>
+                      : const <String, dynamic>{};
+                  final weightVal = p['weight'] ?? p['weightKg'] ?? biometrics['weightKg'];
+                  final heightVal = p['height'] ?? p['heightCm'] ?? biometrics['heightCm'];
+                  final reachVal = p['reach'] ?? p['reachCm'] ?? biometrics['reachCm'];
+                  final forearmVal = p['forearmCircumference'] ?? biometrics['forearmCircumference'];
+                  final bicepVal = p['bicepCircumference'] ?? biometrics['bicepCircumference'];
+                  final handVal = p['handLength'] ?? biometrics['handLength'] ?? biometrics['handWidth'];
+
+                  final followersCount = followersAsync.value?.length ??
+                      (p['followersCount'] as num?)?.toInt() ??
+                      0;
+                  final followingCount = followingAsync.value?.length ??
+                      (p['followingCount'] as num?)?.toInt() ??
+                      0;
+                  final resolvedProfileId = p['id']?.toString() ?? athleteId;
+                  final matchesAsync = ref.watch(athleteMatchesProvider(resolvedProfileId));
+
+                  return SingleChildScrollView(
+                    key: PageStorageKey<String>(
+                        'public_profile_scroll_$resolvedProfileId'),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.space16,
+                      12,
+                      AppTheme.space16,
+                      36,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header with 2px Role-Coded Avatar Ring crowned by the hanging 24k gold medals
+                        Center(
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 36),
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.transparent,
+                                  border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: ArmSphereImage.avatar(
+                                  imageUrl: photo.isNotEmpty ? photo : null,
+                                  initial: displayName,
+                                  size: 104,
+                                  fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                  semanticLabel: 'Athlete profile photo for $displayName',
+                                ),
+                              ),
+                              const SizedBox(height: AppTheme.space16),
                       Text(
                         displayName,
                         style: const TextStyle(
@@ -232,9 +251,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 vertical: AppTheme.space8,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.cardSurface,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                border: Border.all(color: AppTheme.cardBorder),
+                                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -276,9 +295,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                 vertical: AppTheme.space8,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.cardSurface,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                border: Border.all(color: AppTheme.cardBorder),
+                                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -428,7 +447,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                 ArmSwitchEloCard(profileData: p),
                 const SizedBox(height: AppTheme.space24),
 
-                // Specs — Biometrics & Specifications
+                // Specs — Biometrics & Specifications Horizontal Telemetry Carousel
                 Text(
                   'BIOMETRICS & SPECIFICATIONS',
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -438,6 +457,8 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppTheme.space10),
+                BiometricsHorizontalCarousel(profile: p),
+                const SizedBox(height: AppTheme.space12),
                 ElevatedActionCard(
                   padding: const EdgeInsets.all(AppTheme.space16),
                   child: Column(
@@ -446,20 +467,20 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         label: 'Weight Category',
                         value: (weightClass == null || weightClass.isEmpty) ? '—' : weightClass,
                       ),
-                      const Divider(height: 20, color: AppTheme.cardBorder),
+                      const Divider(height: 20, color: Color(0x22FFFFFF)),
                       _SpecRow(
                         label: 'Dominant Arm',
                         value: (dominantArm == null || dominantArm.isEmpty)
                             ? '—'
                             : (dominantArm == 'LEFT' ? 'Left Arm' : 'Right Arm'),
                       ),
-                      const Divider(height: 20, color: AppTheme.cardBorder),
+                      const Divider(height: 20, color: Color(0x22FFFFFF)),
                       _SpecRow(
                         label: 'Competition Weight',
                         value: weightVal != null ? '$weightVal kg' : '—',
                         isTabular: true,
                       ),
-                      const Divider(height: 20, color: AppTheme.cardBorder),
+                      const Divider(height: 20, color: Color(0x22FFFFFF)),
                       _SpecRow(
                         label: 'Height / Wingspan',
                         value: (heightVal != null || reachVal != null)
@@ -468,7 +489,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                         isTabular: true,
                       ),
                       if (forearmVal != null || bicepVal != null || handVal != null) ...[
-                        const Divider(height: 20, color: AppTheme.cardBorder),
+                        const Divider(height: 20, color: Color(0x22FFFFFF)),
                         _SpecRow(
                           label: 'Forearm / Bicep / Hand',
                           value: [
@@ -577,6 +598,178 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                   ),
                 ),
 
+                const SizedBox(height: AppTheme.space24),
+                Text(
+                  'OFFICIAL MATCH HISTORY',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space10),
+                matchesAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  error: (err, _) => ElevatedActionCard(
+                    padding: const EdgeInsets.all(AppTheme.space16),
+                    child: Text(
+                      'Match history unavailable: $err',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                    ),
+                  ),
+                  data: (matches) {
+                    if (matches.isEmpty) {
+                      return ElevatedActionCard(
+                        padding: const EdgeInsets.all(AppTheme.space16),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.sports_kabaddi_outlined, color: AppTheme.textMuted, size: 20),
+                            SizedBox(width: AppTheme.space12),
+                            Expanded(
+                              child: Text(
+                                'No verified sanctioned bouts recorded yet.',
+                                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (int idx = 0; idx < matches.length; idx++) ...[
+                          if (idx > 0) const SizedBox(height: AppTheme.space8),
+                          Builder(
+                            builder: (ctx) {
+                              final m = matches[idx];
+                              final challengerId = m['challengerId']?.toString() ?? m['athleteAId']?.toString() ?? '';
+                              final isChallenger = challengerId == resolvedProfileId || challengerId == athleteId;
+                              final winnerId = m['winnerId']?.toString() ?? '';
+                              final isWin = winnerId.isNotEmpty &&
+                                  (winnerId == resolvedProfileId || winnerId == athleteId);
+                              final opponentName = isChallenger
+                                  ? (m['opponentName'] ?? m['athleteBName'] ?? 'Opponent').toString()
+                                  : (m['challengerName'] ?? m['athleteAName'] ?? 'Challenger').toString();
+                              final armLabel = (m['arm'] ?? 'RIGHT').toString().toUpperCase();
+                              final rawScoreLine = (m['scoreLine'] ?? '').toString().trim();
+                              final parts = rawScoreLine.split(RegExp(r'[\s\-:]+'));
+                              final s0 = m['scoreA']?.toString() ?? (parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : '0');
+                              final s1 = m['scoreB']?.toString() ?? (parts.length > 1 && parts[1].isNotEmpty ? parts[1] : '0');
+                              final formattedScore = isChallenger ? '$s0 — $s1' : '$s1 — $s0';
+                              final rawDelta = m['eloDelta'];
+                              final int? eloDeltaVal = rawDelta is num
+                                  ? rawDelta.toInt()
+                                  : int.tryParse(rawDelta?.toString() ?? '');
+                              final String? eloDeltaLabel = eloDeltaVal != null
+                                  ? '${eloDeltaVal >= 0 ? '+' : ''}$eloDeltaVal ELO'
+                                  : null;
+
+                              return ElevatedActionCard(
+                                slashVariant: CrystalSlashVariant.sequentialRow(idx),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.space14,
+                                  vertical: AppTheme.space12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 34,
+                                      height: 34,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: (isWin ? AppTheme.success : AppTheme.error).withValues(alpha: 0.14),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isWin ? AppTheme.success : AppTheme.error,
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        isWin ? 'WIN' : 'LOSS',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 9.5,
+                                          color: isWin ? AppTheme.success : AppTheme.error,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppTheme.space12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          ChampionshipNameMarquee(
+                                            name: 'vs. $opponentName',
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            [
+                                              '$armLabel ARM',
+                                              'VERIFIED BOUT',
+                                              if (eloDeltaLabel != null) eloDeltaLabel,
+                                            ].join(' • '),
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.goldPrimary,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isWin ? const Color(0x80D4AF37) : const Color(0x80E23B3B),
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        formattedScore,
+                                        style: const TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
+                                          color: AppTheme.textPure,
+                                          fontFeatures: [FontFeature.tabularFigures()],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+
                 if (bio != null && bio.isNotEmpty) ...[
                   const SizedBox(height: AppTheme.space24),
                   Text(
@@ -600,7 +793,9 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
               ],
             ),
           );
-            },
+                },
+              ),
+            ),
           ),
         ],
       ),

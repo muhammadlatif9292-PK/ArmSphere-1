@@ -514,7 +514,34 @@ class MatchRepository extends BaseRepository {
     // If offline, enqueue transaction to offline sync manager
     try {
       final response = await dioClient.dio.post('/matches', data: payload, cancelToken: cancelToken);
-      return Map<String, dynamic>.from(response.data);
+      final rawMap = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      final dataMap = rawMap['data'] is Map
+          ? Map<String, dynamic>.from(rawMap['data'] as Map)
+          : rawMap;
+      final matchId = dataMap['id']?.toString();
+      if (matchId != null && matchId.isNotEmpty) {
+        try {
+          await dioClient.dio.post('/matches/$matchId/verify', cancelToken: cancelToken);
+        } catch (_) {
+          // If caller role or jurisdiction defers verification, preserve the created match record cleanly.
+        }
+      }
+      final challengerId = payload['challengerId']?.toString();
+      final opponentId = payload['opponentId']?.toString();
+      await hiveStorage.evictCache('athlete_profile_self');
+      await hiveStorage.evictCache('admin_matches_list');
+      await hiveStorage.evictCache('notifications_list');
+      if (challengerId != null && challengerId.isNotEmpty) {
+        await hiveStorage.evictCache('athlete_profile_$challengerId');
+        await hiveStorage.evictCache('match_history_$challengerId');
+      }
+      if (opponentId != null && opponentId.isNotEmpty) {
+        await hiveStorage.evictCache('athlete_profile_$opponentId');
+        await hiveStorage.evictCache('match_history_$opponentId');
+      }
+      return rawMap;
     } on DioException catch (e) {
       if (e.error is OfflineException || e.type == DioExceptionType.connectionError) {
         await hiveStorage.enqueueAction(
@@ -645,31 +672,52 @@ class TournamentRepository extends BaseRepository {
     );
   }
 
+  Future<Map<String, dynamic>> createEvent({
+    required Map<String, dynamic> data,
+    CancelToken? cancelToken,
+  }) async {
+    final result = await executeRequest(
+      cacheKey: 'event_create_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post('/tournaments/events', data: data, cancelToken: token),
+      parse: _unwrapMap,
+    );
+    await hiveStorage.evictCache('tournaments_list');
+    return result;
+  }
+
   Future<Map<String, dynamic>> patchEvent({
     required String eventId,
     required Map<String, dynamic> data,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
+    final result = await executeRequest(
       cacheKey: 'event_patch_$eventId',
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.patch('/tournaments/events/$eventId', data: data, cancelToken: token),
       parse: _unwrapMap,
     );
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
+    return result;
   }
 
   Future<Map<String, dynamic>> publishEvent({
     required String eventId,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
+    final result = await executeRequest(
       cacheKey: 'event_publish_$eventId',
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/events/$eventId/publish', cancelToken: token),
       parse: _unwrapMap,
     );
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
+    return result;
   }
 
   Future<Map<String, dynamic>> cancelEvent({
@@ -677,7 +725,7 @@ class TournamentRepository extends BaseRepository {
     String? reason,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
+    final result = await executeRequest(
       cacheKey: 'event_cancel_$eventId',
       cancelToken: cancelToken,
       isMutation: true,
@@ -688,19 +736,25 @@ class TournamentRepository extends BaseRepository {
       ),
       parse: _unwrapMap,
     );
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
+    return result;
   }
 
   Future<Map<String, dynamic>> completeEvent({
     required String eventId,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
+    final result = await executeRequest(
       cacheKey: 'event_complete_$eventId',
       cancelToken: cancelToken,
       isMutation: true,
       request: (token) => dioClient.dio.post('/tournaments/events/$eventId/complete', cancelToken: token),
       parse: _unwrapMap,
     );
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
+    return result;
   }
 
   Future<Map<String, dynamic>> confirmManualPayment({

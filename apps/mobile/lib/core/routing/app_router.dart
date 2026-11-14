@@ -187,6 +187,24 @@ class RoleAwareProfileScreen extends ConsumerWidget {
   }
 }
 
+/// Navigator keys for the 5 persistent bottom-navigation shell branches.
+/// Used to deterministically pop any pushed sub-routes across all branches
+/// whenever the user switches active roles/personas.
+final List<GlobalKey<NavigatorState>> shellBranchNavigatorKeys =
+    List<GlobalKey<NavigatorState>>.generate(
+  5,
+  (index) => GlobalKey<NavigatorState>(debugLabel: 'shellBranch_$index'),
+);
+
+/// Pops all 5 shell branch navigators back to their root route (`isFirst`).
+void resetAllShellBranchStacks() {
+  for (final key in shellBranchNavigatorKeys) {
+    try {
+      key.currentState?.popUntil((route) => route.isFirst);
+    } catch (_) {}
+  }
+}
+
 /// Cold-start journey enforced by [redirect]:
 ///   splash → welcome → register/login → role intent → athlete onboarding → home
 ///
@@ -194,7 +212,15 @@ class RoleAwareProfileScreen extends ConsumerWidget {
 /// sign-in/out never rebuilds the route table itself.
 final routerProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = ValueNotifier<int>(0);
-  ref.listen(authProvider, (_, __) => refreshNotifier.value++);
+  String? lastActiveRole = ref.read(authProvider).activeRole?.toUpperCase();
+  ref.listen<AuthState>(authProvider, (previous, next) {
+    final nextRole = next.activeRole?.toUpperCase();
+    if (lastActiveRole != null && nextRole != null && lastActiveRole != nextRole) {
+      resetAllShellBranchStacks();
+    }
+    lastActiveRole = nextRole;
+    refreshNotifier.value++;
+  });
   ref.onDispose(refreshNotifier.dispose);
 
   final router = GoRouter(
@@ -382,12 +408,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final userRole = _resolveEffectiveUserRole(ref.read(authProvider));
           return MainShellScreen(
             navigationShell: navigationShell,
+            activeRole: userRole,
             isAdminModeOverride:
                 AdminPermissions.isAdminWorkspaceRole(userRole),
           );
         },
         branches: [
           StatefulShellBranch(
+            navigatorKey: shellBranchNavigatorKeys[0],
             routes: [
               GoRoute(
                 path: '/home',
@@ -397,6 +425,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: shellBranchNavigatorKeys[1],
             routes: [
               GoRoute(
                 path: '/discover',
@@ -406,6 +435,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: shellBranchNavigatorKeys[2],
             routes: [
               GoRoute(
                 path: '/tournaments',
@@ -415,6 +445,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: shellBranchNavigatorKeys[3],
             routes: [
               GoRoute(
                 path: '/community/feed',
@@ -424,6 +455,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: shellBranchNavigatorKeys[4],
             routes: [
               GoRoute(
                 path: '/athlete/profile',

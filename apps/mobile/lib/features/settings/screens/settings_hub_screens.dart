@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -17,10 +18,18 @@ class SettingsHubScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 0.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -34,135 +43,199 @@ class SettingsHubScreen extends ConsumerWidget {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
           ),
-          ListView(
-            padding: EdgeInsets.fromLTRB(
-              AppTheme.space16,
-              AppTheme.space16,
-              AppTheme.space16,
-              MainShellScope.isInsideShell(context)
-                  ? MainShellScope.bottomClearance(context, additionalPadding: 36)
-                  : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
-            ),
-        children: [
-          _sectionHeader(context, 'ACCOUNT'),
-          ElevatedActionCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _SettingsTile(
-                  icon: Icons.badge_outlined,
-                  title: 'Account Roles',
-                  subtitle: 'Manage verified roles and persona',
-                  onTap: () => context.push('/settings/roles'),
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  AppTheme.space16,
+                  AppTheme.space16,
+                  insideRootShell
+                      ? 28.0
+                      : kFloatingDockTotalHeight +
+                          MediaQuery.paddingOf(context).bottom +
+                          36,
                 ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                const BiometricSettingsTile(),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.shield_outlined,
-                  title: 'Security & Active Sessions',
-                  subtitle: 'Devices signed in and MFA',
-                  onTap: () => context.push('/session'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppTheme.space20),
+                children: [
+                  _sectionHeader(context, 'ACCOUNT'),
+                  ElevatedActionCard(
+                    padding: EdgeInsets.zero,
+                    enableSlashes: false,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(17),
+                      child: Column(
+                        children: [
+                          _SettingsTile(
+                            rowIndex: 0,
+                            icon: Icons.badge_outlined,
+                            title: 'Account Roles',
+                            onTap: () => context.push('/settings/roles'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          const BiometricSettingsTile(rowIndex: 1),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 2,
+                            icon: Icons.shield_outlined,
+                            title: 'Security & Active Sessions',
+                            onTap: () => context.push('/session'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space20),
 
-          _sectionHeader(context, 'PREFERENCES'),
-          ElevatedActionCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _SettingsTile(
-                  icon: Icons.notifications_outlined,
-                  title: 'Notifications',
-                  onTap: () => context.push('/notifications'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.payment,
-                  title: 'Payment Methods',
-                  onTap: () => context.push('/settings/payment-methods'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.confirmation_number_outlined,
-                  title: 'My Tickets & Passes',
-                  onTap: () => context.push('/settings/tickets'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.block_flipped,
-                  title: 'Blocked Users',
-                  onTap: () => context.push('/settings/blocked'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppTheme.space20),
+                  _sectionHeader(context, 'PREFERENCES'),
+                  ElevatedActionCard(
+                    padding: EdgeInsets.zero,
+                    enableSlashes: false,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(17),
+                      child: Column(
+                        children: [
+                          _SettingsTile(
+                            rowIndex: 3,
+                            icon: Icons.notifications_outlined,
+                            title: 'Notifications',
+                            onTap: () => context.push('/notifications'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 4,
+                            icon: Icons.payment,
+                            title: 'Payment Methods',
+                            onTap: () =>
+                                context.push('/settings/payment-methods'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 5,
+                            icon: Icons.confirmation_number_outlined,
+                            title: 'My Tickets & Passes',
+                            onTap: () => context.push('/settings/tickets'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 6,
+                            icon: Icons.block_flipped,
+                            title: 'Blocked Users',
+                            onTap: () => context.push('/settings/blocked'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space20),
 
-          _sectionHeader(context, 'SUPPORT & LEGAL'),
-          ElevatedActionCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _SettingsTile(
-                  icon: Icons.contact_support_outlined,
-                  title: 'Support Requests',
-                  subtitle: 'Contact Helpdesk & track inquiries',
-                  onTap: () => context.push('/support'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.description_outlined,
-                  title: 'Terms of Service',
-                  onTap: () => context.push('/settings/terms'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Privacy Policy',
-                  onTap: () => context.push('/settings/privacy'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppTheme.space20),
+                  _sectionHeader(context, 'SUPPORT & LEGAL'),
+                  ElevatedActionCard(
+                    padding: EdgeInsets.zero,
+                    enableSlashes: false,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(17),
+                      child: Column(
+                        children: [
+                          _SettingsTile(
+                            rowIndex: 7,
+                            icon: Icons.contact_support_outlined,
+                            title: 'Support Requests',
+                            onTap: () => context.push('/support'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 8,
+                            icon: Icons.description_outlined,
+                            title: 'Terms of Service',
+                            onTap: () => context.push('/settings/terms'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 9,
+                            icon: Icons.privacy_tip_outlined,
+                            title: 'Privacy Policy',
+                            onTap: () => context.push('/settings/privacy'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space20),
 
-          _sectionHeader(context, 'DANGER ZONE'),
-          ElevatedActionCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _SettingsTile(
-                  icon: Icons.delete_forever,
-                  iconColor: AppTheme.error,
-                  title: 'Delete Account',
-                  titleColor: AppTheme.error,
-                  subtitle: 'Permanently deactivate and anonymize your account',
-                  onTap: () => context.push('/settings/deletion'),
-                ),
-                const Divider(height: 1, color: AppTheme.cardBorder),
-                _SettingsTile(
-                  icon: Icons.logout,
-                  iconColor: AppTheme.error,
-                  title: 'Log Out',
-                  titleColor: AppTheme.error,
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    await ref.read(authProvider.notifier).logout();
-                    if (context.mounted) {
-                      context.go('/login');
-                    }
-                  },
-                ),
-              ],
+                  _sectionHeader(context, 'DANGER ZONE'),
+                  ElevatedActionCard(
+                    padding: EdgeInsets.zero,
+                    enableSlashes: false,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(17),
+                      child: Column(
+                        children: [
+                          _SettingsTile(
+                            rowIndex: 10,
+                            icon: Icons.delete_forever,
+                            iconColor: AppTheme.error,
+                            title: 'Delete Account',
+                            titleColor: AppTheme.error,
+                            onTap: () => context.push('/settings/deletion'),
+                          ),
+                          const Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0x22FFFFFF),
+                          ),
+                          _SettingsTile(
+                            rowIndex: 11,
+                            icon: Icons.logout,
+                            iconColor: AppTheme.error,
+                            title: 'Log Out',
+                            titleColor: AppTheme.error,
+                            onTap: () async {
+                              HapticFeedback.mediumImpact();
+                              await ref.read(authProvider.notifier).logout();
+                              if (context.mounted) {
+                                context.go('/login');
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space24),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: AppTheme.space24),
-        ],
-      ),
         ],
       ),
     );
@@ -194,9 +267,9 @@ class SettingsHubScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(AppTheme.space14),
                 decoration: BoxDecoration(
-                  color: const Color(0x8012192A),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x2EFFFFFF)),
+                  border: Border.all(color: const Color(0x38FFFFFF)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,6 +320,7 @@ class SettingsHubScreen extends ConsumerWidget {
 }
 
 class _SettingsTile extends StatelessWidget {
+  final int rowIndex;
   final IconData icon;
   final Color? iconColor;
   final String title;
@@ -255,6 +329,7 @@ class _SettingsTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _SettingsTile({
+    this.rowIndex = 0,
     required this.icon,
     this.iconColor,
     required this.title,
@@ -265,26 +340,31 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        leading: Icon(icon, color: iconColor ?? AppTheme.textPrimary, size: 22),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: titleColor ?? AppTheme.textPrimary,
-            fontSize: 14,
+    return CrystalSlashWrapper.sequentialRow(
+      rowIndex: rowIndex,
+      borderRadius: BorderRadius.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          leading: Icon(icon, color: iconColor ?? AppTheme.textPrimary, size: 22),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: titleColor ?? AppTheme.textPrimary,
+              fontSize: 14,
+              shadows: AppTheme.crystalTextShadows,
+            ),
           ),
+          subtitle: subtitle != null
+              ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary))
+              : null,
+          trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textMuted),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
         ),
-        subtitle: subtitle != null
-            ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary))
-            : null,
-        trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textMuted),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap();
-        },
       ),
     );
   }
@@ -307,10 +387,10 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: const Color(0xEB0B0F19),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          side: const BorderSide(color: AppTheme.cardBorder),
+          side: const BorderSide(color: Color(0x38FFFFFF)),
         ),
         title: const Row(
           children: [
@@ -377,8 +457,11 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -395,7 +478,7 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
           SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.bottomClearance(context, additionalPadding: 24),
             ),
@@ -412,8 +495,9 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
                       Container(
                         padding: const EdgeInsets.all(AppTheme.space8),
                         decoration: BoxDecoration(
-                          color: AppTheme.error.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x80E23B3B)),
                         ),
                         child: const Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 24),
                       ),
@@ -468,8 +552,17 @@ class _AccountDeletionScreenState extends ConsumerState<AccountDeletionScreen> {
             const SizedBox(height: AppTheme.space16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.error,
+                backgroundColor: Colors.transparent,
+                disabledBackgroundColor: Colors.transparent,
                 foregroundColor: Colors.white,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                side: BorderSide(
+                  color: (_acknowledged && !_deleting)
+                      ? const Color(0x80E23B3B)
+                      : const Color(0x2EFFFFFF),
+                  width: (_acknowledged && !_deleting) ? 1.2 : 1.0,
+                ),
               ),
               onPressed: (_acknowledged && !_deleting) ? _confirmAndDeleteAccount : null,
               child: _deleting
@@ -497,8 +590,11 @@ class TermsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -515,7 +611,7 @@ class TermsScreen extends StatelessWidget {
           ListView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.bottomClearance(context, additionalPadding: 24),
             ),
@@ -579,8 +675,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(
           domain: ArmSphereStageDomain.passport,
         ),
@@ -597,7 +696,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ListView(
             padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
-              AppTheme.space16,
+              MediaQuery.paddingOf(context).top + kToolbarHeight + AppTheme.space16,
               AppTheme.space16,
               MainShellScope.bottomClearance(context, additionalPadding: 24),
             ),

@@ -7,7 +7,7 @@ class EmbedUrlBuilder {
     if (upperPlatform == 'YOUTUBE') {
       final videoId = extractYouTubeId(cleanUrl);
       if (videoId != null) {
-        return 'https://www.youtube.com/embed/$videoId?autoplay=1';
+        return 'https://www.youtube.com/embed/$videoId?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1';
       }
     } else if (upperPlatform == 'TIKTOK') {
       final videoId = extractTikTokVideoId(cleanUrl);
@@ -26,7 +26,7 @@ class EmbedUrlBuilder {
   /// Extracts the 11-character video ID from various YouTube URL formats.
   static String? extractYouTubeId(String url) {
     final regExp = RegExp(
-      r'^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*',
+      r'^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*',
       caseSensitive: false,
     );
     final match = regExp.firstMatch(url);

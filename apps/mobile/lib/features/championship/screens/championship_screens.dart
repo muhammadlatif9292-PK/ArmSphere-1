@@ -12,29 +12,58 @@ import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../auth/providers/auth_provider.dart';
 
-/// Domain 10 / Stage 6 Convergence: Championships List Screen
+/// Domain 10 / Stage-First Living Screen Architecture: Championships List Screen
 ///
-/// Implements Canonical Federation Championship Titles & Belt Catalog:
-/// - Displays sanctioned national and regional title belts (GET /championship/titles).
-/// - Unbundled championship belt cards with arm, division, and weight class tags.
-/// - Eradication of nested `GlassCard` inside `ListView` in compliance with Audit Rule Item 2.2.
-/// - Full `RepaintBoundary` raster isolation for smooth 60fps scrolling.
-class ChampionshipsListScreen extends ConsumerWidget {
+/// - Stage Backdrop: `ArmSphereAssets.stageChampionshipBelts` (`m1_stage_championship_belts_9x16.webp`).
+/// - `165px` open top 24k Gold Belt Shrine Showcase (`y: 8%–35%`).
+/// - Division filter chips (`70 KG`, `78 KG`, `86 KG`, `95 KG`, `OPEN`) and reigning champion /
+///   title belt cards anchored in the lower obsidian zone (`y: 36%–90%`) with `120px` bottom clearance.
+class ChampionshipsListScreen extends ConsumerStatefulWidget {
   const ChampionshipsListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChampionshipsListScreen> createState() =>
+      _ChampionshipsListScreenState();
+}
+
+class _ChampionshipsListScreenState
+    extends ConsumerState<ChampionshipsListScreen> {
+  static const List<String> _divisions = [
+    'ALL',
+    '70 KG',
+    '78 KG',
+    '86 KG',
+    '95 KG',
+    'OPEN',
+  ];
+
+  String _selectedDivision = 'ALL';
+
+  bool _matchesDivision(Map<String, dynamic> c) {
+    if (_selectedDivision == 'ALL') return true;
+    final wc = (c['weightClass']?.toString() ?? '').toUpperCase();
+    final name = (c['name']?.toString() ?? '').toUpperCase();
+    final needle = _selectedDivision.replaceAll(' ', '');
+    return wc.replaceAll(' ', '').contains(needle) ||
+        name.replaceAll(' ', '').contains(needle);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final championshipsAsync = ref.watch(championshipProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
+        backgroundColor: Colors.transparent,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.championships,
+        ),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -48,141 +77,210 @@ class ChampionshipsListScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.championships),
           RefreshIndicator(
             color: AppTheme.goldPrimary,
             backgroundColor: AppTheme.cardSurface,
             onRefresh: () async => ref.invalidate(championshipProvider),
             child: championshipsAsync.when(
-          loading: () => ListView.separated(
-            padding: const EdgeInsets.all(AppTheme.space16),
-            itemCount: 4,
-            separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
-            itemBuilder: (_, __) => const SkeletonPlaceholder(
-              height: 100,
-              borderRadius: AppTheme.radiusMedium,
-            ),
-          ),
-          error: (e, _) => AppErrorView(
-            error: e,
-            title: 'Could not load championship titles',
-            onRetry: () => ref.invalidate(championshipProvider),
-            onSecondaryAction: () => context.go('/'),
-            secondaryActionLabel: 'Return to Home',
-          ),
-          data: (championships) {
-            if (championships.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  AppEmptyState(
-                    icon: Icons.emoji_events_outlined,
-                    title: 'No active championship titles',
-                    subtitle:
-                        'Official federation title belts will appear here once sanctioned.',
+              loading: () => ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  AppTheme.space16,
+                  165,
+                  AppTheme.space16,
+                  MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
+                itemCount: 4,
+                separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
+                itemBuilder: (_, __) => const SkeletonPlaceholder(
+                  height: 100,
+                  borderRadius: AppTheme.radiusMedium,
+                ),
+              ),
+              error: (e, _) => AppErrorView(
+                error: e,
+                title: 'Could not load championship titles',
+                onRetry: () => ref.invalidate(championshipProvider),
+                onSecondaryAction: () => context.go('/'),
+                secondaryActionLabel: 'Return to Home',
+              ),
+              data: (allChampionships) {
+                final championships =
+                    allChampionships.where(_matchesDivision).toList();
+
+                return ListView(
+                  key: const ValueKey<String>('championships_list_view'),
+                  padding: EdgeInsets.fromLTRB(
+                    AppTheme.space16,
+                    165,
+                    AppTheme.space16,
+                    MainShellScope.bottomClearance(context, additionalPadding: 44),
                   ),
-                ],
-              );
-            }
-
-            return ListView.separated(
-              key: const ValueKey<String>('championships_list_view'),
-              padding: const EdgeInsets.all(AppTheme.space16),
-              itemCount: championships.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
-              itemBuilder: (context, index) {
-                final c = championships[index];
-                final id = c['id']?.toString() ?? '';
-                final name = c['name']?.toString() ?? 'Championship Title';
-                final arm = (c['arm']?.toString() ?? 'RIGHT').toUpperCase();
-                final weightClass = c['weightClass']?.toString() ?? '';
-                final ageGroup = (c['division'] ?? c['ageGroup'])?.toString() ?? '';
-
-                return RepaintBoundary(
-                  child: ElevatedActionCard(
-                    padding: const EdgeInsets.all(AppTheme.space16),
-                    onTap: id.isEmpty ? null : () => context.push('/championship/$id'),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Championship Medallion Emblem
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppTheme.glassSurface,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                                blurRadius: 8,
-                                spreadRadius: 1,
+                  children: [
+                    // Division Filter Chips (70 KG, 78 KG, 86 KG, 95 KG, OPEN)
+                    SizedBox(
+                      height: 36,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _divisions.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: AppTheme.space8),
+                        itemBuilder: (context, idx) {
+                          final div = _divisions[idx];
+                          final isSelected = _selectedDivision == div;
+                          return ChoiceChip(
+                            label: Text(
+                              div == 'ALL' ? 'ALL DIVISIONS' : div,
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.6,
+                                color: isSelected
+                                    ? AppTheme.goldPrimary
+                                    : const Color(0xFFCBD5E1),
                               ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.military_tech,
-                              color: AppTheme.goldPrimary,
-                              size: 26,
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: AppTheme.space12),
-                        // Title Info & Tags
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: const TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimary,
-                                ),
+                            selected: isSelected,
+                            selectedColor: Colors.transparent,
+                            backgroundColor: Colors.transparent,
+                            surfaceTintColor: Colors.transparent,
+                            showCheckmark: false,
+                            visualDensity: VisualDensity.compact,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusSmall),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? const Color(0x73D4AF37)
+                                    : const Color(0x2EFFFFFF),
+                                width: isSelected ? 1.2 : 1.0,
                               ),
-                              const SizedBox(height: AppTheme.space8),
-                              Wrap(
-                                spacing: AppTheme.space6,
-                                runSpacing: AppTheme.space6,
+                            ),
+                            onSelected: (_) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selectedDivision = div);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.space14),
+                    if (championships.isEmpty)
+                      const AppEmptyState(
+                        icon: Icons.emoji_events_outlined,
+                        title: 'No active championship titles',
+                        subtitle:
+                            'Official federation title belts will appear here once sanctioned.',
+                      )
+                    else
+                      ...List.generate(championships.length, (index) {
+                        final c = championships[index];
+                        final id = c['id']?.toString() ?? '';
+                        final name =
+                            c['name']?.toString() ?? 'Championship Title';
+                        final arm =
+                            (c['arm']?.toString() ?? 'RIGHT').toUpperCase();
+                        final weightClass =
+                            c['weightClass']?.toString() ?? '';
+                        final ageGroup =
+                            (c['division'] ?? c['ageGroup'])?.toString() ?? '';
+
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: index == championships.length - 1
+                                ? 0
+                                : AppTheme.space12,
+                          ),
+                          child: RepaintBoundary(
+                            child: ElevatedActionCard(
+                              padding: const EdgeInsets.all(AppTheme.space16),
+                              onTap: id.isEmpty
+                                  ? null
+                                  : () => context.push('/championship/$id'),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  StatusChip(
-                                    label: arm.contains('RIGHT') ? 'RIGHT ARM' : 'LEFT ARM',
-                                    type: StatusType.warning,
+                                  // Championship Medallion Emblem
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                          color: const Color(0x73D4AF37),
+                                          width: 1.0),
+                                      boxShadow: const [],
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.military_tech,
+                                        color: AppTheme.goldPrimary,
+                                        size: 26,
+                                      ),
+                                    ),
                                   ),
-                                  if (weightClass.isNotEmpty)
-                                    StatusChip(
-                                      label: weightClass,
-                                      type: StatusType.info,
+                                  const SizedBox(width: AppTheme.space12),
+                                  // Title Info & Tags
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: AppTheme.space8),
+                                        Wrap(
+                                          spacing: AppTheme.space6,
+                                          runSpacing: AppTheme.space6,
+                                          children: [
+                                            StatusChip(
+                                              label: arm.contains('RIGHT')
+                                                  ? 'RIGHT ARM'
+                                                  : 'LEFT ARM',
+                                              type: StatusType.warning,
+                                            ),
+                                            if (weightClass.isNotEmpty)
+                                              StatusChip(
+                                                label: weightClass,
+                                                type: StatusType.info,
+                                              ),
+                                            if (ageGroup.isNotEmpty)
+                                              StatusChip(
+                                                label: ageGroup,
+                                                type: StatusType.neutral,
+                                              ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  if (ageGroup.isNotEmpty)
-                                    StatusChip(
-                                      label: ageGroup,
-                                      type: StatusType.neutral,
-                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 14,
+                                    color: AppTheme.goldPrimary,
+                                  ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ],
-                    ),
-                  ),
+                        );
+                      }),
+                  ],
                 );
               },
-            );
-          },
-        ),
+            ),
           ),
         ],
       ),
@@ -226,8 +324,10 @@ class ChampionshipDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.events),
+        backgroundColor: Colors.transparent,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.championships,
+        ),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
@@ -241,8 +341,9 @@ class ChampionshipDetailScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          const CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+          const CrystalStageBackdrop(domain: ArmSphereStageDomain.championships),
           RefreshIndicator(
             color: AppTheme.goldPrimary,
             backgroundColor: AppTheme.cardSurface,
@@ -251,7 +352,12 @@ class ChampionshipDetailScreen extends ConsumerWidget {
               ref.invalidate(championshipChallengesProvider);
             },
             child: ListView(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                165,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
               children: [
                 // 1. Title Belt Dossier Card
                 ElevatedActionCard(
@@ -265,9 +371,9 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.glassSurface,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppTheme.goldPrimary),
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
                             ),
                         child: const Icon(Icons.military_tech, color: AppTheme.goldPrimary, size: 24),
                       ),
@@ -301,7 +407,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppTheme.space12),
-                  const Divider(height: 1, color: AppTheme.border),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   const SizedBox(height: AppTheme.space12),
                   Wrap(
                     spacing: AppTheme.space8,
@@ -324,7 +430,7 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppTheme.space14),
-                  const Divider(height: 1, color: AppTheme.border),
+                  const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                   const SizedBox(height: AppTheme.space12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -387,8 +493,11 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.goldPrimary,
-                          foregroundColor: AppTheme.voidBackground,
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: AppTheme.goldPrimary,
+                          shadowColor: Colors.transparent,
+                          elevation: 0,
+                          side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -563,8 +672,11 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                                             }
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.success,
-                                            foregroundColor: AppTheme.voidBackground,
+                                            backgroundColor: Colors.transparent,
+                                            foregroundColor: AppTheme.success,
+                                            shadowColor: Colors.transparent,
+                                            elevation: 0,
+                                            side: const BorderSide(color: Color(0x6610B981), width: 1.0),
                                             minimumSize: const Size(76, 32),
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           ),
@@ -625,9 +737,9 @@ class ChampionshipDetailScreen extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(AppTheme.space24),
                     decoration: BoxDecoration(
-                      color: AppTheme.glassSurface,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      border: Border.all(color: AppTheme.borderTitanium),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                     ),
                     child: const Center(
                       child: Column(
@@ -711,10 +823,10 @@ class _ReignCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isCurrent ? AppTheme.goldPrimary.withValues(alpha: 0.15) : AppTheme.glassSurface,
-                  shape: BoxShape.circle,
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isCurrent ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                    color: isCurrent ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
                     width: 1.0,
                   ),
                 ),

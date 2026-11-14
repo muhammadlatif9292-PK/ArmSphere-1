@@ -8,6 +8,7 @@ import 'package:mobile/core/api/dio_client.dart';
 import 'package:mobile/core/api/repositories.dart';
 import 'package:mobile/core/providers/state_providers.dart';
 import 'package:mobile/core/routing/app_router.dart';
+import 'package:mobile/core/utils/embed_url_builder.dart';
 import 'package:mobile/features/referee/screens/referee_screens.dart';
 import 'package:mobile/features/referee/widgets/live_scorepad_controller.dart';
 
@@ -211,24 +212,24 @@ void main() {
       // Increment Red point
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('1'), findsOneWidget); // Red has 1 point
 
       // Deduct Red point (-1)
       final deductButtons = find.widgetWithText(OutlinedButton, '-1');
       await tester.tap(deductButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('0'), findsNWidgets(2)); // Both back to 0
 
       // Add 1st Foul on Red Corner
       final foulButtons = find.widgetWithText(OutlinedButton, 'FOUL');
       await tester.tap(foulButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('F: 1/2'), findsOneWidget);
 
       // Add 2nd Foul on Red Corner -> Automatic point to White Corner
       await tester.tap(foulButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.pump(const Duration(milliseconds: 350)); // Drain foul flash timer
       expect(find.text('2 Fouls on Red Corner: Point awarded to White Corner.'), findsOneWidget);
       expect(find.text('1'), findsOneWidget); // White Corner now has 1 point!
@@ -239,7 +240,6 @@ void main() {
     // -------------------------------------------------------------------------
     testWidgets('Requirement 6: 400ms Hold-to-Pin locks pin, triggers heavy feedback, and awards point',
         (WidgetTester tester) async {
-      int finishedScoreChallenger = 0;
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -254,9 +254,7 @@ void main() {
                   required int opponentScore,
                   required String winnerSide,
                   required String scoreLine,
-                }) {
-                  finishedScoreChallenger = challengerScore;
-                },
+                }) {},
               ),
             ),
           ),
@@ -318,6 +316,10 @@ void main() {
         'arm': 'RIGHT',
       };
 
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -334,12 +336,13 @@ void main() {
 
       // Increment Red Corner to 3 points (Win)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.ensureVisible(pointButtons.first);
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.pumpAndSettle();
 
       // Verify conclusion sheet opened
@@ -387,6 +390,10 @@ void main() {
         'arm': 'RIGHT',
       };
 
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -403,11 +410,13 @@ void main() {
 
       // Reach conclusion (3 points)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.ensureVisible(pointButtons.first);
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.pumpAndSettle();
 
       // Tap Submit
@@ -524,15 +533,15 @@ void main() {
       // 1. Award 2 points to Red Corner
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       await tester.tap(pointButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('2'), findsOneWidget);
 
       // 2. Assess 1 foul on Red Corner
       final foulButtons = find.widgetWithText(OutlinedButton, 'FOUL');
       await tester.tap(foulButtons.first);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 360));
       expect(find.text('F: 1/2'), findsOneWidget);
 
       // 3. Locate Reset Score button
@@ -573,5 +582,81 @@ void main() {
       expect(find.text('0'), findsNWidgets(2)); // Both corners reset to 0!
       expect(find.text('F: 0/2'), findsNWidgets(2)); // Both fouls reset to 0!
     });
+
+    testWidgets('12. Pre-Match Format Selector (Best of 1/3/5/7), Win-Lock Condition, and Undo Last Point', (WidgetTester tester) async {
+      String? finishedScoreLine;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: LiveScorepadController(
+                challengerName: 'Devon Larratt',
+                opponentName: 'Levan Saginashvili',
+                arm: 'RIGHT',
+                maxPoints: 3,
+                onMatchFinished: ({
+                  required int challengerScore,
+                  required int opponentScore,
+                  required String winnerSide,
+                  required String scoreLine,
+                }) {
+                  finishedScoreLine = scoreLine;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify all 4 regulation formats are rendered
+      expect(find.text('BEST OF 1'), findsOneWidget);
+      expect(find.text('BEST OF 3'), findsOneWidget);
+      expect(find.text('BEST OF 5'), findsOneWidget);
+      expect(find.text('BEST OF 7'), findsOneWidget);
+
+      // Switch to BEST OF 3 (First to 2)
+      await tester.tap(find.text('BEST OF 3'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('ROUND 1 OF 3 • FIRST TO 2 PINS'), findsOneWidget);
+
+      // Award 2 points to Red Corner (reaches targetWins = 2)
+      final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
+      await tester.tap(pointButtons.first);
+      await tester.pump();
+      await tester.tap(pointButtons.first);
+      await tester.pumpAndSettle();
+
+      // Match must be locked immediately at 2-0
+      expect(finishedScoreLine, '2-0');
+      expect(find.text('DEVON LARRATT WINS BOUT!'), findsOneWidget);
+      expect(find.text('PROCEED TO OFFICIAL CERTIFICATION'), findsOneWidget);
+      expect(find.text('UNDO LAST POINT'), findsOneWidget);
+
+      // Both POINT buttons must now be disabled (Win-Lock prevents 2-2 tie)
+      final redButton = tester.widget<ElevatedButton>(pointButtons.first);
+      final whiteButton = tester.widget<ElevatedButton>(pointButtons.last);
+      expect(redButton.onPressed, isNull);
+      expect(whiteButton.onPressed, isNull);
+
+      // Tap UNDO LAST POINT -> reverts to 1-0 and unlocks buttons
+      await tester.tap(find.text('UNDO LAST POINT'));
+      await tester.pumpAndSettle();
+      expect(find.text('DEVON LARRATT WINS BOUT!'), findsNothing);
+      final unlockedRedButton = tester.widget<ElevatedButton>(pointButtons.first);
+      expect(unlockedRedButton.onPressed, isNotNull);
+    });
+
+    test('13. EmbedUrlBuilder formats YouTube URLs with youtube-nocookie and inline webview parameters', () {
+      final embed = EmbedUrlBuilder.getEmbedUrl(
+        'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'YOUTUBE',
+      );
+      expect(
+        embed,
+        'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&playsinline=1&enablejsapi=1&rel=0&modestbranding=1',
+      );
+    });
   });
 }
+

@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -53,32 +54,61 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
   }
 
   // ===========================================================================
-  // MATCH SCORE OVERRIDE & VOID BOTTOM SHEET
+  // MATCH SCORE PARSER & OVERRIDE / VOID BOTTOM SHEET
   // ===========================================================================
+  int parseScore(dynamic match, int playerIndex) {
+    if (match == null) return 0;
+    if (playerIndex == 0 && match['scoreA'] != null) {
+      return int.tryParse(match['scoreA'].toString()) ?? 0;
+    }
+    if (playerIndex == 1 && match['scoreB'] != null) {
+      return int.tryParse(match['scoreB'].toString()) ?? 0;
+    }
+
+    final scoreLine = match['scoreLine']?.toString() ?? '';
+    final parts = scoreLine.split(RegExp(r'[\s\-:]+'));
+    if (parts.length > playerIndex) {
+      return int.tryParse(parts[playerIndex].trim()) ?? 0;
+    }
+    return 0;
+  }
+
   Future<void> _openMatchOverrideSheet({
     required Map<String, dynamic> match,
     required String activeRole,
     required String? jurisdiction,
   }) async {
     final String matchId = match['id']?.toString() ?? '';
-    final String athleteAId = match['athleteAId']?.toString() ?? 'athlete_a';
-    final String athleteBId = match['athleteBId']?.toString() ?? 'athlete_b';
+    final String athleteAId = match['athleteAId']?.toString() ??
+        match['challengerId']?.toString() ??
+        'athlete_a';
+    final String athleteBId = match['athleteBId']?.toString() ??
+        match['opponentId']?.toString() ??
+        'athlete_b';
     final String athleteAName = match['athleteAName']?.toString() ??
+        match['challengerName']?.toString() ??
         (match['athleteA'] is Map
             ? match['athleteA']['displayName']?.toString()
             : null) ??
+        (match['challenger'] is Map
+            ? match['challenger']['displayName']?.toString()
+            : null) ??
         'Red Corner Athlete';
     final String athleteBName = match['athleteBName']?.toString() ??
+        match['opponentName']?.toString() ??
         (match['athleteB'] is Map
             ? match['athleteB']['displayName']?.toString()
+            : null) ??
+        (match['opponent'] is Map
+            ? match['opponent']['displayName']?.toString()
             : null) ??
         'Blue Corner Athlete';
 
     final scoreACtrl = TextEditingController(
-      text: (match['scoreA'] ?? 0).toString(),
+      text: parseScore(match, 0).toString(),
     );
     final scoreBCtrl = TextEditingController(
-      text: (match['scoreB'] ?? 0).toString(),
+      text: parseScore(match, 1).toString(),
     );
     final reasonCtrl = TextEditingController();
     final weighInRegIdCtrl = TextEditingController(
@@ -1000,75 +1030,98 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
       AdminAction.manageChampionships,
     );
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.governance),
           ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => _refreshSegment(selectedSegment),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
-              ),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AdminAuthorityHeader(
-                  title: 'Arena Operations',
-                  subtitle:
-                      'Sanctioned bout score overrides, championship belts, and tournament desks',
-                  activeRole: activeRole,
-                  jurisdiction: jurisdiction,
-                  onRefresh: () => _refreshSegment(selectedSegment),
-                ),
-                const SizedBox(height: 14),
-
-                AdminSegmentedDeck(
-                  selectedIndex: selectedSegment,
-                  onChanged: (idx) =>
-                      ref.read(adminArenaOpsSegmentProvider.notifier).state =
-                          idx,
-                  segments: [
-                    AdminSegmentItem(
-                      label: 'Match Oversight',
-                      icon: Icons.sports_mma_rounded,
-                      count: matchesAsync.valueOrNull?.length,
-                    ),
-                    AdminSegmentItem(
-                      label: 'Belt Titles',
-                      icon: Icons.workspace_premium_rounded,
-                      count: titlesAsync.valueOrNull?.length,
-                    ),
-                    AdminSegmentItem(
-                      label: 'Tournaments',
-                      icon: Icons.emoji_events_rounded,
-                      count: tournamentsAsync.valueOrNull?.length,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                if (selectedSegment == 0)
-                  _buildMatchOversightSegment(
-                    matchesAsync: matchesAsync,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AdminAuthorityHeader(
+                    title: 'Arena Operations',
+                    subtitle:
+                        'Sanctioned bout score overrides, championship belts, and tournament desks',
                     activeRole: activeRole,
                     jurisdiction: jurisdiction,
-                  )
-                else if (selectedSegment == 1)
-                  _buildBeltTitlesSegment(
-                    titlesAsync: titlesAsync,
-                    challengesAsync: challengesAsync,
-                    canManageChampionships: canManageChampionships,
-                  )
-                else
-                  _buildTournamentsSegment(tournamentsAsync: tournamentsAsync),
+                    onRefresh: () => _refreshSegment(selectedSegment),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.goldPrimary,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async => _refreshSegment(selectedSegment),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          28,
+                        ),
+                        children: [
+                          AdminSegmentedDeck(
+                            selectedIndex: selectedSegment,
+                            onChanged: (idx) => ref
+                                .read(adminArenaOpsSegmentProvider.notifier)
+                                .state = idx,
+                            segments: [
+                              AdminSegmentItem(
+                                label: 'Match Oversight',
+                                icon: Icons.sports_mma_rounded,
+                                count: matchesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Belt Titles',
+                                icon: Icons.workspace_premium_rounded,
+                                count: titlesAsync.valueOrNull?.length,
+                              ),
+                              AdminSegmentItem(
+                                label: 'Tournaments',
+                                icon: Icons.emoji_events_rounded,
+                                count: tournamentsAsync.valueOrNull?.length,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          if (selectedSegment == 0)
+                            _buildMatchOversightSegment(
+                              matchesAsync: matchesAsync,
+                              activeRole: activeRole,
+                              jurisdiction: jurisdiction,
+                            )
+                          else if (selectedSegment == 1)
+                            _buildBeltTitlesSegment(
+                              titlesAsync: titlesAsync,
+                              challengesAsync: challengesAsync,
+                              canManageChampionships: canManageChampionships,
+                            )
+                          else
+                            _buildTournamentsSegment(
+                              tournamentsAsync: tournamentsAsync,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1086,12 +1139,16 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         matchesAsync.valueOrNull ?? const <Map<String, dynamic>>[];
     final filtered = allMatches.where((m) {
       final aName = (m['athleteAName'] ??
-              (m['athleteA'] is Map ? m['athleteA']['displayName'] : '') ??
+              m['challengerName'] ??
+              (m['athleteA'] is Map ? m['athleteA']['displayName'] : null) ??
+              (m['challenger'] is Map ? m['challenger']['displayName'] : null) ??
               '')
           .toString()
           .toLowerCase();
       final bName = (m['athleteBName'] ??
-              (m['athleteB'] is Map ? m['athleteB']['displayName'] : '') ??
+              m['opponentName'] ??
+              (m['athleteB'] is Map ? m['athleteB']['displayName'] : null) ??
+              (m['opponent'] is Map ? m['opponent']['displayName'] : null) ??
               '')
           .toString()
           .toLowerCase();
@@ -1099,8 +1156,17 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
       final matchesSearch = _matchSearch.isEmpty ||
           aName.contains(_matchSearch.toLowerCase()) ||
           bName.contains(_matchSearch.toLowerCase());
-      final matchesStatus =
-          _matchStatusFilter.isEmpty || status == _matchStatusFilter;
+      final bool matchesStatus;
+      if (_matchStatusFilter.isEmpty) {
+        matchesStatus = true;
+      } else if (_matchStatusFilter == 'COMPLETED') {
+        matchesStatus = status == 'COMPLETED' || status == 'VERIFIED';
+      } else if (_matchStatusFilter == 'IN_PROGRESS') {
+        matchesStatus =
+            status == 'IN_PROGRESS' || status == 'PENDING_VERIFICATION';
+      } else {
+        matchesStatus = status == _matchStatusFilter;
+      }
       return matchesSearch && matchesStatus;
     }).toList();
 
@@ -1141,17 +1207,25 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
         else
           ...filtered.map((match) {
             final aName = match['athleteAName']?.toString() ??
+                match['challengerName']?.toString() ??
                 (match['athleteA'] is Map
                     ? match['athleteA']['displayName']?.toString()
                     : null) ??
+                (match['challenger'] is Map
+                    ? match['challenger']['displayName']?.toString()
+                    : null) ??
                 'Red Corner';
             final bName = match['athleteBName']?.toString() ??
+                match['opponentName']?.toString() ??
                 (match['athleteB'] is Map
                     ? match['athleteB']['displayName']?.toString()
                     : null) ??
+                (match['opponent'] is Map
+                    ? match['opponent']['displayName']?.toString()
+                    : null) ??
                 'Blue Corner';
-            final scoreA = match['scoreA'] ?? 0;
-            final scoreB = match['scoreB'] ?? 0;
+            final scoreA = parseScore(match, 0);
+            final scoreB = parseScore(match, 1);
             final arm = match['arm']?.toString() ?? 'RIGHT';
             final weight = match['weightClass']?.toString() ?? 'Open';
             final status =
@@ -1209,10 +1283,11 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.crimson.withValues(alpha: 0.16),
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppTheme.crimson.withValues(alpha: 0.45),
+                              color: const Color(0x80E23B3B),
+                              width: 1.0,
                             ),
                           ),
                           child: Text(
@@ -1367,8 +1442,12 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0x73D4AF37),
+                          width: 1.0,
+                        ),
                       ),
                       child: const Icon(
                         Icons.workspace_premium_rounded,

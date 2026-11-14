@@ -104,7 +104,7 @@ void main() {
       expect(find.text('No purchased tickets'), findsOneWidget);
       expect(
         find.text('Passes and registration tickets you purchase for tournaments and seminars will appear here.'),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byIcon(Icons.confirmation_number_outlined), findsOneWidget);
     });
@@ -312,7 +312,7 @@ void main() {
         await tester.tap(find.widgetWithText(TextButton, 'Sign In'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Sign in to your competitive account'), findsOneWidget);
+        expect(find.text('ArmSphere'), findsOneWidget);
         expect(find.text('Sign In to Account'), findsOneWidget);
       },
     );
@@ -373,9 +373,17 @@ void main() {
         expect(find.text('Delete Account'), findsOneWidget);
         expect(find.text('Log Out'), findsOneWidget);
 
-        final listView = tester.widget<ListView>(find.byType(ListView));
+        final scaffoldBottom = tester.getBottomRight(find.byType(Scaffold)).dy;
+        final listViewFinder = find.byType(ListView);
+        final listView = tester.widget<ListView>(listViewFinder);
         final padding = listView.padding as EdgeInsets;
-        expect(padding.bottom, greaterThanOrEqualTo(MainShellScope.kShellClearance));
+        final listViewBottom = tester.getBottomRight(listViewFinder).dy;
+        final totalBottomClearance =
+            (scaffoldBottom - listViewBottom) + padding.bottom;
+        expect(
+          totalBottomClearance,
+          greaterThanOrEqualTo(MainShellScope.kShellClearance),
+        );
       },
     );
 

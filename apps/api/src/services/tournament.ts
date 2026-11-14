@@ -15,7 +15,8 @@ import {
   athleteClubs,
   users,
   auditLogs,
-  payments
+  payments,
+  notifications
 } from "@armsphere/db-schema";
 import { BadRequestError, NotFoundError, ForbiddenError, ConflictError, logger } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
@@ -918,9 +919,12 @@ export class TournamentService {
       }
     }
 
+    // If formal weigh-ins have not been recorded yet for this category, seed all APPROVED registrants
+    const seedCandidates = qualifiedRegistrants.length > 0 ? qualifiedRegistrants : registrants;
+
     // ELO-based sorting
     const isLeft = bracket.arm.toUpperCase() === "LEFT";
-    const sorted = [...qualifiedRegistrants].sort((a, b) => {
+    const sorted = [...seedCandidates].sort((a, b) => {
       const eloA = isLeft ? (a.leftArmElo ?? 1000) : (a.rightArmElo ?? 1000);
       const eloB = isLeft ? (b.leftArmElo ?? 1000) : (b.rightArmElo ?? 1000);
       return eloB - eloA;
@@ -1677,6 +1681,36 @@ export class TournamentService {
         .set({ status: "ACTIVE", currentMatchId: matchId, updatedAt: new Date() })
         .where(eq(matchTables.id, tableId));
 
+      try {
+        const [profA] = match.athleteAId
+          ? await tx.select().from(athleteProfiles).where(eq(athleteProfiles.id, match.athleteAId)).limit(1)
+          : [null];
+        const [profB] = match.athleteBId
+          ? await tx.select().from(athleteProfiles).where(eq(athleteProfiles.id, match.athleteBId)).limit(1)
+          : [null];
+        const tableLabel = table.name || "Official Arena Table";
+        if (profA?.userId) {
+          await tx.insert(notifications).values({
+            userId: profA.userId,
+            category: "TOURNAMENT",
+            priority: "HIGH",
+            status: "UNREAD",
+            title: `Match Called to ${tableLabel}`,
+            content: `Report immediately to ${tableLabel} for your bout against ${profB?.displayName || "your opponent"} (${bracket.division} ${bracket.weightClass} ${bracket.arm}).`,
+          });
+        }
+        if (profB?.userId) {
+          await tx.insert(notifications).values({
+            userId: profB.userId,
+            category: "TOURNAMENT",
+            priority: "HIGH",
+            status: "UNREAD",
+            title: `Match Called to ${tableLabel}`,
+            content: `Report immediately to ${tableLabel} for your bout against ${profA?.displayName || "your opponent"} (${bracket.division} ${bracket.weightClass} ${bracket.arm}).`,
+          });
+        }
+      } catch (_) {}
+
       return updatedMatch;
     });
   }
@@ -2253,6 +2287,39 @@ export class TournamentService {
         .set({ status: "COMPLETED", updatedAt: new Date() })
         .where(eq(brackets.id as any, bracketId as any));
     }
+
+    try {
+      const aId = (completedMatch as any)?.athleteAId;
+      const bId = (completedMatch as any)?.athleteBId;
+      const [profA] = aId
+        ? await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, aId)).limit(1)
+        : [null];
+      const [profB] = bId
+        ? await db.select().from(athleteProfiles).where(eq(athleteProfiles.id, bId)).limit(1)
+        : [null];
+      const winnerProfile = winnerId === aId ? profA : profB;
+      const loserProfile = winnerId === aId ? profB : profA;
+      if (winnerProfile?.userId) {
+        await db.insert(notifications).values({
+          userId: winnerProfile.userId,
+          category: "TOURNAMENT",
+          priority: "HIGH",
+          status: "UNREAD",
+          title: "Tournament Bout Victory Recorded",
+          content: `Official result confirmed (${scoreLine}) vs ${loserProfile?.displayName || "opponent"}. You advance in the bracket.`,
+        });
+      }
+      if (loserProfile?.userId) {
+        await db.insert(notifications).values({
+          userId: loserProfile.userId,
+          category: "TOURNAMENT",
+          priority: "HIGH",
+          status: "UNREAD",
+          title: "Tournament Bout Result Recorded",
+          content: `Official result confirmed (${scoreLine}) vs ${winnerProfile?.displayName || "opponent"}. Check the live bracket for your next placement.`,
+        });
+      }
+    } catch (_) {}
 
     return completedMatch;
   }

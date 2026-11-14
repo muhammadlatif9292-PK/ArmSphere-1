@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import '../constants/asset_paths.dart';
 import '../theme/app_theme.dart';
 import 'armsphere_image.dart';
+import 'crystal_slash_painter.dart';
+import 'main_shell_screen.dart';
 import 'tactical_command_sheet.dart';
 import 'tactile_press_wrapper.dart';
 
@@ -26,12 +28,13 @@ class VoidStageScaffold extends StatelessWidget {
   final bool? resizeToAvoidBottomInset;
   final List<double> scrimStops;
   final List<Color>? scrimColors;
+  final bool enableVaporDissolve;
 
   const VoidStageScaffold({
     super.key,
     this.backgroundAsset,
     this.stageAsset,
-    this.focalAlignment = ArmSphereAssets.stageTopFocal,
+    this.focalAlignment = Alignment.topCenter,
     this.appBar,
     this.body,
     this.child,
@@ -40,9 +43,10 @@ class VoidStageScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.extendBodyBehindAppBar = true,
     this.extendBody = true,
-    this.resizeToAvoidBottomInset,
-    this.scrimStops = const [0.0, 0.35, 0.70, 1.0],
+    this.resizeToAvoidBottomInset = false,
+    this.scrimStops = const [0.0, 0.45, 0.78, 1.0],
     this.scrimColors,
+    this.enableVaporDissolve = true,
   });
 
   @override
@@ -52,11 +56,28 @@ class VoidStageScaffold extends StatelessWidget {
     final effectiveBody = body ?? child ?? const SizedBox.shrink();
     final effectiveScrimColors = scrimColors ??
         const [
-          Color(0x59070A11), // 35% top protection for status bar & app bar
-          Color(0x4D070A11), // 30% upper-mid clear stage visibility
-          Color(0x80070A11), // 50% lower-mid clear artwork visibility
-          Color(0xB3070A11), // 70% deep obsidian base
+          Color(0x00000000),
+          Color(0x00000000),
+          Color(0x40000000),
+          Color(0x73000000),
         ];
+
+    final view = View.maybeOf(context);
+    final double dpr =
+        view?.devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
+    final Size physicalSize =
+        (view != null && dpr > 0 && view.physicalSize.height > 0)
+            ? (view.physicalSize / dpr)
+            : MediaQuery.sizeOf(context);
+    final double targetWidth =
+        physicalSize.width > 0 ? physicalSize.width : 400.0;
+    final double targetHeight =
+        physicalSize.height > 0 ? physicalSize.height : 840.0;
+
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -71,25 +92,41 @@ class VoidStageScaffold extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Positioned.fill(
-            child: ArmSphereImage(
-              assetPath: effectiveAsset,
-              alignment: focalAlignment,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              fallbackAsset: ArmSphereAssets.stageArena9x16,
-              excludeFromSemantics: true,
-              showLoadingIndicator: false,
-            ),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: scrimStops,
-                  colors: effectiveScrimColors,
+            child: IgnorePointer(
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  minWidth: targetWidth,
+                  maxWidth: targetWidth,
+                  minHeight: targetHeight,
+                  maxHeight: targetHeight,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const ColoredBox(color: AppTheme.voidBackground),
+                      ArmSphereImage(
+                        assetPath: effectiveAsset,
+                        alignment: focalAlignment,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fallbackAsset: ArmSphereAssets.stageArena9x16,
+                        excludeFromSemantics: true,
+                        showLoadingIndicator: false,
+                      ),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: scrimStops,
+                            colors: effectiveScrimColors,
+                          ),
+                        ),
+                      ),
+                      const StageScrollContrastVeil(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -97,22 +134,37 @@ class VoidStageScaffold extends StatelessWidget {
           SafeArea(
             top: appBar != null ? extendBodyBehindAppBar : true,
             bottom: false,
-            child: effectiveBody,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification notification) {
+                if (notification.metrics.axis == Axis.vertical) {
+                  StageScrollDimmerController.updateFromScroll(
+                    notification.context ?? context,
+                    notification.metrics.pixels,
+                  );
+                }
+                return false;
+              },
+              child: CrystalVaporDissolve(
+                enabled: enableVaporDissolve,
+                bottomMargin: bottomDockGap,
+                child: effectiveBody,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Standard bottom clearance (112dp + safe area bottom inset) so scrollable
+  /// Standard bottom clearance (120dp + safe area bottom inset) so scrollable
   /// lists clear the floating smoked-glass pill dock without occlusion.
   static double bottomClearance(BuildContext context) =>
-      MediaQuery.paddingOf(context).bottom + 112.0;
+      MediaQuery.paddingOf(context).bottom + 120.0;
 }
 
 /// Global helper for floating navigation dock bottom clearance.
 double mainShellBottomClearance(BuildContext context) =>
-    MediaQuery.paddingOf(context).bottom + 112.0;
+    MediaQuery.paddingOf(context).bottom + 120.0;
 
 /// Standardized ArmSphere Top AppBar for VoidStageScaffold Screens
 ///
@@ -250,11 +302,28 @@ class SmokedGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveBorder = (borderColor != null &&
+            borderColor != Colors.transparent)
+        ? borderColor!
+        : const Color(0x38FFFFFF);
     Widget container = Container(
       margin: margin,
       padding: padding,
-      color: Colors.transparent,
-      child: child,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: effectiveBorder,
+          width: 1.0,
+        ),
+        boxShadow: const [],
+      ),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(
+          shadows: AppTheme.crystalTextShadows,
+        ),
+        child: child,
+      ),
     );
 
     if (onTap != null) {

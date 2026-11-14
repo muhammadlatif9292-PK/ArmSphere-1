@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
@@ -110,9 +111,9 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xCC060911),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x28FFFFFF)),
+                  border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                 ),
                 child: SelectableText(
                   prettyMetadata,
@@ -197,293 +198,352 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
         (eventsAsync.valueOrNull?.length ?? 0);
     final String? failureReason = report?.failureReason;
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        : 12.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.passport),
           ),
-          RefreshIndicator(
-            color: AppTheme.goldPrimary,
-            backgroundColor: AppTheme.cardSurface,
-            onRefresh: () async => _refreshLedger(auditFilter),
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                mainShellBottomClearance(context, additionalPadding: 28),
-              ),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. Header with Settings Quick Button
-                AdminAuthorityHeader(
-                  title: 'Official Dossier & Audit',
-                  subtitle:
-                      'Federation credential passport, persona switcher, and SHA-256 ledger',
-                  activeRole: activeRole,
-                  jurisdiction: jurisdiction,
-                  onRefresh: () => _refreshLedger(auditFilter),
-                  trailingAction: IconButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      context.push('/settings');
-                    },
-                    tooltip: 'Settings Hub',
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xCC0D1320),
-                      side: const BorderSide(color: Color(0x38FFFFFF)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                // 1. Compact 48px Transparent Top Header with Settings Quick Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: AdminAuthorityHeader(
+                    title: 'Official Dossier & Audit',
+                    subtitle:
+                        'Federation credential passport, persona switcher, and SHA-256 ledger',
+                    activeRole: activeRole,
+                    jurisdiction: jurisdiction,
+                    onRefresh: () => _refreshLedger(auditFilter),
+                    trailingAction: IconButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.push('/settings');
+                      },
+                      tooltip: 'Settings Hub',
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0x4704060B),
+                        side: const BorderSide(
+                          color: Color(0x38FFFFFF),
+                          width: 1.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                    ),
-                    icon: const Icon(
-                      Icons.settings_rounded,
-                      size: 18,
-                      color: AppTheme.textPure,
+                      icon: const Icon(
+                        Icons.settings_rounded,
+                        size: 18,
+                        color: AppTheme.textPure,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // 2. Official Federation Credential Card
-                ElevatedActionCard(
-                  padding: const EdgeInsets.all(16),
-                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.45),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                const SizedBox(height: 8),
+                // 2. Expanded Scrollable Body with Top & Bottom 3D Vapor-Dissolve
+                Expanded(
+                  child: CrystalVaporDissolve(
+                    bottomMargin: bottomDockGap,
+                    child: RefreshIndicator(
+                      color: AppTheme.goldPrimary,
+                      backgroundColor: AppTheme.cardSurface,
+                      onRefresh: () async => _refreshLedger(auditFilter),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          28,
+                        ),
                         children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: AppTheme.goldPrimary
-                                    .withValues(alpha: 0.55),
-                              ),
+                          // Official Federation Credential Card
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            borderColor: const Color(0x73D4AF37),
+                            watermark: ForgedWatermarkType.adminOctagonShield,
+                            slashVariant: const CrystalSlashVariant.crossedCard(
+                              accentColor: AppTheme.goldPrimary,
+                              watermark: ForgedWatermarkType.adminOctagonShield,
                             ),
-                            child: Icon(
-                              AdminPermissions.roleIcon(activeRole),
-                              color: AppTheme.goldPrimary,
-                              size: 26,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  displayName,
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.textPure,
-                                  ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 52,
+                                      height: 52,
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0x73D4AF37),
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        AdminPermissions.roleIcon(activeRole),
+                                        color: AppTheme.goldPrimary,
+                                        size: 26,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            displayName,
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.textPure,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            email,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            AdminPermissions.formatRoleName(
+                                              activeRole,
+                                            ),
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.goldPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const StatusChip.success(label: 'VERIFIED'),
+                                  ],
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  email,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  AdminPermissions.formatRoleName(activeRole),
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.goldPrimary,
-                                  ),
+                                const SizedBox(height: 14),
+                                Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    CrystalActionButton(
+                                      key: const ValueKey(
+                                        'admin_dossier_switch_persona_btn',
+                                      ),
+                                      label: 'SWITCH ROLE',
+                                      icon: Icons.swap_horiz_rounded,
+                                      fullWidth: true,
+                                      accentColor: AppTheme.goldPrimary,
+                                      onTap: () =>
+                                          context.push('/settings/roles'),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    CrystalActionButton(
+                                      label: 'SETTINGS',
+                                      icon: Icons.tune_rounded,
+                                      fullWidth: true,
+                                      isPrimary: false,
+                                      onTap: () => context.push('/settings'),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                          const StatusChip.success(label: 'VERIFIED'),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CrystalActionButton(
-                              key: const ValueKey(
-                                'admin_dossier_switch_persona_btn',
-                              ),
-                              label: 'SWITCH ROLE',
-                              icon: Icons.swap_horiz_rounded,
-                              accentColor: AppTheme.goldPrimary,
-                              onTap: () => context.push('/settings/roles'),
+                          const SizedBox(height: 20),
+
+                          // 3. Cryptographic SHA-256 Audit Chain Verifier
+                          if (canVerifyChain) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'CRYPTOGRAPHIC SHA-256 AUDIT',
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.7,
+                                        color: AppTheme.goldPrimary,
+                                        shadows: AppTheme.crystalTextShadows,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                CrystalHeaderActionPill(
+                                  label: 'VERIFY CHAIN',
+                                  icon: Icons.verified_user_rounded,
+                                  accentColor: isChainValid
+                                      ? AppTheme.success
+                                      : AppTheme.crimson,
+                                  onTap: () {
+                                    ref.invalidate(adminFullAuditReportProvider);
+                                    ref.invalidate(
+                                      adminAuditVerificationProvider,
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      CrystalSnackBar(
+                                        content: Text(
+                                          isChainValid
+                                              ? 'SHA-256 Audit Chain Verified: Client & Server Recomputations Match'
+                                              : 'WARNING: Cryptographic Tampering Detected: ${failureReason ?? "Block signature mismatch"}',
+                                        ),
+                                        backgroundColor: isChainValid
+                                            ? AppTheme.success
+                                            : AppTheme.error,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          CrystalActionButton(
-                            label: 'SETTINGS',
-                            icon: Icons.tune_rounded,
-                            isPrimary: false,
-                            onTap: () => context.push('/settings'),
-                          ),
+                            const SizedBox(height: 10),
+                            ElevatedActionCard(
+                              padding: const EdgeInsets.all(14),
+                              watermark: ForgedWatermarkType.adminOctagonShield,
+                              slashVariant:
+                                  const CrystalSlashVariant.crossedCard(
+                                    watermark:
+                                        ForgedWatermarkType.adminOctagonShield,
+                                  ),
+                              borderColor: isChainValid
+                                  ? AppTheme.success.withValues(alpha: 0.45)
+                                  : AppTheme.crimson.withValues(alpha: 0.65),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isChainValid
+                                            ? const Color(0x6610B981)
+                                            : const Color(0x80E23B3B),
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      isChainValid
+                                          ? Icons.enhanced_encryption_rounded
+                                          : Icons.gpp_bad_rounded,
+                                      color: isChainValid
+                                          ? AppTheme.success
+                                          : AppTheme.crimson,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          isChainValid
+                                              ? 'SHA-256 Hash Chain Integrity: VALID'
+                                              : 'SHA-256 Hash Chain Integrity: TAMPERED',
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.textPure,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          isChainValid
+                                              ? 'Contiguous client & server cryptographic links verified ($checkedCount blocks checked).'
+                                              : 'Tampered block detected! ${failureReason ?? "Hash signature invalid"}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isChainValid
+                                                ? AppTheme.textSecondary
+                                                : AppTheme.crimson,
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            AdminCrystalSearchBar(
+                              controller: _actorSearchCtrl,
+                              hintText: 'Filter audit log by Actor ID...',
+                              onChanged: (v) => setState(() => _actorSearch = v),
+                              onClear: () {
+                                _actorSearchCtrl.clear();
+                                setState(() => _actorSearch = '');
+                              },
+                              filterOptions: const [
+                                '',
+                                'ATHLETE_REVIEW',
+                                'MATCH_OVERRIDE',
+                                'DISPUTE_RESOLVED',
+                                'ROLE_GRANTED',
+                                'ATHLETE_SUSPENDED',
+                              ],
+                              selectedFilter: _selectedActionFilter,
+                              onFilterSelected: (f) =>
+                                  setState(() => _selectedActionFilter = f),
+                            ),
+                            const SizedBox(height: 14),
+
+                            _buildAuditEventsList(eventsAsync),
+                          ] else
+                            const ElevatedActionCard(
+                              padding: EdgeInsets.all(16),
+                              watermark: ForgedWatermarkType.adminOctagonShield,
+                              slashVariant: CrystalSlashVariant.crossedCard(
+                                watermark:
+                                    ForgedWatermarkType.adminOctagonShield,
+                              ),
+                              child: Text(
+                                'Cryptographic SHA-256 Audit Ledger inspection is reserved for System Admin, National Director, and Compliance Officer roles.',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // 3. Cryptographic SHA-256 Audit Chain Verifier
-                if (canVerifyChain) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'CRYPTOGRAPHIC SHA-256 AUDIT LEDGER',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.7,
-                            color: AppTheme.goldPrimary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      CrystalHeaderActionPill(
-                        label: 'VERIFY CHAIN',
-                        icon: Icons.verified_user_rounded,
-                        accentColor:
-                            isChainValid ? AppTheme.success : AppTheme.crimson,
-                        onTap: () {
-                          ref.invalidate(adminFullAuditReportProvider);
-                          ref.invalidate(adminAuditVerificationProvider);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            CrystalSnackBar(
-                              content: Text(
-                                isChainValid
-                                    ? 'SHA-256 Audit Chain Verified: Client & Server Recomputations Match'
-                                    : 'WARNING: Cryptographic Tampering Detected: ${failureReason ?? "Block signature mismatch"}',
-                              ),
-                              backgroundColor: isChainValid
-                                  ? AppTheme.success
-                                  : AppTheme.error,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedActionCard(
-                    padding: const EdgeInsets.all(14),
-                    borderColor: isChainValid
-                        ? AppTheme.success.withValues(alpha: 0.45)
-                        : AppTheme.crimson.withValues(alpha: 0.65),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: (isChainValid
-                                    ? AppTheme.success
-                                    : AppTheme.crimson)
-                                .withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            isChainValid
-                                ? Icons.enhanced_encryption_rounded
-                                : Icons.gpp_bad_rounded,
-                            color: isChainValid
-                                ? AppTheme.success
-                                : AppTheme.crimson,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isChainValid
-                                    ? 'SHA-256 Hash Chain Integrity: VALID'
-                                    : 'SHA-256 Hash Chain Integrity: TAMPERED',
-                                style: const TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.textPure,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isChainValid
-                                    ? 'Contiguous client & server cryptographic links verified ($checkedCount blocks checked).'
-                                    : 'Tampered block detected! ${failureReason ?? "Hash signature invalid"}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isChainValid
-                                      ? AppTheme.textSecondary
-                                      : AppTheme.crimson,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  AdminCrystalSearchBar(
-                    controller: _actorSearchCtrl,
-                    hintText: 'Filter audit log by Actor ID...',
-                    onChanged: (v) => setState(() => _actorSearch = v),
-                    onClear: () {
-                      _actorSearchCtrl.clear();
-                      setState(() => _actorSearch = '');
-                    },
-                    filterOptions: const [
-                      '',
-                      'ATHLETE_REVIEW',
-                      'MATCH_OVERRIDE',
-                      'DISPUTE_RESOLVED',
-                      'ROLE_GRANTED',
-                      'ATHLETE_SUSPENDED',
-                    ],
-                    selectedFilter: _selectedActionFilter,
-                    onFilterSelected: (f) =>
-                        setState(() => _selectedActionFilter = f),
-                  ),
-                  const SizedBox(height: 14),
-
-                  _buildAuditEventsList(eventsAsync),
-                ] else
-                  const ElevatedActionCard(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'Cryptographic SHA-256 Audit Ledger inspection is reserved for System Admin, National Director, and Compliance Officer roles.',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -548,21 +608,24 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
     }
 
     return Column(
-      children: events.map((ev) {
+      children: events.asMap().entries.map((entry) {
+        final int index = entry.key;
+        final Map<String, dynamic> ev = entry.value;
         final actionType =
             ev['actionType']?.toString() ?? ev['action']?.toString() ?? 'EVENT';
         final readableTitle = _formatAuditActionLabel(actionType);
+        final String categoryCode = _resolveAuditCategoryBadge(actionType);
         final actorId =
             ev['actorId']?.toString() ?? ev['userId']?.toString() ?? 'System';
-        final shortActor = actorId.length > 14
+        final shortActor = actorId.length > 10
             ? '${actorId.substring(0, 8)}…'
             : actorId;
         final currentHash = ev['eventHash']?.toString() ??
             ev['currentHash']?.toString() ??
             ev['hash']?.toString() ??
             '';
-        final shortHash = currentHash.length > 10
-            ? '${currentHash.substring(0, 10)}…'
+        final shortHash = currentHash.length > 8
+            ? currentHash.substring(0, 8)
             : (currentHash.isEmpty ? 'SHA-256' : currentHash);
 
         return Padding(
@@ -570,13 +633,18 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
           child: ElevatedActionCard(
             onTap: () => _openAuditEventSheet(ev),
             padding: const EdgeInsets.all(14),
+            slashVariant: CrystalSlashVariant.sequentialRow(index),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0x73D4AF37),
+                      width: 1.0,
+                    ),
                   ),
                   child: const Icon(
                     Icons.fingerprint_rounded,
@@ -591,6 +659,8 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                     children: [
                       Text(
                         readableTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 13.5,
@@ -598,28 +668,29 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                           color: AppTheme.textPure,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
-                          Flexible(
+                          Text(
+                            categoryCode,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.4,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                          Expanded(
                             child: Text(
-                              actionType,
+                              ' • Actor: $shortActor • #$shortHash',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.goldPrimary,
+                                fontSize: 11,
+                                color: AppTheme.textSecondary,
+                                fontFeatures: [FontFeature.tabularFigures()],
                               ),
-                            ),
-                          ),
-                          Text(
-                            ' • Actor: $shortActor • #$shortHash',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.textSecondary,
-                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
                           ),
                         ],
@@ -638,5 +709,15 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
         );
       }).toList(),
     );
+  }
+
+  String _resolveAuditCategoryBadge(String actionType) {
+    final upper = actionType.toUpperCase();
+    if (upper.startsWith('AUTH')) return 'AUTH';
+    if (upper.startsWith('MATCH')) return 'MATCH';
+    if (upper.startsWith('DISPUTE')) return 'DISPUTE';
+    if (upper.startsWith('ROLE')) return 'ROLE';
+    if (upper.startsWith('ATHLETE')) return 'ROSTER';
+    return 'AUDIT';
   }
 }

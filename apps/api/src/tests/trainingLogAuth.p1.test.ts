@@ -318,7 +318,9 @@ describe("Training Log & PR Access Authorization Hardening (P1 IDOR)", () => {
         // Ensure no post IDs or exercises are leaked in error body
         expect(JSON.stringify(res.body)).not.toContain("post-gym-1");
         expect(JSON.stringify(res.body)).not.toContain("WRIST_CURL");
-        expect(JSON.stringify(res.body)).not.toContain("60");
+        const bodyWithoutRequestId = { ...res.body };
+        delete bodyWithoutRequestId.requestId;
+        expect(JSON.stringify(bodyWithoutRequestId)).not.toContain("60");
       });
 
       it("M. Self-access using ownerUserId (user.id fallback) -> 200 and returns profile training logs", async () => {

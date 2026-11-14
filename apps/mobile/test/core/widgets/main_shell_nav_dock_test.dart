@@ -100,7 +100,7 @@ void main() {
       expect(xs, orderedEquals([...xs]..sort()));
     });
 
-    testWidgets('every tab uses the crimson accent when active, never gold',
+    testWidgets('every tab uses gold icon, crimson border, and white label when active',
         (tester) async {
       await _pumpShell(tester);
 
@@ -110,8 +110,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final icon = _iconFor(tester, tab.activeIcon);
-        expect(icon.color, AppTheme.crimson, reason: '${tab.label} icon');
-        expect(icon.color, isNot(AppTheme.goldPrimary));
+        expect(icon.color, const Color(0xFFD4AF37), reason: '${tab.label} icon');
 
         final pill = tester.widget<AnimatedContainer>(
           find.ancestor(
@@ -120,15 +119,31 @@ void main() {
           ),
         );
         final deco = pill.decoration! as BoxDecoration;
-        expect(deco.color, AppTheme.crimson.withValues(alpha: 0.16),
-            reason: '${tab.label} pill fill');
-        expect((deco.border! as Border).top.color,
-            AppTheme.crimson.withValues(alpha: 0.45),
-            reason: '${tab.label} pill border');
+        expect(
+          deco.color,
+          const Color(0x24E23B3B),
+          reason: '${tab.label} pill fill',
+        );
+        expect(
+          deco.gradient,
+          isNull,
+          reason: '${tab.label} pill gradient',
+        );
+        final topBorder = (deco.border! as Border).top;
+        expect(
+          topBorder.color,
+          const Color(0xFFE23B3B),
+          reason: '${tab.label} pill border',
+        );
+        expect(
+          topBorder.width,
+          1.3,
+          reason: '${tab.label} pill border width',
+        );
       }
     });
 
-    testWidgets('active label is titanium white, inactive labels are muted',
+    testWidgets('active label is white, inactive labels are crisp ice-slate',
         (tester) async {
       await _pumpShell(tester);
       await tester.tap(find.text('Events'));
@@ -137,12 +152,12 @@ void main() {
       for (final tab in _tabs) {
         final style = _labelFor(tester, tab.label).style!;
         if (tab.label == 'Events') {
-          expect(style.color, AppTheme.textPrimary);
+          expect(style.color, const Color(0xFFFFFFFF));
           expect(style.fontWeight, FontWeight.w700);
         } else {
-          expect(style.color, AppTheme.textMuted);
+          expect(style.color, const Color(0xFFF1F5F9));
           expect(style.fontWeight, FontWeight.w600);
-          expect(_iconFor(tester, tab.icon).color, AppTheme.textMuted);
+          expect(_iconFor(tester, tab.icon).color, const Color(0xFFF1F5F9));
         }
         expect(style.fontFamily, AppTheme.fontDisplay);
       }
@@ -247,7 +262,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('auto-hides dock when scrolling down and reveals when scrolling up',
+    testWidgets('keeps floating dock permanently visible when scrolling down and up',
         (tester) async {
       final router = GoRouter(
         initialLocation: '/home',
@@ -296,12 +311,12 @@ void main() {
 
       expect(dockOpacity().opacity, 1.0);
 
-      // Drag up to scroll down -> dock auto-hides
+      // Drag up to scroll down -> dock remains permanently visible
       await tester.drag(find.byType(ListView), const Offset(0, -180));
       await tester.pumpAndSettle();
-      expect(dockOpacity().opacity, 0.0);
+      expect(dockOpacity().opacity, 1.0);
 
-      // Drag down to scroll up -> dock reveals
+      // Drag down to scroll up -> dock remains permanently visible
       await tester.drag(find.byType(ListView), const Offset(0, 120));
       await tester.pumpAndSettle();
       expect(dockOpacity().opacity, 1.0);
@@ -722,6 +737,128 @@ void main() {
 
       expect(find.text('All alerts marked as read'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'switching role from Passport -> Settings -> Account Roles and tapping 5th tab (Dossier) resets branch stack and never shows stale Settings screen',
+        (tester) async {
+      final isAdminNotifier = ValueNotifier<bool>(false);
+      addTearDown(isAdminNotifier.dispose);
+
+      final router = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return ValueListenableBuilder<bool>(
+                valueListenable: isAdminNotifier,
+                builder: (ctx, isAdmin, _) {
+                  return MainShellScreen(
+                    navigationShell: navigationShell,
+                    activeRole: isAdmin ? 'SYSTEM_ADMIN' : 'ATHLETE',
+                    isAdminModeOverride: isAdmin,
+                  );
+                },
+              );
+            },
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/home',
+                    builder: (context, state) => ValueListenableBuilder<bool>(
+                      valueListenable: isAdminNotifier,
+                      builder: (context, isAdmin, _) => Center(
+                        child: Text(isAdmin ? 'Admin Command Root' : 'Athlete Arena Root'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/discover',
+                    builder: (context, state) => const Center(child: Text('Discover Root')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/tournaments',
+                    builder: (context, state) => const Center(child: Text('Events Root')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/community/feed',
+                    builder: (context, state) => const Center(child: Text('Community Root')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/athlete/profile',
+                    builder: (context, state) => ValueListenableBuilder<bool>(
+                      valueListenable: isAdminNotifier,
+                      builder: (context, isAdmin, _) => Center(
+                        child: Text(isAdmin ? 'Admin Dossier Root' : 'Athlete Passport Root'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('Stale Athlete Settings'))),
+          ),
+          GoRoute(
+            path: '/settings/roles',
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('Account Roles Switcher'))),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      // 1. Navigate to 5th tab (Passport) in Athlete Mode
+      await tester.tap(find.text('Passport'));
+      await tester.pumpAndSettle();
+      expect(find.text('Athlete Passport Root'), findsOneWidget);
+
+      // 2. Push /settings and /settings/roles on top of Tab 4
+      router.push('/settings');
+      await tester.pumpAndSettle();
+      expect(find.text('Stale Athlete Settings'), findsOneWidget);
+
+      router.push('/settings/roles');
+      await tester.pumpAndSettle();
+      expect(find.text('Account Roles Switcher'), findsOneWidget);
+
+      // 3. Switch role to Admin and redirect to /home (popping pushed routes)
+      isAdminNotifier.value = true;
+      while (router.canPop()) {
+        router.pop();
+      }
+      router.go('/home');
+      await tester.pumpAndSettle();
+      expect(find.text('Admin Command Root'), findsOneWidget);
+
+      // 4. Tap the 5th bottom navigation button (Dossier) -> must show Admin Dossier Root, never Stale Athlete Settings
+      await tester.tap(find.text('Dossier'));
+      await tester.pumpAndSettle();
+      expect(find.text('Admin Dossier Root'), findsOneWidget);
+      expect(find.text('Stale Athlete Settings'), findsNothing);
     });
   });
 }
