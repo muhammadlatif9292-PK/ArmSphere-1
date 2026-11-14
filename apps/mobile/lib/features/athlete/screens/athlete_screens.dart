@@ -2667,26 +2667,35 @@ class _AthleteDashboardScreenState
                             color: AppTheme.textMuted, fontSize: 11)),
                   ),
                   data: (rankings) {
-                    int resolveArmElo(Map<String, dynamic> r) {
-                      final raw = _isRightArm
-                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
-                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
-                      if (raw is num) return raw.toInt();
-                      return int.tryParse(raw?.toString() ?? '') ?? 0;
-                    }
+                    final hasArmSpecificElo = rankings.any((r) =>
+                        r.containsKey('rightArmElo') ||
+                        r.containsKey('leftArmElo'));
 
-                    final armRankings = rankings.map((r) {
-                      final copy = Map<String, dynamic>.from(r);
-                      final resolved = _isRightArm
-                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
-                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
-                      if (resolved != null) {
-                        copy['eloRating'] = resolved;
+                    final List<Map<String, dynamic>> armRankings;
+                    if (hasArmSpecificElo) {
+                      int resolveArmElo(Map<String, dynamic> r) {
+                        final raw = _isRightArm
+                            ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                            : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                        if (raw is num) return raw.toInt();
+                        return int.tryParse(raw?.toString() ?? '') ?? 0;
                       }
-                      return copy;
-                    }).toList()
-                      ..sort(
-                          (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
+
+                      armRankings = rankings.map((r) {
+                        final copy = Map<String, dynamic>.from(r);
+                        final resolved = _isRightArm
+                            ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                            : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                        if (resolved != null) {
+                          copy['eloRating'] = resolved;
+                        }
+                        return copy;
+                      }).toList()
+                        ..sort(
+                            (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
+                    } else {
+                      armRankings = rankings;
+                    }
 
                     final top3 = armRankings.take(3).toList();
                     if (top3.isEmpty) {
