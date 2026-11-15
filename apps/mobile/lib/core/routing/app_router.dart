@@ -555,6 +555,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/athlete/competitions',
+        name: 'athlete_competitions_hub',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const MyCompetitionsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/athlete/passport',
+        redirect: (context, state) => '/athlete/competitions',
+      ),
+      GoRoute(
+        path: '/athlete/passports',
+        redirect: (context, state) => '/athlete/competitions',
+      ),
+      GoRoute(
         path: '/athlete/session/:sessionId',
         name: 'active_session_detail',
         pageBuilder: (context, state) {
@@ -568,6 +584,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/athlete/:athleteId',
         name: 'public_athlete_profile',
+        redirect: (context, state) {
+          final id = state.pathParameters['athleteId'] ?? '';
+          if (id == 'competitions' || id == 'passport' || id == 'passports') {
+            return '/athlete/competitions';
+          }
+          if (id == 'achievements' || id == 'honors') {
+            return '/athlete/achievements';
+          }
+          if (id == 'profile' || id == 'me' || id == 'self' || id == '_') {
+            return '/athlete/profile';
+          }
+          if (id == 'dashboard') {
+            return '/athlete/dashboard';
+          }
+          return null;
+        },
         pageBuilder: (context, state) {
           final athleteId = state.pathParameters['athleteId'] ?? '';
           return AppTransitionPage(
@@ -1500,14 +1532,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: OrganizationProfileScreen(organizationId: orgId),
           );
         },
-      ),
-      GoRoute(
-        path: '/athlete/competitions',
-        name: 'athlete_competitions_hub',
-        pageBuilder: (context, state) => AppTransitionPage(
-          key: state.pageKey,
-          child: const MyCompetitionsScreen(),
-        ),
       ),
     ],
   );

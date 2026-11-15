@@ -30,10 +30,6 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final profileAsync = ref.watch(publicAthleteProfileProvider(athleteId));
-    final followAsync = ref.watch(followStatusProvider(athleteId));
-    final followersAsync = ref.watch(followersProvider(athleteId));
-    final followingAsync = ref.watch(followingProvider(athleteId));
     final authState = ref.watch(authProvider);
 
     // Own profile id (athlete_profiles.id or userId) decides whether to hide Follow.
@@ -41,8 +37,37 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
     final myProfileId = myProfile?['id']?.toString();
     final myUserId = myProfile?['userId']?.toString() ??
         authState.userProfile?['id']?.toString();
-    final isSelf = (myProfileId != null && myProfileId == athleteId) ||
+    final isInvalidOrSelf = athleteId.isEmpty ||
+        athleteId == '_' ||
+        athleteId == 'self' ||
+        athleteId == 'me';
+    final effectiveAthleteId = isInvalidOrSelf
+        ? (myProfileId ?? myUserId ?? '')
+        : athleteId;
+
+    final isSelf = isInvalidOrSelf ||
+        (myProfileId != null && myProfileId == athleteId) ||
         (myUserId != null && myUserId == athleteId);
+
+    final profileAsync = isInvalidOrSelf && myProfile != null
+        ? AsyncValue.data(myProfile)
+        : ref.watch(publicAthleteProfileProvider(
+            effectiveAthleteId.isNotEmpty ? effectiveAthleteId : (myProfileId ?? 'me')));
+    final followAsync = isSelf
+        ? const AsyncValue.data(false)
+        : (effectiveAthleteId.isNotEmpty
+            ? ref.watch(followStatusProvider(effectiveAthleteId))
+            : const AsyncValue.data(false));
+    final followersAsync = isSelf && myProfileId == null
+        ? const AsyncValue.data(<Map<String, dynamic>>[])
+        : (effectiveAthleteId.isNotEmpty
+            ? ref.watch(followersProvider(effectiveAthleteId))
+            : const AsyncValue.data(<Map<String, dynamic>>[]));
+    final followingAsync = isSelf && myProfileId == null
+        ? const AsyncValue.data(<Map<String, dynamic>>[])
+        : (effectiveAthleteId.isNotEmpty
+            ? ref.watch(followingProvider(effectiveAthleteId))
+            : const AsyncValue.data(<Map<String, dynamic>>[]));
     final canViewTrainingLog = isSelf ||
         authState.hasAnyRole(const [
           'SYSTEM_ADMIN',
@@ -100,7 +125,10 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                           ElevatedButton(
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              ref.invalidate(publicAthleteProfileProvider(athleteId));
+                              ref.invalidate(athleteProfileProvider);
+                              if (effectiveAthleteId.isNotEmpty) {
+                                ref.invalidate(publicAthleteProfileProvider(effectiveAthleteId));
+                              }
                             },
                             child: const Text('Retry'),
                           ),
