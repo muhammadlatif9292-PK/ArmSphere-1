@@ -59,7 +59,10 @@ class _TournamentOperatorDashboardScreenState
     }
   }
 
-  Future<void> _showCreateTournamentModal(BuildContext context) async {
+  Future<void> _showCreateTournamentModal(
+    BuildContext context, {
+    Map<String, dynamic>? existingEvent,
+  }) async {
     HapticFeedback.mediumImpact();
     final authProfile = ref.read(authProvider).userProfile ?? {};
     final userProvince = authProfile['province']?.toString().trim() ?? '';
@@ -67,20 +70,69 @@ class _TournamentOperatorDashboardScreenState
       (p) => p.toLowerCase() == userProvince.toLowerCase(),
       orElse: () => _kPakistanProvinces.first,
     );
+    if (existingEvent?['province'] != null &&
+        _kPakistanProvinces.contains(existingEvent!['province'].toString())) {
+      selectedProvince = existingEvent['province'].toString();
+    }
 
-    final nameCtrl = TextEditingController(text: 'PAF Championship Cup 2026');
-    final cityCtrl = TextEditingController(
-      text: selectedProvince == 'Sindh'
-          ? 'Karachi'
-          : selectedProvince == 'KPK'
-              ? 'Peshawar'
-              : selectedProvince == 'Islamabad'
-                  ? 'Islamabad'
-                  : 'Lahore',
+    int wizardStep = 0;
+    final hostOrgNameCtrl = TextEditingController(
+      text: (existingEvent?['organizationName'] ??
+              authProfile['organizationName'] ??
+              'Pakistan Armwrestling Federation (PAFF)')
+          .toString(),
     );
-    final venueCtrl = TextEditingController(text: 'Federation Championship Arena');
-    final capacityCtrl = TextEditingController(text: '128');
-    final feeCtrl = TextEditingController(text: '0');
+    final nameCtrl = TextEditingController(
+      text: (existingEvent?['name'] ?? 'PAF Championship Cup 2026').toString(),
+    );
+    final descriptionCtrl = TextEditingController(
+      text: (existingEvent?['description'] ??
+              'Official sanctioned championship with QR weigh-ins, double-elimination brackets, and live table dispatch.')
+          .toString(),
+    );
+    final cityCtrl = TextEditingController(
+      text: (existingEvent?['city'] ??
+              (selectedProvince == 'Sindh'
+                  ? 'Karachi'
+                  : selectedProvince == 'KPK'
+                      ? 'Peshawar'
+                      : selectedProvince == 'Islamabad'
+                          ? 'Islamabad'
+                          : 'Lahore'))
+          .toString(),
+    );
+    final venueCtrl = TextEditingController(
+      text: (existingEvent?['venue'] ??
+              existingEvent?['venueName'] ??
+              'Federation Championship Arena')
+          .toString(),
+    );
+    final capacityCtrl = TextEditingController(
+      text: (existingEvent?['capacity'] ?? '128').toString(),
+    );
+    final initialFeeCents =
+        (existingEvent?['registrationFeeCents'] as num?)?.toInt() ?? 0;
+    final feeCtrl = TextEditingController(
+      text: (initialFeeCents / 100).round().toString(),
+    );
+
+    String selectedBackdrop = 'ARENA_COLOSSEUM';
+    String eliminationFormat = 'DOUBLE_ELIMINATION';
+    final Set<String> selectedDivisions = {'MEN_SENIOR', 'JUNIOR_U21'};
+    final Set<String> selectedArms = {'RIGHT', 'LEFT'};
+    final Set<String> selectedWeights = {
+      '-65kg',
+      '-75kg',
+      '-85kg',
+      '-95kg',
+      '-105kg',
+      '+105kg',
+    };
+    int tableCount = 2;
+    bool runningFouls = true;
+    bool strapAfterFirstSlip = true;
+    bool refereeGripAfter30s = true;
+    String currency = 'CAD';
     String paymentMethod = 'MANUAL_QR';
     bool publishImmediately = true;
     bool autoCreateTables = true;
@@ -115,13 +167,21 @@ class _TournamentOperatorDashboardScreenState
               }
             }
 
+            const stepLabels = [
+              '1. Identity',
+              '2. Venue',
+              '3. Brackets',
+              '4. Arena',
+              '5. Fees',
+            ];
+
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.viewInsetsOf(ctx).bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.88,
+                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.90,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xF5070A11),
@@ -160,13 +220,15 @@ class _TournamentOperatorDashboardScreenState
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'CREATE SANCTIONED TOURNAMENT',
-                                  style: TextStyle(
+                                  existingEvent != null
+                                      ? 'EDIT SANCTIONED TOURNAMENT'
+                                      : '5-STEP TOURNAMENT CREATOR WIZARD',
+                                  style: const TextStyle(
                                     fontFamily: AppTheme.fontDisplay,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
@@ -175,8 +237,8 @@ class _TournamentOperatorDashboardScreenState
                                   ),
                                 ),
                                 Text(
-                                  'Configure event requirements, venue, dates & arena tables',
-                                  style: TextStyle(
+                                  'Step ${wizardStep + 1} of 5 · Configure identity, categories, tables & QR weigh-ins',
+                                  style: const TextStyle(
                                     fontSize: 11,
                                     color: AppTheme.textSecondary,
                                   ),
@@ -190,298 +252,611 @@ class _TournamentOperatorDashboardScreenState
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: nameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Tournament Name *',
-                          hintText: 'e.g. PAF National Championship 2026',
-                          prefixIcon: Icon(Icons.military_tech_outlined, size: 18),
-                        ),
-                      ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: selectedProvince,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Province *',
-                              ),
-                              items: [
-                                for (final p in _kPakistanProvinces)
-                                  DropdownMenuItem(
-                                    value: p,
-                                    child: Text(p, overflow: TextOverflow.ellipsis),
-                                  ),
-                              ],
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setModalState(() => selectedProvince = v);
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: cityCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'City *',
-                                hintText: 'e.g. Lahore',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: venueCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Arena / Venue Name *',
-                          hintText: 'e.g. Nishtar Park Sports Complex',
-                          prefixIcon: Icon(Icons.location_on_outlined, size: 18),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: capacityCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Max Athletes *',
-                                hintText: '128',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: feeCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Entry Fee (CAD)',
-                                hintText: '0 for Free',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: paymentMethod,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Payment',
-                              ),
-                              items: const [
-                                DropdownMenuItem(value: 'MANUAL_QR', child: Text('Manual / QR')),
-                                DropdownMenuItem(value: 'STRIPE', child: Text('Card / Stripe')),
-                              ],
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setModalState(() => paymentMethod = v);
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      const Text(
-                        'SCHEDULE & REGISTRATION WINDOW',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.8,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => pickDate(
-                                initial: regEnd,
-                                onPicked: (d) {
-                                  regEnd = DateTime(d.year, d.month, d.day, 18, 0);
-                                  if (!eventStart.isAfter(regEnd)) {
-                                    eventStart = regEnd.add(const Duration(days: 1));
-                                  }
-                                  if (eventEnd.isBefore(eventStart)) {
-                                    eventEnd = eventStart.add(const Duration(days: 1));
-                                  }
-                                },
-                              ),
-                              icon: const Icon(Icons.how_to_reg_outlined, size: 15),
-                              label: Text(
-                                'Reg Closes: ${regEnd.day}/${regEnd.month}/${regEnd.year}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => pickDate(
-                                initial: eventStart,
-                                onPicked: (d) {
-                                  eventStart = DateTime(d.year, d.month, d.day, 9, 0);
-                                  if (!regEnd.isBefore(eventStart)) {
-                                    regEnd = eventStart.subtract(const Duration(hours: 12));
-                                  }
-                                  if (eventEnd.isBefore(eventStart)) {
-                                    eventEnd = eventStart.add(const Duration(hours: 12));
-                                  }
-                                },
-                              ),
-                              icon: const Icon(Icons.event_available_outlined, size: 15),
-                              label: Text(
-                                'Event Date: ${eventStart.day}/${eventStart.month}/${eventStart.year}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: AppTheme.goldPrimary,
-                        title: const Text(
-                          'Publish Immediately for Athlete Registration',
-                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: const Text(
-                          'Makes event live in Competitions list so athletes can register right away',
-                          style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                        ),
-                        value: publishImmediately,
-                        onChanged: (v) => setModalState(() => publishImmediately = v),
-                      ),
-                      SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: AppTheme.goldPrimary,
-                        title: const Text(
-                          'Auto-Provision Official Arena Tables (Table 1 & Table 2)',
-                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: const Text(
-                          'Creates Table 1 (Main Stage) and Table 2 (Feature Pit) automatically',
-                          style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                        ),
-                        value: autoCreateTables,
-                        onChanged: (v) => setModalState(() => autoCreateTables = v),
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        height: 50,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.goldPrimary,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: isSubmitting
-                              ? null
-                              : () async {
-                                  final name = nameCtrl.text.trim();
-                                  final city = cityCtrl.text.trim();
-                                  final venue = venueCtrl.text.trim();
-                                  final capacity = int.tryParse(capacityCtrl.text.trim()) ?? 128;
-                                  final feeDollars = double.tryParse(feeCtrl.text.trim()) ?? 0;
-                                  final feeCents = (feeDollars * 100).round();
 
-                                  if (name.length < 3 || city.length < 2 || venue.length < 3) {
-                                    ScaffoldMessenger.of(ctx).showSnackBar(
-                                      CrystalSnackBar(
-                                        content: const Text(
-                                          'Please enter a valid Tournament Name, City, and Venue.',
-                                        ),
-                                        backgroundColor: AppTheme.error,
-                                        behavior: SnackBarBehavior.floating,
+                      // Interactive 5-Step Progress Selector
+                      Row(
+                        children: List.generate(stepLabels.length, (i) {
+                          final active = i <= wizardStep;
+                          final current = i == wizardStep;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => setModalState(() => wizardStep = i),
+                              child: Padding(
+                                padding: EdgeInsets.only(right: i < 4 ? 5 : 0),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(4),
+                                        color: current
+                                            ? AppTheme.goldPrimary
+                                            : (active
+                                                ? AppTheme.emerald
+                                                : const Color(0x33FFFFFF)),
                                       ),
-                                    );
-                                    return;
-                                  }
-
-                                  setModalState(() => isSubmitting = true);
-                                  try {
-                                    final created = await ref
-                                        .read(tournamentProvider.notifier)
-                                        .createEvent(
-                                          data: {
-                                            'name': name,
-                                            'province': selectedProvince,
-                                            'city': city,
-                                            'venue': venue,
-                                            'capacity': capacity > 0 ? capacity : 128,
-                                            'registrationFeeCents': feeCents >= 0 ? feeCents : 0,
-                                            'paymentMethod': paymentMethod,
-                                            'registrationStart': regStart.toUtc().toIso8601String(),
-                                            'registrationEnd': regEnd.toUtc().toIso8601String(),
-                                            'startDate': eventStart.toUtc().toIso8601String(),
-                                            'endDate': eventEnd.toUtc().toIso8601String(),
-                                          },
-                                          publishImmediately: publishImmediately,
-                                          initialTables: autoCreateTables
-                                              ? const ['Table 1 — Main Stage', 'Table 2 — Feature Pit']
-                                              : const [],
-                                        );
-                                    if (ctx.mounted) {
-                                      Navigator.of(ctx).pop(created);
-                                    }
-                                  } on ApiException catch (e) {
-                                    if (ctx.mounted) {
-                                      setModalState(() => isSubmitting = false);
-                                      ScaffoldMessenger.of(ctx).showSnackBar(
-                                        CrystalSnackBar(
-                                          content: Text(e.detail),
-                                          backgroundColor: AppTheme.error,
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (ctx.mounted) {
-                                      setModalState(() => isSubmitting = false);
-                                      ScaffoldMessenger.of(ctx).showSnackBar(
-                                        CrystalSnackBar(
-                                          content: Text('Could not create tournament: $e'),
-                                          backgroundColor: AppTheme.error,
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                          icon: isSubmitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                                )
-                              : const Icon(Icons.add_moderator_rounded, size: 20),
-                          label: Text(
-                            isSubmitting
-                                ? 'PROVISIONING TOURNAMENT...'
-                                : (publishImmediately
-                                    ? 'CREATE & PUBLISH TOURNAMENT'
-                                    : 'CREATE DRAFT TOURNAMENT'),
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                              letterSpacing: 0.6,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      stepLabels[i],
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: current
+                                            ? AppTheme.goldPrimary
+                                            : AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Step 1: Identity & Host Organization
+                      if (wizardStep == 0) ...[
+                        TextField(
+                          controller: hostOrgNameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Host Sanctioning Organization *',
+                            prefixIcon: Icon(Icons.shield_outlined, size: 18),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: nameCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Tournament Name *',
+                            hintText: 'e.g. PAF National Championship 2026',
+                            prefixIcon: Icon(Icons.military_tech_outlined, size: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedBackdrop,
+                          decoration: const InputDecoration(
+                            labelText: 'Stage Backdrop Theme',
+                            prefixIcon: Icon(Icons.wallpaper_rounded, size: 18),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'ARENA_COLOSSEUM',
+                              child: Text('Grand Prix Colosseum Stage'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'CHAMPIONSHIP_GOLD',
+                              child: Text('24K Championship Title Stage'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'UNDERGROUND_PIT',
+                              child: Text('Pro Supermatch Pit Stage'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) setModalState(() => selectedBackdrop = v);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: descriptionCtrl,
+                          maxLines: 2,
+                          decoration: const InputDecoration(
+                            labelText: 'Event Overview & Sanctioning Charter',
+                          ),
+                        ),
+                      ],
+
+                      // Step 2: Schedule & Venue
+                      if (wizardStep == 1) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: selectedProvince,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Province *',
+                                ),
+                                items: [
+                                  for (final p in _kPakistanProvinces)
+                                    DropdownMenuItem(
+                                      value: p,
+                                      child: Text(p, overflow: TextOverflow.ellipsis),
+                                    ),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setModalState(() => selectedProvince = v);
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: cityCtrl,
+                                decoration: const InputDecoration(
+                                  labelText: 'City *',
+                                  hintText: 'e.g. Lahore',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: venueCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Arena / Venue Name *',
+                            hintText: 'e.g. Nishtar Park Sports Complex',
+                            prefixIcon: Icon(Icons.location_on_outlined, size: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => pickDate(
+                                  initial: regEnd,
+                                  onPicked: (d) {
+                                    regEnd = DateTime(d.year, d.month, d.day, 18, 0);
+                                    if (!eventStart.isAfter(regEnd)) {
+                                      eventStart = regEnd.add(const Duration(days: 1));
+                                    }
+                                    if (eventEnd.isBefore(eventStart)) {
+                                      eventEnd = eventStart.add(const Duration(days: 1));
+                                    }
+                                  },
+                                ),
+                                icon: const Icon(Icons.scale_outlined, size: 15),
+                                label: Text(
+                                  'Weigh-In: ${regEnd.day}/${regEnd.month}/${regEnd.year}',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => pickDate(
+                                  initial: eventStart,
+                                  onPicked: (d) {
+                                    eventStart = DateTime(d.year, d.month, d.day, 9, 0);
+                                    if (!regEnd.isBefore(eventStart)) {
+                                      regEnd = eventStart.subtract(const Duration(hours: 12));
+                                    }
+                                    if (eventEnd.isBefore(eventStart)) {
+                                      eventEnd = eventStart.add(const Duration(hours: 12));
+                                    }
+                                  },
+                                ),
+                                icon: const Icon(Icons.event_available_outlined, size: 15),
+                                label: Text(
+                                  'Event Date: ${eventStart.day}/${eventStart.month}/${eventStart.year}',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      // Step 3: Categories & Brackets
+                      if (wizardStep == 2) ...[
+                        DropdownButtonFormField<String>(
+                          initialValue: eliminationFormat,
+                          decoration: const InputDecoration(
+                            labelText: 'Bracket Elimination Format',
+                            prefixIcon: Icon(Icons.account_tree_outlined, size: 18),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'DOUBLE_ELIMINATION',
+                              child: Text('WAF Double Elimination (2 Losses to Eliminate)'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'SINGLE_ELIMINATION',
+                              child: Text('Single Elimination Knockout'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'ROUND_ROBIN',
+                              child: Text('Round Robin Pool Stage'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) setModalState(() => eliminationFormat = v);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'ACTIVE DIVISIONS & ARMS',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final div in const [
+                              'MEN_SENIOR',
+                              'WOMEN_SENIOR',
+                              'JUNIOR_U21',
+                              'MASTERS_40',
+                              'AMATEUR',
+                            ])
+                              FilterChip(
+                                label: Text(
+                                  div.replaceAll('_', ' '),
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                selected: selectedDivisions.contains(div),
+                                onSelected: (sel) {
+                                  setModalState(() {
+                                    if (sel) {
+                                      selectedDivisions.add(div);
+                                    } else if (selectedDivisions.length > 1) {
+                                      selectedDivisions.remove(div);
+                                    }
+                                  });
+                                },
+                              ),
+                            for (final arm in const ['RIGHT', 'LEFT'])
+                              FilterChip(
+                                label: Text(
+                                  '$arm ARM',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                selected: selectedArms.contains(arm),
+                                onSelected: (sel) {
+                                  setModalState(() {
+                                    if (sel) {
+                                      selectedArms.add(arm);
+                                    } else if (selectedArms.length > 1) {
+                                      selectedArms.remove(arm);
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'WEIGHT CLASSES',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            for (final wc in const [
+                              '-65kg',
+                              '-75kg',
+                              '-85kg',
+                              '-95kg',
+                              '-105kg',
+                              '+105kg',
+                            ])
+                              FilterChip(
+                                label: Text(wc, style: const TextStyle(fontSize: 11)),
+                                selected: selectedWeights.contains(wc),
+                                onSelected: (sel) {
+                                  setModalState(() {
+                                    if (sel) {
+                                      selectedWeights.add(wc);
+                                    } else if (selectedWeights.length > 1) {
+                                      selectedWeights.remove(wc);
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      ],
+
+                      // Step 4: Arena Tables & Rules
+                      if (wizardStep == 3) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Physical Arena Tables (1–10)',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: tableCount > 1
+                                      ? () => setModalState(() => tableCount--)
+                                      : null,
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Text(
+                                  '$tableCount TABLES',
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontMono,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.goldPrimary,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: tableCount < 10
+                                      ? () => setModalState(() => tableCount++)
+                                      : null,
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppTheme.goldPrimary,
+                          title: const Text(
+                            'Running Fouls System',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                          value: runningFouls,
+                          onChanged: (v) => setModalState(() => runningFouls = v),
+                        ),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppTheme.goldPrimary,
+                          title: const Text(
+                            'Automatic Strap on First Slip',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                          value: strapAfterFirstSlip,
+                          onChanged: (v) => setModalState(() => strapAfterFirstSlip = v),
+                        ),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppTheme.goldPrimary,
+                          title: const Text(
+                            'Referee Grip after 30s Setup',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                          value: refereeGripAfter30s,
+                          onChanged: (v) => setModalState(() => refereeGripAfter30s = v),
+                        ),
+                      ],
+
+                      // Step 5: Registration, Fees & Publish
+                      if (wizardStep == 4) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: capacityCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Max Athletes *',
+                                  hintText: '128',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: feeCtrl,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: 'Entry Fee ($currency)',
+                                  hintText: '0 for Free',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                initialValue: paymentMethod,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Payment',
+                                ),
+                                items: const [
+                                  DropdownMenuItem(value: 'MANUAL_QR', child: Text('Manual / QR')),
+                                  DropdownMenuItem(value: 'STRIPE', child: Text('Card / Stripe')),
+                                ],
+                                onChanged: (v) {
+                                  if (v != null) {
+                                    setModalState(() => paymentMethod = v);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppTheme.goldPrimary,
+                          title: const Text(
+                            'Publish Immediately for Athlete Registration',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                          subtitle: const Text(
+                            'Makes event live in Competitions list so athletes can register & get QR Passports',
+                            style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                          ),
+                          value: publishImmediately,
+                          onChanged: (v) => setModalState(() => publishImmediately = v),
+                        ),
+                        SwitchListTile.adaptive(
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppTheme.goldPrimary,
+                          title: Text(
+                            'Auto-Provision $tableCount Official Arena Tables',
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                          value: autoCreateTables,
+                          onChanged: (v) => setModalState(() => autoCreateTables = v),
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          if (wizardStep > 0) ...[
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () => setModalState(() => wizardStep--),
+                                child: const Text('PREVIOUS'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                          Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.goldPrimary,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () async {
+                                        if (wizardStep < 4) {
+                                          HapticFeedback.selectionClick();
+                                          setModalState(() => wizardStep++);
+                                          return;
+                                        }
+                                        final name = nameCtrl.text.trim();
+                                        final city = cityCtrl.text.trim();
+                                        final venue = venueCtrl.text.trim();
+                                        final capacity =
+                                            int.tryParse(capacityCtrl.text.trim()) ?? 128;
+                                        final feeDollars =
+                                            double.tryParse(feeCtrl.text.trim()) ?? 0;
+                                        final feeCents = (feeDollars * 100).round();
+
+                                        if (name.length < 3 ||
+                                            city.length < 2 ||
+                                            venue.length < 3) {
+                                          ScaffoldMessenger.of(ctx).showSnackBar(
+                                            CrystalSnackBar(
+                                              content: const Text(
+                                                'Please enter a valid Tournament Name, City, and Venue.',
+                                              ),
+                                              backgroundColor: AppTheme.error,
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                          return;
+                                        }
+
+                                        setModalState(() => isSubmitting = true);
+                                        try {
+                                          final generatedTables = List.generate(
+                                            tableCount,
+                                            (i) => i == 0
+                                                ? 'Table 1 — Main Stage'
+                                                : 'Table ${i + 1} — Arena Pit ${i + 1}',
+                                          );
+                                          final created = await ref
+                                              .read(tournamentProvider.notifier)
+                                              .createEvent(
+                                                data: {
+                                                  'name': name,
+                                                  'organizationName':
+                                                      hostOrgNameCtrl.text.trim(),
+                                                  'description':
+                                                      descriptionCtrl.text.trim(),
+                                                  'province': selectedProvince,
+                                                  'city': city,
+                                                  'venue': venue,
+                                                  'capacity':
+                                                      capacity > 0 ? capacity : 128,
+                                                  'registrationFeeCents':
+                                                      feeCents >= 0 ? feeCents : 0,
+                                                  'paymentMethod': paymentMethod,
+                                                  'eliminationFormat':
+                                                      eliminationFormat,
+                                                  'divisions':
+                                                      selectedDivisions.toList(),
+                                                  'arms': selectedArms.toList(),
+                                                  'weightClasses':
+                                                      selectedWeights.toList(),
+                                                  'registrationStart':
+                                                      regStart.toUtc().toIso8601String(),
+                                                  'registrationEnd':
+                                                      regEnd.toUtc().toIso8601String(),
+                                                  'startDate':
+                                                      eventStart.toUtc().toIso8601String(),
+                                                  'endDate':
+                                                      eventEnd.toUtc().toIso8601String(),
+                                                },
+                                                publishImmediately:
+                                                    publishImmediately,
+                                                initialTables: autoCreateTables
+                                                    ? generatedTables
+                                                    : const [],
+                                              );
+                                          if (ctx.mounted) {
+                                            Navigator.of(ctx).pop(created);
+                                          }
+                                        } on ApiException catch (e) {
+                                          if (ctx.mounted) {
+                                            setModalState(() => isSubmitting = false);
+                                            ScaffoldMessenger.of(ctx).showSnackBar(
+                                              CrystalSnackBar(
+                                                content: Text(e.detail),
+                                                backgroundColor: AppTheme.error,
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                icon: Icon(
+                                  wizardStep < 4
+                                      ? Icons.arrow_forward_rounded
+                                      : Icons.rocket_launch_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  wizardStep < 4
+                                      ? 'NEXT STEP (${wizardStep + 2}/5)'
+                                      : (publishImmediately
+                                          ? 'PUBLISH SANCTIONED TOURNAMENT'
+                                          : 'SAVE TOURNAMENT DRAFT'),
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

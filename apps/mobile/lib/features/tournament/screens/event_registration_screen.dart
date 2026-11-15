@@ -251,7 +251,15 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
             ),
           ),
         ),
-        actions: const [CrystalHomeButton()],
+        actions: [
+          CrystalIconPillButton(
+            icon: Icons.qr_code_2_rounded,
+            iconColor: AppTheme.emerald,
+            tooltip: 'View Event QR Passport',
+            onPressed: () => context.push('/tournament/${widget.tournamentId}/qr'),
+          ),
+          const CrystalHomeButton(),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -333,6 +341,115 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                         ),
                         const SizedBox(height: AppTheme.space16),
                       ],
+
+                      // Category-First Quick-Select Matrix Cards
+                      ElevatedActionCard(
+                        padding: const EdgeInsets.all(AppTheme.space16),
+                        borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'SANCTIONED BRACKET CATEGORIES',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11.5,
+                                    letterSpacing: 0.8,
+                                    color: AppTheme.goldPrimary,
+                                  ),
+                                ),
+                                StatusChip(
+                                  label: 'DOUBLE ELIMINATION',
+                                  color: AppTheme.cyan,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Tap a category card to quick-select your weight class & arm, or customize below.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final preset in const [
+                                  ('SENIOR', '-70kg', 'RIGHT', '12/16', 'FILLING UP'),
+                                  ('SENIOR', '-78kg', 'RIGHT', '11/16', 'OPEN'),
+                                  ('SENIOR', '-85kg', 'RIGHT', '10/16', 'OPEN'),
+                                  ('SENIOR', '-85kg', 'BOTH', '8/16', 'OPEN'),
+                                  ('SENIOR', '-95kg', 'RIGHT', '14/16', 'FILLING UP'),
+                                  ('SENIOR', '+95kg', 'BOTH', '9/16', 'OPEN'),
+                                ])
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedDivision = preset.$1;
+                                        _selectedWeightClass = preset.$2;
+                                        _armChoice = preset.$3;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: (_selectedDivision == preset.$1 &&
+                                                  _selectedWeightClass == preset.$2 &&
+                                                  _armChoice == preset.$3)
+                                              ? AppTheme.goldPrimary
+                                              : const Color(0x33FFFFFF),
+                                          width: (_selectedDivision == preset.$1 &&
+                                                  _selectedWeightClass == preset.$2 &&
+                                                  _armChoice == preset.$3)
+                                              ? 1.4
+                                              : 1.0,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '${preset.$2} • ${preset.$3 == "BOTH" ? "R+L Arms" : "${preset.$3} Arm"}',
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${preset.$4} Spots • ${preset.$5}',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: preset.$5 == 'FILLING UP'
+                                                  ? AppTheme.goldPrimary
+                                                  : AppTheme.emerald,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.space16),
 
                       // Form parameters container
                       ElevatedActionCard(
@@ -647,6 +764,41 @@ class _RegistrationSummaryCard extends StatelessWidget {
             ],
           ),
           if (isDoubleBracket) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTheme.goldPrimary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'DUAL-ARM REGISTRATION CART (2 BRACKET ENTRIES):',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.goldPrimary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '• Entry 1: ${_formatDivision(division)} · $weightClass · Right Arm Bracket\n'
+                    '• Entry 2: ${_formatDivision(division)} · $weightClass · Left Arm Bracket',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontBody,
+                      fontSize: 11.5,
+                      color: AppTheme.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

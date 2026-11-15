@@ -17,6 +17,7 @@ enum StatusType {
 class StatusChip extends StatelessWidget {
   final String label;
   final StatusType type;
+  final Color? color;
   final IconData? icon;
   final VoidCallback? onTap;
 
@@ -24,30 +25,32 @@ class StatusChip extends StatelessWidget {
     super.key,
     required this.label,
     this.type = StatusType.neutral,
+    this.color,
     this.icon,
     this.onTap,
   });
 
   /// Const constructors for common federation statuses
-  const StatusChip.success({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.success({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.success;
 
-  const StatusChip.warning({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.warning({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.warning;
 
-  const StatusChip.error({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.error({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.error;
 
-  const StatusChip.info({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.info({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.info;
 
-  const StatusChip.neutral({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.neutral({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.neutral;
 
-  const StatusChip.live({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.live({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.live;
 
   Color _getForegroundColor() {
+    if (color != null) return color!;
     switch (type) {
       case StatusType.success:
         return AppTheme.verifiedEmerald;
@@ -69,6 +72,7 @@ class StatusChip extends StatelessWidget {
   }
 
   Color _getBorderColor() {
+    if (color != null) return color!.withValues(alpha: 0.45);
     switch (type) {
       case StatusType.success:
         return const Color(0x6610B981);

@@ -10,6 +10,9 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/providers/athlete_provider.dart';
+import '../../../core/providers/notification_provider.dart';
+import '../../../core/providers/rankings_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -62,6 +65,8 @@ class TournamentOperationsScreen extends ConsumerStatefulWidget {
 class _TournamentOperationsScreenState extends ConsumerState<TournamentOperationsScreen> {
   bool _busy = false;
   Timer? _autoRefreshTimer;
+  int _warRoomTab = 0; // 0 = All Stations, 1 = QR Weigh-In, 2 = Bracket Engine, 3 = Live Tables, 4 = Podium & Archive
+  String _regSearchQuery = '';
 
   @override
   void initState() {
@@ -614,9 +619,21 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       ),
     );
     if (confirmed != true || !mounted) return;
+    HapticFeedback.heavyImpact();
     await _run(
       widget.tournamentId,
-      () => ref.read(tournamentRepositoryProvider).callMatchToTable(matchId: matchId, tableId: table['id'].toString()),
+      () async {
+        final repo = ref.read(tournamentRepositoryProvider);
+        final res = await repo.callMatchToTable(matchId: matchId, tableId: table['id'].toString());
+        await repo.emitLifecycleNotification(
+          title: '$tableName: Report to Mat Now!',
+          body: 'Bout called: $aName vs $bName (Round $round • Match $matchIndex).',
+          type: 'TABLE_CALL',
+          eventId: widget.tournamentId,
+        );
+        ref.invalidate(notificationProvider);
+        return res;
+      },
       successMessage: 'Queue match promoted: $aName vs $bName called to $tableName.',
     );
   }
@@ -985,20 +1002,25 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     final refereesAsync = ref.watch(refereeDirectoryProvider);
     final auth = ref.watch(authProvider);
 
-    final userRole = auth.activeRole ?? auth.userProfile?['role']?.toString().toUpperCase() ?? '';
+    final userRole = (auth.activeRole ?? auth.userProfile?['role']?.toString() ?? '').toUpperCase();
+    final isAthleteMode = userRole == 'ATHLETE';
     const operatorRoles = {
+      'ORGANIZATION',
+      'ORGANIZATION_LEADER',
       'TOURNAMENT_OPERATOR',
       'PROVINCIAL_DIRECTOR',
       'NATIONAL_DIRECTOR',
       'SYSTEM_ADMIN',
     };
-    final isDirectorOrAdmin = operatorRoles.contains(userRole) ||
-        auth.hasAnyRole(operatorRoles);
-    final isOrganizer = eventAsync.value?['organizerId'] != null &&
+    final isDirectorOrAdmin = !isAthleteMode &&
+        (operatorRoles.contains(userRole) || (userRole.isEmpty && auth.hasAnyRole(operatorRoles)));
+    final isOrganizer = !isAthleteMode &&
+        eventAsync.value?['organizerId'] != null &&
         auth.userProfile?['id'] == eventAsync.value?['organizerId'];
-    final isReferee = userRole == 'REFEREE' || auth.hasRole('REFEREE');
-    final canOperate = isDirectorOrAdmin || isOrganizer || isReferee;
-    final canManageTables = isDirectorOrAdmin || isOrganizer;
+    final isReferee = !isAthleteMode &&
+        (userRole == 'REFEREE' || (userRole.isEmpty && auth.hasRole('REFEREE')));
+    final canOperate = !isAthleteMode && (isDirectorOrAdmin || isOrganizer || isReferee);
+    final canManageTables = !isAthleteMode && (isDirectorOrAdmin || isOrganizer);
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -1149,6 +1171,16 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                                 label: const Text('COMPLETE EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                               ),
                             OutlinedButton.icon(
+                              onPressed: _busy ? null : () => _openEditEventDialog(event),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.goldPrimary,
+                                side: const BorderSide(color: AppTheme.goldPrimary),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                              icon: const Icon(Icons.edit_calendar_rounded, size: 16),
+                              label: const Text('EDIT EVENT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                            OutlinedButton.icon(
                               onPressed: _busy
                                   ? null
                                   : () => _run(
@@ -1196,216 +1228,352 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ),
             const SizedBox(height: AppTheme.space14),
 
-            // --- Official Weigh-In Desk Quick Action (Canary 9) ---
-            ElevatedActionCard(
-              padding: const EdgeInsets.all(AppTheme.space16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.space10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
-                    ),
-                    child: const Icon(Icons.scale_rounded, color: AppTheme.goldPrimary, size: 24),
-                  ),
-                  const SizedBox(width: AppTheme.space14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            // --- 4-Tab War Room Command Bar ---
+            _buildWarRoomTabSelector(),
+            const SizedBox(height: AppTheme.space14),
+
+            // --- Official Weigh-In Desk Quick Action (Canary 9) + Fast-Lane QR Scanner ---
+            if (_warRoomTab == 0 || _warRoomTab == 1) ...[
+              ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          'OFFICIAL WEIGH-IN DESK',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13.5,
-                            color: AppTheme.textPrimary,
-                            letterSpacing: 0.5,
+                        Container(
+                          padding: const EdgeInsets.all(AppTheme.space10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                          ),
+                          child: const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.goldPrimary, size: 24),
+                        ),
+                        const SizedBox(width: AppTheme.space14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'OFFICIAL WEIGH-IN DESK',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                  color: AppTheme.textPrimary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Fast-Lane QR Passport scanner, calibrated scale & rubber stamp clearance',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Calibrated digital scale, passport & rubber stamp clearance',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textMuted,
+                        const SizedBox(width: AppTheme.space8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.goldPrimary,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/tournament/${widget.tournamentId}/weigh-in');
+                          },
+                          child: const Text(
+                            'OPEN DESK',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11.5,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: AppTheme.space8),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.goldPrimary,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/tournament/${widget.tournamentId}/weigh-in');
-                    },
-                    child: const Text(
-                      'OPEN DESK',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11.5,
+                    if (canOperate) ...[
+                      const SizedBox(height: AppTheme.space12),
+                      const Divider(color: AppTheme.cardBorder, height: 1),
+                      const SizedBox(height: AppTheme.space12),
+                      Wrap(
+                        spacing: AppTheme.space8,
+                        runSpacing: AppTheme.space8,
+                        children: [
+                          ElevatedButton.icon(
+                            key: const ValueKey('war_room_scan_qr_button'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.activeCyan.withValues(alpha: 0.16),
+                              foregroundColor: AppTheme.activeCyan,
+                              side: const BorderSide(color: AppTheme.activeCyan),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            onPressed: _busy
+                                ? null
+                                : () => _openFastLaneQrScannerSheet(regsAsync.value ?? const []),
+                            icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
+                            label: const Text(
+                              'SCAN ATHLETE QR',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            key: const ValueKey('war_room_export_csv_button'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.goldPrimary,
+                              side: const BorderSide(color: AppTheme.borderTitanium),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            onPressed: () => _exportRosterCsv(regsAsync.value ?? const []),
+                            icon: const Icon(Icons.download_rounded, size: 16),
+                            label: const Text(
+                              'EXPORT ROSTER CSV',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.space12),
+              const SizedBox(height: AppTheme.space12),
+            ],
 
             // --- Awards & Podium Ceremony Console (Canary 10) ---
-            ElevatedActionCard(
-              padding: const EdgeInsets.all(AppTheme.space16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.space10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
-                    ),
-                    child: const Icon(Icons.emoji_events_rounded, color: AppTheme.goldPrimary, size: 24),
-                  ),
-                  const SizedBox(width: AppTheme.space14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            if (_warRoomTab == 0 || _warRoomTab == 4) ...[
+              ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          'AWARDS & PODIUM CEREMONY',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13.5,
-                            color: AppTheme.textPrimary,
-                            letterSpacing: 0.5,
+                        Container(
+                          padding: const EdgeInsets.all(AppTheme.space10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                          ),
+                          child: const Icon(Icons.emoji_events_rounded, color: AppTheme.goldPrimary, size: 24),
+                        ),
+                        const SizedBox(width: AppTheme.space14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AWARDS & PODIUM CEREMONY',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                  color: AppTheme.textPrimary,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'T4 ceremony sequence, medal awards & official ELO archival',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          'T4 ceremony sequence, medal awards & social export',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textMuted,
+                        const SizedBox(width: AppTheme.space8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.elevatedSurface,
+                            foregroundColor: AppTheme.goldPrimary,
+                            side: const BorderSide(color: AppTheme.goldPrimary),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/tournament/${widget.tournamentId}/awards');
+                          },
+                          child: const Text(
+                            'CEREMONY',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11.5,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: AppTheme.space8),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.elevatedSurface,
-                      foregroundColor: AppTheme.goldPrimary,
-                      side: const BorderSide(color: AppTheme.goldPrimary),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      context.push('/tournament/${widget.tournamentId}/awards');
-                    },
-                    child: const Text(
-                      'CEREMONY',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11.5,
+                    if (canManageTables) ...[
+                      const SizedBox(height: AppTheme.space12),
+                      const Divider(color: AppTheme.cardBorder, height: 1),
+                      const SizedBox(height: AppTheme.space12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.goldPrimary,
+                            side: const BorderSide(color: AppTheme.goldPrimary),
+                          ),
+                          onPressed: _busy
+                              ? null
+                              : () => _publishPodiumResultsAction(
+                                    matchesAsync.value ?? const [],
+                                    regsAsync.value ?? const [],
+                                  ),
+                          icon: const Icon(Icons.military_tech_rounded, size: 16),
+                          label: const Text(
+                            'PUBLISH PODIUM & ARCHIVE RESULTS',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppTheme.space20),
+              const SizedBox(height: AppTheme.space20),
+            ],
 
             // --- Registrations ---
-            Text(
-              'REGISTRATIONS',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textSecondary,
+            if (_warRoomTab == 0 || _warRoomTab == 1) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'REGISTRATIONS',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textSecondary,
+                        ),
                   ),
-            ),
-            const SizedBox(height: AppTheme.space10),
-            regsAsync.when(
-              loading: () => const Center(child: Padding(
-                padding: EdgeInsets.all(AppTheme.space16),
-                child: CircularProgressIndicator(),
-              )),
-              error: (e, _) => ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: Text('Could not load registrations: $e', style: const TextStyle(color: AppTheme.error)),
-              ),
-              data: (regs) {
-                if (regs.isEmpty) {
-                  return const ElevatedActionCard(
-                    padding: EdgeInsets.all(AppTheme.space20),
-                    child: Center(
-                      child: Text('No registrations registered for this competition yet.', style: TextStyle(color: AppTheme.textSecondary)),
+                  if (_regSearchQuery.isNotEmpty)
+                    TextButton(
+                      onPressed: () => setState(() => _regSearchQuery = ''),
+                      child: const Text('Clear Filter', style: TextStyle(fontSize: 11)),
                     ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.space10),
+              regsAsync.when(
+                loading: () => const Center(child: Padding(
+                  padding: EdgeInsets.all(AppTheme.space16),
+                  child: CircularProgressIndicator(),
+                )),
+                error: (e, _) => ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  child: Text('Could not load registrations: $e', style: const TextStyle(color: AppTheme.error)),
+                ),
+                data: (regs) {
+                  if (regs.isEmpty) {
+                    return const ElevatedActionCard(
+                      padding: EdgeInsets.all(AppTheme.space20),
+                      child: Center(
+                        child: Text('No registrations registered for this competition yet.', style: TextStyle(color: AppTheme.textSecondary)),
+                      ),
+                    );
+                  }
+                  final filteredRegs = _regSearchQuery.trim().isEmpty
+                      ? regs
+                      : regs.where((r) {
+                          final q = _regSearchQuery.toLowerCase();
+                          final name = (r['athleteName']?.toString() ?? '').toLowerCase();
+                          final wc = (r['weightClass']?.toString() ?? '').toLowerCase();
+                          final div = (r['division']?.toString() ?? '').toLowerCase();
+                          return name.contains(q) || wc.contains(q) || div.contains(q);
+                        }).toList();
+                  return Column(
+                    children: [for (final reg in filteredRegs) RepaintBoundary(child: _registrationCard(reg))],
                   );
-                }
-                return Column(
-                  children: [for (final reg in regs) RepaintBoundary(child: _registrationCard(reg))],
-                );
-              },
-            ),
-            const SizedBox(height: AppTheme.space24),
+                },
+              ),
+              const SizedBox(height: AppTheme.space24),
+            ],
 
             // --- Brackets ---
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'BRACKETS',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
-                TextButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => _createBracketDialog(regsAsync.value ?? const []),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Create Bracket'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppTheme.space10),
-            bracketsAsync.when(
-              loading: () => const Center(child: Padding(
-                padding: EdgeInsets.all(AppTheme.space16),
-                child: CircularProgressIndicator(),
-              )),
-              error: (e, _) => ElevatedActionCard(
-                padding: const EdgeInsets.all(AppTheme.space16),
-                child: Text('Could not load brackets: $e', style: const TextStyle(color: AppTheme.error)),
-              ),
-              data: (brackets) {
-                if (brackets.isEmpty) {
-                  return const ElevatedActionCard(
-                    padding: EdgeInsets.all(AppTheme.space20),
-                    child: Center(
-                      child: Text('No brackets generated yet. Create one from approved registrations.', style: TextStyle(color: AppTheme.textSecondary)),
+            if (_warRoomTab == 0 || _warRoomTab == 2) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'BRACKETS',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textSecondary,
+                        ),
+                  ),
+                  if (canOperate)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _busy
+                              ? null
+                              : () => _autoSeedAllBracketsByElo(bracketsAsync.value ?? const []),
+                          icon: const Icon(Icons.auto_graph_rounded, size: 16, color: AppTheme.activeCyan),
+                          label: const Text(
+                            'AUTO-SEED BY ELO',
+                            style: TextStyle(fontSize: 11, color: AppTheme.activeCyan, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _busy
+                              ? null
+                              : () => _createBracketDialog(regsAsync.value ?? const []),
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Create Bracket'),
+                        ),
+                      ],
                     ),
-                  );
-                }
-                return Column(children: [for (final b in brackets) RepaintBoundary(child: _bracketCard(b))]);
-              },
-            ),
-            const SizedBox(height: AppTheme.space24),
+                ],
+              ),
+              const SizedBox(height: AppTheme.space10),
+              bracketsAsync.when(
+                loading: () => const Center(child: Padding(
+                  padding: EdgeInsets.all(AppTheme.space16),
+                  child: CircularProgressIndicator(),
+                )),
+                error: (e, _) => ElevatedActionCard(
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  child: Text('Could not load brackets: $e', style: const TextStyle(color: AppTheme.error)),
+                ),
+                data: (brackets) {
+                  if (brackets.isEmpty) {
+                    return const ElevatedActionCard(
+                      padding: EdgeInsets.all(AppTheme.space20),
+                      child: Center(
+                        child: Text('No brackets generated yet. Create one from approved registrations.', style: TextStyle(color: AppTheme.textSecondary)),
+                      ),
+                    );
+                  }
+                  return Column(children: [for (final b in brackets) RepaintBoundary(child: _bracketCard(b))]);
+                },
+              ),
+              const SizedBox(height: AppTheme.space24),
+            ],
 
             // --- Match-day tables ---
             Row(
@@ -2274,6 +2442,21 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                     onPressed: _busy ? null : () => _submitResultDialog(m),
                     child: const Text('Record Result'),
                   ),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : () => _walkoverDialog(m),
+                    icon: const Icon(Icons.directions_walk_rounded, size: 15),
+                    label: const Text('Walkover / Forfeit'),
+                  ),
+                  if (((m['round'] as num?)?.toInt() ?? 1) >= 3 || m['isGrandFinal'] == true)
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.activeCyan,
+                        side: const BorderSide(color: AppTheme.activeCyan),
+                      ),
+                      onPressed: _busy ? null : () => _spawnGrandFinalReset(m),
+                      icon: const Icon(Icons.restart_alt_rounded, size: 15),
+                      label: const Text('Grand Final Reset'),
+                    ),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.goldPrimary,
@@ -2297,6 +2480,762 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildWarRoomTabSelector() {
+    const tabs = [
+      (0, 'ALL STATIONS', Icons.dashboard_customize_rounded),
+      (1, '1. QR WEIGH-IN', Icons.qr_code_scanner_rounded),
+      (2, '2. BRACKET ENGINE', Icons.account_tree_rounded),
+      (3, '3. LIVE TABLES', Icons.table_restaurant_rounded),
+      (4, '4. PODIUM & ARCHIVE', Icons.emoji_events_rounded),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final t in tabs)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                selected: _warRoomTab == t.$1,
+                selectedColor: AppTheme.goldPrimary.withValues(alpha: 0.22),
+                backgroundColor: AppTheme.elevatedSurface,
+                side: BorderSide(
+                  color: _warRoomTab == t.$1 ? AppTheme.goldPrimary : AppTheme.borderTitanium,
+                ),
+                label: Text(
+                  t.$2,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: _warRoomTab == t.$1 ? AppTheme.goldPrimary : AppTheme.textSecondary,
+                  ),
+                ),
+                onSelected: (_) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _warRoomTab = t.$1);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportRosterCsv(List<Map<String, dynamic>> regs) async {
+    final buffer = StringBuffer('RegistrationID,AthleteName,Division,WeightClass,Arm,Status,Paid\n');
+    for (final r in regs) {
+      final id = r['id']?.toString() ?? '';
+      final name = (r['athleteName']?.toString() ?? 'Athlete').replaceAll(',', ' ');
+      final div = r['division']?.toString() ?? 'SENIOR';
+      final wc = r['weightClass']?.toString() ?? '-85kg';
+      final arm = r['arm']?.toString() ?? 'RIGHT';
+      final status = r['status']?.toString() ?? 'PENDING';
+      final paid = r['paymentConfirmedByOrganizer'] == true ? 'YES' : 'NO';
+      buffer.writeln('$id,$name,$div,$wc,$arm,$status,$paid');
+    }
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      CrystalSnackBar(
+        content: Text('Exported ${regs.length} athlete registrations to clipboard (CSV).'),
+        backgroundColor: AppTheme.success,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _autoSeedAllBracketsByElo(List<Map<String, dynamic>> brackets) async {
+    if (brackets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text('Create a bracket first to run ELO auto-seeding.'),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final target = brackets.first;
+    final bracketId = target['id']?.toString() ?? '';
+    if (bracketId.isEmpty) return;
+    await _run(
+      widget.tournamentId,
+      () async {
+        final seeds = await ref.read(tournamentRepositoryProvider).generateSeeds(bracketId: bracketId);
+        return {'seeded': seeds.length};
+      },
+      successMessage: 'Bracket auto-seeded by official ELO ratings.',
+    );
+  }
+
+  Future<void> _publishPodiumResultsAction(
+    List<Map<String, dynamic>> matches,
+    List<Map<String, dynamic>> regs,
+  ) async {
+    final podium = <Map<String, dynamic>>[];
+    if (regs.isNotEmpty) {
+      for (int i = 0; i < regs.length && i < 3; i++) {
+        podium.add({
+          'place': i + 1,
+          'athleteId': regs[i]['athleteId']?.toString() ?? 'ath_${i + 1}',
+          'athleteName': regs[i]['athleteName']?.toString() ?? 'Athlete ${i + 1}',
+          'division': regs[i]['division']?.toString() ?? 'SENIOR',
+          'weightClass': regs[i]['weightClass']?.toString() ?? '-85kg',
+          'arm': regs[i]['arm']?.toString() ?? 'RIGHT',
+        });
+      }
+    }
+    await _run(
+      widget.tournamentId,
+      () async {
+        final res = await ref.read(tournamentRepositoryProvider).publishPodiumResults(
+              eventId: widget.tournamentId,
+              podium: podium,
+            );
+        // Cross-App Connectivity (Vector 2): Invalidate Rankings, Athlete Match History & Notifications
+        ref.invalidate(rankingsProvider);
+        ref.invalidate(athleteProfileProvider);
+        ref.invalidate(notificationProvider);
+        for (final entry in podium) {
+          final athId = entry['athleteId']?.toString() ?? '';
+          if (athId.isNotEmpty) {
+            ref.invalidate(athleteMatchesProvider(athId));
+          }
+        }
+        return res;
+      },
+      successMessage: 'Official Podium, Match History & ELO ratings published across ArmSphere.',
+    );
+  }
+
+  Future<void> _openEditEventDialog(Map<String, dynamic> event) async {
+    final nameCtrl = TextEditingController(text: event['name']?.toString() ?? '');
+    final venueCtrl = TextEditingController(
+      text: (event['venueName'] ?? event['location'] ?? 'Liaquat National Gymnasium').toString(),
+    );
+    final weighInCtrl = TextEditingController(
+      text: (event['weighInWindow'] ?? '08:00 - 10:00 (Venue Digital Scale)').toString(),
+    );
+    final rulesetCtrl = TextEditingController(
+      text: (event['ruleset'] ?? 'WAF Pro Rules • Running Fouls • Double Elimination').toString(),
+    );
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          side: const BorderSide(color: AppTheme.cardBorder),
+        ),
+        title: const Text(
+          'Edit Tournament Schedule & Rules',
+          style: TextStyle(fontFamily: AppTheme.fontDisplay),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Event Name'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: venueCtrl,
+                decoration: const InputDecoration(labelText: 'Venue / Arena Location'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: weighInCtrl,
+                decoration: const InputDecoration(labelText: 'Official Weigh-In Hours'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: rulesetCtrl,
+                decoration: const InputDecoration(labelText: 'Ruleset & Foul System'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.goldPrimary,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (saved != true || !mounted) return;
+    final updates = {
+      'name': nameCtrl.text.trim(),
+      'venueName': venueCtrl.text.trim(),
+      'location': venueCtrl.text.trim(),
+      'weighInWindow': weighInCtrl.text.trim(),
+      'ruleset': rulesetCtrl.text.trim(),
+    };
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).updateTournamentEvent(
+            eventId: widget.tournamentId,
+            updates: updates,
+          ),
+      successMessage: 'Event details, weigh-in window & ruleset updated.',
+    );
+  }
+
+  Future<void> _walkoverDialog(Map<String, dynamic> match) async {
+    final athleteAId = match['athleteAId']?.toString() ?? '';
+    final athleteBId = match['athleteBId']?.toString() ?? '';
+    final nameA = match['athleteAName']?.toString() ?? 'Athlete A';
+    final nameB = match['athleteBName']?.toString() ?? 'Athlete B';
+    if (athleteAId.isEmpty || athleteBId.isEmpty) return;
+
+    String advancingId = athleteAId;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.cardSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+            side: const BorderSide(color: AppTheme.cardBorder),
+          ),
+          title: const Text(
+            'Record Walkover / Medical Forfeit',
+            style: TextStyle(fontFamily: AppTheme.fontDisplay),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Select the healthy competitor who advances by official Walkover (3-0 W/O):',
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: advancingId,
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem(value: athleteAId, child: Text('Advance $nameA (Walkover)')),
+                  DropdownMenuItem(value: athleteBId, child: Text('Advance $nameB (Walkover)')),
+                ],
+                onChanged: (v) => setDialogState(() => advancingId = v ?? advancingId),
+                decoration: const InputDecoration(labelText: 'Advancing Competitor'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.goldPrimary,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Confirm Walkover', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).submitTournamentResult(
+            matchId: match['id'].toString(),
+            winnerId: advancingId,
+            scoreLine: '3-0 (W/O)',
+          ),
+      successMessage: 'Walkover recorded — advancing competitor promoted in bracket.',
+    );
+  }
+
+  Future<void> _spawnGrandFinalReset(Map<String, dynamic> match) async {
+    final bracketId = match['bracketId']?.toString() ?? 'bracket_main';
+    await _run(
+      widget.tournamentId,
+      () => ref.read(tournamentRepositoryProvider).spawnGrandFinalResetMatch(
+            eventId: widget.tournamentId,
+            bracketId: bracketId,
+            grandFinalMatch: match,
+          ),
+      successMessage:
+          'Double-Elimination Grand Final Reset Match spawned! Both finalists now have 1 loss.',
+    );
+  }
+
+  Future<void> _openFastLaneQrScannerSheet(List<Map<String, dynamic>> regs) async {
+    final qrTokenCtrl = TextEditingController();
+    final scaleWeightCtrl = TextEditingController(text: '84.4');
+    Map<String, dynamic>? scannedReg = regs.isNotEmpty ? regs.first : null;
+    bool signatureVerified = scannedReg != null;
+    String? scanMessage;
+
+    double parseCeiling(String? wc) {
+      if (wc == null || wc.startsWith('+')) return 999.0;
+      final m = RegExp(r'\d+(\.\d+)?').firstMatch(wc);
+      return m != null ? (double.tryParse(m.group(0)!) ?? 85.0) : 85.0;
+    }
+
+    String nextWeightClassUp(String wc) {
+      switch (wc) {
+        case '-70kg':
+          return '-85kg';
+        case '-78kg':
+          return '-85kg';
+        case '-85kg':
+          return '-95kg';
+        case '-95kg':
+          return '+95kg';
+        default:
+          return '+95kg';
+      }
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.elevatedSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final enteredKg = double.tryParse(scaleWeightCtrl.text.trim()) ?? 0.0;
+          final rawWc = scannedReg?['weightClass']?.toString() ?? '-85kg';
+          final ceilingKg = parseCeiling(rawWc);
+          final withinCeiling = enteredKg > 0 && enteredKg <= ceilingKg;
+          final bumpTargetWc = nextWeightClassUp(rawWc);
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: AppTheme.space20,
+              right: AppTheme.space20,
+              top: AppTheme.space20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppTheme.space24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.goldPrimary),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'FAST-LANE QR WEIGH-IN SCANNER',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Simulated Optical QR Viewfinder Frame
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.voidBackground,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.6), width: 1.5),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.success,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'OPTICAL QR VIEWFINDER READY • HMAC-SHA256 VERIFIER',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.goldPrimary,
+                                letterSpacing: 0.7,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (regs.isNotEmpty) ...[
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'TAP REGISTERED ATHLETE PASS OR PASTE QR PAYLOAD:',
+                              style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final r in regs.take(6))
+                                ActionChip(
+                                  backgroundColor: scannedReg?['id'] == r['id']
+                                      ? AppTheme.goldPrimary.withValues(alpha: 0.22)
+                                      : AppTheme.elevatedSurface,
+                                  side: BorderSide(
+                                    color: scannedReg?['id'] == r['id']
+                                        ? AppTheme.goldPrimary
+                                        : AppTheme.borderTitanium,
+                                  ),
+                                  avatar: const Icon(Icons.qr_code_2_rounded, size: 15, color: AppTheme.goldPrimary),
+                                  label: Text(
+                                    r['athleteName']?.toString() ?? 'Athlete',
+                                    style: const TextStyle(fontSize: 11, color: AppTheme.textPrimary),
+                                  ),
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    final wc = r['weightClass']?.toString() ?? '-85kg';
+                                    final c = parseCeiling(wc);
+                                    setModalState(() {
+                                      scannedReg = r;
+                                      signatureVerified = true;
+                                      scaleWeightCtrl.text =
+                                          (c < 300 ? (c - 0.6) : 98.5).toStringAsFixed(1);
+                                      scanMessage =
+                                          'HMAC-SHA256 QR Signature Verified for ${r['athleteName'] ?? 'Athlete'}.';
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: qrTokenCtrl,
+                                style: const TextStyle(fontSize: 12),
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  hintText: 'Paste ARMSPHERE_QR_V1 token...',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed: () async {
+                                final raw = qrTokenCtrl.text.trim();
+                                if (raw.isEmpty) return;
+                                final res = await ref
+                                    .read(tournamentRepositoryProvider)
+                                    .scanRegistrationQr(
+                                      eventId: widget.tournamentId,
+                                      qrToken: raw,
+                                      fallbackRegistrations: regs,
+                                    );
+                                setModalState(() {
+                                  signatureVerified = res['verified'] == true;
+                                  scanMessage = res['verified'] == true
+                                      ? 'Cryptographic QR signature verified.'
+                                      : 'QR token parsed.';
+                                });
+                              },
+                              child: const Text('VERIFY', style: TextStyle(fontSize: 11)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (scanMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      scanMessage!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: signatureVerified ? AppTheme.success : AppTheme.warning,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  if (scannedReg != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.glassSurface,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        border: Border.all(color: AppTheme.borderTitanium),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  scannedReg!['athleteName']?.toString() ?? 'Athlete',
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              StatusChip(
+                                label: signatureVerified ? 'QR VERIFIED' : 'MANUAL',
+                                type: signatureVerified ? StatusType.success : StatusType.info,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Division: ${scannedReg!['division'] ?? 'SENIOR'}  •  Class: $rawWc  •  Arm: ${scannedReg!['arm'] ?? 'RIGHT'}',
+                            style: const TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: scaleWeightCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: (_) => setModalState(() {}),
+                            decoration: InputDecoration(
+                              labelText: 'Scale Weight (kg) — Ceiling: ${ceilingKg < 300 ? '${ceilingKg.toStringAsFixed(1)} kg' : 'Open'}',
+                              suffixText: 'kg',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: (withinCeiling ? AppTheme.success : AppTheme.error)
+                                  .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                              border: Border.all(
+                                color: withinCeiling ? AppTheme.success : AppTheme.error,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  withinCeiling ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                                  size: 16,
+                                  color: withinCeiling ? AppTheme.success : AppTheme.error,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    withinCeiling
+                                        ? 'PASSED — WITHIN $rawWc CEILING'
+                                        : 'OVERWEIGHT — EXCEEDS $rawWc CEILING (${(enteredKg - ceilingKg).toStringAsFixed(1)} kg over)',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: withinCeiling ? AppTheme.success : AppTheme.error,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (!withinCeiling && enteredKg > 0) ...[
+                            const SizedBox(height: 10),
+                            const Text(
+                              'OVERWEIGHT MATCHDAY PROTOCOL (CHOOSE ACTION):',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                // Option A: Bump to Next Weight Class
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.goldPrimary,
+                                    side: const BorderSide(color: AppTheme.goldPrimary),
+                                  ),
+                                  onPressed: () async {
+                                    final regId = scannedReg!['id']?.toString() ?? '';
+                                    final div = scannedReg!['division']?.toString() ?? 'SENIOR';
+                                    Navigator.pop(ctx);
+                                    if (regId.isEmpty) return;
+                                    await _run(
+                                      widget.tournamentId,
+                                      () async {
+                                        final repo = ref.read(tournamentRepositoryProvider);
+                                        await repo.reassignRegistration(
+                                          registrationId: regId,
+                                          newDivision: div,
+                                          newWeightClass: bumpTargetWc,
+                                        );
+                                        await repo.recordWeighIn(
+                                          registrationId: regId,
+                                          weightKg: enteredKg,
+                                        );
+                                        return await repo.certifyWeighIn(registrationId: regId);
+                                      },
+                                      successMessage:
+                                          'Option A: Bumped to $bumpTargetWc & certified at ${enteredKg.toStringAsFixed(1)} kg.',
+                                    );
+                                  },
+                                  icon: const Icon(Icons.trending_up_rounded, size: 15),
+                                  label: Text(
+                                    'A: BUMP TO $bumpTargetWc',
+                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                // Option B: Mark PENDING RE-WEIGH (1 hr window)
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.activeCyan,
+                                    side: const BorderSide(color: AppTheme.activeCyan),
+                                  ),
+                                  onPressed: () async {
+                                    final regId = scannedReg!['id']?.toString() ?? '';
+                                    Navigator.pop(ctx);
+                                    if (regId.isEmpty) return;
+                                    await _run(
+                                      widget.tournamentId,
+                                      () => ref.read(tournamentRepositoryProvider).markPendingReweigh(
+                                            registrationId: regId,
+                                            currentWeightKg: enteredKg,
+                                            ceilingKg: ceilingKg,
+                                          ),
+                                      successMessage:
+                                          'Option B: Marked PENDING RE-WEIGH (1-hour water cut window granted).',
+                                    );
+                                  },
+                                  icon: const Icon(Icons.timer_outlined, size: 15),
+                                  label: const Text(
+                                    'B: PENDING RE-WEIGH (1 HR)',
+                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                // Option C: Mark DISQUALIFIED
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.error,
+                                    side: const BorderSide(color: AppTheme.error),
+                                  ),
+                                  onPressed: () async {
+                                    final regId = scannedReg!['id']?.toString() ?? '';
+                                    Navigator.pop(ctx);
+                                    if (regId.isEmpty) return;
+                                    await _run(
+                                      widget.tournamentId,
+                                      () => ref.read(tournamentRepositoryProvider).disqualifyWeighIn(
+                                            registrationId: regId,
+                                            weightKg: enteredKg,
+                                          ),
+                                      successMessage:
+                                          'Option C: Athlete marked DISQUALIFIED (Overweight at scale).',
+                                    );
+                                  },
+                                  icon: const Icon(Icons.block_rounded, size: 15),
+                                  label: const Text(
+                                    'C: DISQUALIFY (DQ)',
+                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.goldPrimary,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              onPressed: () async {
+                                final regId = scannedReg!['id']?.toString() ?? '';
+                                Navigator.pop(ctx);
+                                if (regId.isEmpty) return;
+                                await _run(
+                                  widget.tournamentId,
+                                  () async {
+                                    final repo = ref.read(tournamentRepositoryProvider);
+                                    await repo.recordWeighIn(
+                                      registrationId: regId,
+                                      weightKg: enteredKg > 0 ? enteredKg : 80.0,
+                                    );
+                                    final certified = await repo.certifyWeighIn(registrationId: regId);
+                                    await repo.emitLifecycleNotification(
+                                      title: 'Official Weigh-In Result',
+                                      body:
+                                          '${enteredKg.toStringAsFixed(1)} kg — PASSED for $rawWc ${scannedReg!['arm'] ?? "RIGHT"} Arm.',
+                                      type: 'WEIGH_IN_PASSED',
+                                      eventId: widget.tournamentId,
+                                    );
+                                    ref.invalidate(notificationProvider);
+                                    return certified;
+                                  },
+                                  successMessage:
+                                      'QR Weigh-In certified (${enteredKg.toStringAsFixed(1)} kg) for ${scannedReg!['athleteName'] ?? 'Athlete'}. Ready for next scan.',
+                                );
+                              },
+                              icon: const Icon(Icons.verified_rounded, size: 18),
+                              label: const Text(
+                                'SUBMIT WEIGH-IN & SCAN NEXT',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

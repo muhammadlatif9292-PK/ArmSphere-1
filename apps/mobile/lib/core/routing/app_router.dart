@@ -61,6 +61,9 @@ import '../../features/admin/screens/admin_roster_screen.dart';
 import '../../features/admin/screens/admin_arena_ops_screen.dart';
 import '../../features/admin/screens/admin_governance_screen.dart';
 import '../../features/admin/screens/admin_dossier_screen.dart';
+import '../../features/organization/screens/organization_profile_screen.dart';
+import '../../features/organization/screens/create_organization_screen.dart';
+import '../../features/tournament/screens/event_qr_passport_screen.dart';
 import '../security/admin_permissions.dart';
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
@@ -71,9 +74,13 @@ bool _isRefereeLandingRole(String? role) {
   return role != null && refereeRoles.contains(role);
 }
 
-/// Roles that route to the tournament operator dashboard.
+/// Roles that route to the tournament operator / organization dashboard.
 bool _isOperatorLandingRole(String? role) {
-  const operatorRoles = {'TOURNAMENT_OPERATOR'};
+  const operatorRoles = {
+    'TOURNAMENT_OPERATOR',
+    'ORGANIZATION',
+    'ORGANIZATION_LEADER',
+  };
   return role != null && operatorRoles.contains(role);
 }
 
@@ -92,6 +99,7 @@ bool _canAccessReferee(String? role) {
 bool _canAccessGovernance(String? role) {
   const accessRoles = {
     'TOURNAMENT_OPERATOR',
+    'ORGANIZATION',
     'COMPLIANCE_OFFICER',
     'SUPPORT_AGENT',
     'ORGANIZATION_LEADER',
@@ -288,10 +296,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Enforce server-side role-based boundary protection for non-entry routes:
           final activeRole = authState.activeRole?.toUpperCase();
           final profileRole = authState.userProfile?['role']?.toString().toUpperCase();
-          final effectiveRole = activeRole ?? profileRole;
+          final effectiveRole = activeRole ?? profileRole ?? 'ATHLETE';
           final allUserRoles = <String>{
             ...authState.verifiedRoles.map((r) => r.toUpperCase()),
-            if (effectiveRole != null) effectiveRole,
+            effectiveRole,
           };
 
           final hasRefereeAccess = allUserRoles.any((r) => _canAccessReferee(r));
@@ -303,6 +311,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (location.startsWith('/governance') && !hasGovernanceAccess) {
             return '/home';
           }
+
+          // Invariant 3: Route-Level Redirect Guards for Tournament Operations & Weigh-In
+          // If the user's ACTIVE role is ATHLETE, they are strictly blocked from entering
+          // /operations or /weigh-in routes, even if they hold another role in verifiedRoles.
+          final isOperationsRoute = location.endsWith('/operations') ||
+              location.contains('/operations?');
+          final isWeighInRoute = location.endsWith('/weigh-in') ||
+              location.contains('/weigh-in?');
+          if ((isOperationsRoute || isWeighInRoute) &&
+              (effectiveRole == 'ATHLETE' ||
+                  (!AdminPermissions.isOperatorRole(effectiveRole) &&
+                      !(isWeighInRoute && effectiveRole == 'REFEREE')))) {
+            final match = RegExp(r'^/tournaments?/([^/]+)/(?:operations|weigh-in)').firstMatch(location);
+            if (match != null) {
+              return '/tournament/${match.group(1)}';
+            }
+            return '/tournaments';
+          }
+
           return null; // Already at an authorized non-entry route — allow navigation
 
         case AuthStatus.unknown:
@@ -700,6 +727,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tournament/:tournamentId/operations',
         name: 'tournament_operations',
+        redirect: (context, state) {
+          final auth = ref.read(authProvider);
+          final role = _resolveEffectiveUserRole(auth);
+          if (!AdminPermissions.isOperatorRole(role)) {
+            final id = state.pathParameters['tournamentId'] ?? '';
+            return id.isNotEmpty ? '/tournament/$id' : '/tournaments';
+          }
+          return null;
+        },
         pageBuilder: (context, state) {
           final tournamentId = state.pathParameters['tournamentId'] ?? '';
           return AppTransitionPage(
@@ -709,8 +745,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/tournament/:tournamentId/qr',
+        name: 'tournament_qr_passport',
+        pageBuilder: (context, state) {
+          final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          final regId = state.uri.queryParameters['registrationId'];
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: EventQrPassportScreen(
+              tournamentId: tournamentId,
+              registrationId: regId,
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: '/tournament/:tournamentId/weigh-in',
         name: 'tournament_weigh_in',
+        redirect: (context, state) {
+          final auth = ref.read(authProvider);
+          final role = _resolveEffectiveUserRole(auth);
+          if (!AdminPermissions.isOperatorRole(role) && role != 'REFEREE') {
+            final id = state.pathParameters['tournamentId'] ?? '';
+            return id.isNotEmpty ? '/tournament/$id' : '/tournaments';
+          }
+          return null;
+        },
         pageBuilder: (context, state) {
           final tournamentId = state.pathParameters['tournamentId'] ?? '';
           final regId = state.uri.queryParameters['registrationId'];
@@ -726,6 +786,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tournaments/:tournamentId/weigh-in',
         name: 'tournaments_weigh_in_canonical',
+        redirect: (context, state) {
+          final auth = ref.read(authProvider);
+          final role = _resolveEffectiveUserRole(auth);
+          if (!AdminPermissions.isOperatorRole(role) && role != 'REFEREE') {
+            final id = state.pathParameters['tournamentId'] ?? '';
+            return id.isNotEmpty ? '/tournament/$id' : '/tournaments';
+          }
+          return null;
+        },
         pageBuilder: (context, state) {
           final tournamentId = state.pathParameters['tournamentId'] ?? '';
           final regId = state.uri.queryParameters['registrationId'];
@@ -1404,6 +1473,41 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: SupportTicketDetailScreen(ticketId: ticketId),
           );
         },
+      ),
+      GoRoute(
+        path: '/organizations',
+        name: 'organizations_directory',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const OrganizationsDirectoryScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/organizations/create',
+        name: 'create_organization',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const CreateOrganizationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/organizations/:organizationId',
+        name: 'organization_profile',
+        pageBuilder: (context, state) {
+          final orgId = state.pathParameters['organizationId'] ?? 'org_paff_national';
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: OrganizationProfileScreen(organizationId: orgId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/athlete/competitions',
+        name: 'athlete_competitions_hub',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const MyCompetitionsScreen(),
+        ),
       ),
     ],
   );

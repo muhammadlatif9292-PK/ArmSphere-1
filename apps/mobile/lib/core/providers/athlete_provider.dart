@@ -99,5 +99,3 @@ final athleteMatchesProvider = FutureProvider.autoDispose.family<List<Map<String
   final repo = ref.watch(matchRepositoryProvider);
   return repo.getMatchHistory(athleteId);
 });
-
-

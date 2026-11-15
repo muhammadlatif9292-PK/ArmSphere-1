@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/api/repositories.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/discover_provider.dart';
@@ -977,6 +978,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             _buildFederationHubSection(context),
             const SizedBox(height: AppTheme.space16),
 
+            // 1B. Sanctioning Organizations & Leagues Carousel
+            _buildOrganizationsSection(context),
+            const SizedBox(height: AppTheme.space16),
+
             // 2. Live Sanctioned Matches (only when live tables are active)
             if (liveMatches.isNotEmpty) ...[
               _buildLiveMatchesSection(context, liveMatches),
@@ -1010,6 +1015,163 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ],
         );
     }
+  }
+
+  /// Sanctioning Organizations & Leagues Carousel Section
+  Widget _buildOrganizationsSection(BuildContext context) {
+    final orgs = OrganizationRepository.canonicalOrganizations;
+    return _FramedDirectorySection(
+      title: 'Sanctioning Organizations & Leagues',
+      subtitle: 'Official federations, promotions & championship bodies',
+      icon: Icons.shield_outlined,
+      accentColor: AppTheme.goldPrimary,
+      actionLabel: 'View All',
+      onActionTap: () {
+        HapticFeedback.selectionClick();
+        context.push('/organizations');
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 154,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: orgs.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final org = orgs[index];
+                final id = (org['id'] ?? 'org_paff_national').toString();
+                final name = (org['name'] ?? 'Organization').toString();
+                final country = (org['country'] ?? 'PK').toString();
+                final city = (org['city'] ?? '').toString();
+                final activeCount =
+                    (org['activeEventsCount'] as num?)?.toInt() ?? 2;
+
+                return SizedBox(
+                  width: 248,
+                  child: ElevatedActionCard(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.push('/organizations/$id');
+                    },
+                    borderColor: AppTheme.goldPrimary.withValues(alpha: 0.42),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color:
+                                      AppTheme.goldPrimary.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              child: const ArmSphereImage(
+                                assetPath: ArmSphereAssets.sealFed,
+                                fit: BoxFit.contain,
+                                semanticLabel: 'Organization Crest',
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 12.5,
+                                            color: AppTheme.textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.verified_rounded,
+                                        color: AppTheme.goldPrimary,
+                                        size: 15,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$city • $country',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            StatusChip(
+                              label: '$activeCount ACTIVE EVENTS',
+                              color: AppTheme.emerald,
+                              icon: Icons.emoji_events_outlined,
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 13,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                context.push('/organizations/create');
+              },
+              icon: const Icon(
+                Icons.add_moderator_rounded,
+                size: 15,
+                color: AppTheme.goldPrimary,
+              ),
+              label: const Text(
+                'Register Sanctioning Organization',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.goldPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Fixed 2x2 Bento Grid replacing the horizontally clipped carousel
@@ -1147,7 +1309,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       onTap: () => context.push(item.route),
       semanticLabel: item.title,
       child: Container(
-        height: 132,
+        constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),

@@ -21,6 +21,7 @@ import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/security/admin_permissions.dart';
 import '../widgets/tournament_widgets.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
@@ -345,17 +346,20 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         final status = (event['status']?.toString() ?? '').toUpperCase();
         final canRegister = status == 'PUBLISHED';
         final auth = ref.watch(authProvider);
-        final role = (auth.activeRole ?? auth.userProfile?['role']?.toString() ?? '').toUpperCase();
-        const operatorRoles = {
-          'TOURNAMENT_OPERATOR',
-          'PROVINCIAL_DIRECTOR',
-          'NATIONAL_DIRECTOR',
-          'SYSTEM_ADMIN',
-        };
-        final canOperate = operatorRoles.contains(role) ||
-            auth.hasAnyRole(operatorRoles) ||
-            (event['organizerId'] != null &&
-                event['organizerId'].toString() == auth.userProfile?['id']?.toString());
+        // Invariant 1 (Active Role is Sovereign) & Invariant 2 (Event Ownership Validation)
+        final canOperate = AdminPermissions.canOperateEvent(
+          activeRole: auth.activeRole,
+          userProfile: auth.userProfile,
+          event: event,
+        );
+        final rawOrgId = event['organizationId']?.toString() ?? '';
+        final isIndependentPromotion = rawOrgId.isEmpty;
+        final hostOrgId = isIndependentPromotion ? 'org_paff_national' : rawOrgId;
+        final hostOrgName = (event['organizationName'] ??
+                (isIndependentPromotion
+                    ? 'Independent Promotion · Verified Organizer'
+                    : 'Pakistan Armwrestling Federation (PAFF)'))
+            .toString();
         final location = [
           event['venueName']?.toString(),
           event['city']?.toString(),
@@ -635,7 +639,133 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         const SizedBox(height: 16),
                       ],
 
-                      // 3. Organizer / Operations Console Access (if authorized)
+                      // Host Sanctioning Organization / Independent Promotion Pill
+                      ElevatedActionCard(
+                        borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          context.push(
+                            isIndependentPromotion
+                                ? '/organizations'
+                                : '/organizations/$hostOrgId',
+                          );
+                        },
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.shield_rounded,
+                              color: AppTheme.goldPrimary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isIndependentPromotion
+                                        ? 'INDEPENDENT PROMOTION'
+                                        : 'HOST SANCTIONING ORGANIZATION',
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    hostOrgName,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            StatusChip(
+                              label: isIndependentPromotion
+                                  ? 'INDEPENDENT PROMOTION'
+                                  : 'SANCTIONED',
+                              color: isIndependentPromotion
+                                  ? AppTheme.cyan
+                                  : AppTheme.goldPrimary,
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: AppTheme.textMuted,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Athlete Event QR Passport Quick-Access Card
+                      ElevatedActionCard(
+                        borderColor: AppTheme.emerald.withValues(alpha: 0.45),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          context.push('/tournament/${widget.tournamentId}/qr');
+                        },
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppTheme.emerald.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.qr_code_2_rounded,
+                                color: AppTheme.emerald,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'My Event QR Passport',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Present your cryptographic QR pass at the weigh-in scale',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const StatusChip(
+                              label: 'SHOW QR',
+                              color: AppTheme.emerald,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 3. Organizer / Operations Console Access (strictly gated by Invariant 1 & 2)
                       if (canOperate) ...[
                         ElevatedActionCard(
                           borderColor: AppTheme.goldPrimary.withValues(alpha: 0.4),

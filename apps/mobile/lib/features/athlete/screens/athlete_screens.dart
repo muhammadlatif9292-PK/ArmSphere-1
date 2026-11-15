@@ -2667,35 +2667,26 @@ class _AthleteDashboardScreenState
                             color: AppTheme.textMuted, fontSize: 11)),
                   ),
                   data: (rankings) {
-                    final hasArmSpecificElo = rankings.any((r) =>
-                        r.containsKey('rightArmElo') ||
-                        r.containsKey('leftArmElo'));
-
-                    final List<Map<String, dynamic>> armRankings;
-                    if (hasArmSpecificElo) {
-                      int resolveArmElo(Map<String, dynamic> r) {
-                        final raw = _isRightArm
-                            ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
-                            : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
-                        if (raw is num) return raw.toInt();
-                        return int.tryParse(raw?.toString() ?? '') ?? 0;
-                      }
-
-                      armRankings = rankings.map((r) {
-                        final copy = Map<String, dynamic>.from(r);
-                        final resolved = _isRightArm
-                            ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
-                            : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
-                        if (resolved != null) {
-                          copy['eloRating'] = resolved;
-                        }
-                        return copy;
-                      }).toList()
-                        ..sort(
-                            (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
-                    } else {
-                      armRankings = rankings;
+                    int resolveArmElo(Map<String, dynamic> r) {
+                      final raw = _isRightArm
+                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                      if (raw is num) return raw.toInt();
+                      return int.tryParse(raw?.toString() ?? '') ?? 0;
                     }
+
+                    final armRankings = rankings.map((r) {
+                      final copy = Map<String, dynamic>.from(r);
+                      final resolved = _isRightArm
+                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                      if (resolved != null) {
+                        copy['eloRating'] = resolved;
+                      }
+                      return copy;
+                    }).toList()
+                      ..sort(
+                          (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
 
                     final top3 = armRankings.take(3).toList();
                     if (top3.isEmpty) {
@@ -3108,16 +3099,14 @@ class _AthleteDashboardScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
+                ChampionshipNameMarquee(
+                  name: title,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 1),
@@ -3412,7 +3401,7 @@ class IntelligenceDeckTabBar extends StatelessWidget {
                 color: isSelected
                     ? const Color(0x80E23B3B)
                     : const Color(0x2EFFFFFF),
-                width: _borderWidth,
+                width: isSelected ? 1.2 : 1.0,
               ),
               borderRadius: BorderRadius.circular(9),
             ),
@@ -4043,6 +4032,18 @@ class AthleteProfileScreen extends ConsumerWidget {
                   children: [
                     _WorkspaceTile(
                       rowIndex: 0,
+                      icon: Icons.qr_code_2_rounded,
+                      iconColor: AppTheme.emerald,
+                      title: 'My Competitions & QR Passports',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/athlete/competitions');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 1,
                       icon: Icons.fitness_center,
                       iconColor: AppTheme.goldPrimary,
                       title: 'Training Log & PRs',

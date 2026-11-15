@@ -27,8 +27,65 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
       arm: arm,
       notes: notes,
     );
+    try {
+      final regId = (response['id'] ??
+              response['registrationId'] ??
+              'reg_${eventId}_${athleteId}_${DateTime.now().millisecondsSinceEpoch}')
+          .toString();
+      await repo.cacheLocalRegistration({
+        'id': regId,
+        'registrationId': regId,
+        'eventId': eventId,
+        'athleteId': athleteId,
+        'division': division,
+        'weightClass': weightClass,
+        'arm': arm,
+        'status': response['status'] ?? 'PENDING_WEIGH_IN',
+        'registeredAt': DateTime.now().toUtc().toIso8601String(),
+        ...response,
+      });
+      await repo.emitLifecycleNotification(
+        title: "You're locked in for Competition!",
+        body: 'Registration confirmed for $division · $weightClass · $arm Arm. Your Event QR Passport is ready.',
+        type: 'REGISTRATION_CONFIRMED',
+        eventId: eventId,
+      );
+      await repo.emitLifecycleNotification(
+        title: '24-Hour Weigh-In Reminder',
+        body: 'Present your Event QR Passport at the official digital scale window (08:00–10:00).',
+        type: 'WEIGH_IN_REMINDER',
+        eventId: eventId,
+      );
+      ref.invalidate(myRegistrationsProvider);
+      ref.invalidate(eventRegistrationsProvider(eventId));
+    } catch (_) {}
     ref.invalidateSelf();
     return response;
+  }
+
+  Future<bool> withdrawRegistration({
+    required String eventId,
+    required String registrationId,
+  }) async {
+    try {
+      final repo = ref.read(tournamentRepositoryProvider);
+      await repo.withdrawRegistration(
+        eventId: eventId,
+        registrationId: registrationId,
+      );
+      await repo.emitLifecycleNotification(
+        title: 'Registration Withdrawn',
+        body: 'Your competition entry ($registrationId) has been cancelled.',
+        type: 'REGISTRATION_WITHDRAWN',
+        eventId: eventId,
+      );
+      ref.invalidate(myRegistrationsProvider);
+      ref.invalidate(eventRegistrationsProvider(eventId));
+      ref.invalidateSelf();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>> createEvent({
@@ -342,3 +399,60 @@ final eventLiveArenaTablesProvider = FutureProvider.autoDispose.family<List<Map<
     };
   });
 });
+
+// =============================================================================
+// SANCTIONING ORGANIZATIONS & LEAGUES PROVIDERS
+// =============================================================================
+
+final organizationsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(organizationRepositoryProvider);
+  return repo.getFeaturedOrganizations();
+});
+
+final allOrganizationsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(organizationRepositoryProvider);
+  return repo.getOrganizations();
+});
+
+final organizationDetailProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, orgId) async {
+  final repo = ref.watch(organizationRepositoryProvider);
+  return repo.getOrganizationById(orgId);
+});
+
+final organizationEventsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, orgId) async {
+  final repo = ref.watch(organizationRepositoryProvider);
+  return repo.getOrganizationEvents(orgId);
+});
+
+final organizationChampionsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, orgId) async {
+  final repo = ref.watch(organizationRepositoryProvider);
+  return repo.getOrganizationChampions(orgId);
+});
+
+// =============================================================================
+// ATHLETE COMPETITIONS & EVENT QR PASSPORT PROVIDERS
+// =============================================================================
+
+final myRegistrationsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  final auth = ref.watch(authProvider);
+  final athleteId = auth.userProfile?['id']?.toString();
+  return repo.getMyRegistrations(athleteId: athleteId);
+});
+
+final eventQrProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, ({String eventId, String registrationId})>((ref, args) async {
+  final repo = ref.watch(tournamentRepositoryProvider);
+  final auth = ref.watch(authProvider);
+  final athleteId = auth.userProfile?['id']?.toString() ?? 'athlete_verified';
+  final athleteName = (auth.userProfile?['displayName'] ??
+          auth.userProfile?['fullName'] ??
+          'Registered Competitor')
+      .toString();
+  return repo.getRegistrationQr(
+    eventId: args.eventId,
+    registrationId: args.registrationId,
+    athleteId: athleteId,
+    athleteName: athleteName,
+  );
+});
+
