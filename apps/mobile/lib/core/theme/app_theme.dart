@@ -446,15 +446,28 @@ class AppTheme {
     Color? borderColor,
     Color? customBackground,
     List<BoxShadow>? customShadow,
+    Color? accentGlow,
   }) {
     return BoxDecoration(
-      color: const Color(0x4704060B),
+      color: customBackground ?? const Color(0x4704060B),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? const Color(0x38FFFFFF),
+        color: borderColor ??
+            (accentGlow != null
+                ? accentGlow.withValues(alpha: 0.5)
+                : const Color(0x38FFFFFF)),
         width: 1.0,
       ),
-      boxShadow: const [],
+      boxShadow: customShadow ??
+          (accentGlow != null
+              ? [
+                  BoxShadow(
+                    color: accentGlow.withValues(alpha: 0.15),
+                    blurRadius: 16,
+                    spreadRadius: -2,
+                  )
+                ]
+              : const []),
     );
   }
 

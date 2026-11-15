@@ -112,12 +112,9 @@ class _CreateOrganizationScreenState
       // Also submit a role application for ORGANIZATION_LEADER / TOURNAMENT_OPERATOR
       try {
         await authRepo.applyForRole(
-          requestedRole: 'TOURNAMENT_OPERATOR',
-          jurisdiction: _provinceCtrl.text.trim().isEmpty
-              ? _country
-              : _provinceCtrl.text.trim(),
-          credentialsSummary:
-              'Organization Submission: ${_nameCtrl.text.trim()} ($_sanctioningBody)',
+          role: 'TOURNAMENT_OPERATOR',
+          experienceDetails:
+              'Organization Submission: ${_nameCtrl.text.trim()} ($_sanctioningBody) [Jurisdiction: ${_provinceCtrl.text.trim().isEmpty ? _country : _provinceCtrl.text.trim()}]',
         );
       } catch (_) {}
 
