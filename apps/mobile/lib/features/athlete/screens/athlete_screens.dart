@@ -2667,26 +2667,35 @@ class _AthleteDashboardScreenState
                             color: AppTheme.textMuted, fontSize: 11)),
                   ),
                   data: (rankings) {
-                    int resolveArmElo(Map<String, dynamic> r) {
-                      final raw = _isRightArm
-                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
-                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
-                      if (raw is num) return raw.toInt();
-                      return int.tryParse(raw?.toString() ?? '') ?? 0;
-                    }
+                    final hasArmSpecificElo = rankings.any((r) =>
+                        r.containsKey('rightArmElo') ||
+                        r.containsKey('leftArmElo'));
 
-                    final armRankings = rankings.map((r) {
-                      final copy = Map<String, dynamic>.from(r);
-                      final resolved = _isRightArm
-                          ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
-                          : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
-                      if (resolved != null) {
-                        copy['eloRating'] = resolved;
+                    final List<Map<String, dynamic>> armRankings;
+                    if (hasArmSpecificElo) {
+                      int resolveArmElo(Map<String, dynamic> r) {
+                        final raw = _isRightArm
+                            ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                            : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                        if (raw is num) return raw.toInt();
+                        return int.tryParse(raw?.toString() ?? '') ?? 0;
                       }
-                      return copy;
-                    }).toList()
-                      ..sort(
-                          (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
+
+                      armRankings = rankings.map((r) {
+                        final copy = Map<String, dynamic>.from(r);
+                        final resolved = _isRightArm
+                            ? (r['rightArmElo'] ?? r['eloRating'] ?? r['points'])
+                            : (r['leftArmElo'] ?? r['eloRating'] ?? r['points']);
+                        if (resolved != null) {
+                          copy['eloRating'] = resolved;
+                        }
+                        return copy;
+                      }).toList()
+                        ..sort(
+                            (a, b) => resolveArmElo(b).compareTo(resolveArmElo(a)));
+                    } else {
+                      armRankings = rankings;
+                    }
 
                     final top3 = armRankings.take(3).toList();
                     if (top3.isEmpty) {
@@ -3099,14 +3108,16 @@ class _AthleteDashboardScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ChampionshipNameMarquee(
-                  name: title,
+                Text(
+                  title,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 1),
@@ -3401,7 +3412,7 @@ class IntelligenceDeckTabBar extends StatelessWidget {
                 color: isSelected
                     ? const Color(0x80E23B3B)
                     : const Color(0x2EFFFFFF),
-                width: isSelected ? 1.2 : 1.0,
+                width: 1.0,
               ),
               borderRadius: BorderRadius.circular(9),
             ),

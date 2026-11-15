@@ -133,6 +133,8 @@ void main() {
       );
       expect(armDropdown, findsOneWidget);
 
+      await tester.ensureVisible(armDropdown);
+      await tester.pumpAndSettle();
       await tester.tap(armDropdown);
       await tester.pumpAndSettle();
 
@@ -319,6 +321,8 @@ void main() {
       final armDropdown = find.byWidgetPredicate(
         (w) => w is DropdownButtonFormField<String> && w.initialValue == 'RIGHT',
       );
+      await tester.ensureVisible(armDropdown);
+      await tester.pumpAndSettle();
       await tester.tap(armDropdown);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Both Arms (Double Bracket)').last);
