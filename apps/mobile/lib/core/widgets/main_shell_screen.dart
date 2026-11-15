@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../constants/asset_paths.dart';
 import '../security/admin_permissions.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ambient_particle_background.dart';
+import '../widgets/crystal_slash_painter.dart';
 
 /// Dimensions and footprint metrics for the floating bottom navigation dock.
 const double kFloatingDockHeight = 64.0;
@@ -22,7 +24,7 @@ const double kFloatingDockTotalHeight =
 /// If outside the shell: returns `safeArea.bottom + additionalPadding`.
 double mainShellBottomClearance(
   BuildContext context, {
-  double additionalPadding = 16.0,
+  double additionalPadding = 44.0,
 }) {
   return MainShellScope.bottomClearance(
     context,
@@ -62,6 +64,7 @@ class MainShellScope extends InheritedWidget {
   final bool isRootTab;
   final int activeTabIndex;
   final bool canStepBackTab;
+  final int discoverResetEpoch;
   final ValueChanged<int>? onNavigateToTab;
   final bool Function()? onStepBackTab;
 
@@ -72,6 +75,7 @@ class MainShellScope extends InheritedWidget {
     this.isRootTab = true,
     this.activeTabIndex = 0,
     this.canStepBackTab = false,
+    this.discoverResetEpoch = 0,
     this.onNavigateToTab,
     this.onStepBackTab,
     required super.child,
@@ -127,7 +131,7 @@ class MainShellScope extends InheritedWidget {
   /// - If outside the shell or on a non-root route: returns `safeArea.bottom + additionalPadding`.
   static double bottomClearance(
     BuildContext context, {
-    double additionalPadding = 16.0,
+    double additionalPadding = 44.0,
   }) {
     final scope = maybeOf(context);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -161,7 +165,8 @@ class MainShellScope extends InheritedWidget {
       dockBottomMargin != oldWidget.dockBottomMargin ||
       isRootTab != oldWidget.isRootTab ||
       activeTabIndex != oldWidget.activeTabIndex ||
-      canStepBackTab != oldWidget.canStepBackTab;
+      canStepBackTab != oldWidget.canStepBackTab ||
+      discoverResetEpoch != oldWidget.discoverResetEpoch;
 }
 
 /// Primary Navigation Shell for ArmSphere
@@ -176,6 +181,7 @@ class MainShellScope extends InheritedWidget {
 class MainShellScreen extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
   final bool? isAdminModeOverride;
+  final String? activeRole;
 
   /// Canonical root tab paths where the bottom navigation dock is permitted to appear.
   static const Set<String> kRootTabPaths = <String>{
@@ -251,6 +257,7 @@ class MainShellScreen extends StatefulWidget {
     super.key,
     required this.navigationShell,
     this.isAdminModeOverride,
+    this.activeRole,
   });
 
   @override
@@ -266,14 +273,42 @@ class _MainShellScreenState extends State<MainShellScreen> {
   /// Chronological stack of previously visited root tab indices (`0..4`).
   final List<int> _tabHistory = <int>[];
   late int _lastRecordedTabIndex;
+  int _discoverResetEpoch = 0;
   String? _lastObservedTopPath;
   bool? _lastObservedAdminMode;
+  String? _lastObservedRole;
+  bool _isResettingForRoleChange = false;
   bool _isSteppingBackTab = false;
   bool _isRedirectingPushedTab = false;
+  bool _didPrecacheStageAssets = false;
 
-  bool _resolveIsAdminMode(BuildContext context) {
-    if (widget.isAdminModeOverride != null) {
-      return widget.isAdminModeOverride!;
+  static const List<String> _kStartupPrecacheAssets = <String>[
+    ArmSphereAssets.stageArena,
+    ArmSphereAssets.stageDiscover,
+    ArmSphereAssets.stageChampionshipBelts,
+    ArmSphereAssets.stageCommunity,
+    ArmSphereAssets.stagePassportVault,
+    ArmSphereAssets.stageReferee,
+    ArmSphereAssets.stageAdminGovernance,
+    ArmSphereAssets.stageAuthWalkout,
+    ArmSphereAssets.athleteDashboardHero,
+    ArmSphereAssets.arenaRadarCard,
+    ArmSphereAssets.cardStandbyTable,
+    ArmSphereAssets.avatarNeutralDark,
+    ArmSphereAssets.teamCrestDefault,
+  ];
+
+  void _precachePrimaryAssets() {
+    if (_didPrecacheStageAssets) return;
+    _didPrecacheStageAssets = true;
+    for (final path in _kStartupPrecacheAssets) {
+      precacheImage(AssetImage(path), context).catchError((_) {});
+    }
+  }
+
+  String _resolveEffectiveRole(BuildContext context) {
+    if (widget.activeRole != null && widget.activeRole!.trim().isNotEmpty) {
+      return widget.activeRole!.trim().toUpperCase();
     }
     try {
       final container = ProviderScope.containerOf(context);
@@ -283,10 +318,52 @@ class _MainShellScreenState extends State<MainShellScreen> {
           (authState.verifiedRoles.length == 1
               ? authState.verifiedRoles.first
               : (profileRole ?? 'ATHLETE'));
-      return AdminPermissions.isAdminWorkspaceRole(effectiveRole);
+      return effectiveRole.trim().toUpperCase();
     } catch (_) {
-      return false;
+      return (widget.isAdminModeOverride ?? false) ? 'SYSTEM_ADMIN' : 'ATHLETE';
     }
+  }
+
+  bool _resolveIsAdminMode(BuildContext context) {
+    if (widget.isAdminModeOverride != null) {
+      return widget.isAdminModeOverride!;
+    }
+    return AdminPermissions.isAdminWorkspaceRole(
+      _resolveEffectiveRole(context),
+    );
+  }
+
+  /// Pops all imperatively pushed routes on [router] so no sub-screens
+  /// (such as `/settings` or `/settings/roles`) remain stranded on top of
+  /// any shell branch stack.
+  void _popAllImperativeRoutes(GoRouter? router) {
+    if (router == null) return;
+    int safetyCounter = 0;
+    try {
+      while (router.canPop() && safetyCounter < 24) {
+        router.pop();
+        safetyCounter++;
+      }
+    } catch (_) {}
+  }
+
+  /// Walks descendant [NavigatorState]s inside the shell's branch `IndexedStack`
+  /// and pops each branch navigator back to its root route (`route.isFirst`).
+  void _resetAllBranchNavigators() {
+    if (!mounted) return;
+    void visitor(Element element) {
+      if (element is StatefulElement && element.state is NavigatorState) {
+        final navState = element.state as NavigatorState;
+        try {
+          navState.popUntil((route) => route.isFirst);
+        } catch (_) {}
+      }
+      element.visitChildren(visitor);
+    }
+
+    try {
+      context.visitChildElements(visitor);
+    } catch (_) {}
   }
 
   @override
@@ -298,6 +375,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _precachePrimaryAssets();
     final router = GoRouter.maybeOf(context);
     final newInfoProvider = router?.routeInformationProvider;
     final newDelegate = router?.routerDelegate;
@@ -331,8 +409,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
     // If a main tab route (e.g. '/athlete/profile', '/discover', '/tournaments')
     // was imperatively pushed on top of a different shell branch via context.push(),
-    // pop the duplicate pushed route and switch the shell branch cleanly so the
-    // bottom navigation dock highlights the target tab and history is preserved.
+    // pop ALL pushed routes and switch the shell branch cleanly so the
+    // bottom navigation dock highlights the target tab and no stale sub-routes remain.
     if (pathTabIdx != null &&
         pathTabIdx != widget.navigationShell.currentIndex &&
         !_isRedirectingPushedTab) {
@@ -348,12 +426,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           try {
-            try {
-              if (router?.canPop() ?? false) {
-                router?.pop();
-              }
-            } catch (_) {}
-            _navigateToTabInternal(pathTabIdx, recordHistory: true);
+            _popAllImperativeRoutes(router);
+            _resetAllBranchNavigators();
+            _navigateToTabInternal(
+              pathTabIdx,
+              recordHistory: !_isResettingForRoleChange,
+            );
           } finally {
             _isRedirectingPushedTab = false;
           }
@@ -364,7 +442,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
     if (pathChanged) {
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
-      _resetScrollPositionsToTop();
+      // Do NOT reset scroll positions here: when a feature route is pushed via
+      // context.push(...) or popped via Back navigation, the previous screen
+      // must preserve its exact scroll offset in history while the newly pushed
+      // route naturally starts at offset 0.0.
     }
 
     setState(() {});
@@ -373,26 +454,63 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   void didUpdateWidget(covariant MainShellScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final bool roleChanged =
+        (oldWidget.activeRole != null &&
+            widget.activeRole != null &&
+            oldWidget.activeRole != widget.activeRole) ||
+        (oldWidget.isAdminModeOverride != null &&
+            widget.isAdminModeOverride != null &&
+            oldWidget.isAdminModeOverride != widget.isAdminModeOverride);
+
     final int newIndex = widget.navigationShell.currentIndex;
+    if (roleChanged || _isResettingForRoleChange) {
+      _tabHistory.clear();
+      _lastRecordedTabIndex = newIndex;
+      _discoverResetEpoch++;
+      _isDockVisible = true;
+      _scrollDeltaAccumulator = 0.0;
+      _resetAllBranchNavigators();
+      _resetScrollPositionsToTop(activeTabOnly: false);
+      return;
+    }
+
     if (oldWidget.navigationShell.currentIndex != newIndex) {
       if (!_isSteppingBackTab && _lastRecordedTabIndex != newIndex) {
         if (_tabHistory.isEmpty || _tabHistory.last != _lastRecordedTabIndex) {
           _tabHistory.add(_lastRecordedTabIndex);
         }
+        if (newIndex == 1 || _lastRecordedTabIndex == 1) {
+          _discoverResetEpoch++;
+        }
       }
       _lastRecordedTabIndex = newIndex;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
-      _resetScrollPositionsToTop();
+      if (!_isSteppingBackTab) {
+        _resetScrollPositionsToTop(activeTabOnly: true);
+      }
     }
   }
 
-  /// Walks the descendant element tree and resets all active vertical
-  /// [ScrollPosition]s to offset `0.0` so newly opened or switched tabs always
-  /// start cleanly at the top.
-  void _resetScrollPositionsToTop() {
+  /// Resets vertical [ScrollPosition]s to offset `0.0`.
+  ///
+  /// When [activeTabOnly] is `true` (default for forward tab switches), skips
+  /// `Offstage(offstage: true)` subtrees inside `IndexedStack` so that previous
+  /// tabs preserve their scroll history when the user navigates back, while the
+  /// newly entered (next) tab starts cleanly from the top.
+  void _resetScrollPositionsToTop({bool activeTabOnly = true}) {
     if (!mounted) return;
     void visitor(Element element) {
+      if (activeTabOnly &&
+          element.widget is Offstage &&
+          (element.widget as Offstage).offstage) {
+        return;
+      }
+      if (element is StatefulElement && element.state is ScaffoldState) {
+        StageScrollDimmerController.resetForScaffold(
+          element.state as ScaffoldState,
+        );
+      }
       if (element is StatefulElement && element.state is ScrollableState) {
         final scrollableState = element.state as ScrollableState;
         final position = scrollableState.position;
@@ -408,31 +526,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
     }
 
     try {
-      final primary = PrimaryScrollController.maybeOf(context);
-      if (primary != null && primary.hasClients) {
-        for (final pos in primary.positions) {
-          if (pos.axis == Axis.vertical && pos.hasPixels && pos.pixels > 0.0) {
-            try {
-              pos.jumpTo(0.0);
-            } catch (_) {}
-          }
-        }
-      }
       context.visitChildElements(visitor);
     } catch (_) {}
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       try {
-        final primary = PrimaryScrollController.maybeOf(context);
-        if (primary != null && primary.hasClients) {
-          for (final pos in primary.positions) {
-            if (pos.axis == Axis.vertical && pos.hasPixels && pos.pixels > 0.0) {
-              try {
-                pos.jumpTo(0.0);
-              } catch (_) {}
-            }
-          }
-        }
         context.visitChildElements(visitor);
       } catch (_) {}
     });
@@ -486,52 +584,32 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification.metrics.axis != Axis.vertical) {
-      return false;
+    // Keep the floating Bottom Navigation Pill permanently visible across all scroll states.
+    if (!_isDockVisible) {
+      setState(() => _isDockVisible = true);
     }
-
-    // Always reveal the dock when at or near the top of the scroll view.
-    if (notification.metrics.pixels <= 16.0) {
-      _scrollDeltaAccumulator = 0.0;
-      if (!_isDockVisible) {
-        setState(() => _isDockVisible = true);
-      }
-      return false;
-    }
-
-    if (notification is ScrollUpdateNotification) {
-      // Only auto-hide or reveal on user drag gestures, never on programmatic jumpTo
-      if (notification.dragDetails == null) {
-        return false;
-      }
-      final delta = notification.scrollDelta ?? 0.0;
-      if ((delta > 0 && _scrollDeltaAccumulator < 0) ||
-          (delta < 0 && _scrollDeltaAccumulator > 0)) {
-        _scrollDeltaAccumulator = 0.0;
-      }
-      _scrollDeltaAccumulator += delta;
-
-      // Scrolling down past threshold -> auto-hide dock
-      if (_scrollDeltaAccumulator > 10.0 &&
-          notification.metrics.pixels > 24.0 &&
-          _isDockVisible) {
-        _scrollDeltaAccumulator = 0.0;
-        setState(() => _isDockVisible = false);
-      } else if (_scrollDeltaAccumulator < -8.0 && !_isDockVisible) {
-        // Scrolling up -> reveal dock
-        _scrollDeltaAccumulator = 0.0;
-        setState(() => _isDockVisible = true);
-      }
+    if (notification.metrics.axis == Axis.vertical) {
+      StageScrollDimmerController.updateFromScroll(
+        notification.context ?? context,
+        notification.metrics.pixels,
+      );
     }
     return false;
   }
 
-  void _navigateToTabInternal(int index, {required bool recordHistory}) {
+  void _navigateToTabInternal(
+    int index, {
+    required bool recordHistory,
+    bool resetTargetToTop = true,
+  }) {
     final int currentIdx = widget.navigationShell.currentIndex;
-    if (recordHistory && index != currentIdx) {
+    if (recordHistory && index != currentIdx && !_isResettingForRoleChange) {
       if (_tabHistory.isEmpty || _tabHistory.last != currentIdx) {
         _tabHistory.add(currentIdx);
       }
+    }
+    if (resetTargetToTop && (index == 1 || currentIdx == 1)) {
+      _discoverResetEpoch++;
     }
     _lastRecordedTabIndex = index;
     if (!_isDockVisible) {
@@ -542,11 +620,20 @@ class _MainShellScreenState extends State<MainShellScreen> {
     } else {
       _scrollDeltaAccumulator = 0.0;
     }
+
+    // Clear any stale imperative routes or branch sub-routes so tapping a bottom
+    // navigation tab always lands cleanly on that tab's canonical root screen.
+    _popAllImperativeRoutes(GoRouter.maybeOf(context));
+    _resetAllBranchNavigators();
+
     widget.navigationShell.goBranch(
       index,
-      initialLocation: index == currentIdx,
+      initialLocation: true,
     );
-    _resetScrollPositionsToTop();
+    if (resetTargetToTop) {
+      _resetScrollPositionsToTop(activeTabOnly: true);
+    }
+    setState(() {});
   }
 
   /// Steps back one tab in `_tabHistory`. Returns `true` if a step back was performed.
@@ -561,7 +648,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _isSteppingBackTab = true;
       try {
         HapticFeedback.selectionClick();
-        _navigateToTabInternal(previousTab, recordHistory: false);
+        _navigateToTabInternal(
+          previousTab,
+          recordHistory: false,
+          resetTargetToTop: false,
+        );
       } finally {
         _isSteppingBackTab = false;
       }
@@ -572,7 +663,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _isSteppingBackTab = true;
       try {
         HapticFeedback.selectionClick();
-        _navigateToTabInternal(0, recordHistory: false);
+        _navigateToTabInternal(
+          0,
+          recordHistory: false,
+          resetTargetToTop: false,
+        );
       } finally {
         _isSteppingBackTab = false;
       }
@@ -586,24 +681,46 @@ class _MainShellScreenState extends State<MainShellScreen> {
     if (index != widget.navigationShell.currentIndex) {
       HapticFeedback.selectionClick();
     }
-    _navigateToTabInternal(index, recordHistory: true);
+    _navigateToTabInternal(
+      index,
+      recordHistory: true,
+      resetTargetToTop: true,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final String effectiveRole = _resolveEffectiveRole(context);
     final bool isAdminMode = _resolveIsAdminMode(context);
-    if (_lastObservedAdminMode != null &&
-        _lastObservedAdminMode != isAdminMode) {
+    final bool roleOrModeChanged =
+        (_lastObservedAdminMode != null &&
+            _lastObservedAdminMode != isAdminMode) ||
+        (_lastObservedRole != null && _lastObservedRole != effectiveRole);
+
+    if (roleOrModeChanged) {
+      _isResettingForRoleChange = true;
       _tabHistory.clear();
+      _lastRecordedTabIndex = 0;
+      _discoverResetEpoch++;
       _isDockVisible = true;
       _scrollDeltaAccumulator = 0.0;
-      _resetScrollPositionsToTop();
+      _resetAllBranchNavigators();
+      _resetScrollPositionsToTop(activeTabOnly: false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _popAllImperativeRoutes(GoRouter.maybeOf(context));
+        _resetAllBranchNavigators();
+        _tabHistory.clear();
+        _lastRecordedTabIndex = widget.navigationShell.currentIndex;
+        _isResettingForRoleChange = false;
+      });
     }
     _lastObservedAdminMode = isAdminMode;
+    _lastObservedRole = effectiveRole;
 
     final bool isRootTab = _isRootTabRoute(context);
     final int effectiveTabIndex = _resolveEffectiveTabIndex(context);
-    final bool showDock = isRootTab && _isDockVisible;
+    final bool showDock = isRootTab;
     final bool canInterceptBack =
         _tabHistory.isNotEmpty || widget.navigationShell.currentIndex != 0;
 
@@ -611,8 +728,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
       isRootTab: isRootTab,
       activeTabIndex: effectiveTabIndex,
       canStepBackTab: canInterceptBack,
-      onNavigateToTab: (index) =>
-          _navigateToTabInternal(index, recordHistory: true),
+      discoverResetEpoch: _discoverResetEpoch,
+      onNavigateToTab: (index) => _navigateToTabInternal(
+        index,
+        recordHistory: true,
+        resetTargetToTop: true,
+      ),
       onStepBackTab: _stepBackTab,
       child: PopScope(
         canPop: !canInterceptBack,
@@ -624,11 +745,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
         child: Scaffold(
           backgroundColor: AppTheme.voidBackground,
           extendBody: true,
+          resizeToAvoidBottomInset: false,
           body: NotificationListener<ScrollNotification>(
             onNotification: _handleScrollNotification,
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                AmbientParticleBackground(tabIndex: effectiveTabIndex),
+                AmbientParticleBackground(
+                  tabIndex: effectiveTabIndex,
+                  isAdminMode: isAdminMode,
+                ),
                 SafeArea(
                   bottom: false,
                   child: widget.navigationShell,
@@ -659,183 +785,116 @@ class _MainShellScreenState extends State<MainShellScreen> {
                             18,
                             kFloatingDockBottomMargin,
                           ),
-                          child: Container(
-                            key: const ValueKey('crystal_floating_nav_dock'),
-                            height: kFloatingDockHeight,
-                            decoration: BoxDecoration(
-                              color: const Color(0xB8080C15),
-                              borderRadius: BorderRadius.circular(26),
-                              border: Border.all(
-                                color: const Color(0x42FFFFFF),
-                                width: 1.0,
-                              ),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                stops: [0.0, 0.45, 1.0],
-                                colors: [
-                                  Color(0x28FFFFFF),
-                                  Color(0x10FFFFFF),
-                                  Color(0x06FFFFFF),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.56),
-                                  offset: const Offset(0, 10),
-                                  blurRadius: 28,
-                                  spreadRadius: -2,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                              child: Container(
+                                key: const ValueKey('crystal_floating_nav_dock'),
+                                height: kFloatingDockHeight,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xB305070C),
+                                  borderRadius: BorderRadius.circular(28),
+                                  border: Border.all(
+                                    color: const Color(0x45FFFFFF),
+                                    width: 1.0,
+                                  ),
+                                  boxShadow: const [],
                                 ),
-                                BoxShadow(
-                                  color:
-                                      AppTheme.crimson.withValues(alpha: 0.08),
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 18,
-                                  spreadRadius: -4,
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(25),
-                              child: BackdropFilter(
-                                filter:
-                                    ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    // Top specular crystal rim reflection line
-                                    Positioned(
-                                      top: 0,
-                                      left: 24,
-                                      right: 24,
-                                      height: 1.0,
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.white
-                                                  .withValues(alpha: 0.0),
-                                              Colors.white
-                                                  .withValues(alpha: 0.55),
-                                              Colors.white
-                                                  .withValues(alpha: 0.0),
-                                            ],
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: isAdminMode
+                                      ? [
+                                          _buildNavItem(
+                                            context,
+                                            index: 0,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.space_dashboard_outlined,
+                                            activeIcon:
+                                                Icons.space_dashboard_rounded,
+                                            label: 'Command',
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: isAdminMode
-                                          ? [
-                                              _buildNavItem(
-                                                context,
-                                                index: 0,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .space_dashboard_outlined,
-                                                activeIcon: Icons
-                                                    .space_dashboard_rounded,
-                                                label: 'Command',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 1,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.badge_outlined,
-                                                activeIcon: Icons.badge_rounded,
-                                                label: 'Roster',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 2,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon:
-                                                    Icons.emoji_events_outlined,
-                                                activeIcon:
-                                                    Icons.emoji_events_rounded,
-                                                label: 'Arena Ops',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 3,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.gavel_outlined,
-                                                activeIcon: Icons.gavel_rounded,
-                                                label: 'Governance',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 4,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .admin_panel_settings_outlined,
-                                                activeIcon: Icons
-                                                    .admin_panel_settings_rounded,
-                                                label: 'Dossier',
-                                              ),
-                                            ]
-                                          : [
-                                              _buildNavItem(
-                                                context,
-                                                index: 0,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.home_outlined,
-                                                activeIcon: Icons.home_rounded,
-                                                label: 'Arena',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 1,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .travel_explore_outlined,
-                                                activeIcon: Icons
-                                                    .travel_explore_rounded,
-                                                label: 'Discover',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 2,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon:
-                                                    Icons.emoji_events_outlined,
-                                                activeIcon:
-                                                    Icons.emoji_events_rounded,
-                                                label: 'Events',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 3,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons.forum_outlined,
-                                                activeIcon: Icons.forum_rounded,
-                                                label: 'Community',
-                                              ),
-                                              _buildNavItem(
-                                                context,
-                                                index: 4,
-                                                activeTabIndex:
-                                                    effectiveTabIndex,
-                                                icon: Icons
-                                                    .person_outline_rounded,
-                                                activeIcon:
-                                                    Icons.person_rounded,
-                                                label: 'Passport',
-                                              ),
-                                            ],
-                                    ),
-                                  ],
+                                          _buildNavItem(
+                                            context,
+                                            index: 1,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.badge_outlined,
+                                            activeIcon: Icons.badge_rounded,
+                                            label: 'Roster',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 2,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.emoji_events_outlined,
+                                            activeIcon:
+                                                Icons.emoji_events_rounded,
+                                            label: 'Arena Ops',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 3,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.gavel_outlined,
+                                            activeIcon: Icons.gavel_rounded,
+                                            label: 'Governance',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 4,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons
+                                                .admin_panel_settings_outlined,
+                                            activeIcon:
+                                                Icons.admin_panel_settings_rounded,
+                                            label: 'Dossier',
+                                          ),
+                                        ]
+                                      : [
+                                          _buildNavItem(
+                                            context,
+                                            index: 0,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.home_outlined,
+                                            activeIcon: Icons.home_rounded,
+                                            label: 'Arena',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 1,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.travel_explore_outlined,
+                                            activeIcon:
+                                                Icons.travel_explore_rounded,
+                                            label: 'Discover',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 2,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.emoji_events_outlined,
+                                            activeIcon:
+                                                Icons.emoji_events_rounded,
+                                            label: 'Events',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 3,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.forum_outlined,
+                                            activeIcon: Icons.forum_rounded,
+                                            label: 'Community',
+                                          ),
+                                          _buildNavItem(
+                                            context,
+                                            index: 4,
+                                            activeTabIndex: effectiveTabIndex,
+                                            icon: Icons.person_outline_rounded,
+                                            activeIcon: Icons.person_rounded,
+                                            label: 'Passport',
+                                          ),
+                                        ],
                                 ),
                               ),
                             ),
@@ -859,9 +918,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
     required String label,
   }) {
     final isSelected = activeTabIndex == index;
-    // Owner directive: crimson is the single active-navigation accent for all
-    // five tabs. Gold stays reserved for championship/achievement cues.
-    const activeColor = AppTheme.crimson;
 
     return Expanded(
       child: Semantics(
@@ -871,8 +927,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
         label: '$label tab',
         tooltip: label,
         onTap: () => _onTap(context, index),
-        // The visible icon/label are replaced by the single label above so
-        // screen readers do not announce the tab twice.
         excludeSemantics: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -885,39 +939,35 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 curve: Curves.easeOutCubic,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                // Border is always present (transparent when idle) so the
-                // label does not shift 2dp down when a tab becomes active.
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? activeColor.withValues(alpha: 0.16)
+                      ? const Color(0x24E23B3B)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? activeColor.withValues(alpha: 0.45)
+                        ? const Color(0xFFE23B3B)
                         : Colors.transparent,
-                    width: 1.0,
+                    width: 1.3,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: activeColor.withValues(alpha: 0.28),
-                            blurRadius: 12,
-                            spreadRadius: -2,
-                          ),
-                        ]
-                      : null,
+                  boxShadow: const [],
                 ),
                 child: Icon(
                   isSelected ? activeIcon : icon,
                   size: 22,
-                  color: isSelected ? activeColor : AppTheme.textMuted,
+                  color: isSelected
+                      ? const Color(0xFFD4AF37)
+                      : const Color(0xFFF1F5F9),
+                  shadows: const [
+                    Shadow(
+                      color: Color(0xFF000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 3),
-              // Fixed-height dock: cap label scaling at 1.3x and shrink a
-              // too-wide label to fit rather than showing "Communi...".
-              // The tab's semantics label/tooltip carry the full name.
               MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.3,
                 child: FittedBox(
@@ -927,15 +977,19 @@ class _MainShellScreenState extends State<MainShellScreen> {
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 10.5,
-                      // SpaceGrotesk bundles w400-w700 only; w800 would be synthesized.
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w600,
                       letterSpacing: 0.3,
-                      // Crimson text on the dock is ~4.06:1 (< 4.5:1 AA), so the
-                      // active label uses titanium white; crimson stays on icon + pill.
                       color: isSelected
-                          ? AppTheme.textPrimary
-                          : AppTheme.textMuted,
+                          ? const Color(0xFFFFFFFF)
+                          : const Color(0xFFF1F5F9),
+                      shadows: const [
+                        Shadow(
+                          color: Color(0xFF000000),
+                          blurRadius: 6,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

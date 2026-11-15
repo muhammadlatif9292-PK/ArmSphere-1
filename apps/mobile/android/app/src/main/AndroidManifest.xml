@@ -2,6 +2,8 @@
     <!-- Networking: dio API client, webview, Stripe -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- QR Weigh-In Desk scanner -->
+    <uses-permission android:name="android.permission.CAMERA"/>
     <!-- Push notifications (FCM + flutter_local_notifications); runtime-requested -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- local_auth biometric unlock -->

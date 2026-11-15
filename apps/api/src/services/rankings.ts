@@ -21,6 +21,11 @@ export interface LeaderboardResult {
     athleteId: string;
     displayName: string;
     eloRating: number;
+    leftArmElo?: number;
+    rightArmElo?: number;
+    profilePhoto?: string | null;
+    avatarUrl?: string | null;
+    weight?: number | null;
     clubId: string | null;
     province: string | null;
     country: string | null;
@@ -33,6 +38,10 @@ export interface LeaderboardResult {
 const leaderboardCache = new Map<string, { value: string; expiresAt: number }>();
 
 export class RankingsService {
+  static clearCache(): void {
+    leaderboardCache.clear();
+  }
+
   /**
    * Retrieves high-performance cached leaderboard listings
    */
@@ -105,31 +114,75 @@ export class RankingsService {
         rightArmElo: athleteProfiles.rightArmElo,
         clubId: athleteProfiles.clubId,
         province: athleteProfiles.province,
+        weightClass: athleteProfiles.weightClass,
+        weight: athleteProfiles.weight,
+        profilePhoto: athleteProfiles.profilePhoto,
       })
       .from(athleteProfiles)
       .where(and(...conditions))
       .orderBy(desc(eloField), asc(athleteProfiles.id))
       .limit(limit + 1);
 
-    console.log("LEADERBOARD RECORDS FOUND FOR CURSOR:", cursor, "->", records.map(r => r.id));
+    const resolveWeightClass = (rec: any, filterWeightClass?: string): string => {
+      const rawWc = typeof rec.weightClass === "string" ? rec.weightClass.trim() : "";
+      if (rawWc && rawWc.toUpperCase() !== "OPEN") {
+        const lower = rawWc.toLowerCase().replace(/\s+/g, "");
+        if (lower.includes("105+") || lower.includes("+105") || lower.includes(">105")) {
+          return "105kg+";
+        }
+        const numMatch = lower.match(/(\d+(\.\d+)?)/);
+        if (numMatch) {
+          const val = parseFloat(numMatch[1]);
+          if (val <= 65) return "65kg";
+          if (val <= 75) return "75kg";
+          if (val <= 85) return "85kg";
+          if (val <= 95) return "95kg";
+          if (val <= 105) return "105kg";
+          return "105kg+";
+        }
+        return rawWc;
+      }
+      if (typeof rec.weight === "number" && rec.weight > 0) {
+        if (rec.weight <= 65) return "65kg";
+        if (rec.weight <= 75) return "75kg";
+        if (rec.weight <= 85) return "85kg";
+        if (rec.weight <= 95) return "95kg";
+        if (rec.weight <= 105) return "105kg";
+        return "105kg+";
+      }
+      return filterWeightClass || rawWc || "OPEN";
+    };
+
+    const filteredRecords =
+      weightClass && weightClass.toUpperCase() !== "ALL" && weightClass.toUpperCase() !== "OPEN"
+        ? records.filter(
+            (rec) =>
+              resolveWeightClass(rec).toLowerCase() === weightClass.trim().toLowerCase()
+          )
+        : records;
 
     // Calculate ranking offset (or simple relative rank starting from 1 for the view slice)
     // Map database records to result format
-    const hasNext = records.length > limit;
-    const itemsToReturn = records.slice(0, limit);
+    const hasNext = filteredRecords.length > limit;
+    const itemsToReturn = filteredRecords.slice(0, limit);
 
     const items = itemsToReturn.map((rec, index) => {
       const eloRating = arm === "LEFT" ? rec.leftArmElo : rec.rightArmElo;
+      const resolvedWc = resolveWeightClass(rec, weightClass);
       return {
         rank: index + 1, // Relative rank inside this filtered view
         athleteId: rec.id,
         displayName: rec.displayName,
         eloRating,
+        leftArmElo: rec.leftArmElo,
+        rightArmElo: rec.rightArmElo,
+        ...(rec.profilePhoto ? { profilePhoto: rec.profilePhoto, avatarUrl: rec.profilePhoto } : {}),
+        ...(typeof rec.weight === "number" ? { weight: rec.weight } : {}),
         clubId: rec.clubId,
         province: rec.province,
         country: "Canada",
         division,
-        weightClass: weightClass || "OPEN",
+        weightClass: resolvedWc,
       };
     });
 

@@ -364,12 +364,12 @@ abstract final class ArmSphereAssets {
   static const String sealFederation = 'assets/images/brand/m0_seal_fed.webp';
 
   // ===========================================================================
-  // M1: Bundled Textures & Canonical Hero Backdrops
+  // M1: Legacy Compatibility Constants (Remapped to Canonical 28 Assets)
   // ===========================================================================
-  static const String texKnurl   = 'assets/images/textures/m1_tex_knurl.webp';
-  static const String texChalk   = 'assets/images/textures/m1_tex_chalk.webp';
-  static const String heroArena  = 'assets/images/heroes/m1_hero_arena.webp';
-  static const String heroGrip   = 'assets/images/heroes/m1_hero_grip.webp';
+  static const String texKnurl   = stageArena9x16;
+  static const String texChalk   = stageArena9x16;
+  static const String heroArena  = stageArena9x16;
+  static const String heroGrip   = heroWelcomeGrip;
 
   // ===========================================================================
   // M4: Division Badges & Referee Certification Insignia (assets/images/badges/)

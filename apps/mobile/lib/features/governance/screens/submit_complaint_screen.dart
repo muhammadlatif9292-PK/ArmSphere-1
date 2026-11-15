@@ -74,7 +74,7 @@ class _SubmitComplaintScreenState extends ConsumerState<SubmitComplaintScreen> {
   @override
   Widget build(BuildContext context) {
     return StickyFormScaffold(
-      stageDomain: ArmSphereStageDomain.referee,
+      stageDomain: ArmSphereStageDomain.governance,
       appBar: AppBar(
         leading: const CrystalBackButton(fallbackRoute: '/governance'),
         title: const Text(

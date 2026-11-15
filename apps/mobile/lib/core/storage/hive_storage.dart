@@ -29,6 +29,11 @@ class HiveStorage {
     await _cacheBox.delete(key);
   }
 
+  /// Alias for evictCache for backward-compatibility with repository calls
+  Future<void> deleteCachedData(String key) async {
+    await evictCache(key);
+  }
+
   /// Evicts all cached entries whose string keys start with [prefix].
   /// Used for targeted cache invalidation across admin mutations,
   /// session teardown, and role switching.

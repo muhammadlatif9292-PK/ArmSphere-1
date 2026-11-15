@@ -43,6 +43,7 @@ class AnnouncementsListScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),

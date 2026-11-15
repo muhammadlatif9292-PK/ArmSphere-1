@@ -62,6 +62,24 @@ export class MessagingService {
   static async getOrCreateConversation(creatorId: string, participantId: string, type: "DIRECT" | "FEDERATION" | "SYSTEM" = "DIRECT") {
     logger.info({ creatorId, participantId, type }, "Initializing conversation between participants");
 
+    let resolvedParticipantId = participantId;
+    const [directUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, participantId))
+      .limit(1);
+    if (!directUser) {
+      const [athleteProfile] = await db
+        .select({ userId: athleteProfiles.userId })
+        .from(athleteProfiles)
+        .where(eq(athleteProfiles.id, participantId))
+        .limit(1);
+      if (athleteProfile?.userId) {
+        resolvedParticipantId = athleteProfile.userId;
+      }
+    }
+    participantId = resolvedParticipantId;
+
     if (type === "DIRECT") {
       const isBlocked = await MessagingService.checkBlockByUsers(creatorId, participantId);
       if (isBlocked) {

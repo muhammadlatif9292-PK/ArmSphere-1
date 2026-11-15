@@ -9,6 +9,7 @@ import '../../../core/widgets/app_error_view.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
+import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/theme/app_theme.dart';
@@ -35,7 +36,7 @@ class MyNominationsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.rankings),
         leading: const CrystalBackButton(),
@@ -79,8 +80,11 @@ class MyNominationsScreen extends ConsumerWidget {
           data: (nominations) {
             if (nominations.isEmpty) {
               return ListView(
+                padding: EdgeInsets.only(
+                  top: 160,
+                  bottom: MainShellScope.bottomClearance(context, additionalPadding: 44),
+                ),
                 children: [
-                  const SizedBox(height: 120),
                   AppEmptyState(
                     icon: Icons.how_to_vote_outlined,
                     title: 'No active nominations',
@@ -103,7 +107,12 @@ class MyNominationsScreen extends ConsumerWidget {
               );
             }
             return ListView.separated(
-              padding: const EdgeInsets.all(AppTheme.space16),
+              padding: EdgeInsets.fromLTRB(
+                AppTheme.space16,
+                160,
+                AppTheme.space16,
+                MainShellScope.bottomClearance(context, additionalPadding: 44),
+              ),
               itemCount: nominations.length,
               separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
               itemBuilder: (context, index) {

@@ -86,13 +86,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // 1. Verify AppBar Federation Seal
+      // 1. Verify AppBar Federation Crest (Step 3 framed 40x40 team crest)
       final appBarSealFinder = find.byWidgetPredicate(
         (widget) =>
-            widget is ArmSphereImage &&
-            widget.assetPath == ArmSphereAssets.sealFed &&
-            widget.width == 18 &&
-            widget.height == 18 &&
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                ArmSphereAssets.teamCrestDefault &&
+            widget.width == 40 &&
+            widget.height == 40 &&
             widget.semanticLabel == 'Official Federation Community Arena',
       );
       expect(appBarSealFinder, findsOneWidget);
@@ -113,7 +115,7 @@ void main() {
         (widget) =>
             widget is ArmSphereImage &&
             widget.imageUrl == 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg' &&
-            widget.fallbackAsset == ArmSphereAssets.heroGrip &&
+            widget.fallbackAsset == ArmSphereAssets.clipFallbackSparring &&
             widget.fit == BoxFit.cover,
       );
       expect(thumbnailFinder, findsOneWidget);

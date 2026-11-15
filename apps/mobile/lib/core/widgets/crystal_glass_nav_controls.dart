@@ -27,46 +27,104 @@ class CrystalNavCapsuleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = accentBorderColor ?? const Color(0x47FFFFFF);
+    final borderColor = accentBorderColor ?? const Color(0x38FFFFFF);
     return Container(
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: const Color(0x990B101B),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.transparent,
+        shape: BoxShape.circle,
         border: Border.all(
           color: borderColor,
           width: 1.0,
         ),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          stops: [0.0, 0.48, 1.0],
-          colors: [
-            Color(0x2EFFFFFF),
-            Color(0x12FFFFFF),
-            Color(0x06FFFFFF),
-          ],
+        boxShadow: const [],
+      ),
+      child: Center(
+        child: Icon(
+          icon,
+          size: iconSize,
+          color: iconColor,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 12,
-            spreadRadius: -2,
-            offset: const Offset(0, 4),
+      ),
+    );
+  }
+}
+
+/// Reusable 38x38px circular wireframe-crystal icon pill button (`Colors.transparent` fill, `1px #38FFFFFF` border)
+/// for top header actions (search, notifications, settings, refresh, role switch).
+class CrystalIconPillButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final Color iconColor;
+  final double iconSize;
+  final Color? borderColor;
+  final Widget? badgeOverlay;
+
+  const CrystalIconPillButton({
+    super.key,
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+    this.iconColor = AppTheme.textPure,
+    this.iconSize = 18.0,
+    this.borderColor,
+    this.badgeOverlay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget pill = Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: borderColor ?? const Color(0x38FFFFFF),
+          width: 1.0,
+        ),
+        boxShadow: const [],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            icon,
+            size: iconSize,
+            color: iconColor,
           ),
+          if (badgeOverlay != null) badgeOverlay!,
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Center(
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: iconColor,
-            ),
+    );
+
+    return Semantics(
+      button: true,
+      label: tooltip,
+      tooltip: tooltip,
+      excludeSemantics: tooltip != null,
+      onTap: onPressed == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              onPressed!();
+            },
+      child: Tooltip(
+        message: tooltip ?? '',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed == null
+              ? null
+              : () {
+                  HapticFeedback.selectionClick();
+                  onPressed!();
+                },
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(child: pill),
           ),
         ),
       ),
@@ -269,6 +327,11 @@ class CrystalHeaderActionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final callback = _effectiveCallback;
+    final effectiveBorder = accentColor == AppTheme.goldPrimary
+        ? const Color(0x73D4AF37)
+        : accentColor == AppTheme.crimson
+            ? const Color(0x80E23B3B)
+            : accentColor.withValues(alpha: 0.55);
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: Center(
@@ -282,72 +345,39 @@ class CrystalHeaderActionPill extends StatelessWidget {
           semanticLabel: label,
           child: Container(
             constraints: const BoxConstraints(minHeight: 34),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
             decoration: BoxDecoration(
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(11),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.42),
-                  blurRadius: 12,
-                  spreadRadius: -2,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: accentColor.withValues(alpha: 0.16),
-                  blurRadius: 12,
-                  spreadRadius: -2,
+              border: Border.all(
+                color: effectiveBorder,
+                width: 1.0,
+              ),
+              boxShadow: const [],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 14,
+                    color: accentColor,
+                  ),
+                  const SizedBox(width: 5),
+                ],
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPure,
+                    letterSpacing: 0.5,
+                    shadows: AppTheme.crystalTextShadows,
+                  ),
                 ),
               ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(11),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xB80B101C),
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(
-                      color: accentColor.withValues(alpha: 0.58),
-                      width: 1.1,
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      stops: const [0.0, 0.5, 1.0],
-                      colors: [
-                        accentColor.withValues(alpha: 0.22),
-                        const Color(0x16FFFFFF),
-                        const Color(0x08FFFFFF),
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(
-                          icon,
-                          size: 14,
-                          color: accentColor,
-                        ),
-                        const SizedBox(width: 5),
-                      ],
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textPure,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ),
           ),
         ),
@@ -356,7 +386,7 @@ class CrystalHeaderActionPill extends StatelessWidget {
   }
 }
 
-/// Frosted Crystal Glassmorphic Action Button for in-screen CTAs
+/// Pure Crystal Wireframe Action Button for in-screen CTAs
 /// (e.g., "Log a Session", "Open Support Ticket", "Create a team", "Share a video").
 class CrystalActionButton extends StatelessWidget {
   final String label;
@@ -387,126 +417,69 @@ class CrystalActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color effectiveAccent =
         isPrimary ? accentColor : AppTheme.textSecondary;
+    final Color borderColor = !isPrimary
+        ? const Color(0x38FFFFFF)
+        : effectiveAccent == AppTheme.goldPrimary
+            ? const Color(0x73D4AF37)
+            : effectiveAccent == AppTheme.crimson
+                ? const Color(0x80E23B3B)
+                : effectiveAccent.withValues(alpha: 0.65);
+
     final Widget buttonBody = Container(
       width: fullWidth ? double.infinity : null,
-      constraints: const BoxConstraints(minHeight: 46),
+      constraints: const BoxConstraints(minHeight: 48),
+      padding:
+          padding ?? const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.48),
-            blurRadius: 18,
-            spreadRadius: -2,
-            offset: const Offset(0, 6),
-          ),
-          if (isPrimary && onTap != null)
-            BoxShadow(
-              color: effectiveAccent.withValues(alpha: 0.24),
-              blurRadius: 16,
-              spreadRadius: -2,
-              offset: const Offset(0, 2),
-            ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: padding ??
-                const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xCC0B101C),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isPrimary
-                    ? effectiveAccent.withValues(alpha: 0.62)
-                    : AppTheme.borderTitanium,
-                width: isPrimary ? 1.2 : 1.0,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: const [0.0, 0.45, 1.0],
-                colors: isPrimary
-                    ? [
-                        effectiveAccent.withValues(alpha: 0.26),
-                        const Color(0x1EFFFFFF),
-                        const Color(0x0AFFFFFF),
-                      ]
-                    : [
-                        const Color(0x1FFFFFFF),
-                        const Color(0x0EFFFFFF),
-                        const Color(0x05FFFFFF),
-                      ],
-              ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned(
-                  top: 0,
-                  left: 14,
-                  right: 14,
-                  height: 1.0,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: 0.52),
-                          Colors.white.withValues(alpha: 0.0),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (isLoading)
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.0,
-                      color: isPrimary ? effectiveAccent : AppTheme.textPure,
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisSize:
-                        fullWidth ? MainAxisSize.max : MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (icon != null) ...[
-                        Icon(
-                          icon,
-                          size: 17,
-                          color:
-                              isPrimary ? effectiveAccent : AppTheme.textPure,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Flexible(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
-                            color: isPrimary
-                                ? AppTheme.textPure
-                                : AppTheme.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
+        border: Border.all(
+          color: borderColor,
+          width: isPrimary ? 1.2 : 1.0,
         ),
+        boxShadow: const [],
+      ),
+      child: Center(
+        child: isLoading
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.0,
+                  color: isPrimary ? effectiveAccent : AppTheme.textPure,
+                ),
+              )
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(
+                        icon,
+                        size: 17,
+                        color: isPrimary ? effectiveAccent : AppTheme.textPure,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      label,
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        color: isPrimary
+                            ? AppTheme.textPure
+                            : AppTheme.textSecondary,
+                        shadows: AppTheme.crystalTextShadows,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
 
@@ -523,8 +496,7 @@ class CrystalActionButton extends StatelessWidget {
   }
 }
 
-/// 56x56dp Squircle Frosted Crystal Glass Floating Action Button (`+` FAB)
-/// with optical blur, gold or crimson specular rim, and ambient glow.
+/// 56x56dp Squircle Pure Crystal Wireframe Floating Action Button (`+` FAB)
 class CrystalFloatingActionButton extends StatelessWidget {
   final VoidCallback onPressed;
   final IconData icon;
@@ -543,6 +515,12 @@ class CrystalFloatingActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color effectiveBorder = accentColor == AppTheme.goldPrimary
+        ? const Color(0x73D4AF37)
+        : accentColor == AppTheme.crimson
+            ? const Color(0x80E23B3B)
+            : accentColor.withValues(alpha: 0.65);
+
     final Widget button = Semantics(
       button: true,
       label: tooltip ?? 'Action',
@@ -562,73 +540,19 @@ class CrystalFloatingActionButton extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.56),
-                blurRadius: 22,
-                spreadRadius: -2,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: accentColor.withValues(alpha: 0.28),
-                blurRadius: 18,
-                spreadRadius: -2,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(
+              color: effectiveBorder,
+              width: 1.2,
+            ),
+            boxShadow: const [],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xD90B101C),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: accentColor.withValues(alpha: 0.68),
-                    width: 1.3,
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    stops: const [0.0, 0.48, 1.0],
-                    colors: [
-                      accentColor.withValues(alpha: 0.30),
-                      const Color(0x22FFFFFF),
-                      const Color(0x0B0F19),
-                    ],
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Positioned(
-                      top: 0,
-                      left: 10,
-                      right: 10,
-                      height: 1.2,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.white.withValues(alpha: 0.0),
-                              Colors.white.withValues(alpha: 0.65),
-                              Colors.white.withValues(alpha: 0.0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      icon,
-                      size: 26,
-                      color: accentColor,
-                    ),
-                  ],
-                ),
-              ),
+          child: Center(
+            child: Icon(
+              icon,
+              size: 26,
+              color: accentColor,
             ),
           ),
         ),
@@ -686,7 +610,7 @@ class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = true,
     this.showHomeButton = true,
     this.centerTitle = false,
-    this.backgroundColor = AppTheme.voidBackground,
+    this.backgroundColor = Colors.transparent,
     this.elevation = 0,
   });
 

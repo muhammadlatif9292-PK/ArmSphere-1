@@ -151,8 +151,10 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: const Text(
           'Set Up Your Experience',
@@ -193,9 +195,10 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.authWalkout),
           ),
           SafeArea(
             child: Center(
@@ -242,8 +245,6 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
         primaryActionIcon: Icons.arrow_forward,
         isLoading: _isLoading,
         onPrimaryAction: _selected == null || _isLoading ? null : _continue,
-        disclaimerText:
-            'Verified official roles are validated by provincial federation directors.',
       ),
     );
   }
@@ -284,37 +285,25 @@ class _IntentCard extends StatelessWidget {
         duration: AppTheme.animationNormal,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0x1AD4AF37) : AppTheme.glassSurface,
-          gradient: selected ? null : AppTheme.machinedTitaniumGradient,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? AppTheme.goldPrimary : AppTheme.borderTitanium,
-            width: selected ? 1.6 : 1.0,
+            color: selected ? const Color(0x73D4AF37) : const Color(0x38FFFFFF),
+            width: selected ? 1.2 : 1.0,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: AppTheme.goldPrimary.withValues(alpha: 0.2),
-                    blurRadius: 14,
-                    spreadRadius: 0,
-                  ),
-                  AppTheme.titaniumShadow(),
-                ]
-              : [AppTheme.titaniumShadow()],
+          boxShadow: const [],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected
-                    ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                    : AppTheme.silverPlane,
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.transparent,
                 border: Border.all(
                   color: selected
-                      ? AppTheme.goldPrimary
-                      : AppTheme.borderTitanium,
+                      ? const Color(0x73D4AF37)
+                      : const Color(0x38FFFFFF),
                 ),
               ),
               child: Icon(
@@ -325,44 +314,29 @@ class _IntentCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          option.title,
-                          style: TextStyle(
-                            fontFamily: 'Space Grotesk',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: selected ? AppTheme.goldPrimary : AppTheme.textPrimary,
-                          ),
-                        ),
+                  Expanded(
+                    child: Text(
+                      option.title,
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: selected ? AppTheme.goldPrimary : AppTheme.textPrimary,
                       ),
-                      if (option.requiresVerification)
-                        const Tooltip(
-                          message: 'Requires federation verification',
-                          triggerMode: TooltipTriggerMode.tap,
-                          child: Icon(
-                            Icons.workspace_premium_outlined,
-                            size: 16,
-                            color: AppTheme.textMuted,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    option.subtitle,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                      height: 1.35,
                     ),
                   ),
+                  if (option.requiresVerification)
+                    const Tooltip(
+                      message: 'Requires federation verification',
+                      triggerMode: TooltipTriggerMode.tap,
+                      child: Icon(
+                        Icons.workspace_premium_outlined,
+                        size: 16,
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
                 ],
               ),
             ),

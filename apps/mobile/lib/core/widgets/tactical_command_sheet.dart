@@ -488,15 +488,27 @@ class TacticalCommandSheet extends ConsumerWidget {
     required bool isVerified,
   }) async {
     HapticFeedback.selectionClick();
+    final router = GoRouter.maybeOf(context);
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
     if (isVerified) {
       try {
         await ref.read(authProvider.notifier).switchActiveRole(roleKey);
       } catch (_) {}
+      if (router != null) {
+        int safety = 0;
+        try {
+          while (router.canPop() && safety < 24) {
+            router.pop();
+            safety++;
+          }
+        } catch (_) {}
+        router.go('/home');
+      }
+      return;
     }
-    if (context.mounted) {
-      Navigator.of(context).pop();
-      context.push(targetRoute);
-    }
+    router?.push('/settings/roles');
   }
 
   Widget _buildSectionHeader({
@@ -508,35 +520,17 @@ class TacticalCommandSheet extends ConsumerWidget {
     return Row(
       children: [
         Expanded(
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '· $badge',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontBody,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textMuted,
-                ),
-              ),
-            ],
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.9,
+              color: AppTheme.textPrimary,
+            ),
           ),
         ),
         if (actionLabel != null && onActionTap != null)
@@ -613,14 +607,12 @@ class _PersonaChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive
-              ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-              : AppTheme.smokedObsidianGlass,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isActive
                 ? AppTheme.goldPrimary
-                : Colors.white.withValues(alpha: 0.10),
+                : const Color(0x38FFFFFF),
             width: isActive ? 1.3 : 1.0,
           ),
         ),
@@ -690,22 +682,16 @@ class _CommandBentoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return TactilePressWrapper(
       onTap: onTap,
-      semanticLabel: '${spec.title} — ${spec.kicker}',
+      semanticLabel: spec.title,
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.smokedObsidianGlass,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: const Color(0x38FFFFFF),
             width: 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          boxShadow: const [],
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -720,17 +706,17 @@ class _CommandBentoTile extends StatelessWidget {
                 showLoadingIndicator: false,
               ),
             ),
-            Positioned.fill(
+            const Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.45, 1.0],
+                    stops: [0.0, 0.52, 1.0],
                     colors: [
-                      const Color(0x66070A11),
-                      const Color(0xB3070A11),
-                      const Color(0xF2070A11),
+                      Color(0x00000000),
+                      Color(0x40000000),
+                      Color(0xB3000000),
                     ],
                   ),
                 ),
@@ -740,50 +726,34 @@ class _CommandBentoTile extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Flexible(
+                      Expanded(
                         child: Text(
-                          spec.kicker,
+                          spec.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontSize: 9.5,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                            color: spec.accentColor,
+                            letterSpacing: -0.2,
+                            color: AppTheme.textPrimary,
+                            shadows: AppTheme.crystalTextShadows,
                           ),
                         ),
                       ),
-                      if (spec.isLive)
+                      if (spec.isLive) ...[
+                        const SizedBox(width: 6),
                         const PulseIndicator(
                           color: AppTheme.primaryAccent,
                           size: 6.0,
                           semanticLabel: 'Live matchup telemetry',
-                        )
-                      else
-                        Icon(
-                          Icons.north_east_rounded,
-                          size: 13,
-                          color: Colors.white.withValues(alpha: 0.65),
                         ),
+                      ],
                     ],
-                  ),
-                  Text(
-                    spec.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
-                      color: AppTheme.textPrimary,
-                    ),
                   ),
                 ],
               ),

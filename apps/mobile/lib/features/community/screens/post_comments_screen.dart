@@ -205,8 +205,8 @@ class _PostCommentsScreenState extends ConsumerState<PostCommentsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space12),
               decoration: const BoxDecoration(
-                color: AppTheme.glassSurface,
-                border: Border(top: BorderSide(color: AppTheme.borderTitanium, width: 1)),
+                color: Colors.transparent,
+                border: Border(top: BorderSide(color: Color(0x47FFFFFF), width: 1.0)),
               ),
               child: Row(
                 children: [

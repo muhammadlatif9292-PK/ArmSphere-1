@@ -51,12 +51,13 @@ class AdminPermissions {
     'SUPPORT_AGENT',
   };
 
-  /// All 9 canonical roles in the ArmSphere Federation ecosystem.
+  /// All canonical roles in the ArmSphere Federation ecosystem.
   static const List<String> allFederationRoles = <String>[
     'ATHLETE',
     'REFEREE',
     'TOURNAMENT_OPERATOR',
     'ORGANIZATION_LEADER',
+    'ORGANIZATION',
     'SUPPORT_AGENT',
     'COMPLIANCE_OFFICER',
     'PROVINCIAL_DIRECTOR',
@@ -64,11 +65,86 @@ class AdminPermissions {
     'SYSTEM_ADMIN',
   ];
 
+  /// Operator & Organization roles capable of running tournament war rooms when active.
+  static const Set<String> operatorRoles = <String>{
+    'ORGANIZATION',
+    'ORGANIZATION_LEADER',
+    'TOURNAMENT_OPERATOR',
+    'PROVINCIAL_DIRECTOR',
+    'NATIONAL_DIRECTOR',
+    'SYSTEM_ADMIN',
+  };
+
   /// Returns `true` when [role] should present the 5-tab Native Admin Workspace
   /// (`Command`, `Roster`, `Arena Ops`, `Governance`, `Dossier`).
   static bool isAdminWorkspaceRole(String? role) {
     if (role == null || role.trim().isEmpty) return false;
     return adminWorkspaceRoles.contains(role.trim().toUpperCase());
+  }
+
+  /// Returns `true` when [role] is an active Organization or Tournament Operator role.
+  static bool isOperatorRole(String? role) {
+    if (role == null || role.trim().isEmpty) return false;
+    return operatorRoles.contains(role.trim().toUpperCase());
+  }
+
+  /// Invariant 1 (Active Role is Sovereign) & Invariant 2 (Event Ownership Validation):
+  /// Determines whether the user in their CURRENT active role is permitted to access
+  /// the Tournament Operations War Room for a specific event.
+  ///
+  /// - If `activeRole == 'ATHLETE'` or `'REFEREE'`, returns `false` unconditionally,
+  ///   even if `verifiedRoles` contains an operator role or `organizerId` matches.
+  /// - If `activeRole` is a federation director or system admin (`PROVINCIAL_DIRECTOR`,
+  ///   `NATIONAL_DIRECTOR`, `SYSTEM_ADMIN`), returns `true`.
+  /// - If `activeRole` is `ORGANIZATION`, `ORGANIZATION_LEADER`, or `TOURNAMENT_OPERATOR`,
+  ///   validates ownership (`organizerId` or `organizationId`) when ownership fields are present.
+  static bool canOperateEvent({
+    required String? activeRole,
+    required Map<String, dynamic>? userProfile,
+    required Map<String, dynamic> event,
+  }) {
+    final resolvedRole =
+        (activeRole ?? userProfile?['role']?.toString() ?? 'ATHLETE')
+            .trim()
+            .toUpperCase();
+
+    // Invariant 1: Athlete or Referee active role NEVER gets operator console access.
+    if (resolvedRole == 'ATHLETE' ||
+        resolvedRole == 'REFEREE' ||
+        resolvedRole.isEmpty) {
+      return false;
+    }
+
+    if (!operatorRoles.contains(resolvedRole)) {
+      return false;
+    }
+
+    // Federation Directors and System Admins have global oversight across sanctioned events.
+    if (resolvedRole == 'SYSTEM_ADMIN' ||
+        resolvedRole == 'NATIONAL_DIRECTOR' ||
+        resolvedRole == 'PROVINCIAL_DIRECTOR') {
+      return true;
+    }
+
+    // Invariant 2: Organization / Tournament Operator must own the event (or event has no owner restriction in test/legacy data).
+    final userId = userProfile?['id']?.toString();
+    final userOrgId = userProfile?['organizationId']?.toString();
+    final eventOrganizerId = event['organizerId']?.toString();
+    final eventOrgId = event['organizationId']?.toString();
+
+    if ((eventOrganizerId == null || eventOrganizerId.isEmpty) &&
+        (eventOrgId == null || eventOrgId.isEmpty)) {
+      return true;
+    }
+
+    if (userId != null && userId.isNotEmpty && eventOrganizerId == userId) {
+      return true;
+    }
+    if (userOrgId != null && userOrgId.isNotEmpty && eventOrgId == userOrgId) {
+      return true;
+    }
+
+    return false;
   }
 
   /// Resolves the assigned provincial jurisdiction for a `PROVINCIAL_DIRECTOR`
@@ -294,6 +370,8 @@ class AdminPermissions {
         return 'Certified Referee';
       case 'TOURNAMENT_OPERATOR':
         return 'Tournament Operator';
+      case 'ORGANIZATION':
+        return 'Sanctioning Organization';
       case 'ORGANIZATION_LEADER':
         return 'Club / Organization Leader';
       case 'SUPPORT_AGENT':
@@ -326,6 +404,8 @@ class AdminPermissions {
         return 'SUPPORT OPS';
       case 'TOURNAMENT_OPERATOR':
         return 'OPERATOR';
+      case 'ORGANIZATION':
+        return 'ORGANIZATION';
       case 'ORGANIZATION_LEADER':
         return 'CLUB LEADER';
       case 'REFEREE':
@@ -345,6 +425,8 @@ class AdminPermissions {
         return 'Switches your workspace to the certified referee console, live table scorepads, foul tracking, and bout evidence submission.';
       case 'TOURNAMENT_OPERATOR':
         return 'Switches your workspace to Tournament Operations, double-elimination brackets, weigh-in locks, and podium awards ceremonies.';
+      case 'ORGANIZATION':
+        return 'Switches your workspace to Organization & Promotion Command for creating sanctioned tournaments, running the 4-Tab Event War Room, QR Weigh-Ins, and Championship Belt lineage.';
       case 'ORGANIZATION_LEADER':
         return 'Switches your workspace to Club & Team leadership, roster management, and inter-club sparring invitations.';
       case 'SUPPORT_AGENT':
@@ -371,6 +453,8 @@ class AdminPermissions {
         return Icons.sports_rounded;
       case 'TOURNAMENT_OPERATOR':
         return Icons.account_tree_rounded;
+      case 'ORGANIZATION':
+        return Icons.shield_rounded;
       case 'ORGANIZATION_LEADER':
         return Icons.groups_rounded;
       case 'SUPPORT_AGENT':

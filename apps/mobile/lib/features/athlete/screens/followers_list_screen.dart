@@ -158,6 +158,7 @@ class FollowersListScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),
@@ -191,6 +192,7 @@ class FollowingListScreen extends ConsumerWidget {
         actions: const [CrystalHomeButton()],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.community),

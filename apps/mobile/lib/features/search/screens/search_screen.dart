@@ -119,9 +119,9 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                 Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppTheme.glassSurface,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    border: Border.all(color: AppTheme.borderTitanium, width: 1.0),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
                   ),
               child: TextField(
                 controller: _searchController,
@@ -186,10 +186,10 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                             height: 64,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppTheme.glassSurface,
+                              color: Colors.transparent,
                               border: Border.all(
-                                color: AppTheme.goldPrimary.withValues(alpha: 0.3),
-                                width: 1.2,
+                                color: const Color(0x73D4AF37),
+                                width: 1.0,
                               ),
                             ),
                             child: const Icon(
@@ -256,8 +256,11 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.goldPrimary,
-                                foregroundColor: Colors.black,
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: AppTheme.goldPrimary,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                side: const BorderSide(color: Color(0x73D4AF37), width: 1.0),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                                 ),

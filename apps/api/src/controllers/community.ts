@@ -9,13 +9,22 @@ import { eq, and } from "drizzle-orm";
 
 // Validation Schemas
 const submitLinkSchema = z.object({
-  externalUrl: z.string().url("Invalid external URL"),
+  externalUrl: z
+    .union([
+      z.string().trim().url("Invalid external URL"),
+      z.literal(""),
+      z.null(),
+      z.undefined(),
+    ])
+    .optional()
+    .nullable(),
   category: z.string().optional().nullable(),
   caption: z.string().optional().nullable(),
   matchId: z.string().uuid("Invalid match ID").optional().nullable(),
   exerciseType: z.string().optional().nullable(),
   weightKg: z.coerce.number().optional().nullable(),
   reps: z.coerce.number().int().optional().nullable(),
+  isTrainingLogEntry: z.boolean().optional().nullable(),
 });
 
 const moderateLinkSchema = z.object({
@@ -52,7 +61,7 @@ export class CommunityController {
   }
 
   /**
-   * Submit a community video link
+   * Submit a community video link or training log / PR entry
    */
   static async submitLink(req: Request, res: Response, next: NextFunction) {
     try {
@@ -61,13 +70,14 @@ export class CommunityController {
 
       const post = await CommunityService.submitLink(
         athleteId,
-        validated.externalUrl,
+        validated.externalUrl ?? "",
         validated.category,
         validated.caption,
         validated.matchId,
         validated.exerciseType,
         validated.weightKg,
-        validated.reps
+        validated.reps,
+        validated.isTrainingLogEntry ?? false
       );
 
       res.status(201).json({

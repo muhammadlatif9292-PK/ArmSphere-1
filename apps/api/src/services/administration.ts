@@ -574,15 +574,17 @@ export class AdministrationService {
   static async getMatches() {
     logger.info("Fetching matches directory");
     const mRecords = await db.select().from(matches);
-    const profiles = await db.select().from(athleteProfiles);
+    const enriched = await MatchService.enrichMatchRecords(mRecords);
 
-    return mRecords.map(m => {
-      const challenger = profiles.find(p => p.id === m.challengerId);
-      const opponent = profiles.find(p => p.id === m.opponentId);
+    return enriched.map((m: any) => {
+      const challengerDisplayName = m.challengerName === "Challenger" ? "Unknown" : m.challengerName;
+      const opponentDisplayName = m.opponentName === "Opponent" ? "Unknown" : m.opponentName;
       return {
         ...m,
-        challengerName: challenger ? challenger.displayName : "Unknown",
-        opponentName: opponent ? opponent.displayName : "Unknown",
+        challengerName: challengerDisplayName,
+        opponentName: opponentDisplayName,
+        athleteAName: challengerDisplayName,
+        athleteBName: opponentDisplayName,
       };
     });
   }

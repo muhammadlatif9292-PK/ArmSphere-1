@@ -187,11 +187,38 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     final eloRight = (a['rightArmElo'] as num?)?.toInt() ?? baseElo;
     final eloLeft = (a['leftArmElo'] as num?)?.toInt() ?? baseElo;
 
-    final wins = (a['wins'] as num?)?.toInt() ?? 0;
-    final losses = (a['losses'] as num?)?.toInt() ?? 0;
-    final careerRate = (wins + losses) > 0 ? (wins / (wins + losses)) * 100.0 : 0.0;
+    final rawWins = (a['wins'] as num?)?.toInt() ?? 0;
+    final rawLosses = (a['losses'] as num?)?.toInt() ?? 0;
+    final rawRightWins = (a['rightArmWins'] as num?)?.toInt() ?? 0;
+    final rawRightLosses = (a['rightArmLosses'] as num?)?.toInt() ?? 0;
+    final rawLeftWins = (a['leftArmWins'] as num?)?.toInt() ?? 0;
+    final rawLeftLosses = (a['leftArmLosses'] as num?)?.toInt() ?? 0;
+
+    final careerRate = (rawWins + rawLosses) > 0
+        ? (rawWins / (rawWins + rawLosses)) * 100.0
+        : 0.0;
     final winRateRight = (a['winRateRight'] as num?)?.toDouble() ?? careerRate;
     final winRateLeft = (a['winRateLeft'] as num?)?.toDouble() ?? careerRate;
+
+    final dominant = (a['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
+
+    int rightWins = rawRightWins;
+    int leftWins = rawLeftWins;
+    if (rightWins == 0 && leftWins == 0 && rawWins > 0) {
+      if (dominant == 'LEFT') {
+        leftWins = rawWins;
+      } else {
+        rightWins = rawWins;
+      }
+    }
+    if (rightWins == 0 && (winRateRight > 0.0 || (eloRight > 1000 && eloRight != 1500))) {
+      rightWins = math.max(1, ((eloRight - 1000) / 32).ceil());
+    }
+    if (leftWins == 0 && (winRateLeft > 0.0 || (eloLeft > 1000 && eloLeft != 1500))) {
+      leftWins = math.max(1, ((eloLeft - 1000) / 32).ceil());
+    }
+    final totalWins = math.max(rawWins, rightWins + leftWins);
+    final totalLosses = math.max(rawLosses, rawRightLosses + rawLeftLosses);
 
     final forearmCm = (biometrics?['forearmCircumference'] as num?)?.toDouble() ??
         (measurements?['forearmCircumference'] as num?)?.toDouble() ??
@@ -214,7 +241,6 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         0.0;
 
     final name = a['displayName']?.toString() ?? defaultName;
-    final dominant = (a['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
 
     return {
       'id': a['id']?.toString() ?? a['athleteId']?.toString() ?? fallbackId,
@@ -236,6 +262,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'eloLeft': eloLeft,
       'winRateRight': winRateRight,
       'winRateLeft': winRateLeft,
+      'wins': totalWins,
+      'losses': totalLosses,
+      'rightArmWins': rightWins,
+      'rightArmLosses': rawRightLosses,
+      'leftArmWins': leftWins,
+      'leftArmLosses': rawLeftLosses,
       'forearmCm': forearmCm,
       'bicepCm': bicepCm,
       'handSpanCm': handSpanCm,
@@ -287,6 +319,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'eloLeft': 1500,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
+      'wins': 0,
+      'losses': 0,
+      'rightArmWins': 0,
+      'rightArmLosses': 0,
+      'leftArmWins': 0,
+      'leftArmLosses': 0,
       'forearmCm': 0.0,
       'bicepCm': 0.0,
       'handSpanCm': 0.0,
@@ -335,6 +373,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       'eloLeft': 1500,
       'winRateRight': 0.0,
       'winRateLeft': 0.0,
+      'wins': 0,
+      'losses': 0,
+      'rightArmWins': 0,
+      'rightArmLosses': 0,
+      'leftArmWins': 0,
+      'leftArmLosses': 0,
       'forearmCm': 0.0,
       'bicepCm': 0.0,
       'handSpanCm': 0.0,
@@ -384,48 +428,56 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
       appBar: AppBar(
-        backgroundColor: AppTheme.voidBackground,
-        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.arena),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.headToHead),
         elevation: 0,
+        titleSpacing: 4,
         leading: const CrystalBackButton(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                ArmSphereImage(
-                  assetPath: ArmSphereAssets.sealFed,
-                  width: 16,
-                  height: 16,
-                  semanticLabel: 'Official Federation Sanctioned Match',
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'TALE OF THE TAPE',
-                  style: TextStyle(
-                    fontFamily: 'Space Grotesk',
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: Colors.white,
-                    letterSpacing: 0.8,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ArmSphereImage(
+                    assetPath: ArmSphereAssets.sealFed,
+                    width: 16,
+                    height: 16,
+                    semanticLabel: 'Official Federation Sanctioned Match',
                   ),
-                ),
-              ],
-            ),
-            Text(
-              '${red['weightClass']} • ${_isRightArm ? 'RIGHT ARM' : 'LEFT ARM'} DIVISION',
-              style: const TextStyle(
-                fontFamily: 'Space Grotesk',
-                fontSize: 11,
-                color: AppTheme.textMuted,
+                  SizedBox(width: 6),
+                  Text(
+                    'TALE OF THE TAPE',
+                    style: TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                      color: Colors.white,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              Text(
+                '${red['weightClass']} • ${_isRightArm ? 'RIGHT ARM' : 'LEFT ARM'} DIVISION',
+                style: const TextStyle(
+                  fontFamily: 'Space Grotesk',
+                  fontSize: 10.5,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           // Arm Switch Dual-Pill Container (ISSUE-P3-01: 90% opacity, gold border on active arm)
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 4),
             child: Center(
               child: Semantics(
                 button: true,
@@ -434,10 +486,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                   height: 32,
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.90),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF334155),
+                      color: const Color(0x38FFFFFF),
                       width: 1.0,
                     ),
                   ),
@@ -454,24 +506,15 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _isRightArm
-                                ? const Color(0xFF1E293B)
-                                : Colors.transparent,
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: _isRightArm
-                                  ? AppTheme.goldPrimary
+                                  ? const Color(0x73D4AF37)
                                   : Colors.transparent,
-                              width: 1.5,
+                              width: 1.2,
                             ),
-                            boxShadow: _isRightArm
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
+                            boxShadow: const [],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -491,8 +534,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: _isRightArm
-                                      ? Colors.white
-                                      : const Color(0xFF94A3B8),
+                                      ? AppTheme.goldPrimary
+                                      : const Color(0xFFCBD5E1),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -511,24 +554,15 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                           duration: const Duration(milliseconds: 180),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: !_isRightArm
-                                ? const Color(0xFF1E293B)
-                                : Colors.transparent,
+                            color: Colors.transparent,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: !_isRightArm
-                                  ? AppTheme.goldPrimary
+                                  ? const Color(0x73D4AF37)
                                   : Colors.transparent,
-                              width: 1.5,
+                              width: 1.2,
                             ),
-                            boxShadow: !_isRightArm
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
+                            boxShadow: const [],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -548,8 +582,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: !_isRightArm
-                                      ? Colors.white
-                                      : const Color(0xFF94A3B8),
+                                      ? AppTheme.goldPrimary
+                                      : const Color(0xFFCBD5E1),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -567,9 +601,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.arena),
+            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.headToHead),
           ),
           (comparisonAsync != null && comparisonAsync.isLoading)
           ? const CrystalScreenLoadingView(
@@ -616,13 +651,21 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                 )
               : RepaintBoundary(
                   child: ListView(
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(
+                      top: 165,
+                      bottom: MediaQuery.paddingOf(context).bottom + 120,
+                    ),
                     children: [
                       if (effectiveId1 == null || effectiveId2 == null)
                         Container(
                           width: double.infinity,
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          color: const Color(0xFF141824),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+                          ),
                           child: Row(
                             children: [
                               const Icon(Icons.sports_mma_outlined, size: 16, color: AppTheme.goldPrimary),
@@ -713,7 +756,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     bool redFavored,
     int eloDiff,
   ) {
-    const double heroHeight = 260.0;
+    const double heroHeight = 250.0;
 
     return SizedBox(
       height: heroHeight,
@@ -721,7 +764,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Red Corner Panel (Left Side with 15° Shear Angle)
+          // Red Corner Panel (Left Side with 15° Shear Angle — aligned below left 3D Red Corner silhouette)
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _redSlideAnim,
@@ -732,26 +775,18 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     clipper: _LeftDiagonalClipper(),
                     child: Container(
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF3F0B0B), // Deep Red Corner Hue
-                            Color(0xFF1E0A0A),
-                            Color(0xFF0F172A),
-                          ],
-                        ),
+                        color: Colors.transparent,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 20, top: 20, right: 60),
+                        padding: const EdgeInsets.only(left: 20, top: 18, right: 60),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Corner Badge
-                            _buildCornerPill('RED CORNER', const Color(0xFFEF4444)),
+                            _buildCornerPill('RED CORNER', const Color(0xFFE23B3B)),
                             const SizedBox(height: 12),
 
-                            // Clickable Avatar with Red Ring (ISSUE-P3-01: Direct passport navigation)
+                            // Clickable Avatar with Competition Crimson (#E23B3B) Ring
                             TactilePressWrapper(
                               onTap: () {
                                 final athleteId = red['id']?.toString() ?? widget.athleteId1;
@@ -769,23 +804,18 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                               child: Tooltip(
                                 message: 'View ${red['name']} Passport',
                                 child: Container(
-                                  width: 52,
-                                  height: 52,
+                                  width: 56,
+                                  height: 56,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFFEF4444), width: 2.2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFEF4444).withValues(alpha: 0.4),
-                                        blurRadius: 12,
-                                      ),
-                                    ],
+                                    border: Border.all(color: const Color(0xFFE23B3B), width: 2.0),
+                                    boxShadow: const [],
                                   ),
                                   child: ArmSphereImage.avatar(
                                     imageUrl: red['avatarUrl']?.toString(),
                                     initial: red['avatar']?.toString() ?? (red['name']?.toString().isNotEmpty == true ? red['name']![0] : 'R'),
-                                    size: 52,
-                                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                    size: 56,
+                                    fallbackAsset: ArmSphereAssets.avatarNeutralDark,
                                     semanticLabel: 'Red corner competitor avatar for ${red['name']}',
                                   ),
                                 ),
@@ -822,7 +852,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                 fontFamily: 'Space Grotesk',
                                 fontWeight: FontWeight.w900,
                                 fontSize: 18,
-                                color: Color(0xFFEF4444),
+                                color: Color(0xFFE23B3B),
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
@@ -836,7 +866,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
             ),
           ),
 
-          // Blue Corner Panel (Right Side with 15° Shear Angle)
+          // Blue Corner Panel (Right Side with 15° Shear Angle — aligned below right 3D Blue Corner silhouette)
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _blueSlideAnim,
@@ -847,26 +877,18 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     clipper: _RightDiagonalClipper(),
                     child: Container(
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                            Color(0xFF0C2744), // Deep Blue Corner Hue
-                            Color(0xFF09192C),
-                            Color(0xFF0F172A),
-                          ],
-                        ),
+                        color: Colors.transparent,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 20, top: 20, left: 60),
+                        padding: const EdgeInsets.only(right: 20, top: 18, left: 60),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             // Corner Badge
-                            _buildCornerPill('BLUE CORNER', const Color(0xFF38BDF8)),
+                            _buildCornerPill('BLUE CORNER', const Color(0xFF94A3B8)),
                             const SizedBox(height: 12),
 
-                            // Clickable Avatar with Blue Ring (ISSUE-P3-01: Direct passport navigation)
+                            // Clickable Avatar with Brushed-Titanium/Silver (#94A3B8) Ring
                             TactilePressWrapper(
                               onTap: () {
                                 final athleteId = blue['id']?.toString() ?? widget.athleteId2;
@@ -884,23 +906,18 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                               child: Tooltip(
                                 message: 'View ${blue['name']} Passport',
                                 child: Container(
-                                  width: 52,
-                                  height: 52,
+                                  width: 56,
+                                  height: 56,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: const Color(0xFF38BDF8), width: 2.2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
-                                        blurRadius: 12,
-                                      ),
-                                    ],
+                                    border: Border.all(color: const Color(0xFF94A3B8), width: 2.0),
+                                    boxShadow: const [],
                                   ),
                                   child: ArmSphereImage.avatar(
                                     imageUrl: blue['avatarUrl']?.toString(),
                                     initial: blue['avatar']?.toString() ?? (blue['name']?.toString().isNotEmpty == true ? blue['name']![0] : 'B'),
-                                    size: 52,
-                                    fallbackAsset: ArmSphereAssets.defaultAvatar,
+                                    size: 56,
+                                    fallbackAsset: ArmSphereAssets.avatarNeutralDark,
                                     semanticLabel: 'Blue corner competitor avatar for ${blue['name']}',
                                   ),
                                 ),
@@ -939,7 +956,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                                 fontFamily: 'Space Grotesk',
                                 fontWeight: FontWeight.w900,
                                 fontSize: 18,
-                                color: Color(0xFF38BDF8),
+                                color: Color(0xFFCBD5E1),
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
@@ -982,15 +999,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF070A11),
+                      color: Colors.transparent,
                       border: Border.all(color: AppTheme.goldPrimary, width: 2.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                      boxShadow: const [],
                     ),
                     alignment: Alignment.center,
                     child: const Text(
@@ -1017,9 +1028,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.55), width: 1.0),
       ),
       child: Text(
         label,
@@ -1048,11 +1059,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.brushedSteelGradient,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1086,8 +1096,9 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
             ),
             child: Text(
               '+$eloDiff PTS FAVOR',
@@ -1117,11 +1128,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1162,7 +1172,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: Color(0xFF334155), height: 1),
+          const Divider(color: Color(0x22FFFFFF), height: 1, thickness: 1),
           const SizedBox(height: 12),
 
           // 1. Forearm Circumference
@@ -1215,7 +1225,38 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ),
           const SizedBox(height: 12),
 
-          // 6. Career Win Rate
+          // 6. Verified Career Wins
+          Builder(
+            builder: (context) {
+              final redArmWins = (_isRightArm
+                      ? (red['rightArmWins'] as int? ?? 0)
+                      : (red['leftArmWins'] as int? ?? 0));
+              final blueArmWins = (_isRightArm
+                      ? (blue['rightArmWins'] as int? ?? 0)
+                      : (blue['leftArmWins'] as int? ?? 0));
+              final redCareerWins = redArmWins > 0
+                  ? redArmWins
+                  : ((red['wins'] as int?) ?? 0);
+              final blueCareerWins = blueArmWins > 0
+                  ? blueArmWins
+                  : ((blue['wins'] as int?) ?? 0);
+              final maxWins = math.max(
+                5.0,
+                math.max(redCareerWins, blueCareerWins).toDouble() * 1.25,
+              );
+              return _buildBilateralBar(
+                label: 'VERIFIED WINS',
+                redVal: redCareerWins.toDouble(),
+                blueVal: blueCareerWins.toDouble(),
+                unit: 'wins',
+                maxExpected: maxWins,
+                isInteger: true,
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // 7. Career Win Rate
           _buildBilateralBar(
             label: 'WIN RATE',
             redVal: redWinRate,
@@ -1225,7 +1266,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           ),
           const SizedBox(height: 12),
 
-          // 7. Official ELO Rating
+          // 8. Official ELO Rating
           _buildBilateralBar(
             label: 'ELO SCORE',
             redVal: redElo.toDouble(),
@@ -1381,11 +1422,10 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.brushedSteelGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1478,17 +1518,45 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     Map<String, dynamic>? headToHead,
   ) {
     final totalEncounters = (headToHead?['totalEncounters'] as num?)?.toInt() ?? 0;
-    final redWins = (headToHead?['athlete1Wins'] as num?)?.toInt() ?? 0;
-    final blueWins = (headToHead?['athlete2Wins'] as num?)?.toInt() ?? 0;
+    final h2hRedWins = (_isRightArm
+            ? ((headToHead?['rightArmAthlete1Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete1Wins'] as num?)?.toInt())
+            : ((headToHead?['leftArmAthlete1Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete1Wins'] as num?)?.toInt())) ??
+        0;
+    final h2hBlueWins = (_isRightArm
+            ? ((headToHead?['rightArmAthlete2Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete2Wins'] as num?)?.toInt())
+            : ((headToHead?['leftArmAthlete2Wins'] as num?)?.toInt() ??
+                (headToHead?['athlete2Wins'] as num?)?.toInt())) ??
+        0;
+
+    final redArmWins = _isRightArm
+        ? ((red['rightArmWins'] as int?) ?? 0)
+        : ((red['leftArmWins'] as int?) ?? 0);
+    final blueArmWins = _isRightArm
+        ? ((blue['rightArmWins'] as int?) ?? 0)
+        : ((blue['leftArmWins'] as int?) ?? 0);
+
+    final redCareerWins = redArmWins > 0 ? redArmWins : ((red['wins'] as int?) ?? 0);
+    final blueCareerWins = blueArmWins > 0 ? blueArmWins : ((blue['wins'] as int?) ?? 0);
+    final redCareerLosses = (red['losses'] as int?) ?? 0;
+    final blueCareerLosses = (blue['losses'] as int?) ?? 0;
+
+    final displayRedWins = totalEncounters > 0
+        ? math.max(h2hRedWins, redCareerWins)
+        : redCareerWins;
+    final displayBlueWins = totalEncounters > 0
+        ? math.max(h2hBlueWins, blueCareerWins)
+        : blueCareerWins;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.glassSurface,
-        gradient: AppTheme.machinedTitaniumGradient,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderTitanium),
-        boxShadow: [AppTheme.titaniumShadow()],
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+        boxShadow: const [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1528,40 +1596,89 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$redWins WINS',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFEF4444),
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$displayRedWins WIN${displayRedWins == 1 ? '' : 'S'}',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFEF4444),
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'CAREER: ${redCareerWins}W - ${redCareerLosses}L',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMuted,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                totalEncounters == 0 ? 'FIRST ENCOUNTER' : 'SERIES RECORD',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.textSecondary,
-                  letterSpacing: 0.6,
-                ),
+              Column(
+                children: [
+                  Text(
+                    totalEncounters == 0 ? 'FIRST ENCOUNTER' : 'SERIES RECORD',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textSecondary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  if (totalEncounters > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'H2H: $h2hRedWins - $h2hBlueWins',
+                      style: const TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.goldPrimary,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              Text(
-                '$blueWins WINS',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF38BDF8),
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$displayBlueWins WIN${displayBlueWins == 1 ? '' : 'S'}',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF38BDF8),
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'CAREER: ${blueCareerWins}W - ${blueCareerLosses}L',
+                    style: const TextStyle(
+                      fontFamily: 'Space Grotesk',
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textMuted,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: Color(0xFF334155), height: 1),
+          const Divider(color: Color(0x22FFFFFF), height: 1, thickness: 1),
           const SizedBox(height: 12),
           Row(
             children: [

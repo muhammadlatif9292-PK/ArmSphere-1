@@ -17,6 +17,7 @@ enum StatusType {
 class StatusChip extends StatelessWidget {
   final String label;
   final StatusType type;
+  final Color? color;
   final IconData? icon;
   final VoidCallback? onTap;
 
@@ -24,30 +25,32 @@ class StatusChip extends StatelessWidget {
     super.key,
     required this.label,
     this.type = StatusType.neutral,
+    this.color,
     this.icon,
     this.onTap,
   });
 
   /// Const constructors for common federation statuses
-  const StatusChip.success({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.success({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.success;
 
-  const StatusChip.warning({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.warning({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.warning;
 
-  const StatusChip.error({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.error({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.error;
 
-  const StatusChip.info({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.info({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.info;
 
-  const StatusChip.neutral({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.neutral({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.neutral;
 
-  const StatusChip.live({super.key, required this.label, this.icon, this.onTap})
+  const StatusChip.live({super.key, required this.label, this.color, this.icon, this.onTap})
       : type = StatusType.live;
 
   Color _getForegroundColor() {
+    if (color != null) return color!;
     switch (type) {
       case StatusType.success:
         return AppTheme.verifiedEmerald;
@@ -65,43 +68,39 @@ class StatusChip extends StatelessWidget {
   }
 
   Color _getBackgroundColor() {
-    return _getForegroundColor().withValues(alpha: 0.14);
+    return Colors.transparent;
   }
 
   Color _getBorderColor() {
-    return _getForegroundColor().withValues(alpha: 0.38);
+    if (color != null) return color!.withValues(alpha: 0.45);
+    switch (type) {
+      case StatusType.success:
+        return const Color(0x6610B981);
+      case StatusType.warning:
+        return const Color(0x73D4AF37);
+      case StatusType.error:
+      case StatusType.live:
+        return const Color(0x80E23B3B);
+      case StatusType.info:
+        return const Color(0x6638BDF8);
+      case StatusType.neutral:
+        return const Color(0x38FFFFFF);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final fgColor = _getForegroundColor();
-    final bgColor = _getBackgroundColor();
     final borderColor = _getBorderColor();
     final isLive = type == StatusType.live;
 
     Widget chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.5),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
         border: Border.all(color: borderColor, width: 1.0),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.08),
-            bgColor,
-          ],
-        ),
-        boxShadow: isLive
-            ? [
-                BoxShadow(
-                  color: AppTheme.competitionCrimson.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  spreadRadius: 0.5,
-                ),
-              ]
-            : null,
+        boxShadow: const [],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -115,12 +114,6 @@ class StatusChip extends StatelessWidget {
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppTheme.competitionCrimson,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.competitionCrimson,
-                    blurRadius: 4,
-                  ),
-                ],
               ),
             ),
           ] else if (icon != null) ...[
@@ -135,6 +128,7 @@ class StatusChip extends StatelessWidget {
               fontSize: 10.0,
               color: fgColor,
               letterSpacing: 0.6,
+              shadows: AppTheme.crystalTextShadows,
             ),
           ),
         ],
@@ -164,22 +158,17 @@ class ArmIndicatorPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isRightArm ? AppTheme.electricCyan : AppTheme.championshipGold;
+    final borderColor =
+        isRightArm ? const Color(0x6638BDF8) : const Color(0x73D4AF37);
     final label = isRightArm ? 'RIGHT ARM' : 'LEFT ARM';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1.0),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.08),
-            color.withValues(alpha: 0.12),
-          ],
-        ),
+        border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: const [],
       ),
       child: Text(
         label,
@@ -189,6 +178,7 @@ class ArmIndicatorPill extends StatelessWidget {
           fontSize: 9.5,
           color: color,
           letterSpacing: 0.6,
+          shadows: AppTheme.crystalTextShadows,
         ),
       ),
     );

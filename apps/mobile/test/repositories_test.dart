@@ -33,6 +33,9 @@ void main() {
     // Stub caching operations to prevent NullPointer/un-stubbed errors
     when(() => mockHiveStorage.cacheData(any(), any())).thenAnswer((_) async {});
     when(() => mockHiveStorage.getCachedData(any())).thenReturn(null);
+    when(() => mockHiveStorage.evictCache(any())).thenAnswer((_) async {});
+    when(() => mockHiveStorage.evictByPrefix(any())).thenAnswer((_) async {});
+    when(() => mockHiveStorage.clearAllCaches()).thenAnswer((_) async {});
   });
 
   group('MessagingRepository Unit Tests', () {

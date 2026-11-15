@@ -1,4 +1,4 @@
-import { eq, and, like, or, SQL, desc, notInArray, sql } from "drizzle-orm";
+import { eq, and, like, or, SQL, desc, notInArray, inArray, sql } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { 
   users, 
@@ -256,20 +256,67 @@ export class AthleteService {
     // Resolve verified match record and active championship titles count for dashboard & achievements
     let wins = 0;
     let losses = 0;
+    let rightArmWins = 0;
+    let rightArmLosses = 0;
+    let leftArmWins = 0;
+    let leftArmLosses = 0;
     let titlesCount = 0;
+    const candidateIds = Array.from(new Set([profile.id, profile.userId].filter(Boolean)));
     try {
       const verifiedMatches = await db
         .select()
         .from(matches)
         .where(
           and(
-            or(eq(matches.challengerId, profile.id), eq(matches.opponentId, profile.id)),
+            or(
+              inArray(matches.challengerId, candidateIds),
+              inArray(matches.opponentId, candidateIds)
+            ),
             eq(matches.status, "VERIFIED")
           )
         );
+      const seenMatchIds = new Set<string>();
       for (const m of verifiedMatches) {
-        if (m.winnerId === profile.id) wins++;
-        else if (m.winnerId) losses++;
+        seenMatchIds.add(m.id);
+        const arm = ((m as any).arm || "RIGHT").toString().toUpperCase();
+        const isWinner = m.winnerId ? candidateIds.includes(m.winnerId) : false;
+        if (isWinner) {
+          wins++;
+          if (arm === "LEFT") leftArmWins++;
+          else rightArmWins++;
+        } else if (m.winnerId) {
+          losses++;
+          if (arm === "LEFT") leftArmLosses++;
+          else rightArmLosses++;
+        }
+      }
+
+      try {
+        const completedTourneyMatches = await db
+          .select()
+          .from(tournamentMatches)
+          .where(
+            and(
+              or(
+                inArray(tournamentMatches.athleteAId, candidateIds),
+                inArray(tournamentMatches.athleteBId, candidateIds)
+              ),
+              eq(tournamentMatches.status, "COMPLETED")
+            )
+          );
+        for (const tm of completedTourneyMatches) {
+          if (seenMatchIds.has(tm.id)) continue;
+          const isWinner = tm.winnerId ? candidateIds.includes(tm.winnerId) : false;
+          if (isWinner) {
+            wins++;
+            rightArmWins++;
+          } else if (tm.winnerId) {
+            losses++;
+            rightArmLosses++;
+          }
+        }
+      } catch (_) {
+        // Ignore if tournamentMatches table is unavailable in isolated unit tests
       }
 
       const activeTitles = await db
@@ -280,6 +327,13 @@ export class AthleteService {
     } catch (_) {
       // Fallback to 0 if match/title tables are unavailable in isolated unit tests
     }
+
+    const totalRight = rightArmWins + rightArmLosses;
+    const totalLeft = leftArmWins + leftArmLosses;
+    const totalAll = wins + losses;
+    const winRateRight = totalRight > 0 ? Math.round((rightArmWins / totalRight) * 1000) / 10 : 0;
+    const winRateLeft = totalLeft > 0 ? Math.round((leftArmWins / totalLeft) * 1000) / 10 : 0;
+    const winRate = totalAll > 0 ? Math.round((wins / totalAll) * 1000) / 10 : 0;
 
     const isOwner = viewerUserId === ownerUserId;
     const isPrivileged = !!(viewerRole && ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"].includes(viewerRole.toUpperCase()));
@@ -293,6 +347,13 @@ export class AthleteService {
       ...safeProfile,
       wins,
       losses,
+      rightArmWins,
+      rightArmLosses,
+      leftArmWins,
+      leftArmLosses,
+      winRateRight,
+      winRateLeft,
+      winRate,
       titlesCount,
       club,
       verificationStatus: verification?.status || "UNVERIFIED",
@@ -781,63 +842,178 @@ export class AthleteService {
       throw new NotFoundError("One or both athletes could not be found");
     }
 
+    const a1Ids = Array.from(new Set([athlete1.id, athlete1.userId].filter(Boolean)));
+    const a2Ids = Array.from(new Set([athlete2.id, athlete2.userId].filter(Boolean)));
+
     // Query past tournament matches between these two athletes
-    const h2hMatches = await db
-      .select()
-      .from(tournamentMatches)
-      .where(
-        and(
-          sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
-          eq(tournamentMatches.status, "COMPLETED")
-        )
-      );
+    let tourneyH2H: any[] = [];
+    try {
+      tourneyH2H = await db
+        .select()
+        .from(tournamentMatches)
+        .where(
+          and(
+            sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
+            eq(tournamentMatches.status, "COMPLETED")
+          )
+        );
+    } catch (_) {
+      tourneyH2H = [];
+    }
+
+    // Also query verified sanctioned bouts from the matches table between these two athletes
+    let sanctionedH2H: any[] = [];
+    try {
+      sanctionedH2H = await db
+        .select()
+        .from(matches)
+        .where(
+          and(
+            or(
+              and(inArray(matches.challengerId, a1Ids), inArray(matches.opponentId, a2Ids)),
+              and(inArray(matches.challengerId, a2Ids), inArray(matches.opponentId, a1Ids))
+            ),
+            eq(matches.status, "VERIFIED")
+          )
+        );
+    } catch (_) {
+      sanctionedH2H = [];
+    }
+
+    const seenIds = new Set<string>();
+    const combinedH2H: any[] = [];
+    for (const m of tourneyH2H) {
+      if (m?.id) seenIds.add(m.id);
+      combinedH2H.push({
+        id: m.id,
+        winnerId: m.winnerId,
+        arm: (m.arm || "RIGHT").toUpperCase(),
+        scoreLine: m.scoreLine || `${m.athleteAScore ?? 0}-${m.athleteBScore ?? 0}`,
+        round: m.round ?? 1,
+        bracketType: m.bracketType || "TOURNAMENT",
+        date: m.updatedAt || m.createdAt,
+      });
+    }
+    for (const m of sanctionedH2H) {
+      if (m?.id && seenIds.has(m.id)) continue;
+      if (m?.id) seenIds.add(m.id);
+      combinedH2H.push({
+        id: m.id,
+        winnerId: m.winnerId,
+        arm: ((m as any).arm || "RIGHT").toString().toUpperCase(),
+        scoreLine: `${(m as any).challengerScore ?? 0}-${(m as any).opponentScore ?? 0}`,
+        round: 1,
+        bracketType: "SANCTIONED_BOUT",
+        date: m.updatedAt || m.createdAt,
+      });
+    }
 
     let athlete1Wins = 0;
     let athlete2Wins = 0;
+    let rightArmAthlete1Wins = 0;
+    let rightArmAthlete2Wins = 0;
+    let leftArmAthlete1Wins = 0;
+    let leftArmAthlete2Wins = 0;
 
-    for (const m of h2hMatches) {
-      if (m.winnerId === athlete1.id) athlete1Wins++;
-      else if (m.winnerId === athlete2.id) athlete2Wins++;
+    for (const m of combinedH2H) {
+      const arm = (m.arm || "RIGHT").toUpperCase();
+      if (m.winnerId && a1Ids.includes(m.winnerId)) {
+        athlete1Wins++;
+        if (arm === "LEFT") leftArmAthlete1Wins++;
+        else rightArmAthlete1Wins++;
+      } else if (m.winnerId && a2Ids.includes(m.winnerId)) {
+        athlete2Wins++;
+        if (arm === "LEFT") leftArmAthlete2Wins++;
+        else rightArmAthlete2Wins++;
+      }
     }
 
-    // Compute per-arm career win rates from verified matches
-    const computeArmWinRates = async (profileId: string) => {
-      let rightWins = 0;
-      let rightTotal = 0;
-      let leftWins = 0;
-      let leftTotal = 0;
-      try {
-        const verified = await db
-          .select()
-          .from(matches)
-          .where(
-            and(
-              or(eq(matches.challengerId, profileId), eq(matches.opponentId, profileId)),
-              eq(matches.status, "VERIFIED")
-            )
-          );
-        for (const m of verified) {
-          const arm = (m.arm || "RIGHT").toUpperCase();
-          const won = m.winnerId === profileId;
-          if (arm === "LEFT") {
-            leftTotal++;
-            if (won) leftWins++;
-          } else {
-            rightTotal++;
-            if (won) rightWins++;
+    // Compute per-arm career win rates and win/loss totals from verified matches
+    const computeArmWinRates = async (profile: any) => {
+      const candidateIds = Array.from(new Set([profile.id, profile.userId].filter(Boolean)));
+      let rightWins = (profile.rightArmWins as number) ?? 0;
+      let rightLosses = (profile.rightArmLosses as number) ?? 0;
+      let leftWins = (profile.leftArmWins as number) ?? 0;
+      let leftLosses = (profile.leftArmLosses as number) ?? 0;
+
+      if (rightWins + rightLosses + leftWins + leftLosses === 0) {
+        try {
+          const verified = await db
+            .select()
+            .from(matches)
+            .where(
+              and(
+                or(
+                  inArray(matches.challengerId, candidateIds),
+                  inArray(matches.opponentId, candidateIds)
+                ),
+                eq(matches.status, "VERIFIED")
+              )
+            );
+          const seenIds = new Set<string>();
+          for (const m of verified) {
+            seenIds.add(m.id);
+            const arm = ((m as any).arm || "RIGHT").toString().toUpperCase();
+            const won = m.winnerId ? candidateIds.includes(m.winnerId) : false;
+            if (arm === "LEFT") {
+              if (won) leftWins++;
+              else if (m.winnerId) leftLosses++;
+            } else {
+              if (won) rightWins++;
+              else if (m.winnerId) rightLosses++;
+            }
           }
+          try {
+            const tourneyDone = await db
+              .select()
+              .from(tournamentMatches)
+              .where(
+                and(
+                  or(
+                    inArray(tournamentMatches.athleteAId, candidateIds),
+                    inArray(tournamentMatches.athleteBId, candidateIds)
+                  ),
+                  inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+                )
+              );
+            for (const tm of tourneyDone) {
+              if (seenIds.has(tm.id)) continue;
+              const won = tm.winnerId ? candidateIds.includes(tm.winnerId) : false;
+              if (won) rightWins++;
+              else if (tm.winnerId) rightLosses++;
+            }
+          } catch (_) {
+            // Ignore when tournamentMatches is unavailable in isolated unit tests
+          }
+        } catch (_) {
+          // Fallback when matches table is not seeded in isolated unit tests
         }
-      } catch (_) {
-        // Fallback when matches table is not seeded in isolated unit tests
       }
+
+      const rightTotal = rightWins + rightLosses;
+      const leftTotal = leftWins + leftLosses;
+      const totalWins = rightWins + leftWins || (profile.wins ?? 0);
+      const totalLosses = rightLosses + leftLosses || (profile.losses ?? 0);
+      const totalAll = totalWins + totalLosses;
       const winRateRight = rightTotal > 0 ? Math.round((rightWins / rightTotal) * 1000) / 10 : 0;
       const winRateLeft = leftTotal > 0 ? Math.round((leftWins / leftTotal) * 1000) / 10 : 0;
-      return { winRateRight, winRateLeft };
+      const winRate = totalAll > 0 ? Math.round((totalWins / totalAll) * 1000) / 10 : 0;
+      return {
+        winRateRight,
+        winRateLeft,
+        winRate,
+        rightWins,
+        rightLosses,
+        leftWins,
+        leftLosses,
+        totalWins,
+        totalLosses,
+      };
     };
 
     const [a1Rates, a2Rates] = await Promise.all([
-      computeArmWinRates(athlete1.id),
-      computeArmWinRates(athlete2.id),
+      computeArmWinRates(athlete1),
+      computeArmWinRates(athlete2),
     ]);
 
     const a1RightElo = (athlete1 as any).rightArmElo ?? (athlete1 as any).eloRating ?? 1000;
@@ -866,8 +1042,13 @@ export class AthleteService {
         leftArmElo: a1LeftElo,
         winRateRight: a1Rates.winRateRight,
         winRateLeft: a1Rates.winRateLeft,
-        wins: (athlete1 as any).wins ?? 0,
-        losses: (athlete1 as any).losses ?? 0,
+        winRate: a1Rates.winRate,
+        wins: a1Rates.totalWins,
+        losses: a1Rates.totalLosses,
+        rightArmWins: a1Rates.rightWins,
+        rightArmLosses: a1Rates.rightLosses,
+        leftArmWins: a1Rates.leftWins,
+        leftArmLosses: a1Rates.leftLosses,
         weightClass: athlete1.weightClass,
         measurements: athlete1.measurements,
         biometrics: athlete1.biometrics,
@@ -888,24 +1069,26 @@ export class AthleteService {
         leftArmElo: a2LeftElo,
         winRateRight: a2Rates.winRateRight,
         winRateLeft: a2Rates.winRateLeft,
-        wins: (athlete2 as any).wins ?? 0,
-        losses: (athlete2 as any).losses ?? 0,
+        winRate: a2Rates.winRate,
+        wins: a2Rates.totalWins,
+        losses: a2Rates.totalLosses,
+        rightArmWins: a2Rates.rightWins,
+        rightArmLosses: a2Rates.rightLosses,
+        leftArmWins: a2Rates.leftWins,
+        leftArmLosses: a2Rates.leftLosses,
         weightClass: athlete2.weightClass,
         measurements: athlete2.measurements,
         biometrics: athlete2.biometrics,
       },
       headToHead: {
-        totalEncounters: h2hMatches.length,
+        totalEncounters: combinedH2H.length,
         athlete1Wins,
         athlete2Wins,
-        matches: h2hMatches.map((m: any) => ({
-          id: m.id,
-          winnerId: m.winnerId,
-          scoreLine: m.scoreLine,
-          round: m.round,
-          bracketType: m.bracketType,
-          date: m.updatedAt,
-        })),
+        rightArmAthlete1Wins,
+        rightArmAthlete2Wins,
+        leftArmAthlete1Wins,
+        leftArmAthlete2Wins,
+        matches: combinedH2H,
       },
       winProbability: {
         athlete1: Math.round(athlete1Prob * 100),
