@@ -728,7 +728,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                     child: _metricColumn(
                                       icon: Icons.groups_outlined,
                                       label: 'Capacity',
-                                      value: '${(event['appliedAthletes'] is List) ? (event['appliedAthletes'] as List).length : (event['registeredCount'] ?? 0)} / ${event['capacity'] ?? '64'} Athletes',
+                                      value: '${event['registeredCount'] ?? ((event['appliedAthletes'] is List && (event['appliedAthletes'] as List).isNotEmpty) ? (event['appliedAthletes'] as List).length : 0)} / ${event['capacity'] ?? '64'} Athletes',
                                     ),
                                   ),
                                   Container(height: 36, width: 1, color: AppTheme.borderSubtle),
@@ -747,6 +747,14 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         ),
                         const SizedBox(height: 16),
 
+                        // 2. Weight & Division Tactical Filter Tray (Cat N)
+                        _buildCategoryFilterTray(),
+                        const SizedBox(height: 16),
+
+                        // 3. Multi-Table Live Arena Status Grid (SIG-1)
+                        _buildLiveArenaTables(context),
+                        const SizedBox(height: 16),
+
                         // Athlete Weight Categories (Left/Right Arm) & Awards/Prizes Summary Card
                         _buildAthleteCategoriesAndAwardsCard(context, event),
                         const SizedBox(height: 16),
@@ -759,16 +767,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         _buildOfflineSpectatorPassAndVerificationCard(context, event),
                         const SizedBox(height: 16),
 
-                        // 2. Weight & Division Tactical Filter Tray (Cat N)
-                        _buildCategoryFilterTray(),
-                        const SizedBox(height: 16),
-
                         // 2b. Official Spectator & VIP Event Passes
                         _buildEventPassesSection(context, event),
-                        const SizedBox(height: 16),
-
-                        // 3. Multi-Table Live Arena Status Grid (SIG-1)
-                        _buildLiveArenaTables(context),
                         const SizedBox(height: 16),
 
                         // 4. Event Description Card (if available)

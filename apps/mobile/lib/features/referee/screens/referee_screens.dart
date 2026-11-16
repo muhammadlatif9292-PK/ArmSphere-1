@@ -1550,101 +1550,6 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                       )
                     else ...[
                       Text(
-                        'MY TABLE ASSIGNMENTS (OFFLINE-READY)',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.space12),
-                      for (final assignment in refereeAssignments)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: ElevatedActionCard(
-                            key: ValueKey(
-                              'referee_assignment_card_${assignment['tournamentId']}_table_${assignment['assignedTableNumber']}',
-                            ),
-                            borderColor: AppTheme.goldPrimary.withValues(alpha: 0.55),
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _activeAssignment = assignment;
-                                _athleteQueryCtrl.clear();
-                                _opponentQueryCtrl.clear();
-                                _validationResult = null;
-                                _lastConfirmedSubmissionMessage = null;
-                              });
-                            },
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    StatusChip(
-                                      label: ((assignment['tableCount'] as num?)?.toInt() ?? 1) > 1
-                                          ? 'ASSIGNED: TABLE ${assignment['assignedTableNumber']}'
-                                          : 'ASSIGNED: TABLE 1',
-                                      color: AppTheme.goldPrimary,
-                                      icon: Icons.table_restaurant_rounded,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    StatusChip(
-                                      label: '${assignment['pendingOnTableCount']} PENDING',
-                                      color: AppTheme.emerald,
-                                    ),
-                                    const Spacer(),
-                                    const StatusChip(
-                                      label: 'CACHED OFFLINE',
-                                      color: AppTheme.cyan,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  (assignment['tournamentName'] ?? 'Sanctioned Tournament').toString(),
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16.5,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${assignment['organizationName'] ?? ''} • ${assignment['venue'] ?? ''}, ${assignment['city'] ?? ''}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Referee: ${assignment['refereeName']} • Tap to open Scan QR & Green-Light Matchup Validator',
-                                        style: const TextStyle(
-                                          fontSize: 11.5,
-                                          color: AppTheme.emerald,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 16,
-                                      color: AppTheme.goldPrimary,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: AppTheme.space16),
-                      Text(
                         'OFFICIAL ACTIONS',
                         style: theme.textTheme.labelMedium?.copyWith(
                           letterSpacing: 1.2,
@@ -1684,6 +1589,103 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                           ),
                         ],
                       ),
+                      if (refereeAssignments.isNotEmpty) ...[
+                        const SizedBox(height: AppTheme.space24),
+                        Text(
+                          'MY TABLE ASSIGNMENTS (OFFLINE-READY)',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.space12),
+                        for (final assignment in refereeAssignments)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: ElevatedActionCard(
+                              key: ValueKey(
+                                'referee_assignment_card_${assignment['tournamentId']}_table_${assignment['assignedTableNumber']}',
+                              ),
+                              borderColor: AppTheme.goldPrimary.withValues(alpha: 0.55),
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _activeAssignment = assignment;
+                                  _athleteQueryCtrl.clear();
+                                  _opponentQueryCtrl.clear();
+                                  _validationResult = null;
+                                  _lastConfirmedSubmissionMessage = null;
+                                });
+                              },
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      StatusChip(
+                                        label: ((assignment['tableCount'] as num?)?.toInt() ?? 1) > 1
+                                            ? 'ASSIGNED: TABLE ${assignment['assignedTableNumber']}'
+                                            : 'ASSIGNED: TABLE 1',
+                                        color: AppTheme.goldPrimary,
+                                        icon: Icons.table_restaurant_rounded,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      StatusChip(
+                                        label: '${assignment['pendingOnTableCount']} PENDING',
+                                        color: AppTheme.emerald,
+                                      ),
+                                      const Spacer(),
+                                      const StatusChip(
+                                        label: 'CACHED OFFLINE',
+                                        color: AppTheme.cyan,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    (assignment['tournamentName'] ?? 'Sanctioned Tournament').toString(),
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16.5,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${assignment['organizationName'] ?? ''} • ${assignment['venue'] ?? ''}, ${assignment['city'] ?? ''}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Referee: ${assignment['refereeName']} • Tap to open Scan QR & Green-Light Matchup Validator',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppTheme.emerald,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 16,
+                                        color: AppTheme.goldPrimary,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                       const SizedBox(height: AppTheme.space24),
                       Text(
                         'LIVE EVENT BOARD',
