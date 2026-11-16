@@ -104,6 +104,12 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     }
 
     if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Registration Recorded! Spot held pending payment.'),
+        backgroundColor: AppTheme.emerald,
+      ),
+    );
     await _showOfflineSafeSubmittedQrDialog(localEntry);
   }
 

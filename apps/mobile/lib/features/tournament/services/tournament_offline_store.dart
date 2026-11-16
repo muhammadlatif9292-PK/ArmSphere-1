@@ -125,67 +125,8 @@ class TournamentOfflineStore {
         }
       } catch (_) {}
     }
-
-    final now = DateTime.now();
-    final seeds = <Map<String, dynamic>>[
-      {
-        'id': 'org_paff_national_evt_upcoming_01',
-        'organizationId': 'org_paff_national',
-        'organizationName': 'Pakistan Armwrestling Federation (PAFF)',
-        'name': 'National Open Qualifier & Supermatch Series 2026',
-        'status': 'PUBLISHED',
-        'isReleased': true,
-        'venue': 'Liaquat National Gymnasium',
-        'venueName': 'Liaquat National Gymnasium',
-        'city': 'Islamabad',
-        'province': 'Federal Capital',
-        'startDate': now.add(const Duration(days: 14)).toIso8601String(),
-        'endDate': now.add(const Duration(days: 15)).toIso8601String(),
-        'capacity': 64,
-        'registeredCount': 10,
-        'entryFeePkr': 2500,
-        'entryFeeConfigured': true,
-        'registrationFeeCents': 250000,
-        'formatCategory': 'ELIMINATION',
-        'eliminationSubFormat': 'DOUBLE_ELIMINATION',
-        'tableCount': 2,
-        'tableAssignmentMode': 'DYNAMIC_FREE_TABLE_QUEUE',
-      },
-      {
-        'id': 'org_paff_national_evt_live_02',
-        'organizationId': 'org_paff_national',
-        'organizationName': 'Pakistan Armwrestling Federation (PAFF)',
-        'name': 'Grand Prix Title Showdown VII',
-        'status': 'ONGOING',
-        'isReleased': true,
-        'venue': 'Titanium Combat Arena',
-        'venueName': 'Titanium Combat Arena',
-        'city': 'Lahore',
-        'province': 'Punjab',
-        'startDate': now.subtract(const Duration(hours: 2)).toIso8601String(),
-        'endDate': now.add(const Duration(hours: 6)).toIso8601String(),
-        'capacity': 64,
-        'registeredCount': 10,
-        'entryFeePkr': 3000,
-        'entryFeeConfigured': true,
-        'registrationFeeCents': 300000,
-        'formatCategory': 'SUPERFIGHTS',
-        'eliminationSubFormat': '',
-        'tableCount': 2,
-        'tableAssignmentMode': 'DYNAMIC_FREE_TABLE_QUEUE',
-      },
-    ];
-
-    for (final seed in seeds) {
-      final id = seed['id'].toString();
-      if (!_memoryReleasedTournaments.containsKey(id)) {
-        _memoryReleasedTournaments[id] = _ensureNormalizedTournament(seed);
-      }
-    }
   }
 
-  /// Normalizes a tournament record so it always has `weightCategories`, `tables`,
-  /// `awardsConfig`, `spectatorGateConfig`, `appliedAthletes`, and `card3MatchupsState`.
   static Map<String, dynamic> _ensureNormalizedTournament(
     Map<String, dynamic> raw,
   ) {
@@ -782,9 +723,13 @@ class TournamentOfflineStore {
       if (!isReleasedTournament(r)) continue;
       final id = r['id']?.toString() ?? '';
       if (id.isEmpty) continue;
-      if (!_memoryReleasedTournaments.containsKey(id)) {
-        _memoryReleasedTournaments[id] = _ensureNormalizedTournament(r);
-      }
+      _memoryReleasedTournaments[id] = _ensureNormalizedTournament(r);
+    }
+    if (mergedRemote.isNotEmpty) {
+      return mergedRemote
+          .where(isReleasedTournament)
+          .map((r) => _ensureNormalizedTournament(r))
+          .toList();
     }
     return _memoryReleasedTournaments.values
         .where(isReleasedTournament)
@@ -828,7 +773,7 @@ class TournamentOfflineStore {
     for (final s in serverEvents) {
       if (!isReleasedTournament(s)) continue;
       final sId = (s['id'] ?? '').toString();
-      if (sId.isNotEmpty && !_memoryReleasedTournaments.containsKey(sId)) {
+      if (sId.isNotEmpty) {
         _memoryReleasedTournaments[sId] = _ensureNormalizedTournament(s);
       }
     }
@@ -843,14 +788,7 @@ class TournamentOfflineStore {
       _memoryReleasedTournaments[tournamentId] = normalized;
       return normalized;
     }
-    final normalized = _ensureNormalizedTournament({
-      'id': tournamentId,
-      'name': 'National Open Championship & Supermatch Series',
-      'status': 'PUBLISHED',
-      'isReleased': true,
-    });
-    _memoryReleasedTournaments[tournamentId] = normalized;
-    return normalized;
+    return null;
   }
 
   // ===========================================================================
