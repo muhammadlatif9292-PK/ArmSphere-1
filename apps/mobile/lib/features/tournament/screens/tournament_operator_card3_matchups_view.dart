@@ -763,8 +763,8 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
 
     if (pendingCandidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const CrystalSnackBar(
-          content: Text(
+        CrystalSnackBar(
+          content: const Text(
             'No other pending matchups are waiting in this round queue to step up.',
           ),
           backgroundColor: AppTheme.warning,
@@ -1233,11 +1233,11 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
       final cId = candidate['id']?.toString();
       if (firstPlace == null) {
         firstPlace = candidate;
-      } else if (secondPlace == null && cId != firstPlace['id']?.toString()) {
+      } else if (secondPlace == null && cId != firstPlace?['id']?.toString()) {
         secondPlace = candidate;
       } else if (thirdPlace == null &&
-          cId != firstPlace['id']?.toString() &&
-          cId != secondPlace['id']?.toString()) {
+          cId != firstPlace?['id']?.toString() &&
+          cId != secondPlace?['id']?.toString()) {
         thirdPlace = candidate;
         break;
       }

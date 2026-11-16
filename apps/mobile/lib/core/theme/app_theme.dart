@@ -74,6 +74,9 @@ class AppTheme {
   /// Obsidian rim border token (22% white specular sheen).
   static const Color obsidianRimBorder = Color(0x38FFFFFF);
 
+  /// Obsidian background color token.
+  static const Color obsidian = Color(0xFF070A11);
+
   /// Smoked obsidian glass surface token -> 100% Pure Crystal Transparent.
   static const Color smokedObsidianGlass = Colors.transparent;
 

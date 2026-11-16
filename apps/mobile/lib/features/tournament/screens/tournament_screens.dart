@@ -15,6 +15,7 @@ import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/providers/dependency_providers.dart';
+import '../../../core/api/offline_sync.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/visual_preferences_provider.dart';

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/api/offline_sync.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/tournament_provider.dart';

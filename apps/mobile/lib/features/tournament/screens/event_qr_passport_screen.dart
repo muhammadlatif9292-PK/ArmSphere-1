@@ -27,9 +27,10 @@ class ArmSphereQrMatrixView extends StatelessWidget {
 
   const ArmSphereQrMatrixView({
     super.key,
-    required this.payload,
+    String? payload,
+    String? data,
     this.size = 220,
-  });
+  }) : payload = payload ?? data ?? '';
 
   @override
   Widget build(BuildContext context) {
