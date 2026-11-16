@@ -6,6 +6,7 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
   @override
   Future<List<Map<String, dynamic>>> build() async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(tournamentRepositoryProvider);
     return repo.getTournaments();
   }
@@ -94,7 +95,21 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     List<String> initialTables = const [],
   }) async {
     final repo = ref.read(tournamentRepositoryProvider);
-    var created = await repo.createEvent(data: data);
+    String? currentUserId;
+    try {
+      final profile = ref.read(authProvider).userProfile;
+      currentUserId = (profile?['id'] ?? profile?['userId'])?.toString().trim();
+    } catch (_) {}
+
+    final enrichedData = <String, dynamic>{
+      ...data,
+      if (data['organizerId'] == null &&
+          currentUserId != null &&
+          currentUserId.isNotEmpty)
+        'organizerId': currentUserId,
+    };
+
+    var created = await repo.createEvent(data: enrichedData);
     final eventId = created['id']?.toString() ?? '';
     if (eventId.isNotEmpty) {
       if (publishImmediately) {
@@ -110,6 +125,14 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
         }
       }
       _refreshEventScopes(eventId);
+    }
+    if (created['organizerId'] == null &&
+        currentUserId != null &&
+        currentUserId.isNotEmpty) {
+      created = <String, dynamic>{
+        ...created,
+        'organizerId': currentUserId,
+      };
     }
     ref.invalidateSelf();
     return created;
@@ -171,6 +194,7 @@ final tournamentProvider = AsyncNotifierProvider.autoDispose<TournamentNotifier,
 });
 
 final eventDetailProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, eventId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getEventById(eventId: eventId);
 });
@@ -181,6 +205,7 @@ final eventAwardsProvider = FutureProvider.autoDispose.family<Map<String, dynami
 });
 
 final eventRegistrationsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getEventRegistrations(eventId: eventId);
 });
@@ -191,6 +216,7 @@ final bracketDetailsProvider = FutureProvider.autoDispose.family<Map<String, dyn
 });
 
 final bracketsListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.listBrackets();
 });
@@ -198,36 +224,42 @@ final bracketsListProvider = FutureProvider.autoDispose<List<Map<String, dynamic
 /// Brackets belonging to one event. The API lists all brackets without an
 /// eventId filter, so the scoping happens client-side.
 final eventBracketsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   final all = await repo.listBrackets();
   return all.where((b) => b['eventId']?.toString() == eventId).toList();
 });
 
 final eventStatsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, eventId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getEventStats(eventId: eventId);
 });
 
 /// Every bracket match in one event (match-day board + referee assignments).
 final eventMatchesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getEventMatches(eventId: eventId);
 });
 
 /// Physical match tables (IDLE/ACTIVE) used for match calls (global fallback).
 final matchTablesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.listTables();
 });
 
 /// Physical match tables scoped to an event, including live queue orders.
 final eventMatchTablesProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, eventId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.listEventTables(eventId: eventId);
 });
 
 /// Referee directory (admin surface; director roles only).
 final refereeDirectoryProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.listReferees();
 });
@@ -238,6 +270,7 @@ final ticketTypesProvider = FutureProvider.autoDispose.family<List<Map<String, d
 });
 
 final myTicketsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(tournamentRepositoryProvider);
   return repo.getMyTickets();
 });
@@ -405,26 +438,31 @@ final eventLiveArenaTablesProvider = FutureProvider.autoDispose.family<List<Map<
 // =============================================================================
 
 final organizationsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(organizationRepositoryProvider);
   return repo.getFeaturedOrganizations();
 });
 
 final allOrganizationsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(organizationRepositoryProvider);
   return repo.getOrganizations();
 });
 
 final organizationDetailProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, orgId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(organizationRepositoryProvider);
   return repo.getOrganizationById(orgId);
 });
 
 final organizationEventsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, orgId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(organizationRepositoryProvider);
   return repo.getOrganizationEvents(orgId);
 });
 
 final organizationChampionsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, orgId) async {
+  ref.watch(authSessionScopeProvider);
   final repo = ref.watch(organizationRepositoryProvider);
   return repo.getOrganizationChampions(orgId);
 });

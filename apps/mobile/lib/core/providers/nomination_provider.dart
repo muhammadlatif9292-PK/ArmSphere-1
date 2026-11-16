@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state_providers.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 // 1. Notifier to manage user's own nominations list
 class NominationListNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(nominationRepositoryProvider);
     return repo.getOwnNominations();
   }

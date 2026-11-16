@@ -1004,22 +1004,40 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
 
     final userRole = (auth.activeRole ?? auth.userProfile?['role']?.toString() ?? '').toUpperCase();
     final isAthleteMode = userRole == 'ATHLETE';
-    const operatorRoles = {
-      'ORGANIZATION',
-      'ORGANIZATION_LEADER',
-      'TOURNAMENT_OPERATOR',
+    const federationDirectorRoles = {
       'PROVINCIAL_DIRECTOR',
       'NATIONAL_DIRECTOR',
       'SYSTEM_ADMIN',
     };
+    const orgOperatorRoles = {
+      'ORGANIZATION',
+      'ORGANIZATION_LEADER',
+      'TOURNAMENT_OPERATOR',
+    };
     final isDirectorOrAdmin = !isAthleteMode &&
-        (operatorRoles.contains(userRole) || (userRole.isEmpty && auth.hasAnyRole(operatorRoles)));
+        (federationDirectorRoles.contains(userRole) ||
+            (userRole.isEmpty && auth.hasAnyRole(federationDirectorRoles)));
+    final isOrgOperatorRole = !isAthleteMode &&
+        (orgOperatorRoles.contains(userRole) ||
+            (userRole.isEmpty && auth.hasAnyRole(orgOperatorRoles)));
+    final eventVal = eventAsync.value;
+    final currentUserId = (auth.userProfile?['id'] ?? auth.userProfile?['userId'])?.toString().trim();
+    final currentUserOrgId = (auth.userProfile?['organizationId'] ?? auth.userProfile?['orgId'])?.toString().trim();
+    final eventOrganizerId = (eventVal?['organizerId'] ?? eventVal?['createdById'])?.toString().trim();
+    final eventOrgId = (eventVal?['organizationId'] ?? eventVal?['orgId'])?.toString().trim();
     final isOrganizer = !isAthleteMode &&
-        eventAsync.value?['organizerId'] != null &&
-        auth.userProfile?['id'] == eventAsync.value?['organizerId'];
+        ((currentUserId != null &&
+                currentUserId.isNotEmpty &&
+                eventOrganizerId != null &&
+                eventOrganizerId == currentUserId) ||
+            (currentUserOrgId != null &&
+                currentUserOrgId.isNotEmpty &&
+                eventOrgId != null &&
+                eventOrgId == currentUserOrgId));
     final isReferee = !isAthleteMode &&
         (userRole == 'REFEREE' || (userRole.isEmpty && auth.hasRole('REFEREE')));
-    final canOperate = !isAthleteMode && (isDirectorOrAdmin || isOrganizer || isReferee);
+    final canOperate = !isAthleteMode &&
+        (isDirectorOrAdmin || (isOrgOperatorRole && isOrganizer) || isOrganizer || isReferee);
     final canManageTables = !isAthleteMode && (isDirectorOrAdmin || isOrganizer);
 
     return Scaffold(

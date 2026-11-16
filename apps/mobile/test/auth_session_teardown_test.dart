@@ -61,6 +61,14 @@ class FakeHiveStorage implements HiveStorage {
   @override
   Future<void> evictCache(String key) async => cache.remove(key);
   @override
+  Future<void> evictByPrefix(String prefix) async {
+    cache.removeWhere((key, _) => key.startsWith(prefix));
+  }
+  @override
+  Future<void> clearAllCaches() async => cache.clear();
+  @override
+  Future<void> clearQueue() async {}
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -203,6 +211,30 @@ void main() {
       expect(fakeSecureStorage.data.isEmpty, isTrue);
       expect(fakeHiveStorage.cache.isEmpty, isTrue);
       expect(container.read(authProvider).status, equals(AuthStatus.unauthenticated));
+    });
+
+    test('F: Account switch clears local_created_organizations, tournaments_list, and bumps authSessionScopeProvider', () async {
+      await fakeHiveStorage.cacheData('local_created_organizations', [
+        {'id': 'org_prev', 'name': 'Previous Account Org', 'ownerUserId': 'user_a'},
+      ]);
+      await fakeHiveStorage.cacheData('tournaments_list', [
+        {'id': 'evt_prev', 'name': 'Previous Account Event', 'organizerId': 'user_a'},
+      ]);
+      await fakeHiveStorage.cacheData('local_my_registrations', [
+        {'id': 'reg_prev', 'athleteId': 'user_a'},
+      ]);
+      await fakeHiveStorage.cacheData('event_detail_evt_prev', {'id': 'evt_prev'});
+
+      final container = createContainer();
+      final initialScope = container.read(authSessionScopeProvider);
+
+      await container.read(authProvider.notifier).logout();
+
+      expect(fakeHiveStorage.cache.containsKey('local_created_organizations'), isFalse);
+      expect(fakeHiveStorage.cache.containsKey('tournaments_list'), isFalse);
+      expect(fakeHiveStorage.cache.containsKey('local_my_registrations'), isFalse);
+      expect(fakeHiveStorage.cache.containsKey('event_detail_evt_prev'), isFalse);
+      expect(container.read(authSessionScopeProvider), isNot(equals(initialScope)));
     });
   });
 

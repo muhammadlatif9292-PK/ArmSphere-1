@@ -8,7 +8,10 @@ import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/widgets/status_chip.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../tournament/screens/event_qr_passport_screen.dart';
+import '../../tournament/services/tournament_offline_store.dart';
 import '../widgets/biometric_settings_tile.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
@@ -22,6 +25,11 @@ class SettingsHubScreen extends ConsumerWidget {
     final double bottomDockGap = insideRootShell
         ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
         : 0.0;
+    final auth = ref.watch(authProvider);
+    final profile = auth.userProfile;
+    final settingsQrPayload = TournamentOfflineStore.buildSettingsIdentityQr(profile);
+    final userId = (profile?['id'] ?? profile?['userId'] ?? 'ath-pk-01').toString();
+    final userName = (profile?['displayName'] ?? profile?['name'] ?? 'Malik Sherbaz').toString();
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -59,6 +67,87 @@ class SettingsHubScreen extends ConsumerWidget {
                           36,
                 ),
                 children: [
+                  _sectionHeader(context, 'ATHLETE & OFFICIAL QR IDENTITY'),
+                  ElevatedActionCard(
+                    key: const ValueKey('settings_athlete_identity_qr_card'),
+                    borderColor: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                    padding: const EdgeInsets.all(14),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      Clipboard.setData(ClipboardData(text: settingsQrPayload));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        CrystalSnackBar(
+                          content: Text('Official QR Identity copied: $settingsQrPayload'),
+                          backgroundColor: AppTheme.emerald,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ArmSphereQrMatrixView(
+                            data: settingsQrPayload,
+                            size: 78,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'OFFICIAL ATHLETE QR IDENTITY',
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 11.5,
+                                        color: AppTheme.goldPrimary,
+                                        letterSpacing: 0.6,
+                                      ),
+                                    ),
+                                  ),
+                                  StatusChip(
+                                    label: 'OFFLINE READY',
+                                    color: AppTheme.emerald,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$userName • ID: $userId',
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13.5,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Present this QR to Referees at your assigned table or Operators at weigh-in & venue entrance ($settingsQrPayload).',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textSecondary,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space20),
+
                   _sectionHeader(context, 'ACCOUNT'),
                   ElevatedActionCard(
                     padding: EdgeInsets.zero,

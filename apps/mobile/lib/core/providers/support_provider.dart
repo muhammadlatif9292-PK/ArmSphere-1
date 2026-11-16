@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state_providers.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 /// Notifier to list and create support tickets (optionally filtered by status).
 class SupportTicketsNotifier
@@ -7,6 +8,7 @@ class SupportTicketsNotifier
   @override
   Future<List<Map<String, dynamic>>> build(String? arg) async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(supportRepositoryProvider);
     return repo.listTickets(status: arg);
   }
@@ -40,6 +42,7 @@ class SupportTicketDetailNotifier
   @override
   Future<Map<String, dynamic>> build(String arg) async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(supportRepositoryProvider);
     return repo.getTicket(arg);
   }

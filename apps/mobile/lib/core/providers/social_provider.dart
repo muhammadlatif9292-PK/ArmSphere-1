@@ -203,6 +203,7 @@ class SparringInvitesNotifier extends AutoDisposeFamilyAsyncNotifier<List<Map<St
   @override
   Future<List<Map<String, dynamic>>> build(String? arg) async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(socialRepositoryProvider);
     return repo.listSparringInvites(teamId: arg);
   }
@@ -261,6 +262,7 @@ class MyTeamsNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>
   @override
   Future<List<Map<String, dynamic>>> build() async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getMyTeams();
   }
@@ -276,6 +278,7 @@ class BlockedUsersNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dyn
   @override
   Future<List<Map<String, dynamic>>> build() async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(socialRepositoryProvider);
     return repo.getBlockedUsers();
   }

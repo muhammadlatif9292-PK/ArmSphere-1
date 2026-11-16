@@ -27,18 +27,24 @@ import { StorageService } from "./storage.js";
 import { env } from "../config/env.js";
 import { UserRoleService } from "./userRole.js";
 
+const eventStep1ConfigMap = new Map<string, Record<string, any>>();
+
 export class TournamentService {
   // ==========================================
   // 1. Event Management
   // ==========================================
 
-  static async listEvents(filters?: { status?: string; timeframe?: "upcoming" | "past" }) {
+  static async listEvents(filters?: { status?: string; timeframe?: "upcoming" | "past"; organizerId?: string }) {
     logger.info({ filters }, "Listing tournament events");
     let query = db.select().from(events);
     const conditions = [];
 
     if (filters?.status) {
       conditions.push(eq(events.status, filters.status));
+    }
+
+    if (filters?.organizerId) {
+      conditions.push(eq(events.organizerId, filters.organizerId));
     }
 
     if (filters?.timeframe) {
@@ -66,6 +72,10 @@ export class TournamentService {
           logger.error({ err, fileKey: event.paymentQrImageUrl }, "Failed to generate presigned download URL for QR code in listEvents");
         }
       }
+      const step1 = eventStep1ConfigMap.get(event.id);
+      if (step1) {
+        (event as any).step1Config = step1;
+      }
     }
     return eventsList;
   }
@@ -86,6 +96,10 @@ export class TournamentService {
         logger.error({ err, fileKey: event.paymentQrImageUrl }, "Failed to generate presigned download URL for QR code in getEvent");
       }
     }
+    const step1 = eventStep1ConfigMap.get(event.id);
+    if (step1) {
+      (event as any).step1Config = step1;
+    }
     return event;
   }
 
@@ -103,6 +117,9 @@ export class TournamentService {
     organizerId?: string;
     paymentMethod?: string;
     paymentQrImageUrl?: string;
+    status?: string;
+    step1Config?: Record<string, any>;
+    idempotencyKey?: string;
   }, actorId?: string) {
     logger.info({ name: data.name, actorId }, "Creating new tournament event");
 
@@ -165,12 +182,17 @@ export class TournamentService {
         venue: data.venue,
         capacity: data.capacity,
         registrationFeeCents: data.registrationFeeCents ?? null,
-        status: "DRAFT",
+        status: data.status || "DRAFT",
         organizerId: data.organizerId || actorId || null,
         paymentMethod: data.paymentMethod || "STRIPE",
         paymentQrImageUrl: data.paymentQrImageUrl || null
       })
       .returning();
+
+    if (data.step1Config && newEvent?.id) {
+      eventStep1ConfigMap.set(newEvent.id, data.step1Config);
+      (newEvent as any).step1Config = data.step1Config;
+    }
 
     return newEvent;
   }
@@ -355,14 +377,23 @@ export class TournamentService {
       throw new BadRequestError("Event start date must be before or equal to the end date.");
     }
 
+    const { step1Config, idempotencyKey: _idemKey, ...dbColumns } = data as any;
+
     const [updatedEvent] = await db
       .update(events)
       .set({
-        ...data,
+        ...dbColumns,
         updatedAt: new Date()
       })
       .where(eq(events.id, id))
       .returning();
+
+    if (step1Config && updatedEvent?.id) {
+      eventStep1ConfigMap.set(updatedEvent.id, step1Config);
+      (updatedEvent as any).step1Config = step1Config;
+    } else if (updatedEvent?.id && eventStep1ConfigMap.has(updatedEvent.id)) {
+      (updatedEvent as any).step1Config = eventStep1ConfigMap.get(updatedEvent.id);
+    }
 
     return updatedEvent;
   }

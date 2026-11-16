@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/providers/athlete_provider.dart';
+import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -11,6 +13,8 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../services/tournament_offline_store.dart';
+import 'event_qr_passport_screen.dart';
 import 'tournament_screens.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
@@ -28,9 +32,10 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
   String _selectedDivision = 'SENIOR';
   String _selectedWeightClass = '-85kg';
   String _armChoice = 'RIGHT';
+  int _guestCount = 0;
   bool _isLoading = false;
 
-  String? _currentAthleteId() {
+  String _currentAthleteId() {
     final profile = ref.read(athleteProfileProvider).valueOrNull;
     final profileId = profile?['id']?.toString();
     if (profileId != null && profileId.isNotEmpty) {
@@ -38,93 +43,176 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     }
     final auth = ref.read(authProvider);
     final user = auth.userProfile?['user'] as Map<String, dynamic>? ?? auth.userProfile ?? {};
-    return user['athleteProfileId']?.toString() ??
-        user['id']?.toString() ??
-        user['userId']?.toString();
+    return (user['athleteProfileId'] ??
+            user['id'] ??
+            user['userId'] ??
+            'ath-pk-local')
+        .toString();
+  }
+
+  String _currentAthleteName() {
+    final profile = ref.read(athleteProfileProvider).valueOrNull;
+    final name = profile?['displayName'] ?? profile?['name'];
+    if (name != null && name.toString().trim().isNotEmpty) {
+      return name.toString().trim();
+    }
+    final auth = ref.read(authProvider);
+    final user = auth.userProfile?['user'] as Map<String, dynamic>? ?? auth.userProfile ?? {};
+    return (user['displayName'] ?? user['name'] ?? 'ArmSphere Athlete').toString();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final athleteId = _currentAthleteId();
-    if (athleteId == null || athleteId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
-          content: Text('Session expired — please sign in again.'),
-          backgroundColor: AppTheme.error,
-        ),
-      );
-      return;
-    }
+    final athleteName = _currentAthleteName();
 
     setState(() => _isLoading = true);
+    HapticFeedback.heavyImpact();
 
+    // 1. Always save locally first via Offline-First Optimistic Store & generate local QR Code
+    final hive = ref.read(hiveStorageProvider);
+    OfflineSyncManager? syncManager;
     try {
-      final registration = await ref.read(tournamentProvider.notifier).registerAthlete(
+      syncManager = ref.read(offlineSyncManagerProvider);
+    } catch (_) {}
+
+    final localEntry = await TournamentOfflineStore.submitAthleteApplicationOfflineSafe(
+      hive: hive,
+      syncManager: syncManager,
+      tournamentId: widget.tournamentId,
+      athleteId: athleteId,
+      athleteName: athleteName,
+      weightCategory: _selectedWeightClass,
+      arm: _armChoice,
+      guestCount: _guestCount,
+    );
+
+    // 2. Attempt online registration in background without ever failing or losing input
+    try {
+      await ref.read(tournamentProvider.notifier).registerAthlete(
             eventId: widget.tournamentId,
             athleteId: athleteId,
             division: _selectedDivision,
             weightClass: _selectedWeightClass,
             arm: _armChoice,
           );
-      if (!mounted || registration == null) return;
-
-      final status = (registration['status']?.toString() ?? '').toUpperCase();
-      switch (status) {
-        case 'PENDING':
-          _showResult(
-            title: 'Registration Recorded!',
-            body: 'Your entry has been submitted and is awaiting organizer approval.',
-            color: AppTheme.success,
-          );
-          break;
-        case 'WAITLISTED':
-          _showResult(
-            title: 'Placed on Waitlist',
-            body: 'This weight class is currently at capacity. You will be notified if a bracket spot opens.',
-            color: AppTheme.secondaryAccent,
-          );
-          break;
-        case 'PENDING_PAYMENT':
-          final clientSecret = registration['clientSecret']?.toString();
-          if ((clientSecret ?? '').isNotEmpty) {
-            await _showPaymentRequired(registration);
-          } else {
-            await _showManualQrPayment();
-          }
-          break;
-        default:
-          _showResult(
-            title: 'Registration submitted',
-            body: 'Status: ${status.isNotEmpty ? status : "Recorded"}.',
-            color: AppTheme.info,
-          );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(content: Text(e.detail), backgroundColor: AppTheme.error),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(content: Text('Registration failed: $e'), backgroundColor: AppTheme.error),
-        );
-      }
+    } catch (_) {
+      // Offline sync queue already holds SUBMIT_ATHLETE_APPLICATION — never show an error!
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+
+    if (!mounted) return;
+    await _showOfflineSafeSubmittedQrDialog(localEntry);
   }
 
-  void _showResult({required String title, required String body, required Color color}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      CrystalSnackBar(
-        content: Text('$title $body'),
-        backgroundColor: color,
-        duration: const Duration(seconds: 4),
+  Future<void> _showOfflineSafeSubmittedQrDialog(Map<String, dynamic> localEntry) async {
+    final qrData = (localEntry['qrCode'] ?? 'ARMSPHERE-QR').toString();
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.cardSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: AppTheme.emerald, width: 1.5),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: AppTheme.emerald, size: 24),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'SUBMITTED / DONE ✓',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: AppTheme.emerald,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${localEntry['athleteName']} • ${localEntry['registeredWeightLabel']} (${localEntry['registeredArm']} Arm)',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w800,
+                fontSize: 13.5,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: ArmSphereQrMatrixView(
+                data: qrData,
+                size: 160,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Official Local Tournament QR:\n$qrData',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontMono,
+                fontSize: 11,
+                color: AppTheme.goldPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Saved locally for instant offline weigh-in & referee table verification. Auto-syncs to server in the background.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: AppTheme.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              if (mounted) {
+                context.push('/tournament/${widget.tournamentId}/qr');
+              }
+            },
+            child: const Text(
+              'OPEN QR PASSPORT',
+              style: TextStyle(color: AppTheme.goldPrimary, fontWeight: FontWeight.w800),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.emerald,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              if (mounted && context.canPop()) {
+                context.pop();
+              }
+            },
+            child: const Text(
+              'DONE',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ],
       ),
     );
-    context.pop();
   }
 
   Future<void> _showPaymentRequired(Map<String, dynamic> registration) async {

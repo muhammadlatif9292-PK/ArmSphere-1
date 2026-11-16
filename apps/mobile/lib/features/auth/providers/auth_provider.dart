@@ -312,6 +312,70 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await hiveStorage.cacheData('auth_session_user', safeCopy);
   }
 
+  void _bumpSessionScope(String? userId, String? activeRole) {
+    try {
+      ref.read(authSessionScopeProvider.notifier).state =
+          '${userId ?? 'anon'}:${activeRole ?? ''}:${DateTime.now().microsecondsSinceEpoch}';
+    } catch (_) {}
+  }
+
+  Future<void> _clearAccountScopedCaches(HiveStorage hiveStorage) async {
+    const exactKeys = <String>[
+      'auth_session_user',
+      'auth_role_intent',
+      'auth_active_role',
+      'local_created_organizations',
+      'local_my_registrations',
+      'local_lifecycle_notifications',
+      'local_conversations_list',
+      'athlete_profile_self',
+      'athlete_biometrics_self',
+      'tournaments_list',
+      'brackets_list',
+      'notifications_list',
+      'my_teams',
+      'blocked_users_list',
+      'user_communication_preferences',
+      'my_tickets_list',
+      'disputes_list',
+      'organizations_featured',
+    ];
+    for (final key in exactKeys) {
+      try {
+        await hiveStorage.evictCache(key);
+      } catch (_) {}
+    }
+
+    const prefixes = <String>[
+      'admin_',
+      'support_',
+      'event_',
+      'bracket_',
+      'tournament_',
+      'my_event_registrations_',
+      'my_nominations_',
+      'messages_',
+      'sparring_invites_',
+      'organization_',
+      'organizations_',
+      'athlete_profile_',
+      'match_history_',
+      'training_logs_',
+    ];
+    for (final prefix in prefixes) {
+      try {
+        await hiveStorage.evictByPrefix(prefix);
+      } catch (_) {}
+    }
+
+    try {
+      await hiveStorage.clearAllCaches();
+    } catch (_) {}
+    try {
+      await hiveStorage.clearQueue();
+    } catch (_) {}
+  }
+
   /// Exchanges credentials for tokens and stores the session.
   ///
   /// Used by both [login] and [register] so every entry into the app runs on
@@ -327,6 +391,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         ? Map<String, dynamic>.from(data['user'])
         : Map<String, dynamic>.from(data);
     profile['isOnboarded'] = profile['isOnboarded'] as bool? ?? false;
+
+    try {
+      final hiveStorage = ref.read(hiveStorageProvider);
+      await _clearAccountScopedCaches(hiveStorage);
+    } catch (_) {}
 
     await _persistSession(profile, data['accessToken']?.toString(), data['refreshToken']?.toString());
     return profile;
@@ -353,6 +422,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         pendingRoleApplications: pending,
         activeRole: activeRole,
       );
+      _bumpSessionScope((profile['id'] ?? profile['userId'])?.toString(), activeRole);
       if (onboarded) {
         _initializeSync();
       }
@@ -388,6 +458,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         pendingRoleApplications: pending,
         activeRole: activeRole,
       );
+      _bumpSessionScope((profile['id'] ?? profile['userId'])?.toString(), activeRole);
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
@@ -499,6 +570,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         pendingRoleApplications: pending,
         activeRole: activeRole,
       );
+      _bumpSessionScope((profile['id'] ?? profile['userId'])?.toString(), activeRole);
       if (onboarded) {
         _initializeSync();
       }
@@ -545,14 +617,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       try {
         final hiveStorage = ref.read(hiveStorageProvider);
-        await hiveStorage.evictCache('auth_session_user');
-        await hiveStorage.evictCache('auth_role_intent');
-        await hiveStorage.evictCache('auth_active_role');
-        await hiveStorage.evictByPrefix('admin_');
-        await hiveStorage.evictByPrefix('support_');
+        await _clearAccountScopedCaches(hiveStorage);
       } catch (_) {}
 
       state = AuthState(status: AuthStatus.unauthenticated);
+      _bumpSessionScope(null, null);
       _isLoggingOut = false;
     }
   }
@@ -578,14 +647,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       try {
         final hiveStorage = ref.read(hiveStorageProvider);
-        await hiveStorage.evictCache('auth_session_user');
-        await hiveStorage.evictCache('auth_role_intent');
-        await hiveStorage.evictCache('auth_active_role');
-        await hiveStorage.evictByPrefix('admin_');
-        await hiveStorage.evictByPrefix('support_');
+        await _clearAccountScopedCaches(hiveStorage);
       } catch (_) {}
 
       state = AuthState(status: AuthStatus.unauthenticated);
+      _bumpSessionScope(null, null);
     }
   }
 
@@ -621,6 +687,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(
       activeRole: normalized,
       verifiedRoles: updatedVerified,
+    );
+    _bumpSessionScope(
+      (state.userProfile?['id'] ?? state.userProfile?['userId'])?.toString(),
+      normalized,
     );
   }
 
@@ -667,6 +737,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {}
   }
 }
+
+/// Session scope token updated whenever the authenticated user or active role changes.
+/// Watched by `keepAlive()` data providers so account/role transitions never retain stale data.
+final authSessionScopeProvider = StateProvider<String>((ref) => 'default');
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(ref);

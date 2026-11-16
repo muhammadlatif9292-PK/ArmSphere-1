@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state_providers.dart';
 import 'athlete_provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 
 /// Notifier to fetch and manage the cursor-paginated community feed.
 class CommunityFeedNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynamic>>> {
   @override
   Future<List<Map<String, dynamic>>> build() async {
     ref.keepAlive();
+    ref.watch(authSessionScopeProvider);
     final repo = ref.watch(communityRepositoryProvider);
     return repo.getFeed(limit: 20);
   }

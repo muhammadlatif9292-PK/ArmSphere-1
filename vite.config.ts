@@ -3,19 +3,23 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  build: {
-    outDir: path.resolve(__dirname, 'dist'),
-    emptyOutDir: true,
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'apps/admin-web/src'),
+export default defineConfig(() => {
+  return {
+    plugins: [react(), tailwindcss()],
+    build: {
+      outDir: path.resolve(__dirname, 'dist'),
+      emptyOutDir: true,
     },
-  },
-  server: {
-    port: 3000,
-    host: '0.0.0.0',
-  },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'apps/admin-web/src'),
+      },
+    },
+    server: {
+      port: 3000,
+      host: '0.0.0.0',
+      hmr: process.env.DISABLE_HMR !== 'true',
+      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+  };
 });

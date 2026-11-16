@@ -183,6 +183,40 @@ class AuthRepository extends BaseRepository {
     );
   }
 
+  Future<void> _evictUserSessionCaches() async {
+    const keys = <String>[
+      'auth_session_user',
+      'auth_role_intent',
+      'auth_active_role',
+      'local_created_organizations',
+      'local_my_registrations',
+      'local_lifecycle_notifications',
+      'local_conversations_list',
+      'athlete_profile_self',
+      'athlete_biometrics_self',
+      'tournaments_list',
+      'brackets_list',
+      'notifications_list',
+      'my_teams',
+      'blocked_users_list',
+      'user_communication_preferences',
+      'my_tickets_list',
+      'disputes_list',
+      'organizations_featured',
+    ];
+    for (final k in keys) {
+      try {
+        await hiveStorage.evictCache(k);
+      } catch (_) {}
+    }
+    try {
+      await hiveStorage.clearAllCaches();
+    } catch (_) {}
+    try {
+      await hiveStorage.clearQueue();
+    } catch (_) {}
+  }
+
   Future<void> logout({CancelToken? cancelToken}) async {
     try {
       await dioClient.dio.post('/auth/logout', cancelToken: cancelToken);
@@ -191,9 +225,7 @@ class AuthRepository extends BaseRepository {
       // prevent local credential and session cleanup.
     } finally {
       await dioClient.secureStorage.clearSession();
-      await hiveStorage.evictCache('auth_session_user');
-      await hiveStorage.evictCache('auth_role_intent');
-      await hiveStorage.evictCache('auth_active_role');
+      await _evictUserSessionCaches();
     }
   }
 
@@ -202,9 +234,7 @@ class AuthRepository extends BaseRepository {
       await dioClient.dio.delete('/auth/me', cancelToken: cancelToken);
     } finally {
       await dioClient.secureStorage.clearSession();
-      await hiveStorage.evictCache('auth_session_user');
-      await hiveStorage.evictCache('auth_role_intent');
-      await hiveStorage.evictCache('auth_active_role');
+      await _evictUserSessionCaches();
     }
   }
 
@@ -715,19 +745,38 @@ class TournamentRepository extends BaseRepository {
     String? notes,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'tournament_reg_$eventId',
-      cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post('/tournaments/registrations', data: {
-        'eventId': eventId,
-        'athleteId': athleteId,
-        'division': division,
-        'weightClass': weightClass,
-        'arm': arm,
-        if (notes != null) 'notes': notes,
-      }, cancelToken: token),
-      parse: _unwrapMap,
-    );
+    final payload = <String, dynamic>{
+      'eventId': eventId,
+      'athleteId': athleteId,
+      'division': division,
+      'weightClass': weightClass,
+      'arm': arm,
+      if (notes != null) 'notes': notes,
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'tournament_reg_$eventId',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post('/tournaments/registrations', data: payload, cancelToken: token),
+        parse: _unwrapMap,
+      );
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'SUBMIT_ATHLETE_APPLICATION',
+        endpoint: '/tournaments/registrations',
+        payload: payload,
+        method: 'POST',
+      );
+      return <String, dynamic>{
+        'id': 'local_reg_${DateTime.now().millisecondsSinceEpoch}',
+        ...payload,
+        'status': 'PENDING',
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Saved / Sent — Queued for automatic sync',
+      };
+    }
   }
 
   Future<Map<String, dynamic>> getBracket(String bracketId, {CancelToken? cancelToken}) async {
@@ -752,15 +801,59 @@ class TournamentRepository extends BaseRepository {
     required Map<String, dynamic> data,
     CancelToken? cancelToken,
   }) async {
-    final result = await executeRequest(
-      cacheKey: 'event_create_${DateTime.now().millisecondsSinceEpoch}',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.post('/tournaments/events', data: data, cancelToken: token),
-      parse: _unwrapMap,
+    String? sessionUserId;
+    try {
+      final sessionUser = hiveStorage.getCachedData('auth_session_user');
+      if (sessionUser is Map) {
+        sessionUserId = (sessionUser['id'] ?? sessionUser['userId'])?.toString().trim();
+      }
+    } catch (_) {}
+
+    final payload = Map<String, dynamic>.from(data);
+    final rawOrganizerId = payload['organizerId']?.toString().trim();
+    final uuidPattern = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
     );
-    await hiveStorage.evictCache('tournaments_list');
-    return result;
+    if (rawOrganizerId != null && !uuidPattern.hasMatch(rawOrganizerId)) {
+      payload.remove('organizerId');
+    }
+
+    try {
+      final result = await executeRequest(
+        cacheKey: 'event_create_${DateTime.now().millisecondsSinceEpoch}',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post('/tournaments/events', data: payload, cancelToken: token),
+        parse: _unwrapMap,
+      );
+      await hiveStorage.evictCache('tournaments_list');
+      final effectiveOrganizerId =
+          (result['organizerId'] ?? rawOrganizerId ?? sessionUserId)?.toString().trim();
+      if (effectiveOrganizerId != null &&
+          effectiveOrganizerId.isNotEmpty &&
+          result['organizerId'] == null) {
+        return {...result, 'organizerId': effectiveOrganizerId};
+      }
+      return result;
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'SAVE_TOURNAMENT_DRAFT',
+        endpoint: '/tournaments/events',
+        payload: payload,
+        method: 'POST',
+      );
+      final effectiveOrganizerId = (rawOrganizerId ?? sessionUserId ?? 'local_operator').toString().trim();
+      final optimistic = <String, dynamic>{
+        'id': payload['id']?.toString() ?? 'local_evt_${DateTime.now().millisecondsSinceEpoch}',
+        ...payload,
+        'organizerId': effectiveOrganizerId,
+        'status': payload['status']?.toString() ?? 'DRAFT',
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Saved / Done — Queued for automatic sync',
+      };
+      return optimistic;
+    }
   }
 
   Future<Map<String, dynamic>> patchEvent({
@@ -768,32 +861,65 @@ class TournamentRepository extends BaseRepository {
     required Map<String, dynamic> data,
     CancelToken? cancelToken,
   }) async {
-    final result = await executeRequest(
-      cacheKey: 'event_patch_$eventId',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.patch('/tournaments/events/$eventId', data: data, cancelToken: token),
-      parse: _unwrapMap,
-    );
-    await hiveStorage.evictCache('tournaments_list');
-    await hiveStorage.evictCache('event_detail_$eventId');
-    return result;
+    try {
+      final result = await executeRequest(
+        cacheKey: 'event_patch_$eventId',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.patch('/tournaments/events/$eventId', data: data, cancelToken: token),
+        parse: _unwrapMap,
+      );
+      await hiveStorage.evictCache('tournaments_list');
+      await hiveStorage.evictCache('event_detail_$eventId');
+      return result;
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'UPDATE_RELEASED_TOURNAMENT',
+        endpoint: '/tournaments/events/$eventId',
+        payload: data,
+        method: 'PATCH',
+      );
+      return <String, dynamic>{
+        'id': eventId,
+        ...data,
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Saved / Done — Queued for automatic sync',
+      };
+    }
   }
 
   Future<Map<String, dynamic>> publishEvent({
     required String eventId,
     CancelToken? cancelToken,
   }) async {
-    final result = await executeRequest(
-      cacheKey: 'event_publish_$eventId',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.post('/tournaments/events/$eventId/publish', cancelToken: token),
-      parse: _unwrapMap,
-    );
-    await hiveStorage.evictCache('tournaments_list');
-    await hiveStorage.evictCache('event_detail_$eventId');
-    return result;
+    try {
+      final result = await executeRequest(
+        cacheKey: 'event_publish_$eventId',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post('/tournaments/events/$eventId/publish', cancelToken: token),
+        parse: _unwrapMap,
+      );
+      await hiveStorage.evictCache('tournaments_list');
+      await hiveStorage.evictCache('event_detail_$eventId');
+      return result;
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'RELEASE_TOURNAMENT',
+        endpoint: '/tournaments/events/$eventId/publish',
+        payload: {'eventId': eventId, 'status': 'PUBLISHED'},
+        method: 'POST',
+      );
+      return <String, dynamic>{
+        'id': eventId,
+        'status': 'PUBLISHED',
+        'isReleased': true,
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Released & Scheduled — Queued for automatic sync',
+      };
+    }
   }
 
   Future<Map<String, dynamic>> cancelEvent({
@@ -900,48 +1026,112 @@ class TournamentRepository extends BaseRepository {
     required double weightKg,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'weighin_$registrationId',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.post('/tournaments/weighins', data: {
+    final payload = <String, dynamic>{
+      'registrationId': registrationId,
+      'weight': weightKg,
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'weighin_$registrationId',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post('/tournaments/weighins', data: payload, cancelToken: token),
+        parse: _unwrapMap,
+      );
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'VERIFY_WEIGH_IN',
+        endpoint: '/tournaments/weighins',
+        payload: payload,
+        method: 'POST',
+      );
+      return <String, dynamic>{
+        'id': registrationId,
         'registrationId': registrationId,
         'weight': weightKg,
-      }, cancelToken: token),
-      parse: _unwrapMap,
-    );
+        'status': 'WEIGHED',
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Saved / Done — Weigh-in saved locally & queued for auto-sync',
+      };
+    }
   }
 
   Future<Map<String, dynamic>> certifyWeighIn({
     required String registrationId,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'certify_weighin_$registrationId',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/certify', cancelToken: token),
-      parse: _unwrapMap,
-    );
+    final payload = <String, dynamic>{
+      'registrationId': registrationId,
+      'status': 'PASSED',
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'certify_weighin_$registrationId',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post('/tournaments/registrations/$registrationId/certify', cancelToken: token),
+        parse: _unwrapMap,
+      );
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'CERTIFY_WEIGH_IN',
+        endpoint: '/tournaments/registrations/$registrationId/certify',
+        payload: payload,
+        method: 'POST',
+      );
+      return <String, dynamic>{
+        'id': registrationId,
+        'registrationId': registrationId,
+        'status': 'PASSED',
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Saved / Done — Weigh-in certified locally & queued for auto-sync',
+      };
+    }
   }
 
   Future<Map<String, dynamic>> reassignRegistration({
     required String registrationId,
     required String newDivision,
     required String newWeightClass,
+    String? newArm,
+    String? assignedOpponentId,
+    String? assignedOpponentName,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'reassign_$registrationId',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.post('/tournaments/registrations/reassign', data: {
-        'registrationId': registrationId,
-        'newDivision': newDivision,
-        'newWeightClass': newWeightClass,
-      }, cancelToken: token),
-      parse: _unwrapMap,
-    );
+    final payload = <String, dynamic>{
+      'registrationId': registrationId,
+      'newDivision': newDivision,
+      'newWeightClass': newWeightClass,
+      if (newArm != null) 'newArm': newArm,
+      if (assignedOpponentId != null) 'assignedOpponentId': assignedOpponentId,
+      if (assignedOpponentName != null) 'assignedOpponentName': assignedOpponentName,
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'reassign_$registrationId',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post('/tournaments/registrations/reassign', data: payload, cancelToken: token),
+        parse: _unwrapMap,
+      );
+    } on OfflineException catch (_) {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'RESOLVE_UNMATCH_ATHLETE',
+        endpoint: '/tournaments/registrations/reassign',
+        payload: payload,
+        method: 'POST',
+      );
+      return <String, dynamic>{
+        'id': registrationId,
+        ...payload,
+        'status': 'VERIFIED',
+        'offlineQueued': true,
+        'idempotencyKey': queued['idempotencyKey'],
+        'statusMessage': 'Saved / Done — Category move & opponent assignment queued for auto-sync',
+      };
+    }
   }
 
   Future<Map<String, dynamic>> createBracket({
@@ -1188,14 +1378,26 @@ class TournamentRepository extends BaseRepository {
       );
       return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
-      if (e.error is OfflineException || e.type == DioExceptionType.connectionError) {
-        await hiveStorage.enqueueAction(
-          actionType: 'TOURNAMENT_MATCH_RESULT',
+      if (e.error is OfflineException ||
+          e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        final queued = await hiveStorage.enqueueAction(
+          actionType: 'SUBMIT_REFEREE_MATCH_RESULT',
           endpoint: '/tournaments/matches/result',
           payload: payload,
           method: 'POST',
         );
-        throw OfflineException('Submission queued offline. Will sync automatically when back online.');
+        return <String, dynamic>{
+          'matchId': matchId,
+          'winnerId': winnerId,
+          'scoreLine': scoreLine,
+          'status': 'COMPLETED',
+          'offlineQueued': true,
+          'idempotencyKey': queued['idempotencyKey'],
+          'statusMessage': 'Sent / Done — Match result saved locally & queued for sync',
+        };
       }
       rethrow;
     }
@@ -1319,7 +1521,15 @@ class TournamentRepository extends BaseRepository {
     try {
       final localCached = hiveStorage.getCachedData('local_my_registrations');
       if (localCached is List) {
-        localList = localCached.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        localList = localCached
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .where((r) {
+              if (athleteId == null || athleteId.trim().isEmpty) return true;
+              final regAthleteId = r['athleteId']?.toString().trim();
+              return regAthleteId == null || regAthleteId.isEmpty || regAthleteId == athleteId.trim();
+            })
+            .toList();
       }
     } catch (_) {}
 
@@ -3354,12 +3564,32 @@ class OrganizationRepository extends BaseRepository {
     },
   ];
 
+  String? _currentSessionUserId() {
+    try {
+      final sessionUser = hiveStorage.getCachedData('auth_session_user');
+      if (sessionUser is Map) {
+        final id = (sessionUser['id'] ?? sessionUser['userId'])?.toString().trim();
+        if (id != null && id.isNotEmpty) return id;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   List<Map<String, dynamic>> _mergeWithLocalOrganizations(List<Map<String, dynamic>> remoteOrSeed) {
     List<Map<String, dynamic>> localList = <Map<String, dynamic>>[];
+    final currentUserId = _currentSessionUserId();
     try {
       final localRaw = hiveStorage.getCachedData('local_created_organizations');
       if (localRaw is List) {
-        localList = localRaw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        localList = localRaw
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .where((org) {
+              final ownerId = (org['ownerUserId'] ?? org['createdById'] ?? org['organizerId'])?.toString().trim();
+              if (ownerId == null || ownerId.isEmpty) return true;
+              return currentUserId != null && ownerId == currentUserId;
+            })
+            .toList();
       }
     } catch (_) {}
 
@@ -3674,6 +3904,7 @@ class OrganizationRepository extends BaseRepository {
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-|-$'), '');
 
+    final currentUserId = _currentSessionUserId();
     final localOrg = <String, dynamic>{
       'id': id,
       'slug': slug,
@@ -3685,6 +3916,7 @@ class OrganizationRepository extends BaseRepository {
       'sanctionedBeltsCount': 0,
       'certifiedRefereesCount': 1,
       'createdAt': nowIso,
+      if (currentUserId != null && currentUserId.isNotEmpty) 'ownerUserId': currentUserId,
       ...payload,
     };
 

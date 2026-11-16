@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/asset_paths.dart';
+import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/armsphere_image.dart';
@@ -13,6 +14,7 @@ import '../../../core/security/admin_permissions.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../tournament/services/tournament_offline_store.dart';
 
 /// Directory of Sanctioning Organizations & Leagues (`/organizations`).
 class OrganizationsDirectoryScreen extends ConsumerStatefulWidget {
@@ -668,7 +670,7 @@ class _OrganizationProfileScreenState
 
                     // 3. Tab Content
                     if (_selectedTab == 0)
-                      _buildUpcomingEventsTab(context, eventsAsync)
+                      _buildUpcomingEventsTab(context, eventsAsync, org)
                     else if (_selectedTab == 1)
                       _buildArchivesTab(context, eventsAsync)
                     else if (_selectedTab == 2)
@@ -688,23 +690,44 @@ class _OrganizationProfileScreenState
   Widget _buildUpcomingEventsTab(
     BuildContext context,
     AsyncValue<List<Map<String, dynamic>>> eventsAsync,
+    Map<String, dynamic> org,
   ) {
+    final hive = ref.watch(hiveStorageProvider);
+    final orgName = (org['name'] ?? '').toString();
+
+    List<Map<String, dynamic>> resolveReleasedEvents(List<Map<String, dynamic>> rawEvents) {
+      final merged = TournamentOfflineStore.getReleasedTournamentsForOrganization(
+        hive: hive,
+        organizationId: widget.organizationId,
+        organizationName: orgName,
+        serverEvents: rawEvents,
+      );
+      return merged.where((e) {
+        if (!TournamentOfflineStore.isReleasedTournament(e)) return false;
+        final s = (e['status'] ?? 'UPCOMING').toString().toUpperCase();
+        return s != 'COMPLETED' && s != 'CANCELLED' && s != 'DRAFT' && s != 'UNRELEASED';
+      }).toList();
+    }
+
+    final fallbackUpcoming = resolveReleasedEvents(eventsAsync.valueOrNull ?? const []);
+
     return eventsAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(color: AppTheme.goldPrimary),
-        ),
-      ),
-      error: (e, _) => Text(
-        'Could not load organization events: $e',
-        style: const TextStyle(color: AppTheme.textSecondary),
-      ),
+      loading: () => fallbackUpcoming.isNotEmpty
+          ? _buildReleasedUpcomingCards(context, fallbackUpcoming)
+          : const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+              ),
+            ),
+      error: (e, _) => fallbackUpcoming.isNotEmpty
+          ? _buildReleasedUpcomingCards(context, fallbackUpcoming)
+          : Text(
+              'Could not load organization events: $e',
+              style: const TextStyle(color: AppTheme.textSecondary),
+            ),
       data: (events) {
-        final upcoming = events.where((e) {
-          final s = (e['status'] ?? 'UPCOMING').toString().toUpperCase();
-          return s != 'COMPLETED' && s != 'CANCELLED';
-        }).toList();
+        final upcoming = resolveReleasedEvents(events);
 
         if (upcoming.isEmpty) {
           final auth = ref.watch(authProvider);
@@ -735,7 +758,7 @@ class _OrganizationProfileScreenState
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Official tournament dates, weigh-in schedules, and registration brackets will appear here as soon as they are published.',
+                  'Official tournament dates, weigh-in schedules, and registration brackets will appear here as soon as they are released.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12.5,
@@ -770,110 +793,128 @@ class _OrganizationProfileScreenState
           );
         }
 
-        return Column(
-          children: upcoming.map((evt) {
-            final evtId = evt['id']?.toString() ?? 'tourney_1';
-            final name = evt['name']?.toString() ?? 'Sanctioned Championship';
-            final status = (evt['status'] ?? 'UPCOMING').toString().toUpperCase();
-            final isLive = status == 'ONGOING' || status == 'LIVE';
-            final venue = [evt['venueName'], evt['city'], evt['province']]
-                .where((v) => v != null && v.toString().isNotEmpty)
-                .join(', ');
-            final registered = (evt['registeredCount'] as num?)?.toInt() ?? 32;
-            final capacity = (evt['capacity'] as num?)?.toInt() ?? 64;
+        return _buildReleasedUpcomingCards(context, upcoming);
+      },
+    );
+  }
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: ElevatedActionCard(
-                borderColor: isLive
-                    ? AppTheme.crimson.withValues(alpha: 0.6)
-                    : AppTheme.goldPrimary.withValues(alpha: 0.4),
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  context.push('/tournament/$evtId');
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildReleasedUpcomingCards(
+    BuildContext context,
+    List<Map<String, dynamic>> upcoming,
+  ) {
+    return Column(
+      children: upcoming.map((evt) {
+        final evtId = evt['id']?.toString() ?? 'tourney_1';
+        final name = evt['name']?.toString() ?? 'Sanctioned Championship';
+        final status = (evt['status'] ?? 'UPCOMING').toString().toUpperCase();
+        final isLive = status == 'ONGOING' || status == 'LIVE';
+        final venue = [evt['venue'] ?? evt['venueName'], evt['city'], evt['province']]
+            .where((v) => v != null && v.toString().isNotEmpty)
+            .join(', ');
+        final appliedList = (evt['appliedAthletes'] is List) ? (evt['appliedAthletes'] as List) : const [];
+        final registered = appliedList.isNotEmpty
+            ? appliedList.length
+            : ((evt['registeredCount'] as num?)?.toInt() ?? 32);
+        final capacity = (evt['capacity'] as num?)?.toInt() ?? 64;
+        final feePkr = (evt['entryFeePkr'] as num?)?.toInt() ??
+            (((evt['registrationFeeCents'] as num?)?.toInt() ?? 0) ~/ 100);
+        final feeLabel = feePkr <= 0 ? 'FREE ENTRY' : 'PKR $feePkr';
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: ElevatedActionCard(
+            borderColor: isLive
+                ? AppTheme.crimson.withValues(alpha: 0.6)
+                : AppTheme.goldPrimary.withValues(alpha: 0.4),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              context.push('/tournament/$evtId');
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        StatusChip(
-                          label: isLive ? 'LIVE NOW' : 'UPCOMING SANCTIONED',
-                          color: isLive ? AppTheme.crimson : AppTheme.goldPrimary,
-                          icon: isLive
-                              ? Icons.sensors_rounded
-                              : Icons.calendar_today_rounded,
-                        ),
-                        const Spacer(),
-                        Text(
-                          '$registered / $capacity Pullers',
-                          style: const TextStyle(
-                            fontFamily: AppTheme.fontMono,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.emerald,
-                          ),
-                        ),
-                      ],
+                    StatusChip(
+                      label: isLive ? 'LIVE NOW' : 'SCHEDULED • RELEASED',
+                      color: isLive ? AppTheme.crimson : AppTheme.goldPrimary,
+                      icon: isLive
+                          ? Icons.sensors_rounded
+                          : Icons.calendar_today_rounded,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(width: 6),
+                    StatusChip(
+                      label: feeLabel,
+                      color: AppTheme.emerald,
+                    ),
+                    const Spacer(),
                     Text(
-                      name,
+                      '$registered / $capacity Pullers',
                       style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                        color: AppTheme.textPrimary,
+                        fontFamily: AppTheme.fontMono,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.emerald,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      venue,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              context.push('/tournament/$evtId');
-                            },
-                            icon: const Icon(Icons.visibility_outlined, size: 16),
-                            label: const Text('EVENT DOSSIER'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.goldPrimary,
-                              foregroundColor: Colors.black,
-                            ),
-                            onPressed: () {
-                              HapticFeedback.mediumImpact();
-                              context.push('/tournament/$evtId/register');
-                            },
-                            icon: const Icon(Icons.how_to_reg_rounded, size: 16),
-                            label: const Text(
-                              'REGISTER',
-                              style: TextStyle(fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            );
-          }).toList(),
+                const SizedBox(height: 10),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  venue,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          context.push('/tournament/$evtId');
+                        },
+                        icon: const Icon(Icons.visibility_outlined, size: 16),
+                        label: const Text('DETAILS & MATCHUPS'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.goldPrimary,
+                          foregroundColor: Colors.black,
+                        ),
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          context.push('/tournament/$evtId/register');
+                        },
+                        icon: const Icon(Icons.how_to_reg_rounded, size: 16),
+                        label: const Text(
+                          'APPLY / REGISTER',
+                          style: TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         );
-      },
+      }).toList(),
     );
   }
 

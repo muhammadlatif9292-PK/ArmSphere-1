@@ -126,21 +126,32 @@ class AdminPermissions {
       return true;
     }
 
-    // Invariant 2: Organization / Tournament Operator must own the event (or event has no owner restriction in test/legacy data).
-    final userId = userProfile?['id']?.toString();
-    final userOrgId = userProfile?['organizationId']?.toString();
-    final eventOrganizerId = event['organizerId']?.toString();
-    final eventOrgId = event['organizationId']?.toString();
+    // Invariant 2: Organization / Tournament Operator must own the event.
+    final userId = (userProfile?['id'] ?? userProfile?['userId'])?.toString().trim();
+    final userOrgId = (userProfile?['organizationId'] ?? userProfile?['orgId'])?.toString().trim();
+    final eventOrganizerId = (event['organizerId'] ?? event['createdById'] ?? event['ownerId'])?.toString().trim();
+    final eventOrgId = (event['organizationId'] ?? event['orgId'])?.toString().trim();
 
-    if ((eventOrganizerId == null || eventOrganizerId.isEmpty) &&
+    if (userId != null &&
+        userId.isNotEmpty &&
+        eventOrganizerId != null &&
+        eventOrganizerId.isNotEmpty &&
+        eventOrganizerId == userId) {
+      return true;
+    }
+    if (userOrgId != null &&
+        userOrgId.isNotEmpty &&
+        eventOrgId != null &&
+        eventOrgId.isNotEmpty &&
+        eventOrgId == userOrgId) {
+      return true;
+    }
+
+    // Only allow unowned test fixtures when no user identity is present at all
+    if ((userId == null || userId.isEmpty) &&
+        (userOrgId == null || userOrgId.isEmpty) &&
+        (eventOrganizerId == null || eventOrganizerId.isEmpty) &&
         (eventOrgId == null || eventOrgId.isEmpty)) {
-      return true;
-    }
-
-    if (userId != null && userId.isNotEmpty && eventOrganizerId == userId) {
-      return true;
-    }
-    if (userOrgId != null && userOrgId.isNotEmpty && eventOrgId == userOrgId) {
       return true;
     }
 

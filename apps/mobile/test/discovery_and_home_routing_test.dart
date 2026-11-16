@@ -43,8 +43,11 @@ class FakeDisputeNotifier extends DisputeNotifier {
 }
 
 class FakeTournamentNotifier extends TournamentNotifier {
+  final List<Map<String, dynamic>> _items;
+  FakeTournamentNotifier([this._items = const []]);
+
   @override
-  Future<List<Map<String, dynamic>>> build() async => [];
+  Future<List<Map<String, dynamic>>> build() async => _items;
 }
 
 class FakeRankingsNotifier extends RankingsNotifier {
@@ -159,6 +162,55 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
+
+    testWidgets(
+      'Isolates TournamentOperatorDashboardScreen events per account so switching to another account hides previous account events',
+      (WidgetTester tester) async {
+        final sharedEvents = [
+          {
+            'id': 'evt_account_a',
+            'name': 'Account A Exclusive Cup',
+            'status': 'PUBLISHED',
+            'organizerId': 'user_a',
+            'city': 'Lahore',
+            'province': 'Punjab',
+          },
+        ];
+
+        // Log in as Account B in Organization/Tournament Operator role: must NOT see Account A's event
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              authProvider.overrideWith((ref) => TestAuthNotifier(
+                    AuthState(
+                      status: AuthStatus.authenticated,
+                      activeRole: 'ORGANIZATION_LEADER',
+                      verifiedRoles: const ['ATHLETE', 'ORGANIZATION_LEADER'],
+                      userProfile: const {
+                        'id': 'user_b',
+                        'displayName': 'Operator B',
+                        'role': 'ORGANIZATION_LEADER',
+                      },
+                    ),
+                  )),
+              tournamentProvider.overrideWith(() => FakeTournamentNotifier(sharedEvents)),
+              disputeProvider.overrideWith(() => FakeDisputeNotifier()),
+            ],
+            child: const MaterialApp(
+              home: Scaffold(body: RoleAwareHomeScreen()),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+        expect(find.byType(TournamentOperatorDashboardScreen), findsOneWidget);
+        expect(find.text('Account A Exclusive Cup'), findsNothing);
+        expect(find.text('No Tournaments Created Yet'), findsOneWidget);
+
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump();
+      },
+    );
 
     testWidgets('Renders AthleteDashboardScreen by default when role is absent', (WidgetTester tester) async {
       await tester.pumpWidget(

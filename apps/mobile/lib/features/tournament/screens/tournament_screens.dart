@@ -14,6 +14,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/widgets/main_shell_screen.dart';
+import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
@@ -22,6 +23,8 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../core/security/admin_permissions.dart';
+import '../services/tournament_offline_store.dart';
+import 'event_qr_passport_screen.dart';
 import '../widgets/tournament_widgets.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
@@ -122,10 +125,12 @@ class TournamentsListScreen extends ConsumerWidget {
               onSessionExpired: () => ref.read(authProvider.notifier).logout(),
             ),
             data: (events) {
-          // Drafts are not public product surfaces; hide them here.
-          final visible = events
-              .where((e) => (e['status']?.toString().toUpperCase() ?? '') != 'DRAFT')
-              .toList();
+          final hive = ref.watch(hiveStorageProvider);
+          // Merge released local & server tournaments; strictly exclude unreleased drafts.
+          final visible = TournamentOfflineStore.getAllReleasedTournaments(
+            hive: hive,
+            serverEvents: events,
+          ).where(TournamentOfflineStore.isReleasedTournament).toList();
 
           if (visible.isEmpty) {
             return RefreshIndicator(
@@ -272,8 +277,17 @@ class TournamentDetailScreen extends ConsumerStatefulWidget {
 
 class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen> {
   Timer? _countdownTimer;
+  int _activeAthleteTab = 0; // 0 = Details Tab, 1 = Matchups Tab
   String _selectedCategory = 'ALL';
   static const _categories = ['ALL', '-75 KG', '-85 KG', '-95 KG', '+105 KG', 'OPEN RIGHT', 'OPEN LEFT'];
+
+  // Matchups Read-Only Filter State
+  String _selectedMatchupCategoryFilter = 'ALL';
+  int _selectedMatchupRoundFilter = 0; // 0 = All Rounds
+  Map<String, dynamic>? _localSubmittedApplication;
+  Map<String, dynamic>? _localIssuedSpectatorPass;
+  Map<String, dynamic>? _entranceVerifyResult;
+  final TextEditingController _entranceVerifyCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -287,6 +301,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _entranceVerifyCtrl.dispose();
     super.dispose();
   }
 
@@ -315,43 +330,68 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(eventDetailProvider(widget.tournamentId));
+    final hive = ref.watch(hiveStorageProvider);
+    final offlineFallback = TournamentOfflineStore.getReleasedTournamentById(
+      hive: hive,
+      tournamentId: widget.tournamentId,
+    );
+
+    Widget buildWithResolvedEvent(Map<String, dynamic> rawEvent) {
+      final mergedEvent = TournamentOfflineStore.getReleasedTournamentById(
+            hive: hive,
+            tournamentId: widget.tournamentId,
+            serverEvents: [rawEvent],
+          ) ??
+          rawEvent;
+      return _buildTournamentDetailScaffold(context, mergedEvent);
+    }
 
     return eventAsync.when(
-      loading: () => const Scaffold(
-        backgroundColor: AppTheme.background,
-        body: TournamentSkeletonLoadingWidget(),
-      ),
-      error: (error, _) => Scaffold(
-        backgroundColor: AppTheme.background,
-        appBar: AppBar(
-          leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
-          title: const Text('Tournament Details'),
-          actions: const [CrystalHomeButton()],
-        ),
-        body: AppErrorView(
-          error: error,
-          title: 'Could not load tournament',
-          onRetry: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
-          secondaryActionLabel: 'Return to Tournaments',
-          onSecondaryAction: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/tournaments');
-            }
-          },
-        ),
-      ),
-      data: (event) {
-        final status = (event['status']?.toString() ?? '').toUpperCase();
-        final canRegister = status == 'PUBLISHED';
-        final auth = ref.watch(authProvider);
-        // Invariant 1 (Active Role is Sovereign) & Invariant 2 (Event Ownership Validation)
-        final canOperate = AdminPermissions.canOperateEvent(
-          activeRole: auth.activeRole,
-          userProfile: auth.userProfile,
-          event: event,
-        );
+      loading: () => offlineFallback != null
+          ? buildWithResolvedEvent(offlineFallback)
+          : const Scaffold(
+              backgroundColor: AppTheme.background,
+              body: TournamentSkeletonLoadingWidget(),
+            ),
+      error: (error, _) => offlineFallback != null
+          ? buildWithResolvedEvent(offlineFallback)
+          : Scaffold(
+              backgroundColor: AppTheme.background,
+              appBar: AppBar(
+                leading: const CrystalBackButton(fallbackRoute: '/tournaments'),
+                title: const Text('Tournament Details'),
+                actions: const [CrystalHomeButton()],
+              ),
+              body: AppErrorView(
+                error: error,
+                title: 'Could not load tournament',
+                onRetry: () => ref.invalidate(eventDetailProvider(widget.tournamentId)),
+                secondaryActionLabel: 'Return to Tournaments',
+                onSecondaryAction: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/tournaments');
+                  }
+                },
+              ),
+            ),
+      data: (event) => buildWithResolvedEvent(event),
+    );
+  }
+
+  Widget _buildTournamentDetailScaffold(BuildContext context, Map<String, dynamic> event) {
+    final status = (event['status']?.toString() ?? 'REGISTRATION_OPEN').toUpperCase();
+    final canRegister = status == 'PUBLISHED' ||
+        status == 'REGISTRATION_OPEN' ||
+        status == 'UPCOMING' ||
+        event['isReleased'] == true;
+    final auth = ref.watch(authProvider);
+    final canOperate = AdminPermissions.canOperateEvent(
+      activeRole: auth.activeRole,
+      userProfile: auth.userProfile,
+      event: event,
+    );
         final rawOrgId = event['organizationId']?.toString() ?? '';
         final isIndependentPromotion = rawOrgId.isEmpty;
         final hostOrgId = isIndependentPromotion ? 'org_paff_national' : rawOrgId;
@@ -532,396 +572,525 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 ),
               ),
 
-              // Body Content
+              // Body Content with 2 Clean Athlete-Adapted Tabs (1: Details Tab, 2: Matchups Tab)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 1. Overview Metrics Strip
-                      ElevatedActionCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _metricColumn(
-                                    icon: Icons.calendar_today_outlined,
-                                    label: 'Dates',
-                                    value: dates.isEmpty ? 'TBA' : dates,
-                                  ),
-                                ),
-                                Container(height: 36, width: 1, color: AppTheme.borderSubtle),
-                                Expanded(
-                                  child: _metricColumn(
-                                    icon: Icons.payments_outlined,
-                                    label: 'Entry Fee',
-                                    value: formatEventFee(event['registrationFeeCents']),
-                                    isHighlighted: true,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24, thickness: 1, color: Color(0x22FFFFFF)),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _metricColumn(
-                                    icon: Icons.groups_outlined,
-                                    label: 'Capacity',
-                                    value: '${event['registeredCount'] ?? 0} / ${event['capacity'] ?? '∞'} Athletes',
-                                  ),
-                                ),
-                                Container(height: 36, width: 1, color: AppTheme.borderSubtle),
-                                Expanded(
-                                  child: _metricColumn(
-                                    icon: Icons.verified_outlined,
-                                    label: 'Sanctioning',
-                                    value: 'IFA / WAF Certified',
-                                    badgeAsset: ArmSphereAssets.sealFed,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 2. Weight & Division Tactical Filter Tray (Cat N)
-                      _buildCategoryFilterTray(),
-                      const SizedBox(height: 16),
-
-                      // 2b. Official Spectator & VIP Event Passes
-                      _buildEventPassesSection(context, event),
-                      const SizedBox(height: 16),
-
-                      // 3. Multi-Table Live Arena Status Grid (SIG-1)
-                      _buildLiveArenaTables(context),
-                      const SizedBox(height: 16),
-
-                      // 4. Event Description Card (if available)
-                      if ((event['description']?.toString() ?? '').isNotEmpty) ...[
-                        ElevatedActionCard(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.info_outline, size: 16, color: AppTheme.goldPrimary),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Event Overview',
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                event['description'].toString(),
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  height: 1.6,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // Host Sanctioning Organization / Independent Promotion Pill
-                      ElevatedActionCard(
-                        borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.push(
-                            isIndependentPromotion
-                                ? '/organizations'
-                                : '/organizations/$hostOrgId',
-                          );
-                        },
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      // Two Clean Athlete-Adapted Tabs Selector: 1) Details Tab, 2) Matchups Tab
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.shield_rounded,
-                              color: AppTheme.goldPrimary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isIndependentPromotion
-                                        ? 'INDEPENDENT PROMOTION'
-                                        : 'HOST SANCTIONING ORGANIZATION',
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.8,
-                                      color: AppTheme.goldPrimary,
+                              child: GestureDetector(
+                                key: const ValueKey('athlete_tournament_details_tab_btn'),
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() => _activeAthleteTab = 0);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: _activeAthleteTab == 0
+                                        ? AppTheme.goldPrimary.withValues(alpha: 0.18)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _activeAthleteTab == 0
+                                          ? AppTheme.goldPrimary
+                                          : Colors.transparent,
+                                      width: 1.4,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    hostOrgName,
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.textPrimary,
-                                    ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.event_note_rounded,
+                                        size: 16,
+                                        color: _activeAthleteTab == 0
+                                            ? AppTheme.goldPrimary
+                                            : AppTheme.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '1) DETAILS TAB',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 12,
+                                          letterSpacing: 0.6,
+                                          color: _activeAthleteTab == 0
+                                              ? AppTheme.goldPrimary
+                                              : AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                            StatusChip(
-                              label: isIndependentPromotion
-                                  ? 'INDEPENDENT PROMOTION'
-                                  : 'SANCTIONED',
-                              color: isIndependentPromotion
-                                  ? AppTheme.cyan
-                                  : AppTheme.goldPrimary,
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: AppTheme.textMuted,
-                              size: 18,
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: GestureDetector(
+                                key: const ValueKey('athlete_tournament_matchups_tab_btn'),
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() => _activeAthleteTab = 1);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: _activeAthleteTab == 1
+                                        ? AppTheme.emerald.withValues(alpha: 0.18)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _activeAthleteTab == 1
+                                          ? AppTheme.emerald
+                                          : Colors.transparent,
+                                      width: 1.4,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.account_tree_rounded,
+                                        size: 16,
+                                        color: _activeAthleteTab == 1
+                                            ? AppTheme.emerald
+                                            : AppTheme.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '2) MATCHUPS TAB',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 12,
+                                          letterSpacing: 0.6,
+                                          color: _activeAthleteTab == 1
+                                              ? AppTheme.emerald
+                                              : AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-                      // Athlete Event QR Passport Quick-Access Card
-                      ElevatedActionCard(
-                        borderColor: AppTheme.emerald.withValues(alpha: 0.45),
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          context.push('/tournament/${widget.tournamentId}/qr');
-                        },
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(9),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: AppTheme.emerald.withValues(alpha: 0.5),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.qr_code_2_rounded,
-                                color: AppTheme.emerald,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'My Event QR Passport',
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 14,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Present your cryptographic QR pass at the weigh-in scale',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const StatusChip(
-                              label: 'SHOW QR',
-                              color: AppTheme.emerald,
-                            ),
-                          ],
-                        ),
-                      ),
                       const SizedBox(height: 16),
 
-                      // 3. Organizer / Operations Console Access (strictly gated by Invariant 1 & 2)
-                      if (canOperate) ...[
-                        ElevatedActionCard(
-                          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.4),
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            context.push('/tournament/${widget.tournamentId}/operations');
-                          },
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
-                                ),
-                                child: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.goldPrimary, size: 22),
-                              ),
-                              const SizedBox(width: 14),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Event Operations Console',
-                                      style: TextStyle(
-                                        fontFamily: 'Space Grotesk',
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Weigh-ins, bracket seeds & scorekeeping',
-                                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 20),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // Championship Awards Ceremony Card (Canary 10)
-                      if (status == 'COMPLETED') ...[
-                        ElevatedActionCard(
-                          borderColor: AppTheme.goldPrimary,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            context.push('/tournament/${widget.tournamentId}/awards');
-                          },
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
-                                ),
-                                child: const Icon(Icons.workspace_premium_rounded, color: AppTheme.goldPrimary, size: 24),
-                              ),
-                              const SizedBox(width: 14),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Championship Awards & Podium',
-                                      style: TextStyle(
-                                        fontFamily: 'Space Grotesk',
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Official gold, silver & bronze medalist ceremony',
-                                      style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right, color: AppTheme.goldPrimary, size: 20),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      // 4. Important Dates Timeline Widget
-                      ImportantDatesTimelineWidget(tournament: event),
-                      const SizedBox(height: 16),
-
-                      // 5. Rulebook Accordion Widget
-                      RulebookAccordionWidget(tournament: event),
-                      const SizedBox(height: 16),
-
-                      // 6. Venue & Location Details
-                      if (location.isNotEmpty) ...[
+                      if (_activeAthleteTab == 1) ...[
+                        _buildAthleteReadOnlyMatchupsAndPodiumTab(context, event),
+                        const SizedBox(height: 96),
+                      ] else ...[
+                        // 1. Overview Metrics Strip (Schedule, Entry Fee in PKR, Capacity, Sanctioning)
                         ElevatedActionCard(
                           padding: const EdgeInsets.all(16),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 children: [
-                                  Icon(Icons.stadium_outlined, size: 16, color: AppTheme.goldPrimary),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Venue & Arena Information',
-                                    style: TextStyle(
-                                      fontFamily: 'Space Grotesk',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      color: AppTheme.textPrimary,
+                                  Expanded(
+                                    child: _metricColumn(
+                                      icon: Icons.calendar_today_outlined,
+                                      label: 'Schedule & Dates',
+                                      value: dates.isEmpty ? 'TBA' : dates,
+                                    ),
+                                  ),
+                                  Container(height: 36, width: 1, color: AppTheme.borderSubtle),
+                                  Expanded(
+                                    child: _metricColumn(
+                                      icon: Icons.payments_outlined,
+                                      label: 'Entry Fee (PKR)',
+                                      value: _formatPkrEntryFee(event),
+                                      isHighlighted: true,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                event['venueName']?.toString() ?? 'Sanctioned Competition Facility',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                  color: AppTheme.textPrimary,
+                              const Divider(height: 24, thickness: 1, color: Color(0x22FFFFFF)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _metricColumn(
+                                      icon: Icons.groups_outlined,
+                                      label: 'Capacity',
+                                      value: '${(event['appliedAthletes'] is List) ? (event['appliedAthletes'] as List).length : (event['registeredCount'] ?? 0)} / ${event['capacity'] ?? '64'} Athletes',
+                                    ),
+                                  ),
+                                  Container(height: 36, width: 1, color: AppTheme.borderSubtle),
+                                  Expanded(
+                                    child: _metricColumn(
+                                      icon: Icons.verified_outlined,
+                                      label: 'Sanctioning',
+                                      value: 'IFA / WAF Certified',
+                                      badgeAsset: ArmSphereAssets.sealFed,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Athlete Weight Categories (Left/Right Arm) & Awards/Prizes Summary Card
+                        _buildAthleteCategoriesAndAwardsCard(context, event),
+                        const SizedBox(height: 16),
+
+                        // Zero-Error Optimistic Apply / Register Card (with Local Tournament QR Generation)
+                        _buildZeroErrorAthleteApplyCard(context, event),
+                        const SizedBox(height: 16),
+
+                        // Buying / Clicking for Spectating & Verification by QR or Name
+                        _buildOfflineSpectatorPassAndVerificationCard(context, event),
+                        const SizedBox(height: 16),
+
+                        // 2. Weight & Division Tactical Filter Tray (Cat N)
+                        _buildCategoryFilterTray(),
+                        const SizedBox(height: 16),
+
+                        // 2b. Official Spectator & VIP Event Passes
+                        _buildEventPassesSection(context, event),
+                        const SizedBox(height: 16),
+
+                        // 3. Multi-Table Live Arena Status Grid (SIG-1)
+                        _buildLiveArenaTables(context),
+                        const SizedBox(height: 16),
+
+                        // 4. Event Description Card (if available)
+                        if ((event['description']?.toString() ?? '').isNotEmpty) ...[
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.info_outline, size: 16, color: AppTheme.goldPrimary),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Event Overview',
+                                      style: TextStyle(
+                                        fontFamily: 'Space Grotesk',
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  event['description'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    height: 1.6,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Host Sanctioning Organization / Independent Promotion Pill
+                        ElevatedActionCard(
+                          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push(
+                              isIndependentPromotion
+                                  ? '/organizations'
+                                  : '/organizations/$hostOrgId',
+                            );
+                          },
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.shield_rounded,
+                                color: AppTheme.goldPrimary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isIndependentPromotion
+                                          ? 'INDEPENDENT PROMOTION'
+                                          : 'HOST SANCTIONING ORGANIZATION',
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.8,
+                                        color: AppTheme.goldPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      hostOrgName,
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                location,
-                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              StatusChip(
+                                label: isIndependentPromotion
+                                    ? 'INDEPENDENT PROMOTION'
+                                    : 'SANCTIONED',
+                                color: isIndependentPromotion
+                                    ? AppTheme.cyan
+                                    : AppTheme.goldPrimary,
                               ),
-                              if (event['venueAddress'] != null) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.chevron_right,
+                                color: AppTheme.textMuted,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Athlete Event QR Passport Quick-Access Card
+                        ElevatedActionCard(
+                          borderColor: AppTheme.emerald.withValues(alpha: 0.45),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            context.push('/tournament/${widget.tournamentId}/qr');
+                          },
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(9),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: AppTheme.emerald.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.qr_code_2_rounded,
+                                  color: AppTheme.emerald,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'My Event QR Passport',
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Present your cryptographic QR pass at the weigh-in scale',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const StatusChip(
+                                label: 'SHOW QR',
+                                color: AppTheme.emerald,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 3. Organizer / Operations Console Access (strictly gated by Invariant 1 & 2)
+                        if (canOperate) ...[
+                          ElevatedActionCard(
+                            borderColor: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              context.push('/tournament/${widget.tournamentId}/operations');
+                            },
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
+                                  ),
+                                  child: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.goldPrimary, size: 22),
+                                ),
+                                const SizedBox(width: 14),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Event Operations Console',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Weigh-ins, bracket seeds & scorekeeping',
+                                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right, color: AppTheme.textMuted, size: 20),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Championship Awards Ceremony Card (Canary 10)
+                        if (status == 'COMPLETED') ...[
+                          ElevatedActionCard(
+                            borderColor: AppTheme.goldPrimary,
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              context.push('/tournament/${widget.tournamentId}/awards');
+                            },
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0x73D4AF37), width: 1.0),
+                                  ),
+                                  child: const Icon(Icons.workspace_premium_rounded, color: AppTheme.goldPrimary, size: 24),
+                                ),
+                                const SizedBox(width: 14),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Championship Awards & Podium',
+                                        style: TextStyle(
+                                          fontFamily: 'Space Grotesk',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Official gold, silver & bronze medalist ceremony',
+                                        style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right, color: AppTheme.goldPrimary, size: 20),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // 4. Important Dates Timeline Widget
+                        ImportantDatesTimelineWidget(tournament: event),
+                        const SizedBox(height: 16),
+
+                        // 5. Rulebook Accordion Widget
+                        RulebookAccordionWidget(tournament: event),
+                        const SizedBox(height: 16),
+
+                        // 6. Venue & Location Details
+                        if (location.isNotEmpty) ...[
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.stadium_outlined, size: 16, color: AppTheme.goldPrimary),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Venue & Arena Information',
+                                      style: TextStyle(
+                                        fontFamily: 'Space Grotesk',
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  (event['venue'] ?? event['venueName'] ?? 'Sanctioned Competition Facility').toString(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  event['venueAddress'].toString(),
-                                  style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                  location,
+                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                                 ),
+                                if (event['venueAddress'] != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    event['venueAddress'].toString(),
+                                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                          const SizedBox(height: 16),
+                        ],
 
-                      // Extra bottom padding to avoid sticky bar occlusion
-                      const SizedBox(height: 96),
+                        // Extra bottom padding to avoid sticky bar occlusion
+                        const SizedBox(height: 96),
+                      ],
                     ],
                   ),
                 ),
@@ -932,7 +1101,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           ),
           bottomNavigationBar: StickyBottomActionBar(
             primaryActionLabel: canRegister
-                ? 'Register for Event'
+                ? 'Apply / Register to Compete'
                 : (status == 'ONGOING'
                     ? 'Track Live Matches'
                     : (status == 'COMPLETED' ? 'View Awards & Ceremony' : 'Registration Closed')),
@@ -944,7 +1113,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             onPrimaryAction: canRegister
                 ? () {
                     HapticFeedback.selectionClick();
-                    context.push('/tournament/${widget.tournamentId}/register');
+                    _openOptimisticApplyModal(context, event);
                   }
                 : (status == 'COMPLETED'
                     ? () {
@@ -954,16 +1123,19 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     : (status == 'ONGOING'
                         ? () {
                             HapticFeedback.selectionClick();
-                            context.push('/tournament/${widget.tournamentId}/brackets');
+                            setState(() => _activeAthleteTab = 1);
                           }
                         : null)),
             secondaryAction: OutlinedButton.icon(
               onPressed: () {
                 HapticFeedback.selectionClick();
-                context.push('/tournament/${widget.tournamentId}/brackets');
+                setState(() => _activeAthleteTab = _activeAthleteTab == 0 ? 1 : 0);
               },
-              icon: const Icon(Icons.account_tree_outlined, size: 16),
-              label: const Text('Brackets & Schedule'),
+              icon: Icon(
+                _activeAthleteTab == 0 ? Icons.account_tree_outlined : Icons.event_note_rounded,
+                size: 16,
+              ),
+              label: Text(_activeAthleteTab == 0 ? 'Matchups & Podium' : 'Back to Details'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.textPrimary,
                 side: const BorderSide(color: AppTheme.borderSubtle),
@@ -972,7 +1144,925 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             ),
           ),
         );
+  }
+
+  String _formatPkrEntryFee(Map<String, dynamic> event) {
+    final feePkr = (event['entryFeePkr'] as num?)?.toInt();
+    if (feePkr != null) {
+      return feePkr <= 0 ? 'FREE (0 PKR)' : 'PKR $feePkr';
+    }
+    return formatEventFee(event['registrationFeeCents']);
+  }
+
+  Widget _buildAthleteCategoriesAndAwardsCard(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) {
+    final weightCategories = (event['weightCategories'] is List)
+        ? (event['weightCategories'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
+        : <Map<String, dynamic>>[
+            {'weightLabel': '70 kg', 'arm': 'BOTH'},
+            {'weightLabel': '80 kg', 'arm': 'BOTH'},
+            {'weightLabel': '90 kg', 'arm': 'RIGHT'},
+            {'weightLabel': 'Open', 'arm': 'BOTH'},
+          ];
+    final awardsConfig = (event['awardsConfig'] is Map)
+        ? Map<String, dynamic>.from(event['awardsConfig'] as Map)
+        : <String, dynamic>{
+            'firstPlacePrize': 'PKR 50,000 + Gold Championship Medal & Certificate',
+            'secondPlacePrize': 'PKR 25,000 + Silver Medal & Certificate',
+            'thirdPlacePrize': 'PKR 10,000 + Bronze Medal & Certificate',
+            'championOfChampionsPrize': 'Custom ArmSphere Championship Title Belt',
+          };
+
+    return ElevatedActionCard(
+      padding: const EdgeInsets.all(16),
+      borderColor: AppTheme.goldPrimary.withValues(alpha: 0.45),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.fitness_center_rounded, size: 16, color: AppTheme.goldPrimary),
+              SizedBox(width: 8),
+              Text(
+                'WEIGHT CATEGORIES (LEFT / RIGHT ARM) & PRIZES',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  color: AppTheme.goldPrimary,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final cat in weightCategories)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.obsidian,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45)),
+                  ),
+                  child: Text(
+                    '${cat['weightLabel'] ?? 'Open'} • ${(cat['arm'] ?? 'BOTH') == 'BOTH' ? 'Left & Right Arm' : '${cat['arm']} Arm'}',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0x22FFFFFF)),
+          const SizedBox(height: 12),
+          const Text(
+            'OFFICIAL AWARDS & PRIZES:',
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.emerald,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '• 1st Place: ${awardsConfig['firstPlacePrize'] ?? 'Gold Medal & Cash Prize'}\n'
+            '• 2nd Place: ${awardsConfig['secondPlacePrize'] ?? 'Silver Medal & Cash Prize'}\n'
+            '• 3rd Place: ${awardsConfig['thirdPlacePrize'] ?? 'Bronze Medal & Cash Prize'}\n'
+            '• Overall Champion: ${awardsConfig['championOfChampionsPrize'] ?? 'Championship Belt'}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openOptimisticApplyModal(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) async {
+    final weightCategories = (event['weightCategories'] is List &&
+            (event['weightCategories'] as List).isNotEmpty)
+        ? (event['weightCategories'] as List)
+            .whereType<Map>()
+            .map((e) => (e['weightLabel'] ?? '80 kg').toString())
+            .toSet()
+            .toList()
+        : <String>['70 kg', '80 kg', '90 kg', 'Open'];
+
+    String selectedWeight = weightCategories.first;
+    String selectedArm = 'RIGHT';
+    int guestCount = 0;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                18,
+                18,
+                18,
+                MediaQuery.viewInsetsOf(ctx).bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.how_to_reg_rounded, color: AppTheme.goldPrimary, size: 22),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'APPLY / REGISTER TO COMPETE',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const StatusChip(
+                        label: 'OFFLINE-SAFE',
+                        color: AppTheme.emerald,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Entry Fee: ${_formatPkrEntryFee(event)} • Instant local save & QR generation even if offline.',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedWeight,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Weight Category',
+                      prefixIcon: Icon(Icons.scale_outlined, size: 18),
+                    ),
+                    items: [
+                      for (final w in weightCategories)
+                        DropdownMenuItem(value: w, child: Text(w)),
+                    ],
+                    onChanged: (v) => setSheetState(() => selectedWeight = v ?? selectedWeight),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedArm,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Competition Arm / Hand',
+                      prefixIcon: Icon(Icons.front_hand_outlined, size: 18),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'RIGHT', child: Text('Right Arm Division')),
+                      DropdownMenuItem(value: 'LEFT', child: Text('Left Arm Division')),
+                      DropdownMenuItem(value: 'BOTH', child: Text('Both Arms (Left & Right)')),
+                    ],
+                    onChanged: (v) => setSheetState(() => selectedArm = v ?? 'RIGHT'),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Additional Spectator Guests (Optional)',
+                        style: TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: guestCount > 0
+                                ? () => setSheetState(() => guestCount--)
+                                : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                          Text(
+                            '$guestCount',
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: guestCount < 5
+                                ? () => setSheetState(() => guestCount++)
+                                : null,
+                            icon: const Icon(Icons.add_circle_outline),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      key: const ValueKey('athlete_optimistic_submit_apply_button'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.emerald,
+                        foregroundColor: Colors.black,
+                      ),
+                      onPressed: () async {
+                        HapticFeedback.heavyImpact();
+                        final auth = ref.read(authProvider);
+                        final profile = auth.userProfile ?? {};
+                        final athleteId =
+                            (profile['id'] ?? profile['userId'] ?? 'ath-pk-local').toString();
+                        final athleteName = (profile['displayName'] ??
+                                profile['name'] ??
+                                'ArmSphere Athlete')
+                            .toString();
+                        final hive = ref.read(hiveStorageProvider);
+                        OfflineSyncManager? syncManager;
+                        try {
+                          syncManager = ref.read(offlineSyncManagerProvider);
+                        } catch (_) {}
+
+                        final submitted =
+                            await TournamentOfflineStore.submitAthleteApplicationOfflineSafe(
+                          hive: hive,
+                          syncManager: syncManager,
+                          tournamentId: widget.tournamentId,
+                          athleteId: athleteId,
+                          athleteName: athleteName,
+                          weightCategory: selectedWeight,
+                          arm: selectedArm,
+                          guestCount: guestCount,
+                          elo: (profile['elo'] as num?)?.toInt() ?? 1820,
+                        );
+                        if (!ctx.mounted) return;
+                        Navigator.of(ctx).pop();
+                        if (mounted) {
+                          setState(() {
+                            _localSubmittedApplication = submitted;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            CrystalSnackBar(
+                              content: Text(
+                                'Submitted / Done ✓ • Registered for $selectedWeight ($selectedArm Arm). Local Tournament QR generated & queued for auto-sync!',
+                              ),
+                              backgroundColor: AppTheme.emerald,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle_rounded),
+                      label: const Text(
+                        'SUBMIT APPLICATION (INSTANT OFFLINE-SAFE)',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
       },
+    );
+  }
+
+  Widget _buildZeroErrorAthleteApplyCard(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) {
+    final app = _localSubmittedApplication;
+    return ElevatedActionCard(
+      padding: const EdgeInsets.all(16),
+      borderColor: AppTheme.emerald.withValues(alpha: 0.55),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_user_rounded, color: AppTheme.emerald, size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'ATHLETE REGISTRATION & TOURNAMENT QR PASS',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    color: AppTheme.emerald,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+              StatusChip(
+                label: app != null ? 'SUBMITTED / DONE ✓' : 'OPEN',
+                color: AppTheme.emerald,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (app != null) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ArmSphereQrMatrixView(
+                      data: (app['qrCode'] ?? 'ARMSPHERE-QR').toString(),
+                      size: 86,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SUBMITTED / DONE ✓',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13.5,
+                            color: AppTheme.emerald,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${app['athleteName']} • ${app['registeredWeightLabel']} (${app['registeredArm']} Arm)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'QR: ${app['qrCode']}\nSaved locally & auto-syncing in background.',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ] else
+            const Text(
+              'Select your Weight Category and Arm/Hand to apply. Works 100% offline — immediately saves locally and generates your Tournament QR Code.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.35),
+            ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.goldPrimary,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () => _openOptimisticApplyModal(context, event),
+                  icon: const Icon(Icons.how_to_reg_rounded, size: 17),
+                  label: Text(
+                    app != null ? 'UPDATE / ADD CATEGORY' : 'APPLY / REGISTER NOW',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () => context.push('/tournament/${widget.tournamentId}/register'),
+                icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                label: const Text(
+                  'FULL FORM',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineSpectatorPassAndVerificationCard(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) {
+    final spectatorEnabled = event['spectatorEnabled'] != false;
+    if (!spectatorEnabled) return const SizedBox.shrink();
+
+    final passPricePkr = (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
+    final pass = _localIssuedSpectatorPass;
+
+    return ElevatedActionCard(
+      padding: const EdgeInsets.all(16),
+      borderColor: AppTheme.cyan.withValues(alpha: 0.45),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.confirmation_number_rounded, color: AppTheme.cyan, size: 18),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'SPECTATING & ENTRANCE VERIFICATION (QR OR NAME)',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11.5,
+                    color: AppTheme.cyan,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+              StatusChip(
+                label: passPricePkr <= 0 ? 'FREE SPECTATING' : 'PKR $passPricePkr PASS',
+                color: AppTheme.cyan,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (pass != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: AppTheme.recessedObsidianWellDecoration(radius: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ArmSphereQrMatrixView(
+                      data: (pass['qrCode'] ?? 'ARMSPHERE-SPEC').toString(),
+                      size: 72,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SPECTATOR PASS ISSUED ✓',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12.5,
+                            color: AppTheme.emerald,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Holder: ${pass['holderName']} • ${pass['qrCode']}',
+                          style: const TextStyle(fontSize: 11.5, color: AppTheme.textPrimary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.cyan,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () async {
+              HapticFeedback.mediumImpact();
+              final auth = ref.read(authProvider);
+              final profile = auth.userProfile ?? {};
+              final userId = (profile['id'] ?? 'spec-local-01').toString();
+              final userName =
+                  (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator').toString();
+              final hive = ref.read(hiveStorageProvider);
+              OfflineSyncManager? syncManager;
+              try {
+                syncManager = ref.read(offlineSyncManagerProvider);
+              } catch (_) {}
+
+              final issued = await TournamentOfflineStore.claimOrPurchaseSpectatorPassOfflineSafe(
+                hive: hive,
+                syncManager: syncManager,
+                tournamentId: widget.tournamentId,
+                userId: userId,
+                userName: userName,
+                pricePkr: passPricePkr,
+              );
+              if (mounted) {
+                setState(() => _localIssuedSpectatorPass = issued);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CrystalSnackBar(
+                    content: Text(
+                      'Submitted / Done ✓ • Spectator Pass (${issued['qrCode']}) saved locally & synced!',
+                    ),
+                    backgroundColor: AppTheme.emerald,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+            label: Text(
+              passPricePkr <= 0
+                  ? 'GET FREE SPECTATOR QR PASS (OFFLINE-SAFE)'
+                  : 'BUY SPECTATOR PASS (PKR $passPricePkr • OFFLINE-SAFE)',
+              style: const TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w900,
+                fontSize: 11.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _entranceVerifyCtrl,
+            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+            decoration: InputDecoration(
+              labelText: 'Verify Athlete / Spectator by QR Code or Name',
+              hintText: 'Scan/paste QR code or type name (e.g. Malik Sherbaz)...',
+              prefixIcon: const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.cyan),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.verified_rounded, color: AppTheme.emerald),
+                onPressed: () async {
+                  final hive = ref.read(hiveStorageProvider);
+                  OfflineSyncManager? syncManager;
+                  try {
+                    syncManager = ref.read(offlineSyncManagerProvider);
+                  } catch (_) {}
+                  final res = await TournamentOfflineStore.verifyEntranceByQrOrNameOfflineSafe(
+                    hive: hive,
+                    syncManager: syncManager,
+                    tournamentId: widget.tournamentId,
+                    query: _entranceVerifyCtrl.text,
+                  );
+                  if (mounted) {
+                    setState(() => _entranceVerifyResult = res);
+                  }
+                },
+              ),
+            ),
+          ),
+          if (_entranceVerifyResult != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (_entranceVerifyResult!['verified'] == true)
+                    ? AppTheme.emerald.withValues(alpha: 0.15)
+                    : AppTheme.crimson.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: (_entranceVerifyResult!['verified'] == true)
+                      ? AppTheme.emerald
+                      : AppTheme.crimson,
+                ),
+              ),
+              child: Text(
+                (_entranceVerifyResult!['message'] ?? '').toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: (_entranceVerifyResult!['verified'] == true)
+                      ? AppTheme.emerald
+                      : AppTheme.crimson,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAthleteReadOnlyMatchupsAndPodiumTab(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) {
+    final matchups = (event['matchups'] is List)
+        ? (event['matchups'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
+        : <Map<String, dynamic>>[];
+
+    final categories = <String>{
+      'ALL',
+      for (final m in matchups)
+        if ((m['categoryLabel'] ?? '').toString().trim().isNotEmpty)
+          (m['categoryLabel'] ?? '').toString(),
+    }.toList();
+
+    final rounds = <int>{
+      0,
+      for (final m in matchups) (m['roundNumber'] as num?)?.toInt() ?? 1,
+    }.toList()
+      ..sort();
+
+    final filtered = matchups.where((m) {
+      if (_selectedMatchupCategoryFilter != 'ALL' &&
+          (m['categoryLabel'] ?? '').toString() != _selectedMatchupCategoryFilter) {
+        return false;
+      }
+      if (_selectedMatchupRoundFilter > 0 &&
+          ((m['roundNumber'] as num?)?.toInt() ?? 1) != _selectedMatchupRoundFilter) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    final completedFinals = matchups.where((m) {
+      final s = (m['status'] ?? '').toString().toUpperCase();
+      return (s == 'DONE' || s == 'COMPLETED') && (m['winnerName'] ?? '').toString().isNotEmpty;
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Final Podium Winners Summary Card (Read-Only for Athletes)
+        ElevatedActionCard(
+          padding: const EdgeInsets.all(16),
+          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.55),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.emoji_events_rounded, color: AppTheme.goldPrimary, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'FINAL PODIUM & LIVE WINNERS STANDINGS',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                        color: AppTheme.goldPrimary,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                  StatusChip(
+                    label: 'READ-ONLY LIVE VIEW',
+                    color: AppTheme.emerald,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (completedFinals.isEmpty)
+                const Text(
+                  'Podium standings (1st Gold, 2nd Silver, 3rd Bronze) update automatically as category rounds and finals are completed.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                )
+              else
+                for (final done in completedFinals.take(3))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.workspace_premium_rounded,
+                            color: AppTheme.goldPrimary, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${done['categoryLabel'] ?? 'Category'} • Winner: ${done['winnerName']} (vs ${done['winnerId'] == done['player1Id'] ? done['player2Name'] : done['player1Name']})',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Category & Round Filter Chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final cat in categories)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    selected: _selectedMatchupCategoryFilter == cat,
+                    selectedColor: AppTheme.goldPrimary.withValues(alpha: 0.22),
+                    label: Text(
+                      cat,
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                    ),
+                    onSelected: (_) => setState(() => _selectedMatchupCategoryFilter = cat),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final r in rounds)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    selected: _selectedMatchupRoundFilter == r,
+                    selectedColor: AppTheme.emerald.withValues(alpha: 0.22),
+                    label: Text(
+                      r == 0 ? 'All Rounds' : 'Round $r',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                    ),
+                    onSelected: (_) => setState(() => _selectedMatchupRoundFilter = r),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Read-Only Matchup Cards with Table Badges, Rounds, Loss Badges, and Live Results
+        for (final m in filtered)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: ElevatedActionCard(
+              padding: const EdgeInsets.all(14),
+              borderColor: ((m['status'] ?? '').toString().toUpperCase() == 'DONE')
+                  ? AppTheme.emerald.withValues(alpha: 0.5)
+                  : AppTheme.goldPrimary.withValues(alpha: 0.35),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      StatusChip(
+                        label: 'TABLE ${m['tableNumber'] ?? 1}',
+                        color: AppTheme.goldPrimary,
+                        icon: Icons.table_restaurant_rounded,
+                      ),
+                      const SizedBox(width: 6),
+                      StatusChip(
+                        label: 'ROUND ${m['roundNumber'] ?? 1}',
+                        color: AppTheme.cyan,
+                      ),
+                      const Spacer(),
+                      StatusChip(
+                        label: (m['status'] ?? 'PENDING').toString().toUpperCase(),
+                        color: ((m['status'] ?? '').toString().toUpperCase() == 'DONE')
+                            ? AppTheme.emerald
+                            : AppTheme.warning,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    (m['categoryLabel'] ?? 'Open Division').toString(),
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.goldPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (m['player1Name'] ?? 'Athlete 1').toString(),
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Elo ${m['player1Elo'] ?? 1800} • ${m['player1Losses'] ?? 0} Loss(es)',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'VS',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              (m['player2Name'] ?? 'Athlete 2').toString(),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Elo ${m['player2Elo'] ?? 1800} • ${m['player2Losses'] ?? 0} Loss(es)',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if ((m['winnerName'] ?? '').toString().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.emerald.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.emoji_events_rounded, size: 15, color: AppTheme.emerald),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Winner: ${m['winnerName']} (${m['scoreLine'] ?? 'Official Result'})',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.emerald,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 

@@ -19,6 +19,9 @@ const createEventSchema = z.object({
   paymentMethod: z.enum(["STRIPE", "MANUAL_QR"]).optional(),
   paymentQrImageUrl: z.string().nullable().optional(),
   organizerId: z.string().uuid().optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
+  step1Config: z.record(z.any()).optional(),
+  idempotencyKey: z.string().optional(),
 });
 
 const editEventSchema = z.object({
@@ -35,6 +38,9 @@ const editEventSchema = z.object({
   paymentMethod: z.enum(["STRIPE", "MANUAL_QR"]).optional(),
   paymentQrImageUrl: z.string().nullable().optional(),
   organizerId: z.string().uuid().optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
+  step1Config: z.record(z.any()).optional(),
+  idempotencyKey: z.string().optional(),
 });
 
 const registerAthleteSchema = z.object({
@@ -117,11 +123,12 @@ export class TournamentController {
   // Event Management
   static async listEvents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status, timeframe } = req.query;
+      const { status, timeframe, organizerId } = req.query;
       const parsedTimeframe = timeframe === "upcoming" || timeframe === "past" ? timeframe : undefined;
       const eventsList = await TournamentService.listEvents({
         status: status?.toString(),
-        timeframe: parsedTimeframe
+        timeframe: parsedTimeframe,
+        organizerId: organizerId?.toString()
       });
       res.json(eventsList);
     } catch (error) {
