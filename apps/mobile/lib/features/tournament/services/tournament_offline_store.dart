@@ -509,8 +509,9 @@ class TournamentOfflineStore {
       );
     }
 
-    final feePkr = (raw['entryFeePkr'] as num?)?.toInt() ??
-        (((raw['registrationFeeCents'] as num?)?.toInt() ?? 0) ~/ 100);
+    final feePkr = (raw['entryFeePkr'] as num?)?.toInt();
+    final rawFeeCents = (raw['registrationFeeCents'] as num?)?.toInt();
+    final effectiveFeeCents = rawFeeCents ?? (feePkr != null ? feePkr * 100 : 0);
 
     final baseMap = <String, dynamic>{
       ...raw,
@@ -538,9 +539,9 @@ class TournamentOfflineStore {
       'eliminationSubFormat':
           (raw['eliminationSubFormat'] ?? 'DOUBLE_ELIMINATION').toString(),
       'weightCategories': weightCategories,
-      'entryFeePkr': feePkr,
-      'entryFeeConfigured': true,
-      'registrationFeeCents': feePkr * 100,
+      if (feePkr != null) 'entryFeePkr': feePkr,
+      'entryFeeConfigured': raw['entryFeeConfigured'] ?? (feePkr != null),
+      'registrationFeeCents': effectiveFeeCents,
       'awardsConfig': awardsConfig,
       'spectatorGateConfig': spectatorGateConfig,
       'appliedAthletes': appliedAthletes,

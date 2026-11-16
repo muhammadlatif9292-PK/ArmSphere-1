@@ -696,7 +696,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         _buildAthleteReadOnlyMatchupsAndPodiumTab(context, event),
                         const SizedBox(height: 96),
                       ] else ...[
-                        // 1. Overview Metrics Strip (Schedule, Entry Fee in PKR, Capacity, Sanctioning)
+                        // 2. Weight & Division Tactical Filter Tray (Cat N)
+                        _buildCategoryFilterTray(),
+                        const SizedBox(height: 16),
+
+                        // 1. Overview Metrics Strip (Schedule, Entry Fee, Capacity, Sanctioning)
                         ElevatedActionCard(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -714,7 +718,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                   Expanded(
                                     child: _metricColumn(
                                       icon: Icons.payments_outlined,
-                                      label: 'Entry Fee (PKR)',
+                                      label: event['entryFeePkr'] != null ? 'Entry Fee (PKR)' : 'Entry Fee',
                                       value: _formatPkrEntryFee(event),
                                       isHighlighted: true,
                                     ),
@@ -745,10 +749,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-
-                        // 2. Weight & Division Tactical Filter Tray (Cat N)
-                        _buildCategoryFilterTray(),
                         const SizedBox(height: 16),
 
                         // 3. Multi-Table Live Arena Status Grid (SIG-1)

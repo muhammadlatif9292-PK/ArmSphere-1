@@ -470,7 +470,9 @@ class _WeighInClearanceStampState extends State<WeighInClearanceStamp>
     );
 
     if (widget.isApproved) {
-      _triggerStamp();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _triggerStamp();
+      });
     }
   }
 
