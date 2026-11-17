@@ -580,10 +580,16 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Two Clean Athlete-Adapted Tabs Selector: 1) Details Tab, 2) Matchups Tab
+                      // Two Clean Forged-Crystal Tabs: 1) Event Overview & Purse, 2) Live Brackets & Podium
                       Container(
                         padding: const EdgeInsets.all(5),
-                        decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0E121A),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                          ),
+                        ),
                         child: Row(
                           children: [
                             Expanded(
@@ -597,38 +603,43 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                   duration: const Duration(milliseconds: 180),
                                   padding: const EdgeInsets.symmetric(vertical: 11),
                                   decoration: BoxDecoration(
-                                    color: _activeAthleteTab == 0
-                                        ? AppTheme.goldPrimary.withValues(alpha: 0.18)
-                                        : Colors.transparent,
+                                    gradient: _activeAthleteTab == 0
+                                        ? const LinearGradient(
+                                            colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                                          )
+                                        : null,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: _activeAthleteTab == 0
                                           ? AppTheme.goldPrimary
                                           : Colors.transparent,
-                                      width: 1.4,
+                                      width: 1.3,
                                     ),
                                   ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        Icons.event_note_rounded,
-                                        size: 16,
+                                        Icons.emoji_events_outlined,
+                                        size: 15,
                                         color: _activeAthleteTab == 0
                                             ? AppTheme.goldPrimary
                                             : AppTheme.textSecondary,
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        '1) DETAILS TAB',
-                                        style: TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 12,
-                                          letterSpacing: 0.6,
-                                          color: _activeAthleteTab == 0
-                                              ? AppTheme.goldPrimary
-                                              : AppTheme.textSecondary,
+                                      Flexible(
+                                        child: Text(
+                                          'Event Overview & Purse',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 11.5,
+                                            color: _activeAthleteTab == 0
+                                                ? AppTheme.goldPrimary
+                                                : AppTheme.textSecondary,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -648,15 +659,17 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                   duration: const Duration(milliseconds: 180),
                                   padding: const EdgeInsets.symmetric(vertical: 11),
                                   decoration: BoxDecoration(
-                                    color: _activeAthleteTab == 1
-                                        ? AppTheme.emerald.withValues(alpha: 0.18)
-                                        : Colors.transparent,
+                                    gradient: _activeAthleteTab == 1
+                                        ? const LinearGradient(
+                                            colors: [Color(0xFF0E3224), Color(0xFF071A12)],
+                                          )
+                                        : null,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: _activeAthleteTab == 1
                                           ? AppTheme.emerald
                                           : Colors.transparent,
-                                      width: 1.4,
+                                      width: 1.3,
                                     ),
                                   ),
                                   child: Row(
@@ -664,22 +677,25 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                     children: [
                                       Icon(
                                         Icons.account_tree_rounded,
-                                        size: 16,
+                                        size: 15,
                                         color: _activeAthleteTab == 1
                                             ? AppTheme.emerald
                                             : AppTheme.textSecondary,
                                       ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        '2) MATCHUPS TAB',
-                                        style: TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 12,
-                                          letterSpacing: 0.6,
-                                          color: _activeAthleteTab == 1
-                                              ? AppTheme.emerald
-                                              : AppTheme.textSecondary,
+                                      Flexible(
+                                        child: Text(
+                                          'Live Brackets & Podium',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 11.5,
+                                            color: _activeAthleteTab == 1
+                                                ? AppTheme.emerald
+                                                : AppTheme.textSecondary,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1102,45 +1118,60 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           ),
           bottomNavigationBar: StickyBottomActionBar(
             primaryActionLabel: canRegister
-                ? 'Apply / Register to Compete'
+                ? '⚡ APPLY TO COMPETE'
                 : (status == 'ONGOING'
                     ? 'Track Live Matches'
-                    : (status == 'COMPLETED' ? 'View Awards & Ceremony' : 'Registration Closed')),
-            primaryActionIcon: canRegister
-                ? Icons.how_to_reg
-                : (status == 'COMPLETED'
-                    ? Icons.workspace_premium_rounded
-                    : (status == 'ONGOING' ? Icons.sports_kabaddi : Icons.emoji_events_outlined)),
-            onPrimaryAction: canRegister
-                ? () {
-                    HapticFeedback.selectionClick();
-                    _openOptimisticApplyModal(context, event);
-                  }
-                : (status == 'COMPLETED'
-                    ? () {
-                        HapticFeedback.selectionClick();
-                        context.push('/tournament/${widget.tournamentId}/awards');
-                      }
-                    : (status == 'ONGOING'
-                        ? () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _activeAthleteTab = 1);
-                          }
-                        : null)),
+                    : (status == 'COMPLETED' ? 'View Awards & Ceremony' : '⚡ APPLY TO COMPETE')),
+            primaryActionIcon: Icons.bolt_rounded,
+            onPrimaryAction: () {
+              HapticFeedback.selectionClick();
+              _openOptimisticApplyModal(context, event);
+            },
             secondaryAction: OutlinedButton.icon(
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                setState(() => _activeAthleteTab = _activeAthleteTab == 0 ? 1 : 0);
+              onPressed: () async {
+                HapticFeedback.mediumImpact();
+                final auth = ref.read(authProvider);
+                final profile = auth.userProfile ?? {};
+                final userId = (profile['id'] ?? 'spec-local-01').toString();
+                final userName =
+                    (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator').toString();
+                final hive = ref.read(hiveStorageProvider);
+                OfflineSyncManager? syncManager;
+                try {
+                  syncManager = ref.read(offlineSyncManagerProvider);
+                } catch (_) {}
+                final passPricePkr =
+                    (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
+                final issued =
+                    await TournamentOfflineStore.claimOrPurchaseSpectatorPassOfflineSafe(
+                  hive: hive,
+                  syncManager: syncManager,
+                  tournamentId: widget.tournamentId,
+                  userId: userId,
+                  userName: userName,
+                  pricePkr: passPricePkr,
+                );
+                if (mounted) {
+                  setState(() => _localIssuedSpectatorPass = issued);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CrystalSnackBar(
+                      content: Text(
+                        'Official Spectator Pass (${issued['qrCode']}) issued & ready for Gate QR scan!',
+                      ),
+                      backgroundColor: AppTheme.emerald,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
               },
-              icon: Icon(
-                _activeAthleteTab == 0 ? Icons.account_tree_outlined : Icons.event_note_rounded,
-                size: 16,
-              ),
-              label: Text(_activeAthleteTab == 0 ? 'Matchups & Podium' : 'Back to Details'),
+              icon: const Icon(Icons.confirmation_number_rounded, size: 15),
+              label: const Text('🎟 GET SPECTATOR PASS'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.textPrimary,
-                side: const BorderSide(color: AppTheme.borderSubtle),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusSmall)),
+                foregroundColor: AppTheme.goldPrimary,
+                side: const BorderSide(color: AppTheme.goldPrimary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                ),
               ),
             ),
           ),
@@ -1173,30 +1204,38 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     final awardsConfig = (event['awardsConfig'] is Map)
         ? Map<String, dynamic>.from(event['awardsConfig'] as Map)
         : <String, dynamic>{
-            'firstPlacePrize': 'PKR 50,000 + Gold Championship Medal & Certificate',
-            'secondPlacePrize': 'PKR 25,000 + Silver Medal & Certificate',
-            'thirdPlacePrize': 'PKR 10,000 + Bronze Medal & Certificate',
-            'championOfChampionsPrize': 'Custom ArmSphere Championship Title Belt',
+            'firstPlacePrize': 'PKR 50,000 + Gold Championship Medal',
+            'secondPlacePrize': 'PKR 25,000 + Silver Medal',
+            'thirdPlacePrize': 'PKR 10,000 + Bronze Medal',
           };
 
-    return ElevatedActionCard(
-      padding: const EdgeInsets.all(16),
-      borderColor: AppTheme.goldPrimary.withValues(alpha: 0.45),
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF171C27), Color(0xFF0C0F16)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.fitness_center_rounded, size: 16, color: AppTheme.goldPrimary),
+              Icon(Icons.emoji_events_rounded,
+                  size: 16, color: AppTheme.goldPrimary),
               SizedBox(width: 8),
               Text(
-                'WEIGHT CATEGORIES (LEFT / RIGHT ARM) & PRIZES',
+                'DIVISIONS & CHAMPIONSHIP PURSE (PKR)',
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w900,
                   fontSize: 12,
                   color: AppTheme.goldPrimary,
-                  letterSpacing: 0.6,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -1208,47 +1247,97 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             children: [
               for (final cat in weightCategories)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppTheme.obsidian,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                    ),
                   ),
                   child: Text(
-                    '${cat['weightLabel'] ?? 'Open'} • ${(cat['arm'] ?? 'BOTH') == 'BOTH' ? 'Left & Right Arm' : '${cat['arm']} Arm'}',
+                    '${cat['weightLabel'] ?? 'Open'} • ${(cat['arm'] ?? 'BOTH') == 'BOTH' ? 'L & R' : '${cat['arm']}'}',
                     style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
                       color: AppTheme.textPrimary,
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: Color(0x22FFFFFF)),
           const SizedBox(height: 12),
-          const Text(
-            'OFFICIAL AWARDS & PRIZES:',
+          Row(
+            children: [
+              Expanded(
+                child: _buildPursePod(
+                  medal: '1ST GOLD',
+                  prize: (awardsConfig['firstPlacePrize'] ?? 'PKR 50,000')
+                      .toString(),
+                  color: const Color(0xFFD4AF37),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildPursePod(
+                  medal: '2ND SILVER',
+                  prize: (awardsConfig['secondPlacePrize'] ?? 'PKR 25,000')
+                      .toString(),
+                  color: const Color(0xFFE2E8F0),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildPursePod(
+                  medal: '3RD BRONZE',
+                  prize: (awardsConfig['thirdPlacePrize'] ?? 'PKR 10,000')
+                      .toString(),
+                  color: const Color(0xFFCD7F32),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPursePod({
+    required String medal,
+    required String prize,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: AppTheme.obsidian,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            medal,
             style: TextStyle(
               fontFamily: AppTheme.fontDisplay,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.emerald,
-              letterSpacing: 0.6,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w900,
+              color: color,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 3),
           Text(
-            '• 1st Place: ${awardsConfig['firstPlacePrize'] ?? 'Gold Medal & Cash Prize'}\n'
-            '• 2nd Place: ${awardsConfig['secondPlacePrize'] ?? 'Silver Medal & Cash Prize'}\n'
-            '• 3rd Place: ${awardsConfig['thirdPlacePrize'] ?? 'Bronze Medal & Cash Prize'}\n'
-            '• Overall Champion: ${awardsConfig['championOfChampionsPrize'] ?? 'Championship Belt'}',
+            prize,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-              height: 1.45,
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimary,
             ),
           ),
         ],
@@ -1296,12 +1385,13 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.how_to_reg_rounded, color: AppTheme.goldPrimary, size: 22),
+                      const Icon(Icons.bolt_rounded,
+                          color: AppTheme.goldPrimary, size: 22),
                       const SizedBox(width: 8),
-                      Expanded(
+                      const Expanded(
                         child: Text(
-                          'APPLY / REGISTER TO COMPETE',
-                          style: const TextStyle(
+                          '⚡ APPLY TO COMPETE',
+                          style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontWeight: FontWeight.w900,
                             fontSize: 15,
@@ -1315,12 +1405,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Entry Fee: ${_formatPkrEntryFee(event)} • Instant local save & QR generation even if offline.',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: selectedWeight,
                     decoration: const InputDecoration(
@@ -1331,9 +1416,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       for (final w in weightCategories)
                         DropdownMenuItem(value: w, child: Text(w)),
                     ],
-                    onChanged: (v) => setSheetState(() => selectedWeight = v ?? selectedWeight),
+                    onChanged: (v) =>
+                        setSheetState(() => selectedWeight = v ?? selectedWeight),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
                     initialValue: selectedArm,
                     decoration: const InputDecoration(
@@ -1341,19 +1427,24 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       prefixIcon: Icon(Icons.front_hand_outlined, size: 18),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'RIGHT', child: Text('Right Arm Division')),
-                      DropdownMenuItem(value: 'LEFT', child: Text('Left Arm Division')),
-                      DropdownMenuItem(value: 'BOTH', child: Text('Both Arms (Left & Right)')),
+                      DropdownMenuItem(
+                          value: 'RIGHT', child: Text('Right Arm Division')),
+                      DropdownMenuItem(
+                          value: 'LEFT', child: Text('Left Arm Division')),
+                      DropdownMenuItem(
+                          value: 'BOTH', child: Text('Both Arms (Left & Right)')),
                     ],
-                    onChanged: (v) => setSheetState(() => selectedArm = v ?? 'RIGHT'),
+                    onChanged: (v) =>
+                        setSheetState(() => selectedArm = v ?? 'RIGHT'),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Additional Spectator Guests (Optional)',
-                        style: TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
+                        'Spectator Guests Included',
+                        style:
+                            TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
                       ),
                       Row(
                         children: [
@@ -1382,7 +1473,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 50,
                     child: ElevatedButton.icon(
@@ -1396,7 +1487,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         final auth = ref.read(authProvider);
                         final profile = auth.userProfile ?? {};
                         final athleteId =
-                            (profile['id'] ?? profile['userId'] ?? 'ath-pk-local').toString();
+                            (profile['id'] ?? profile['userId'] ?? 'ath-pk-local')
+                                .toString();
                         final athleteName = (profile['displayName'] ??
                                 profile['name'] ??
                                 'ArmSphere Athlete')
@@ -1407,8 +1499,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           syncManager = ref.read(offlineSyncManagerProvider);
                         } catch (_) {}
 
-                        final submitted =
-                            await TournamentOfflineStore.submitAthleteApplicationOfflineSafe(
+                        final submitted = await TournamentOfflineStore
+                            .submitAthleteApplicationOfflineSafe(
                           hive: hive,
                           syncManager: syncManager,
                           tournamentId: widget.tournamentId,
@@ -1428,7 +1520,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           ScaffoldMessenger.of(context).showSnackBar(
                             CrystalSnackBar(
                               content: Text(
-                                'Submitted / Done ✓ • Registered for $selectedWeight ($selectedArm Arm). Local Tournament QR generated & queued for auto-sync!',
+                                'Submitted / Done ✓ • Registered for $selectedWeight ($selectedArm Arm). Official QR Credential generated!',
                               ),
                               backgroundColor: AppTheme.emerald,
                               behavior: SnackBarBehavior.floating,
@@ -1438,11 +1530,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       },
                       icon: const Icon(Icons.check_circle_rounded),
                       label: const Text(
-                        'SUBMIT APPLICATION (INSTANT OFFLINE-SAFE)',
+                        'CONFIRM & GENERATE OFFICIAL QR CREDENTIAL',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontWeight: FontWeight.w900,
-                          fontSize: 12.5,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -1461,38 +1553,48 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     Map<String, dynamic> event,
   ) {
     final app = _localSubmittedApplication;
-    return ElevatedActionCard(
-      padding: const EdgeInsets.all(16),
-      borderColor: AppTheme.emerald.withValues(alpha: 0.55),
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF151C27), Color(0xFF0C1017)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.emerald.withValues(alpha: 0.55),
+          width: 1.3,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Icon(Icons.verified_user_rounded, color: AppTheme.emerald, size: 18),
+              const Icon(Icons.qr_code_2_rounded,
+                  color: AppTheme.emerald, size: 18),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'ATHLETE REGISTRATION & TOURNAMENT QR PASS',
+                  'OFFICIAL ARMSPHERE QR CREDENTIAL CARD',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.w900,
                     fontSize: 12,
                     color: AppTheme.emerald,
-                    letterSpacing: 0.6,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
               StatusChip(
-                label: app != null ? 'SUBMITTED / DONE ✓' : 'OPEN',
+                label: app != null ? 'CREDENTIAL ACTIVE ✓' : 'READY',
                 color: AppTheme.emerald,
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           if (app != null) ...[
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(13),
               decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
               child: Row(
                 children: [
@@ -1504,7 +1606,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     ),
                     child: ArmSphereQrMatrixView(
                       data: (app['qrCode'] ?? 'ARMSPHERE-QR').toString(),
-                      size: 86,
+                      size: 84,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -1513,11 +1615,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'SUBMITTED / DONE ✓',
+                          'OFFICIAL ATHLETE CREDENTIAL ✓',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontWeight: FontWeight.w900,
-                            fontSize: 13.5,
+                            fontSize: 13,
                             color: AppTheme.emerald,
                           ),
                         ),
@@ -1525,17 +1627,17 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         Text(
                           '${app['athleteName']} • ${app['registeredWeightLabel']} (${app['registeredArm']} Arm)',
                           style: const TextStyle(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             fontSize: 12.5,
                             color: AppTheme.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'QR: ${app['qrCode']}\nSaved locally & auto-syncing in background.',
+                          'QR: ${app['qrCode']} • Scan at Venue Gate & Scale',
                           style: const TextStyle(
                             fontSize: 11,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.goldPrimary,
                           ),
                         ),
                       ],
@@ -1545,35 +1647,44 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               ),
             ),
             const SizedBox(height: 10),
-          ] else
-            const Text(
-              'Select your Weight Category and Arm/Hand to apply. Works 100% offline — immediately saves locally and generates your Tournament QR Code.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.35),
-            ),
-          const SizedBox(height: 10),
+          ],
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.goldPrimary,
-                    foregroundColor: Colors.black,
-                  ),
-                  onPressed: () => _openOptimisticApplyModal(context, event),
-                  icon: const Icon(Icons.how_to_reg_rounded, size: 17),
-                  label: Text(
-                    app != null ? 'UPDATE / ADD CATEGORY' : 'APPLY / REGISTER NOW',
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11.5,
+                child: GestureDetector(
+                  onTap: () => _openOptimisticApplyModal(context, event),
+                  child: Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF3A1216), Color(0xFF1A090B)],
+                      ),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(
+                        color: const Color(0xFFE23B3B),
+                        width: 1.3,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        app != null
+                            ? '⚡ UPDATE DIVISION / QR'
+                            : '⚡ APPLY TO COMPETE',
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11.5,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
-                onPressed: () => context.push('/tournament/${widget.tournamentId}/register'),
+                onPressed: () =>
+                    context.push('/tournament/${widget.tournamentId}/register'),
                 icon: const Icon(Icons.open_in_new_rounded, size: 15),
                 label: const Text(
                   'FULL FORM',
@@ -1594,38 +1705,44 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     final spectatorEnabled = event['spectatorEnabled'] != false;
     if (!spectatorEnabled) return const SizedBox.shrink();
 
-    final passPricePkr = (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
+    final passPricePkr =
+        (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
     final pass = _localIssuedSpectatorPass;
 
-    return ElevatedActionCard(
-      padding: const EdgeInsets.all(16),
-      borderColor: AppTheme.cyan.withValues(alpha: 0.45),
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131823),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.cyan.withValues(alpha: 0.45)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Icon(Icons.confirmation_number_rounded, color: AppTheme.cyan, size: 18),
+              const Icon(Icons.confirmation_number_rounded,
+                  color: AppTheme.cyan, size: 18),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'SPECTATING & ENTRANCE VERIFICATION (QR OR NAME)',
+                  'SPECTATOR PASS & GATE QR CREDENTIAL',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.w900,
                     fontSize: 11.5,
                     color: AppTheme.cyan,
-                    letterSpacing: 0.6,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
               StatusChip(
-                label: passPricePkr <= 0 ? 'FREE SPECTATING' : 'PKR $passPricePkr PASS',
+                label: passPricePkr <= 0 ? 'FREE PASS' : 'PKR $passPricePkr',
                 color: AppTheme.cyan,
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           if (pass != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
@@ -1649,7 +1766,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'SPECTATOR PASS ISSUED ✓',
+                          'OFFICIAL SPECTATOR QR PASS ✓',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontWeight: FontWeight.w900,
@@ -1659,8 +1776,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Holder: ${pass['holderName']} • ${pass['qrCode']}',
-                          style: const TextStyle(fontSize: 11.5, color: AppTheme.textPrimary),
+                          '${pass['holderName']} • ${pass['qrCode']}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppTheme.textPrimary,
+                          ),
                         ),
                       ],
                     ),
@@ -1670,25 +1790,23 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             ),
             const SizedBox(height: 10),
           ],
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.cyan,
-              foregroundColor: Colors.black,
-            ),
-            onPressed: () async {
+          GestureDetector(
+            onTap: () async {
               HapticFeedback.mediumImpact();
               final auth = ref.read(authProvider);
               final profile = auth.userProfile ?? {};
               final userId = (profile['id'] ?? 'spec-local-01').toString();
               final userName =
-                  (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator').toString();
+                  (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator')
+                      .toString();
               final hive = ref.read(hiveStorageProvider);
               OfflineSyncManager? syncManager;
               try {
                 syncManager = ref.read(offlineSyncManagerProvider);
               } catch (_) {}
 
-              final issued = await TournamentOfflineStore.claimOrPurchaseSpectatorPassOfflineSafe(
+              final issued = await TournamentOfflineStore
+                  .claimOrPurchaseSpectatorPassOfflineSafe(
                 hive: hive,
                 syncManager: syncManager,
                 tournamentId: widget.tournamentId,
@@ -1701,7 +1819,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   CrystalSnackBar(
                     content: Text(
-                      'Submitted / Done ✓ • Spectator Pass (${issued['qrCode']}) saved locally & synced!',
+                      'Spectator QR Pass (${issued['qrCode']}) saved locally & synced!',
                     ),
                     backgroundColor: AppTheme.emerald,
                     behavior: SnackBarBehavior.floating,
@@ -1709,35 +1827,50 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 );
               }
             },
-            icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-            label: Text(
-              passPricePkr <= 0
-                  ? 'GET FREE SPECTATOR QR PASS (OFFLINE-SAFE)'
-                  : 'BUY SPECTATOR PASS (PKR $passPricePkr • OFFLINE-SAFE)',
-              style: const TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.w900,
-                fontSize: 11.5,
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                ),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: AppTheme.goldPrimary, width: 1.3),
+              ),
+              child: Center(
+                child: Text(
+                  passPricePkr <= 0
+                      ? '🎟 GET SPECTATOR PASS (FREE QR)'
+                      : '🎟 GET SPECTATOR PASS (PKR $passPricePkr)',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11.5,
+                    color: AppTheme.goldPrimary,
+                  ),
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           TextField(
             controller: _entranceVerifyCtrl,
-            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12.5),
             decoration: InputDecoration(
-              labelText: 'Verify Athlete / Spectator by QR Code or Name',
-              hintText: 'Scan/paste QR code or type name (e.g. Malik Sherbaz)...',
-              prefixIcon: const Icon(Icons.qr_code_scanner_rounded, color: AppTheme.cyan),
+              isDense: true,
+              labelText: 'Quick Gate Check (QR or Puller Name)',
+              prefixIcon: const Icon(Icons.qr_code_scanner_rounded,
+                  color: AppTheme.cyan, size: 18),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.verified_rounded, color: AppTheme.emerald),
+                icon: const Icon(Icons.verified_rounded,
+                    color: AppTheme.emerald, size: 18),
                 onPressed: () async {
                   final hive = ref.read(hiveStorageProvider);
                   OfflineSyncManager? syncManager;
                   try {
                     syncManager = ref.read(offlineSyncManagerProvider);
                   } catch (_) {}
-                  final res = await TournamentOfflineStore.verifyEntranceByQrOrNameOfflineSafe(
+                  final res = await TournamentOfflineStore
+                      .verifyEntranceByQrOrNameOfflineSafe(
                     hive: hive,
                     syncManager: syncManager,
                     tournamentId: widget.tournamentId,
@@ -1808,11 +1941,13 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
     final filtered = matchups.where((m) {
       if (_selectedMatchupCategoryFilter != 'ALL' &&
-          (m['categoryLabel'] ?? '').toString() != _selectedMatchupCategoryFilter) {
+          (m['categoryLabel'] ?? '').toString() !=
+              _selectedMatchupCategoryFilter) {
         return false;
       }
       if (_selectedMatchupRoundFilter > 0 &&
-          ((m['roundNumber'] as num?)?.toInt() ?? 1) != _selectedMatchupRoundFilter) {
+          ((m['roundNumber'] as num?)?.toInt() ?? 1) !=
+              _selectedMatchupRoundFilter) {
         return false;
       }
       return true;
@@ -1820,37 +1955,48 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
 
     final completedFinals = matchups.where((m) {
       final s = (m['status'] ?? '').toString().toUpperCase();
-      return (s == 'DONE' || s == 'COMPLETED') && (m['winnerName'] ?? '').toString().isNotEmpty;
+      return (s == 'DONE' || s == 'COMPLETED') &&
+          (m['winnerName'] ?? '').toString().isNotEmpty;
     }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Final Podium Winners Summary Card (Read-Only for Athletes)
-        ElevatedActionCard(
-          padding: const EdgeInsets.all(16),
-          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.55),
+        // 1. Prestigious Live Podium Standings Card (Read-Only Broadcast View)
+        Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF282010), Color(0xFF100E09)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.goldPrimary.withValues(alpha: 0.7),
+              width: 1.3,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Row(
                 children: [
-                  Icon(Icons.emoji_events_rounded, color: AppTheme.goldPrimary, size: 20),
+                  Icon(Icons.emoji_events_rounded,
+                      color: AppTheme.goldPrimary, size: 20),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'FINAL PODIUM & LIVE WINNERS STANDINGS',
+                      'LIVE PODIUM & CHAMPIONSHIP WINNERS',
                       style: TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontWeight: FontWeight.w900,
                         fontSize: 12.5,
                         color: AppTheme.goldPrimary,
-                        letterSpacing: 0.6,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                   StatusChip(
-                    label: 'READ-ONLY LIVE VIEW',
+                    label: 'BROADCAST VIEW',
                     color: AppTheme.emerald,
                   ),
                 ],
@@ -1858,24 +2004,47 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               const SizedBox(height: 10),
               if (completedFinals.isEmpty)
                 const Text(
-                  'Podium standings (1st Gold, 2nd Silver, 3rd Bronze) update automatically as category rounds and finals are completed.',
+                  '1st Gold, 2nd Silver & 3rd Bronze podium winners appear automatically as division finals complete.',
                   style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 )
               else
-                for (final done in completedFinals.take(3))
+                for (int i = 0; i < completedFinals.take(3).length; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Row(
                       children: [
-                        const Icon(Icons.workspace_premium_rounded,
-                            color: AppTheme.goldPrimary, size: 16),
-                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppTheme.goldPrimary),
+                          ),
+                          child: Text(
+                            i == 0
+                                ? '1ST GOLD'
+                                : i == 1
+                                    ? '2ND SILVER'
+                                    : '3RD BRONZE',
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${done['categoryLabel'] ?? 'Category'} • Winner: ${done['winnerName']} (vs ${done['winnerId'] == done['player1Id'] ? done['player2Name'] : done['player1Name']})',
+                            '${completedFinals[i]['categoryLabel'] ?? 'Division'} • ${completedFinals[i]['winnerName']}',
                             style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
                               color: AppTheme.textPrimary,
                             ),
                           ),
@@ -1886,9 +2055,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
 
-        // Category & Round Filter Chips
+        // 2. Category & Round Filter Chips
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -1901,9 +2070,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     selectedColor: AppTheme.goldPrimary.withValues(alpha: 0.22),
                     label: Text(
                       cat,
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w800),
                     ),
-                    onSelected: (_) => setState(() => _selectedMatchupCategoryFilter = cat),
+                    onSelected: (_) =>
+                        setState(() => _selectedMatchupCategoryFilter = cat),
                   ),
                 ),
             ],
@@ -1922,9 +2093,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     selectedColor: AppTheme.emerald.withValues(alpha: 0.22),
                     label: Text(
                       r == 0 ? 'All Rounds' : 'Round $r',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w800),
                     ),
-                    onSelected: (_) => setState(() => _selectedMatchupRoundFilter = r),
+                    onSelected: (_) =>
+                        setState(() => _selectedMatchupRoundFilter = r),
                   ),
                 ),
             ],
@@ -1932,135 +2105,199 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         ),
         const SizedBox(height: 12),
 
-        // Read-Only Matchup Cards with Table Badges, Rounds, Loss Badges, and Live Results
+        // 3. Read-Only Broadcast Bout Plates (Table Assignments, 0L / 1L Badges, Red vs Gold Corner)
         for (final m in filtered)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: ElevatedActionCard(
-              padding: const EdgeInsets.all(14),
-              borderColor: ((m['status'] ?? '').toString().toUpperCase() == 'DONE')
-                  ? AppTheme.emerald.withValues(alpha: 0.5)
-                  : AppTheme.goldPrimary.withValues(alpha: 0.35),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      StatusChip(
-                        label: 'TABLE ${m['tableNumber'] ?? 1}',
-                        color: AppTheme.goldPrimary,
-                        icon: Icons.table_restaurant_rounded,
-                      ),
-                      const SizedBox(width: 6),
-                      StatusChip(
-                        label: 'ROUND ${m['roundNumber'] ?? 1}',
-                        color: AppTheme.cyan,
-                      ),
-                      const Spacer(),
-                      StatusChip(
-                        label: (m['status'] ?? 'PENDING').toString().toUpperCase(),
-                        color: ((m['status'] ?? '').toString().toUpperCase() == 'DONE')
-                            ? AppTheme.emerald
-                            : AppTheme.warning,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    (m['categoryLabel'] ?? 'Open Division').toString(),
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.goldPrimary,
+            child: Builder(
+              builder: (_) {
+                final status =
+                    (m['status'] ?? 'PENDING').toString().toUpperCase();
+                final isDone = status == 'DONE' || status == 'COMPLETED';
+                final p1Losses = (m['player1Losses'] as num?)?.toInt() ?? 0;
+                final p2Losses = (m['player2Losses'] as num?)?.toInt() ?? 0;
+
+                return Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF171C28), Color(0xFF0D1017)],
+                    ),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: isDone
+                          ? AppTheme.emerald.withValues(alpha: 0.55)
+                          : AppTheme.goldPrimary.withValues(alpha: 0.35),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              (m['player1Name'] ?? 'Athlete 1').toString(),
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              'Elo ${m['player1Elo'] ?? 1800} • ${m['player1Losses'] ?? 0} Loss(es)',
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          'VS',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                            color: AppTheme.goldPrimary,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              (m['player2Name'] ?? 'Athlete 2').toString(),
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              'Elo ${m['player2Elo'] ?? 1800} • ${m['player2Losses'] ?? 0} Loss(es)',
-                              style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if ((m['winnerName'] ?? '').toString().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppTheme.emerald.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
+                      Row(
                         children: [
-                          const Icon(Icons.emoji_events_rounded, size: 15, color: AppTheme.emerald),
+                          StatusChip(
+                            label: 'TABLE ${m['tableNumber'] ?? 1}',
+                            color: AppTheme.goldPrimary,
+                            icon: Icons.table_restaurant_rounded,
+                          ),
                           const SizedBox(width: 6),
+                          StatusChip(
+                            label: 'ROUND ${m['roundNumber'] ?? 1}',
+                            color: AppTheme.cyan,
+                          ),
+                          const Spacer(),
+                          StatusChip(
+                            label: status,
+                            color: isDone ? AppTheme.emerald : AppTheme.warning,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        (m['categoryLabel'] ?? 'Open Division').toString(),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
                           Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF11151F),
+                                borderRadius: BorderRadius.circular(10),
+                                border: const Border(
+                                  left: BorderSide(
+                                    color: Color(0xFFE23B3B),
+                                    width: 3.0,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    (m['player1Name'] ?? 'Athlete 1').toString(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13.5,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'ELO ${m['player1Elo'] ?? 1800} • ${p1Losses}L',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: p1Losses == 0
+                                          ? AppTheme.emerald
+                                          : AppTheme.warning,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
                             child: Text(
-                              'Winner: ${m['winnerName']} (${m['scoreLine'] ?? 'Official Result'})',
-                              style: const TextStyle(
+                              'VS',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w900,
                                 fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.emerald,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF11151F),
+                                borderRadius: BorderRadius.circular(10),
+                                border: const Border(
+                                  right: BorderSide(
+                                    color: AppTheme.goldPrimary,
+                                    width: 3.0,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    (m['player2Name'] ?? 'Athlete 2').toString(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13.5,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'ELO ${m['player2Elo'] ?? 1800} • ${p2Losses}L',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: p2Losses == 0
+                                          ? AppTheme.emerald
+                                          : AppTheme.warning,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ],
-              ),
+                      if ((m['winnerName'] ?? '').toString().isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.emerald.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.emoji_events_rounded,
+                                  size: 15, color: AppTheme.emerald),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Winner: ${m['winnerName']} (${m['scoreLine'] ?? 'Official Result'})',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.emerald,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
             ),
           ),
       ],

@@ -715,20 +715,20 @@ class _TournamentOperatorDashboardScreenState
   String _formatSummaryLabel(Map<String, dynamic> record) {
     final cat = (record['formatCategory'] ?? '').toString();
     final sub = (record['eliminationSubFormat'] ?? '').toString();
-    if (cat == 'SUPERFIGHTS') return 'Superfights (Single Bouts)';
+    if (cat == 'SUPERFIGHTS') return 'Superfights';
     if (cat == 'ELIMINATION') {
       switch (sub) {
         case 'SINGLE_ELIMINATION':
-          return 'Single / One-Loss Elimination';
+          return 'Single Elim';
         case 'DOUBLE_ELIMINATION':
-          return 'Double / Two-Loss Elimination';
+          return 'Double Elim';
         case 'THREE_LOSS_ELIMINATION':
-          return 'Three-Loss Elimination';
+          return 'Triple Elim';
         case 'LAST_ONE_STANDING':
-          return 'Last-One-Standing';
+          return 'Last Standing';
       }
     }
-    return 'Format Not Selected';
+    return 'Double Elim';
   }
 
   /// Auto-saves any change to a tournament draft locally (and queues background sync without blocking).
@@ -1151,21 +1151,21 @@ class _TournamentOperatorDashboardScreenState
     String operatorId,
     Map<String, dynamic> profile,
   ) {
-    String subtitle = 'ARENA OPERATIONS COMMAND';
+    String subtitle = 'ARENA OPERATIONS';
     if (_activeView == _OperatorSubView.tournamentHub) {
-      subtitle = 'TOURNAMENT HUB • 4-STAGE CONTROL';
+      subtitle = 'TOURNAMENT HUB • 4-STAGE DECK';
     } else if (_activeView == _OperatorSubView.card1BasicDetails) {
-      subtitle = 'CARD 1 • BASIC & MANDATORY DETAILS';
+      subtitle = 'STAGE 01 • EVENT & DIVISION SETUP';
     } else if (_activeView == _OperatorSubView.awardsPrizesSubScreen) {
-      subtitle = 'CARD 1 SUB-SCREEN • AWARDS & PRIZES';
+      subtitle = 'STAGE 01 • AWARDS & PRIZE PURSE';
     } else if (_activeView == _OperatorSubView.card2AppliedAthletes) {
-      subtitle = 'CARD 2 • APPLIED / REGISTERED ATHLETES';
+      subtitle = 'STAGE 02 • REGISTERED ATHLETES';
     } else if (_activeView == _OperatorSubView.card3MatchupsBrackets) {
-      subtitle = 'CARD 3 • MATCHUPS & BRACKETS ENGINE';
+      subtitle = 'STAGE 03 • MATCHUPS & BRACKETS';
     } else if (_activeView == _OperatorSubView.card4WeighInVerification) {
-      subtitle = 'CARD 4 • WEIGH-IN VERIFICATION DESK';
+      subtitle = 'STAGE 04 • WEIGH-IN VERIFICATION';
     } else if (_activeView == _OperatorSubView.spectatorEntranceQrGate) {
-      subtitle = 'SPECTATOR & VENUE ENTRANCE QR GATE';
+      subtitle = 'VENUE GATE • SPECTATOR & QR ACCESS';
     }
 
     return AppBar(
@@ -1214,12 +1214,13 @@ class _TournamentOperatorDashboardScreenState
               Flexible(
                 child: Text(
                   subtitle,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10,
-                    letterSpacing: 0.9,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 10.5,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.w800,
                     color: AppTheme.goldPrimary,
                   ),
                 ),
@@ -1229,26 +1230,18 @@ class _TournamentOperatorDashboardScreenState
           const SizedBox(height: 2),
           Text(
             operatorName,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontFamily: AppTheme.fontDisplay,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
+              fontSize: 17.5,
+              fontWeight: FontWeight.w900,
               color: AppTheme.textPrimary,
             ),
           ),
         ],
       ),
       actions: [
-        if (_activeView == _OperatorSubView.mainList)
-          Center(
-            child: CrystalHeaderActionPill(
-              label: 'CREATE TOURNAMENT',
-              icon: Icons.add,
-              onTap: () => _startNewTournamentDraft(operatorId, profile),
-            ),
-          ),
-        const SizedBox(width: 4),
         CrystalIconPillButton(
           icon: Icons.sync_rounded,
           iconColor: AppTheme.emerald,
@@ -1510,7 +1503,7 @@ class _TournamentOperatorDashboardScreenState
   }
 
   // ===========================================================================
-  // 1. OPERATOR MAIN SCREEN (Create Button + Top List & Bottom List)
+  // 1. OPERATOR MAIN SCREEN (Forged Crystal Event Banners & Zero Clutter)
   // ===========================================================================
   Widget _buildOperatorMainScreen(
     BuildContext context,
@@ -1533,73 +1526,33 @@ class _TournamentOperatorDashboardScreenState
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.space16,
-        12,
+        10,
         AppTheme.space16,
         36,
       ),
       children: [
-        // Offline-First Sync Engine Status Bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.45)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.offline_bolt_outlined,
-                  size: 16, color: AppTheme.emerald),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'OFFLINE-FIRST OUTBOX ENGINE ACTIVE • $_autoSaveBannerText',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontMono,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.emerald,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        // Sleek 30px Single-Line Emerald Crystal Status Strip
+        const _EmeraldCrystalStatusStrip(
+          leftText: '● Offline-Ready • Auto-Saved',
+          rightText: 'SYNCED',
         ),
         const SizedBox(height: 14),
 
-        // Prominent "Create Tournament" CTA Button
-        SizedBox(
-          width: double.infinity,
+        // Prominent Forged 24k Gold & Crimson-Obsidian Crystal Button
+        _ForgedGoldCrystalButton(
+          key: const ValueKey('operator_create_tournament_button'),
+          label: 'CREATE TOURNAMENT',
+          icon: Icons.add_circle_outline_rounded,
           height: 54,
-          child: ElevatedButton.icon(
-            key: const ValueKey('operator_create_tournament_button'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.goldPrimary,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              ),
-            ),
-            onPressed: () => _startNewTournamentDraft(operatorId, profile),
-            icon: const Icon(Icons.add_circle_outline_rounded, size: 22),
-            label: const Text(
-              'CREATE TOURNAMENT',
-              style: TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
+          onTap: () => _startNewTournamentDraft(operatorId, profile),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
 
         if (tournaments.isEmpty) ...[
           AppEmptyState(
             icon: Icons.emoji_events_outlined,
             title: 'No Tournaments Created Yet',
-            subtitle:
-                'Tap "Create Tournament" above to start a tournament draft (works 100% offline with automatic draft protection).',
+            subtitle: 'Tap "Create Tournament" above to initialize an event deck.',
             bannerAsset: ArmSphereAssets.cardStandbyTable,
             bannerAlignment: Alignment.centerRight,
             ctaLabel: 'Create Tournament',
@@ -1608,17 +1561,17 @@ class _TournamentOperatorDashboardScreenState
           const SizedBox(height: 20),
         ],
 
-        // TOP LIST: UPCOMING / ACTIVE & UNRELEASED DRAFTS
+        // TOP LIST: UPCOMING & ACTIVE
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'UPCOMING / ACTIVE TOURNAMENTS & DRAFTS',
+              'UPCOMING & ACTIVE',
               style: TextStyle(
                 fontFamily: AppTheme.fontDisplay,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
                 color: AppTheme.goldPrimary,
               ),
             ),
@@ -1628,39 +1581,34 @@ class _TournamentOperatorDashboardScreenState
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Active registrations, ongoing live events, and unreleased operator drafts (hidden from athletes until released).',
-          style: TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
-        ),
         const SizedBox(height: 10),
         if (upcomingAndDrafts.isEmpty)
           ElevatedActionCard(
             padding: const EdgeInsets.all(AppTheme.space16),
             child: const Text(
-              'No upcoming or active tournaments right now. Tap "Create Tournament" to start a new event or draft.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+              'No active tournaments. Tap "Create Tournament" above.',
+              style: TextStyle(fontSize: 12.5, color: AppTheme.textSecondary),
             ),
           )
         else
           for (final item in upcomingAndDrafts) ...[
             _buildTournamentListCard(context, item, isCompleted: false),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
           ],
 
-        const SizedBox(height: 22),
+        const SizedBox(height: 20),
 
-        // BOTTOM LIST: PREVIOUS COMPLETED TOURNAMENTS
+        // BOTTOM LIST: COMPLETED ARCHIVE
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'PREVIOUS COMPLETED TOURNAMENTS',
+              'COMPLETED ARCHIVE',
               style: TextStyle(
                 fontFamily: AppTheme.fontDisplay,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
                 color: AppTheme.textSecondary,
               ),
             ),
@@ -1670,24 +1618,19 @@ class _TournamentOperatorDashboardScreenState
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Archived completed tournaments, official results, and podium records.',
-          style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted),
-        ),
         const SizedBox(height: 10),
         if (completedList.isEmpty)
           ElevatedActionCard(
             padding: const EdgeInsets.all(AppTheme.space16),
             child: const Text(
-              'No completed tournaments in history yet.',
-              style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              'No completed tournaments in archive.',
+              style: TextStyle(fontSize: 12.5, color: AppTheme.textMuted),
             ),
           )
         else
           for (final item in completedList) ...[
             _buildTournamentListCard(context, item, isCompleted: true),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
           ],
       ],
     );
@@ -1707,13 +1650,34 @@ class _TournamentOperatorDashboardScreenState
         ? t['name'].toString()
         : 'Untitled Tournament Draft';
 
+    final appliedCount = (t['appliedAthletes'] is List)
+        ? (t['appliedAthletes'] as List).length
+        : _seedDefaultAppliedAthletes(t).length;
+    final cityText = (t['city']?.toString().trim().isNotEmpty == true)
+        ? t['city'].toString()
+        : 'Lahore';
+    final provinceText = (t['province']?.toString().trim().isNotEmpty == true)
+        ? t['province'].toString()
+        : 'Punjab';
+    final dateText = _formatDateReadable(t['startDate']).split(' • ').first;
+
+    final Color accentColor = isCompleted
+        ? AppTheme.textSecondary
+        : (isReleased ? AppTheme.emerald : AppTheme.goldPrimary);
+    final String badgeLabel = isCompleted
+        ? 'COMPLETED'
+        : (isReleased ? 'RELEASED • LIVE' : 'DRAFT • LOCKED');
+    final String stagesText = (isReleased && isCard1Complete)
+        ? '4/4 Stages Unlocked'
+        : '1/4 Stages Unlocked • $doneCount/$totalCount Ready';
+
     return ElevatedActionCard(
       padding: const EdgeInsets.all(AppTheme.space16),
       borderColor: isCompleted
           ? AppTheme.borderSubtle
           : (isReleased
-              ? AppTheme.emerald.withValues(alpha: 0.55)
-              : AppTheme.goldPrimary.withValues(alpha: 0.55)),
+              ? AppTheme.emerald.withValues(alpha: 0.65)
+              : AppTheme.goldPrimary.withValues(alpha: 0.65)),
       onTap: () {
         HapticFeedback.selectionClick();
         setState(() {
@@ -1724,74 +1688,114 @@ class _TournamentOperatorDashboardScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Row: Bold 17sp white tournament title + compact status badge
           Row(
             children: [
               Expanded(
                 child: Text(
                   displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
                     color: AppTheme.textPrimary,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              StatusChip(
-                label: isCompleted
-                    ? 'COMPLETED'
-                    : (isReleased
-                        ? 'RELEASED • OPEN'
-                        : (isCard1Complete
-                            ? 'DRAFT • READY TO RELEASE'
-                            : 'UNRELEASED DRAFT ($doneCount/$totalCount)')),
-                type: isCompleted
-                    ? StatusType.neutral
-                    : (isReleased ? StatusType.success : StatusType.warning),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined,
-                  size: 13, color: AppTheme.textSecondary),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  '${(t['venue']?.toString().trim().isNotEmpty == true) ? t['venue'] : 'Venue Pending'} • ${t['city'] ?? 'Lahore'}, ${t['province'] ?? 'Punjab'}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.65),
+                    width: 1.1,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                ),
+                child: Text(
+                  badgeLabel,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontMono,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: accentColor,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const SizedBox(height: 8),
+
+          // Middle Row (8px below): Compact icon-pill metadata row
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              Text(
-                _formatDateReadable(t['startDate']),
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontMono,
-                  fontSize: 11,
-                  color: AppTheme.textMuted,
-                ),
+              _buildTelemetryMiniPill(
+                icon: Icons.location_on_outlined,
+                label: '$cityText, $provinceText',
+                color: AppTheme.textSecondary,
               ),
-              Text(
-                isReleased ? 'Open Hub (4 Cards Unlocked) →' : 'Open Hub (Cards 2-4 Locked) →',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: isReleased ? AppTheme.emerald : AppTheme.goldPrimary,
-                ),
+              _buildTelemetryMiniPill(
+                icon: Icons.calendar_today_outlined,
+                label: dateText,
+                color: AppTheme.textSecondary,
+              ),
+              _buildTelemetryMiniPill(
+                icon: Icons.groups_2_outlined,
+                label: '$appliedCount Athletes',
+                color: AppTheme.cyan,
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+
+          // Bottom Action Strip (10px below): Full-width crystal action bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  accentColor.withValues(alpha: 0.14),
+                  const Color(0xCC070A11),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.42),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    stagesText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontMono,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Manage Hub →',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: accentColor,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1799,7 +1803,7 @@ class _TournamentOperatorDashboardScreenState
   }
 
   // ===========================================================================
-  // 2. TOURNAMENT HUB SCREEN (4 Bold Dashboard Card Buttons + Strict Locking)
+  // 2. TOURNAMENT HUB SCREEN (Visual Telemetry Bento Cards)
   // ===========================================================================
   Widget _buildTournamentHubScreen(
     BuildContext context,
@@ -1813,22 +1817,33 @@ class _TournamentOperatorDashboardScreenState
     final doneCount = validation['doneCount'] as int;
     final totalCount = validation['totalCount'] as int;
     final divisionsCount = _expandSeparatedDivisions(tournament).length;
-    final formatLabel = _formatSummaryLabel(tournament);
+    final tableCount = ((tournament['tableCount'] as num?)?.toInt() ?? 1).clamp(1, 12);
+
+    final shortFormatLabel = _formatSummaryLabel(tournament);
+
     final feePkr = tournament['entryFeePkr'];
-    final feeText = (tournament['entryFeeConfigured'] == true && feePkr != null)
-        ? ((feePkr as num) == 0 ? 'Free (0 PKR)' : 'PKR $feePkr')
-        : 'Fee Pending';
+    final shortFeeLabel =
+        (tournament['entryFeeConfigured'] == true && feePkr != null)
+            ? '$feePkr PKR'
+            : '0 PKR';
 
     final displayName = (tournament['name']?.toString().trim().isNotEmpty == true)
         ? tournament['name'].toString()
         : 'Untitled Tournament Draft';
+    final venueName = (tournament['venue']?.toString().trim().isNotEmpty == true)
+        ? tournament['venue'].toString()
+        : 'Arena Venue';
+    final cityName = (tournament['city']?.toString().trim().isNotEmpty == true)
+        ? tournament['city'].toString()
+        : 'Lahore';
+    final dateShort = _formatDateReadable(tournament['startDate']);
 
     final appliedAthletes = (tournament['appliedAthletes'] is List)
         ? (tournament['appliedAthletes'] as List)
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList()
-        : <Map<String, dynamic>>[];
+        : _seedDefaultAppliedAthletes(tournament);
     final verifiedWeighInCount = appliedAthletes
         .where((a) => a['weighInStatus'] == 'VERIFIED')
         .length;
@@ -1836,125 +1851,158 @@ class _TournamentOperatorDashboardScreenState
         .where((a) => a['weighInStatus'] == 'UNMATCH')
         .length;
 
+    int topElo = 1000;
+    for (final a in appliedAthletes) {
+      final elo = (a['elo'] as num?)?.toInt() ?? 1000;
+      if (elo > topElo) topElo = elo;
+    }
+
+    final gateMode = (tournament['spectatorGateConfig']?['spectatorAccessMode'] ?? 'FREE')
+        .toString()
+        .toUpperCase();
+    final maxGuests =
+        (tournament['spectatorGateConfig']?['allowedGuestsPerAthlete'] ?? 2)
+            .toString();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.space16,
-        12,
+        10,
         AppTheme.space16,
         36,
       ),
       children: [
-        // Tournament Hub Header Card
+        // Compact Single-Line Offline Status Strip
+        _EmeraldCrystalStatusStrip(
+          leftText: '● Offline-Ready • Auto-Saved',
+          rightText: isReleased ? 'LIVE DECK' : '$doneCount/$totalCount READY',
+        ),
+        const SizedBox(height: 12),
+
+        // Compact Tournament Summary Header Card
         ElevatedActionCard(
           padding: const EdgeInsets.all(AppTheme.space16),
           borderColor: isReleased
-              ? AppTheme.emerald.withValues(alpha: 0.6)
-              : AppTheme.goldPrimary.withValues(alpha: 0.6),
+              ? AppTheme.emerald.withValues(alpha: 0.65)
+              : AppTheme.goldPrimary.withValues(alpha: 0.65),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Text(
                       displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.textPrimary,
                       ),
                     ),
                   ),
-                  StatusChip(
-                    label: isReleased
-                        ? 'RELEASED / SCHEDULED ✓'
-                        : 'UNRELEASED DRAFT',
-                    type: isReleased ? StatusType.success : StatusType.warning,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (isReleased ? AppTheme.emerald : AppTheme.goldPrimary)
+                          .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: (isReleased ? AppTheme.emerald : AppTheme.goldPrimary)
+                            .withValues(alpha: 0.7),
+                      ),
+                    ),
+                    child: Text(
+                      isReleased ? 'RELEASED ✓' : 'DRAFT',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontMono,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: isReleased ? AppTheme.emerald : AppTheme.goldPrimary,
+                      ),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
-                isReleased
-                    ? 'Published to athletes. All 4 Hub Cards are unlocked. You can still make permitted edits in Card 1.'
-                    : 'Draft saved locally (hidden from athletes). Complete all mandatory details in Card 1 and tap "Release / Schedule" to unlock Cards 2, 3 & 4.',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (!isReleased)
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton.icon(
-                    key: const ValueKey('hub_release_schedule_button'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isCard1Complete
-                          ? AppTheme.goldPrimary
-                          : const Color(0x33FFFFFF),
-                      foregroundColor:
-                          isCard1Complete ? Colors.black : AppTheme.textSecondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                      ),
-                    ),
-                    onPressed: () =>
-                        _handleReleaseTournament(tournament, operatorId),
-                    icon: Icon(
-                      isCard1Complete
-                          ? Icons.rocket_launch_rounded
-                          : Icons.lock_clock_outlined,
-                      size: 20,
-                    ),
-                    label: Text(
-                      isCard1Complete
-                          ? 'RELEASE / SCHEDULE TOURNAMENT (UNLOCK CARDS 2–4)'
-                          : 'COMPLETE CARD 1 ($doneCount/$totalCount) TO RELEASE / SCHEDULE',
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 14,
+                    color: AppTheme.goldPrimary,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      '$venueName, $cityName  •  $dateShort',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w900,
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ),
+                ],
+              ),
+              if (!isReleased) ...[
+                const SizedBox(height: 12),
+                _ForgedGoldCrystalButton(
+                  key: const ValueKey('hub_release_schedule_button'),
+                  label: isCard1Complete
+                      ? 'RELEASE & PUBLISH TOURNAMENT'
+                      : 'COMPLETE STAGE 01 ($doneCount/$totalCount) TO RELEASE',
+                  icon: isCard1Complete
+                      ? Icons.rocket_launch_rounded
+                      : Icons.lock_clock_outlined,
+                  height: 52,
+                  isDimmed: !isCard1Complete,
+                  onTap: () => _handleReleaseTournament(tournament, operatorId),
                 ),
+              ],
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         const Text(
-          'TOURNAMENT HUB • 4 OPERATIONAL STAGES',
+          '4 OPERATIONAL STAGES',
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.9,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
             color: AppTheme.goldPrimary,
           ),
         ),
         const SizedBox(height: 10),
 
-        // CARD 1: BASIC & MANDATORY DETAILS (Always Unlocked)
+        // STAGE 01: EVENT & DIVISION SETUP
         _buildHubDashboardCardButton(
           key: const ValueKey('hub_card_1_basic_details'),
-          cardNumber: 1,
-          title: 'Basic & Mandatory Details',
-          subtitle:
-              'Schedule, Organization, Venue, R/L Weight Categories ($divisionsCount divisions), Format ($formatLabel), Tables (${tournament['tableCount']}), Referees, Fee ($feeText) & Awards ${(tournament['awardsConfig']?['isConfigured'] == true) ? "✓" : ""}',
-          badgeText: isReleased
-              ? 'RELEASED ✓ • EDITABLE'
-              : (isCard1Complete
-                  ? '100% FILLED • READY TO RELEASE'
-                  : '$doneCount/$totalCount MANDATORY COMPLETED'),
-          badgeColor: isReleased
+          stageTag: 'STAGE 01',
+          title: 'Event & Division Setup',
+          statusPillText: isCard1Complete ? 'READY ✓' : '$doneCount/$totalCount READY',
+          accentColor: isReleased
               ? AppTheme.emerald
               : (isCard1Complete ? AppTheme.goldPrimary : AppTheme.warning),
           icon: Icons.tune_rounded,
           isLocked: false,
+          telemetryPills: [
+            '$divisionsCount Divisions',
+            shortFormatLabel,
+            '$tableCount ${tableCount == 1 ? 'Table' : 'Tables'}',
+            shortFeeLabel,
+          ],
           onTap: () {
             HapticFeedback.selectionClick();
             setState(() => _activeView = _OperatorSubView.card1BasicDetails);
@@ -1962,21 +2010,23 @@ class _TournamentOperatorDashboardScreenState
         ),
         const SizedBox(height: 12),
 
-        // CARD 2: APPLIED / REGISTERED ATHLETES (Locked until Card 1 complete + Released)
+        // STAGE 02: REGISTERED ATHLETES
         _buildHubDashboardCardButton(
           key: const ValueKey('hub_card_2_applied_athletes'),
-          cardNumber: 2,
-          title: 'Applied / Registered Athletes',
-          subtitle: areCards2To4Unlocked
-              ? '${appliedAthletes.length} Applied Athletes • Horizontal Category Filter Bar ($divisionsCount R/L Categories) & Live Elo Ranking Carousel.'
-              : 'LOCKED — Complete all mandatory fields in Card 1 and tap "Release / Schedule" to unlock.',
-          badgeText: areCards2To4Unlocked
-              ? 'UNLOCKED • ${appliedAthletes.length} APPLIED'
-              : 'LOCKED 🔒',
-          badgeColor:
+          stageTag: 'STAGE 02',
+          title: 'Registered Athletes',
+          statusPillText: areCards2To4Unlocked
+              ? '${appliedAthletes.length} APPLIED'
+              : 'LOCKED',
+          accentColor:
               areCards2To4Unlocked ? AppTheme.cyan : AppTheme.textMuted,
           icon: Icons.groups_2_outlined,
           isLocked: !areCards2To4Unlocked,
+          telemetryPills: [
+            '${appliedAthletes.length} Athletes',
+            '$divisionsCount Categories',
+            'Top ELO $topElo',
+          ],
           onTap: () {
             if (!areCards2To4Unlocked) {
               _showLockedCardToast();
@@ -1988,20 +2038,21 @@ class _TournamentOperatorDashboardScreenState
         ),
         const SizedBox(height: 12),
 
-        // CARD 3: MATCHUPS & BRACKETS (Locked until Card 1 complete + Released)
+        // STAGE 03: MATCHUPS & BRACKETS
         _buildHubDashboardCardButton(
           key: const ValueKey('hub_card_3_matchups_brackets'),
-          cardNumber: 3,
+          stageTag: 'STAGE 03',
           title: 'Matchups & Brackets',
-          subtitle: areCards2To4Unlocked
-              ? 'Format: $formatLabel • ${tournament['tableCount']} Table(s) • Smart Random (Elo/PR/Lift), BYE, Free-Table Queue, Absent Skip & Auto 1st/2nd/3rd Podium.'
-              : 'LOCKED — Format ($formatLabel) will configure bracket rules once released.',
-          badgeText:
-              areCards2To4Unlocked ? 'UNLOCKED • $formatLabel' : 'LOCKED 🔒',
-          badgeColor:
+          statusPillText: areCards2To4Unlocked ? 'ACTIVE' : 'LOCKED',
+          accentColor:
               areCards2To4Unlocked ? AppTheme.goldPrimary : AppTheme.textMuted,
           icon: Icons.account_tree_outlined,
           isLocked: !areCards2To4Unlocked,
+          telemetryPills: [
+            shortFormatLabel,
+            '$tableCount ${tableCount == 1 ? 'Table' : 'Tables'}',
+            'Auto-BYE',
+          ],
           onTap: () {
             if (!areCards2To4Unlocked) {
               _showLockedCardToast();
@@ -2013,21 +2064,21 @@ class _TournamentOperatorDashboardScreenState
         ),
         const SizedBox(height: 12),
 
-        // CARD 4: WEIGH-IN VERIFICATION (Locked until Card 1 complete + Released)
+        // STAGE 04: WEIGH-IN VERIFICATION
         _buildHubDashboardCardButton(
           key: const ValueKey('hub_card_4_weigh_in'),
-          cardNumber: 4,
+          stageTag: 'STAGE 04',
           title: 'Weigh-In Verification',
-          subtitle: areCards2To4Unlocked
-              ? 'Official scale verification across $divisionsCount separated Left & Right Arm divisions ($verifiedWeighInCount Verified, $unmatchWeighInCount Unmatch).'
-              : 'LOCKED — Complete Card 1 and click "Release / Schedule" to unlock Weigh-In Desk.',
-          badgeText: areCards2To4Unlocked
-              ? 'UNLOCKED • SCALE READY'
-              : 'LOCKED 🔒',
-          badgeColor:
+          statusPillText: areCards2To4Unlocked ? 'SCALE READY' : 'LOCKED',
+          accentColor:
               areCards2To4Unlocked ? AppTheme.emerald : AppTheme.textMuted,
           icon: Icons.scale_outlined,
           isLocked: !areCards2To4Unlocked,
+          telemetryPills: [
+            '$verifiedWeighInCount Verified',
+            '$unmatchWeighInCount Unmatched',
+            'QR Ready',
+          ],
           onTap: () {
             if (!areCards2To4Unlocked) {
               _showLockedCardToast();
@@ -2043,118 +2094,36 @@ class _TournamentOperatorDashboardScreenState
         const SizedBox(height: 18),
 
         const Text(
-          'OPTIONAL VENUE ACCESS & SPECTATOR GATE',
+          'VENUE ACCESS & SPECTATOR GATE',
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontSize: 11.5,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.9,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
             color: AppTheme.cyan,
           ),
         ),
         const SizedBox(height: 10),
 
-        // OPTIONAL FEATURE AREA: SPECTATOR ACCESS & VENUE ENTRANCE QR GATE
-        ElevatedActionCard(
+        // VENUE GATE: SPECTATOR & GATE QR
+        _buildHubDashboardCardButton(
           key: const ValueKey('hub_spectator_entrance_qr_gate_card'),
-          padding: const EdgeInsets.all(AppTheme.space16),
-          borderColor: AppTheme.cyan.withValues(alpha: 0.65),
+          stageTag: 'VENUE GATE',
+          title: 'Spectator & Gate QR',
+          statusPillText: '$gateMode • $maxGuests GUESTS',
+          accentColor: AppTheme.cyan,
+          icon: Icons.qr_code_scanner_rounded,
+          isLocked: false,
+          telemetryPills: [
+            gateMode == 'FREE' ? 'Free Entry' : 'Paid Pass',
+            'Max $maxGuests Guests',
+            'Gate Scanner',
+          ],
           onTap: () {
             HapticFeedback.selectionClick();
             setState(
                 () => _activeView = _OperatorSubView.spectatorEntranceQrGate);
           },
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.cyan.withValues(alpha: 0.8),
-                    width: 1.3,
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: AppTheme.cyan,
-                    size: 24,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'VENUE GATE & SPECTATOR PASSES',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontMono,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.cyan,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: AppTheme.cyan.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: Text(
-                            '${(tournament['spectatorGateConfig']?['spectatorAccessMode'] ?? 'FREE')} • MAX ${tournament['spectatorGateConfig']?['allowedGuestsPerAthlete'] ?? 2} GUESTS',
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontMono,
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.cyan,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Spectator Access & Venue Entrance QR Gate',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Configure Free/Paid Spectating (PKR), Athlete Friend/Guest allowance (0–4), and scan Athlete or Spectator QR passes at the venue entrance offline & online.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: AppTheme.cyan,
-              ),
-            ],
-          ),
         ),
       ],
     );
@@ -2175,118 +2144,402 @@ class _TournamentOperatorDashboardScreenState
 
   Widget _buildHubDashboardCardButton({
     required Key key,
-    required int cardNumber,
+    required String stageTag,
     required String title,
-    required String subtitle,
-    required String badgeText,
-    required Color badgeColor,
+    required String statusPillText,
+    required Color accentColor,
     required IconData icon,
     required bool isLocked,
+    required List<String> telemetryPills,
     required VoidCallback onTap,
   }) {
+    final effectiveColor = isLocked ? AppTheme.textMuted : accentColor;
     return Opacity(
-      opacity: isLocked ? 0.62 : 1.0,
+      opacity: isLocked ? 0.65 : 1.0,
       child: ElevatedActionCard(
         key: key,
         padding: const EdgeInsets.all(AppTheme.space16),
         borderColor: isLocked
             ? const Color(0x28FFFFFF)
-            : badgeColor.withValues(alpha: 0.65),
+            : accentColor.withValues(alpha: 0.65),
         onTap: onTap,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Left: 48x48 Forged Crystal Icon Box
             Container(
-              width: 46,
-              height: 46,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    effectiveColor.withValues(alpha: 0.22),
+                    const Color(0xE6070A11),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(13),
                 border: Border.all(
                   color: isLocked
                       ? const Color(0x33FFFFFF)
-                      : badgeColor.withValues(alpha: 0.8),
-                  width: 1.3,
+                      : effectiveColor.withValues(alpha: 0.85),
+                  width: 1.35,
                 ),
               ),
               child: Center(
                 child: Icon(
                   isLocked ? Icons.lock_outline_rounded : icon,
-                  color: isLocked ? AppTheme.textMuted : badgeColor,
+                  color: effectiveColor,
                   size: 24,
                 ),
               ),
             ),
             const SizedBox(width: 14),
+
+            // Center (Expanded): 3-Row Telemetry Layout
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Row 1: Stage tag + short status pill
                   Row(
                     children: [
                       Text(
-                        'CARD $cardNumber',
+                        stageTag,
                         style: TextStyle(
                           fontFamily: AppTheme.fontMono,
                           fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: isLocked ? AppTheme.textMuted : badgeColor,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                          color: effectiveColor,
                         ),
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: badgeColor.withValues(alpha: 0.5),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2.5,
                           ),
-                        ),
-                        child: Text(
-                          badgeText,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontMono,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                            color: badgeColor,
+                          decoration: BoxDecoration(
+                            color: effectiveColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: effectiveColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Text(
+                            statusPillText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontMono,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              color: effectiveColor,
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
+
+                  // Row 2: Bold 17sp white title
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                      height: 1.35,
-                    ),
+                  const SizedBox(height: 8),
+
+                  // Row 3: 3 to 4 crisp scannable mini-pills
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final pill in telemetryPills)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xCC0B101B),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: const Color(0x2EFFFFFF),
+                            ),
+                          ),
+                          child: Text(
+                            pill,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontMono,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Icon(
-              isLocked
-                  ? Icons.lock_rounded
-                  : Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: isLocked ? AppTheme.textMuted : badgeColor,
+
+            // Right (width: 28px): Dedicated column for chevron or lock icon
+            SizedBox(
+              width: 28,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Icon(
+                  isLocked
+                      ? Icons.lock_rounded
+                      : Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: effectiveColor,
+                ),
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTelemetryMiniPill({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xCC0B101B),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: const Color(0x28FFFFFF)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12.5, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: AppTheme.fontMono,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// REUSABLE FORGED 24K GOLD CRYSTAL BUTTON & EMERALD STATUS STRIP
+// =============================================================================
+class _EmeraldCrystalStatusStrip extends StatelessWidget {
+  final String leftText;
+  final String rightText;
+
+  const _EmeraldCrystalStatusStrip({
+    required this.leftText,
+    required this.rightText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0x2610B981),
+            Color(0xE6070A11),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.emerald.withValues(alpha: 0.55),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Flexible(
+            child: Text(
+              leftText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontMono,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.emerald,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            rightText,
+            maxLines: 1,
+            style: const TextStyle(
+              fontFamily: AppTheme.fontMono,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.goldPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForgedGoldCrystalButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final double height;
+  final bool isDimmed;
+
+  const _ForgedGoldCrystalButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.height = 54,
+    this.isDimmed = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: isDimmed ? 0.72 : 1.0,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: double.infinity,
+            height: height,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0x40D4AF37),
+                  Color(0x18D4AF37),
+                  Color(0xE6070A11),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFD4AF37),
+                width: 1.4,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.18),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // 2px L-shaped corner brackets
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: _buildCornerBracket(isTop: true, isLeft: true),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: _buildCornerBracket(isTop: true, isLeft: false),
+                ),
+                Positioned(
+                  bottom: 4,
+                  left: 4,
+                  child: _buildCornerBracket(isTop: false, isLeft: true),
+                ),
+                Positioned(
+                  bottom: 4,
+                  right: 4,
+                  child: _buildCornerBracket(isTop: false, isLeft: false),
+                ),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          icon,
+                          size: 20,
+                          color: const Color(0xFFD4AF37),
+                        ),
+                        const SizedBox(width: 9),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.7,
+                              color: Color(0xFFFFFFFF),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCornerBracket({required bool isTop, required bool isLeft}) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        border: Border(
+          top: isTop
+              ? const BorderSide(color: Color(0xFFD4AF37), width: 2.0)
+              : BorderSide.none,
+          bottom: !isTop
+              ? const BorderSide(color: Color(0xFFD4AF37), width: 2.0)
+              : BorderSide.none,
+          left: isLeft
+              ? const BorderSide(color: Color(0xFFD4AF37), width: 2.0)
+              : BorderSide.none,
+          right: !isLeft
+              ? const BorderSide(color: Color(0xFFD4AF37), width: 2.0)
+              : BorderSide.none,
         ),
       ),
     );
@@ -2294,7 +2547,7 @@ class _TournamentOperatorDashboardScreenState
 }
 
 // =============================================================================
-// 3. CARD 1 — BASIC & MANDATORY DETAILS VIEW
+// 3. CARD 1 — EVENT & DIVISION SETUP (Quick-Jump Bar & Tactile Controls)
 // =============================================================================
 class _Card1BasicDetailsView extends StatefulWidget {
   final Map<String, dynamic> tournament;
@@ -2330,6 +2583,8 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
   late final TextEditingController _maxAthletesCtrl;
   late final TextEditingController _entryFeeCtrl;
   late final TextEditingController _customWeightCtrl;
+
+  final List<GlobalKey> _stepKeys = List.generate(7, (_) => GlobalKey());
 
   @override
   void initState() {
@@ -2378,6 +2633,18 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
     widget.onChanged(next);
   }
 
+  void _scrollToSection(int index) {
+    HapticFeedback.selectionClick();
+    final ctx = _stepKeys[index].currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
   Future<void> _pickScheduleDateTime() async {
     final initial =
         DateTime.tryParse(widget.tournament['startDate']?.toString() ?? '') ??
@@ -2418,7 +2685,8 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
         <Map<String, dynamic>>[];
     final formatCat = (t['formatCategory'] ?? '').toString();
     final elimSub = (t['eliminationSubFormat'] ?? '').toString();
-    final int tableCount = ((t['tableCount'] as num?)?.toInt() ?? 1).clamp(1, 12);
+    final int tableCount =
+        ((t['tableCount'] as num?)?.toInt() ?? 1).clamp(1, 12);
     final assignMode = (t['tableAssignmentMode'] ?? '').toString();
     final tables = (t['tables'] as List?)
             ?.map((e) => Map<String, dynamic>.from(e as Map))
@@ -2429,747 +2697,880 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
         : <String, dynamic>{};
     final isAwardsConfigured = awardsConfig['isConfigured'] == true;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.space16,
-        12,
-        AppTheme.space16,
-        40,
-      ),
+    final stepPills = <(String, bool)>[
+      ('1. Info', v['basicValid'] == true),
+      ('2. Divisions', v['weightsValid'] == true),
+      ('3. Format', v['formatValid'] == true),
+      ('4. Tables', v['tablesValid'] == true),
+      ('5. Referees', v['refereesValid'] == true),
+      ('6. Entry Fee', v['entryFeeValid'] == true),
+      ('7. Awards', isAwardsConfigured),
+    ];
+
+    final rawTiers = (awardsConfig['tiers'] is List)
+        ? (awardsConfig['tiers'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
+        : <Map<String, dynamic>>[];
+    final int p1 = (rawTiers.isNotEmpty
+            ? (rawTiers[0]['cashAmountPkr'] as num?)?.toInt()
+            : null) ??
+        25000;
+    final int p2 = (rawTiers.length > 1
+            ? (rawTiers[1]['cashAmountPkr'] as num?)?.toInt()
+            : null) ??
+        15000;
+    final int p3 = (rawTiers.length > 2
+            ? (rawTiers[2]['cashAmountPkr'] as num?)?.toInt()
+            : null) ??
+        7500;
+
+    return Column(
       children: [
-        // Auto-save status banner
+        // Sticky Top Status Strip + Horizontal 7-Step Quick-Jump Bar
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.45)),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            8,
+            AppTheme.space16,
+            10,
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.cloud_done_outlined,
-                  size: 16, color: AppTheme.goldPrimary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'AUTO-SAVING DRAFT • ${widget.autoSaveBannerText}',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontMono,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.goldPrimary,
-                  ),
-                ),
-              ),
-              Text(
-                '${v['doneCount']}/${v['totalCount']} READY',
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontMono,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.emerald,
-                ),
-              ),
-            ],
+          decoration: const BoxDecoration(
+            color: Color(0xF2060911),
+            border: Border(
+              bottom: BorderSide(color: Color(0x26FFFFFF)),
+            ),
           ),
-        ),
-        const SizedBox(height: 14),
-
-        // SECTION 1: BASIC INFO
-        _buildSectionCard(
-          stepLabel: '1. BASIC & MANDATORY INFO',
-          isValid: v['basicValid'] == true,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                controller: _nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Event / Tournament Name *',
-                  hintText: 'e.g. Punjab National Open Championship',
-                  prefixIcon: Icon(Icons.emoji_events_outlined, size: 18),
-                ),
-                onChanged: (val) => _emitPatch({'name': val}),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _orgCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Organization Name *',
-                  hintText: 'e.g. Pakistan Arm-Wrestling Federation',
-                  prefixIcon: Icon(Icons.shield_outlined, size: 18),
-                ),
-                onChanged: (val) => _emitPatch({'organizationName': val}),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _kPakistanProvinces.contains(t['province'])
-                          ? t['province'].toString()
-                          : _kPakistanProvinces.first,
-                      decoration: const InputDecoration(labelText: 'Province *'),
-                      items: [
-                        for (final p in _kPakistanProvinces)
-                          DropdownMenuItem(value: p, child: Text(p)),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) _emitPatch({'province': val});
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _cityCtrl,
-                      decoration: const InputDecoration(labelText: 'City *'),
-                      onChanged: (val) => _emitPatch({'city': val}),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _venueCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Venue Location *',
-                  hintText: 'e.g. Nishtar Park Sports Complex Arena',
-                  prefixIcon: Icon(Icons.location_on_outlined, size: 18),
-                ),
-                onChanged: (val) => _emitPatch({'venue': val}),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: OutlinedButton.icon(
-                      onPressed: _pickScheduleDateTime,
-                      icon: const Icon(Icons.calendar_month_outlined, size: 16),
-                      label: Text(
-                        'Schedule: ${t['startDate']?.toString().substring(0, 16).replaceAll('T', ' ') ?? 'Select'}',
-                        style: const TextStyle(fontSize: 11.5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _maxAthletesCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Max Athletes *',
-                      ),
-                      onChanged: (val) {
-                        final parsed = int.tryParse(val.trim()) ?? 0;
-                        _emitPatch({'capacity': parsed});
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // SECTION 2: WEIGHT CATEGORIES & ARM/HAND SUPPORT
-        _buildSectionCard(
-          stepLabel: '2. WEIGHT CATEGORIES & ARM DIVISION (R / L / BOTH)',
-          isValid: v['weightsValid'] == true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Toggle weight categories and specify Right Arm, Left Arm, or Both (Left and Right divisions stay cleanly separated).',
-                style: TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 10),
-              for (int idx = 0; idx < weightCategories.length; idx++) ...[
-                _buildWeightCategoryRow(weightCategories, idx),
-                const SizedBox(height: 8),
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _customWeightCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Add Custom Weight Category (e.g. 65 kg, 100+ kg)',
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      final label = _customWeightCtrl.text.trim();
-                      if (label.isEmpty) return;
-                      final updated = [
-                        ...weightCategories,
-                        {
-                          'id': 'wc_${DateTime.now().millisecondsSinceEpoch}',
-                          'label': label,
-                          'enabled': true,
-                          'arm': 'BOTH',
-                        },
-                      ];
-                      _customWeightCtrl.clear();
-                      _emitPatch({'weightCategories': updated});
-                    },
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('ADD'),
-                  ),
-                ],
+              _EmeraldCrystalStatusStrip(
+                leftText: '● Offline-Ready • Auto-Saved',
+                rightText: '${v['doneCount']}/${v['totalCount']} READY',
               ),
               const SizedBox(height: 8),
-              Text(
-                'Active Separated Divisions (${widget.separatedDivisions.length}): ${widget.separatedDivisions.map((d) => d['label']).join('  |  ')}',
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontMono,
-                  fontSize: 10.5,
-                  color: AppTheme.goldPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // SECTION 3: MANDATORY TOURNAMENT / MATCH FORMAT TYPE
-        _buildSectionCard(
-          stepLabel: '3. MANDATORY TOURNAMENT / MATCH FORMAT TYPE',
-          isValid: v['formatValid'] == true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Selecting the format here automatically controls which filters and bracket rules appear later on Card 3.',
-                style: TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSelectableFormatTile(
-                      title: 'SUPERFIGHTS',
-                      subtitle: 'Single Bouts / Vendetta Supermatches',
-                      selected: formatCat == 'SUPERFIGHTS',
-                      onTap: () => _emitPatch({
-                        'formatCategory': 'SUPERFIGHTS',
-                        'eliminationSubFormat': '',
-                      }),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildSelectableFormatTile(
-                      title: 'ELIMINATION',
-                      subtitle: 'Bracket Tournament Progression',
-                      selected: formatCat == 'ELIMINATION',
-                      onTap: () => _emitPatch({
-                        'formatCategory': 'ELIMINATION',
-                        'eliminationSubFormat': elimSub.isNotEmpty
-                            ? elimSub
-                            : 'DOUBLE_ELIMINATION',
-                      }),
-                    ),
-                  ),
-                ],
-              ),
-              if (formatCat == 'ELIMINATION') ...[
-                const SizedBox(height: 12),
-                const Text(
-                  'SELECT ELIMINATION BRACKET FORMAT:',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.goldPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                for (final opt in const [
-                  ('SINGLE_ELIMINATION', 'Single / One-Loss Elimination'),
-                  ('DOUBLE_ELIMINATION', 'Double / Two-Loss Elimination'),
-                  ('THREE_LOSS_ELIMINATION', 'Three-Loss Elimination'),
-                  (
-                    'LAST_ONE_STANDING',
-                    'Last-One-Standing (Whoever lasts in category wins)'
-                  ),
-                ]) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: _buildSelectableFormatTile(
-                      title: opt.$2,
-                      subtitle: 'Controls Card 3 bracket & elimination rules',
-                      selected: elimSub == opt.$1,
-                      onTap: () => _emitPatch({
-                        'formatCategory': 'ELIMINATION',
-                        'eliminationSubFormat': opt.$1,
-                      }),
-                    ),
-                  ),
-                ],
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // SECTION 4: NUMBER OF TABLES & MANDATORY TABLE ASSIGNMENT MODE
-        _buildSectionCard(
-          stepLabel: '4. NO. OF TABLES & TABLE ASSIGNMENT MODE',
-          isValid: v['tablesValid'] == true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'No. of Arena Tables',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: tableCount > 1
-                            ? () => _emitPatch({
-                                  'tableCount': tableCount - 1,
-                                  if (tableCount - 1 == 1)
-                                    'tableAssignmentMode': 'SINGLE_TABLE_DEFAULT',
-                                })
-                            : null,
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                      Text(
-                        '$tableCount ${tableCount == 1 ? "TABLE" : "TABLES"}',
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontMono,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: tableCount < 10
-                            ? () => _emitPatch({
-                                  'tableCount': tableCount + 1,
-                                  if (assignMode == 'SINGLE_TABLE_DEFAULT')
-                                    'tableAssignmentMode': '',
-                                })
-                            : null,
-                        icon: const Icon(Icons.add_circle_outline),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              if (tableCount > 1) ...[
-                const SizedBox(height: 10),
-                const Text(
-                  'MANDATORY TABLE ASSIGNMENT MODE (FOR > 1 TABLES):',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.goldPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                for (final mode in const [
-                  (
-                    'CATEGORY_BY_TABLE',
-                    'Option 1: Category-by-Table',
-                    'Table 1 is for specific weight categories, Table 2 (etc.) for other weight categories.'
-                  ),
-                  (
-                    'RANDOM_BY_APP',
-                    'Option 2: Random by App',
-                    'Random categories/players distributed across Table 1, Table 2, etc. by the app.'
-                  ),
-                  (
-                    'DYNAMIC_FREE_TABLE_QUEUE',
-                    'Option 3: Dynamic Free-Table Queue',
-                    'As matches finish and a referee submits the result, that table is freed and assigned the next matchup.'
-                  ),
-                ]) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: _buildSelectableFormatTile(
-                      title: mode.$2,
-                      subtitle: mode.$3,
-                      selected: assignMode == mode.$1,
-                      onTap: () => _emitPatch({'tableAssignmentMode': mode.$1}),
-                    ),
-                  ),
-                ],
-                if (assignMode == 'CATEGORY_BY_TABLE') ...[
-                  const SizedBox(height: 8),
-                  for (int ti = 0; ti < tables.length; ti++) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0x33FFFFFF)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${tables[ti]['tableName']} — Assigned Weight Categories:',
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.goldPrimary,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (int i = 0; i < stepPills.length; i++) ...[
+                      GestureDetector(
+                        onTap: () => _scrollToSection(i),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: stepPills[i].$2
+                                  ? [
+                                      AppTheme.emerald.withValues(alpha: 0.22),
+                                      const Color(0xE6070A11),
+                                    ]
+                                  : [
+                                      AppTheme.goldPrimary
+                                          .withValues(alpha: 0.16),
+                                      const Color(0xE6070A11),
+                                    ],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: stepPills[i].$2
+                                  ? AppTheme.emerald.withValues(alpha: 0.65)
+                                  : AppTheme.goldPrimary.withValues(alpha: 0.5),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              for (final div in widget.separatedDivisions)
-                                FilterChip(
-                                  label: Text(
-                                    div['label']!,
-                                    style: const TextStyle(fontSize: 10.5),
-                                  ),
-                                  selected: ((tables[ti]
-                                              ['assignedCategoryDivisionIds']
-                                          as List?) ??
-                                      const [])
-                                      .contains(div['divisionId']),
-                                  onSelected: (sel) {
-                                    final nextTables = tables
-                                        .map((e) => Map<String, dynamic>.from(e))
-                                        .toList();
-                                    final currentIds = List<String>.from(
-                                      (nextTables[ti]
-                                                  ['assignedCategoryDivisionIds']
-                                              as List?) ??
-                                          const [],
-                                    );
-                                    if (sel) {
-                                      currentIds.add(div['divisionId']!);
-                                    } else {
-                                      currentIds.remove(div['divisionId']!);
-                                    }
-                                    nextTables[ti]
-                                        ['assignedCategoryDivisionIds'] = currentIds;
-                                    _emitPatch({'tables': nextTables});
-                                  },
-                                ),
-                            ],
+                          child: Text(
+                            '${stepPills[i].$1} ${stepPills[i].$2 ? "✓" : "•"}',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontMono,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: stepPills[i].$2
+                                  ? AppTheme.emerald
+                                  : AppTheme.goldPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (i < stepPills.length - 1) const SizedBox(width: 6),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Scrollable 7-Section Setup Form
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              14,
+              AppTheme.space16,
+              40,
+            ),
+            children: [
+              // SECTION 1: EVENT & VENUE INFO
+              Container(
+                key: _stepKeys[0],
+                child: _buildSectionCard(
+                  stepLabel: '01. EVENT & VENUE INFO',
+                  isValid: v['basicValid'] == true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _nameCtrl,
+                        style: const TextStyle(fontSize: 14.5),
+                        decoration: const InputDecoration(
+                          labelText: 'Event Name *',
+                          hintText: 'e.g. Punjab National Open Championship',
+                          prefixIcon:
+                              Icon(Icons.emoji_events_outlined, size: 18),
+                        ),
+                        onChanged: (val) => _emitPatch({'name': val}),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _orgCtrl,
+                        style: const TextStyle(fontSize: 14.5),
+                        decoration: const InputDecoration(
+                          labelText: 'Organization *',
+                          hintText: 'e.g. Pakistan Arm-Wrestling Federation',
+                          prefixIcon: Icon(Icons.shield_outlined, size: 18),
+                        ),
+                        onChanged: (val) =>
+                            _emitPatch({'organizationName': val}),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue:
+                                  _kPakistanProvinces.contains(t['province'])
+                                      ? t['province'].toString()
+                                      : _kPakistanProvinces.first,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                color: AppTheme.textPrimary,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Province *',
+                              ),
+                              items: [
+                                for (final p in _kPakistanProvinces)
+                                  DropdownMenuItem(value: p, child: Text(p)),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) _emitPatch({'province': val});
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _cityCtrl,
+                              style: const TextStyle(fontSize: 14.5),
+                              decoration:
+                                  const InputDecoration(labelText: 'City *'),
+                              onChanged: (val) => _emitPatch({'city': val}),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ],
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // SECTION 5: MANDATORY REFEREE SELECTION (Min 2 Referees per Table)
-        _buildSectionCard(
-          stepLabel: '5. MANDATORY REFEREE SELECTION (MIN 2 PER TABLE)',
-          isValid: v['refereesValid'] == true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select certified referees for each table (minimum 2 referees per table required).',
-                style: TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 10),
-              for (int ti = 0; ti < tables.length; ti++) ...[
-                Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: (((tables[ti]['assignedRefereeIds'] as List?)
-                                      ?.length ??
-                                  0) >=
-                              2)
-                          ? AppTheme.emerald.withValues(alpha: 0.5)
-                          : AppTheme.warning.withValues(alpha: 0.5),
-                    ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _venueCtrl,
+                        style: const TextStyle(fontSize: 14.5),
+                        decoration: const InputDecoration(
+                          labelText: 'Venue Location *',
+                          hintText: 'e.g. Nishtar Park Sports Complex Arena',
+                          prefixIcon:
+                              Icon(Icons.location_on_outlined, size: 18),
+                        ),
+                        onChanged: (val) => _emitPatch({'venue': val}),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: SizedBox(
+                              height: 50,
+                              child: OutlinedButton.icon(
+                                onPressed: _pickScheduleDateTime,
+                                icon: const Icon(
+                                  Icons.calendar_month_outlined,
+                                  size: 16,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                                label: Text(
+                                  t['startDate']
+                                          ?.toString()
+                                          .substring(0, 16)
+                                          .replaceAll('T', ' ') ??
+                                      'Schedule Date/Time',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontMono,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 4,
+                            child: TextField(
+                              controller: _maxAthletesCtrl,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(fontSize: 14.5),
+                              decoration: const InputDecoration(
+                                labelText: 'Max Athletes *',
+                                isDense: true,
+                              ),
+                              onChanged: (val) {
+                                final parsed = int.tryParse(val.trim()) ?? 0;
+                                _emitPatch({'capacity': parsed});
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // SECTION 2: WEIGHT CATEGORIES & ARM DIVISION
+              Container(
+                key: _stepKeys[1],
+                child: _buildSectionCard(
+                  stepLabel: '02. WEIGHT CATEGORIES & ARM DIVISION',
+                  isValid: v['weightsValid'] == true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int idx = 0;
+                          idx < weightCategories.length;
+                          idx++) ...[
+                        _buildWeightCategoryRow(weightCategories, idx),
+                        const SizedBox(height: 8),
+                      ],
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _customWeightCtrl,
+                              style: const TextStyle(fontSize: 14),
+                              decoration: const InputDecoration(
+                                hintText: 'Custom Weight (e.g. 65 kg)',
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 44,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                final label = _customWeightCtrl.text.trim();
+                                if (label.isEmpty) return;
+                                final updated = [
+                                  ...weightCategories,
+                                  {
+                                    'id':
+                                        'wc_${DateTime.now().millisecondsSinceEpoch}',
+                                    'label': label.toUpperCase(),
+                                    'enabled': true,
+                                    'arm': 'BOTH',
+                                  },
+                                ];
+                                _customWeightCtrl.clear();
+                                _emitPatch({'weightCategories': updated});
+                              },
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('ADD'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // SECTION 3: MATCH FORMAT (2x2 Visual Bracket Grid)
+              Container(
+                key: _stepKeys[2],
+                child: _buildSectionCard(
+                  stepLabel: '03. MATCH FORMAT & BRACKET SYSTEM',
+                  isValid: v['formatValid'] == true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '${tables[ti]['tableName']} Referees',
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12.5,
-                              color: AppTheme.textPrimary,
+                          Expanded(
+                            child: _buildSelectableFormatTile(
+                              title: 'SUPERFIGHTS',
+                              subtitle: 'Single Bouts / Vendetta',
+                              selected: formatCat == 'SUPERFIGHTS',
+                              onTap: () => _emitPatch({
+                                'formatCategory': 'SUPERFIGHTS',
+                                'eliminationSubFormat': '',
+                              }),
                             ),
                           ),
-                          Text(
-                            '${((tables[ti]['assignedRefereeIds'] as List?) ?? const []).length}/2+ Selected',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontMono,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _buildSelectableFormatTile(
+                              title: 'ELIMINATION',
+                              subtitle: 'Tournament Bracket',
+                              selected: formatCat == 'ELIMINATION',
+                              onTap: () => _emitPatch({
+                                'formatCategory': 'ELIMINATION',
+                                'eliminationSubFormat': elimSub.isNotEmpty
+                                    ? elimSub
+                                    : 'DOUBLE_ELIMINATION',
+                              }),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (formatCat == 'ELIMINATION') ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildBracketGridCard(
+                                codeBadge: '1L',
+                                title: 'Single Elimination',
+                                subtitle: '1 Loss Knockout',
+                                selected: elimSub == 'SINGLE_ELIMINATION',
+                                onTap: () => _emitPatch({
+                                  'formatCategory': 'ELIMINATION',
+                                  'eliminationSubFormat': 'SINGLE_ELIMINATION',
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildBracketGridCard(
+                                codeBadge: '2L',
+                                title: 'Double Elimination',
+                                subtitle: '2 Losses to Eliminate',
+                                selected: elimSub == 'DOUBLE_ELIMINATION',
+                                onTap: () => _emitPatch({
+                                  'formatCategory': 'ELIMINATION',
+                                  'eliminationSubFormat': 'DOUBLE_ELIMINATION',
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildBracketGridCard(
+                                codeBadge: '3L',
+                                title: 'Triple Elimination',
+                                subtitle: '3 Losses to Eliminate',
+                                selected: elimSub == 'THREE_LOSS_ELIMINATION',
+                                onTap: () => _emitPatch({
+                                  'formatCategory': 'ELIMINATION',
+                                  'eliminationSubFormat':
+                                      'THREE_LOSS_ELIMINATION',
+                                }),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildBracketGridCard(
+                                codeBadge: '∞',
+                                title: 'Last-One-Standing',
+                                subtitle: 'Undefeated Survival',
+                                selected: elimSub == 'LAST_ONE_STANDING',
+                                onTap: () => _emitPatch({
+                                  'formatCategory': 'ELIMINATION',
+                                  'eliminationSubFormat': 'LAST_ONE_STANDING',
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // SECTION 4: ARENA TABLES & QUEUE MODE
+              Container(
+                key: _stepKeys[3],
+                child: _buildSectionCard(
+                  stepLabel: '04. ARENA TABLES & QUEUE MODE',
+                  isValid: v['tablesValid'] == true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xCC0B101B),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'ACTIVE ARENA TABLES',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: tableCount > 1
+                                      ? () => _emitPatch({
+                                            'tableCount': tableCount - 1,
+                                            if (tableCount - 1 == 1)
+                                              'tableAssignmentMode':
+                                                  'SINGLE_TABLE_DEFAULT',
+                                          })
+                                      : null,
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  child: Text(
+                                    '$tableCount ${tableCount == 1 ? "TABLE" : "TABLES"}',
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontMono,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: tableCount < 10
+                                      ? () => _emitPatch({
+                                            'tableCount': tableCount + 1,
+                                            if (assignMode ==
+                                                'SINGLE_TABLE_DEFAULT')
+                                              'tableAssignmentMode': '',
+                                          })
+                                      : null,
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (tableCount > 1) ...[
+                        const SizedBox(height: 10),
+                        for (final mode in const [
+                          (
+                            'CATEGORY_BY_TABLE',
+                            'Category-by-Table',
+                            'Dedicated weight classes per table'
+                          ),
+                          (
+                            'RANDOM_BY_APP',
+                            'Random Distribution',
+                            'Balanced automatic table assignment'
+                          ),
+                          (
+                            'DYNAMIC_FREE_TABLE_QUEUE',
+                            'Dynamic Free-Table Queue',
+                            'Next ready bout auto-assigns to freed table'
+                          ),
+                        ]) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _buildSelectableFormatTile(
+                              title: mode.$2,
+                              subtitle: mode.$3,
+                              selected: assignMode == mode.$1,
+                              onTap: () =>
+                                  _emitPatch({'tableAssignmentMode': mode.$1}),
+                            ),
+                          ),
+                        ],
+                        if (assignMode == 'CATEGORY_BY_TABLE') ...[
+                          const SizedBox(height: 4),
+                          for (int ti = 0; ti < tables.length; ti++) ...[
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border:
+                                    Border.all(color: const Color(0x33FFFFFF)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${tables[ti]['tableName']} Divisions',
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      for (final div
+                                          in widget.separatedDivisions)
+                                        FilterChip(
+                                          label: Text(
+                                            div['label']!,
+                                            style:
+                                                const TextStyle(fontSize: 10.5),
+                                          ),
+                                          selected: ((tables[ti][
+                                                      'assignedCategoryDivisionIds']
+                                                  as List?) ??
+                                              const [])
+                                              .contains(div['divisionId']),
+                                          onSelected: (sel) {
+                                            final nextTables = tables
+                                                .map((e) =>
+                                                    Map<String, dynamic>.from(
+                                                        e))
+                                                .toList();
+                                            final currentIds =
+                                                List<String>.from(
+                                              (nextTables[ti][
+                                                          'assignedCategoryDivisionIds']
+                                                      as List?) ??
+                                                  const [],
+                                            );
+                                            if (sel) {
+                                              currentIds
+                                                  .add(div['divisionId']!);
+                                            } else {
+                                              currentIds
+                                                  .remove(div['divisionId']!);
+                                            }
+                                            nextTables[ti][
+                                                    'assignedCategoryDivisionIds'] =
+                                                currentIds;
+                                            _emitPatch({'tables': nextTables});
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // SECTION 5: CERTIFIED REFEREES (2-Column Grid of Official Referee Badges)
+              Container(
+                key: _stepKeys[4],
+                child: _buildSectionCard(
+                  stepLabel: '05. CERTIFIED REFEREES (MIN 2 / TABLE)',
+                  isValid: v['refereesValid'] == true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int ti = 0; ti < tables.length; ti++) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
                               color: (((tables[ti]['assignedRefereeIds']
                                                   as List?)
                                               ?.length ??
                                           0) >=
                                       2)
-                                  ? AppTheme.emerald
-                                  : AppTheme.warning,
+                                  ? AppTheme.emerald.withValues(alpha: 0.5)
+                                  : AppTheme.warning.withValues(alpha: 0.5),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final refItem in _kDefaultRefereePool)
-                            FilterChip(
-                              label: Text(
-                                refItem['name']!,
-                                style: const TextStyle(fontSize: 11),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${tables[ti]['tableName']} Officials',
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${((tables[ti]['assignedRefereeIds'] as List?) ?? const []).length}/2+ Assigned',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontMono,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: (((tables[ti]['assignedRefereeIds']
+                                                          as List?)
+                                                      ?.length ??
+                                                  0) >=
+                                              2)
+                                          ? AppTheme.emerald
+                                          : AppTheme.warning,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              selected: ((tables[ti]['assignedRefereeIds']
-                                          as List?) ??
-                                      const [])
-                                  .contains(refItem['id']),
-                              onSelected: (sel) {
-                                final nextTables = tables
-                                    .map((e) => Map<String, dynamic>.from(e))
-                                    .toList();
-                                final refIds = List<String>.from(
-                                  (nextTables[ti]['assignedRefereeIds']
-                                          as List?) ??
-                                      const [],
-                                );
-                                if (sel) {
-                                  refIds.add(refItem['id']!);
-                                } else {
-                                  refIds.remove(refItem['id']!);
-                                }
-                                nextTables[ti]['assignedRefereeIds'] = refIds;
-                                _emitPatch({'tables': nextTables});
+                              const SizedBox(height: 10),
+                              _buildRefereeTwoColumnGrid(tables, ti),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // SECTION 6: ENTRY FEE (PKR)
+              Container(
+                key: _stepKeys[5],
+                child: _buildSectionCard(
+                  stepLabel: '06. ENTRY FEE (PKR)',
+                  isValid: v['entryFeeValid'] == true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final preset in const [
+                            (0, 'Free'),
+                            (1000, 'PKR 1,000'),
+                            (1500, 'PKR 1,500'),
+                            (2500, 'PKR 2,500'),
+                            (5000, 'PKR 5,000'),
+                          ])
+                            ChoiceChip(
+                              label: Text(
+                                preset.$2,
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontMono,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              selected: t['entryFeeConfigured'] == true &&
+                                  t['entryFeePkr'] == preset.$1,
+                              onSelected: (_) {
+                                _entryFeeCtrl.text = preset.$1.toString();
+                                _emitPatch({
+                                  'entryFeePkr': preset.$1,
+                                  'entryFeeConfigured': true,
+                                });
                               },
                             ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _entryFeeCtrl,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 14.5),
+                        decoration: const InputDecoration(
+                          labelText: 'Custom Entry Fee (PKR) *',
+                          hintText: '0 for Free or amount in PKR',
+                          prefixIcon: Icon(Icons.payments_outlined, size: 18),
+                        ),
+                        onChanged: (val) {
+                          final trimmed = val.trim();
+                          if (trimmed.isEmpty) {
+                            _emitPatch({
+                              'entryFeePkr': null,
+                              'entryFeeConfigured': false,
+                            });
+                            return;
+                          }
+                          final parsed = int.tryParse(trimmed);
+                          if (parsed != null && parsed >= 0) {
+                            _emitPatch({
+                              'entryFeePkr': parsed,
+                              'entryFeeConfigured': true,
+                            });
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
+              ),
+              const SizedBox(height: 14),
 
-        // SECTION 6: MANDATORY ENTRY / APPLICATION FEE IN PKR
-        _buildSectionCard(
-          stepLabel: '6. MANDATORY ENTRY / APPLICATION FEE (PKR)',
-          isValid: v['entryFeeValid'] == true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Specify cost for athletes to apply/submit in PKR (enter 0 for free entry, or any PKR amount).',
-                style: TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final preset in const [0, 1000, 1500, 2500, 5000])
-                    ChoiceChip(
-                      label: Text(
-                        preset == 0 ? '0 PKR (Free)' : 'PKR $preset',
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      selected: t['entryFeeConfigured'] == true &&
-                          t['entryFeePkr'] == preset,
-                      onSelected: (_) {
-                        _entryFeeCtrl.text = preset.toString();
-                        _emitPatch({
-                          'entryFeePkr': preset,
-                          'entryFeeConfigured': true,
-                        });
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _entryFeeCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Entry / Application Fee in PKR *',
-                  hintText: 'Enter 0 for Free, or e.g. 1500',
-                  prefixIcon: Icon(Icons.payments_outlined, size: 18),
-                ),
-                onChanged: (val) {
-                  final trimmed = val.trim();
-                  if (trimmed.isEmpty) {
-                    _emitPatch({
-                      'entryFeePkr': null,
-                      'entryFeeConfigured': false,
-                    });
-                    return;
-                  }
-                  final parsed = int.tryParse(trimmed);
-                  if (parsed != null && parsed >= 0) {
-                    _emitPatch({
-                      'entryFeePkr': parsed,
-                      'entryFeeConfigured': true,
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        // SECTION 7: SEPARATE AWARDS & PRIZES SUB-SCREEN BUTTON (Inside Card 1)
-        ElevatedActionCard(
-          key: const ValueKey('card1_open_awards_subscreen_button'),
-          padding: const EdgeInsets.all(AppTheme.space16),
-          borderColor: isAwardsConfigured
-              ? AppTheme.emerald.withValues(alpha: 0.7)
-              : AppTheme.goldPrimary.withValues(alpha: 0.6),
-          onTap: widget.onOpenAwardsSubScreen,
-          child: Row(
-            children: [
+              // SECTION 7: AWARDS & PRIZE PURSE SUMMARY CARD
               Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isAwardsConfigured
-                        ? AppTheme.emerald
-                        : AppTheme.goldPrimary,
-                  ),
-                ),
-                child: Icon(
-                  isAwardsConfigured
-                      ? Icons.check_circle_rounded
-                      : Icons.emoji_events_outlined,
-                  color: isAwardsConfigured
-                      ? AppTheme.emerald
-                      : AppTheme.goldPrimary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          '7. AWARDS & PRIZES SUB-SCREEN',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.textPrimary,
+                key: _stepKeys[6],
+                child: ElevatedActionCard(
+                  key: const ValueKey('card1_open_awards_subscreen_button'),
+                  padding: const EdgeInsets.all(AppTheme.space16),
+                  borderColor: isAwardsConfigured
+                      ? AppTheme.emerald.withValues(alpha: 0.7)
+                      : AppTheme.goldPrimary.withValues(alpha: 0.65),
+                  onTap: widget.onOpenAwardsSubScreen,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isAwardsConfigured
+                                ? AppTheme.emerald
+                                : AppTheme.goldPrimary,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        if (isAwardsConfigured)
-                          const StatusChip(
-                            label: 'CONFIGURED ✓',
-                            type: StatusType.success,
-                          )
-                        else
-                          const StatusChip(
-                            label: 'REQUIRED',
-                            type: StatusType.warning,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isAwardsConfigured
-                          ? '✓ Saved: ${awardsConfig['rewardType'] == 'CASH_PKR' ? 'Cash Prizes (PKR)' : (awardsConfig['rewardType'] == 'AWARDS' ? 'Medals & Trophies' : 'Cash (PKR) + Awards')} • ${awardsConfig['winnerStructure'] == 'OVERALL_WINNERS' ? 'Overall Tournament Winners' : 'Per-Category Winners'}'
-                          : 'Tap to open dedicated sub-screen: configure Money/Cash (PKR) or Awards for Overall or Per-Category Winners.',
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: AppTheme.textSecondary,
+                        child: Icon(
+                          isAwardsConfigured
+                              ? Icons.emoji_events_rounded
+                              : Icons.emoji_events_outlined,
+                          color: isAwardsConfigured
+                              ? AppTheme.emerald
+                              : AppTheme.goldPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Flexible(
+                                  child: Text(
+                                    '07. AWARDS & PRIZE PURSE',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                StatusChip(
+                                  label: isAwardsConfigured
+                                      ? 'CONFIGURED ✓'
+                                      : 'REQUIRED',
+                                  type: isAwardsConfigured
+                                      ? StatusType.success
+                                      : StatusType.warning,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '1st: PKR $p1  •  2nd: PKR $p2  •  3rd: PKR $p3',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontMono,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 28,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 16, color: AppTheme.goldPrimary),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-        // RELEASE / SCHEDULE BUTTON
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton.icon(
-            key: const ValueKey('card1_release_schedule_button'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isComplete
-                  ? AppTheme.goldPrimary
-                  : const Color(0x33FFFFFF),
-              foregroundColor: isComplete ? Colors.black : AppTheme.textSecondary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              // FORGED 24K GOLD CRYSTAL RELEASE / UPDATE BUTTON
+              _ForgedGoldCrystalButton(
+                key: const ValueKey('card1_release_schedule_button'),
+                label: isReleased
+                    ? 'SAVE & UPDATE RELEASED TOURNAMENT'
+                    : (isComplete
+                        ? 'RELEASE & PUBLISH TOURNAMENT'
+                        : 'COMPLETE 7/7 SECTIONS TO RELEASE (${v['doneCount']}/${v['totalCount']})'),
+                icon: isReleased
+                    ? Icons.verified_rounded
+                    : (isComplete
+                        ? Icons.rocket_launch_rounded
+                        : Icons.lock_clock_outlined),
+                height: 54,
+                isDimmed: !isComplete && !isReleased,
+                onTap: widget.onReleaseTournament,
               ),
-            ),
-            onPressed: widget.onReleaseTournament,
-            icon: Icon(
-              isReleased
-                  ? Icons.verified_rounded
-                  : (isComplete
-                      ? Icons.rocket_launch_rounded
-                      : Icons.lock_clock_outlined),
-            ),
-            label: Text(
-              isReleased
-                  ? 'SAVE & UPDATE RELEASED TOURNAMENT'
-                  : (isComplete
-                      ? 'RELEASE / SCHEDULE (UNLOCK CARDS 2–4)'
-                      : 'FILL ALL 7 SECTIONS TO RELEASE (${v['doneCount']}/${v['totalCount']})'),
-              style: const TextStyle(
-                fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.w900,
-                fontSize: 13,
-              ),
-            ),
+            ],
           ),
         ),
       ],
     );
   }
 
+  // Compact Horizontal Division Plate (height: 58px) with single-line weight & 3-segment switcher
   Widget _buildWeightCategoryRow(
     List<Map<String, dynamic>> categories,
     int index,
@@ -3177,67 +3578,370 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
     final item = categories[index];
     final enabled = item['enabled'] == true;
     final arm = (item['arm']?.toString() ?? 'BOTH').toUpperCase();
+    final rawLabel = (item['label']?.toString() ?? '').toUpperCase();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      height: 58,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        color: enabled ? const Color(0xCC0D1322) : const Color(0x80070A11),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: enabled
-              ? AppTheme.goldPrimary.withValues(alpha: 0.55)
-              : const Color(0x22FFFFFF),
+              ? AppTheme.goldPrimary.withValues(alpha: 0.65)
+              : const Color(0x24FFFFFF),
+          width: enabled ? 1.3 : 1.0,
         ),
       ),
       child: Row(
         children: [
-          Checkbox(
-            value: enabled,
-            activeColor: AppTheme.goldPrimary,
-            checkColor: Colors.black,
-            onChanged: (v) {
-              final next = categories
-                  .map((e) => Map<String, dynamic>.from(e))
-                  .toList();
-              next[index]['enabled'] = v ?? false;
-              _emitPatch({'weightCategories': next});
-            },
+          // Left Side: Checkbox/toggle + bold single-line weight label (16sp bold white, maxLines: 1)
+          SizedBox(
+            width: 32,
+            child: Checkbox(
+              value: enabled,
+              activeColor: AppTheme.goldPrimary,
+              checkColor: Colors.black,
+              visualDensity: VisualDensity.compact,
+              onChanged: (v) {
+                final next = categories
+                    .map((e) => Map<String, dynamic>.from(e))
+                    .toList();
+                next[index]['enabled'] = v ?? false;
+                _emitPatch({'weightCategories': next});
+              },
+            ),
           ),
+          const SizedBox(width: 4),
           Expanded(
             child: Text(
-              item['label']?.toString() ?? '',
+              rawLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: AppTheme.fontDisplay,
-                fontWeight: FontWeight.w800,
-                fontSize: 13.5,
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
                 color: enabled ? AppTheme.textPrimary : AppTheme.textMuted,
               ),
             ),
           ),
-          for (final armOpt in const [
-            ('RIGHT', 'Right'),
-            ('LEFT', 'Left'),
-            ('BOTH', 'Both (R+L)'),
-          ])
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: ChoiceChip(
-                label: Text(
-                  armOpt.$2,
-                  style: const TextStyle(fontSize: 10.5),
+          const SizedBox(width: 6),
+
+          // Right Side: Compact 3-segment crystal pill switcher ([ Right ] | [ Left ] | [ Both R+L ])
+          Container(
+            height: 34,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: const Color(0xE605080F),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: const Color(0x2EFFFFFF)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final armOpt in const [
+                  ('RIGHT', 'Right'),
+                  ('LEFT', 'Left'),
+                  ('BOTH', 'Both R+L'),
+                ])
+                  GestureDetector(
+                    onTap: enabled
+                        ? () {
+                            HapticFeedback.selectionClick();
+                            final next = categories
+                                .map((e) => Map<String, dynamic>.from(e))
+                                .toList();
+                            next[index]['arm'] = armOpt.$1;
+                            _emitPatch({'weightCategories': next});
+                          }
+                        : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: (enabled && arm == armOpt.$1)
+                            ? const LinearGradient(
+                                colors: [
+                                  Color(0x45D4AF37),
+                                  Color(0x20D4AF37),
+                                ],
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(7),
+                        border: (enabled && arm == armOpt.$1)
+                            ? Border.all(
+                                color: AppTheme.goldPrimary,
+                                width: 1.1,
+                              )
+                            : null,
+                      ),
+                      child: Text(
+                        armOpt.$2,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontMono,
+                          fontSize: 10.5,
+                          fontWeight: (enabled && arm == armOpt.$1)
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: (enabled && arm == armOpt.$1)
+                              ? AppTheme.textPrimary
+                              : AppTheme.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBracketGridCard({
+    required String codeBadge,
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0x38D4AF37),
+                    Color(0xE6070A11),
+                  ],
+                )
+              : const LinearGradient(
+                  colors: [
+                    Color(0xCC0B101B),
+                    Color(0xE6070A11),
+                  ],
                 ),
-                selected: enabled && arm == armOpt.$1,
-                onSelected: enabled
-                    ? (_) {
-                        final next = categories
-                            .map((e) => Map<String, dynamic>.from(e))
-                            .toList();
-                        next[index]['arm'] = armOpt.$1;
-                        _emitPatch({'weightCategories': next});
-                      }
-                    : null,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppTheme.goldPrimary : const Color(0x2EFFFFFF),
+            width: selected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppTheme.goldPrimary.withValues(alpha: 0.22)
+                        : const Color(0x1FFFFFFF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: selected
+                          ? AppTheme.goldPrimary
+                          : const Color(0x33FFFFFF),
+                    ),
+                  ),
+                  child: Text(
+                    codeBadge,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontMono,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: selected
+                          ? AppTheme.goldPrimary
+                          : AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+                Icon(
+                  selected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
+                  size: 16,
+                  color: selected ? AppTheme.goldPrimary : AppTheme.textMuted,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                color: selected ? AppTheme.textPrimary : AppTheme.textSecondary,
               ),
             ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: AppTheme.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRefereeTwoColumnGrid(
+    List<Map<String, dynamic>> tables,
+    int tableIndex,
+  ) {
+    final assignedIds = List<String>.from(
+      (tables[tableIndex]['assignedRefereeIds'] as List?) ?? const [],
+    );
+    final rows = <Widget>[];
+    for (int i = 0; i < _kDefaultRefereePool.length; i += 2) {
+      final first = _kDefaultRefereePool[i];
+      final second = (i + 1 < _kDefaultRefereePool.length)
+          ? _kDefaultRefereePool[i + 1]
+          : null;
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildOfficialRefereeBadge(
+                  refItem: first,
+                  isSelected: assignedIds.contains(first['id']),
+                  onToggle: () {
+                    _toggleRefereeSelection(
+                      tables,
+                      tableIndex,
+                      first['id']!,
+                      !assignedIds.contains(first['id']),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (second != null)
+                Expanded(
+                  child: _buildOfficialRefereeBadge(
+                    refItem: second,
+                    isSelected: assignedIds.contains(second['id']),
+                    onToggle: () {
+                      _toggleRefereeSelection(
+                        tables,
+                        tableIndex,
+                        second['id']!,
+                        !assignedIds.contains(second['id']),
+                      );
+                    },
+                  ),
+                )
+              else
+                const Expanded(child: SizedBox.shrink()),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(children: rows);
+  }
+
+  void _toggleRefereeSelection(
+    List<Map<String, dynamic>> tables,
+    int tableIndex,
+    String refId,
+    bool select,
+  ) {
+    HapticFeedback.selectionClick();
+    final nextTables =
+        tables.map((e) => Map<String, dynamic>.from(e)).toList();
+    final refIds = List<String>.from(
+      (nextTables[tableIndex]['assignedRefereeIds'] as List?) ?? const [],
+    );
+    if (select) {
+      if (!refIds.contains(refId)) refIds.add(refId);
+    } else {
+      refIds.remove(refId);
+    }
+    nextTables[tableIndex]['assignedRefereeIds'] = refIds;
+    _emitPatch({'tables': nextTables});
+  }
+
+  Widget _buildOfficialRefereeBadge({
+    required Map<String, String> refItem,
+    required bool isSelected,
+    required VoidCallback onToggle,
+  }) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    AppTheme.emerald.withValues(alpha: 0.22),
+                    const Color(0xE6070A11),
+                  ],
+                )
+              : const LinearGradient(
+                  colors: [
+                    Color(0xCC0B101B),
+                    Color(0xE6070A11),
+                  ],
+                ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.emerald
+                : const Color(0x2EFFFFFF),
+            width: isSelected ? 1.4 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.verified_user_rounded : Icons.shield_outlined,
+              size: 16,
+              color: isSelected ? AppTheme.emerald : AppTheme.goldPrimary,
+            ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                refItem['name'] ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: isSelected
+                      ? AppTheme.textPrimary
+                      : AppTheme.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3249,11 +3953,22 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          gradient: selected
+              ? const LinearGradient(
+                  colors: [
+                    Color(0x33D4AF37),
+                    Color(0xE6070A11),
+                  ],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(11),
           border: Border.all(
             color: selected ? AppTheme.goldPrimary : const Color(0x33FFFFFF),
             width: selected ? 1.5 : 1.0,
@@ -3275,10 +3990,12 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5,
                       color: selected
                           ? AppTheme.goldPrimary
                           : AppTheme.textPrimary,
@@ -3287,6 +4004,8 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 10.5,
                       color: AppTheme.textSecondary,
@@ -3320,15 +4039,18 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
               Expanded(
                 child: Text(
                   stepLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 0.6,
+                    letterSpacing: 0.7,
                     color: AppTheme.goldPrimary,
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               StatusChip(
                 label: isValid ? 'READY ✓' : 'REQUIRED',
                 type: isValid ? StatusType.success : StatusType.warning,
@@ -3344,7 +4066,7 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
 }
 
 // =============================================================================
-// 4. SEPARATE AWARDS & PRIZES SUB-SCREEN (Inside Card 1)
+// 4. AWARDS & PRIZES SUB-SCREEN (Gold / Silver / Bronze Podium Purse Cards)
 // =============================================================================
 class _AwardsPrizesSubScreenView extends StatefulWidget {
   final Map<String, dynamic> tournament;
@@ -3369,6 +4091,8 @@ class _AwardsPrizesSubScreenViewState
   late String _winnerStructure; // 'OVERALL_WINNERS' | 'PER_CATEGORY_WINNERS'
   late int _topNCount;
   late List<Map<String, dynamic>> _tiers;
+  final Map<int, TextEditingController> _cashCtrls = {};
+  final Map<int, TextEditingController> _awardCtrls = {};
 
   @override
   void initState() {
@@ -3379,13 +4103,42 @@ class _AwardsPrizesSubScreenViewState
     _rewardType = (cfg['rewardType'] ?? 'CASH_PKR').toString();
     _winnerStructure =
         (cfg['winnerStructure'] ?? 'PER_CATEGORY_WINNERS').toString();
-    _topNCount = ((cfg['topNCount'] as num?)?.toInt() ?? 3).clamp(1, 5);
+    _topNCount = ((cfg['topNCount'] as num?)?.toInt() ?? 3).clamp(1, 3);
     final rawTiers = (cfg['tiers'] is List)
         ? (cfg['tiers'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList()
         : <Map<String, dynamic>>[];
     _tiers = _syncTiersCount(_topNCount, rawTiers);
+    _rebuildControllers();
+  }
+
+  void _rebuildControllers() {
+    for (final i in List<int>.generate(_tiers.length, (idx) => idx)) {
+      final cashText = (_tiers[i]['cashAmountPkr'] ?? 0).toString();
+      if (_cashCtrls.containsKey(i)) {
+        _cashCtrls[i]!.text = cashText;
+      } else {
+        _cashCtrls[i] = TextEditingController(text: cashText);
+      }
+      final awardText = (_tiers[i]['awardTitle'] ?? '').toString();
+      if (_awardCtrls.containsKey(i)) {
+        _awardCtrls[i]!.text = awardText;
+      } else {
+        _awardCtrls[i] = TextEditingController(text: awardText);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _cashCtrls.values) {
+      c.dispose();
+    }
+    for (final c in _awardCtrls.values) {
+      c.dispose();
+    }
+    super.dispose();
   }
 
   List<Map<String, dynamic>> _syncTiersCount(
@@ -3399,12 +4152,10 @@ class _AwardsPrizesSubScreenViewState
         'position': pos,
         'label': found?['label']?.toString() ??
             (pos == 1
-                ? '1st Place Winner'
-                : (pos == 2
-                    ? '2nd Place Runner-Up'
-                    : (pos == 3 ? '3rd Place Podium' : 'Top $pos Place'))),
+                ? '1st Place Champion'
+                : (pos == 2 ? '2nd Place Silver' : '3rd Place Bronze')),
         'cashAmountPkr': (found?['cashAmountPkr'] as num?)?.toInt() ??
-            (pos == 1 ? 25000 : (pos == 2 ? 15000 : 5000)),
+            (pos == 1 ? 25000 : (pos == 2 ? 15000 : 7500)),
         'awardTitle': found?['awardTitle']?.toString() ??
             (pos == 1
                 ? 'Gold Medal & Champion Trophy'
@@ -3416,236 +4167,196 @@ class _AwardsPrizesSubScreenViewState
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.space16,
-        12,
-        AppTheme.space16,
-        40,
-      ),
+    return Column(
       children: [
-        ElevatedActionCard(
-          padding: const EdgeInsets.all(AppTheme.space16),
-          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              12,
+              AppTheme.space16,
+              24,
+            ),
             children: [
-              const Text(
-                'AWARDS & PRIZES CONFIGURATION',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.goldPrimary,
+              ElevatedActionCard(
+                padding: const EdgeInsets.all(AppTheme.space16),
+                borderColor: AppTheme.goldPrimary.withValues(alpha: 0.65),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. PRIZE TYPE (3-Column Equal Selector)
+                    const Text(
+                      '1. PRIZE TYPE',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        for (final opt in const [
+                          ('CASH_PKR', 'Cash (PKR)'),
+                          ('AWARDS', 'Trophies/Medals'),
+                          ('CASH_AND_AWARDS', 'Cash + Awards'),
+                        ]) ...[
+                          Expanded(
+                            child: _buildEqualColumnSegment(
+                              label: opt.$2,
+                              selected: _rewardType == opt.$1,
+                              onTap: () =>
+                                  setState(() => _rewardType = opt.$1),
+                            ),
+                          ),
+                          if (opt.$1 != 'CASH_AND_AWARDS')
+                            const SizedBox(width: 8),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+
+                    // 2. WINNER STRUCTURE (2 Full-Width Non-Truncating Cards)
+                    const Text(
+                      '2. WINNER STRUCTURE',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildWinnerStructureCard(
+                      title: 'Overall Tournament Champions',
+                      subtitle: 'Single prize pool across all divisions',
+                      selected: _winnerStructure == 'OVERALL_WINNERS',
+                      onTap: () => setState(
+                          () => _winnerStructure = 'OVERALL_WINNERS'),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildWinnerStructureCard(
+                      title: 'Per-Category Champions',
+                      subtitle:
+                          'Separate 1st, 2nd, 3rd prizes in each weight class',
+                      selected: _winnerStructure == 'PER_CATEGORY_WINNERS',
+                      onTap: () => setState(
+                          () => _winnerStructure = 'PER_CATEGORY_WINNERS'),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // 3. PODIUM DEPTH (Stacked Header + 3-Column Row)
+                    const Text(
+                      '3. PODIUM DEPTH',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        for (final depthOpt in const [
+                          (1, 'Top 1 (1st Only)'),
+                          (2, 'Top 2 (1st–2nd)'),
+                          (3, 'Top 3 (1st–3rd)'),
+                        ]) ...[
+                          Expanded(
+                            child: _buildEqualColumnSegment(
+                              label: depthOpt.$2,
+                              selected: _topNCount == depthOpt.$1,
+                              onTap: () {
+                                setState(() {
+                                  _topNCount = depthOpt.$1;
+                                  _tiers =
+                                      _syncTiersCount(depthOpt.$1, _tiers);
+                                  _rebuildControllers();
+                                });
+                              },
+                            ),
+                          ),
+                          if (depthOpt.$1 != 3) const SizedBox(width: 8),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Choose whether prizes are Money/Cash (with exact PKR amounts) or Awards, and configure the winner structure (Overall Tournament Winners or Per-Category Winners).',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
               const SizedBox(height: 16),
 
-              // 1. Prize Type Selector
-              const Text(
-                '1. PRIZE / REWARD TYPE',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Money / Cash (PKR)'),
-                    selected: _rewardType == 'CASH_PKR',
-                    onSelected: (_) => setState(() => _rewardType = 'CASH_PKR'),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Awards (Medals / Trophies)'),
-                    selected: _rewardType == 'AWARDS',
-                    onSelected: (_) => setState(() => _rewardType = 'AWARDS'),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Both Cash (PKR) + Awards'),
-                    selected: _rewardType == 'CASH_AND_AWARDS',
-                    onSelected: (_) =>
-                        setState(() => _rewardType = 'CASH_AND_AWARDS'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
+              // Gold, Silver & Bronze Podium Purse Cards
+              for (int i = 0; i < _tiers.length; i++) ...[
+                _buildPodiumPurseCard(i),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
 
-              // 2. Winner Structure Selector
-              const Text(
-                '2. WINNER STRUCTURE',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Overall Tournament Winners (e.g. Top 3 Overall)'),
-                    selected: _winnerStructure == 'OVERALL_WINNERS',
-                    onSelected: (_) =>
-                        setState(() => _winnerStructure = 'OVERALL_WINNERS'),
+        // Fixed Bottom Save Bar (Zero Text Wrapping)
+        Container(
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.space16,
+            10,
+            AppTheme.space16,
+            16,
+          ),
+          decoration: const BoxDecoration(
+            color: Color(0xF5060911),
+            border: Border(
+              top: BorderSide(color: Color(0x2EFFFFFF)),
+            ),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 96,
+                height: 52,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0x45FFFFFF)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: EdgeInsets.zero,
                   ),
-                  ChoiceChip(
-                    label: const Text('Per-Category Winners (1st, 2nd, 3rd in Each Category)'),
-                    selected: _winnerStructure == 'PER_CATEGORY_WINNERS',
-                    onSelected: (_) => setState(
-                        () => _winnerStructure = 'PER_CATEGORY_WINNERS'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-
-              // 3. Number of Winning Positions (Top 1 / Top 3 / Top N)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '3. NUMBER OF WINNING POSITIONS (TOP N)',
+                  onPressed: widget.onCancel,
+                  child: const Text(
+                    '< Back',
+                    maxLines: 1,
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11.5,
                       fontWeight: FontWeight.w800,
+                      fontSize: 13,
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  Wrap(
-                    spacing: 6,
-                    children: [
-                      for (final n in const [1, 2, 3, 4, 5])
-                        ChoiceChip(
-                          label: Text('Top $n'),
-                          selected: _topNCount == n,
-                          onSelected: (_) {
-                            setState(() {
-                              _topNCount = n;
-                              _tiers = _syncTiersCount(n, _tiers);
-                            });
-                          },
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // 4. Position Amounts & Titles
-              for (int i = 0; i < _tiers.length; i++) ...[
-                Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0x33FFFFFF)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Position #${_tiers[i]['position']} — ${_tiers[i]['label']}',
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (_rewardType == 'CASH_PKR' ||
-                          _rewardType == 'CASH_AND_AWARDS') ...[
-                        TextFormField(
-                          initialValue:
-                              _tiers[i]['cashAmountPkr']?.toString() ?? '0',
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Cash Prize Amount (PKR) *',
-                            prefixIcon: Icon(Icons.payments_outlined, size: 18),
-                          ),
-                          onChanged: (val) {
-                            _tiers[i]['cashAmountPkr'] =
-                                int.tryParse(val.trim()) ?? 0;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      if (_rewardType == 'AWARDS' ||
-                          _rewardType == 'CASH_AND_AWARDS') ...[
-                        TextFormField(
-                          initialValue:
-                              _tiers[i]['awardTitle']?.toString() ?? '',
-                          decoration: const InputDecoration(
-                            labelText: 'Award / Medal / Trophy Description *',
-                            prefixIcon:
-                                Icon(Icons.emoji_events_outlined, size: 18),
-                          ),
-                          onChanged: (val) {
-                            _tiers[i]['awardTitle'] = val;
-                          },
-                        ),
-                      ],
-                    ],
-                  ),
                 ),
-              ],
-
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: widget.onCancel,
-                      child: const Text('BACK TO CARD 1'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        key: const ValueKey('save_awards_prizes_button'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.goldPrimary,
-                          foregroundColor: Colors.black,
-                        ),
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          widget.onSaveAwards({
-                            'isConfigured': true,
-                            'rewardType': _rewardType,
-                            'winnerStructure': _winnerStructure,
-                            'topNCount': _topNCount,
-                            'tiers': _tiers,
-                          });
-                        },
-                        icon: const Icon(Icons.check_circle_outline_rounded),
-                        label: const Text(
-                          'SAVE AWARDS & PRIZES (✓)',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ForgedGoldCrystalButton(
+                  key: const ValueKey('save_awards_prizes_button'),
+                  label: '✓ SAVE PRIZE PURSE',
+                  icon: Icons.emoji_events_rounded,
+                  height: 52,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    widget.onSaveAwards({
+                      'isConfigured': true,
+                      'rewardType': _rewardType,
+                      'winnerStructure': _winnerStructure,
+                      'topNCount': _topNCount,
+                      'tiers': _tiers,
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -3653,4 +4364,288 @@ class _AwardsPrizesSubScreenViewState
       ],
     );
   }
+
+  Widget _buildEqualColumnSegment({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        height: 42,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? const LinearGradient(
+                  colors: [
+                    Color(0x40D4AF37),
+                    Color(0x18D4AF37),
+                  ],
+                )
+              : const LinearGradient(
+                  colors: [
+                    Color(0xCC0B101B),
+                    Color(0xE6070A11),
+                  ],
+                ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? AppTheme.goldPrimary : const Color(0x2EFFFFFF),
+            width: selected ? 1.4 : 1.0,
+          ),
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w900,
+            color: selected ? AppTheme.textPrimary : AppTheme.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWinnerStructureCard({
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? const LinearGradient(
+                  colors: [
+                    Color(0x36D4AF37),
+                    Color(0xE6070A11),
+                  ],
+                )
+              : const LinearGradient(
+                  colors: [
+                    Color(0xCC0B101B),
+                    Color(0xE6070A11),
+                  ],
+                ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppTheme.goldPrimary : const Color(0x2EFFFFFF),
+            width: selected ? 1.4 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              size: 18,
+              color: selected ? AppTheme.goldPrimary : AppTheme.textMuted,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w900,
+                      color: selected
+                          ? AppTheme.textPrimary
+                          : AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPodiumPurseCard(int index) {
+    final pos = (_tiers[index]['position'] as int?) ?? (index + 1);
+    final Color metalColor = pos == 1
+        ? const Color(0xFFD4AF37) // 24k Champagne Gold
+        : (pos == 2
+            ? const Color(0xFFE2E8F0) // Brushed Platinum Silver
+            : const Color(0xFFCD7F32)); // Championship Bronze
+    final String posTitle = pos == 1
+        ? 'POSITION #1 • 1ST PLACE CHAMPION'
+        : (pos == 2
+            ? 'POSITION #2 • 2ND PLACE SILVER'
+            : 'POSITION #3 • 3RD PLACE BRONZE');
+    final List<(int, String)> quickChips = pos == 1
+        ? const [(10000, '10,000'), (25000, '25,000'), (50000, '50,000')]
+        : (pos == 2
+            ? const [(5000, '5,000'), (15000, '15,000'), (25000, '25,000')]
+            : const [(2500, '2,500'), (7500, '7,500'), (10000, '10,000')]);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            metalColor.withValues(alpha: 0.16),
+            const Color(0xEB070A11),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: metalColor.withValues(alpha: 0.8),
+          width: 1.4,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: metalColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: metalColor),
+                ),
+                child: Icon(
+                  Icons.workspace_premium_rounded,
+                  color: metalColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  posTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13.5,
+                    color: metalColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_rewardType == 'CASH_PKR' ||
+              _rewardType == 'CASH_AND_AWARDS') ...[
+            TextField(
+              controller: _cashCtrls[index],
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 14.5),
+              decoration: const InputDecoration(
+                labelText: 'Prize Purse (PKR) *',
+                prefixIcon: Icon(Icons.payments_outlined, size: 18),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _tiers[index]['cashAmountPkr'] =
+                      int.tryParse(val.trim()) ?? 0;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final chip in quickChips)
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _tiers[index]['cashAmountPkr'] = chip.$1;
+                        _cashCtrls[index]?.text = chip.$1.toString();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (_tiers[index]['cashAmountPkr'] == chip.$1)
+                            ? metalColor.withValues(alpha: 0.25)
+                            : const Color(0xCC0B101B),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(
+                          color: (_tiers[index]['cashAmountPkr'] == chip.$1)
+                              ? metalColor
+                              : const Color(0x2EFFFFFF),
+                        ),
+                      ),
+                      child: Text(
+                        'PKR ${chip.$2}',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontMono,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: (_tiers[index]['cashAmountPkr'] == chip.$1)
+                              ? metalColor
+                              : AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (_rewardType == 'CASH_AND_AWARDS') const SizedBox(height: 10),
+          ],
+          if (_rewardType == 'AWARDS' ||
+              _rewardType == 'CASH_AND_AWARDS') ...[
+            TextField(
+              controller: _awardCtrls[index],
+              style: const TextStyle(fontSize: 14.5),
+              decoration: const InputDecoration(
+                labelText: 'Trophy / Medal Title *',
+                prefixIcon: Icon(Icons.emoji_events_outlined, size: 18),
+              ),
+              onChanged: (val) {
+                _tiers[index]['awardTitle'] = val;
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
+

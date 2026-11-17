@@ -1844,8 +1844,16 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
         : const <Map<String, dynamic>>[];
 
     final formatBadgeText = _isSuperfights
-        ? 'SUPERFIGHTS (SINGLE BOUTS)'
+        ? 'SUPERFIGHTS'
         : _eliminationSubFormat.replaceAll('_', ' ');
+
+    String compactDiv(String raw) {
+      String w = raw.split('•').first.trim().replaceAll(' ', '');
+      final up = raw.toUpperCase();
+      if (up.contains('RIGHT')) return '$w R';
+      if (up.contains('LEFT')) return '$w L';
+      return raw;
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -1855,37 +1863,133 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
         40,
       ),
       children: [
-        // Offline-First Status & Locked Format Indicator (NO Superfights vs Elimination toggle here)
+        // =====================================================================
+        // 0. SLEEK FORGED-CRYSTAL STAGE HEADER
+        // =====================================================================
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.55)),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF171C26), Color(0xFF0C0F16)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+              width: 1.2,
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.offline_bolt_rounded,
-                  size: 16, color: AppTheme.emerald),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'CARD 3 MATCHUPS • $formatBadgeText • ${widget.autoSaveBannerText}',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontMono,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.emerald,
+              InkWell(
+                onTap: widget.onBackToHub,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppTheme.obsidian,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 12,
+                        color: AppTheme.goldPrimary,
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'HUB',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MATCHUPS, BRACKETS & PODIUM • $formatBadgeText',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        color: AppTheme.textPrimary,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${compactDiv(_selectedCategory)} • ${catAthletes.length} Pullers • $doneInRoundCount Done / $pendingInRoundCount Pending',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.emerald,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isFinalDoneForSelectedCategory)
+                InkWell(
+                  key: const ValueKey('card3_complete_final_podium_button'),
+                  borderRadius: BorderRadius.circular(9),
+                  onTap: _handleCompleteFinalAndCertifyPodiumNow,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.emoji_events_rounded,
+                          size: 13,
+                          color: AppTheme.goldPrimary,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'PODIUM',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.goldPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
         const SizedBox(height: 12),
 
         // =====================================================================
-        // AUTOMATIC WINNERS / PODIUM SUMMARY CARD (1ST, 2ND, 3RD PLACE)
-        // Automatically shown at the top of the category when the "Final" match is Done!
+        // AUTOMATIC 1ST, 2ND & 3RD PLACE CATEGORY PODIUM BANNER
         // =====================================================================
         if (isFinalDoneForSelectedCategory &&
             selectedCategoryPodium.isNotEmpty) ...[
@@ -1904,60 +2008,68 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
         ],
 
         // =====================================================================
-        // 1. MATCHUP CREATION ACTION BAR (SMART RANDOM, MANUAL PAIR & BYE RULE)
+        // 1. TOP COMMAND ACTION BAR
         // =====================================================================
-        ElevatedActionCard(
-          padding: const EdgeInsets.all(14),
-          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.6),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF171D29), Color(0xFF0C1017)],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+              width: 1.2,
+            ),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'MATCHUP ENGINE • $_selectedCategory (${catAthletes.length} Athletes)',
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.goldPrimary,
-                      ),
-                    ),
-                  ),
-                  if (catAthletes.length % 2 == 1)
-                    const StatusChip(
-                      label: 'ODD ROSTER • BYE ACTIVE',
-                      type: StatusType.warning,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Pair opponents manually or tap "Random Matchups" to pair smartly by Elo, PRs & Max Lift. Odd-numbered rosters automatically assign a BYE (Auto-Advance to Next Round).',
-                style: TextStyle(fontSize: 11.5, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     flex: 3,
-                    child: ElevatedButton.icon(
+                    child: GestureDetector(
                       key: const ValueKey('card3_smart_random_matchups_button'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.goldPrimary,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 11),
-                      ),
-                      onPressed: _handleSmartRandomMatchupsForCurrentRound,
-                      icon: const Icon(Icons.shuffle_rounded, size: 17),
-                      label: const Text(
-                        'RANDOM MATCHUPS (BY ELO, PR & LIFT)',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
+                      onTap: _handleSmartRandomMatchupsForCurrentRound,
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF3A1216), Color(0xFF1C080B)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFE23B3B),
+                            width: 1.3,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.bolt_rounded,
+                              size: 18,
+                              color: AppTheme.goldPrimary,
+                            ),
+                            SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                '⚡ SMART RANDOM PAIRING',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.textPrimary,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1965,105 +2077,139 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                   const SizedBox(width: 8),
                   Expanded(
                     flex: 2,
-                    child: OutlinedButton.icon(
+                    child: GestureDetector(
                       key: const ValueKey('card3_manual_pair_button'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.cyan,
-                        side: const BorderSide(color: AppTheme.cyan),
-                        padding: const EdgeInsets.symmetric(vertical: 11),
+                      onTap: () => _openManualPairOrByeDialog(),
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.goldPrimary,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 17,
+                              color: AppTheme.goldPrimary,
+                            ),
+                            SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '+ MANUAL BOUT',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.goldPrimary,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      onPressed: () => _openManualPairOrByeDialog(),
-                      icon:
-                          const Icon(Icons.person_add_alt_1_rounded, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+              if (catAthletes.length % 2 == 1) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.fast_forward_rounded,
+                      size: 14,
+                      color: AppTheme.goldPrimary,
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'ODD ROSTER BYE:',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
                       label: const Text(
-                        'MANUAL / BYE',
-                        style: TextStyle(
+                        'Top ELO/PR',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+                      ),
+                      selected: _byeAssignmentPolicy == 'HIGHEST_ELO_PR',
+                      onSelected: (_) => setState(
+                          () => _byeAssignmentPolicy = 'HIGHEST_ELO_PR'),
+                    ),
+                    const SizedBox(width: 6),
+                    ChoiceChip(
+                      label: const Text(
+                        'Random BYE',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+                      ),
+                      selected: _byeAssignmentPolicy == 'RANDOM',
+                      onSelected: (_) =>
+                          setState(() => _byeAssignmentPolicy = 'RANDOM'),
+                    ),
+                  ],
+                ),
+              ],
+              if (!_isSuperfights &&
+                  _selectedRound < roundTabs.length &&
+                  (doneInRoundCount > 0 || pendingInRoundCount > 0)) ...[
+                const SizedBox(height: 10),
+                GestureDetector(
+                  key: const ValueKey(
+                      'card3_next_round_cancel_pending_override_button'),
+                  onTap: _handleNextRoundAndCancelPendingOverride,
+                  child: Container(
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF102B22), Color(0xFF081712)],
+                      ),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(
+                        color: AppTheme.emerald,
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        pendingInRoundCount > 0
+                            ? '⏭ ADVANCE TO NEXT ROUND (OVERRIDE $pendingInRoundCount PENDING)'
+                            : '⏭ ADVANCE TO NEXT ROUND (ROUND ${_selectedRound + 1}) →',
+                        style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
+                          color: AppTheme.emerald,
+                          letterSpacing: 0.4,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Odd-Number BYE Policy Selector + Quick Final Completion for Podium
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  const Icon(Icons.fast_forward_rounded,
-                      size: 14, color: AppTheme.goldPrimary),
-                  const Text(
-                    'ODD-NUMBER "BYE" RULE:',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontMono,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Auto BYE → Highest Elo/PR',
-                        style: TextStyle(fontSize: 10)),
-                    selected: _byeAssignmentPolicy == 'HIGHEST_ELO_PR',
-                    onSelected: (_) =>
-                        setState(() => _byeAssignmentPolicy = 'HIGHEST_ELO_PR'),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Auto BYE → Random',
-                        style: TextStyle(fontSize: 10)),
-                    selected: _byeAssignmentPolicy == 'RANDOM',
-                    onSelected: (_) =>
-                        setState(() => _byeAssignmentPolicy = 'RANDOM'),
-                  ),
-                  if (!isFinalDoneForSelectedCategory)
-                    ActionChip(
-                      key: const ValueKey('card3_complete_final_podium_button'),
-                      avatar: const Icon(Icons.emoji_events_rounded,
-                          size: 14, color: AppTheme.goldPrimary),
-                      label: const Text(
-                        'Complete Final → Show 1st/2nd/3rd Podium',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                      onPressed: _handleCompleteFinalAndCertifyPodiumNow,
-                    ),
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
 
         // =====================================================================
-        // 2. MULTI-TABLE DYNAMIC FREE-TABLE QUEUE & ABSENT PLAYERS PANEL
+        // 2. CLEAN CONTEXT-AWARE FILTER STRIPS (ZERO CLUTTER)
         // =====================================================================
-        if (_tableCount > 1) ...[
-          _buildDynamicFreeTableQueuePanel(roundMatches),
-          const SizedBox(height: 14),
-        ],
-
-        // =====================================================================
-        // 3. CONTEXT-AWARE FILTER BARS
-        // =====================================================================
-        // 3A. Weight Category Filters
-        const Text(
-          'WEIGHT CATEGORY FILTERS',
-          style: TextStyle(
-            fontFamily: AppTheme.fontDisplay,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.8,
-            color: AppTheme.goldPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
+        // Row 1: Horizontal Weight & Arm Division chips (70kg R, 70kg L, 80kg R...)
         SingleChildScrollView(
           key: const ValueKey('card3_weight_category_filter_bar'),
           scrollDirection: Axis.horizontal,
@@ -2072,19 +2218,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               for (final cat in categories)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(
-                      '${_isCategoryFinalCompleted(cat) ? "🏆 " : ""}$cat (${_athletesInCategory(cat).length})',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: _selectedCategory == cat
-                            ? FontWeight.w900
-                            : FontWeight.w700,
-                        fontSize: 11.5,
-                      ),
-                    ),
-                    selected: _selectedCategory == cat,
-                    onSelected: (_) {
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () {
                       HapticFeedback.selectionClick();
                       setState(() {
                         _selectedCategory = cat;
@@ -2092,100 +2228,149 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                         _synchronizeDynamicFreeTableActiveSlots(cat);
                       });
                     },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: _selectedCategory == cat
+                            ? const LinearGradient(
+                                colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFF151923), Color(0xFF0C0F16)],
+                              ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _selectedCategory == cat
+                              ? AppTheme.goldPrimary
+                              : const Color(0x28FFFFFF),
+                          width: _selectedCategory == cat ? 1.3 : 1.0,
+                        ),
+                      ),
+                      child: Text(
+                        '${_isCategoryFinalCompleted(cat) ? "🏆 " : ""}${compactDiv(cat)} (${_athletesInCategory(cat).length})',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11.5,
+                          color: _selectedCategory == cat
+                              ? AppTheme.goldPrimary
+                              : AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
-        // 3B. Elimination Round Filters (ONLY shown if Elimination format was selected in Card 1; hidden for Superfights)
-        if (!_isSuperfights) ...[
-          const Text(
-            'ELIMINATION ROUND FILTERS (DYNAMIC BY CATEGORY SIZE)',
-            style: TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.8,
-              color: AppTheme.goldPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          SingleChildScrollView(
-            key: const ValueKey('card3_elimination_round_filter_bar'),
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final rt in roundTabs)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(
-                        rt['label'].toString(),
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: _selectedRound == rt['round']
-                              ? FontWeight.w900
-                              : FontWeight.w700,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                      selected: _selectedRound == rt['round'],
-                      onSelected: (_) {
-                        HapticFeedback.selectionClick();
-                        setState(() {
-                          _selectedRound = rt['round'] as int;
-                          _synchronizeDynamicFreeTableActiveSlots(
-                              _selectedCategory);
-                        });
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-        ],
-
-        // 3C. Pairing Status Filters ("Matched Up" vs. "Non-Matched Up") & Completion Status Filters ("Pending", "Done", "All")
+        // Row 2: Compact Segmented Bar for [ Matched ] vs [ Unmatched ] + Status Pills (All, Pending, Completed)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              ChoiceChip(
-                key: const ValueKey('card3_filter_matched_up'),
-                label: Text('Matched Up (${roundMatches.length})'),
-                selected: _pairingFilter == 'MATCHED_UP',
-                onSelected: (_) =>
-                    setState(() => _pairingFilter = 'MATCHED_UP'),
-              ),
-              const SizedBox(width: 6),
-              ChoiceChip(
-                key: const ValueKey('card3_filter_non_matched_up'),
-                label: Text('Non-Matched Up (${nonMatchedAthletes.length})'),
-                selected: _pairingFilter == 'NON_MATCHED_UP',
-                onSelected: (_) =>
-                    setState(() => _pairingFilter = 'NON_MATCHED_UP'),
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1017),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0x28FFFFFF)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      key: const ValueKey('card3_filter_matched_up'),
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () =>
+                          setState(() => _pairingFilter = 'MATCHED_UP'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _pairingFilter == 'MATCHED_UP'
+                              ? const Color(0xFFE23B3B).withValues(alpha: 0.22)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: _pairingFilter == 'MATCHED_UP'
+                              ? Border.all(color: const Color(0xFFE23B3B))
+                              : null,
+                        ),
+                        child: Text(
+                          'Matched (${roundMatches.length})',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: _pairingFilter == 'MATCHED_UP'
+                                ? AppTheme.textPrimary
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      key: const ValueKey('card3_filter_non_matched_up'),
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () =>
+                          setState(() => _pairingFilter = 'NON_MATCHED_UP'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _pairingFilter == 'NON_MATCHED_UP'
+                              ? AppTheme.warning.withValues(alpha: 0.22)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: _pairingFilter == 'NON_MATCHED_UP'
+                              ? Border.all(color: AppTheme.warning)
+                              : null,
+                        ),
+                        child: Text(
+                          'Unmatched (${nonMatchedAthletes.length})',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: _pairingFilter == 'NON_MATCHED_UP'
+                                ? AppTheme.warning
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (_pairingFilter == 'MATCHED_UP') ...[
-                const SizedBox(width: 14),
-                Container(
-                  width: 1,
-                  height: 22,
-                  color: const Color(0x33FFFFFF),
-                ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 for (final comp in [
                   ('ALL', 'All (${roundMatches.length})'),
                   ('PENDING', 'Pending ($pendingInRoundCount)'),
-                  ('DONE', 'Done ($doneInRoundCount)'),
+                  ('DONE', 'Completed ($doneInRoundCount)'),
                 ])
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
                       key: ValueKey('card3_completion_filter_${comp.$1}'),
-                      label: Text(comp.$2, style: const TextStyle(fontSize: 11)),
+                      label: Text(
+                        comp.$2,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       selected: _completionFilter == comp.$1,
                       onSelected: (_) =>
                           setState(() => _completionFilter = comp.$1),
@@ -2196,17 +2381,91 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
           ),
         ),
 
-        // 3D. Table Filters (ONLY shown when No. of Tables > 1)
+        // Row 3 (Shown ONLY for Elimination): Round Progression Pills with Connecting Line
+        if (!_isSuperfights) ...[
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            key: const ValueKey('card3_elimination_round_filter_bar'),
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (int i = 0; i < roundTabs.length; i++) ...[
+                  if (i > 0)
+                    Container(
+                      width: 14,
+                      height: 2,
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                    ),
+                  Builder(
+                    builder: (_) {
+                      final rt = roundTabs[i];
+                      final rNum = rt['round'] as int;
+                      final isSel = _selectedRound == rNum;
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _selectedRound = rNum;
+                            _synchronizeDynamicFreeTableActiveSlots(
+                                _selectedCategory);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 11,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSel
+                                ? AppTheme.goldPrimary.withValues(alpha: 0.2)
+                                : const Color(0xFF131722),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSel
+                                  ? AppTheme.goldPrimary
+                                  : const Color(0x28FFFFFF),
+                              width: isSel ? 1.3 : 1.0,
+                            ),
+                          ),
+                          child: Text(
+                            rt['label'].toString(),
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                              color: isSel
+                                  ? AppTheme.goldPrimary
+                                  : AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+
+        // Row 4 (Shown ONLY when Tables > 1): Table Filter Pills
         if (_tableCount > 1) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           SingleChildScrollView(
             key: const ValueKey('card3_table_filter_bar'),
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 ChoiceChip(
-                  label:
-                      const Text('All Tables', style: TextStyle(fontSize: 11)),
+                  label: const Text(
+                    'All Tables',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   selected: _selectedTableFilter == 'ALL',
                   onSelected: (_) =>
                       setState(() => _selectedTableFilter = 'ALL'),
@@ -2216,7 +2475,14 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
-                      label: Text(tName, style: const TextStyle(fontSize: 11)),
+                      label: Text(
+                        tName,
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       selected: _selectedTableFilter == tName,
                       onSelected: (_) =>
                           setState(() => _selectedTableFilter = tName),
@@ -2225,45 +2491,98 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               ],
             ),
           ),
+          const SizedBox(height: 10),
+          _buildDynamicFreeTableQueuePanel(roundMatches),
         ],
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
 
-        // =====================================================================
-        // 4. ROUND LOCKING & OPERATOR "NEXT ROUND & CANCEL PENDING" OVERRIDE
-        // =====================================================================
-        if (!_isSuperfights) ...[
-          _buildRoundLockAndOverrideBanner(
-            roundTabs: roundTabs,
-            doneCount: doneInRoundCount,
-            pendingCount: pendingInRoundCount,
-            isCurrentRoundSubmissionAllowed: isCurrentRoundSubmissionAllowed,
+        // Unlock Override Pill if viewing a locked future round
+        if (!_isSuperfights && !isCurrentRoundSubmissionAllowed) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: AppTheme.warning.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.warning),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.lock_clock_rounded,
+                  size: 16,
+                  color: AppTheme.warning,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Round $_selectedRound awaiting Round ${_selectedRound - 1} completion',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.warning,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      _markRoundUnlockedByOverride(
+                          _selectedCategory, _selectedRound);
+                    });
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.goldPrimary),
+                    ),
+                    child: const Text(
+                      'UNLOCK NOW',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
         ],
 
         // =====================================================================
-        // 5. MATCHED UP LIST OR NON-MATCHED UP LIST
+        // 3. BOUT PLATES OR UNMATCHED ATHLETE LIST
         // =====================================================================
         if (_pairingFilter == 'NON_MATCHED_UP')
           _buildNonMatchedUpAthletesList(nonMatchedAthletes)
         else if (completionFilteredMatches.isEmpty)
-          ElevatedActionCard(
-            padding: const EdgeInsets.all(AppTheme.space16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFF121620),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0x28FFFFFF)),
+            ),
+            child: Row(
               children: [
-                Text(
-                  _selectedRound > 1 && !isCurrentRoundSubmissionAllowed
-                      ? 'Next Round Preview: Complete or submit matches in Round ${_selectedRound - 1} (or tap "Next Round Matchups & Cancel Any Left Pending" above) to populate and unlock Round $_selectedRound matchups.'
-                      : 'No matchups match the current filter in $_selectedCategory.',
-                  style: const TextStyle(
-                      fontSize: 12, color: AppTheme.textSecondary),
+                const Expanded(
+                  child: Text(
+                    'No bouts in this filter view.',
+                    style:
+                        TextStyle(fontSize: 12.5, color: AppTheme.textSecondary),
+                  ),
                 ),
-                const SizedBox(height: 10),
                 OutlinedButton.icon(
                   onPressed: _handleSmartRandomMatchupsForCurrentRound,
-                  icon: const Icon(Icons.shuffle_rounded, size: 16),
-                  label: const Text('GENERATE SMART RANDOM MATCHUPS NOW'),
+                  icon: const Icon(Icons.bolt_rounded, size: 16),
+                  label: const Text('SMART PAIR'),
                 ),
               ],
             ),
@@ -2280,7 +2599,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     );
   }
 
-  /// DYNAMIC FREE-TABLE QUEUE & ABSENT PLAYERS PANEL (When Tables > 1)
+  /// COMPACT MULTI-TABLE LIVE DECK & FREE-TABLE QUEUE STRIP (When Tables > 1)
   Widget _buildDynamicFreeTableQueuePanel(
     List<Map<String, dynamic>> roundMatches,
   ) {
@@ -2292,81 +2611,64 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
 
     final lastSummary = _matchupsState['lastAutoAssignedSummary']?.toString();
 
-    return ElevatedActionCard(
+    return Container(
       key: const ValueKey('card3_dynamic_free_table_queue_panel'),
-      padding: const EdgeInsets.all(14),
-      borderColor: AppTheme.cyan.withValues(alpha: 0.65),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111621),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cyan.withValues(alpha: 0.45)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               const Icon(Icons.table_restaurant_rounded,
-                  size: 17, color: AppTheme.cyan),
-              const SizedBox(width: 8),
+                  size: 15, color: AppTheme.cyan),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'MULTI-TABLE LIVE DECK & DYNAMIC FREE-TABLE QUEUE (${_tableCount} TABLES)',
+                  'LIVE MULTI-TABLE QUEUE ($_tableCount TABLES)',
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 12.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                     color: AppTheme.cyan,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
               StatusChip(
                 label: _isDynamicFreeTableMode
-                    ? 'DYNAMIC FREE-TABLE ON'
+                    ? 'FREE-TABLE AUTO QUEUE'
                     : _tableAssignmentMode.replaceAll('_', ' '),
                 type: StatusType.info,
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'When a match finishes, its table is marked Freed and the next queued matchup is automatically assigned to that table. If selected athletes are absent at the table, tap "Skip for Now / Play Next Matchup" so the next ready pair plays immediately while the absent matchup stays queued right after them.',
-            style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-          ),
           if (lastSummary != null && lastSummary.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: AppTheme.emerald.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                    color: AppTheme.emerald.withValues(alpha: 0.55)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.bolt_rounded,
-                      size: 16, color: AppTheme.emerald),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      lastSummary,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontMono,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.emerald,
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 6),
+            Text(
+              lastSummary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: AppTheme.fontMono,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.emerald,
               ),
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 for (final tName in _tableNames)
                   Padding(
-                    padding: const EdgeInsets.only(right: 10),
+                    padding: const EdgeInsets.only(right: 8),
                     child: _buildSingleTableQueueStatusCard(
                       tableName: tName,
                       pendingMatches: pendingMatches,
@@ -2389,21 +2691,17 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
         .toList();
 
     final activeMatch = tablePending.firstOrNull;
-    final nextInQueue =
-        tablePending.length > 1 ? tablePending[1] : pendingMatches
-            .where((m) => m['id'] != activeMatch?['id'])
-            .firstOrNull;
 
     return Container(
-      width: 265,
-      padding: const EdgeInsets.all(11),
+      width: 235,
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0x16FFFFFF),
-        borderRadius: BorderRadius.circular(10),
+        color: AppTheme.obsidian,
+        borderRadius: BorderRadius.circular(11),
         border: Border.all(
           color: activeMatch != null
-              ? AppTheme.cyan.withValues(alpha: 0.65)
-              : AppTheme.emerald.withValues(alpha: 0.65),
+              ? AppTheme.cyan.withValues(alpha: 0.55)
+              : AppTheme.emerald.withValues(alpha: 0.55),
         ),
       ),
       child: Column(
@@ -2416,136 +2714,135 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 tableName.toUpperCase(),
                 style: const TextStyle(
                   fontFamily: AppTheme.fontDisplay,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w900,
                   color: AppTheme.goldPrimary,
                 ),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: activeMatch != null
-                      ? AppTheme.cyan.withValues(alpha: 0.2)
-                      : AppTheme.emerald.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  activeMatch != null
-                      ? 'ON TABLE • MATCH #${activeMatch['matchIndex']}'
-                      : 'TABLE FREE ✓',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontMono,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color:
-                        activeMatch != null ? AppTheme.cyan : AppTheme.emerald,
-                  ),
+              Text(
+                activeMatch != null
+                    ? 'BOUT #${activeMatch['matchIndex']}'
+                    : 'TABLE FREE ✓',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w900,
+                  color:
+                      activeMatch != null ? AppTheme.cyan : AppTheme.emerald,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           if (activeMatch != null) ...[
             Text(
-              '${activeMatch['athleteAName']} vs. ${activeMatch['athleteBName']}',
+              '${activeMatch['athleteAName']} vs ${activeMatch['athleteBName']}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontFamily: AppTheme.fontDisplay,
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 3),
-            Text(
-              nextInQueue != null
-                  ? 'Next Queued: #${nextInQueue['matchIndex']} (${nextInQueue['athleteAName']} vs. ${nextInQueue['athleteBName']})'
-                  : 'Next Queued: No other pending matchups waiting',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: AppTheme.fontMono,
-                fontSize: 9.5,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                key: ValueKey('card3_table_skip_absent_${tableName.replaceAll(' ', '_')}'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.warning,
-                  side: const BorderSide(color: AppTheme.warning),
-                  minimumSize: const Size(0, 30),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-                onPressed: () =>
-                    _handleSkipAbsentAndPlayNextMatchup(activeMatch),
-                icon: const Icon(Icons.skip_next_rounded, size: 13),
-                label: const Text(
-                  'SKIP FOR NOW / PLAY NEXT MATCHUP',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w900,
+            const SizedBox(height: 6),
+            InkWell(
+              key: ValueKey(
+                  'card3_table_skip_absent_${tableName.replaceAll(' ', '_')}'),
+              borderRadius: BorderRadius.circular(7),
+              onTap: () => _handleSkipAbsentAndPlayNextMatchup(activeMatch),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(
+                    color: AppTheme.warning.withValues(alpha: 0.65),
                   ),
                 ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.skip_next_rounded,
+                        size: 13, color: AppTheme.warning),
+                    SizedBox(width: 4),
+                    Text(
+                      '⏭ SKIP (ABSENT)',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.warning,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ] else ...[
+          ] else
             const Text(
-              'Table is Freed and ready for the next round or manual assignment.',
+              'Ready for next queued bout',
               style: TextStyle(fontSize: 10.5, color: AppTheme.emerald),
             ),
-          ],
         ],
       ),
     );
   }
 
-  /// AUTOMATIC CATEGORY WINNERS / PODIUM SUMMARY CARD (1ST, 2ND, 3RD PLACE)
+  /// PRESTIGIOUS CHAMPIONSHIP PODIUM BANNER (1st Gold, 2nd Silver, 3rd Bronze + PKR Purse)
   Widget _buildCategoryPodiumSummaryCard({
     required String categoryLabel,
     required List<Map<String, dynamic>> podium,
   }) {
-    final winnerStructure =
-        (_awardsConfig['winnerStructure'] ?? 'PER_CATEGORY_WINNERS')
-            .toString()
-            .toUpperCase();
-    final rewardType =
-        (_awardsConfig['rewardType'] ?? 'CASH_AND_AWARDS').toString();
-
-    return ElevatedActionCard(
+    return Container(
       key: ValueKey('card3_category_podium_summary_$categoryLabel'),
-      padding: const EdgeInsets.all(16),
-      borderColor: AppTheme.goldPrimary,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF282010), Color(0xFF100E09)],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.goldPrimary, width: 1.5),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events_rounded,
-                  size: 22, color: AppTheme.goldPrimary),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.goldPrimary),
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  size: 20,
+                  color: AppTheme.goldPrimary,
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'FINAL COMPLETED • CATEGORY WINNERS & PODIUM SUMMARY',
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontMono,
-                        fontSize: 10,
+                    const Text(
+                      'CHAMPIONSHIP PODIUM STANDINGS',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.emerald,
+                        letterSpacing: 0.7,
                       ),
                     ),
                     Text(
-                      '$categoryLabel — OFFICIAL PODIUM (1ST, 2ND, 3RD PLACE)',
+                      categoryLabel.toUpperCase(),
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 14,
@@ -2557,108 +2854,113 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 ),
               ),
               const StatusChip(
-                label: 'FINAL DONE ✓',
+                label: 'FINAL CERTIFIED ✓',
                 type: StatusType.success,
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Connected directly to Card 1 Awards & Prizes (${rewardType.replaceAll('_', ' ')} • ${winnerStructure.replaceAll('_', ' ')}).',
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-          ),
           const SizedBox(height: 12),
           for (final p in podium) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(11),
-              decoration: BoxDecoration(
-                color: p['position'] == 1
-                    ? AppTheme.goldPrimary.withValues(alpha: 0.16)
-                    : (p['position'] == 2
-                        ? AppTheme.cyan.withValues(alpha: 0.12)
-                        : const Color(0x16FFFFFF)),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: p['position'] == 1
-                      ? AppTheme.goldPrimary
-                      : (p['position'] == 2
-                          ? AppTheme.cyan.withValues(alpha: 0.7)
-                          : const Color(0x44FFFFFF)),
-                  width: p['position'] == 1 ? 1.5 : 1.0,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: p['position'] == 1
-                          ? AppTheme.goldPrimary
-                          : (p['position'] == 2
-                              ? AppTheme.cyan
-                              : AppTheme.warning),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '#${p['position']}',
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
-                      ),
+            Builder(
+              builder: (_) {
+                final pos = (p['position'] as num?)?.toInt() ?? 1;
+                final Color medalColor = pos == 1
+                    ? const Color(0xFFD4AF37) // 1st Gold
+                    : pos == 2
+                        ? const Color(0xFFE2E8F0) // 2nd Silver
+                        : const Color(0xFFCD7F32); // 3rd Bronze
+                final String medalTitle = pos == 1
+                    ? '1ST GOLD'
+                    : pos == 2
+                        ? '2ND SILVER'
+                        : '3RD BRONZE';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF12151E),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: medalColor.withValues(alpha: pos == 1 ? 0.85 : 0.45),
+                      width: pos == 1 ? 1.4 : 1.0,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${p['title']} • ${p['athleteName']}',
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: medalColor.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(color: medalColor),
+                        ),
+                        child: Text(
+                          medalTitle,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: medalColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (p['athleteName'] ?? 'Champion').toString(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'ELO ${p['eloRating']} • PR ${p['prKg']}kg',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.emerald.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(
+                            color: AppTheme.emerald.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        child: Text(
+                          p['prizeDescription'].toString(),
                           style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${p['clubName']} • ${p['eloRating']} ELO • PR ${p['prKg']}kg • Lift ${p['maxLiftKg']}kg',
-                          style: const TextStyle(
-                            fontFamily: AppTheme.fontMono,
                             fontSize: 10,
-                            color: AppTheme.textSecondary,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.emerald,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppTheme.emerald.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppTheme.emerald),
-                    ),
-                    child: Text(
-                      p['prizeDescription'].toString(),
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontMono,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.emerald,
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ],
@@ -2666,7 +2968,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     );
   }
 
-  /// OVERALL TOURNAMENT WINNERS SUMMARY CARD (Shown when Card 1 configured OVERALL_WINNERS)
+  /// OVERALL TOURNAMENT WINNERS SUMMARY CARD
   Widget _buildOverallTournamentWinnersCard(List<String> categories) {
     final championsPool = <Map<String, dynamic>>[];
     for (final cat in categories) {
@@ -2699,7 +3001,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'OVERALL TOURNAMENT WINNERS PODIUM (CARD 1 OVERALL PRIZE STRUCTURE)',
+                  'OVERALL TOURNAMENT CHAMPIONS',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 12.5,
@@ -2719,7 +3021,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Overall #${i + 1}: ${topOverall[i]['athleteName']} (${topOverall[i]['categoryLabel']} • ${topOverall[i]['eloRating']} ELO)',
+                      '#${i + 1} ${topOverall[i]['athleteName']} (${topOverall[i]['categoryLabel']})',
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontSize: 12,
@@ -2731,8 +3033,8 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                   Text(
                     _formatPrizeForPosition(i + 1),
                     style: const TextStyle(
-                      fontFamily: AppTheme.fontMono,
-                      fontSize: 10.5,
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.goldPrimary,
                     ),
@@ -2745,133 +3047,19 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     );
   }
 
-  Widget _buildRoundLockAndOverrideBanner({
-    required List<Map<String, dynamic>> roundTabs,
-    required int doneCount,
-    required int pendingCount,
-    required bool isCurrentRoundSubmissionAllowed,
-  }) {
-    final canAdvanceToNextRound = _selectedRound < roundTabs.length;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isCurrentRoundSubmissionAllowed
-            ? AppTheme.emerald.withValues(alpha: 0.1)
-            : AppTheme.warning.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isCurrentRoundSubmissionAllowed
-              ? AppTheme.emerald.withValues(alpha: 0.6)
-              : AppTheme.warning,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isCurrentRoundSubmissionAllowed
-                    ? Icons.lock_open_rounded
-                    : Icons.lock_clock_rounded,
-                size: 17,
-                color: isCurrentRoundSubmissionAllowed
-                    ? AppTheme.emerald
-                    : AppTheme.warning,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  isCurrentRoundSubmissionAllowed
-                      ? 'ROUND $_selectedRound ACTIVE • $doneCount DONE / $pendingCount PENDING'
-                      : 'ROUND $_selectedRound RESULT SUBMISSION LOCKED (PREVIOUS ROUND HAS PENDING MATCHES)',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
-                    color: isCurrentRoundSubmissionAllowed
-                        ? AppTheme.emerald
-                        : AppTheme.warning,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            isCurrentRoundSubmissionAllowed
-                ? 'As results are submitted, surviving athletes automatically build and update Round ${_selectedRound + 1} matchups by Elo, PRs & Max Lift.'
-                : 'Default Rule: Next round matchups are pre-built dynamically, but result submission waits until previous round matches finish OR you click Operator Override below.',
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-          ),
-          if (canAdvanceToNextRound && (pendingCount > 0 || doneCount > 0)) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                key: const ValueKey(
-                    'card3_next_round_cancel_pending_override_button'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.warning,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                onPressed: _handleNextRoundAndCancelPendingOverride,
-                icon: const Icon(Icons.skip_next_rounded, size: 18),
-                label: Text(
-                  pendingCount > 0
-                      ? 'NEXT ROUND MATCHUPS & CANCEL ANY LEFT PENDING ($pendingCount PENDING)'
-                      : 'OPEN NEXT ROUND MATCHUPS (ROUND ${_selectedRound + 1}) →',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-          ],
-          if (!isCurrentRoundSubmissionAllowed) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.goldPrimary,
-                  side: const BorderSide(color: AppTheme.goldPrimary),
-                ),
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  setState(() {
-                    _markRoundUnlockedByOverride(
-                        _selectedCategory, _selectedRound);
-                  });
-                },
-                icon: const Icon(Icons.lock_open_rounded, size: 16),
-                label: Text(
-                  'OPERATOR OVERRIDE: ALLOW ROUND $_selectedRound RESULT SUBMISSIONS NOW',
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildNonMatchedUpAthletesList(
     List<Map<String, dynamic>> nonMatchedAthletes,
   ) {
     if (nonMatchedAthletes.isEmpty) {
-      return ElevatedActionCard(
-        padding: const EdgeInsets.all(AppTheme.space16),
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF121620),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.emerald.withValues(alpha: 0.45)),
+        ),
         child: const Text(
-          'All eligible athletes in this category and round are currently Matched Up (or assigned a BYE).',
+          'All athletes in this division and round are paired.',
           style: TextStyle(fontSize: 12, color: AppTheme.emerald),
         ),
       );
@@ -2880,9 +3068,14 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     return Column(
       children: [
         for (final a in nonMatchedAthletes) ...[
-          ElevatedActionCard(
-            padding: const EdgeInsets.all(14),
-            borderColor: AppTheme.warning.withValues(alpha: 0.6),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF151923),
+              borderRadius: BorderRadius.circular(14),
+              border:
+                  Border.all(color: AppTheme.warning.withValues(alpha: 0.55)),
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -2893,37 +3086,48 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                         a['athleteName']?.toString() ?? 'Athlete',
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 14.5,
+                          fontSize: 14,
                           fontWeight: FontWeight.w900,
                           color: AppTheme.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${a['eloRating']} ELO • PR: ${a['prKg']} kg • Max Lift: ${a['maxLiftKg']} kg',
+                        'ELO ${a['eloRating']} • PR ${a['prKg']}kg • Lift ${a['maxLiftKg']}kg',
                         style: const TextStyle(
-                          fontFamily: AppTheme.fontMono,
                           fontSize: 11,
-                          color: AppTheme.cyan,
+                          color: AppTheme.goldPrimary,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.goldPrimary,
-                    foregroundColor: Colors.black,
-                  ),
-                  onPressed: () => _openManualPairOrByeDialog(
+                InkWell(
+                  borderRadius: BorderRadius.circular(9),
+                  onTap: () => _openManualPairOrByeDialog(
                     preselectedAthleteAId: a['id'].toString(),
                   ),
-                  child: const Text(
-                    'PAIR / ASSIGN BYE',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                      ),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: AppTheme.goldPrimary),
+                    ),
+                    child: const Text(
+                      '+ PAIR / BYE',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.goldPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -2936,9 +3140,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     );
   }
 
-  /// Matchup Card UI with Left-vs-Right Athlete Layout, Elo, PR/Max Lift badge,
-  /// Assigned Table badge + Manual Table Reassignment, Dynamic Free-Table "Skip for Now / Play Next Matchup",
-  /// Superfight Point Transfer badge, and Elimination Loss Counter badges.
+  /// CHAMPIONSHIP "RED CORNER VS. GOLD/BLUE CORNER" MATCHUP CARD UI (BOUT PLATE)
   Widget _buildMatchupCard({
     required Map<String, dynamic> match,
     required bool isSubmissionAllowed,
@@ -2961,68 +3163,98 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     final aIsWinner = isDone && winnerId == aId;
     final bIsWinner = isDone && winnerId == bId;
 
-    Color borderColor = AppTheme.border;
-    if (isBye) {
-      borderColor = AppTheme.goldPrimary.withValues(alpha: 0.75);
-    } else if (isDone) {
-      borderColor = AppTheme.emerald.withValues(alpha: 0.7);
-    } else if (isCancelled) {
-      borderColor = AppTheme.crimson.withValues(alpha: 0.55);
-    } else if (tableQueueStatus == 'DEFERRED_PLAYS_NEXT') {
-      borderColor = AppTheme.warning.withValues(alpha: 0.75);
-    } else {
-      borderColor = AppTheme.cyan.withValues(alpha: 0.55);
-    }
+    final String statusLabel = isBye
+        ? 'BYE ADVANCE'
+        : isDone
+            ? 'COMPLETED ✓'
+            : isCancelled
+                ? 'OVERRIDDEN'
+                : (tableQueueStatus == 'ACTIVE_AT_TABLE' && _tableCount > 1
+                    ? 'ON TABLE'
+                    : 'PENDING');
 
-    return ElevatedActionCard(
-      padding: const EdgeInsets.all(14),
-      borderColor: borderColor,
+    final Color statusColor = isBye
+        ? AppTheme.goldPrimary
+        : isDone
+            ? AppTheme.emerald
+            : isCancelled
+                ? AppTheme.crimson
+                : (tableQueueStatus == 'ACTIVE_AT_TABLE'
+                    ? AppTheme.cyan
+                    : AppTheme.warning);
+
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF171C28), Color(0xFF0D1017)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDone
+              ? AppTheme.emerald.withValues(alpha: 0.55)
+              : isBye
+                  ? AppTheme.goldPrimary.withValues(alpha: 0.65)
+                  : const Color(0x33FFFFFF),
+          width: 1.2,
+        ),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top Header Row: Bout # + Assigned Table Badge + Queue Status + Status Badge + Edit/Swap Button
+          // 1. TOP STRIP: Bout # & Round tag on left, Assigned Table pill in center, Match Status pill on right
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.goldPrimary.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(6),
+                  color: AppTheme.obsidian,
+                  borderRadius: BorderRadius.circular(7),
                   border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.55)),
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                  ),
                 ),
                 child: Text(
                   _isSuperfights
-                      ? 'SUPERFIGHT #$matchIndex'
-                      : 'R$roundNumber • MATCH #$matchIndex',
+                      ? 'BOUT #$matchIndex • SUPERFIGHT'
+                      : 'BOUT #$matchIndex • ROUND $roundNumber',
                   style: const TextStyle(
-                    fontFamily: AppTheme.fontMono,
+                    fontFamily: AppTheme.fontDisplay,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     color: AppTheme.goldPrimary,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              // Clearly show Assigned Table Badge ("Table 1", "Table 2", etc.) on every matchup card
+              // Center Assigned Table Pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.cyan.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                  border:
-                      Border.all(color: AppTheme.cyan.withValues(alpha: 0.55)),
+                  color: AppTheme.cyan.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(
+                    color: AppTheme.cyan.withValues(alpha: 0.55),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.table_bar_rounded,
-                        size: 11, color: AppTheme.cyan),
+                    const Icon(
+                      Icons.table_bar_rounded,
+                      size: 11,
+                      color: AppTheme.cyan,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       tableBadge.toUpperCase(),
                       style: const TextStyle(
-                        fontFamily: AppTheme.fontMono,
+                        fontFamily: AppTheme.fontDisplay,
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.cyan,
@@ -3031,115 +3263,48 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                   ],
                 ),
               ),
-              if (_tableCount > 1 && !isDone && !isBye && !isCancelled) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: tableQueueStatus == 'ACTIVE_AT_TABLE'
-                        ? AppTheme.emerald.withValues(alpha: 0.16)
-                        : (tableQueueStatus == 'DEFERRED_PLAYS_NEXT'
-                            ? AppTheme.warning.withValues(alpha: 0.18)
-                            : const Color(0x18FFFFFF)),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    tableQueueStatus == 'ACTIVE_AT_TABLE'
-                        ? 'ON TABLE NOW'
-                        : (tableQueueStatus == 'DEFERRED_PLAYS_NEXT'
-                            ? 'DEFERRED • PLAYS NEXT'
-                            : 'QUEUED'),
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontMono,
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w900,
-                      color: tableQueueStatus == 'ACTIVE_AT_TABLE'
-                          ? AppTheme.emerald
-                          : (tableQueueStatus == 'DEFERRED_PLAYS_NEXT'
-                              ? AppTheme.warning
-                              : AppTheme.textSecondary),
-                    ),
+              // Right Match Status Pill
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(7),
+                  border: Border.all(
+                    color: statusColor.withValues(alpha: 0.7),
                   ),
                 ),
-              ],
-              const Spacer(),
-              StatusChip(
-                label: isBye
-                    ? 'BYE • AUTO-ADVANCE'
-                    : (isDone
-                        ? 'DONE ✓'
-                        : (isCancelled ? 'CANCELLED (PENDING)' : 'PENDING')),
-                type: isBye
-                    ? StatusType.warning
-                    : (isDone
-                        ? StatusType.success
-                        : (isCancelled
-                            ? StatusType.error
-                            : StatusType.info)),
-              ),
-              const SizedBox(width: 4),
-              IconButton(
-                tooltip: 'Edit / Swap Matchup or Assign BYE',
-                constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(4),
-                icon: const Icon(Icons.swap_horiz_rounded,
-                    size: 18, color: AppTheme.goldPrimary),
-                onPressed: () => _openEditOrSwapMatchupDialog(match),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    color: statusColor,
+                  ),
+                ),
               ),
             ],
           ),
 
-          // Deferred / Auto-Assigned Queue Notice Banner (if applicable)
-          if (deferredNote != null && deferredNote.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppTheme.warning.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-                border:
-                    Border.all(color: AppTheme.warning.withValues(alpha: 0.45)),
-              ),
-              child: Text(
-                deferredNote,
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontMono,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.warning,
-                ),
-              ),
-            ),
-          ],
-
-          // MULTI-TABLE MANUAL TABLE REASSIGNMENT BAR (When Tables > 1)
+          // Multi-Table Reassignment Strip (When Tables > 1)
           if (_tableCount > 1) ...[
             const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  const Text(
-                    'ASSIGNED TABLE (TAP TO CHANGE):',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontMono,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
                   for (final tName in _tableNames)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: ChoiceChip(
                         key: ValueKey(
                             'card3_reassign_${match['id']}_${tName.replaceAll(' ', '_')}'),
+                        visualDensity: VisualDensity.compact,
                         label: Text(
                           tName,
                           style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
                             fontSize: 10,
                             fontWeight: tableBadge == tName
                                 ? FontWeight.w900
@@ -3154,13 +3319,26 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               ),
             ),
           ],
+
+          if (deferredNote != null && deferredNote.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              deferredNote,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.warning,
+              ),
+            ),
+          ],
+
           const SizedBox(height: 10),
 
-          // Left-vs-Right Athlete Layout
+          // 2. CENTER FACE-OFF ROW: Red Corner vs. Medallion vs. White/Gold Corner
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // LEFT CORNER (ATHLETE A)
+              // LEFT ATHLETE (RED CORNER — 3px Competition Crimson #E23B3B left edge bar)
               Expanded(
                 child: _buildCornerColumn(
                   isLeftCorner: true,
@@ -3177,47 +3355,54 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 ),
               ),
 
-              // CENTER VS / POINT TRANSFER BADGE
+              // CENTER VS MEDALLION (or +16 / -16 ELO delta once completed)
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0x22FFFFFF),
-                        borderRadius: BorderRadius.circular(6),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF282010), Color(0xFF120F08)],
+                        ),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.75),
+                          width: 1.2,
+                        ),
                       ),
                       child: Text(
                         isBye ? 'BYE' : 'VS',
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w900,
                           color: AppTheme.goldPrimary,
                         ),
                       ),
                     ),
-                    if (isDone && !isBye && _isSuperfights) ...[
-                      const SizedBox(height: 6),
+                    if (isDone && !isBye) ...[
+                      const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.16),
+                          color: AppTheme.obsidian,
                           borderRadius: BorderRadius.circular(5),
                           border: Border.all(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.6)),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                          ),
                         ),
                         child: Text(
-                          aIsWinner
-                              ? '+$eloDelta ← -$eloDelta PTS'
-                              : '-$eloDelta → +$eloDelta PTS',
+                          '+$eloDelta / -$eloDelta ELO',
                           style: const TextStyle(
-                            fontFamily: AppTheme.fontMono,
+                            fontFamily: AppTheme.fontDisplay,
                             fontSize: 8.5,
                             fontWeight: FontWeight.w900,
                             color: AppTheme.goldPrimary,
@@ -3229,37 +3414,52 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 ),
               ),
 
-              // RIGHT CORNER (ATHLETE B OR BYE)
+              // RIGHT ATHLETE (WHITE/GOLD CORNER — 3px 24k Gold/Titanium right edge bar, or BYE badge)
               Expanded(
                 child: isBye
                     ? Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(11),
                         decoration: BoxDecoration(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color:
-                                  AppTheme.goldPrimary.withValues(alpha: 0.55)),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(11),
+                          border: const Border(
+                            right: BorderSide(
+                              color: AppTheme.goldPrimary,
+                              width: 3.0,
+                            ),
+                            top: BorderSide(
+                              color: Color(0x66D4AF37),
+                              width: 1.0,
+                            ),
+                            bottom: BorderSide(
+                              color: Color(0x66D4AF37),
+                              width: 1.0,
+                            ),
+                            left: BorderSide(
+                              color: Color(0x66D4AF37),
+                              width: 1.0,
+                            ),
+                          ),
                         ),
                         child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              'BYE (AUTO-ADVANCE)',
+                              'BYE • AUTO-ADVANCE',
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
-                                fontSize: 12.5,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w900,
                                 color: AppTheme.goldPrimary,
                               ),
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'Odd-number bracket slot. Athlete automatically advances to the next round.',
+                              'Advances to next round',
                               textAlign: TextAlign.right,
                               style: TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 color: AppTheme.textSecondary,
                               ),
                             ),
@@ -3286,121 +3486,178 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
             ],
           ),
 
-          // Result Submission Controls + Absent Players "Skip for Now / Play Next Matchup"
-          if (!isBye) ...[
-            const SizedBox(height: 12),
-            const Divider(color: Color(0x22FFFFFF), height: 1),
-            const SizedBox(height: 10),
-            Row(
+          // 3. BOTTOM QUICK-ACTION STRIP: [ ✓ Record Winner ], [ ⇄ Swap / Edit ], [ ⏭ Skip (Absent) ]
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.only(top: 8),
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Color(0x22FFFFFF), width: 1),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: aIsWinner
-                          ? AppTheme.emerald.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                      foregroundColor: aIsWinner
-                          ? AppTheme.emerald
-                          : (isSubmissionAllowed
-                              ? AppTheme.textPrimary
-                              : AppTheme.textMuted),
-                      side: BorderSide(
-                        color: aIsWinner
-                            ? AppTheme.emerald
-                            : const Color(0x44FFFFFF),
+                if (!isBye)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(9),
+                          onTap: () =>
+                              _submitMatchWinner(match: match, winnerId: aId),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: aIsWinner
+                                  ? AppTheme.emerald.withValues(alpha: 0.2)
+                                  : const Color(0xFF131823),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: aIsWinner
+                                    ? AppTheme.emerald
+                                    : const Color(0x38FFFFFF),
+                              ),
+                            ),
+                            child: Text(
+                              aIsWinner
+                                  ? '✓ WINNER: ${match['athleteAName']}'
+                                  : '✓ Win: ${match['athleteAName']}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: aIsWinner
+                                    ? AppTheme.emerald
+                                    : AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      minimumSize: const Size(0, 34),
-                    ),
-                    onPressed: () =>
-                        _submitMatchWinner(match: match, winnerId: aId),
-                    icon: Icon(
-                      aIsWinner
-                          ? Icons.emoji_events_rounded
-                          : Icons.check_circle_outline_rounded,
-                      size: 14,
-                    ),
-                    label: Text(
-                      aIsWinner
-                          ? 'WINNER: ${match['athleteAName']}'
-                          : 'WIN: ${match['athleteAName']}',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(9),
+                          onTap: () =>
+                              _submitMatchWinner(match: match, winnerId: bId),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: bIsWinner
+                                  ? AppTheme.emerald.withValues(alpha: 0.2)
+                                  : const Color(0xFF131823),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: bIsWinner
+                                    ? AppTheme.emerald
+                                    : const Color(0x38FFFFFF),
+                              ),
+                            ),
+                            child: Text(
+                              bIsWinner
+                                  ? '✓ WINNER: ${match['athleteBName']}'
+                                  : '✓ Win: ${match['athleteBName']}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: bIsWinner
+                                    ? AppTheme.emerald
+                                    : AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: bIsWinner
-                          ? AppTheme.emerald.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                      foregroundColor: bIsWinner
-                          ? AppTheme.emerald
-                          : (isSubmissionAllowed
-                              ? AppTheme.textPrimary
-                              : AppTheme.textMuted),
-                      side: BorderSide(
-                        color: bIsWinner
-                            ? AppTheme.emerald
-                            : const Color(0x44FFFFFF),
-                      ),
-                      minimumSize: const Size(0, 34),
-                    ),
-                    onPressed: () =>
-                        _submitMatchWinner(match: match, winnerId: bId),
-                    icon: Icon(
-                      bIsWinner
-                          ? Icons.emoji_events_rounded
-                          : Icons.check_circle_outline_rounded,
-                      size: 14,
-                    ),
-                    label: Text(
-                      bIsWinner
-                          ? 'WINNER: ${match['athleteBName']}'
-                          : 'WIN: ${match['athleteBName']}',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => _openEditOrSwapMatchupDialog(match),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.obsidian,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              '⇄ Swap / Edit',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    if (!isBye && !isDone && !isCancelled) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          key: ValueKey(
+                              'card3_skip_absent_play_next_${match['id']}'),
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () =>
+                              _handleSkipAbsentAndPlayNextMatchup(match),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warning.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.warning.withValues(alpha: 0.65),
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '⏭ Skip (Absent)',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.warning,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-            // ABSENT / NOT PRESENT PLAYERS ACTION BUTTON (When Pending)
-            if (!isDone && !isCancelled) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: ValueKey('card3_skip_absent_play_next_${match['id']}'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.warning,
-                    side: BorderSide(
-                        color: AppTheme.warning.withValues(alpha: 0.7)),
-                    minimumSize: const Size(0, 32),
-                  ),
-                  onPressed: () => _handleSkipAbsentAndPlayNextMatchup(match),
-                  icon: const Icon(Icons.skip_next_rounded, size: 15),
-                  label: Text(
-                    'ATHLETES ABSENT AT $tableBadge? SKIP FOR NOW / PLAY NEXT MATCHUP (QUEUED RIGHT AFTER)',
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
+          ),
         ],
       ),
     );
@@ -3424,56 +3681,76 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     final isEliminated =
         !_isSuperfights && losses >= _maxLossesBeforeElimination;
 
+    // Red Corner (#E23B3B) on Left, 24k Gold (#D4AF37) on Right
+    final Color cornerEdgeColor = isLeftCorner
+        ? const Color(0xFFE23B3B)
+        : const Color(0xFFD4AF37);
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isDone
             ? (isWinner
                 ? AppTheme.emerald.withValues(alpha: 0.14)
-                : AppTheme.crimson.withValues(alpha: 0.1))
-            : const Color(0x12FFFFFF),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDone
-              ? (isWinner
-                  ? AppTheme.emerald
-                  : AppTheme.crimson.withValues(alpha: 0.55))
-              : const Color(0x28FFFFFF),
-          width: (isDone && isWinner) ? 1.5 : 1.0,
+                : AppTheme.crimson.withValues(alpha: 0.08))
+            : const Color(0xFF11151F),
+        borderRadius: BorderRadius.circular(11),
+        border: Border(
+          left: BorderSide(
+            color: isLeftCorner ? cornerEdgeColor : const Color(0x28FFFFFF),
+            width: isLeftCorner ? 3.0 : 1.0,
+          ),
+          right: BorderSide(
+            color: !isLeftCorner ? cornerEdgeColor : const Color(0x28FFFFFF),
+            width: !isLeftCorner ? 3.0 : 1.0,
+          ),
+          top: BorderSide(
+            color: isDone && isWinner
+                ? AppTheme.emerald
+                : const Color(0x28FFFFFF),
+            width: 1.0,
+          ),
+          bottom: BorderSide(
+            color: isDone && isWinner
+                ? AppTheme.emerald
+                : const Color(0x28FFFFFF),
+            width: 1.0,
+          ),
         ),
       ),
       child: Column(
         crossAxisAlignment: align,
         children: [
-          // Winner / Loss Highlight Badge (Superfights & Completed Bouts)
-          if (isDone) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isWinner
-                    ? AppTheme.emerald.withValues(alpha: 0.22)
-                    : AppTheme.crimson.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                isBye
-                    ? 'AUTO-ADVANCE ✓'
-                    : (_isSuperfights
-                        ? (isWinner
-                            ? 'WINNER (+$eloDelta ELO)'
-                            : 'LOSS (-$eloDelta ELO)')
-                        : (isWinner ? 'WINNER ✓' : 'LOSS')),
+          Row(
+            mainAxisAlignment: isLeftCorner
+                ? MainAxisAlignment.start
+                : MainAxisAlignment.end,
+            children: [
+              Text(
+                isLeftCorner ? 'RED CORNER' : 'GOLD CORNER',
                 style: TextStyle(
-                  fontFamily: AppTheme.fontMono,
-                  fontSize: 9,
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 8.5,
                   fontWeight: FontWeight.w900,
-                  color: isWinner ? AppTheme.emerald : AppTheme.crimson,
+                  color: cornerEdgeColor,
+                  letterSpacing: 0.6,
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-          ],
-
+              if (isDone) ...[
+                const SizedBox(width: 5),
+                Text(
+                  isWinner ? '• WIN ✓' : '• LOSS',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w900,
+                    color: isWinner ? AppTheme.emerald : AppTheme.crimson,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 3),
           Text(
             name,
             textAlign: textAlign,
@@ -3486,9 +3763,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               color: AppTheme.textPrimary,
             ),
           ),
-          const SizedBox(height: 4),
-
-          // Elo Rating + Elimination Loss Counter Badge ("0L", "1L", "2L", "Eliminated")
+          const SizedBox(height: 5),
           Wrap(
             spacing: 4,
             runSpacing: 4,
@@ -3496,19 +3771,42 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 isLeftCorner ? WrapAlignment.start : WrapAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.goldPrimary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
+                  color: AppTheme.obsidian,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                  ),
                 ),
                 child: Text(
-                  '$elo ELO',
+                  'ELO $elo',
                   style: const TextStyle(
-                    fontFamily: AppTheme.fontMono,
+                    fontFamily: AppTheme.fontDisplay,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w900,
                     color: AppTheme.goldPrimary,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.obsidian,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: AppTheme.cyan.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Text(
+                  'PR ${prKg.toStringAsFixed(0)}kg',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.cyan,
                   ),
                 ),
               ),
@@ -3518,25 +3816,24 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: isEliminated
-                        ? AppTheme.crimson.withValues(alpha: 0.22)
+                        ? AppTheme.crimson.withValues(alpha: 0.2)
                         : (losses == 0
-                            ? AppTheme.emerald.withValues(alpha: 0.18)
-                            : AppTheme.warning.withValues(alpha: 0.2)),
-                    borderRadius: BorderRadius.circular(4),
+                            ? AppTheme.emerald.withValues(alpha: 0.16)
+                            : AppTheme.warning.withValues(alpha: 0.18)),
+                    borderRadius: BorderRadius.circular(5),
                     border: Border.all(
                       color: isEliminated
                           ? AppTheme.crimson
                           : (losses == 0
                               ? AppTheme.emerald
                               : AppTheme.warning),
-                      width: 0.8,
                     ),
                   ),
                   child: Text(
-                    isEliminated ? '${losses}L • ELIMINATED' : '${losses}L',
+                    isEliminated ? '${losses}L / ELIMINATED' : '${losses}L',
                     style: TextStyle(
-                      fontFamily: AppTheme.fontMono,
-                      fontSize: 9.5,
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 9,
                       fontWeight: FontWeight.w900,
                       color: isEliminated
                           ? AppTheme.crimson
@@ -3548,20 +3845,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
-
-          // PR & Max Lift Badge
-          Text(
-            'PR: ${prKg.toStringAsFixed(0)}kg • Lift: ${maxLiftKg.toStringAsFixed(0)}kg',
-            textAlign: textAlign,
-            style: const TextStyle(
-              fontFamily: AppTheme.fontMono,
-              fontSize: 9.5,
-              color: AppTheme.textSecondary,
-            ),
-          ),
         ],
       ),
     );
   }
 }
+

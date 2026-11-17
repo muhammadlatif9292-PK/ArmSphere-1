@@ -709,13 +709,28 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             ) ||
             (validatedBout?['status'] ?? '').toString().toUpperCase() == 'DONE');
 
+    final tournamentTitle =
+        (tournament['name'] ?? assignment['tournamentName'] ?? 'PAL Championship Cup')
+            .toString();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Top Navigation Back to Assignment Cards List
-        ElevatedActionCard(
-          padding: const EdgeInsets.all(16),
-          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.55),
+        // 1. Forged-Crystal Tournament & Table Assignment Header Card
+        Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF171D29), Color(0xFF0C0F16)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.goldPrimary.withValues(alpha: 0.55),
+              width: 1.3,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -730,24 +745,34 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                         _lastConfirmedSubmissionMessage = null;
                       });
                     },
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(9),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
+                        color: AppTheme.obsidian,
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.arrow_back_ios_new_rounded, size: 12, color: AppTheme.goldPrimary),
+                          Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 12,
+                            color: AppTheme.goldPrimary,
+                          ),
                           SizedBox(width: 4),
                           Text(
-                            'ALL ASSIGNMENTS',
+                            'ASSIGNMENTS',
                             style: TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                               color: AppTheme.goldPrimary,
                             ),
                           ),
@@ -756,47 +781,60 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                     ),
                   ),
                   const Spacer(),
-                  StatusChip(
-                    label: totalTables > 1
-                        ? 'ASSIGNED: TABLE $tableNumber OF $totalTables'
-                        : 'ASSIGNED: MAIN TABLE 1',
-                    color: AppTheme.goldPrimary,
-                    icon: Icons.table_restaurant_rounded,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.goldPrimary),
+                    ),
+                    child: Text(
+                      totalTables > 1
+                          ? 'TABLE $tableNumber OF $totalTables'
+                          : 'TABLE 1',
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(
-                (tournament['name'] ?? assignment['tournamentName'] ?? 'Sanctioned Tournament').toString(),
+                '$tournamentTitle • TABLE $tableNumber',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w900,
-                  fontSize: 18,
+                  fontSize: 16,
                   color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${tournament['organizationName'] ?? assignment['organizationName'] ?? ''} • ${tournament['venue'] ?? assignment['venue'] ?? ''}',
-                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
                 children: [
                   StatusChip(
-                    label: 'REFEREE: ${(assignment['refereeName'] ?? 'Official').toString().toUpperCase()}',
+                    label:
+                        'REF: ${(assignment['refereeName'] ?? 'Official').toString().toUpperCase()}',
                     color: AppTheme.emerald,
                     icon: Icons.verified_user_rounded,
                   ),
                   StatusChip(
-                    label: '${myTablePending.length} PENDING ON TABLE $tableNumber',
+                    label: '${myTablePending.length} QUEUED ON TABLE $tableNumber',
                     color: AppTheme.cyan,
                     icon: Icons.sports_kabaddi_rounded,
                   ),
                   const StatusChip(
-                    label: 'OFFLINE-SAFE OUTBOX ACTIVE',
+                    label: 'OFFLINE OUTBOX READY',
                     color: AppTheme.emerald,
                     icon: Icons.offline_bolt_rounded,
                   ),
@@ -805,128 +843,174 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
 
-        // Large Thumb-Friendly Scan QR Button + Athlete Name/ID Search Fields
-        ElevatedActionCard(
-          padding: const EdgeInsets.all(16),
-          borderColor: AppTheme.emerald.withValues(alpha: 0.45),
+        // 2. Fast Dual-Puller Verification Console (Scan QR or Search Athlete Name)
+        Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF161B26), Color(0xFF0C0F16)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.emerald.withValues(alpha: 0.45),
+              width: 1.2,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.qr_code_scanner_rounded, color: AppTheme.goldPrimary, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: AppTheme.goldPrimary),
+                    ),
+                    child: const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: AppTheme.goldPrimary,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
                     child: Text(
-                      'STRICT PRE-MATCH IDENTITY & GREEN-LIGHT CHECK',
+                      'DUAL-PULLER GREEN-LIGHT VERIFICATION CONSOLE',
                       style: TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontWeight: FontWeight.w900,
                         fontSize: 12,
-                        letterSpacing: 0.7,
+                        letterSpacing: 0.5,
                         color: AppTheme.goldPrimary,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Scan the athlete\'s QR code (from Settings, Mobile App, Saved Card, or Printed Badge) or type their Name / ID to verify table & opponent clearance.',
-                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.35),
-              ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
-              // Large Thumb-Friendly "Scan QR" Button
-              SizedBox(
-                height: 54,
-                child: ElevatedButton.icon(
-                  key: const ValueKey('referee_large_scan_qr_button'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.goldPrimary,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () => _openQrScannerSimulationModal(
-                    context,
-                    tournament,
-                    tableNumber,
-                    serverEvents,
-                  ),
-                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 24),
-                  label: const Text(
-                    'SCAN QR (ATHLETE / SETTINGS / CARD)',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
+              // Large Thumb-Friendly Forged-Crystal Scan QR Button
+              GestureDetector(
+                key: const ValueKey('referee_large_scan_qr_button'),
+                onTap: () => _openQrScannerSimulationModal(
+                  context,
+                  tournament,
+                  tableNumber,
+                  serverEvents,
                 ),
-              ),
-              const SizedBox(height: 14),
-
-              // Athlete Name / ID typing/search field
-              TextField(
-                key: const ValueKey('referee_athlete_name_search_field'),
-                controller: _athleteQueryCtrl,
-                onChanged: (_) => _runPreMatchCheck(serverEvents),
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13.5),
-                decoration: InputDecoration(
-                  labelText: 'Athlete 1 Name, ID Number, or QR Payload',
-                  hintText: 'Type athlete name (e.g. Malik Sherbaz) or ID (ath-pk-01)...',
-                  prefixIcon: const Icon(Icons.person_search_rounded, color: AppTheme.goldPrimary),
-                  suffixIcon: _athleteQueryCtrl.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _athleteQueryCtrl.clear();
-                            _runPreMatchCheck(serverEvents);
-                          },
-                        )
-                      : null,
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppTheme.goldPrimary,
+                      width: 1.4,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.qr_code_scanner_rounded,
+                        size: 22,
+                        color: AppTheme.goldPrimary,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '📷 SCAN ATHLETE QR PASS (TABLE CHECK)',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
-              TextField(
-                key: const ValueKey('referee_opponent_name_search_field'),
-                controller: _opponentQueryCtrl,
-                onChanged: (_) => _runPreMatchCheck(serverEvents),
-                style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13.5),
-                decoration: InputDecoration(
-                  labelText: 'Opponent Name, ID, or QR (Optional 2-Player Verification)',
-                  hintText: 'Verify exact matched opponent (blocks wrongly paired players)...',
-                  prefixIcon: const Icon(Icons.people_alt_outlined, color: AppTheme.cyan),
-                  suffixIcon: _opponentQueryCtrl.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _opponentQueryCtrl.clear();
-                            _runPreMatchCheck(serverEvents);
-                          },
-                        )
-                      : null,
-                ),
+
+              // Dual-Puller Search Fields (Red Corner / Gold Corner)
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey('referee_athlete_name_search_field'),
+                      controller: _athleteQueryCtrl,
+                      onChanged: (_) => _runPreMatchCheck(serverEvents),
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: 'Puller 1 (Name / ID / QR)',
+                        hintText: 'e.g. Malik Sherbaz',
+                        prefixIcon: const Icon(
+                          Icons.person_search_rounded,
+                          color: Color(0xFFE23B3B),
+                          size: 18,
+                        ),
+                        suffixIcon: _athleteQueryCtrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 16),
+                                onPressed: () {
+                                  _athleteQueryCtrl.clear();
+                                  _runPreMatchCheck(serverEvents);
+                                },
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey('referee_opponent_name_search_field'),
+                      controller: _opponentQueryCtrl,
+                      onChanged: (_) => _runPreMatchCheck(serverEvents),
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: 'Puller 2 (Optional Check)',
+                        hintText: 'Matched opponent',
+                        prefixIcon: const Icon(
+                          Icons.people_alt_outlined,
+                          color: AppTheme.goldPrimary,
+                          size: 18,
+                        ),
+                        suffixIcon: _opponentQueryCtrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 16),
+                                onPressed: () {
+                                  _opponentQueryCtrl.clear();
+                                  _runPreMatchCheck(serverEvents);
+                                },
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               if (myTablePending.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Text(
-                  'TABLE QUEUE QUICK-VERIFY:',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.textSecondary,
-                    letterSpacing: 0.7,
-                  ),
-                ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 10),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -936,20 +1020,29 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                           padding: const EdgeInsets.only(right: 8),
                           child: ActionChip(
                             backgroundColor: AppTheme.obsidian,
-                            side: BorderSide(color: AppTheme.emerald.withValues(alpha: 0.5)),
-                            avatar: const Icon(Icons.verified_rounded, size: 15, color: AppTheme.emerald),
+                            side: BorderSide(
+                              color: AppTheme.emerald.withValues(alpha: 0.5),
+                            ),
+                            avatar: const Icon(
+                              Icons.verified_rounded,
+                              size: 14,
+                              color: AppTheme.emerald,
+                            ),
                             label: Text(
                               '${m['player1Name']} vs ${m['player2Name']}',
                               style: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
                                 color: AppTheme.textPrimary,
                               ),
                             ),
                             onPressed: () {
                               HapticFeedback.selectionClick();
-                              _athleteQueryCtrl.text = (m['player1Name'] ?? '').toString();
-                              _opponentQueryCtrl.text = (m['player2Name'] ?? '').toString();
+                              _athleteQueryCtrl.text =
+                                  (m['player1Name'] ?? '').toString();
+                              _opponentQueryCtrl.text =
+                                  (m['player2Name'] ?? '').toString();
                               _runPreMatchCheck(serverEvents);
                             },
                           ),
@@ -961,21 +1054,27 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
 
-        // Strict Pre-Match Validation Result (Green-Light vs Red Warning)
+        // 3. GREEN-LIGHT VALIDATION BANNER & OFFICIAL RESULT SUBMISSION CONSOLE
         if (validation != null) ...[
           AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            padding: const EdgeInsets.all(16),
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: validation.allowedToPlay
-                  ? AppTheme.emerald.withValues(alpha: 0.14)
-                  : AppTheme.crimson.withValues(alpha: 0.16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: validation.allowedToPlay
+                    ? const [Color(0xFF0E2F23), Color(0xFF081712)]
+                    : const [Color(0xFF361115), Color(0xFF19080A)],
+              ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: validation.allowedToPlay ? AppTheme.emerald : AppTheme.crimson,
-                width: 1.8,
+                color: validation.allowedToPlay
+                    ? AppTheme.emerald
+                    : const Color(0xFFE23B3B),
+                width: 1.6,
               ),
             ),
             child: Column(
@@ -985,10 +1084,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                   children: [
                     Icon(
                       validation.allowedToPlay
-                          ? Icons.check_circle_rounded
+                          ? Icons.verified_rounded
                           : Icons.gpp_bad_rounded,
-                      color: validation.allowedToPlay ? AppTheme.emerald : AppTheme.crimson,
-                      size: 28,
+                      color: validation.allowedToPlay
+                          ? AppTheme.emerald
+                          : const Color(0xFFE23B3B),
+                      size: 26,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -996,23 +1097,27 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            validation.headline,
+                            validation.allowedToPlay
+                                ? 'ALLOWED TO PLAY • TABLE $tableNumber VERIFIED ✓'
+                                : '⛔ BLOCKED: ${validation.headline}',
                             style: TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontWeight: FontWeight.w900,
-                              fontSize: 15,
+                              fontSize: 13.5,
                               color: validation.allowedToPlay
                                   ? AppTheme.emerald
-                                  : AppTheme.crimson,
+                                  : const Color(0xFFE23B3B),
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             validation.detail,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
                               color: AppTheme.textPrimary,
-                              height: 1.35,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -1020,32 +1125,43 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                const Divider(height: 1, color: Color(0x22FFFFFF)),
                 const SizedBox(height: 10),
-                _buildCheckRow(
-                  'a) Active match in this tournament & active round',
-                  validation.checkAActiveMatchInRound,
-                ),
-                _buildCheckRow(
-                  'b) Exact matched opponents (blocks wrong pairings)',
-                  validation.checkBExactMatchedOpponents,
-                ),
-                _buildCheckRow(
-                  'c) Match status is Pending (blocks already Done matches)',
-                  validation.checkCMatchStillPending,
-                ),
-                _buildCheckRow(
-                  'd) Assigned to THIS referee\'s Table $tableNumber',
-                  validation.checkDBelongsToAssignedTable,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildCompactCheckPill(
+                      'Active Round',
+                      validation.checkAActiveMatchInRound,
+                    ),
+                    _buildCompactCheckPill(
+                      'Matched Pair',
+                      validation.checkBExactMatchedOpponents,
+                    ),
+                    _buildCompactCheckPill(
+                      'Pending Status',
+                      validation.checkCMatchStillPending,
+                    ),
+                    _buildCompactCheckPill(
+                      'Table $tableNumber',
+                      validation.checkDBelongsToAssignedTable,
+                    ),
+                  ],
                 ),
 
-                // Result Submission Form (Only unlocked when Green-Light Allowed to Play OR showing Done lock state)
-                if (validatedBout != null && (validation.allowedToPlay || isLocked)) ...[
-                  const SizedBox(height: 14),
+                // Unlocked Result Submission Console when Green-Light Verified
+                if (validatedBout != null &&
+                    (validation.allowedToPlay || isLocked)) ...[
+                  const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+                    padding: const EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A0D13),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppTheme.emerald.withValues(alpha: 0.55),
+                      ),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -1053,29 +1169,25 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'OFFICIAL RESULT SUBMISSION • TABLE $tableNumber',
+                              '${validatedBout['categoryLabel'] ?? 'Division'} • ROUND ${validatedBout['roundNumber'] ?? 1}',
                               style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 11.5,
                                 color: AppTheme.goldPrimary,
-                                letterSpacing: 0.6,
                               ),
                             ),
                             StatusChip(
-                              label: isLocked ? 'DONE / SENT ✓' : 'ALLOWED TO PLAY',
+                              label: isLocked
+                                  ? 'DONE / SENT ✓'
+                                  : 'UNLOCKED FOR SCORING',
                               color: AppTheme.emerald,
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        Text(
-                          '${validatedBout['categoryLabel'] ?? 'Category'} • Round ${validatedBout['roundNumber'] ?? 1}',
-                          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                        ),
-                        const SizedBox(height: 10),
 
-                        // Winner Selection Cards
+                        // Winner Corner Selector (Red Corner vs Gold Corner)
                         Row(
                           children: [
                             Expanded(
@@ -1087,37 +1199,56 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                                         setState(() => _selectedWinSide = 'A');
                                       },
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(11),
                                   decoration: BoxDecoration(
                                     color: _selectedWinSide == 'A'
-                                        ? AppTheme.emerald.withValues(alpha: 0.18)
+                                        ? AppTheme.emerald
+                                            .withValues(alpha: 0.18)
                                         : AppTheme.cardSurface,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _selectedWinSide == 'A'
-                                          ? AppTheme.emerald
-                                          : const Color(0x33FFFFFF),
-                                      width: _selectedWinSide == 'A' ? 1.6 : 1.0,
+                                    borderRadius: BorderRadius.circular(11),
+                                    border: Border(
+                                      left: const BorderSide(
+                                        color: Color(0xFFE23B3B),
+                                        width: 3.0,
+                                      ),
+                                      top: BorderSide(
+                                        color: _selectedWinSide == 'A'
+                                            ? AppTheme.emerald
+                                            : const Color(0x33FFFFFF),
+                                      ),
+                                      right: BorderSide(
+                                        color: _selectedWinSide == 'A'
+                                            ? AppTheme.emerald
+                                            : const Color(0x33FFFFFF),
+                                      ),
+                                      bottom: BorderSide(
+                                        color: _selectedWinSide == 'A'
+                                            ? AppTheme.emerald
+                                            : const Color(0x33FFFFFF),
+                                      ),
                                     ),
                                   ),
                                   child: Column(
                                     children: [
                                       const Text(
-                                        'WINNER • CORNER A',
+                                        'RED CORNER WINNER',
                                         style: TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppTheme.emerald,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFE23B3B),
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        (validatedBout['player1Name'] ?? 'Athlete 1').toString(),
-                                        textAlign: TextAlign.center,
+                                        (validatedBout['player1Name'] ??
+                                                'Athlete 1')
+                                            .toString(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
-                                          fontWeight: FontWeight.w800,
+                                          fontWeight: FontWeight.w900,
                                           fontSize: 13.5,
                                           color: AppTheme.textPrimary,
                                         ),
@@ -1127,7 +1258,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: GestureDetector(
                                 onTap: isLocked
@@ -1137,37 +1268,56 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                                         setState(() => _selectedWinSide = 'B');
                                       },
                                 child: Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(11),
                                   decoration: BoxDecoration(
                                     color: _selectedWinSide == 'B'
-                                        ? AppTheme.emerald.withValues(alpha: 0.18)
+                                        ? AppTheme.emerald
+                                            .withValues(alpha: 0.18)
                                         : AppTheme.cardSurface,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _selectedWinSide == 'B'
-                                          ? AppTheme.emerald
-                                          : const Color(0x33FFFFFF),
-                                      width: _selectedWinSide == 'B' ? 1.6 : 1.0,
+                                    borderRadius: BorderRadius.circular(11),
+                                    border: Border(
+                                      right: const BorderSide(
+                                        color: AppTheme.goldPrimary,
+                                        width: 3.0,
+                                      ),
+                                      top: BorderSide(
+                                        color: _selectedWinSide == 'B'
+                                            ? AppTheme.emerald
+                                            : const Color(0x33FFFFFF),
+                                      ),
+                                      left: BorderSide(
+                                        color: _selectedWinSide == 'B'
+                                            ? AppTheme.emerald
+                                            : const Color(0x33FFFFFF),
+                                      ),
+                                      bottom: BorderSide(
+                                        color: _selectedWinSide == 'B'
+                                            ? AppTheme.emerald
+                                            : const Color(0x33FFFFFF),
+                                      ),
                                     ),
                                   ),
                                   child: Column(
                                     children: [
                                       const Text(
-                                        'WINNER • CORNER B',
+                                        'GOLD CORNER WINNER',
                                         style: TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppTheme.emerald,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppTheme.goldPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        (validatedBout['player2Name'] ?? 'Athlete 2').toString(),
-                                        textAlign: TextAlign.center,
+                                        (validatedBout['player2Name'] ??
+                                                'Athlete 2')
+                                            .toString(),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
-                                          fontWeight: FontWeight.w800,
+                                          fontWeight: FontWeight.w900,
                                           fontSize: 13.5,
                                           color: AppTheme.textPrimary,
                                         ),
@@ -1179,23 +1329,31 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
 
-                        // Normal Win/Loss vs Win by Forfeit / Injury (Walkover)
+                        // RECORD WIN / LOSS vs WIN BY FORFEIT / INJURY Mode Buttons
                         Row(
                           children: [
                             Expanded(
                               child: ChoiceChip(
                                 selected: !_isWalkoverForfeit,
-                                selectedColor: AppTheme.emerald.withValues(alpha: 0.25),
+                                selectedColor:
+                                    AppTheme.emerald.withValues(alpha: 0.25),
                                 label: const Text(
-                                  'Normal Win / Loss',
-                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                                  'RECORD WIN / LOSS',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                                 onSelected: isLocked
                                     ? null
                                     : (v) {
-                                        if (v) setState(() => _isWalkoverForfeit = false);
+                                        if (v) {
+                                          setState(
+                                              () => _isWalkoverForfeit = false);
+                                        }
                                       },
                               ),
                             ),
@@ -1203,15 +1361,23 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                             Expanded(
                               child: ChoiceChip(
                                 selected: _isWalkoverForfeit,
-                                selectedColor: AppTheme.goldPrimary.withValues(alpha: 0.25),
+                                selectedColor: AppTheme.goldPrimary
+                                    .withValues(alpha: 0.25),
                                 label: const Text(
-                                  'Win by Forfeit / Injury',
-                                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                                  'WIN BY FORFEIT / INJURY',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                                 onSelected: isLocked
                                     ? null
                                     : (v) {
-                                        if (v) setState(() => _isWalkoverForfeit = true);
+                                        if (v) {
+                                          setState(
+                                              () => _isWalkoverForfeit = true);
+                                        }
                                       },
                               ),
                             ),
@@ -1223,8 +1389,10 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                           DropdownButtonFormField<String>(
                             initialValue: _scoreLine,
                             decoration: const InputDecoration(
+                              isDense: true,
                               labelText: 'Match Score Line',
-                              prefixIcon: Icon(Icons.scoreboard_outlined, size: 18),
+                              prefixIcon:
+                                  Icon(Icons.scoreboard_outlined, size: 18),
                             ),
                             items: [
                               for (final s in _kScoreOptions)
@@ -1232,23 +1400,29 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                             ],
                             onChanged: isLocked
                                 ? null
-                                : (v) => setState(() => _scoreLine = v ?? '3-0'),
+                                : (v) =>
+                                    setState(() => _scoreLine = v ?? '3-0'),
                           )
                         else
                           DropdownButtonFormField<String>(
                             initialValue: _forfeitReason,
                             decoration: const InputDecoration(
+                              isDense: true,
                               labelText: 'Walkover / Forfeit / Injury Reason',
-                              prefixIcon: Icon(Icons.medical_services_outlined, size: 18),
+                              prefixIcon: Icon(Icons.medical_services_outlined,
+                                  size: 18),
                             ),
                             items: const [
                               DropdownMenuItem(
                                 value: 'Injury / Medical Withdrawal',
-                                child: Text('Injury / Medical Withdrawal (Walkover)'),
+                                child: Text(
+                                    'Injury / Medical Withdrawal (Walkover)'),
                               ),
                               DropdownMenuItem(
-                                value: 'Opponent Forfeit / Did Not Report to Table',
-                                child: Text('Opponent Forfeit / No-Show Walkover'),
+                                value:
+                                    'Opponent Forfeit / Did Not Report to Table',
+                                child:
+                                    Text('Opponent Forfeit / No-Show Walkover'),
                               ),
                               DropdownMenuItem(
                                 value: 'Referee Foul / Disqualification',
@@ -1257,24 +1431,27 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                             ],
                             onChanged: isLocked
                                 ? null
-                                : (v) => setState(
-                                    () => _forfeitReason = v ?? 'Injury / Medical Withdrawal'),
+                                : (v) => setState(() => _forfeitReason =
+                                    v ?? 'Injury / Medical Withdrawal'),
                           ),
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
 
-                        // Single-Tap Locked Submit Button
+                        // Single-Tap Idempotency Locked Submit Button
                         SizedBox(
-                          height: 50,
+                          height: 48,
                           child: ElevatedButton.icon(
-                            key: const ValueKey('referee_single_tap_submit_result_button'),
+                            key: const ValueKey(
+                                'referee_single_tap_submit_result_button'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  isLocked ? AppTheme.obsidian : AppTheme.emerald,
+                              backgroundColor: isLocked
+                                  ? AppTheme.obsidian
+                                  : AppTheme.emerald,
                               foregroundColor:
                                   isLocked ? AppTheme.emerald : Colors.black,
                               side: isLocked
-                                  ? const BorderSide(color: AppTheme.emerald, width: 1.4)
+                                  ? const BorderSide(
+                                      color: AppTheme.emerald, width: 1.4)
                                   : null,
                             ),
                             onPressed: isLocked
@@ -1288,19 +1465,19 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                               isLocked
                                   ? Icons.lock_clock_rounded
                                   : Icons.send_and_archive_rounded,
-                              size: 20,
+                              size: 18,
                             ),
                             label: Text(
                               isLocked
                                   ? 'DONE / SENT ✓ (SINGLE-TAP LOCKED)'
                                   : (_isWalkoverForfeit
-                                      ? 'SUBMIT WIN BY FORFEIT / INJURY (WALKOVER)'
-                                      : 'SUBMIT OFFICIAL MATCH RESULT (OFFLINE-SAFE)'),
+                                      ? 'RECORD WIN BY FORFEIT / INJURY'
+                                      : 'RECORD WIN / LOSS (OFFLINE-SAFE)'),
                               style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 12.5,
-                                letterSpacing: 0.5,
+                                fontSize: 12,
+                                letterSpacing: 0.4,
                               ),
                             ),
                           ),
@@ -1312,20 +1489,21 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
         ],
 
         if (_lastConfirmedSubmissionMessage != null) ...[
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppTheme.emerald.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.emerald),
             ),
             child: Row(
               children: [
-                const Icon(Icons.cloud_done_rounded, color: AppTheme.emerald, size: 22),
+                const Icon(Icons.cloud_done_rounded,
+                    color: AppTheme.emerald, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -1340,12 +1518,17 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
         ],
 
-        // All Matchups on This Referee's Table
-        ElevatedActionCard(
-          padding: const EdgeInsets.all(16),
+        // 4. Table Queue List
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131722),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0x28FFFFFF)),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1354,9 +1537,9 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                 style: const TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w900,
-                  fontSize: 12,
+                  fontSize: 11.5,
                   color: AppTheme.goldPrimary,
-                  letterSpacing: 0.7,
+                  letterSpacing: 0.6,
                 ),
               ),
               const SizedBox(height: 10),
@@ -1364,11 +1547,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                   (m) => ((m['tableNumber'] as num?)?.toInt() ?? 1) == tableNumber))
                 Builder(
                   builder: (_) {
-                    final status = (m['status'] ?? 'PENDING').toString().toUpperCase();
+                    final status =
+                        (m['status'] ?? 'PENDING').toString().toUpperCase();
                     final isDone = status == 'DONE' || status == 'COMPLETED';
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(11),
                       decoration: BoxDecoration(
                         color: AppTheme.obsidian,
                         borderRadius: BorderRadius.circular(12),
@@ -1388,16 +1572,16 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                                   '${m['player1Name']} vs ${m['player2Name']}',
                                   style: const TextStyle(
                                     fontFamily: AppTheme.fontDisplay,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
                                     color: AppTheme.textPrimary,
                                   ),
                                 ),
-                                const SizedBox(height: 3),
+                                const SizedBox(height: 2),
                                 Text(
-                                  '${m['categoryLabel'] ?? ''} • Round ${m['roundNumber'] ?? 1}${isDone ? ' • Winner: ${m['winnerName'] ?? ''} (${m['scoreLine'] ?? 'Done'})' : ''}',
+                                  '${m['categoryLabel'] ?? ''} • Round ${m['roundNumber'] ?? 1}${isDone ? ' • Winner: ${m['winnerName'] ?? ''}' : ''}',
                                   style: const TextStyle(
-                                    fontSize: 11.5,
+                                    fontSize: 11,
                                     color: AppTheme.textSecondary,
                                   ),
                                 ),
@@ -1407,26 +1591,40 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                           const SizedBox(width: 8),
                           if (isDone)
                             const StatusChip(
-                              label: 'DONE / SENT ✓',
+                              label: 'DONE ✓',
                               color: AppTheme.emerald,
                             )
                           else
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.emerald,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                minimumSize: Size.zero,
-                              ),
-                              onPressed: () {
+                            InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () {
                                 HapticFeedback.selectionClick();
-                                _athleteQueryCtrl.text = (m['player1Name'] ?? '').toString();
-                                _opponentQueryCtrl.text = (m['player2Name'] ?? '').toString();
+                                _athleteQueryCtrl.text =
+                                    (m['player1Name'] ?? '').toString();
+                                _opponentQueryCtrl.text =
+                                    (m['player2Name'] ?? '').toString();
                                 _runPreMatchCheck(serverEvents);
                               },
-                              child: const Text(
-                                'VERIFY & SCORE',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppTheme.emerald.withValues(alpha: 0.16),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppTheme.emerald),
+                                ),
+                                child: const Text(
+                                  'VERIFY & SCORE',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppTheme.emerald,
+                                  ),
+                                ),
                               ),
                             ),
                         ],
@@ -1441,25 +1639,31 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     );
   }
 
-  Widget _buildCheckRow(String label, bool passed) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+  Widget _buildCompactCheckPill(String label, bool passed) {
+    final color = passed ? AppTheme.emerald : const Color(0xFFE23B3B);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: color.withValues(alpha: 0.65)),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             passed ? Icons.check_circle_rounded : Icons.cancel_rounded,
-            size: 16,
-            color: passed ? AppTheme.emerald : AppTheme.crimson,
+            size: 13,
+            color: color,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: passed ? FontWeight.w700 : FontWeight.w800,
-                color: passed ? AppTheme.textPrimary : AppTheme.crimson,
-              ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTheme.fontDisplay,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: color,
             ),
           ),
         ],
@@ -1540,7 +1744,6 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 155px open 3D Referee Control Console stage showcase spacer
                     const SizedBox(height: 155),
                     if (_activeAssignment != null)
                       _buildRefereeTableConsole(
@@ -1592,7 +1795,7 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                       if (refereeAssignments.isNotEmpty) ...[
                         const SizedBox(height: AppTheme.space24),
                         Text(
-                          'MY TABLE ASSIGNMENTS (OFFLINE-READY)',
+                          'MY TABLE ASSIGNMENTS',
                           style: theme.textTheme.labelMedium?.copyWith(
                             letterSpacing: 1.2,
                             fontWeight: FontWeight.bold,
@@ -1618,68 +1821,55 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                                   _lastConfirmedSubmissionMessage = null;
                                 });
                               },
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              padding: const EdgeInsets.all(15),
+                              child: Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      StatusChip(
-                                        label: ((assignment['tableCount'] as num?)?.toInt() ?? 1) > 1
-                                            ? 'ASSIGNED: TABLE ${assignment['assignedTableNumber']}'
-                                            : 'ASSIGNED: TABLE 1',
-                                        color: AppTheme.goldPrimary,
-                                        icon: Icons.table_restaurant_rounded,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      StatusChip(
-                                        label: '${assignment['pendingOnTableCount']} PENDING',
-                                        color: AppTheme.emerald,
-                                      ),
-                                      const Spacer(),
-                                      const StatusChip(
-                                        label: 'CACHED OFFLINE',
-                                        color: AppTheme.cyan,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    (assignment['tournamentName'] ?? 'Sanctioned Tournament').toString(),
-                                    style: const TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 16.5,
-                                      color: AppTheme.textPrimary,
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: AppTheme.goldPrimary),
+                                    ),
+                                    child: const Icon(
+                                      Icons.table_restaurant_rounded,
+                                      color: AppTheme.goldPrimary,
+                                      size: 22,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${assignment['organizationName'] ?? ''} • ${assignment['venue'] ?? ''}, ${assignment['city'] ?? ''}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Referee: ${assignment['refereeName']} • Tap to open Scan QR & Green-Light Matchup Validator',
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${assignment['tournamentName'] ?? 'PAL Championship Cup'} • TABLE ${assignment['assignedTableNumber']}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            fontSize: 11.5,
-                                            color: AppTheme.emerald,
-                                            fontWeight: FontWeight.w700,
+                                            fontFamily: AppTheme.fontDisplay,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 14.5,
+                                            color: AppTheme.textPrimary,
                                           ),
                                         ),
-                                      ),
-                                      const Icon(
-                                        Icons.arrow_forward_ios_rounded,
-                                        size: 16,
-                                        color: AppTheme.goldPrimary,
-                                      ),
-                                    ],
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Referee: ${assignment['refereeName']} • ${assignment['pendingOnTableCount']} Pending Bouts',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.emerald,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 16,
+                                    color: AppTheme.goldPrimary,
                                   ),
                                 ],
                               ),
