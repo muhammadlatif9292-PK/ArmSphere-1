@@ -169,14 +169,10 @@ class TournamentOfflineStore {
                 : <String>[],
         'assignedRefereeIds': found?['assignedRefereeIds'] is List
             ? List<String>.from(found!['assignedRefereeIds'] as List)
-            : (i == 1
-                ? <String>['ref-pk-01', 'ref-pk-02']
-                : <String>['ref-pk-03', 'ref-pk-04']),
+            : <String>[],
         'assignedRefereeNames': found?['assignedRefereeNames'] is List
             ? List<String>.from(found!['assignedRefereeNames'] as List)
-            : (i == 1
-                ? <String>['Zubair Qureshi', 'Bilal Mengal']
-                : <String>['Tariq Mehmood', 'Kamran Afridi']),
+            : <String>[],
       });
     }
 
@@ -708,6 +704,25 @@ class TournamentOfflineStore {
           _globalReleasedKey,
           _memoryReleasedTournaments.values.toList(),
         );
+        // Also keep the operator's local tournament list in sync so referee result
+        // submissions immediately reflect in the Tournament Operator Hub & Card 3.
+        final orgId = (normalized['organizerId'] ?? '').toString().trim();
+        if (orgId.isNotEmpty) {
+          final opKey = 'operator_step1_tournaments_$orgId';
+          final rawOpList = hive.getCachedData(opKey);
+          if (rawOpList is List) {
+            final updatedOpList = rawOpList.map((item) {
+              if (item is Map && item['id']?.toString() == id) {
+                return <String, dynamic>{
+                  ...Map<String, dynamic>.from(item),
+                  ...normalized,
+                };
+              }
+              return item;
+            }).toList();
+            await hive.cacheData(opKey, updatedOpList);
+          }
+        }
       } catch (_) {}
     }
   }
@@ -724,13 +739,10 @@ class TournamentOfflineStore {
       if (!isReleasedTournament(r)) continue;
       final id = r['id']?.toString() ?? '';
       if (id.isEmpty) continue;
-      _memoryReleasedTournaments[id] = _ensureNormalizedTournament(r);
-    }
-    if (mergedRemote.isNotEmpty) {
-      return mergedRemote
-          .where(isReleasedTournament)
-          .map((r) => _ensureNormalizedTournament(r))
-          .toList();
+      // Preserve locally updated tournament state if already present in memory
+      if (!_memoryReleasedTournaments.containsKey(id)) {
+        _memoryReleasedTournaments[id] = _ensureNormalizedTournament(r);
+      }
     }
     return _memoryReleasedTournaments.values
         .where(isReleasedTournament)
@@ -796,7 +808,9 @@ class TournamentOfflineStore {
   // 1. REFEREE ROLE: TABLE ASSIGNMENTS, GREEN-LIGHT VALIDATION & RESULT SUBMIT
   // ===========================================================================
 
-  /// Returns all Tournament Table Assignment Cards for the Referee screen (cached locally for offline access).
+  /// Returns ONLY the Tournament Table Assignment Cards in which this specific referee
+  /// has been selected (cached locally for offline access).
+  /// Never returns unselected tournaments from ArmSphere, and strictly isolates each referee's data.
   static List<Map<String, dynamic>> getRefereeAssignments({
     HiveStorage? hive,
     Map<String, dynamic>? userProfile,
@@ -804,11 +818,37 @@ class TournamentOfflineStore {
     String? refereeUserId,
     String? refereeName,
   }) {
-    final effectiveRefId = refereeUserId ??
-        (userProfile?['id'] ?? userProfile?['userId'] ?? 'ref-pk-01').toString();
-    final effectiveRefName = refereeName ??
-        (userProfile?['displayName'] ?? userProfile?['name'] ?? 'Official Referee')
-            .toString();
+    final nestedProfile = userProfile?['profile'] is Map
+        ? Map<String, dynamic>.from(userProfile!['profile'] as Map)
+        : const <String, dynamic>{};
+    final nestedUser = userProfile?['user'] is Map
+        ? Map<String, dynamic>.from(userProfile!['user'] as Map)
+        : const <String, dynamic>{};
+
+    final effectiveRefId = (refereeUserId ??
+            userProfile?['id'] ??
+            userProfile?['userId'] ??
+            userProfile?['athleteId'] ??
+            nestedUser['id'] ??
+            nestedProfile['id'] ??
+            '')
+        .toString()
+        .trim();
+    final effectiveRefName = (refereeName ??
+            userProfile?['displayName'] ??
+            userProfile?['fullName'] ??
+            userProfile?['name'] ??
+            nestedProfile['fullName'] ??
+            nestedProfile['displayName'] ??
+            nestedUser['name'] ??
+            '')
+        .toString()
+        .trim();
+    final effectiveRefEmail =
+        (userProfile?['email'] ?? nestedUser['email'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
 
     final tournaments = getAllReleasedTournaments(
       hive: hive,
@@ -819,6 +859,7 @@ class TournamentOfflineStore {
     for (final t in tournaments) {
       final status = (t['status'] ?? '').toString().toUpperCase();
       if (status == 'COMPLETED' || status == 'CANCELLED') continue;
+      if (!isReleasedTournament(t)) continue;
 
       final tables = (t['tables'] as List?)
               ?.whereType<Map>()
@@ -827,81 +868,126 @@ class TournamentOfflineStore {
           const <Map<String, dynamic>>[];
       final tableCount = ((t['tableCount'] as num?)?.toInt() ?? 1).clamp(1, 12);
 
-      Map<String, dynamic>? matchedTable;
+      // Find all tables in this tournament where THIS referee was explicitly selected
+      final matchedTables = <Map<String, dynamic>>[];
       for (final tbl in tables) {
         final refIds = (tbl['assignedRefereeIds'] as List?)
-                ?.map((e) => e.toString())
+                ?.map((e) => e.toString().trim())
+                .where((s) => s.isNotEmpty)
                 .toList() ??
             const <String>[];
         final refNames = (tbl['assignedRefereeNames'] as List?)
-                ?.map((e) => e.toString().toLowerCase())
+                ?.map((e) => e.toString().trim())
+                .where((s) => s.isNotEmpty)
                 .toList() ??
             const <String>[];
-        if (refIds.contains(effectiveRefId) ||
-            (effectiveRefName.trim().isNotEmpty &&
-                refNames.any((n) => n.contains(effectiveRefName.toLowerCase())))) {
-          matchedTable = tbl;
-          break;
+
+        if (refIds.isEmpty && refNames.isEmpty) continue;
+
+        final idMatched = effectiveRefId.isNotEmpty &&
+            refIds.any((id) => id.toLowerCase() == effectiveRefId.toLowerCase());
+        final nameMatched = effectiveRefName.isNotEmpty &&
+            refNames.any((n) {
+              final nl = n.toLowerCase();
+              final el = effectiveRefName.toLowerCase();
+              return nl == el || nl.contains(el) || el.contains(nl);
+            });
+        final emailMatched = effectiveRefEmail.isNotEmpty &&
+            (refIds.any((id) => id.toLowerCase() == effectiveRefEmail) ||
+                refNames.any((n) => n.toLowerCase() == effectiveRefEmail));
+
+        if (idMatched || nameMatched || emailMatched) {
+          matchedTables.add(tbl);
         }
       }
-      matchedTable ??= tables.isNotEmpty
-          ? tables.first
-          : <String, dynamic>{
-              'tableNumber': 1,
-              'tableName': 'Table 1',
-              'assignedRefereeIds': <String>['ref-pk-01', 'ref-pk-02'],
-              'assignedRefereeNames': <String>['Zubair Qureshi', 'Bilal Mengal'],
-            };
 
-      final assignedTableName =
-          matchedTable['tableName']?.toString() ?? 'Table 1';
-      final assignedTableNumber =
-          (matchedTable['tableNumber'] as num?)?.toInt() ?? 1;
+      // Single-device operator/referee test support: ONLY if this tournament was
+      // created locally on this device by the current user (`organizerId == effectiveRefId`
+      // or local `draft_...` id) AND has referees selected on a table, allow the creator
+      // switching to Referee mode on the same device to test the table(s) they configured.
+      if (matchedTables.isEmpty) {
+        final isCreatedOnThisDeviceByCurrentUser =
+            (effectiveRefId.isNotEmpty &&
+                    t['organizerId']?.toString().trim() == effectiveRefId) ||
+                t['id'].toString().startsWith('draft_');
+        if (isCreatedOnThisDeviceByCurrentUser) {
+          for (final tbl in tables) {
+            final refIds = (tbl['assignedRefereeIds'] as List?)
+                    ?.map((e) => e.toString().trim())
+                    .where((s) => s.isNotEmpty)
+                    .toList() ??
+                const <String>[];
+            if (refIds.isNotEmpty) {
+              matchedTables.add(tbl);
+            }
+          }
+        }
+      }
+
+      // Strictly skip any tournament where this referee was NOT selected!
+      if (matchedTables.isEmpty) continue;
 
       final allMatches = flattenAllMatches(t);
-      final myTablePending = allMatches
-          .where((m) =>
-              m['isBye'] != true &&
-              (m['status'] ?? 'PENDING').toString().toUpperCase() ==
-                  'PENDING' &&
-              (tableCount == 1 ||
-                  (m['tableNumber'] as num?)?.toInt() == assignedTableNumber ||
-                  (m['assignedTable'] ?? 'Table 1').toString() ==
-                      assignedTableName))
-          .toList();
-      final myTableDone = allMatches
-          .where((m) =>
-              m['isBye'] != true &&
-              (m['status'] ?? 'PENDING').toString().toUpperCase() == 'DONE' &&
-              (tableCount == 1 ||
-                  (m['tableNumber'] as num?)?.toInt() == assignedTableNumber ||
-                  (m['assignedTable'] ?? 'Table 1').toString() ==
-                      assignedTableName))
-          .toList();
 
-      assignments.add({
-        'assignmentId': 'ref_assign_${t['id']}_table_$assignedTableNumber',
-        'tournamentId': t['id'].toString(),
-        'tournamentName': t['name']?.toString() ?? 'ArmSphere Championship',
-        'organizationName':
-            t['organizationName']?.toString() ?? 'Pakistan Armwrestling Federation',
-        'venueName': (t['venueName'] ?? t['venue'] ?? 'Combat Arena').toString(),
-        'city': (t['city'] ?? 'Lahore').toString(),
-        'formatCategory': (t['formatCategory'] ?? 'ELIMINATION').toString(),
-        'eliminationSubFormat':
-            (t['eliminationSubFormat'] ?? 'DOUBLE_ELIMINATION').toString(),
-        'refereeId': effectiveRefId,
-        'refereeName': effectiveRefName,
-        'tournament': t,
-        'assignedTableNumber': assignedTableNumber,
-        'assignedTableName': assignedTableName,
-        'tableCount': tableCount,
-        'pendingCount': myTablePending.length,
-        'doneCount': myTableDone.length,
-        'pendingCountOnTable': myTablePending.length,
-        'completedCountOnTable': myTableDone.length,
-        'allTables': tables,
-      });
+      for (final matchedTable in matchedTables) {
+        final assignedTableName =
+            matchedTable['tableName']?.toString() ?? 'Table 1';
+        final assignedTableNumber =
+            (matchedTable['tableNumber'] as num?)?.toInt() ?? 1;
+
+        final myTablePending = allMatches
+            .where((m) =>
+                m['isBye'] != true &&
+                (m['status'] ?? 'PENDING').toString().toUpperCase() ==
+                    'PENDING' &&
+                (tableCount == 1 ||
+                    (m['tableNumber'] as num?)?.toInt() ==
+                        assignedTableNumber ||
+                    (m['assignedTable'] ?? 'Table 1')
+                            .toString()
+                            .toLowerCase() ==
+                        assignedTableName.toLowerCase()))
+            .toList();
+        final myTableDone = allMatches
+            .where((m) =>
+                m['isBye'] != true &&
+                (m['status'] ?? 'PENDING').toString().toUpperCase() == 'DONE' &&
+                (tableCount == 1 ||
+                    (m['tableNumber'] as num?)?.toInt() ==
+                        assignedTableNumber ||
+                    (m['assignedTable'] ?? 'Table 1')
+                            .toString()
+                            .toLowerCase() ==
+                        assignedTableName.toLowerCase()))
+            .toList();
+
+        assignments.add({
+          'assignmentId': 'ref_assign_${t['id']}_table_$assignedTableNumber',
+          'tournamentId': t['id'].toString(),
+          'tournamentName': t['name']?.toString() ?? 'ArmSphere Championship',
+          'organizationName': t['organizationName']?.toString() ??
+              'Pakistan Armwrestling Federation',
+          'venueName':
+              (t['venueName'] ?? t['venue'] ?? 'Combat Arena').toString(),
+          'city': (t['city'] ?? 'Lahore').toString(),
+          'formatCategory': (t['formatCategory'] ?? 'ELIMINATION').toString(),
+          'eliminationSubFormat':
+              (t['eliminationSubFormat'] ?? 'DOUBLE_ELIMINATION').toString(),
+          'refereeId': effectiveRefId.isNotEmpty ? effectiveRefId : 'ref_local',
+          'refereeName':
+              effectiveRefName.isNotEmpty ? effectiveRefName : 'Referee',
+          'tournament': t,
+          'assignedTableNumber': assignedTableNumber,
+          'assignedTableName': assignedTableName,
+          'tableCount': tableCount,
+          'pendingCount': myTablePending.length,
+          'doneCount': myTableDone.length,
+          'pendingCountOnTable': myTablePending.length,
+          'pendingOnTableCount': myTablePending.length,
+          'completedCountOnTable': myTableDone.length,
+          'allTables': tables,
+        });
+      }
     }
 
     return assignments;
@@ -1159,25 +1245,191 @@ class TournamentOfflineStore {
         .where((m) => m['isBye'] != true)
         .toList();
 
-    bool involvesAthlete(Map<String, dynamic> m, String regId, String athId) {
-      final aReg = (m['athleteAId'] ?? '').toString();
-      final bReg = (m['athleteBId'] ?? '').toString();
-      final aAth = (m['athleteAAthleteId'] ?? aReg).toString();
-      final bAth = (m['athleteBAthleteId'] ?? bReg).toString();
-      return aReg == regId || bReg == regId || aAth == athId || bAth == athId;
+    bool involvesAthlete(Map<String, dynamic> m, String regId, String athId, String athName) {
+      final aReg = (m['athleteAId'] ?? '').toString().toLowerCase();
+      final bReg = (m['athleteBId'] ?? '').toString().toLowerCase();
+      final aAth = (m['athleteAAthleteId'] ?? aReg).toString().toLowerCase();
+      final bAth = (m['athleteBAthleteId'] ?? bReg).toString().toLowerCase();
+      final aName = (m['athleteAName'] ?? '').toString().toLowerCase();
+      final bName = (m['athleteBName'] ?? '').toString().toLowerCase();
+      final rLower = regId.toLowerCase();
+      final idLower = athId.toLowerCase();
+      final nLower = athName.toLowerCase();
+      return aReg == rLower ||
+          bReg == rLower ||
+          aAth == idLower ||
+          bAth == idLower ||
+          (nLower.isNotEmpty && (aName == nLower || bName == nLower));
+    }
+
+    // When both 1st Athlete and 2nd Athlete are scanned, verify the pair across all tournament matchups:
+    if (secondaryAthlete != null) {
+      final secRegId = secondaryAthlete['id'].toString();
+      final secAthId =
+          (secondaryAthlete['athleteId'] ?? secRegId).toString();
+      final secName = secondaryAthlete['athleteName'].toString();
+
+      if (secRegId.toLowerCase() == primaryRegId.toLowerCase() ||
+          secAthId.toLowerCase() == primaryAthId.toLowerCase() ||
+          secName.toLowerCase() == primaryName.toLowerCase()) {
+        return RefereePreMatchValidationResult(
+          isGreenLight: false,
+          statusHeadline: 'SAME ATHLETE SCANNED TWICE',
+          detailReason:
+              'Both QR scans belong to $primaryName. Please scan the 1st athlete and then the 2nd opponent athlete.',
+          checkAActiveMatchInRound: false,
+          checkBExactMatchedOpponents: false,
+          checkCMatchStillPending: false,
+          checkDBelongsToAssignedTable: false,
+        );
+      }
+
+      // Find all matchups in the tournament involving BOTH scanned athletes
+      final pairMatches = allMatches
+          .where((m) =>
+              involvesAthlete(m, primaryRegId, primaryAthId, primaryName) &&
+              involvesAthlete(m, secRegId, secAthId, secName))
+          .toList();
+
+      if (pairMatches.isEmpty) {
+        return RefereePreMatchValidationResult(
+          isGreenLight: false,
+          statusHeadline: 'MATCHUP DOES NOT EXIST',
+          detailReason:
+              '$primaryName and $secName do not have a matchup together in this tournament.',
+          checkAActiveMatchInRound: false,
+          checkBExactMatchedOpponents: false,
+          checkCMatchStillPending: false,
+          checkDBelongsToAssignedTable: false,
+        );
+      }
+
+      // Sort pairMatches so PENDING on this referee's table comes first, then PENDING on other table, then DONE
+      pairMatches.sort((a, b) {
+        final stA = (a['status'] ?? 'PENDING').toString().toUpperCase();
+        final stB = (b['status'] ?? 'PENDING').toString().toUpperCase();
+        if (stA != stB) return stA == 'PENDING' ? -1 : 1;
+        final tA = (a['assignedTable'] ?? 'Table 1').toString().toLowerCase() ==
+            assignedTableNameResolved.toLowerCase();
+        final tB = (b['assignedTable'] ?? 'Table 1').toString().toLowerCase() ==
+            assignedTableNameResolved.toLowerCase();
+        if (tA != tB) return tA ? -1 : 1;
+        final rA = (a['roundNumber'] as num?)?.toInt() ?? 1;
+        final rB = (b['roundNumber'] as num?)?.toInt() ?? 1;
+        return rB.compareTo(rA);
+      });
+
+      final pairBout = pairMatches.first;
+      final pairCategory =
+          (pairBout['categoryLabel'] ?? primaryAthlete['categoryLabel'] ?? '')
+              .toString();
+      final pairRound = (pairBout['roundNumber'] as num?)?.toInt() ?? 1;
+      final pairStatus =
+          (pairBout['status'] ?? 'PENDING').toString().toUpperCase();
+      final pairTable = (pairBout['assignedTable'] ?? 'Table 1').toString();
+      final pairTableNum = (pairBout['tableNumber'] as num?)?.toInt() ?? 1;
+
+      int activeRound = 1;
+      if (!isSuperfights) {
+        final catMatches = allMatches
+            .where((m) => (m['categoryLabel'] ?? '').toString() == pairCategory)
+            .toList();
+        final pendingRounds = catMatches
+            .where((m) =>
+                (m['status'] ?? 'PENDING').toString().toUpperCase() ==
+                'PENDING')
+            .map((m) => (m['roundNumber'] as num?)?.toInt() ?? 1)
+            .toList();
+        if (pendingRounds.isNotEmpty) {
+          activeRound = pendingRounds.reduce(math.min);
+        } else if (catMatches.isNotEmpty) {
+          activeRound = catMatches
+              .map((m) => (m['roundNumber'] as num?)?.toInt() ?? 1)
+              .reduce(math.max);
+        }
+      }
+
+      final isStillPending = pairStatus == 'PENDING';
+      final isAssignedTable = tableCount <= 1 ||
+          pairTable.toLowerCase() == assignedTableNameResolved.toLowerCase() ||
+          (assignedTableNumber != null && pairTableNum == assignedTableNumber);
+      final isActiveRound = isSuperfights || pairRound == activeRound;
+
+      if (!isStillPending) {
+        final winnerInfo = pairBout['winnerName'] != null
+            ? ' (Winner: ${pairBout['winnerName']})'
+            : '';
+        return RefereePreMatchValidationResult(
+          isGreenLight: false,
+          statusHeadline: 'MATCH ALREADY COMPLETED',
+          detailReason:
+              '$primaryName vs $secName ($pairCategory) has already been completed$winnerInfo. Completed matches cannot be scored again.',
+          checkAActiveMatchInRound: isActiveRound,
+          checkBExactMatchedOpponents: true,
+          checkCMatchStillPending: false,
+          checkDBelongsToAssignedTable: isAssignedTable,
+          matchedBout: pairBout,
+          resolvedCategoryLabel: pairCategory,
+        );
+      }
+
+      if (!isAssignedTable) {
+        return RefereePreMatchValidationResult(
+          isGreenLight: false,
+          statusHeadline: 'WRONG TABLE — ASSIGNED TO ${pairTable.toUpperCase()}',
+          detailReason:
+              '$primaryName vs $secName ($pairCategory) is assigned to $pairTable, not your appointed $assignedTableNameResolved.',
+          checkAActiveMatchInRound: isActiveRound,
+          checkBExactMatchedOpponents: true,
+          checkCMatchStillPending: true,
+          checkDBelongsToAssignedTable: false,
+          matchedBout: pairBout,
+          resolvedCategoryLabel: pairCategory,
+        );
+      }
+
+      if (!isActiveRound) {
+        return RefereePreMatchValidationResult(
+          isGreenLight: false,
+          statusHeadline: 'ROUND $pairRound NOT ACTIVE YET',
+          detailReason:
+              '$primaryName vs $secName is scheduled for Round $pairRound, while Round $activeRound is still in progress.',
+          checkAActiveMatchInRound: false,
+          checkBExactMatchedOpponents: true,
+          checkCMatchStillPending: true,
+          checkDBelongsToAssignedTable: true,
+          matchedBout: pairBout,
+          resolvedCategoryLabel: pairCategory,
+        );
+      }
+
+      return RefereePreMatchValidationResult(
+        isGreenLight: true,
+        statusHeadline:
+            'MATCHUP VERIFIED • ${assignedTableNameResolved.toUpperCase()}',
+        detailReason:
+            '$primaryName vs $secName ($pairCategory • Round $pairRound)',
+        checkAActiveMatchInRound: true,
+        checkBExactMatchedOpponents: true,
+        checkCMatchStillPending: true,
+        checkDBelongsToAssignedTable: true,
+        matchedBout: pairBout,
+        resolvedCategoryLabel: pairCategory,
+      );
     }
 
     final athleteMatches = allMatches
-        .where((m) => involvesAthlete(m, primaryRegId, primaryAthId))
+        .where((m) =>
+            involvesAthlete(m, primaryRegId, primaryAthId, primaryName))
         .toList();
 
     // Check (a): Does the athlete have an active match in this tournament?
     if (athleteMatches.isEmpty) {
       return RefereePreMatchValidationResult(
         isGreenLight: false,
-        statusHeadline: 'RED-LIGHT • NO ACTIVE MATCHUP ASSIGNED',
+        statusHeadline: 'NO ACTIVE MATCHUP ASSIGNED',
         detailReason:
-            '$primaryName ($primaryAthId) is registered in ${primaryAthlete['categoryLabel']}, but does not have an active match scheduled yet.',
+            '$primaryName is registered in ${primaryAthlete['categoryLabel']}, but does not have an active match scheduled yet.',
         checkAActiveMatchInRound: false,
         checkBExactMatchedOpponents: false,
         checkCMatchStillPending: false,
@@ -1204,7 +1456,6 @@ class TournamentOfflineStore {
             .toString();
     final roundNumber = (candidateMatch['roundNumber'] as num?)?.toInt() ?? 1;
 
-    // Determine active round for this category (if Elimination)
     int activeRoundInCategory = 1;
     if (!isSuperfights) {
       final catMatches = allMatches
@@ -1226,53 +1477,20 @@ class TournamentOfflineStore {
 
     final checkAActiveMatchInRound =
         isSuperfights || roundNumber == activeRoundInCategory;
-
-    // Check (b): Are these the exact matched opponents (block wrongly matched players)?
-    bool checkBExactMatchedOpponents = true;
-    if (secondaryAthlete != null) {
-      final secRegId = secondaryAthlete['id'].toString();
-      final secAthId =
-          (secondaryAthlete['athleteId'] ?? secRegId).toString();
-      if (secRegId == primaryRegId ||
-          !involvesAthlete(candidateMatch, secRegId, secAthId)) {
-        checkBExactMatchedOpponents = false;
-      }
-    }
-
-    // Check (c): Is the match still Pending (block players from an already Done/played match)?
     final matchStatus =
         (candidateMatch['status'] ?? 'PENDING').toString().toUpperCase();
     final checkCMatchStillPending = matchStatus == 'PENDING';
-
-    // Check (d): Does this matchup belong to THIS referee's assigned table?
     final matchTable =
         (candidateMatch['assignedTable'] ?? 'Table 1').toString();
     final checkDBelongsToAssignedTable = tableCount <= 1 ||
         matchTable.toLowerCase() == assignedTableNameResolved.toLowerCase();
 
-    if (!checkBExactMatchedOpponents) {
-      final secName =
-          secondaryAthlete?['athleteName'] ?? effectiveSecondaryInput;
-      return RefereePreMatchValidationResult(
-        isGreenLight: false,
-        statusHeadline: 'RED-LIGHT • WRONGLY MATCHED PLAYERS BLOCKED',
-        detailReason:
-            '$primaryName and $secName are NOT matched opponents! $primaryName\'s official opponent in Round $roundNumber is ${candidateMatch['athleteAId'] == primaryRegId ? candidateMatch['athleteBName'] : candidateMatch['athleteAName']}.',
-        checkAActiveMatchInRound: checkAActiveMatchInRound,
-        checkBExactMatchedOpponents: false,
-        checkCMatchStillPending: checkCMatchStillPending,
-        checkDBelongsToAssignedTable: checkDBelongsToAssignedTable,
-        matchedBout: candidateMatch,
-        resolvedCategoryLabel: categoryLabel,
-      );
-    }
-
     if (!checkCMatchStillPending) {
       return RefereePreMatchValidationResult(
         isGreenLight: false,
-        statusHeadline: 'RED-LIGHT • MATCH ALREADY COMPLETED (REPLAY BLOCKED)',
+        statusHeadline: 'MATCH ALREADY COMPLETED',
         detailReason:
-            'Match #${candidateMatch['matchIndex']} (${candidateMatch['athleteAName']} vs. ${candidateMatch['athleteBName']}) is already marked $matchStatus (${candidateMatch['scoreLine'] ?? "Played"}). Completed matches cannot be played again.',
+            'Match #${candidateMatch['matchIndex']} (${candidateMatch['athleteAName']} vs. ${candidateMatch['athleteBName']}) is already marked $matchStatus.',
         checkAActiveMatchInRound: checkAActiveMatchInRound,
         checkBExactMatchedOpponents: true,
         checkCMatchStillPending: false,
@@ -1286,9 +1504,9 @@ class TournamentOfflineStore {
       return RefereePreMatchValidationResult(
         isGreenLight: false,
         statusHeadline:
-            'RED-LIGHT • WRONG TABLE ($matchTable vs $assignedTableNameResolved)',
+            'WRONG TABLE — ASSIGNED TO ${matchTable.toUpperCase()}',
         detailReason:
-            'Match #${candidateMatch['matchIndex']} (${candidateMatch['athleteAName']} vs. ${candidateMatch['athleteBName']}) belongs to $matchTable, NOT your assigned table ($assignedTableNameResolved). Direct athletes to $matchTable.',
+            'Match #${candidateMatch['matchIndex']} (${candidateMatch['athleteAName']} vs. ${candidateMatch['athleteBName']}) belongs to $matchTable, NOT your assigned table ($assignedTableNameResolved).',
         checkAActiveMatchInRound: checkAActiveMatchInRound,
         checkBExactMatchedOpponents: true,
         checkCMatchStillPending: true,
@@ -1302,7 +1520,7 @@ class TournamentOfflineStore {
       return RefereePreMatchValidationResult(
         isGreenLight: false,
         statusHeadline:
-            'RED-LIGHT • ROUND $roundNumber NOT ACTIVE YET (ACTIVE: ROUND $activeRoundInCategory)',
+            'ROUND $roundNumber NOT ACTIVE YET',
         detailReason:
             'This matchup is in Round $roundNumber, while Round $activeRoundInCategory is still in progress for $categoryLabel.',
         checkAActiveMatchInRound: false,
@@ -1314,13 +1532,12 @@ class TournamentOfflineStore {
       );
     }
 
-    // All 4 checks passed -> GREEN-LIGHT!
     return RefereePreMatchValidationResult(
       isGreenLight: true,
       statusHeadline:
-          'GREEN-LIGHT • ALLOWED TO PLAY ON ${assignedTableNameResolved.toUpperCase()}',
+          'MATCHUP VERIFIED • ${assignedTableNameResolved.toUpperCase()}',
       detailReason:
-          'Verified: ${candidateMatch['athleteAName']} vs. ${candidateMatch['athleteBName']} ($categoryLabel • Round $roundNumber • Match #${candidateMatch['matchIndex']}) is Pending and assigned to $assignedTableNameResolved.',
+          '${candidateMatch['athleteAName']} vs. ${candidateMatch['athleteBName']} ($categoryLabel • Round $roundNumber)',
       checkAActiveMatchInRound: true,
       checkBExactMatchedOpponents: true,
       checkCMatchStillPending: true,

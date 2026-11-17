@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
+import 'tournament_operator_hub_cards_views.dart';
 
 /// Card 3 — Matchups & Brackets Screen (Operator Tournament Hub)
 ///
@@ -201,7 +202,6 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
 
   String _formatPrizeForPosition(int position) {
     final cfg = _awardsConfig;
-    final rewardType = (cfg['rewardType'] ?? 'CASH_PKR').toString().toUpperCase();
     final rawTiers = (cfg['tiers'] as List?) ?? const [];
     final tier = rawTiers
         .whereType<Map>()
@@ -210,19 +210,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
 
     final cashPkr = (tier?['cashAmountPkr'] as num?)?.toInt() ??
         (position == 1 ? 25000 : (position == 2 ? 15000 : 7500));
-    final awardTitle = (tier?['awardTitle'] ??
-            (position == 1
-                ? 'Gold Medal & Champion Trophy'
-                : (position == 2 ? 'Silver Medal' : 'Bronze Medal')))
-        .toString();
-
-    if (rewardType == 'CASH_PKR') {
-      return 'PKR $cashPkr';
-    } else if (rewardType == 'AWARDS') {
-      return awardTitle;
-    } else {
-      return 'PKR $cashPkr + $awardTitle';
-    }
+    return 'PKR $cashPkr';
   }
 
   List<Map<String, dynamic>> _normalizeAthletesWithPrAndMaxLift(
@@ -1855,273 +1843,257 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
       return raw;
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.space16,
-        12,
-        AppTheme.space16,
-        40,
-      ),
-      children: [
-        // =====================================================================
-        // 0. SLEEK FORGED-CRYSTAL STAGE HEADER
-        // =====================================================================
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF171C26), Color(0xFF0C0F16)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.goldPrimary.withValues(alpha: 0.45),
-              width: 1.2,
-            ),
-          ),
-          child: Row(
-            children: [
-              InkWell(
-                onTap: widget.onBackToHub,
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: AppTheme.obsidian,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 12,
-                        color: AppTheme.goldPrimary,
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'HUB',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.space16,
+          12,
+          AppTheme.space16,
+          48,
+        ),
+        children: [
+          // =====================================================================
+          // 0. SLEEK FORGED-CRYSTAL STAGE SUMMARY BAR (NO DUPLICATE < HUB BUTTON)
+          // =====================================================================
+          HoldToInspectText(
+            title: 'Matchups & Brackets Summary',
+            fullText:
+                '$formatBadgeText • $_selectedCategory • ${catAthletes.length} Pullers • $doneInRoundCount Done / $pendingInRoundCount Pending',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF171C26), Color(0xFF0C0F16)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                  width: 1.2,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MATCHUPS, BRACKETS & PODIUM • $formatBadgeText',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                        color: AppTheme.textPrimary,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${compactDiv(_selectedCategory)} • ${catAthletes.length} Pullers • $doneInRoundCount Done / $pendingInRoundCount Pending',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.emerald,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isFinalDoneForSelectedCategory)
-                InkWell(
-                  key: const ValueKey('card3_complete_final_podium_button'),
-                  borderRadius: BorderRadius.circular(9),
-                  onTap: _handleCompleteFinalAndCertifyPodiumNow,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.65),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.emoji_events_rounded,
-                          size: 13,
-                          color: AppTheme.goldPrimary,
-                        ),
-                        SizedBox(width: 4),
                         Text(
-                          'PODIUM',
-                          style: TextStyle(
+                          '$formatBadgeText • ${compactDiv(_selectedCategory)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontSize: 10,
                             fontWeight: FontWeight.w900,
-                            color: AppTheme.goldPrimary,
+                            fontSize: 13,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${catAthletes.length} Pullers • $doneInRoundCount Done / $pendingInRoundCount Pending',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.emerald,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // =====================================================================
-        // AUTOMATIC 1ST, 2ND & 3RD PLACE CATEGORY PODIUM BANNER
-        // =====================================================================
-        if (isFinalDoneForSelectedCategory &&
-            selectedCategoryPodium.isNotEmpty) ...[
-          _buildCategoryPodiumSummaryCard(
-            categoryLabel: _selectedCategory,
-            podium: selectedCategoryPodium,
-          ),
-          const SizedBox(height: 12),
-          if ((_awardsConfig['winnerStructure'] ?? '')
-                  .toString()
-                  .toUpperCase() ==
-              'OVERALL_WINNERS') ...[
-            _buildOverallTournamentWinnersCard(categories),
-            const SizedBox(height: 12),
-          ],
-        ],
-
-        // =====================================================================
-        // 1. TOP COMMAND ACTION BAR
-        // =====================================================================
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF171D29), Color(0xFF0C1017)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppTheme.goldPrimary.withValues(alpha: 0.45),
-              width: 1.2,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: GestureDetector(
-                      key: const ValueKey('card3_smart_random_matchups_button'),
-                      onTap: _handleSmartRandomMatchupsForCurrentRound,
+                  if (!isFinalDoneForSelectedCategory)
+                    InkWell(
+                      key: const ValueKey('card3_complete_final_podium_button'),
+                      borderRadius: BorderRadius.circular(9),
+                      onTap: _handleCompleteFinalAndCertifyPodiumNow,
                       child: Container(
-                        height: 46,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 7),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF3A1216), Color(0xFF1C080B)],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(9),
                           border: Border.all(
-                            color: const Color(0xFFE23B3B),
-                            width: 1.3,
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.65),
                           ),
                         ),
                         child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.bolt_rounded,
-                              size: 18,
-                              color: AppTheme.goldPrimary,
-                            ),
-                            SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                '⚡ SMART RANDOM PAIRING',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppTheme.textPrimary,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: GestureDetector(
-                      key: const ValueKey('card3_manual_pair_button'),
-                      onTap: () => _openManualPairOrByeDialog(),
-                      child: Container(
-                        height: 46,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2B2210), Color(0xFF141008)],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppTheme.goldPrimary,
-                            width: 1.2,
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_rounded,
-                              size: 17,
+                              Icons.emoji_events_rounded,
+                              size: 13,
                               color: AppTheme.goldPrimary,
                             ),
                             SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                '+ MANUAL BOUT',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppTheme.goldPrimary,
-                                  letterSpacing: 0.4,
-                                ),
+                            Text(
+                              'PODIUM',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.goldPrimary,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // =====================================================================
+          // AUTOMATIC 1ST, 2ND & 3RD PLACE CATEGORY PODIUM BANNER
+          // =====================================================================
+          if (isFinalDoneForSelectedCategory &&
+              selectedCategoryPodium.isNotEmpty) ...[
+            _buildCategoryPodiumSummaryCard(
+              categoryLabel: _selectedCategory,
+              podium: selectedCategoryPodium,
+            ),
+            const SizedBox(height: 12),
+            if ((_awardsConfig['winnerStructure'] ?? '')
+                    .toString()
+                    .toUpperCase() ==
+                'OVERALL_WINNERS') ...[
+              _buildOverallTournamentWinnersCard(categories),
+              const SizedBox(height: 12),
+            ],
+          ],
+
+          // =====================================================================
+          // 1. TOP COMMAND ACTION BAR
+          // =====================================================================
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF171D29), Color(0xFF0C1017)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                width: 1.2,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: HoldToInspectText(
+                        title: 'Smart Random Pairing',
+                        fullText:
+                            'Automatically pair athletes in $_selectedCategory by ELO, PR, and Max Lift.',
+                        child: GestureDetector(
+                          key: const ValueKey(
+                              'card3_smart_random_matchups_button'),
+                          onTap: _handleSmartRandomMatchupsForCurrentRound,
+                          child: Container(
+                            height: 46,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF3A1216), Color(0xFF1C080B)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE23B3B),
+                                width: 1.3,
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  size: 18,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                                SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    'SMART RANDOM PAIRING',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.textPrimary,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: HoldToInspectText(
+                        title: 'Manual Bout Creation',
+                        fullText:
+                            'Manually pair two athletes or assign an automatic BYE advancement.',
+                        child: GestureDetector(
+                          key: const ValueKey('card3_manual_pair_button'),
+                          onTap: () => _openManualPairOrByeDialog(),
+                          child: Container(
+                            height: 46,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.goldPrimary,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_rounded,
+                                  size: 17,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                                SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    '+ MANUAL BOUT',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppTheme.goldPrimary,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               if (catAthletes.length % 2 == 1) ...[
                 const SizedBox(height: 8),
                 Row(
@@ -2595,7 +2567,8 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
             ),
             const SizedBox(height: 12),
           ],
-      ],
+        ],
+      ),
     );
   }
 

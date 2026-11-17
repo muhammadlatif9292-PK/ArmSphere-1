@@ -55,62 +55,110 @@ StatusType _resolveCertStatusType(String status) {
   }
 }
 
-/// Referee Dashboard — Offline-First Table Assignment Cards, Strict 4-Point
-/// Green-Light Pre-Match Validation, Normal Win/Loss + Win by Forfeit/Injury,
-/// and Single-Tap Locked Zero-Error Offline Result Submission.
+/// Referee Dashboard — Shows ONLY the Tournament Table Assignments in which
+/// the current referee is selected (showing Organization Name, Tournament Name,
+/// and Table Number). Clicking an assignment opens the simple 2-Athlete QR Scanner
+/// workflow that verifies the pair after the 2nd QR scan and either shows Red Errors
+/// (if already done, wrong table, or matchup does not exist) or unlocks Result Submission.
 class RefereeDashboardScreen extends ConsumerStatefulWidget {
   const RefereeDashboardScreen({super.key});
 
   @override
-  ConsumerState<RefereeDashboardScreen> createState() => _RefereeDashboardScreenState();
+  ConsumerState<RefereeDashboardScreen> createState() =>
+      _RefereeDashboardScreenState();
 }
 
-class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen> {
-  String? _selectedEventId;
-  bool _busy = false;
-
-  // Referee Assignment & Table Console State
+class _RefereeDashboardScreenState
+    extends ConsumerState<RefereeDashboardScreen> {
   Map<String, dynamic>? _activeAssignment;
-  final TextEditingController _athleteQueryCtrl = TextEditingController();
-  final TextEditingController _opponentQueryCtrl = TextEditingController();
+
+  // 2-Step QR Scanning State (1st Athlete QR -> 2nd Athlete QR)
+  Map<String, dynamic>? _scannedAthlete1;
+  String? _scannedRaw1;
+  String? _scan1Error;
+
+  Map<String, dynamic>? _scannedAthlete2;
+  String? _scannedRaw2;
+
   RefereePreMatchValidationResult? _validationResult;
   String _selectedWinSide = 'A';
   bool _isWalkoverForfeit = false;
-  String _forfeitReason = 'Injury / Medical Withdrawal';
   String _scoreLine = '3-0';
   final Set<String> _localSubmittedMatchLocks = <String>{};
   String? _lastConfirmedSubmissionMessage;
+  String? _lastUserId;
 
-  @override
-  void dispose() {
-    _athleteQueryCtrl.dispose();
-    _opponentQueryCtrl.dispose();
-    super.dispose();
+  void _resetScannedAthletes({bool keepConfirmation = false}) {
+    setState(() {
+      _scannedAthlete1 = null;
+      _scannedRaw1 = null;
+      _scan1Error = null;
+      _scannedAthlete2 = null;
+      _scannedRaw2 = null;
+      _validationResult = null;
+      _selectedWinSide = 'A';
+      _isWalkoverForfeit = false;
+      _scoreLine = '3-0';
+      if (!keepConfirmation) {
+        _lastConfirmedSubmissionMessage = null;
+      }
+    });
   }
 
-  void _runPreMatchCheck(List<Map<String, dynamic>> serverEvents) {
-    final assignment = _activeAssignment;
-    if (assignment == null) return;
-    final hive = ref.read(hiveStorageProvider);
-    final tId = (assignment['tournamentId'] ?? '').toString();
-    final tableNumber = (assignment['assignedTableNumber'] as num?)?.toInt() ?? 1;
+  void _handleSingleAthleteQrScanned({
+    required int slotNumber,
+    required String rawQrInput,
+    required Map<String, dynamic> tournament,
+    required int assignedTableNumber,
+    required String assignedTableName,
+  }) {
+    final clean = rawQrInput.trim();
+    if (clean.isEmpty) return;
 
-    final tournament = TournamentOfflineStore.getReleasedTournamentById(
-          hive: hive,
-          tournamentId: tId,
-          serverEvents: serverEvents,
-        ) ??
-        Map<String, dynamic>.from(assignment['tournament'] as Map? ?? {});
+    final resolved = TournamentOfflineStore.resolveAthleteFromQrOrQuery(
+      tournament: tournament,
+      rawInput: clean,
+    );
+
+    if (slotNumber == 1) {
+      // Step 1: Only scan 1st athlete. Do NOT show matchup or run pair validation yet.
+      setState(() {
+        _lastConfirmedSubmissionMessage = null;
+        _scannedRaw1 = clean;
+        _scannedAthlete1 = resolved;
+        _scan1Error = resolved == null
+            ? 'This QR code ("$clean") does not match any registered athlete in this tournament.'
+            : null;
+        _scannedAthlete2 = null;
+        _scannedRaw2 = null;
+        _validationResult = null;
+      });
+      return;
+    }
+
+    // Step 2: 2nd Athlete QR scanned -> Now verify both athletes against all matchups & table!
+    final hive = ref.read(hiveStorageProvider);
+    final tId = (tournament['id'] ?? '').toString();
+    final primaryQuery = _scannedRaw1 ??
+        (_scannedAthlete1?['athleteName'] ?? _scannedAthlete1?['id'] ?? '')
+            .toString();
 
     final res = TournamentOfflineStore.validatePreMatchForReferee(
       tournament: tournament,
-      assignedTableNumber: tableNumber,
-      primaryInput: _athleteQueryCtrl.text,
-      secondaryInput: _opponentQueryCtrl.text,
+      assignedTableNumber: assignedTableNumber,
+      assignedTableName: assignedTableName,
+      primaryInput: primaryQuery,
+      secondaryInput: clean,
     );
 
     setState(() {
+      _lastConfirmedSubmissionMessage = null;
+      _scannedRaw2 = clean;
+      _scannedAthlete2 = resolved;
       _validationResult = res;
+      _selectedWinSide = 'A';
+      _isWalkoverForfeit = false;
+      _scoreLine = '3-0';
       if (res.matchedBout != null) {
         final mId = (res.matchedBout!['id'] ?? '').toString();
         if (TournamentOfflineStore.isMatchSubmissionLocked(hive, tId, mId)) {
@@ -120,19 +168,16 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     });
   }
 
-  Future<void> _openQrScannerSimulationModal(
-    BuildContext context,
-    Map<String, dynamic> tournament,
-    int assignedTableNumber,
-    List<Map<String, dynamic>> serverEvents,
-  ) async {
+  Future<void> _openSingleAthleteQrScannerModal({
+    required BuildContext context,
+    required int slotNumber,
+    required Map<String, dynamic> tournament,
+    required int assignedTableNumber,
+    required String assignedTableName,
+  }) async {
+    FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.mediumImpact();
-    final matchups = (tournament['matchups'] is List)
-        ? (tournament['matchups'] as List)
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList()
-        : <Map<String, dynamic>>[];
+
     final applied = (tournament['appliedAthletes'] is List)
         ? (tournament['appliedAthletes'] as List)
             .whereType<Map>()
@@ -145,235 +190,282 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
+      backgroundColor: const Color(0xFF0D111A),
+      barrierColor: Colors.black.withValues(alpha: 0.82),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: Color(0x66D4AF37), width: 1.3),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            18,
-            18,
-            18,
-            MediaQuery.viewInsetsOf(ctx).bottom + 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
-                      ),
-                      child: const Icon(
-                        Icons.qr_code_scanner_rounded,
-                        color: AppTheme.goldPrimary,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'SCAN ATHLETE QR CODE',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 15,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'Table $assignedTableNumber • Scans Settings QR, Tournament QR Card, or Printed Player Badge',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close, color: AppTheme.textSecondary),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: qrTextCtrl,
-                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: 'Paste / Scan Raw QR Payload or Athlete ID',
-                    hintText: 'ARMSPHERE-ATHLETE-QR:ath-pk-01:Malik Sherbaz',
-                    prefixIcon: const Icon(Icons.qr_code_2_rounded, color: AppTheme.goldPrimary),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.check_circle_rounded, color: AppTheme.emerald),
-                      onPressed: () {
-                        if (qrTextCtrl.text.trim().isNotEmpty) {
-                          _athleteQueryCtrl.text = qrTextCtrl.text.trim();
-                          Navigator.of(ctx).pop();
-                          _runPreMatchCheck(serverEvents);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'QUICK-SCAN SIMULATION (SELECT ATHLETE / MATCHUP QR)',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    color: AppTheme.goldPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                for (final m in matchups.where((m) => m['isBye'] != true)) ...[
-                  Builder(
-                    builder: (_) {
-                      final mTable = (m['tableNumber'] as num?)?.toInt() ?? 1;
-                      final status = (m['status'] ?? 'PENDING').toString().toUpperCase();
-                      final p1 = (m['player1Name'] ?? 'Athlete 1').toString();
-                      final p1Id = (m['player1Id'] ?? '').toString();
-                      final p2 = (m['player2Name'] ?? 'Athlete 2').toString();
-                      final p2Id = (m['player2Id'] ?? '').toString();
-                      final isThisTable = mTable == assignedTableNumber;
-                      final isPending = status != 'DONE' && status != 'COMPLETED';
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              18,
+              18,
+              18,
+              MediaQuery.viewInsetsOf(ctx).bottom + 24,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(ctx).height * 0.82,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.obsidian,
+                          color: AppTheme.goldPrimary.withValues(alpha: 0.16),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: (isThisTable && isPending)
-                                ? AppTheme.emerald.withValues(alpha: 0.55)
-                                : const Color(0x33FFFFFF),
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.6),
                           ),
                         ),
+                        child: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: AppTheme.goldPrimary,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                StatusChip(
-                                  label: 'TABLE $mTable',
-                                  color: isThisTable ? AppTheme.emerald : AppTheme.warning,
-                                ),
-                                const SizedBox(width: 6),
-                                StatusChip(
-                                  label: status,
-                                  color: isPending ? AppTheme.cyan : AppTheme.textMuted,
-                                ),
-                                const Spacer(),
-                                Text(
-                                  (m['categoryLabel'] ?? '').toString(),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
                             Text(
-                              '$p1 vs $p2',
+                              slotNumber == 1
+                                  ? 'SCAN 1ST ATHLETE QR CODE'
+                                  : 'SCAN 2ND ATHLETE QR CODE',
                               style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13.5,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
                                 color: AppTheme.textPrimary,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 6,
-                              children: [
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.emerald,
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    minimumSize: Size.zero,
-                                  ),
-                                  onPressed: () {
-                                    _athleteQueryCtrl.text =
-                                        'ARMSPHERE-ATHLETE-QR:$p1Id:$p1';
-                                    _opponentQueryCtrl.text =
-                                        'ARMSPHERE-ATHLETE-QR:$p2Id:$p2';
-                                    Navigator.of(ctx).pop();
-                                    _runPreMatchCheck(serverEvents);
-                                  },
-                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 15),
-                                  label: const Text(
-                                    'Scan Both Opponents QR',
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-                                  ),
-                                ),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppTheme.goldPrimary,
-                                    side: BorderSide(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    minimumSize: Size.zero,
-                                  ),
-                                  onPressed: () {
-                                    _athleteQueryCtrl.text =
-                                        'ARMSPHERE-ATHLETE-QR:$p1Id:$p1';
-                                    _opponentQueryCtrl.clear();
-                                    Navigator.of(ctx).pop();
-                                    _runPreMatchCheck(serverEvents);
-                                  },
-                                  icon: const Icon(Icons.person_pin_rounded, size: 15),
-                                  label: Text(
-                                    'Scan $p1 QR',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(height: 2),
+                            Text(
+                              slotNumber == 1
+                                  ? 'Scan the first athlete at $assignedTableName'
+                                  : 'Scan the opponent athlete at $assignedTableName to verify matchup',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary,
+                              ),
                             ),
                           ],
                         ),
-                      );
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // QR Code Input / Hardware Scanner Field
+                  TextField(
+                    controller: qrTextCtrl,
+                    onTapOutside: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFF141A26),
+                      labelText: 'Scan or Enter Athlete QR Code',
+                      hintText: 'ARMSPHERE-ATHLETE-QR:...',
+                      prefixIcon: const Icon(
+                        Icons.qr_code_2_rounded,
+                        color: AppTheme.goldPrimary,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.emerald,
+                        ),
+                        onPressed: () {
+                          final val = qrTextCtrl.text.trim();
+                          if (val.isNotEmpty) {
+                            Navigator.of(ctx).pop();
+                            _handleSingleAthleteQrScanned(
+                              slotNumber: slotNumber,
+                              rawQrInput: val,
+                              tournament: tournament,
+                              assignedTableNumber: assignedTableNumber,
+                              assignedTableName: assignedTableName,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    onSubmitted: (val) {
+                      if (val.trim().isNotEmpty) {
+                        Navigator.of(ctx).pop();
+                        _handleSingleAthleteQrScanned(
+                          slotNumber: slotNumber,
+                          rawQrInput: val.trim(),
+                          tournament: tournament,
+                          assignedTableNumber: assignedTableNumber,
+                          assignedTableName: assignedTableName,
+                        );
+                      }
                     },
                   ),
-                ],
-                if (applied.length >= 2) ...[
-                  const SizedBox(height: 6),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.crimson,
-                      side: BorderSide(color: AppTheme.crimson.withValues(alpha: 0.6)),
+                  const SizedBox(height: 14),
+
+                  Text(
+                    slotNumber == 1
+                        ? 'TAP AN ATHLETE QR BADGE TO SCAN 1ST ATHLETE'
+                        : 'TAP AN ATHLETE QR BADGE TO SCAN 2ND ATHLETE',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.7,
+                      color: AppTheme.goldPrimary,
                     ),
-                    onPressed: () {
-                      // Test mismatched opponent validation
-                      final first = applied.first;
-                      _athleteQueryCtrl.text = (first['athleteName'] ?? 'Malik Sherbaz').toString();
-                      _opponentQueryCtrl.text = 'Unmatched Wrong Opponent';
-                      Navigator.of(ctx).pop();
-                      _runPreMatchCheck(serverEvents);
-                    },
-                    icon: const Icon(Icons.warning_amber_rounded, size: 16),
-                    label: const Text(
-                      'Test Wrongly Matched Opponent Scan (Red Warning)',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Individual Athlete QR Badges (NO matchups shown here!)
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: applied.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (_, idx) {
+                        final ath = applied[idx];
+                        final athName = (ath['athleteName'] ??
+                                ath['name'] ??
+                                'Athlete ${idx + 1}')
+                            .toString();
+                        final athId =
+                            (ath['athleteId'] ?? ath['id'] ?? 'ath-$idx')
+                                .toString();
+                        final qrPayload = (ath['settingsIdentityQr'] ??
+                                ath['qrCodePayload'] ??
+                                'ARMSPHERE-ATHLETE-QR:$athId:$athName')
+                            .toString();
+                        final isAlreadySlot1 = slotNumber == 2 &&
+                            (_scannedAthlete1?['id']?.toString() ==
+                                    ath['id']?.toString() ||
+                                _scannedAthlete1?['athleteName']?.toString() ==
+                                    athName);
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF141923),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isAlreadySlot1
+                                  ? AppTheme.goldPrimary.withValues(alpha: 0.45)
+                                  : const Color(0x28FFFFFF),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.obsidian,
+                                  borderRadius: BorderRadius.circular(9),
+                                  border: Border.all(
+                                    color: AppTheme.goldPrimary
+                                        .withValues(alpha: 0.45),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.qr_code_2_rounded,
+                                  color: AppTheme.goldPrimary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      athName,
+                                      style: const TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 13.5,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                    if (isAlreadySlot1)
+                                      const Text(
+                                        'Scanned as 1st Athlete',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.goldPrimary,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.goldPrimary,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: Size.zero,
+                                ),
+                                onPressed: () {
+                                  Navigator.of(ctx).pop();
+                                  _handleSingleAthleteQrScanned(
+                                    slotNumber: slotNumber,
+                                    rawQrInput: qrPayload,
+                                    tournament: tournament,
+                                    assignedTableNumber: assignedTableNumber,
+                                    assignedTableName: assignedTableName,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.qr_code_scanner_rounded,
+                                  size: 15,
+                                ),
+                                label: const Text(
+                                  'SCAN QR',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -391,7 +483,6 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     final lockKey = '$tId::$mId';
     final hive = ref.read(hiveStorageProvider);
 
-    // Single-Tap Lock: immediately block duplicate taps
     if (_localSubmittedMatchLocks.contains(lockKey) ||
         TournamentOfflineStore.isMatchSubmissionLocked(hive, tId, mId)) {
       return;
@@ -403,33 +494,38 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
     HapticFeedback.heavyImpact();
 
     final winnerId = _selectedWinSide == 'A'
-        ? (bout['player1Id'] ?? '').toString()
-        : (bout['player2Id'] ?? '').toString();
+        ? (bout['athleteAId'] ?? bout['player1Id'] ?? '').toString()
+        : (bout['athleteBId'] ?? bout['player2Id'] ?? '').toString();
     final winnerName = _selectedWinSide == 'A'
-        ? (bout['player1Name'] ?? 'Athlete 1').toString()
-        : (bout['player2Name'] ?? 'Athlete 2').toString();
+        ? (bout['athleteAName'] ?? bout['player1Name'] ?? 'Athlete 1')
+            .toString()
+        : (bout['athleteBName'] ?? bout['player2Name'] ?? 'Athlete 2')
+            .toString();
 
     OfflineSyncManager? syncManager;
     try {
       syncManager = ref.read(offlineSyncManagerProvider);
     } catch (_) {}
 
-    final result = await TournamentOfflineStore.submitRefereeMatchResultOfflineSafe(
+    final result =
+        await TournamentOfflineStore.submitRefereeMatchResultOfflineSafe(
       hive: hive,
       syncManager: syncManager,
       tournamentId: tId,
+      match: bout,
       matchupId: mId,
       winnerId: winnerId,
       winnerName: winnerName,
       winMethod: _isWalkoverForfeit ? 'FORFEIT_INJURY' : 'NORMAL',
-      forfeitReason: _isWalkoverForfeit ? _forfeitReason : null,
-      scoreLine: _isWalkoverForfeit ? 'W/O (Forfeit/Injury)' : _scoreLine,
-      refereeId: (assignment['refereeId'] ?? 'ref-pk-01').toString(),
-      refereeName: (assignment['refereeName'] ?? 'Official Referee').toString(),
-      assignedTableNumber: (assignment['assignedTableNumber'] as num?)?.toInt() ?? 1,
+      forfeitReason:
+          _isWalkoverForfeit ? 'Forfeit / Injury Walkover' : null,
+      scoreLine: _isWalkoverForfeit ? 'Forfeit / Injury' : _scoreLine,
+      refereeId: (assignment['refereeId'] ?? 'ref_local').toString(),
+      refereeName: (assignment['refereeName'] ?? 'Referee').toString(),
+      assignedTableNumber:
+          (assignment['assignedTableNumber'] as num?)?.toInt() ?? 1,
     );
 
-    // Update active assignment snapshot and re-run validation so the match shows Done / Sent
     final refreshedAssignments = TournamentOfflineStore.getRefereeAssignments(
       hive: hive,
       userProfile: ref.read(authProvider).userProfile,
@@ -445,224 +541,32 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
       setState(() {
         if (updatedAssignment != null) {
           _activeAssignment = updatedAssignment;
-        } else if (result['tournament'] is Map) {
+        } else if (result['updatedTournament'] is Map) {
           _activeAssignment = {
             ...assignment,
-            'tournament': result['tournament'],
+            'tournament': result['updatedTournament'],
           };
         }
+        _scannedAthlete1 = null;
+        _scannedRaw1 = null;
+        _scan1Error = null;
+        _scannedAthlete2 = null;
+        _scannedRaw2 = null;
+        _validationResult = null;
         _lastConfirmedSubmissionMessage =
-            'DONE / SENT ✓ • Winner: $winnerName (${_isWalkoverForfeit ? "Win by Forfeit / Injury Walkover" : "Normal $_scoreLine"}) • Table ${assignment['assignedTableNumber']} Freed for Next Matchup';
-        _runPreMatchCheck(serverEvents);
+            'Match Result Submitted • Winner: $winnerName (${_isWalkoverForfeit ? "Forfeit / Injury" : _scoreLine})';
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         CrystalSnackBar(
           content: Text(
-            'Done / Sent ✓ • $winnerName recorded (${_isWalkoverForfeit ? "Forfeit/Injury Walkover" : _scoreLine}). Table ${assignment['assignedTableNumber']} freed & synced offline-first.',
+            'Match Result Submitted • Winner: $winnerName (${_isWalkoverForfeit ? "Forfeit / Injury" : _scoreLine})',
           ),
           backgroundColor: AppTheme.emerald,
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
-  }
-
-  Future<void> _run(Future<void> Function() action, {String? successMessage}) async {
-    if (_busy) return;
-    setState(() => _busy = true);
-    try {
-      await action();
-      if (mounted && successMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: Text(successMessage),
-            backgroundColor: AppTheme.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: Text(e.detail),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: Text('Action saved to offline queue: $e'),
-            backgroundColor: AppTheme.emerald,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _refreshBoard() async {
-    final eventId = _selectedEventId;
-    if (eventId != null) ref.invalidate(eventMatchesProvider(eventId));
-    ref.invalidate(matchTablesProvider);
-  }
-
-  Future<void> _callToTable(Map<String, dynamic> match) async {
-    final tables = await ref.read(matchTablesProvider.future);
-    if (!mounted) return;
-    if (tables.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
-          content: const Text('No tables exist yet — ask the organizer to add tables first.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    String? tableId = tables.first['id']?.toString();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.cardSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            side: const BorderSide(color: AppTheme.cardBorder),
-          ),
-          title: const Text('Call Match to Table', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
-          content: DropdownButtonFormField<String>(
-            initialValue: tableId,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Select Assigned Table'),
-            items: [
-              for (final t in tables)
-                DropdownMenuItem(
-                  value: t['id']?.toString(),
-                  child: Text('${t['name'] ?? 'Table'} (${t['status'] ?? ''})', overflow: TextOverflow.ellipsis),
-                ),
-            ],
-            onChanged: (v) => setDialogState(() => tableId = v),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Call Match'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (confirmed != true || tableId == null) return;
-    await _run(() async {
-      await ref.read(tournamentRepositoryProvider).callMatchToTable(
-            matchId: match['id'].toString(),
-            tableId: tableId!,
-          );
-      await _refreshBoard();
-    }, successMessage: 'Match successfully called to table.');
-  }
-
-  Future<void> _submitResult(Map<String, dynamic> match) async {
-    final aName = match['athleteAName']?.toString() ?? 'Athlete A';
-    final bName = match['athleteBName']?.toString() ?? 'Athlete B';
-    String winnerSide = 'A';
-    String scoreLine = _kScoreOptions.first;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.cardSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            side: const BorderSide(color: AppTheme.cardBorder),
-          ),
-          title: const Text('Submit Official Result', style: TextStyle(fontFamily: AppTheme.fontDisplay)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                value: 'A',
-                groupValue: winnerSide,
-                activeColor: AppTheme.primaryRed,
-                title: Text(aName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Red Corner (Athlete A)', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-                onChanged: (v) => setDialogState(() => winnerSide = v ?? 'A'),
-              ),
-              RadioListTile<String>(
-                value: 'B',
-                groupValue: winnerSide,
-                activeColor: AppTheme.primaryRed,
-                title: Text(bName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('White Corner (Athlete B)', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-                onChanged: (v) => setDialogState(() => winnerSide = v ?? 'B'),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: scoreLine,
-                decoration: const InputDecoration(labelText: 'Score line (wins-pulls format)'),
-                items: [
-                  for (final s in _kScoreOptions)
-                    DropdownMenuItem(
-                      value: s,
-                      child: Text(
-                        s,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                ],
-                onChanged: (v) => setDialogState(() => scoreLine = v ?? scoreLine),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Submit Result'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (confirmed != true) return;
-    final winnerId = (winnerSide == 'A' ? match['athleteAId'] : match['athleteBId'])?.toString();
-    if (winnerId == null || winnerId.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CrystalSnackBar(
-            content: const Text('Both athletes must be determined before a result can be submitted.'),
-            backgroundColor: AppTheme.warning,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-      return;
-    }
-    await _run(() async {
-      await ref.read(tournamentRepositoryProvider).submitTournamentResult(
-            matchId: match['id'].toString(),
-            winnerId: winnerId,
-            scoreLine: scoreLine,
-          );
-      await _refreshBoard();
-    }, successMessage: 'Official match result recorded.');
   }
 
   Widget _buildRefereeTableConsole(
@@ -672,8 +576,12 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
   ) {
     final hive = ref.read(hiveStorageProvider);
     final tId = (assignment['tournamentId'] ?? '').toString();
-    final tableNumber = (assignment['assignedTableNumber'] as num?)?.toInt() ?? 1;
-    final totalTables = (assignment['tableCount'] as num?)?.toInt() ?? 1;
+    final tableNumber =
+        (assignment['assignedTableNumber'] as num?)?.toInt() ?? 1;
+    final assignedTableName =
+        (assignment['assignedTableName'] ?? 'Table $tableNumber').toString();
+    final tableCount =
+        ((assignment['tableCount'] as num?)?.toInt() ?? 1).clamp(1, 12);
 
     final tournament = TournamentOfflineStore.getReleasedTournamentById(
           hive: hive,
@@ -682,43 +590,50 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
         ) ??
         Map<String, dynamic>.from(assignment['tournament'] as Map? ?? {});
 
-    final matchups = (tournament['matchups'] is List)
-        ? (tournament['matchups'] as List)
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .where((m) => m['isBye'] != true)
-            .toList()
-        : <Map<String, dynamic>>[];
-
-    final myTablePending = matchups
-        .where((m) =>
-            ((m['tableNumber'] as num?)?.toInt() ?? 1) == tableNumber &&
-            (m['status'] ?? 'PENDING').toString().toUpperCase() != 'DONE' &&
-            (m['status'] ?? 'PENDING').toString().toUpperCase() != 'COMPLETED')
+    final allMatches = TournamentOfflineStore.flattenAllMatches(tournament)
+        .where((m) => m['isBye'] != true)
         .toList();
 
-    final validation = _validationResult;
-    final validatedBout = validation?.matchedBout;
-    final validatedBoutId = (validatedBout?['id'] ?? '').toString();
-    final isLocked = validatedBoutId.isNotEmpty &&
-        (_localSubmittedMatchLocks.contains('$tId::$validatedBoutId') ||
-            TournamentOfflineStore.isMatchSubmissionLocked(
-              hive,
-              tId,
-              validatedBoutId,
-            ) ||
-            (validatedBout?['status'] ?? '').toString().toUpperCase() == 'DONE');
+    final myTablePending = allMatches
+        .where((m) =>
+            (m['status'] ?? 'PENDING').toString().toUpperCase() == 'PENDING' &&
+            (tableCount == 1 ||
+                ((m['tableNumber'] as num?)?.toInt() ?? 1) == tableNumber ||
+                (m['assignedTable'] ?? 'Table 1').toString().toLowerCase() ==
+                    assignedTableName.toLowerCase()))
+        .toList();
 
+    final myTableDone = allMatches
+        .where((m) =>
+            (m['status'] ?? 'PENDING').toString().toUpperCase() == 'DONE' &&
+            (tableCount == 1 ||
+                ((m['tableNumber'] as num?)?.toInt() ?? 1) == tableNumber ||
+                (m['assignedTable'] ?? 'Table 1').toString().toLowerCase() ==
+                    assignedTableName.toLowerCase()))
+        .toList();
+
+    final orgName = (tournament['organizationName'] ??
+            assignment['organizationName'] ??
+            'Organization')
+        .toString();
     final tournamentTitle =
-        (tournament['name'] ?? assignment['tournamentName'] ?? 'PAL Championship Cup')
+        (tournament['name'] ?? assignment['tournamentName'] ?? 'Tournament')
             .toString();
+
+    final bool bothScanned = _scannedRaw1 != null && _scannedRaw2 != null;
+    final validation = _validationResult;
+    final bool hasRedError = _scan1Error != null ||
+        (bothScanned && (validation == null || !validation.allowedToPlay));
+    final bool isMatchVerified =
+        bothScanned && validation != null && validation.allowedToPlay;
+    final validatedBout = validation?.matchedBout;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Forged-Crystal Tournament & Table Assignment Header Card
+        // 1. Simple, Clean Assignment Summary Card (Organization, Tournament Name, Table Number, Queued Count)
         Container(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -736,54 +651,21 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
             children: [
               Row(
                 children: [
-                  InkWell(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _activeAssignment = null;
-                        _validationResult = null;
-                        _lastConfirmedSubmissionMessage = null;
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(9),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.obsidian,
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 12,
-                            color: AppTheme.goldPrimary,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'ASSIGNMENTS',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
-                              color: AppTheme.goldPrimary,
-                            ),
-                          ),
-                        ],
+                  Expanded(
+                    child: Text(
+                      orgName.toUpperCase(),
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.7,
+                        color: AppTheme.goldPrimary,
                       ),
                     ),
                   ),
-                  const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 11,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
@@ -792,12 +674,10 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                       border: Border.all(color: AppTheme.goldPrimary),
                     ),
                     child: Text(
-                      totalTables > 1
-                          ? 'TABLE $tableNumber OF $totalTables'
-                          : 'TABLE 1',
+                      'TABLE $tableNumber',
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.goldPrimary,
                       ),
@@ -805,711 +685,93 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               Text(
-                '$tournamentTitle • TABLE $tableNumber',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                tournamentTitle,
                 style: const TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                  fontSize: 19,
                   color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  StatusChip(
-                    label:
-                        'REF: ${(assignment['refereeName'] ?? 'Official').toString().toUpperCase()}',
-                    color: AppTheme.emerald,
-                    icon: Icons.verified_user_rounded,
-                  ),
-                  StatusChip(
-                    label: '${myTablePending.length} QUEUED ON TABLE $tableNumber',
-                    color: AppTheme.cyan,
-                    icon: Icons.sports_kabaddi_rounded,
-                  ),
-                  const StatusChip(
-                    label: 'OFFLINE OUTBOX READY',
-                    color: AppTheme.emerald,
-                    icon: Icons.offline_bolt_rounded,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // 2. Fast Dual-Puller Verification Console (Scan QR or Search Athlete Name)
-        Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF161B26), Color(0xFF0C0F16)],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: AppTheme.emerald.withValues(alpha: 0.45),
-              width: 1.2,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Container(
-                    width: 34,
-                    height: 34,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(color: AppTheme.goldPrimary),
+                      color: AppTheme.cyan.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.cyan.withValues(alpha: 0.6),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.qr_code_scanner_rounded,
-                      color: AppTheme.goldPrimary,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
                     child: Text(
-                      'DUAL-PULLER GREEN-LIGHT VERIFICATION CONSOLE',
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 0.5,
-                        color: AppTheme.goldPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Large Thumb-Friendly Forged-Crystal Scan QR Button
-              GestureDetector(
-                key: const ValueKey('referee_large_scan_qr_button'),
-                onTap: () => _openQrScannerSimulationModal(
-                  context,
-                  tournament,
-                  tableNumber,
-                  serverEvents,
-                ),
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2B2210), Color(0xFF141008)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AppTheme.goldPrimary,
-                      width: 1.4,
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.qr_code_scanner_rounded,
-                        size: 22,
-                        color: AppTheme.goldPrimary,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        '📷 SCAN ATHLETE QR PASS (TABLE CHECK)',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Dual-Puller Search Fields (Red Corner / Gold Corner)
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey('referee_athlete_name_search_field'),
-                      controller: _athleteQueryCtrl,
-                      onChanged: (_) => _runPreMatchCheck(serverEvents),
+                      '${myTablePending.length} Matches Queued on Table $tableNumber',
                       style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        labelText: 'Puller 1 (Name / ID / QR)',
-                        hintText: 'e.g. Malik Sherbaz',
-                        prefixIcon: const Icon(
-                          Icons.person_search_rounded,
-                          color: Color(0xFFE23B3B),
-                          size: 18,
-                        ),
-                        suffixIcon: _athleteQueryCtrl.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 16),
-                                onPressed: () {
-                                  _athleteQueryCtrl.clear();
-                                  _runPreMatchCheck(serverEvents);
-                                },
-                              )
-                            : null,
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.cyan,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      key: const ValueKey('referee_opponent_name_search_field'),
-                      controller: _opponentQueryCtrl,
-                      onChanged: (_) => _runPreMatchCheck(serverEvents),
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.emerald.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.emerald.withValues(alpha: 0.6),
                       ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        labelText: 'Puller 2 (Optional Check)',
-                        hintText: 'Matched opponent',
-                        prefixIcon: const Icon(
-                          Icons.people_alt_outlined,
-                          color: AppTheme.goldPrimary,
-                          size: 18,
-                        ),
-                        suffixIcon: _opponentQueryCtrl.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 16),
-                                onPressed: () {
-                                  _opponentQueryCtrl.clear();
-                                  _runPreMatchCheck(serverEvents);
-                                },
-                              )
-                            : null,
+                    ),
+                    child: Text(
+                      '${myTableDone.length} Completed',
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.emerald,
                       ),
                     ),
                   ),
                 ],
               ),
-
-              if (myTablePending.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final m in myTablePending)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ActionChip(
-                            backgroundColor: AppTheme.obsidian,
-                            side: BorderSide(
-                              color: AppTheme.emerald.withValues(alpha: 0.5),
-                            ),
-                            avatar: const Icon(
-                              Icons.verified_rounded,
-                              size: 14,
-                              color: AppTheme.emerald,
-                            ),
-                            label: Text(
-                              '${m['player1Name']} vs ${m['player2Name']}',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              _athleteQueryCtrl.text =
-                                  (m['player1Name'] ?? '').toString();
-                              _opponentQueryCtrl.text =
-                                  (m['player2Name'] ?? '').toString();
-                              _runPreMatchCheck(serverEvents);
-                            },
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
 
-        // 3. GREEN-LIGHT VALIDATION BANNER & OFFICIAL RESULT SUBMISSION CONSOLE
-        if (validation != null) ...[
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: validation.allowedToPlay
-                    ? const [Color(0xFF0E2F23), Color(0xFF081712)]
-                    : const [Color(0xFF361115), Color(0xFF19080A)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: validation.allowedToPlay
-                    ? AppTheme.emerald
-                    : const Color(0xFFE23B3B),
-                width: 1.6,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      validation.allowedToPlay
-                          ? Icons.verified_rounded
-                          : Icons.gpp_bad_rounded,
-                      color: validation.allowedToPlay
-                          ? AppTheme.emerald
-                          : const Color(0xFFE23B3B),
-                      size: 26,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            validation.allowedToPlay
-                                ? 'ALLOWED TO PLAY • TABLE $tableNumber VERIFIED ✓'
-                                : '⛔ BLOCKED: ${validation.headline}',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13.5,
-                              color: validation.allowedToPlay
-                                  ? AppTheme.emerald
-                                  : const Color(0xFFE23B3B),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            validation.detail,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _buildCompactCheckPill(
-                      'Active Round',
-                      validation.checkAActiveMatchInRound,
-                    ),
-                    _buildCompactCheckPill(
-                      'Matched Pair',
-                      validation.checkBExactMatchedOpponents,
-                    ),
-                    _buildCompactCheckPill(
-                      'Pending Status',
-                      validation.checkCMatchStillPending,
-                    ),
-                    _buildCompactCheckPill(
-                      'Table $tableNumber',
-                      validation.checkDBelongsToAssignedTable,
-                    ),
-                  ],
-                ),
-
-                // Unlocked Result Submission Console when Green-Light Verified
-                if (validatedBout != null &&
-                    (validation.allowedToPlay || isLocked)) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(13),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0A0D13),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: AppTheme.emerald.withValues(alpha: 0.55),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${validatedBout['categoryLabel'] ?? 'Division'} • ROUND ${validatedBout['roundNumber'] ?? 1}',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 11.5,
-                                color: AppTheme.goldPrimary,
-                              ),
-                            ),
-                            StatusChip(
-                              label: isLocked
-                                  ? 'DONE / SENT ✓'
-                                  : 'UNLOCKED FOR SCORING',
-                              color: AppTheme.emerald,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Winner Corner Selector (Red Corner vs Gold Corner)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: isLocked
-                                    ? null
-                                    : () {
-                                        HapticFeedback.selectionClick();
-                                        setState(() => _selectedWinSide = 'A');
-                                      },
-                                child: Container(
-                                  padding: const EdgeInsets.all(11),
-                                  decoration: BoxDecoration(
-                                    color: _selectedWinSide == 'A'
-                                        ? AppTheme.emerald
-                                            .withValues(alpha: 0.18)
-                                        : AppTheme.cardSurface,
-                                    borderRadius: BorderRadius.circular(11),
-                                    border: Border(
-                                      left: const BorderSide(
-                                        color: Color(0xFFE23B3B),
-                                        width: 3.0,
-                                      ),
-                                      top: BorderSide(
-                                        color: _selectedWinSide == 'A'
-                                            ? AppTheme.emerald
-                                            : const Color(0x33FFFFFF),
-                                      ),
-                                      right: BorderSide(
-                                        color: _selectedWinSide == 'A'
-                                            ? AppTheme.emerald
-                                            : const Color(0x33FFFFFF),
-                                      ),
-                                      bottom: BorderSide(
-                                        color: _selectedWinSide == 'A'
-                                            ? AppTheme.emerald
-                                            : const Color(0x33FFFFFF),
-                                      ),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      const Text(
-                                        'RED CORNER WINNER',
-                                        style: TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.w900,
-                                          color: Color(0xFFE23B3B),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        (validatedBout['player1Name'] ??
-                                                'Athlete 1')
-                                            .toString(),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 13.5,
-                                          color: AppTheme.textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: isLocked
-                                    ? null
-                                    : () {
-                                        HapticFeedback.selectionClick();
-                                        setState(() => _selectedWinSide = 'B');
-                                      },
-                                child: Container(
-                                  padding: const EdgeInsets.all(11),
-                                  decoration: BoxDecoration(
-                                    color: _selectedWinSide == 'B'
-                                        ? AppTheme.emerald
-                                            .withValues(alpha: 0.18)
-                                        : AppTheme.cardSurface,
-                                    borderRadius: BorderRadius.circular(11),
-                                    border: Border(
-                                      right: const BorderSide(
-                                        color: AppTheme.goldPrimary,
-                                        width: 3.0,
-                                      ),
-                                      top: BorderSide(
-                                        color: _selectedWinSide == 'B'
-                                            ? AppTheme.emerald
-                                            : const Color(0x33FFFFFF),
-                                      ),
-                                      left: BorderSide(
-                                        color: _selectedWinSide == 'B'
-                                            ? AppTheme.emerald
-                                            : const Color(0x33FFFFFF),
-                                      ),
-                                      bottom: BorderSide(
-                                        color: _selectedWinSide == 'B'
-                                            ? AppTheme.emerald
-                                            : const Color(0x33FFFFFF),
-                                      ),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      const Text(
-                                        'GOLD CORNER WINNER',
-                                        style: TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.w900,
-                                          color: AppTheme.goldPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        (validatedBout['player2Name'] ??
-                                                'Athlete 2')
-                                            .toString(),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontFamily: AppTheme.fontDisplay,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 13.5,
-                                          color: AppTheme.textPrimary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // RECORD WIN / LOSS vs WIN BY FORFEIT / INJURY Mode Buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ChoiceChip(
-                                selected: !_isWalkoverForfeit,
-                                selectedColor:
-                                    AppTheme.emerald.withValues(alpha: 0.25),
-                                label: const Text(
-                                  'RECORD WIN / LOSS',
-                                  style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                onSelected: isLocked
-                                    ? null
-                                    : (v) {
-                                        if (v) {
-                                          setState(
-                                              () => _isWalkoverForfeit = false);
-                                        }
-                                      },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ChoiceChip(
-                                selected: _isWalkoverForfeit,
-                                selectedColor: AppTheme.goldPrimary
-                                    .withValues(alpha: 0.25),
-                                label: const Text(
-                                  'WIN BY FORFEIT / INJURY',
-                                  style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                onSelected: isLocked
-                                    ? null
-                                    : (v) {
-                                        if (v) {
-                                          setState(
-                                              () => _isWalkoverForfeit = true);
-                                        }
-                                      },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        if (!_isWalkoverForfeit)
-                          DropdownButtonFormField<String>(
-                            initialValue: _scoreLine,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              labelText: 'Match Score Line',
-                              prefixIcon:
-                                  Icon(Icons.scoreboard_outlined, size: 18),
-                            ),
-                            items: [
-                              for (final s in _kScoreOptions)
-                                DropdownMenuItem(value: s, child: Text(s)),
-                            ],
-                            onChanged: isLocked
-                                ? null
-                                : (v) =>
-                                    setState(() => _scoreLine = v ?? '3-0'),
-                          )
-                        else
-                          DropdownButtonFormField<String>(
-                            initialValue: _forfeitReason,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              labelText: 'Walkover / Forfeit / Injury Reason',
-                              prefixIcon: Icon(Icons.medical_services_outlined,
-                                  size: 18),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Injury / Medical Withdrawal',
-                                child: Text(
-                                    'Injury / Medical Withdrawal (Walkover)'),
-                              ),
-                              DropdownMenuItem(
-                                value:
-                                    'Opponent Forfeit / Did Not Report to Table',
-                                child:
-                                    Text('Opponent Forfeit / No-Show Walkover'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Referee Foul / Disqualification',
-                                child: Text('Referee Foul / Disqualification'),
-                              ),
-                            ],
-                            onChanged: isLocked
-                                ? null
-                                : (v) => setState(() => _forfeitReason =
-                                    v ?? 'Injury / Medical Withdrawal'),
-                          ),
-
-                        const SizedBox(height: 12),
-
-                        // Single-Tap Idempotency Locked Submit Button
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            key: const ValueKey(
-                                'referee_single_tap_submit_result_button'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isLocked
-                                  ? AppTheme.obsidian
-                                  : AppTheme.emerald,
-                              foregroundColor:
-                                  isLocked ? AppTheme.emerald : Colors.black,
-                              side: isLocked
-                                  ? const BorderSide(
-                                      color: AppTheme.emerald, width: 1.4)
-                                  : null,
-                            ),
-                            onPressed: isLocked
-                                ? null
-                                : () => _handleOfflineSafeRefereeSubmit(
-                                      assignment: assignment,
-                                      bout: validatedBout,
-                                      serverEvents: serverEvents,
-                                    ),
-                            icon: Icon(
-                              isLocked
-                                  ? Icons.lock_clock_rounded
-                                  : Icons.send_and_archive_rounded,
-                              size: 18,
-                            ),
-                            label: Text(
-                              isLocked
-                                  ? 'DONE / SENT ✓ (SINGLE-TAP LOCKED)'
-                                  : (_isWalkoverForfeit
-                                      ? 'RECORD WIN BY FORFEIT / INJURY'
-                                      : 'RECORD WIN / LOSS (OFFLINE-SAFE)'),
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 12,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-
+        // 2. Last Submitted Confirmation Banner (if a match was just submitted)
         if (_lastConfirmedSubmissionMessage != null) ...[
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.emerald.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.emerald),
+              color: const Color(0xFF0E2B20),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.emerald, width: 1.3),
             ),
             child: Row(
               children: [
-                const Icon(Icons.cloud_done_rounded,
-                    color: AppTheme.emerald, size: 20),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppTheme.emerald,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     _lastConfirmedSubmissionMessage!,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.textPrimary,
                     ),
@@ -1518,152 +780,578 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
         ],
 
-        // 4. Table Queue List
+        // 3. 2-Step Athlete QR Scanner Console (Scan 1st Athlete QR -> Scan 2nd Athlete QR)
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF131722),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0x28FFFFFF)),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF161B26), Color(0xFF0C0F16)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: hasRedError
+                  ? const Color(0xFFE23B3B)
+                  : (isMatchVerified
+                      ? AppTheme.emerald
+                      : AppTheme.goldPrimary.withValues(alpha: 0.45)),
+              width: 1.4,
+            ),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'TABLE $tableNumber MATCHUP QUEUE (${matchups.where((m) => ((m['tableNumber'] as num?)?.toInt() ?? 1) == tableNumber).length} BOUTS)',
-                style: const TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11.5,
-                  color: AppTheme.goldPrimary,
-                  letterSpacing: 0.6,
-                ),
+              // Scanned Athlete 1 & Athlete 2 Status Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildScannedAthleteSlotCard(
+                      slotNumber: 1,
+                      scannedAthlete: _scannedAthlete1,
+                      rawScan: _scannedRaw1,
+                      isError: _scan1Error != null ||
+                          (bothScanned && hasRedError),
+                      isVerified: isMatchVerified,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildScannedAthleteSlotCard(
+                      slotNumber: 2,
+                      scannedAthlete: _scannedAthlete2,
+                      rawScan: _scannedRaw2,
+                      isError: bothScanned && hasRedError,
+                      isVerified: isMatchVerified,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              for (final m in matchups.where(
-                  (m) => ((m['tableNumber'] as num?)?.toInt() ?? 1) == tableNumber))
-                Builder(
-                  builder: (_) {
-                    final status =
-                        (m['status'] ?? 'PENDING').toString().toUpperCase();
-                    final isDone = status == 'DONE' || status == 'COMPLETED';
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: AppTheme.obsidian,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDone
-                              ? AppTheme.textMuted.withValues(alpha: 0.3)
-                              : AppTheme.emerald.withValues(alpha: 0.45),
+              const SizedBox(height: 14),
+
+              // Main QR Code Scanner Button
+              if (!bothScanned && _scan1Error == null)
+                GestureDetector(
+                  key: const ValueKey('referee_large_scan_qr_button'),
+                  onTap: () => _openSingleAthleteQrScannerModal(
+                    context: context,
+                    slotNumber: _scannedRaw1 == null ? 1 : 2,
+                    tournament: tournament,
+                    assignedTableNumber: tableNumber,
+                    assignedTableName: assignedTableName,
+                  ),
+                  child: Container(
+                    height: 54,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: _scannedRaw1 == null
+                            ? const [Color(0xFF2B2210), Color(0xFF141008)]
+                            : const [Color(0xFF102E23), Color(0xFF091913)],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _scannedRaw1 == null
+                            ? AppTheme.goldPrimary
+                            : AppTheme.emerald,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.qr_code_scanner_rounded,
+                          size: 22,
+                          color: _scannedRaw1 == null
+                              ? AppTheme.goldPrimary
+                              : AppTheme.emerald,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${m['player1Name']} vs ${m['player2Name']}',
-                                  style: const TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 13,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${m['categoryLabel'] ?? ''} • Round ${m['roundNumber'] ?? 1}${isDone ? ' • Winner: ${m['winnerName'] ?? ''}' : ''}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        const SizedBox(width: 10),
+                        Text(
+                          _scannedRaw1 == null
+                              ? 'SCAN 1ST ATHLETE QR CODE'
+                              : 'SCAN 2ND ATHLETE QR CODE',
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13.5,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: 0.5,
                           ),
-                          const SizedBox(width: 8),
-                          if (isDone)
-                            const StatusChip(
-                              label: 'DONE ✓',
-                              color: AppTheme.emerald,
-                            )
-                          else
-                            InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                _athleteQueryCtrl.text =
-                                    (m['player1Name'] ?? '').toString();
-                                _opponentQueryCtrl.text =
-                                    (m['player2Name'] ?? '').toString();
-                                _runPreMatchCheck(serverEvents);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      AppTheme.emerald.withValues(alpha: 0.16),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppTheme.emerald),
-                                ),
-                                child: const Text(
-                                  'VERIFY & SCORE',
-                                  style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppTheme.emerald,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+
+              if (_scannedRaw1 != null) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.textSecondary,
+                    side: const BorderSide(color: Color(0x36FFFFFF)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onPressed: _resetScannedAthletes,
+                  icon: const Icon(Icons.refresh_rounded, size: 17),
+                  label: const Text(
+                    'CLEAR & SCAN AGAIN',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+        const SizedBox(height: 14),
+
+        // 4. RED ERROR CARD (Shown if 1st scan failed OR upon scanning 2nd QR when matchup is done, wrong table, or does not exist)
+        if (hasRedError)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF3A1115), Color(0xFF1A0709)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFE23B3B),
+                width: 1.6,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.error_rounded,
+                      color: Color(0xFFE23B3B),
+                      size: 26,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _scan1Error != null
+                            ? 'INVALID ATHLETE QR CODE'
+                            : (validation?.headline ?? 'INVALID MATCHUP'),
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          color: Color(0xFFE23B3B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _scan1Error ??
+                      validation?.detail ??
+                      'These athletes do not have an active pending match on Table $tableNumber.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // 5. VERIFIED MATCHUP & RESULT ENTRY CARD (Shown ONLY after both athlete QRs are scanned and verified on this table)
+        if (isMatchVerified && validatedBout != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0E2B20), Color(0xFF081510)],
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: AppTheme.emerald,
+                width: 1.6,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.verified_rounded,
+                      color: AppTheme.emerald,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'MATCHUP VERIFIED • TABLE $tableNumber',
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: AppTheme.emerald,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${validatedBout['athleteAName'] ?? validatedBout['player1Name']}  vs  ${validatedBout['athleteBName'] ?? validatedBout['player2Name']}',
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${validatedBout['categoryLabel'] ?? 'Division'} • Round ${validatedBout['roundNumber'] ?? 1}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.goldPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                const Text(
+                  'SELECT WINNER',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.7,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Full-width Winner Option A
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedWinSide = 'A');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _selectedWinSide == 'A'
+                          ? AppTheme.emerald.withValues(alpha: 0.22)
+                          : const Color(0xFF10151F),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedWinSide == 'A'
+                            ? AppTheme.emerald
+                            : const Color(0x33FFFFFF),
+                        width: _selectedWinSide == 'A' ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _selectedWinSide == 'A'
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: _selectedWinSide == 'A'
+                              ? AppTheme.emerald
+                              : AppTheme.textSecondary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            (validatedBout['athleteAName'] ??
+                                    validatedBout['player1Name'] ??
+                                    'Athlete 1')
+                                .toString(),
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14.5,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (_selectedWinSide == 'A')
+                          const Text(
+                            'WINNER',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.emerald,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Full-width Winner Option B
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedWinSide = 'B');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _selectedWinSide == 'B'
+                          ? AppTheme.emerald.withValues(alpha: 0.22)
+                          : const Color(0xFF10151F),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedWinSide == 'B'
+                            ? AppTheme.emerald
+                            : const Color(0x33FFFFFF),
+                        width: _selectedWinSide == 'B' ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _selectedWinSide == 'B'
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: _selectedWinSide == 'B'
+                              ? AppTheme.emerald
+                              : AppTheme.textSecondary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            (validatedBout['athleteBName'] ??
+                                    validatedBout['player2Name'] ??
+                                    'Athlete 2')
+                                .toString(),
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14.5,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (_selectedWinSide == 'B')
+                          const Text(
+                            'WINNER',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.emerald,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                const Text(
+                  'MATCH RESULT / SCORE',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.7,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in const ['3-0', '3-1', '3-2', '2-0', '2-1'])
+                      ChoiceChip(
+                        label: Text(
+                          s,
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                          ),
+                        ),
+                        selected: !_isWalkoverForfeit && _scoreLine == s,
+                        selectedColor: AppTheme.emerald.withValues(alpha: 0.28),
+                        onSelected: (_) {
+                          setState(() {
+                            _isWalkoverForfeit = false;
+                            _scoreLine = s;
+                          });
+                        },
+                      ),
+                    ChoiceChip(
+                      label: const Text(
+                        'Forfeit / Injury',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        ),
+                      ),
+                      selected: _isWalkoverForfeit,
+                      selectedColor:
+                          AppTheme.goldPrimary.withValues(alpha: 0.28),
+                      onSelected: (_) {
+                        setState(() {
+                          _isWalkoverForfeit = true;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    key: const ValueKey(
+                        'referee_single_tap_submit_result_button'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.emerald,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _handleOfflineSafeRefereeSubmit(
+                      assignment: assignment,
+                      bout: validatedBout,
+                      serverEvents: serverEvents,
+                    ),
+                    icon: const Icon(Icons.check_circle_rounded, size: 20),
+                    label: const Text(
+                      'SUBMIT MATCH RESULT',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13.5,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildCompactCheckPill(String label, bool passed) {
-    final color = passed ? AppTheme.emerald : const Color(0xFFE23B3B);
+  Widget _buildScannedAthleteSlotCard({
+    required int slotNumber,
+    required Map<String, dynamic>? scannedAthlete,
+    required String? rawScan,
+    required bool isError,
+    required bool isVerified,
+  }) {
+    final bool isScanned = rawScan != null;
+    final String athleteName = scannedAthlete != null
+        ? (scannedAthlete['athleteName'] ?? scannedAthlete['name'] ?? 'Athlete')
+            .toString()
+        : (isScanned ? rawScan : 'Waiting for QR...');
+
+    final Color borderColor = isError
+        ? const Color(0xFFE23B3B)
+        : (isVerified
+            ? AppTheme.emerald
+            : (isScanned
+                ? AppTheme.goldPrimary
+                : const Color(0x28FFFFFF)));
+
+    final Color bgColor = isError
+        ? const Color(0xFF2B0D11)
+        : (isVerified
+            ? const Color(0xFF0E281E)
+            : const Color(0xFF10151F));
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withValues(alpha: 0.65)),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: borderColor,
+          width: (isError || isVerified || isScanned) ? 1.4 : 1.0,
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            passed ? Icons.check_circle_rounded : Icons.cancel_rounded,
-            size: 13,
-            color: color,
+          Row(
+            children: [
+              Icon(
+                isError
+                    ? Icons.cancel_rounded
+                    : (isScanned
+                        ? Icons.check_circle_rounded
+                        : Icons.qr_code_rounded),
+                size: 15,
+                color: isError
+                    ? const Color(0xFFE23B3B)
+                    : (isVerified
+                        ? AppTheme.emerald
+                        : (isScanned
+                            ? AppTheme.goldPrimary
+                            : AppTheme.textSecondary)),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  slotNumber == 1 ? '1ST ATHLETE' : '2ND ATHLETE',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: isError
+                        ? const Color(0xFFE23B3B)
+                        : (isVerified
+                            ? AppTheme.emerald
+                            : (isScanned
+                                ? AppTheme.goldPrimary
+                                : AppTheme.textSecondary)),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 4),
+          const SizedBox(height: 6),
           Text(
-            label,
+            athleteName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: AppTheme.fontDisplay,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 13,
+              color: isScanned ? AppTheme.textPrimary : AppTheme.textMuted,
             ),
           ),
         ],
@@ -1675,10 +1363,26 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final auth = ref.watch(authProvider);
-    final myUserId = auth.userProfile?['id']?.toString();
+    final currentUserId =
+        (auth.userProfile?['id'] ?? auth.userProfile?['userId'] ?? '')
+            .toString();
+
+    if (_lastUserId != currentUserId) {
+      _lastUserId = currentUserId;
+      _activeAssignment = null;
+      _scannedAthlete1 = null;
+      _scannedRaw1 = null;
+      _scan1Error = null;
+      _scannedAthlete2 = null;
+      _scannedRaw2 = null;
+      _validationResult = null;
+      _lastConfirmedSubmissionMessage = null;
+    }
+
     final eventsAsync = ref.watch(tournamentProvider);
     final hive = ref.watch(hiveStorageProvider);
-    final serverEvents = eventsAsync.valueOrNull ?? const <Map<String, dynamic>>[];
+    final serverEvents =
+        eventsAsync.valueOrNull ?? const <Map<String, dynamic>>[];
 
     final refereeAssignments = TournamentOfflineStore.getRefereeAssignments(
       hive: hive,
@@ -1688,112 +1392,67 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
+        ? (kFloatingDockTotalHeight +
+            MediaQuery.paddingOf(context).bottom +
+            10.0)
         : 12.0;
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: _activeAssignment != null
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.goldPrimary, size: 18),
-                onPressed: () => setState(() {
-                  _activeAssignment = null;
-                  _validationResult = null;
-                }),
-              )
-            : CrystalBackButton.maybeForInnerScreen(context),
-        title: Text(_activeAssignment != null ? 'Referee Table Console' : 'Referee Panel'),
-        actions: [
-          CrystalIconPillButton(
-            icon: Icons.sync_rounded,
-            iconColor: AppTheme.emerald,
-            tooltip: 'Sync Offline Referee Outbox',
-            onPressed: () {
-              try {
-                ref.read(offlineSyncManagerProvider).syncQueue();
-              } catch (_) {}
-              setState(() {});
-            },
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: AppTheme.voidBackground,
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: _activeAssignment != null
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: AppTheme.goldPrimary,
+                    size: 18,
+                  ),
+                  onPressed: () => setState(() {
+                    _activeAssignment = null;
+                    _resetScannedAthletes();
+                  }),
+                )
+              : CrystalBackButton.maybeForInnerScreen(context),
+          title: Text(
+            _activeAssignment != null ? 'Referee Assignment' : 'Referee Panel',
           ),
-          if (!MainShellScope.isInsideShell(context)) const CrystalHomeButton(),
-        ],
-      ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const Positioned.fill(
-            child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
-          ),
-          SafeArea(
-            bottom: false,
-            child: CrystalVaporDissolve(
-              bottomMargin: bottomDockGap,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppTheme.space16,
-                  kToolbarHeight + 8,
-                  AppTheme.space16,
-                  28,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 155),
-                    if (_activeAssignment != null)
-                      _buildRefereeTableConsole(
-                        context,
-                        _activeAssignment!,
-                        serverEvents,
-                      )
-                    else ...[
-                      Text(
-                        'OFFICIAL ACTIONS',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.space12),
-                      _RefereeScorepadHeroCard(
-                        onTap: () => context.push('/referee/submit-scorepad'),
-                      ),
-                      const SizedBox(height: AppTheme.space12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _RefCard(
-                              icon: Icons.verified_outlined,
-                              label: 'Certifications',
-                              onTap: () => context.push('/referee/certifications'),
-                            ),
-                          ),
-                          const SizedBox(width: AppTheme.space8),
-                          Expanded(
-                            child: _RefCard(
-                              icon: Icons.search,
-                              label: 'Search Athletes',
-                              onTap: () => context.push('/referee/search-athletes'),
-                            ),
-                          ),
-                          const SizedBox(width: AppTheme.space8),
-                          Expanded(
-                            child: _RefCard(
-                              icon: Icons.cloud_upload_outlined,
-                              label: 'Upload Evidence',
-                              onTap: () => context.push('/referee/upload-evidence'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (refereeAssignments.isNotEmpty) ...[
-                        const SizedBox(height: AppTheme.space24),
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const Positioned.fill(
+              child: CrystalStageBackdrop(domain: ArmSphereStageDomain.referee),
+            ),
+            SafeArea(
+              bottom: false,
+              child: CrystalVaporDissolve(
+                bottomMargin: bottomDockGap,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppTheme.space16,
+                    kToolbarHeight + 12,
+                    AppTheme.space16,
+                    36,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_activeAssignment != null)
+                        _buildRefereeTableConsole(
+                          context,
+                          _activeAssignment!,
+                          serverEvents,
+                        )
+                      else ...[
                         Text(
                           'MY TABLE ASSIGNMENTS',
                           style: theme.textTheme.labelMedium?.copyWith(
@@ -1803,170 +1462,165 @@ class _RefereeDashboardScreenState extends ConsumerState<RefereeDashboardScreen>
                           ),
                         ),
                         const SizedBox(height: AppTheme.space12),
-                        for (final assignment in refereeAssignments)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: ElevatedActionCard(
-                              key: ValueKey(
-                                'referee_assignment_card_${assignment['tournamentId']}_table_${assignment['assignedTableNumber']}',
-                              ),
-                              borderColor: AppTheme.goldPrimary.withValues(alpha: 0.55),
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                setState(() {
-                                  _activeAssignment = assignment;
-                                  _athleteQueryCtrl.clear();
-                                  _opponentQueryCtrl.clear();
-                                  _validationResult = null;
-                                  _lastConfirmedSubmissionMessage = null;
-                                });
-                              },
-                              padding: const EdgeInsets.all(15),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.goldPrimary.withValues(alpha: 0.14),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppTheme.goldPrimary),
-                                    ),
-                                    child: const Icon(
-                                      Icons.table_restaurant_rounded,
-                                      color: AppTheme.goldPrimary,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${assignment['tournamentName'] ?? 'PAL Championship Cup'} • TABLE ${assignment['assignedTableNumber']}',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontFamily: AppTheme.fontDisplay,
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 14.5,
-                                            color: AppTheme.textPrimary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Referee: ${assignment['refereeName']} • ${assignment['pendingOnTableCount']} Pending Bouts',
-                                          style: const TextStyle(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.emerald,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    size: 16,
-                                    color: AppTheme.goldPrimary,
-                                  ),
-                                ],
+                        if (refereeAssignments.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF121620),
+                              borderRadius: BorderRadius.circular(16),
+                              border:
+                                  Border.all(color: const Color(0x28FFFFFF)),
+                            ),
+                            child: const Text(
+                              'No tournament assignments for your referee account yet. You will only see assignments here when a Tournament Operator selects you for a table.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textSecondary,
+                                height: 1.4,
                               ),
                             ),
+                          )
+                        else
+                          for (final assignment in refereeAssignments)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ElevatedActionCard(
+                                key: ValueKey(
+                                  'referee_assignment_card_${assignment['tournamentId']}_table_${assignment['assignedTableNumber']}',
+                                ),
+                                borderColor: AppTheme.goldPrimary
+                                    .withValues(alpha: 0.55),
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _activeAssignment = assignment;
+                                    _resetScannedAthletes();
+                                  });
+                                },
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.goldPrimary
+                                            .withValues(alpha: 0.14),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: AppTheme.goldPrimary,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.table_restaurant_rounded,
+                                        color: AppTheme.goldPrimary,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            (assignment['organizationName'] ??
+                                                    'Organization')
+                                                .toString(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.goldPrimary,
+                                              letterSpacing: 0.4,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            (assignment['tournamentName'] ??
+                                                    'Tournament')
+                                                .toString(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 16,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Table ${assignment['assignedTableNumber']}',
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.emerald,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 16,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        const SizedBox(height: AppTheme.space24),
+                        Text(
+                          'REFEREE TOOLS',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textSecondary,
                           ),
-                      ],
-                      const SizedBox(height: AppTheme.space24),
-                      Text(
-                        'LIVE EVENT BOARD',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textSecondary,
                         ),
-                      ),
-                      const SizedBox(height: AppTheme.space12),
-                      eventsAsync.when(
-                        loading: () => const Column(
+                        const SizedBox(height: AppTheme.space12),
+                        Row(
                           children: [
-                            SkeletonPlaceholder(height: 84),
-                            SizedBox(height: AppTheme.space12),
-                            SkeletonPlaceholder(height: 112),
+                            Expanded(
+                              child: _RefCard(
+                                icon: Icons.verified_outlined,
+                                label: 'Certifications',
+                                onTap: () =>
+                                    context.push('/referee/certifications'),
+                              ),
+                            ),
+                            const SizedBox(width: AppTheme.space8),
+                            Expanded(
+                              child: _RefCard(
+                                icon: Icons.search,
+                                label: 'Search Athletes',
+                                onTap: () =>
+                                    context.push('/referee/search-athletes'),
+                              ),
+                            ),
+                            const SizedBox(width: AppTheme.space8),
+                            Expanded(
+                              child: _RefCard(
+                                icon: Icons.cloud_upload_outlined,
+                                label: 'Upload Evidence',
+                                onTap: () =>
+                                    context.push('/referee/upload-evidence'),
+                              ),
+                            ),
                           ],
                         ),
-                        error: (e, _) => ElevatedActionCard(
-                          padding: const EdgeInsets.all(AppTheme.space16),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.offline_bolt_rounded, color: AppTheme.emerald, size: 24),
-                              const SizedBox(width: AppTheme.space12),
-                              const Expanded(
-                                child: Text(
-                                  'Offline Mode Active — Use your cached Table Assignment Cards above to scan QR codes and submit results without internet.',
-                                  style: TextStyle(fontSize: 12.5, color: AppTheme.textSecondary),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => ref.invalidate(tournamentProvider),
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        data: (events) {
-                          final selectable = events
-                              .where((e) => !['DRAFT', 'CANCELLED'].contains(e['status']?.toString().toUpperCase()))
-                              .toList();
-                          if (_selectedEventId == null ||
-                              !selectable.any((e) => e['id']?.toString() == _selectedEventId)) {
-                            _selectedEventId = selectable.isNotEmpty ? selectable.first['id']?.toString() : null;
-                          }
-                          if (selectable.isEmpty) {
-                            return const ElevatedActionCard(
-                              padding: EdgeInsets.all(AppTheme.space20),
-                              child: Center(
-                                child: Text(
-                                  'No published events available yet.',
-                                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                                ),
-                              ),
-                            );
-                          }
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedEventId,
-                                isExpanded: true,
-                                decoration: const InputDecoration(labelText: 'Active Competition Event'),
-                                items: [
-                                  for (final e in selectable)
-                                    DropdownMenuItem(
-                                      value: e['id']?.toString(),
-                                      child: Text(e['name']?.toString() ?? 'Event', overflow: TextOverflow.ellipsis),
-                                    ),
-                                ],
-                                onChanged: (v) => setState(() => _selectedEventId = v),
-                              ),
-                              const SizedBox(height: AppTheme.space16),
-                              _AssignmentsBody(
-                                eventId: _selectedEventId!,
-                                myUserId: myUserId,
-                                busy: _busy,
-                                onCall: _callToTable,
-                                onResult: _submitResult,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
