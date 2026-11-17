@@ -1575,12 +1575,16 @@ class _RefereeDashboardScreenState
                             ),
                         const SizedBox(height: AppTheme.space24),
                         Text(
-                          'REFEREE TOOLS',
+                          'OFFICIAL ACTIONS',
                           style: theme.textTheme.labelMedium?.copyWith(
                             letterSpacing: 1.2,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textSecondary,
                           ),
+                        ),
+                        const SizedBox(height: AppTheme.space12),
+                        _RefereeScorepadHeroCard(
+                          onTap: () => context.push('/referee/submit-scorepad'),
                         ),
                         const SizedBox(height: AppTheme.space12),
                         Row(
