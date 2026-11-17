@@ -1439,12 +1439,7 @@ class _TournamentOperatorDashboardScreenState
         appliedAthletes: currentAthletes,
         initialSelectedAthleteId: _selectedAthleteIdForWeighIn,
         autoSaveBannerText: _autoSaveBannerText,
-        onCommitWeighInAction: ({
-          required updatedAthletes,
-          required actionType,
-          required syncPayload,
-          required bannerMessage,
-        }) async {
+        onUpdateAthletes: (updatedAthletes) async {
           final updatedTournament = <String, dynamic>{
             ...current,
             'appliedAthletes': updatedAthletes,
@@ -1452,10 +1447,54 @@ class _TournamentOperatorDashboardScreenState
           await _enqueueAndPersistHubAction(
             updatedTournament: updatedTournament,
             operatorId: operatorId,
-            actionType: actionType,
+            actionType: 'VERIFY_WEIGH_IN',
             endpoint: '/tournaments/weighins',
-            syncPayload: syncPayload,
-            bannerMessage: bannerMessage,
+            syncPayload: {
+              'eventId': current['id'],
+              'verifiedCount': updatedAthletes
+                  .where((a) => a['weighInStatus'] == 'VERIFIED')
+                  .length,
+            },
+            bannerMessage: 'Saved / Done • Weigh-In Verified & Saved',
+          );
+        },
+        onSwitchCategoryAndPairInMatchups: ({
+          required athlete,
+          required newWeightLabel,
+          required newArm,
+          required newCategoryLabel,
+          required autoPairInNewCategory,
+        }) async {
+          final id = athlete['id']?.toString();
+          final updatedList = currentAthletes.map((a) {
+            if (a['id']?.toString() != id) return a;
+            return <String, dynamic>{
+              ...a,
+              'weightClass': newWeightLabel,
+              'registeredWeightLabel': newWeightLabel,
+              'arm': newArm,
+              'registeredArm': newArm,
+              'categoryLabel': newCategoryLabel,
+              'weighInStatus': 'VERIFIED',
+              'reassignedFromUnmatch': true,
+            };
+          }).toList();
+          final updatedTournament = <String, dynamic>{
+            ...current,
+            'appliedAthletes': updatedList,
+          };
+          await _enqueueAndPersistHubAction(
+            updatedTournament: updatedTournament,
+            operatorId: operatorId,
+            actionType: 'RECLASSIFY_ATHLETE_CATEGORY',
+            endpoint: '/tournaments/registrations/category',
+            syncPayload: {
+              'eventId': current['id'],
+              'athleteId': id,
+              'newCategoryLabel': newCategoryLabel,
+              'autoPair': autoPairInNewCategory,
+            },
+            bannerMessage: 'Saved / Done • Category Reclassified',
           );
         },
         onBackToHub: () {
@@ -1466,30 +1505,79 @@ class _TournamentOperatorDashboardScreenState
     }
 
     if (_activeView == _OperatorSubView.spectatorEntranceQrGate) {
+      final spectatorPasses = (current['spectatorPasses'] is List)
+          ? (current['spectatorPasses'] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList()
+          : <Map<String, dynamic>>[];
+
       return SpectatorEntranceQrGateView(
         key: ValueKey('spectator_gate_${current['id']}'),
         tournament: current,
         appliedAthletes: currentAthletes,
+        spectatorPasses: spectatorPasses,
         autoSaveBannerText: _autoSaveBannerText,
-        onCommitGateAction: ({
-          required updatedSpectatorConfig,
-          required updatedAthletes,
-          required actionType,
-          required syncPayload,
-          required bannerMessage,
+        onUpdateSpectatorConfig: ({
+          required bool spectatorEnabled,
+          required String spectatorMode,
+          required int spectatorTicketPricePkr,
+          required int athleteGuestPassAllowance,
         }) async {
           final updatedTournament = <String, dynamic>{
             ...current,
-            'spectatorGateConfig': updatedSpectatorConfig,
+            'spectatorEnabled': spectatorEnabled,
+            'spectatorMode': spectatorMode,
+            'spectatorTicketPricePkr': spectatorTicketPricePkr,
+            'athleteGuestPassAllowance': athleteGuestPassAllowance,
+          };
+          await _enqueueAndPersistHubAction(
+            updatedTournament: updatedTournament,
+            operatorId: operatorId,
+            actionType: 'UPDATE_SPECTATOR_CONFIG',
+            endpoint: '/tournaments/spectator-config',
+            syncPayload: {
+              'eventId': current['id'],
+              'spectatorEnabled': spectatorEnabled,
+              'spectatorMode': spectatorMode,
+              'spectatorTicketPricePkr': spectatorTicketPricePkr,
+              'athleteGuestPassAllowance': athleteGuestPassAllowance,
+            },
+            bannerMessage: 'Saved / Done • Spectator Gate Rules Synced',
+          );
+        },
+        onUpdateSpectatorPasses: (updatedPasses) async {
+          final updatedTournament = <String, dynamic>{
+            ...current,
+            'spectatorPasses': updatedPasses,
+          };
+          await _enqueueAndPersistHubAction(
+            updatedTournament: updatedTournament,
+            operatorId: operatorId,
+            actionType: 'UPDATE_SPECTATOR_PASSES',
+            endpoint: '/tournaments/spectator-passes',
+            syncPayload: {
+              'eventId': current['id'],
+              'passCount': updatedPasses.length,
+            },
+            bannerMessage: 'Saved / Done • Spectator Pass Recorded',
+          );
+        },
+        onUpdateAthletes: (updatedAthletes) async {
+          final updatedTournament = <String, dynamic>{
+            ...current,
             'appliedAthletes': updatedAthletes,
           };
           await _enqueueAndPersistHubAction(
             updatedTournament: updatedTournament,
             operatorId: operatorId,
-            actionType: actionType,
-            endpoint: '/events/${current['id']}/entrance/scan',
-            syncPayload: syncPayload,
-            bannerMessage: bannerMessage,
+            actionType: 'UPDATE_ATHLETES_GUEST_COUNT',
+            endpoint: '/tournaments/registrations',
+            syncPayload: {
+              'eventId': current['id'],
+              'athleteCount': updatedAthletes.length,
+            },
+            bannerMessage: 'Saved / Done • Guest Entitlement Updated',
           );
         },
         onBackToHub: () {

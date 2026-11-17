@@ -274,7 +274,7 @@ class _Card2AppliedAthletesViewState extends State<Card2AppliedAthletesView> {
                             style: const TextStyle(color: AppTheme.textPrimary),
                             decoration: const InputDecoration(
                               labelText: 'ELO Rating',
-                              prefixIcon: Icon(Icons.Leaderboard_rounded, size: 18),
+                              prefixIcon: Icon(Icons.leaderboard_rounded, size: 18),
                             ),
                           ),
                         ),
@@ -1116,6 +1116,7 @@ class Card4WeighInVerificationView extends StatefulWidget {
   final List<Map<String, dynamic>> appliedAthletes;
   final String autoSaveBannerText;
   final String? initialScannedQrCode;
+  final String? initialSelectedAthleteId;
   final ValueChanged<List<Map<String, dynamic>>> onUpdateAthletes;
   final void Function({
     required Map<String, dynamic> athlete,
@@ -1133,6 +1134,7 @@ class Card4WeighInVerificationView extends StatefulWidget {
     required this.appliedAthletes,
     required this.autoSaveBannerText,
     this.initialScannedQrCode,
+    this.initialSelectedAthleteId,
     required this.onUpdateAthletes,
     this.onSwitchCategoryAndPairInMatchups,
     required this.onBackToHub,
@@ -1161,6 +1163,16 @@ class _Card4WeighInVerificationViewState
     if (widget.initialScannedQrCode != null &&
         widget.initialScannedQrCode!.trim().isNotEmpty) {
       _resolveQrScan(widget.initialScannedQrCode!.trim(), showToast: false);
+    } else if (widget.initialSelectedAthleteId != null &&
+        widget.initialSelectedAthleteId!.trim().isNotEmpty) {
+      final found = widget.appliedAthletes.where((a) =>
+          a['id']?.toString() == widget.initialSelectedAthleteId ||
+          a['athleteId']?.toString() == widget.initialSelectedAthleteId).firstOrNull;
+      if (found != null) {
+        _selectAthleteForWeighIn(found);
+      } else if (widget.appliedAthletes.isNotEmpty) {
+        _selectAthleteForWeighIn(widget.appliedAthletes.first);
+      }
     } else if (widget.appliedAthletes.isNotEmpty) {
       _selectAthleteForWeighIn(widget.appliedAthletes.first);
     }
