@@ -53,7 +53,7 @@ class TournamentOfflineStore {
     required String athleteId,
     required String athleteName,
   }) {
-    final cleanId = athleteId.trim().isEmpty ? 'ath-pk-101' : athleteId.trim();
+    final cleanId = athleteId.trim().isEmpty ? 'ath-local' : athleteId.trim();
     final cleanName =
         athleteName.trim().isEmpty ? 'ArmSphere Athlete' : athleteName.trim();
     return 'ARMSPHERE-ATHLETE-QR:$cleanId:$cleanName';
@@ -61,8 +61,20 @@ class TournamentOfflineStore {
 
   /// Convenience helper accepting a user profile map directly (used by SettingsHubScreen).
   static String buildSettingsIdentityQr(Map<String, dynamic>? profile) {
-    final id = (profile?['id'] ?? profile?['userId'] ?? 'ath-pk-01').toString();
-    final name = (profile?['displayName'] ?? profile?['name'] ?? 'Malik Sherbaz')
+    final id = (profile?['id'] ??
+            profile?['userId'] ??
+            profile?['athleteId'] ??
+            profile?['sub'] ??
+            'ath-local')
+        .toString();
+    final name = (profile?['displayName'] ??
+            profile?['fullName'] ??
+            profile?['name'] ??
+            profile?['username'] ??
+            (profile?['email'] != null
+                ? profile!['email'].toString().split('@').first
+                : null) ??
+            'ArmSphere Athlete')
         .toString();
     return buildSettingsAthleteIdentityQr(
       athleteId: id,

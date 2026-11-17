@@ -32,7 +32,7 @@ class ElevatedActionCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppTheme.space16),
     this.margin,
-    this.borderRadius = 18.0,
+    this.borderRadius = 16.0,
     this.borderColor,
     this.backgroundColor,
     this.accentColor,
@@ -102,13 +102,14 @@ class ElevatedActionCard extends StatelessWidget {
     Widget cardContent = Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: const Color(0x4704060B),
+        color: backgroundColor ?? const Color(0x4D04060B),
         borderRadius: radius,
         border: Border.all(
           color: effectiveBorderColor,
           width: 1.0,
         ),
-        boxShadow: const [],
+        boxShadow: boxShadow ?? customShadow ?? const [],
+        gradient: gradient,
       ),
       child: innerContent,
     );
@@ -127,3 +128,6 @@ class ElevatedActionCard extends StatelessWidget {
     return cardContent;
   }
 }
+
+/// Typedef alias establishing the Forged-Crystal card standard globally.
+typedef ForgedCrystalCard = ElevatedActionCard;

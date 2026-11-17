@@ -67,6 +67,7 @@ class AdminPermissions {
 
   /// Operator & Organization roles capable of running tournament war rooms when active.
   static const Set<String> operatorRoles = <String>{
+    'OPERATOR',
     'ORGANIZATION',
     'ORGANIZATION_LEADER',
     'TOURNAMENT_OPERATOR',

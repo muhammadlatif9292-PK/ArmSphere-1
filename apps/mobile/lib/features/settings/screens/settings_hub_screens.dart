@@ -28,8 +28,16 @@ class SettingsHubScreen extends ConsumerWidget {
     final auth = ref.watch(authProvider);
     final profile = auth.userProfile;
     final settingsQrPayload = TournamentOfflineStore.buildSettingsIdentityQr(profile);
-    final userId = (profile?['id'] ?? profile?['userId'] ?? 'ath-pk-01').toString();
-    final userName = (profile?['displayName'] ?? profile?['name'] ?? 'Malik Sherbaz').toString();
+    final userId = (profile?['id'] ?? profile?['userId'] ?? profile?['athleteId'] ?? profile?['sub'] ?? 'ath-local').toString();
+    final userName = (profile?['displayName'] ??
+            profile?['fullName'] ??
+            profile?['name'] ??
+            profile?['username'] ??
+            (profile?['email'] != null
+                ? profile!['email'].toString().split('@').first
+                : null) ??
+            'Verified Athlete')
+        .toString();
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,

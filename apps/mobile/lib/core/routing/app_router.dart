@@ -77,6 +77,7 @@ bool _isRefereeLandingRole(String? role) {
 /// Roles that route to the tournament operator / organization dashboard.
 bool _isOperatorLandingRole(String? role) {
   const operatorRoles = {
+    'OPERATOR',
     'TOURNAMENT_OPERATOR',
     'ORGANIZATION',
     'ORGANIZATION_LEADER',
@@ -532,6 +533,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
           child: const TournamentsListScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/tournament/operator',
+        name: 'tournament_operator_screen',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const TournamentOperatorDashboardScreen(),
         ),
       ),
       GoRoute(

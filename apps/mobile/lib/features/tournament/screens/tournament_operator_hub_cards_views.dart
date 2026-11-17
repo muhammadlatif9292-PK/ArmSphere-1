@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -233,12 +236,18 @@ class Card2AppliedAthletesView extends StatefulWidget {
     required List<Map<String, String>> separatedDivisions,
     required List<Map<String, dynamic>> appliedAthletes,
     required ValueChanged<List<Map<String, dynamic>>> onUpdateAthletes,
+    WidgetRef? ref,
   }) async {
     final nameCtrl = TextEditingController();
-    final clubCtrl = TextEditingController(text: 'ArmSphere Pro Club');
-    final eloCtrl = TextEditingController(text: '1620');
-    final prCtrl = TextEditingController(text: '58 kg Pronation • 64 kg Cup');
-    final maxLiftCtrl = TextEditingController(text: '64');
+    final clubCtrl = TextEditingController(text: 'ArmSphere Club');
+    final eloCtrl = TextEditingController(text: '1600');
+    final prCtrl = TextEditingController(text: '60 kg Max Lift');
+    final maxLiftCtrl = TextEditingController(text: '60');
+    String? selectedAthleteId;
+    List<Map<String, dynamic>> searchMatches = [];
+    bool isSearching = false;
+    Timer? debounceTimer;
+
     final divisions = separatedDivisions.isNotEmpty
         ? separatedDivisions
         : [
@@ -250,12 +259,37 @@ class Card2AppliedAthletesView extends StatefulWidget {
           ];
     Map<String, String> selectedDiv = divisions.first;
 
+    void onNameChanged(String val, void Function(void Function()) setModalState) {
+      debounceTimer?.cancel();
+      final q = val.trim();
+      if (q.isEmpty || ref == null) {
+        setModalState(() {
+          searchMatches = [];
+          isSearching = false;
+        });
+        return;
+      }
+      setModalState(() => isSearching = true);
+      debounceTimer = Timer(const Duration(milliseconds: 300), () async {
+        try {
+          final results = await ref.read(athleteRepositoryProvider).searchAthletes(q);
+          setModalState(() {
+            searchMatches = results;
+            isSearching = false;
+          });
+        } catch (_) {
+          setModalState(() => isSearching = false);
+        }
+      });
+    }
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
+      backgroundColor: const Color(0xFA0B0F19),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
       ),
       builder: (sheetCtx) {
         return StatefulBuilder(
@@ -298,10 +332,12 @@ class Card2AppliedAthletesView extends StatefulWidget {
                           const Expanded(
                             child: Text(
                               'ADD ATHLETE TO REGISTRY',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 15,
+                                fontSize: 16,
                                 color: AppTheme.textPrimary,
                                 letterSpacing: 0.5,
                               ),
@@ -317,118 +353,304 @@ class Card2AppliedAthletesView extends StatefulWidget {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      TextField(
-                        controller: nameCtrl,
-                        onTapOutside: (_) =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        style: const TextStyle(color: AppTheme.textPrimary),
-                        decoration: const InputDecoration(
-                          labelText: 'Athlete Full Name',
-                          hintText: 'e.g. Tariq Mehmood',
-                          prefixIcon: Icon(Icons.badge_outlined, size: 18),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedDiv['label'],
-                        dropdownColor: AppTheme.elevatedSurface,
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 13,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Weight & Arm Division',
-                          prefixIcon:
-                              Icon(Icons.fitness_center_rounded, size: 18),
-                        ),
-                        items: [
-                          for (final d in divisions)
-                            DropdownMenuItem(
-                              value: d['label'],
-                              child: Text(d['label'] ?? ''),
+
+                      // Clean non-colliding Athlete Full Name Field
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'ATHLETE FULL NAME',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              color: AppTheme.goldPrimary,
+                              letterSpacing: 0.6,
                             ),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: nameCtrl,
+                            onTapOutside: (_) =>
+                                FocusManager.instance.primaryFocus?.unfocus(),
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 14,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'e.g. Tariq Mehmood',
+                              prefixIcon: Icon(Icons.badge_outlined, size: 18),
+                              isDense: true,
+                            ),
+                            onChanged: (val) => onNameChanged(val, setModalState),
+                          ),
                         ],
-                        onChanged: (v) {
-                          if (v == null) return;
-                          final match = divisions.firstWhere(
-                            (d) => d['label'] == v,
-                            orElse: () => divisions.first,
-                          );
-                          setModalState(() => selectedDiv = match);
-                        },
                       ),
-                      const SizedBox(height: 10),
+
+                      if (isSearching)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            children: const [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.goldPrimary),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Searching athlete database...',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      if (searchMatches.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          constraints: const BoxConstraints(maxHeight: 140),
+                          decoration: BoxDecoration(
+                            color: const Color(0x4D04060B),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0x38FFFFFF)),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.all(6),
+                            itemCount: searchMatches.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 4),
+                            itemBuilder: (ctx, idx) {
+                              final athlete = searchMatches[idx];
+                              final aName = (athlete['displayName'] ?? athlete['fullName'] ?? athlete['name'] ?? '').toString();
+                              final aClub = (athlete['clubName'] ?? athlete['club'] ?? athlete['city'] ?? 'ArmSphere Club').toString();
+                              final aElo = (athlete['eloRating'] ?? athlete['elo'] ?? 1600).toString();
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setModalState(() {
+                                    nameCtrl.text = aName;
+                                    clubCtrl.text = aClub;
+                                    eloCtrl.text = aElo;
+                                    selectedAthleteId = (athlete['id'] ?? athlete['userId'] ?? athlete['athleteId'] ?? '').toString();
+                                    searchMatches = [];
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x22FFFFFF),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppTheme.goldPrimary),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '$aName • $aClub',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                        ),
+                                      ),
+                                      Text('ELO $aElo', style: const TextStyle(fontFamily: AppTheme.fontMono, fontSize: 11, color: AppTheme.goldPrimary)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                      const SizedBox(height: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'WEIGHT & ARM DIVISION',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              color: AppTheme.goldPrimary,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          DropdownButtonFormField<String>(
+                            initialValue: selectedDiv['label'],
+                            dropdownColor: AppTheme.elevatedSurface,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 13,
+                            ),
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              prefixIcon:
+                                  Icon(Icons.fitness_center_rounded, size: 18),
+                            ),
+                            items: [
+                              for (final d in divisions)
+                                DropdownMenuItem(
+                                  value: d['label'],
+                                  child: Text(d['label'] ?? ''),
+                                ),
+                            ],
+                            onChanged: (v) {
+                              if (v == null) return;
+                              final match = divisions.firstWhere(
+                                (d) => d['label'] == v,
+                                orElse: () => divisions.first,
+                              );
+                              setModalState(() => selectedDiv = match);
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
-                              controller: eloCtrl,
-                              keyboardType: TextInputType.number,
-                              onTapOutside: (_) =>
-                                  FocusManager.instance.primaryFocus?.unfocus(),
-                              style:
-                                  const TextStyle(color: AppTheme.textPrimary),
-                              decoration: const InputDecoration(
-                                labelText: 'ELO Rating',
-                                prefixIcon:
-                                    Icon(Icons.leaderboard_rounded, size: 18),
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'ELO RATING',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                    color: AppTheme.goldPrimary,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: eloCtrl,
+                                  keyboardType: TextInputType.number,
+                                  onTapOutside: (_) =>
+                                      FocusManager.instance.primaryFocus?.unfocus(),
+                                  style:
+                                      const TextStyle(color: AppTheme.textPrimary),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    prefixIcon:
+                                        Icon(Icons.leaderboard_rounded, size: 18),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
-                              controller: clubCtrl,
-                              onTapOutside: (_) =>
-                                  FocusManager.instance.primaryFocus?.unfocus(),
-                              style:
-                                  const TextStyle(color: AppTheme.textPrimary),
-                              decoration: const InputDecoration(
-                                labelText: 'Club / City',
-                                prefixIcon:
-                                    Icon(Icons.shield_outlined, size: 18),
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'CLUB / CITY',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                    color: AppTheme.goldPrimary,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: clubCtrl,
+                                  onTapOutside: (_) =>
+                                      FocusManager.instance.primaryFocus?.unfocus(),
+                                  style:
+                                      const TextStyle(color: AppTheme.textPrimary),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    prefixIcon:
+                                        Icon(Icons.shield_outlined, size: 18),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
                             flex: 2,
-                            child: TextField(
-                              controller: prCtrl,
-                              onTapOutside: (_) =>
-                                  FocusManager.instance.primaryFocus?.unfocus(),
-                              style:
-                                  const TextStyle(color: AppTheme.textPrimary),
-                              decoration: const InputDecoration(
-                                labelText: 'Verified PR Summary',
-                                prefixIcon: Icon(Icons.bolt_rounded, size: 18),
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'VERIFIED PR SUMMARY',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                    color: AppTheme.goldPrimary,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: prCtrl,
+                                  onTapOutside: (_) =>
+                                      FocusManager.instance.primaryFocus?.unfocus(),
+                                  style:
+                                      const TextStyle(color: AppTheme.textPrimary),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    prefixIcon: Icon(Icons.bolt_rounded, size: 18),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
-                              controller: maxLiftCtrl,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              onTapOutside: (_) =>
-                                  FocusManager.instance.primaryFocus?.unfocus(),
-                              style:
-                                  const TextStyle(color: AppTheme.textPrimary),
-                              decoration: const InputDecoration(
-                                labelText: 'Max Lift (kg)',
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'MAX LIFT (KG)',
+                                  style: TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                    color: AppTheme.goldPrimary,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: maxLiftCtrl,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  onTapOutside: (_) =>
+                                      FocusManager.instance.primaryFocus?.unfocus(),
+                                  style:
+                                      const TextStyle(color: AppTheme.textPrimary),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       GestureDetector(
                         onTap: () {
                           final name = nameCtrl.text.trim();
@@ -452,11 +674,11 @@ class Card2AppliedAthletesView extends StatefulWidget {
                                   : 'RIGHT');
                           final qrStr =
                               'ARMSPHERE-$tId-ATH-${idx.toString().padLeft(3, '0')}';
+                          final effectiveAthleteId = selectedAthleteId ??
+                              'ath-reg-${DateTime.now().millisecondsSinceEpoch}';
                           final newAthlete = <String, dynamic>{
-                            'id':
-                                'ath-walkin-${DateTime.now().millisecondsSinceEpoch}',
-                            'athleteId':
-                                'ath-walkin-${DateTime.now().millisecondsSinceEpoch}',
+                            'id': effectiveAthleteId,
+                            'athleteId': effectiveAthleteId,
                             'athleteName': name,
                             'club': clubCtrl.text.trim().isEmpty
                                 ? 'Independent'
@@ -757,7 +979,7 @@ class _Card2AppliedAthletesViewState extends State<Card2AppliedAthletesView> {
             key: const ValueKey('card2_elo_ranking_carousel'),
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF11151E),
+              color: const Color(0x4D04060B),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: AppTheme.goldPrimary.withValues(alpha: 0.35),
@@ -1024,9 +1246,9 @@ class _Card2AppliedAthletesViewState extends State<Card2AppliedAthletesView> {
             Container(
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                color: const Color(0xFF121620),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0x26FFFFFF)),
+                color: const Color(0x4D04060B),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
               ),
               child: const Center(
                 child: Text(
@@ -1080,18 +1302,15 @@ class _Card2AppliedAthletesViewState extends State<Card2AppliedAthletesView> {
                         vertical: 11,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [Color(0xFF161B26), Color(0xFF0E121A)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
+                        color: const Color(0x4D04060B),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isVerified
-                              ? AppTheme.emerald.withValues(alpha: 0.45)
+                              ? AppTheme.emerald.withValues(alpha: 0.55)
                               : isUnmatched
-                                  ? AppTheme.crimson.withValues(alpha: 0.55)
-                                  : const Color(0x28FFFFFF),
+                                  ? AppTheme.crimson.withValues(alpha: 0.65)
+                                  : const Color(0x38FFFFFF),
+                          width: 1.0,
                         ),
                       ),
                       child: Row(

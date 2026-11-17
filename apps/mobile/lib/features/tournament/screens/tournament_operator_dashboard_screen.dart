@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/dependency_providers.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../../core/storage/hive_storage.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/security/admin_permissions.dart';
@@ -30,65 +32,6 @@ const List<String> _kPakistanProvinces = [
   'Islamabad',
   'Gilgit-Baltistan',
   'Azad Kashmir',
-];
-
-const List<Map<String, String>> _kDefaultRefereePool = [
-  {
-    'id': 'ath-pk-101',
-    'name': 'Hamza Tariq',
-    'club': 'Lahore Titans • Lahore',
-    'elo': '1865',
-    'badge': 'Athlete & Certified Referee • Lahore Titans',
-  },
-  {
-    'id': 'ath-pk-102',
-    'name': 'Shahzaib Baloch',
-    'club': 'Quetta Grizzlies • Quetta',
-    'elo': '1795',
-    'badge': 'Athlete & Certified Referee • Quetta Grizzlies',
-  },
-  {
-    'id': 'ath-pk-103',
-    'name': 'Zain Ul Abideen',
-    'club': 'Islamabad Vipers • Islamabad',
-    'elo': '1740',
-    'badge': 'Athlete & Certified Referee • Islamabad Vipers',
-  },
-  {
-    'id': 'ath-pk-106',
-    'name': 'Murtaza Afridi',
-    'club': 'Khyber Iron Grip • Peshawar',
-    'elo': '1760',
-    'badge': 'Athlete & Certified Referee • Khyber Iron Grip',
-  },
-  {
-    'id': 'ath-pk-108',
-    'name': 'Asadullah Khan',
-    'club': 'Rawalpindi Forge • Rawalpindi',
-    'elo': '1810',
-    'badge': 'Athlete & Certified Referee • Rawalpindi Forge',
-  },
-  {
-    'id': 'ath-pk-109',
-    'name': 'Sikandar Hayat',
-    'club': 'Multan Royals • Multan',
-    'elo': '1725',
-    'badge': 'Athlete & Certified Referee • Multan Royals',
-  },
-  {
-    'id': 'ath-pk-104',
-    'name': 'Taimoor Jutt',
-    'club': 'Gujranwala Lions • Gujranwala',
-    'elo': '1690',
-    'badge': 'Athlete & Certified Referee • Gujranwala Lions',
-  },
-  {
-    'id': 'ath-pk-107',
-    'name': 'Daniyal Qureshi',
-    'club': 'Karachi Wolves • Karachi',
-    'elo': '1685',
-    'badge': 'Athlete & Certified Referee • Karachi Wolves',
-  },
 ];
 
 enum _OperatorSubView {
@@ -309,7 +252,7 @@ class _TournamentOperatorDashboardScreenState
             : <String>[],
         'assignedRefereeIds': found?['assignedRefereeIds'] is List
             ? List<String>.from(found!['assignedRefereeIds'] as List)
-            : (isReleased ? <String>['ath-pk-101', 'ath-pk-102'] : <String>[]),
+            : <String>[],
       });
     }
 
@@ -817,14 +760,25 @@ class _TournamentOperatorDashboardScreenState
       final refIds = found?['assignedRefereeIds'] is List
           ? List<String>.from(found!['assignedRefereeIds'] as List)
           : <String>[];
-      final refNames = refIds
-          .map((id) =>
-              _kDefaultRefereePool
-                  .where((r) => r['id'] == id)
-                  .map((r) => r['name']!)
-                  .firstOrNull ??
-              id)
-          .toList();
+      final existingNames = found?['assignedRefereeNames'] is List
+          ? List<String>.from(found!['assignedRefereeNames'] as List)
+          : <String>[];
+      final appliedAthletes = (updated['appliedAthletes'] is List)
+          ? (updated['appliedAthletes'] as List).whereType<Map>()
+          : const <Map>[];
+      final refNames = refIds.asMap().entries.map((entry) {
+        if (entry.key < existingNames.length && existingNames[entry.key].trim().isNotEmpty) {
+          return existingNames[entry.key].trim();
+        }
+        final match = appliedAthletes
+            .where((a) => (a['athleteId'] ?? a['id'] ?? '').toString() == entry.value)
+            .firstOrNull;
+        if (match != null) {
+          final n = (match['athleteName'] ?? match['name'] ?? '').toString().trim();
+          if (n.isNotEmpty) return n;
+        }
+        return entry.value;
+      }).toList();
       syncedTables.add({
         'tableNumber': i,
         'tableName': found?['tableName']?.toString() ?? 'Table $i',
@@ -1380,6 +1334,7 @@ class _TournamentOperatorDashboardScreenState
                               : _seedDefaultAppliedAthletes(currentTournament);
                       Card2AppliedAthletesView.showRegisterAthleteModal(
                         context: context,
+                        ref: ref,
                         tournament: currentTournament,
                         separatedDivisions:
                             _expandSeparatedDivisions(currentTournament),
@@ -2941,7 +2896,7 @@ class _ForgedGoldCrystalButton extends StatelessWidget {
 // =============================================================================
 // 3. CARD 1 — EVENT & DIVISION SETUP (Quick-Jump Bar & Tactile Controls)
 // =============================================================================
-class _Card1BasicDetailsView extends StatefulWidget {
+class _Card1BasicDetailsView extends ConsumerStatefulWidget {
   final Map<String, dynamic> tournament;
   final String autoSaveBannerText;
   final Map<String, dynamic> validation;
@@ -2964,10 +2919,10 @@ class _Card1BasicDetailsView extends StatefulWidget {
   });
 
   @override
-  State<_Card1BasicDetailsView> createState() => _Card1BasicDetailsViewState();
+  ConsumerState<_Card1BasicDetailsView> createState() => _Card1BasicDetailsViewState();
 }
 
-class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
+class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _orgCtrl;
   late final TextEditingController _venueCtrl;
@@ -2976,9 +2931,12 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
   late final TextEditingController _entryFeeCtrl;
   late final TextEditingController _customWeightCtrl;
 
-  // Per-table referee search state
+  // Per-table referee search state with live 300ms debounced database search
   final Map<int, TextEditingController> _refSearchCtrls = {};
   final Set<int> _openRefereeSearchTables = <int>{};
+  Timer? _refSearchDebounceTimer;
+  bool _isSearchingReferees = false;
+  List<Map<String, String>> _dynamicRefereeSearchResults = [];
 
   final List<GlobalKey> _stepKeys = List.generate(7, (_) => GlobalKey());
 
@@ -3011,6 +2969,7 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
 
   @override
   void dispose() {
+    _refSearchDebounceTimer?.cancel();
     _nameCtrl.dispose();
     _orgCtrl.dispose();
     _venueCtrl.dispose();
@@ -3022,6 +2981,53 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
       ctrl.dispose();
     }
     super.dispose();
+  }
+
+  void _onRefereeSearchChanged(String query) {
+    _refSearchDebounceTimer?.cancel();
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _isSearchingReferees = false;
+        _dynamicRefereeSearchResults = [];
+      });
+      return;
+    }
+    setState(() {
+      _isSearchingReferees = true;
+    });
+    _refSearchDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        final repo = ref.read(athleteRepositoryProvider);
+        final results = await repo.searchAthletes(trimmed);
+        if (!mounted) return;
+        final list = <Map<String, String>>[];
+        for (final r in results) {
+          final id = (r['id'] ?? r['userId'] ?? r['athleteId'] ?? '').toString().trim();
+          final name = (r['displayName'] ?? r['fullName'] ?? r['name'] ?? '').toString().trim();
+          if (id.isEmpty || name.isEmpty) continue;
+          final club = (r['clubName'] ?? r['club'] ?? r['city'] ?? 'ArmSphere Official').toString().trim();
+          final elo = (r['eloRating'] ?? r['elo'] ?? 1750).toString().trim();
+          list.add({
+            'id': id,
+            'name': name,
+            'club': club,
+            'elo': elo,
+            'badge': 'Athlete & Certified Referee • $club',
+          });
+        }
+        setState(() {
+          _dynamicRefereeSearchResults = list;
+          _isSearchingReferees = false;
+        });
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _isSearchingReferees = false;
+          });
+        }
+      }
+    });
   }
 
   TextEditingController _refSearchControllerFor(int tableIndex) {
@@ -3081,10 +3087,13 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
     });
   }
 
-  /// Builds the searchable pool of athletes who are certified referees in our data.
+  /// Builds the searchable pool of athletes who are certified referees in our data,
+  /// querying the real database dynamically and including applied athlete-referees.
   List<Map<String, String>> _buildAthleteRefereePool() {
     final byId = <String, Map<String, String>>{};
-    for (final r in _kDefaultRefereePool) {
+
+    // 1. Dynamic search results from database
+    for (final r in _dynamicRefereeSearchResults) {
       final id = (r['id'] ?? '').trim();
       if (id.isNotEmpty) {
         byId[id] = Map<String, String>.from(r);
@@ -4396,16 +4405,16 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
     }).toList();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xCC090D16),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0x4D04060B),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isReady
-              ? AppTheme.emerald.withValues(alpha: 0.55)
-              : AppTheme.warning.withValues(alpha: 0.55),
-          width: 1.2,
+              ? AppTheme.emerald.withValues(alpha: 0.6)
+              : const Color(0x38FFFFFF),
+          width: 1.0,
         ),
       ),
       child: Column(
@@ -4420,14 +4429,16 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
                   children: [
                     Text(
                       '${tables[tableIndex]['tableName']} Officials',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontFamily: AppTheme.fontDisplay,
                         fontWeight: FontWeight.w900,
-                        fontSize: 13.5,
+                        fontSize: 16,
                         color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       '${assignedIds.length}/2+ Athlete-Referees Selected',
                       style: TextStyle(
@@ -4461,6 +4472,7 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
                     if (_openRefereeSearchTables.contains(tableIndex)) {
                       _openRefereeSearchTables.remove(tableIndex);
                       searchCtrl.clear();
+                      _onRefereeSearchChanged('');
                       FocusManager.instance.primaryFocus?.unfocus();
                     } else {
                       _openRefereeSearchTables.add(tableIndex);
@@ -4503,26 +4515,60 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
                 suffixIcon: query.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear_rounded, size: 16),
-                        onPressed: () => setState(() => searchCtrl.clear()),
+                        onPressed: () {
+                          searchCtrl.clear();
+                          _onRefereeSearchChanged('');
+                          setState(() {});
+                        },
                       )
                     : null,
                 isDense: true,
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (val) => _onRefereeSearchChanged(val),
             ),
             const SizedBox(height: 8),
-            if (matchingReferees.isEmpty)
+            if (_isSearchingReferees)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                alignment: Alignment.center,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.goldPrimary),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'Searching verified referees from database...',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        color: AppTheme.goldPrimary,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (matchingReferees.isEmpty)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xCC070A11),
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: const Color(0x24FFFFFF)),
+                  color: const Color(0x4D04060B),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0x28FFFFFF)),
                 ),
-                child: const Text(
-                  'No matching unselected athlete-referees found.',
-                  style: TextStyle(
+                child: Text(
+                  query.isEmpty
+                      ? 'Type an athlete name to search certified referees from database.'
+                      : 'No certified referees found matching "$query".',
+                  style: const TextStyle(
                     fontSize: 11.5,
                     color: AppTheme.textSecondary,
                   ),
@@ -4532,9 +4578,9 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
               Container(
                 constraints: const BoxConstraints(maxHeight: 210),
                 decoration: BoxDecoration(
-                  color: const Color(0xE605080F),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0x2EFFFFFF)),
+                  color: const Color(0x4D04060B),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0x38FFFFFF)),
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
@@ -4563,10 +4609,10 @@ class _Card1BasicDetailsViewState extends State<_Card1BasicDetailsView> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xCC0D1322),
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0x4D04060B),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                              color: AppTheme.goldPrimary.withValues(alpha: 0.5),
                             ),
                           ),
                           child: Row(

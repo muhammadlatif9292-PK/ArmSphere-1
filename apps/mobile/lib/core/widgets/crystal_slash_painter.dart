@@ -264,7 +264,7 @@ class CrystalSlashPainter extends CustomPainter {
   final BorderRadius borderRadius;
   final bool paintOpticalLens;
 
-  static const Color opticalLensColor = Color(0x4704060B);
+  static const Color opticalLensColor = Color(0x4D04060B);
   static const Color competitionCrimson = Color(0xFFE23B3B);
   static const Color championshipGold = Color(0xFFD4AF37);
   static const Color watermarkColor = Color(0x0CFFFFFF);
@@ -367,7 +367,7 @@ class CrystalSlashPainter extends CustomPainter {
   /// on the top-left and bottom-right corners of the card border.
   void _paintForgedTableCornerBrackets(Canvas canvas, Size size) {
     final Color accent = _resolveAccentColor();
-    const double strokeWidth = 2.0;
+    const double strokeWidth = 3.0;
     const double inset = 1.0;
     final double armLength = math.min(
       14.0,
@@ -785,7 +785,7 @@ class CrystalVaporDissolve extends StatelessWidget {
         return const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          stops: <double>[0.0, 0.032, 0.955, 1.0],
+          stops: <double>[0.0, 0.04, 0.96, 1.0],
           colors: <Color>[
             Color(0x00FFFFFF),
             Color(0xFFFFFFFF),

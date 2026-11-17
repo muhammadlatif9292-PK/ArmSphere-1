@@ -3159,19 +3159,15 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF171C28), Color(0xFF0D1017)],
-        ),
+        color: const Color(0x4D04060B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDone
               ? AppTheme.emerald.withValues(alpha: 0.55)
               : isBye
                   ? AppTheme.goldPrimary.withValues(alpha: 0.65)
-                  : const Color(0x33FFFFFF),
-          width: 1.2,
+                  : const Color(0x38FFFFFF),
+          width: 1.0,
         ),
       ),
       child: Column(
@@ -3335,24 +3331,24 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 34,
-                      height: 34,
+                      width: 38,
+                      height: 38,
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF282010), Color(0xFF120F08)],
-                        ),
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(
-                          color: AppTheme.goldPrimary.withValues(alpha: 0.75),
-                          width: 1.2,
+                      decoration: ShapeDecoration(
+                        color: const Color(0x3305070C),
+                        shape: BeveledRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: AppTheme.goldPrimary.withValues(alpha: 0.85),
+                            width: 1.2,
+                          ),
                         ),
                       ),
                       child: Text(
                         isBye ? 'BYE' : 'VS',
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
                           color: AppTheme.goldPrimary,
                         ),
@@ -3486,9 +3482,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                             ),
                             decoration: BoxDecoration(
                               color: aIsWinner
-                                  ? AppTheme.emerald.withValues(alpha: 0.2)
-                                  : const Color(0xFF131823),
-                              borderRadius: BorderRadius.circular(9),
+                                  ? AppTheme.emerald.withValues(alpha: 0.22)
+                                  : const Color(0x4D04060B),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: aIsWinner
                                     ? AppTheme.emerald
@@ -3527,9 +3523,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                             ),
                             decoration: BoxDecoration(
                               color: bIsWinner
-                                  ? AppTheme.emerald.withValues(alpha: 0.2)
-                                  : const Color(0xFF131823),
-                              borderRadius: BorderRadius.circular(9),
+                                  ? AppTheme.emerald.withValues(alpha: 0.22)
+                                  : const Color(0x4D04060B),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: bIsWinner
                                     ? AppTheme.emerald
@@ -3664,10 +3660,10 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
       decoration: BoxDecoration(
         color: isDone
             ? (isWinner
-                ? AppTheme.emerald.withValues(alpha: 0.14)
-                : AppTheme.crimson.withValues(alpha: 0.08))
-            : const Color(0xFF11151F),
-        borderRadius: BorderRadius.circular(11),
+                ? AppTheme.emerald.withValues(alpha: 0.16)
+                : AppTheme.crimson.withValues(alpha: 0.10))
+            : const Color(0x4D04060B),
+        borderRadius: BorderRadius.circular(12),
         border: Border(
           left: BorderSide(
             color: isLeftCorner ? cornerEdgeColor : const Color(0x28FFFFFF),
@@ -3731,7 +3727,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontFamily: AppTheme.fontDisplay,
-              fontSize: 13.5,
+              fontSize: 16,
               fontWeight: FontWeight.w900,
               color: AppTheme.textPrimary,
             ),
