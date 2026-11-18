@@ -487,7 +487,9 @@ class Card2AppliedAthletesView extends StatefulWidget {
                           const SizedBox(height: 6),
                           DropdownButtonFormField<String>(
                             initialValue: selectedDiv['label'],
-                            dropdownColor: AppTheme.elevatedSurface,
+                            dropdownColor: const Color(0xFF131722),
+                            borderRadius: BorderRadius.circular(12),
+                            elevation: 8,
                             style: const TextStyle(
                               color: AppTheme.textPrimary,
                               fontSize: 13,

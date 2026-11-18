@@ -82,10 +82,14 @@ class SettingsHubScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(14),
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      Clipboard.setData(ClipboardData(text: settingsQrPayload));
+                      _showEnlargedQrDialog(context, settingsQrPayload, userName, userId);
+                    },
+                    onLongPress: () {
+                      HapticFeedback.heavyImpact();
+                      Clipboard.setData(ClipboardData(text: userId));
                       ScaffoldMessenger.of(context).showSnackBar(
                         CrystalSnackBar(
-                          content: Text('Official QR Identity copied: $settingsQrPayload'),
+                          content: Text('Athlete ID copied to clipboard: $userId'),
                           backgroundColor: AppTheme.emerald,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -129,9 +133,11 @@ class SettingsHubScreen extends ConsumerWidget {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
                                 '$userName • ID: $userId',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontWeight: FontWeight.w800,
@@ -139,13 +145,12 @@ class SettingsHubScreen extends ConsumerWidget {
                                   color: AppTheme.textPrimary,
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                'Present this QR to Referees at your assigned table or Operators at weigh-in & venue entrance ($settingsQrPayload).',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.textSecondary,
-                                  height: 1.3,
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Tap to enlarge QR • Hold to copy ID',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: AppTheme.textMuted,
                                 ),
                               ),
                             ],
@@ -411,6 +416,134 @@ class SettingsHubScreen extends ConsumerWidget {
               fontWeight: FontWeight.bold,
               color: AppTheme.textSecondary,
             ),
+      ),
+    );
+  }
+
+  void _showEnlargedQrDialog(
+    BuildContext context,
+    String qrPayload,
+    String userName,
+    String userId,
+  ) {
+    showDialog(
+      context: context,
+      barrierColor: const Color(0xCC030509),
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF0F131D),
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0x4DFFFFFF), width: 1.0),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.qr_code_2_rounded, color: AppTheme.goldPrimary, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'OFFICIAL ATHLETE QR',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: AppTheme.goldPrimary,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x40000000),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: ArmSphereQrMatrixView(
+                  data: qrPayload,
+                  size: 230,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                userName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Athlete ID: $userId',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: AppTheme.fontMono,
+                  fontSize: 11,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0x33D4AF37),
+                  foregroundColor: AppTheme.goldPrimary,
+                  side: const BorderSide(color: Color(0x66D4AF37), width: 1.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  Clipboard.setData(ClipboardData(text: userId));
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CrystalSnackBar(
+                      content: Text('Athlete ID copied to clipboard: $userId'),
+                      backgroundColor: AppTheme.emerald,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy_rounded, size: 14),
+                label: const Text(
+                  'Copy ID to Clipboard',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -3594,9 +3594,6 @@ class OrganizationRepository extends BaseRepository {
     } catch (_) {}
 
     final merged = <String, Map<String, dynamic>>{};
-    for (final org in canonicalOrganizations) {
-      merged[org['id'].toString()] = Map<String, dynamic>.from(org);
-    }
     for (final org in remoteOrSeed) {
       final id = (org['id'] ?? org['slug'] ?? '').toString();
       if (id.isNotEmpty) {

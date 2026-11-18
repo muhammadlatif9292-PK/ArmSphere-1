@@ -569,6 +569,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
+      canvasColor: const Color(0xFF131722),
       primaryColor: goldPrimary,
       colorScheme: const ColorScheme.dark(
         surface: Colors.transparent,

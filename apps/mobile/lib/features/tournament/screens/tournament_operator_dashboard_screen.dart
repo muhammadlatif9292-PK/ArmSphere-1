@@ -341,11 +341,7 @@ class _TournamentOperatorDashboardScreenState
             .toList()
         : <Map<String, dynamic>>[];
 
-    normalizedBase['appliedAthletes'] = existingAthletes.isNotEmpty
-        ? existingAthletes
-        : (isReleased
-            ? _seedDefaultAppliedAthletes(normalizedBase)
-            : <Map<String, dynamic>>[]);
+    normalizedBase['appliedAthletes'] = existingAthletes;
 
     return normalizedBase;
   }
@@ -353,191 +349,7 @@ class _TournamentOperatorDashboardScreenState
   List<Map<String, dynamic>> _seedDefaultAppliedAthletes(
     Map<String, dynamic> tournament,
   ) {
-    final divisions = _expandSeparatedDivisions(tournament);
-    final divLabels = divisions.isNotEmpty
-        ? divisions.map((d) => d['label'] ?? '70 kg • Right Arm').toList()
-        : <String>[
-            '70 kg • Right Arm',
-            '70 kg • Left Arm',
-            '80 kg • Right Arm',
-            '80 kg • Left Arm',
-            '90 kg • Right Arm',
-            'Open • Right Arm',
-          ];
-
-    String pickDiv(int idx) => divLabels[idx % divLabels.length];
-
-    final templates = <Map<String, dynamic>>[
-      // 5 athletes in pickDiv(0) (odd number -> demonstrates automatic/manual BYE handling!)
-      {
-        'id': 'reg-pk-101',
-        'athleteId': 'ath-pk-101',
-        'athleteName': 'Hamza Tariq',
-        'clubName': 'Lahore Titans • Lahore',
-        'categoryLabel': pickDiv(0),
-        'eloRating': 1865,
-        'prKg': 68.0,
-        'maxLiftKg': 76.5,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 69.2,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-102',
-        'athleteId': 'ath-pk-102',
-        'athleteName': 'Shahzaib Baloch',
-        'clubName': 'Quetta Grizzlies • Quetta',
-        'categoryLabel': pickDiv(0),
-        'eloRating': 1795,
-        'prKg': 65.5,
-        'maxLiftKg': 73.0,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 68.8,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-103',
-        'athleteId': 'ath-pk-103',
-        'athleteName': 'Zain Ul Abideen',
-        'clubName': 'Islamabad Vipers • Islamabad',
-        'categoryLabel': pickDiv(0),
-        'eloRating': 1740,
-        'prKg': 63.0,
-        'maxLiftKg': 70.5,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 69.5,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-104',
-        'athleteId': 'ath-pk-104',
-        'athleteName': 'Taimoor Jutt',
-        'clubName': 'Gujranwala Lions • Gujranwala',
-        'categoryLabel': pickDiv(0),
-        'eloRating': 1690,
-        'prKg': 61.0,
-        'maxLiftKg': 68.0,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 69.0,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-105',
-        'athleteId': 'ath-pk-105',
-        'athleteName': 'Babar Niazi',
-        'clubName': 'Mianwali Hawks • Mianwali',
-        'categoryLabel': pickDiv(0),
-        'eloRating': 1635,
-        'prKg': 58.5,
-        'maxLiftKg': 65.0,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 67.9,
-        'isReferee': false,
-      },
-      // Athletes in pickDiv(1) & pickDiv(2)
-      {
-        'id': 'reg-pk-106',
-        'athleteId': 'ath-pk-106',
-        'athleteName': 'Murtaza Afridi',
-        'clubName': 'Khyber Iron Grip • Peshawar',
-        'categoryLabel': pickDiv(1),
-        'eloRating': 1760,
-        'prKg': 64.0,
-        'maxLiftKg': 72.0,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 69.4,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-107',
-        'athleteId': 'ath-pk-107',
-        'athleteName': 'Daniyal Qureshi',
-        'clubName': 'Karachi Wolves • Karachi',
-        'categoryLabel': pickDiv(1),
-        'eloRating': 1685,
-        'prKg': 60.5,
-        'maxLiftKg': 67.5,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 68.7,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-108',
-        'athleteId': 'ath-pk-108',
-        'athleteName': 'Asadullah Khan',
-        'clubName': 'Rawalpindi Forge • Rawalpindi',
-        'categoryLabel': pickDiv(2),
-        'eloRating': 1810,
-        'prKg': 74.0,
-        'maxLiftKg': 83.0,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 79.1,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-109',
-        'athleteId': 'ath-pk-109',
-        'athleteName': 'Sikandar Hayat',
-        'clubName': 'Multan Royals • Multan',
-        'categoryLabel': pickDiv(2),
-        'eloRating': 1725,
-        'prKg': 71.0,
-        'maxLiftKg': 79.5,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 78.6,
-        'isReferee': true,
-      },
-      {
-        'id': 'reg-pk-110',
-        'athleteId': 'ath-pk-110',
-        'athleteName': 'Farhan Gillani',
-        'clubName': 'Faisalabad Bulls • Faisalabad',
-        'categoryLabel': pickDiv(2),
-        'eloRating': 1650,
-        'prKg': 68.0,
-        'maxLiftKg': 75.5,
-        'lossesCount': 0,
-        'weighInStatus': 'VERIFIED',
-        'measuredWeightKg': 79.4,
-        'isReferee': false,
-      },
-    ];
-
-    return templates.map((t) {
-      final cat = t['categoryLabel'].toString();
-      final parts = cat.split('•');
-      final wClass = parts.first.trim();
-      final arm = parts.length > 1 ? parts.last.trim() : 'Right Arm';
-      final qr = 'ARMSPHERE-QR:${t['id']}:${t['athleteId']}:$cat';
-      return <String, dynamic>{
-        ...t,
-        'registrationId': t['id'],
-        'name': t['athleteName'],
-        'club': t['clubName'],
-        'elo': t['eloRating'],
-        'weightClass': wClass,
-        'registeredWeightLabel': wClass,
-        'arm': arm,
-        'registeredArm': arm,
-        'qrCode': qr,
-        'qrCodePayload': qr,
-        'applicationStatus': 'APPLIED',
-        'unmatchResolution': 'NONE',
-        'assignedOpponentId': null,
-        'assignedOpponentName': null,
-        'checkedInGuestsCount': 0,
-        'entranceCheckedIn': false,
-      };
-    }).toList();
+    return <Map<String, dynamic>>[];
   }
 
   Future<void> _enqueueAndPersistHubAction({
@@ -886,9 +698,7 @@ class _TournamentOperatorDashboardScreenState
 
     final releasedRecord = <String, dynamic>{
       ...record,
-      'appliedAthletes': existingApplied.isNotEmpty
-          ? existingApplied
-          : _seedDefaultAppliedAthletes(record),
+      'appliedAthletes': existingApplied,
       'isReleased': true,
       'status': wasAlreadyReleased
           ? ((record['status']?.toString().toUpperCase() == 'DRAFT')
@@ -1001,6 +811,142 @@ class _TournamentOperatorDashboardScreenState
                 : 'Tournament Released & Scheduled! Cards 2, 3, and 4 are now UNLOCKED and athletes can apply.',
           ),
           backgroundColor: AppTheme.emerald,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteTournament(
+    Map<String, dynamic> tournament,
+    String operatorId,
+  ) async {
+    final rawName = (tournament['name'] ?? '').toString().trim();
+    final tourneyName = rawName.isEmpty ? 'Untitled Tournament' : rawName;
+    final tournamentId = (tournament['id'] ?? '').toString().trim();
+    if (tournamentId.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: const Color(0xCC030509),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF131722),
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0x4DFFFFFF), width: 1.0),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppTheme.crimson, size: 24),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Delete Tournament?',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete "$tourneyName"?\n\nThis will remove the tournament, its divisions, and bracket records from the system. It will never appear in Discover, Events, or Athlete schedules again. This cannot be undone.',
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.textSecondary,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.crimson,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'DELETE PERMANENTLY',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    HapticFeedback.heavyImpact();
+
+    // 1. Remove from operator local map and persist
+    final opMap = _loadOperatorLocalMap(operatorId);
+    opMap.remove(tournamentId);
+    await _persistOperatorLocalMap(operatorId);
+
+    // 2. Remove from global released store and Hive
+    final hive = ref.read(hiveStorageProvider);
+    await TournamentOfflineStore.deleteTournament(
+      hive: hive,
+      tournamentId: tournamentId,
+      operatorId: operatorId,
+    );
+
+    // 3. Queue offline sync / send backend delete if available
+    try {
+      await hive.enqueueAction(
+        actionType: 'DELETE_TOURNAMENT',
+        endpoint: '/tournaments/$tournamentId',
+        payload: {
+          'id': tournamentId,
+          'organizerId': operatorId,
+          'deletedAt': DateTime.now().toUtc().toIso8601String(),
+        },
+        method: 'DELETE',
+        idempotencyKey: 'idem_del_tourney_$tournamentId',
+      );
+      ref.read(offlineSyncManagerProvider).syncQueue();
+    } catch (_) {}
+
+    // 4. Invalidate relevant providers
+    ref.invalidate(tournamentProvider);
+    ref.invalidate(discoverFeedProvider);
+
+    // 5. Update state and notify operator
+    if (mounted) {
+      setState(() {
+        if (_selectedTournamentId == tournamentId) {
+          _selectedTournamentId = null;
+          _activeView = _OperatorSubView.mainHub;
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: Text('Tournament "$tourneyName" has been permanently deleted.'),
+          backgroundColor: AppTheme.crimson,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -2040,7 +1986,7 @@ class _TournamentOperatorDashboardScreenState
 
     final appliedCount = (t['appliedAthletes'] is List)
         ? (t['appliedAthletes'] as List).length
-        : _seedDefaultAppliedAthletes(t).length;
+        : 0;
     final cityText = (t['city']?.toString().trim().isNotEmpty == true)
         ? t['city'].toString()
         : 'Lahore';
@@ -2118,6 +2064,19 @@ class _TournamentOperatorDashboardScreenState
                       color: accentColor,
                     ),
                   ),
+                ),
+                const SizedBox(width: 6),
+                IconButton(
+                  key: ValueKey('delete_tournament_${t['id']}'),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AppTheme.crimson,
+                  ),
+                  tooltip: 'Delete Tournament',
+                  onPressed: () => _confirmDeleteTournament(t, operatorId),
                 ),
               ],
             ),
@@ -2410,7 +2369,7 @@ class _TournamentOperatorDashboardScreenState
           stageTag: 'STAGE 02',
           title: 'Registered Athletes',
           statusPillText: areCards2To4Unlocked
-              ? '${appliedAthletes.length} APPLIED'
+              ? (appliedAthletes.isEmpty ? '0 REGISTERED' : '${appliedAthletes.length} APPLIED')
               : 'LOCKED',
           accentColor:
               areCards2To4Unlocked ? AppTheme.cyan : AppTheme.textMuted,
@@ -2419,7 +2378,7 @@ class _TournamentOperatorDashboardScreenState
           telemetryPills: [
             '${appliedAthletes.length} Athletes',
             '$divisionsCount Categories',
-            'Top ELO $topElo',
+            appliedAthletes.isEmpty ? 'No ELO Yet' : 'Top ELO $topElo',
           ],
           onTap: () {
             if (!areCards2To4Unlocked) {
@@ -2519,6 +2478,40 @@ class _TournamentOperatorDashboardScreenState
                 () => _activeView = _OperatorSubView.spectatorEntranceQrGate);
           },
         ),
+        const SizedBox(height: 24),
+        Center(
+          child: TextButton.icon(
+            key: const ValueKey('delete_tournament_hub_btn'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.crimson,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: AppTheme.crimson.withValues(alpha: 0.5),
+                  width: 1.0,
+                ),
+              ),
+            ),
+            onPressed: () => _confirmDeleteTournament(tournament, operatorId),
+            icon: const Icon(
+              Icons.delete_forever_rounded,
+              size: 18,
+              color: AppTheme.crimson,
+            ),
+            label: const Text(
+              'DELETE TOURNAMENT',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                color: AppTheme.crimson,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -3325,6 +3318,9 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
+                              dropdownColor: const Color(0xFF131722),
+                              borderRadius: BorderRadius.circular(12),
+                              elevation: 8,
                               initialValue:
                                   _kPakistanProvinces.contains(t['province'])
                                       ? t['province'].toString()
@@ -3338,7 +3334,16 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                               ),
                               items: [
                                 for (final p in _kPakistanProvinces)
-                                  DropdownMenuItem(value: p, child: Text(p)),
+                                  DropdownMenuItem(
+                                    value: p,
+                                    child: Text(
+                                      p,
+                                      style: const TextStyle(
+                                        color: AppTheme.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
                               ],
                               onChanged: (val) {
                                 FocusManager.instance.primaryFocus?.unfocus();
@@ -4393,16 +4398,17 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
     final isSearchOpen =
         _openRefereeSearchTables.contains(tableIndex) || query.isNotEmpty;
 
-    final matchingReferees = pool.where((r) {
-      if (assignedIds.contains(r['id'])) return false;
-      if (query.isEmpty) return true;
-      final name = (r['name'] ?? '').toLowerCase();
-      final club = (r['club'] ?? '').toLowerCase();
-      final badge = (r['badge'] ?? '').toLowerCase();
-      return name.contains(query) ||
-          club.contains(query) ||
-          badge.contains(query);
-    }).toList();
+    final matchingReferees = query.isEmpty
+        ? <Map<String, String>>[]
+        : pool.where((r) {
+            if (assignedIds.contains(r['id'])) return false;
+            final name = (r['name'] ?? '').toLowerCase();
+            final club = (r['club'] ?? '').toLowerCase();
+            final badge = (r['badge'] ?? '').toLowerCase();
+            return name.contains(query) ||
+                club.contains(query) ||
+                badge.contains(query);
+          }).toList();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

@@ -538,6 +538,20 @@ class EventQrPassportScreen extends ConsumerWidget {
                             eventName: eventName,
                           );
                         },
+                        onLongPress: () {
+                          HapticFeedback.heavyImpact();
+                          final athleteId = (qrPassport['athleteId'] ?? '').toString();
+                          if (athleteId.isNotEmpty) {
+                            Clipboard.setData(ClipboardData(text: athleteId));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              CrystalSnackBar(
+                                content: Text('Athlete ID copied: $athleteId'),
+                                backgroundColor: AppTheme.emerald,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
                         child: ArmSphereQrMatrixView(
                           key: const ValueKey('athlete_event_qr_matrix'),
                           payload: qrPayloadStr,

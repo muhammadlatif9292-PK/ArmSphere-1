@@ -232,275 +232,12 @@ class TournamentOfflineStore {
     String pickDiv(int idx) =>
         divLabels.isNotEmpty ? divLabels[idx % divLabels.length] : '70 kg • Right Arm';
 
-    final appliedAthletes = (raw['appliedAthletes'] is List &&
-            (raw['appliedAthletes'] as List).isNotEmpty)
+    final appliedAthletes = (raw['appliedAthletes'] is List)
         ? (raw['appliedAthletes'] as List)
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList()
-        : <Map<String, dynamic>>[
-            {
-              'id': 'reg-pk-101',
-              'registrationId': 'reg-pk-101',
-              'athleteId': 'ath-pk-101',
-              'athleteName': 'Hamza Tariq',
-              'clubName': 'Lahore Titans • Lahore',
-              'categoryLabel': pickDiv(0),
-              'weightClass': '70 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1865,
-              'prKg': 68.0,
-              'maxLiftKg': 76.5,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 69.2,
-              'guestCount': 2,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-101',
-                eventId: id,
-                athleteId: 'ath-pk-101',
-                athleteName: 'Hamza Tariq',
-                categoryLabel: pickDiv(0),
-                guestCount: 2,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-101',
-                athleteName: 'Hamza Tariq',
-              ),
-            },
-            {
-              'id': 'reg-pk-102',
-              'registrationId': 'reg-pk-102',
-              'athleteId': 'ath-pk-102',
-              'athleteName': 'Shahzaib Baloch',
-              'clubName': 'Quetta Grizzlies • Quetta',
-              'categoryLabel': pickDiv(0),
-              'weightClass': '70 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1795,
-              'prKg': 65.5,
-              'maxLiftKg': 73.0,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 68.8,
-              'guestCount': 1,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-102',
-                eventId: id,
-                athleteId: 'ath-pk-102',
-                athleteName: 'Shahzaib Baloch',
-                categoryLabel: pickDiv(0),
-                guestCount: 1,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-102',
-                athleteName: 'Shahzaib Baloch',
-              ),
-            },
-            {
-              'id': 'reg-pk-103',
-              'registrationId': 'reg-pk-103',
-              'athleteId': 'ath-pk-103',
-              'athleteName': 'Zain Ul Abideen',
-              'clubName': 'Islamabad Vipers • Islamabad',
-              'categoryLabel': pickDiv(0),
-              'weightClass': '70 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1740,
-              'prKg': 63.0,
-              'maxLiftKg': 70.5,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 69.5,
-              'guestCount': 2,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-103',
-                eventId: id,
-                athleteId: 'ath-pk-103',
-                athleteName: 'Zain Ul Abideen',
-                categoryLabel: pickDiv(0),
-                guestCount: 2,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-103',
-                athleteName: 'Zain Ul Abideen',
-              ),
-            },
-            {
-              'id': 'reg-pk-104',
-              'registrationId': 'reg-pk-104',
-              'athleteId': 'ath-pk-104',
-              'athleteName': 'Taimoor Jutt',
-              'clubName': 'Gujranwala Lions • Gujranwala',
-              'categoryLabel': pickDiv(0),
-              'weightClass': '70 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1690,
-              'prKg': 61.0,
-              'maxLiftKg': 68.0,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 69.0,
-              'guestCount': 0,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-104',
-                eventId: id,
-                athleteId: 'ath-pk-104',
-                athleteName: 'Taimoor Jutt',
-                categoryLabel: pickDiv(0),
-                guestCount: 0,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-104',
-                athleteName: 'Taimoor Jutt',
-              ),
-            },
-            {
-              'id': 'reg-pk-105',
-              'registrationId': 'reg-pk-105',
-              'athleteId': 'ath-pk-105',
-              'athleteName': 'Babar Niazi',
-              'clubName': 'Mianwali Hawks • Mianwali',
-              'categoryLabel': pickDiv(0),
-              'weightClass': '70 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1635,
-              'prKg': 58.5,
-              'maxLiftKg': 65.0,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 67.9,
-              'guestCount': 1,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-105',
-                eventId: id,
-                athleteId: 'ath-pk-105',
-                athleteName: 'Babar Niazi',
-                categoryLabel: pickDiv(0),
-                guestCount: 1,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-105',
-                athleteName: 'Babar Niazi',
-              ),
-            },
-            {
-              'id': 'reg-pk-106',
-              'registrationId': 'reg-pk-106',
-              'athleteId': 'ath-pk-106',
-              'athleteName': 'Murtaza Afridi',
-              'clubName': 'Khyber Iron Grip • Peshawar',
-              'categoryLabel': pickDiv(1),
-              'weightClass': '70 kg',
-              'arm': 'Left Arm',
-              'eloRating': 1760,
-              'prKg': 64.0,
-              'maxLiftKg': 72.0,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 69.4,
-              'guestCount': 2,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-106',
-                eventId: id,
-                athleteId: 'ath-pk-106',
-                athleteName: 'Murtaza Afridi',
-                categoryLabel: pickDiv(1),
-                guestCount: 2,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-106',
-                athleteName: 'Murtaza Afridi',
-              ),
-            },
-            {
-              'id': 'reg-pk-107',
-              'registrationId': 'reg-pk-107',
-              'athleteId': 'ath-pk-107',
-              'athleteName': 'Daniyal Qureshi',
-              'clubName': 'Karachi Wolves • Karachi',
-              'categoryLabel': pickDiv(1),
-              'weightClass': '70 kg',
-              'arm': 'Left Arm',
-              'eloRating': 1685,
-              'prKg': 60.5,
-              'maxLiftKg': 67.5,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 68.7,
-              'guestCount': 1,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-107',
-                eventId: id,
-                athleteId: 'ath-pk-107',
-                athleteName: 'Daniyal Qureshi',
-                categoryLabel: pickDiv(1),
-                guestCount: 1,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-107',
-                athleteName: 'Daniyal Qureshi',
-              ),
-            },
-            {
-              'id': 'reg-pk-108',
-              'registrationId': 'reg-pk-108',
-              'athleteId': 'ath-pk-108',
-              'athleteName': 'Asadullah Khan',
-              'clubName': 'Rawalpindi Forge • Rawalpindi',
-              'categoryLabel': pickDiv(2),
-              'weightClass': '80 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1810,
-              'prKg': 74.0,
-              'maxLiftKg': 83.0,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 79.1,
-              'guestCount': 2,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-108',
-                eventId: id,
-                athleteId: 'ath-pk-108',
-                athleteName: 'Asadullah Khan',
-                categoryLabel: pickDiv(2),
-                guestCount: 2,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-108',
-                athleteName: 'Asadullah Khan',
-              ),
-            },
-            {
-              'id': 'reg-pk-109',
-              'registrationId': 'reg-pk-109',
-              'athleteId': 'ath-pk-109',
-              'athleteName': 'Sikandar Hayat',
-              'clubName': 'Multan Royals • Multan',
-              'categoryLabel': pickDiv(2),
-              'weightClass': '80 kg',
-              'arm': 'Right Arm',
-              'eloRating': 1725,
-              'prKg': 71.0,
-              'maxLiftKg': 79.5,
-              'lossesCount': 0,
-              'weighInStatus': 'VERIFIED',
-              'measuredWeightKg': 78.6,
-              'guestCount': 0,
-              'qrCodePayload': buildTournamentRegistrationQr(
-                registrationId: 'reg-pk-109',
-                eventId: id,
-                athleteId: 'ath-pk-109',
-                athleteName: 'Sikandar Hayat',
-                categoryLabel: pickDiv(2),
-                guestCount: 0,
-              ),
-              'settingsIdentityQr': buildSettingsAthleteIdentityQr(
-                athleteId: 'ath-pk-109',
-                athleteName: 'Sikandar Hayat',
-              ),
-            },
-          ];
+        : <Map<String, dynamic>>[];
 
     Map<String, dynamic> card3MatchupsState;
     if (raw['card3MatchupsState'] is Map &&
@@ -733,6 +470,43 @@ class TournamentOfflineStore {
               return item;
             }).toList();
             await hive.cacheData(opKey, updatedOpList);
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  /// Permanently deletes a tournament from memory, the global released store,
+  /// and the operator's local drafts/tournaments cache.
+  static Future<void> deleteTournament({
+    HiveStorage? hive,
+    required String tournamentId,
+    String? operatorId,
+  }) async {
+    _memoryReleasedTournaments.remove(tournamentId);
+    if (hive != null) {
+      try {
+        final cached = hive.getCachedData(_globalReleasedKey);
+        if (cached is List) {
+          final updated = cached.where((item) {
+            if (item is Map) {
+              return item['id']?.toString() != tournamentId;
+            }
+            return true;
+          }).toList();
+          await hive.cacheData(_globalReleasedKey, updated);
+        }
+        if (operatorId != null && operatorId.isNotEmpty) {
+          final opKey = 'operator_step1_tournaments_$operatorId';
+          final rawOpList = hive.getCachedData(opKey);
+          if (rawOpList is List) {
+            final updatedOp = rawOpList.where((item) {
+              if (item is Map) {
+                return item['id']?.toString() != tournamentId;
+              }
+              return true;
+            }).toList();
+            await hive.cacheData(opKey, updatedOp);
           }
         }
       } catch (_) {}

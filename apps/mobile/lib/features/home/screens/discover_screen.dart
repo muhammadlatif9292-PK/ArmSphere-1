@@ -1019,7 +1019,70 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   /// Sanctioning Organizations & Leagues Carousel Section
   Widget _buildOrganizationsSection(BuildContext context) {
-    final orgs = OrganizationRepository.canonicalOrganizations;
+    final orgsAsync = ref.watch(allOrganizationsProvider);
+    final orgs = orgsAsync.valueOrNull ?? const [];
+    if (orgs.isEmpty) {
+      return _FramedDirectorySection(
+        title: 'Sanctioning Organizations & Leagues',
+        subtitle: 'Official federations, promotions & championship bodies',
+        icon: Icons.shield_outlined,
+        accentColor: AppTheme.goldPrimary,
+        child: ElevatedActionCard(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                ),
+                child: const Icon(Icons.shield_outlined, color: AppTheme.goldPrimary, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'No Sanctioned Federations Yet',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'Register your armwrestling organization to sanction tournaments.',
+                      style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/organizations/create');
+                      },
+                      child: const Text(
+                        '+ Register Organization →',
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontDisplay,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11.5,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return _FramedDirectorySection(
       title: 'Sanctioning Organizations & Leagues',
       subtitle: 'Official federations, promotions & championship bodies',

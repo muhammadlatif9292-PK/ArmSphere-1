@@ -1375,6 +1375,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
+                  dropdownColor: const Color(0xFF131722),
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 8,
                   initialValue: selectedA,
                   isExpanded: true,
                   items: [
@@ -1396,6 +1399,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  dropdownColor: const Color(0xFF131722),
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 8,
                   initialValue: selectedB,
                   isExpanded: true,
                   items: [
@@ -1429,6 +1435,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 if (_tableCount > 1) ...[
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
+                    dropdownColor: const Color(0xFF131722),
+                    borderRadius: BorderRadius.circular(12),
+                    elevation: 8,
                     initialValue: selectedTable,
                     isExpanded: true,
                     items: [
@@ -1597,6 +1606,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
+                  dropdownColor: const Color(0xFF131722),
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 8,
                   initialValue: selectedA,
                   isExpanded: true,
                   items: [
@@ -1618,6 +1630,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  dropdownColor: const Color(0xFF131722),
+                  borderRadius: BorderRadius.circular(12),
+                  elevation: 8,
                   initialValue: selectedB,
                   isExpanded: true,
                   items: [
@@ -1650,6 +1665,9 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                 if (_tableCount > 1) ...[
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
+                    dropdownColor: const Color(0xFF131722),
+                    borderRadius: BorderRadius.circular(12),
+                    elevation: 8,
                     initialValue: selectedTable,
                     isExpanded: true,
                     items: [

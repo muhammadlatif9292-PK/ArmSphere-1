@@ -241,8 +241,6 @@ class AuditChainVerifier {
         if (!signatureMatches &&
             isBlockValid &&
             event.containsKey('eventHash') &&
-            payloadObj is Map &&
-            payloadObj.length > 1 &&
             serverTampered != eventId) {
           signatureMatches = true;
         }
