@@ -558,13 +558,13 @@ class EventQrPassportScreen extends ConsumerWidget {
                           size: 230,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       const Text(
-                        'Present this QR code at the Organization Weigh-In Desk for instant scale verification.',
+                        'Tap to enlarge QR • Hold to copy ID',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          fontSize: 11,
+                          color: AppTheme.textMuted,
                         ),
                       ),
                       const SizedBox(height: 16),

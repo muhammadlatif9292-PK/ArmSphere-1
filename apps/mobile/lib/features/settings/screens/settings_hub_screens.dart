@@ -76,10 +76,7 @@ class SettingsHubScreen extends ConsumerWidget {
                 ),
                 children: [
                   _sectionHeader(context, 'ATHLETE & OFFICIAL QR IDENTITY'),
-                  ElevatedActionCard(
-                    key: const ValueKey('settings_athlete_identity_qr_card'),
-                    borderColor: AppTheme.goldPrimary.withValues(alpha: 0.5),
-                    padding: const EdgeInsets.all(14),
+                  GestureDetector(
                     onTap: () {
                       HapticFeedback.selectionClick();
                       _showEnlargedQrDialog(context, settingsQrPayload, userName, userId);
@@ -95,7 +92,11 @@ class SettingsHubScreen extends ConsumerWidget {
                         ),
                       );
                     },
-                    child: Row(
+                    child: ElevatedActionCard(
+                      key: const ValueKey('settings_athlete_identity_qr_card'),
+                      borderColor: AppTheme.goldPrimary.withValues(alpha: 0.5),
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(6),
@@ -159,7 +160,8 @@ class SettingsHubScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppTheme.space20),
+                ),
+                const SizedBox(height: AppTheme.space20),
 
                   _sectionHeader(context, 'ACCOUNT'),
                   ElevatedActionCard(

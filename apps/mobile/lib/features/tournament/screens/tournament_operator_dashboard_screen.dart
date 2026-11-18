@@ -932,14 +932,13 @@ class _TournamentOperatorDashboardScreenState
 
     // 4. Invalidate relevant providers
     ref.invalidate(tournamentProvider);
-    ref.invalidate(discoverFeedProvider);
 
     // 5. Update state and notify operator
     if (mounted) {
       setState(() {
         if (_selectedTournamentId == tournamentId) {
           _selectedTournamentId = null;
-          _activeView = _OperatorSubView.mainHub;
+          _activeView = _OperatorSubView.mainList;
         }
       });
 
@@ -1975,6 +1974,9 @@ class _TournamentOperatorDashboardScreenState
     Map<String, dynamic> t, {
     required bool isCompleted,
   }) {
+    final operatorId = (t['organizerId'] ?? '').toString().trim().isNotEmpty
+        ? t['organizerId'].toString().trim()
+        : _resolveOperatorId(ref.read(authProvider).userProfile ?? const {});
     final isReleased = t['isReleased'] == true;
     final validation = _validateCard1(t);
     final isCard1Complete = validation['isComplete'] == true;
