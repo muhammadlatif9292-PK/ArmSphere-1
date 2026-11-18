@@ -23,6 +23,7 @@ import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
+import '../../tournament/services/tournament_offline_store.dart';
 
 /// Federation Discovery Segment Categories
 enum DiscoverCategory {
@@ -699,7 +700,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   ) {
     final query = _activeQuery.toLowerCase();
 
-    final allTournaments = tournamentsAsync.value ?? [];
+    final allTournaments = (tournamentsAsync.value ?? []).where((t) {
+      final id = (t['id'] ?? '').toString();
+      if (TournamentOfflineStore.isTournamentDeleted(id)) return false;
+      final status = (t['status'] ?? '').toString().toUpperCase();
+      return status != 'CANCELLED' && status != 'DELETED';
+    }).toList();
     final matchingTournaments = allTournaments.where((t) {
       final name = (t['name'] ?? '').toString().toLowerCase();
       final location = (t['location'] ?? '').toString().toLowerCase();
@@ -920,8 +926,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     final feedTournaments = (feed['upcomingTournaments'] as List?) ?? [];
     final providerTournaments = tournamentsAsync.value ?? [];
-    final tournaments =
+    final rawTournaments =
         feedTournaments.isNotEmpty ? feedTournaments : providerTournaments;
+    final tournaments = rawTournaments.where((t) {
+      if (t is! Map) return false;
+      final id = (t['id'] ?? '').toString();
+      if (TournamentOfflineStore.isTournamentDeleted(id)) return false;
+      final status = (t['status'] ?? '').toString().toUpperCase();
+      return status != 'CANCELLED' && status != 'DELETED';
+    }).toList();
 
     final venues = venuesAsync.value ?? [];
 

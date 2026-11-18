@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'dio_client.dart';
 import '../storage/hive_storage.dart';
 import '../utils/error_formatter.dart';
+import '../../features/tournament/services/tournament_offline_store.dart';
 
 /// Base Repository with support for retries, cancellation, and offline fallback
 abstract class BaseRepository {
@@ -700,12 +701,56 @@ class TournamentRepository extends BaseRepository {
   }
 
   Future<List<Map<String, dynamic>>> getTournaments({CancelToken? cancelToken}) async {
-    return executeRequest(
+    final list = await executeRequest(
       cacheKey: 'tournaments_list',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.get('/tournaments/events', cancelToken: token),
       parse: _unwrapList,
     );
+    return list.where((t) {
+      final id = (t['id'] ?? '').toString();
+      if (TournamentOfflineStore.isTournamentDeleted(id)) return false;
+      final status = (t['status'] ?? '').toString().toUpperCase();
+      return status != 'CANCELLED' && status != 'DELETED';
+    }).toList();
+  }
+
+  Future<Map<String, dynamic>> deleteEvent({
+    required String eventId,
+    CancelToken? cancelToken,
+  }) async {
+    await hiveStorage.evictCache('tournaments_list');
+    await hiveStorage.evictCache('event_detail_$eventId');
+    try {
+      final cached = hiveStorage.getCachedData('tournaments_list');
+      if (cached is List) {
+        final filtered = cached
+            .where((e) => e is Map && e['id']?.toString() != eventId)
+            .toList();
+        await hiveStorage.cacheData('tournaments_list', filtered);
+      }
+    } catch (_) {}
+
+    try {
+      final response = await dioClient.dio.delete(
+        '/tournaments/events/$eventId',
+        cancelToken: cancelToken,
+      );
+      return _unwrapMap(response.data);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        try {
+          final res2 = await dioClient.dio.delete(
+            '/tournaments/$eventId',
+            cancelToken: cancelToken,
+          );
+          return _unwrapMap(res2.data);
+        } catch (_) {}
+      }
+      return {'id': eventId, 'status': 'DELETED_LOCAL'};
+    } catch (_) {
+      return {'id': eventId, 'status': 'DELETED_LOCAL'};
+    }
   }
 
   Future<Map<String, dynamic>> getEventById({

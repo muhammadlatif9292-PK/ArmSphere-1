@@ -52,6 +52,20 @@ tournamentRouter.post(
   TournamentController.cancelEvent
 );
 
+tournamentRouter.delete(
+  "/events/:id",
+  authenticate,
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.deleteEvent
+);
+
+tournamentRouter.delete(
+  "/:id",
+  authenticate,
+  requireRole(UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.deleteEvent
+);
+
 tournamentRouter.post(
   "/events/:id/publish",
   authenticate,

@@ -184,6 +184,16 @@ export class TournamentController {
     }
   }
 
+  static async deleteEvent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const result = await TournamentService.deleteEvent(id, req.user!.id);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async publishEvent(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

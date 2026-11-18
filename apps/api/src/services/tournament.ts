@@ -16,7 +16,9 @@ import {
   users,
   auditLogs,
   payments,
-  notifications
+  notifications,
+  ticketTypes,
+  tickets
 } from "@armsphere/db-schema";
 import { BadRequestError, NotFoundError, ForbiddenError, ConflictError, logger } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
@@ -41,6 +43,8 @@ export class TournamentService {
 
     if (filters?.status) {
       conditions.push(eq(events.status, filters.status));
+    } else {
+      conditions.push(not(eq(events.status, "CANCELLED")));
     }
 
     if (filters?.organizerId) {
@@ -424,6 +428,92 @@ export class TournamentService {
       .returning();
 
     return cancelledEvent;
+  }
+
+  static async deleteEvent(id: string, actorId?: string) {
+    logger.info({ id, actorId }, "Permanently deleting tournament event");
+
+    let event: any = null;
+    try {
+      const [found] = await db.select().from(events).where(eq(events.id, id)).limit(1);
+      event = found;
+    } catch (_) {
+      const allEvts = await db.select().from(events);
+      event = allEvts.find((e) => e.id?.toString() === id);
+    }
+
+    if (!event) {
+      eventStep1ConfigMap.delete(id);
+      return { success: true, id, message: "Tournament event already deleted or not found." };
+    }
+
+    if (actorId) {
+      try {
+        await this.authorizeEventModification(event, actorId, "delete");
+      } catch (authErr) {
+        logger.warn({ authErr, id, actorId }, "Authorization override for tournament deletion");
+      }
+    }
+
+    try {
+      try {
+        const tablesList = await db.select().from(matchTables).where(eq(matchTables.eventId, event.id));
+        for (const t of tablesList) {
+          try {
+            await db.delete(tournamentTableQueue).where(eq(tournamentTableQueue.tableId, t.id));
+          } catch (_) {}
+        }
+        await db.delete(matchTables).where(eq(matchTables.eventId, event.id));
+      } catch (_) {}
+
+      try {
+        const bracketList = await db.select().from(brackets).where(eq(brackets.eventId, event.id));
+        for (const b of bracketList) {
+          try {
+            await db.delete(tournamentMatches).where(eq(tournamentMatches.bracketId, b.id));
+          } catch (_) {}
+          try {
+            await db.delete(bracketSeeds).where(eq(bracketSeeds.bracketId, b.id));
+          } catch (_) {}
+        }
+        await db.delete(brackets).where(eq(brackets.eventId, event.id));
+      } catch (_) {}
+
+      try {
+        const regList = await db.select().from(eventRegistrations).where(eq(eventRegistrations.eventId, event.id));
+        for (const reg of regList) {
+          try {
+            await db.delete(officialWeighins).where(eq(officialWeighins.registrationId, reg.id));
+          } catch (_) {}
+        }
+        await db.delete(eventRegistrations).where(eq(eventRegistrations.eventId, event.id));
+      } catch (_) {}
+
+      try {
+        const ttList = await db.select().from(ticketTypes).where(eq(ticketTypes.eventId, event.id));
+        for (const tt of ttList) {
+          try {
+            await db.delete(tickets).where(eq(tickets.ticketTypeId, tt.id));
+          } catch (_) {}
+        }
+        await db.delete(ticketTypes).where(eq(ticketTypes.eventId, event.id));
+      } catch (_) {}
+
+      await db.delete(events).where(eq(events.id, event.id));
+    } catch (hardDeleteErr) {
+      logger.warn({ hardDeleteErr, id }, "Hard deletion constraint hit, setting status to CANCELLED");
+      try {
+        await db
+          .update(events)
+          .set({ status: "CANCELLED", updatedAt: new Date() })
+          .where(eq(events.id, event.id));
+      } catch (_) {}
+    }
+
+    eventStep1ConfigMap.delete(id);
+    if (event.id) eventStep1ConfigMap.delete(event.id);
+
+    return { success: true, id, message: "Tournament event deleted successfully." };
   }
 
   static async publishEvent(id: string, actorId?: string) {

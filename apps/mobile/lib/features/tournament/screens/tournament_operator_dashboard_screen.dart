@@ -901,12 +901,16 @@ class _TournamentOperatorDashboardScreenState
 
     HapticFeedback.heavyImpact();
 
-    // 1. Remove from operator local map and persist
+    // 1. Remove from all operator local maps in memory and persist
+    for (final key in _operatorDraftStore.keys.toList()) {
+      _operatorDraftStore[key]?.remove(tournamentId);
+      await _persistOperatorLocalMap(key);
+    }
     final opMap = _loadOperatorLocalMap(operatorId);
     opMap.remove(tournamentId);
     await _persistOperatorLocalMap(operatorId);
 
-    // 2. Remove from global released store and Hive
+    // 2. Remove from global released store, Hive, and persistent tombstones
     final hive = ref.read(hiveStorageProvider);
     await TournamentOfflineStore.deleteTournament(
       hive: hive,
@@ -914,21 +918,26 @@ class _TournamentOperatorDashboardScreenState
       operatorId: operatorId,
     );
 
-    // 3. Queue offline sync / send backend delete if available
+    // 3. Immediately send DELETE to backend repository (with offline fallback)
     try {
-      await hive.enqueueAction(
-        actionType: 'DELETE_TOURNAMENT',
-        endpoint: '/tournaments/$tournamentId',
-        payload: {
-          'id': tournamentId,
-          'organizerId': operatorId,
-          'deletedAt': DateTime.now().toUtc().toIso8601String(),
-        },
-        method: 'DELETE',
-        idempotencyKey: 'idem_del_tourney_$tournamentId',
-      );
-      ref.read(offlineSyncManagerProvider).syncQueue();
-    } catch (_) {}
+      final repo = ref.read(tournamentRepositoryProvider);
+      await repo.deleteEvent(eventId: tournamentId);
+    } catch (_) {
+      try {
+        await hive.enqueueAction(
+          actionType: 'DELETE_TOURNAMENT',
+          endpoint: '/tournaments/events/$tournamentId',
+          payload: {
+            'id': tournamentId,
+            'organizerId': operatorId,
+            'deletedAt': DateTime.now().toUtc().toIso8601String(),
+          },
+          method: 'DELETE',
+          idempotencyKey: 'idem_del_tourney_$tournamentId',
+        );
+        ref.read(offlineSyncManagerProvider).syncQueue();
+      } catch (_) {}
+    }
 
     // 4. Invalidate relevant providers
     ref.invalidate(tournamentProvider);
@@ -1108,11 +1117,17 @@ class _TournamentOperatorDashboardScreenState
         authState.activeRole ?? profile['role']?.toString() ?? 'TOURNAMENT_OPERATOR';
 
     final permittedServer = serverEvents
-        .where((t) => AdminPermissions.canOperateEvent(
-              activeRole: effectiveRole,
-              userProfile: profile,
-              event: t,
-            ))
+        .where((t) {
+          final id = (t['id'] ?? '').toString();
+          if (TournamentOfflineStore.isTournamentDeleted(id)) return false;
+          final status = (t['status'] ?? '').toString().toUpperCase();
+          if (status == 'CANCELLED' || status == 'DELETED') return false;
+          return AdminPermissions.canOperateEvent(
+            activeRole: effectiveRole,
+            userProfile: profile,
+            event: t,
+          );
+        })
         .toList();
 
     final localMap = _loadOperatorLocalMap(operatorId);
@@ -1120,7 +1135,10 @@ class _TournamentOperatorDashboardScreenState
 
     for (final s in permittedServer) {
       final norm = _normalizeTournamentRecord(s, operatorId);
-      combinedById[norm['id'].toString()] = norm;
+      final id = norm['id'].toString();
+      if (!TournamentOfflineStore.isTournamentDeleted(id)) {
+        combinedById[id] = norm;
+      }
     }
 
     // Overlay local offline drafts & edits so zero input is ever lost,
@@ -1131,7 +1149,13 @@ class _TournamentOperatorDashboardScreenState
     } catch (_) {}
 
     for (final entry in localMap.entries) {
+      if (TournamentOfflineStore.isTournamentDeleted(entry.key)) continue;
       var norm = _normalizeTournamentRecord(entry.value, operatorId);
+      final id = norm['id']?.toString() ?? entry.key;
+      if (TournamentOfflineStore.isTournamentDeleted(id)) continue;
+      final status = (norm['status'] ?? '').toString().toUpperCase();
+      if (status == 'CANCELLED' || status == 'DELETED') continue;
+
       if (norm['isReleased'] == true) {
         final storeCopy = TournamentOfflineStore.getReleasedTournamentById(
           hive: hive,
@@ -1153,7 +1177,9 @@ class _TournamentOperatorDashboardScreenState
       combinedById[entry.key] = norm;
     }
 
-    return combinedById.values.toList();
+    return combinedById.values
+        .where((t) => !TournamentOfflineStore.isTournamentDeleted(t['id']?.toString()))
+        .toList();
   }
 
   Widget _buildSingleBackNavButton(BuildContext context) {

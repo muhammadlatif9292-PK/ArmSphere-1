@@ -152,6 +152,21 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
     }
   }
 
+  Future<bool> deleteEvent({
+    required String eventId,
+  }) async {
+    try {
+      final repo = ref.read(tournamentRepositoryProvider);
+      await repo.deleteEvent(eventId: eventId);
+      _refreshEventScopes(eventId);
+      ref.invalidateSelf();
+      return true;
+    } catch (_) {
+      ref.invalidateSelf();
+      return false;
+    }
+  }
+
   Future<bool> confirmManualPayment({
     required String registrationId,
     required String eventId,

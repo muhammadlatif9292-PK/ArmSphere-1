@@ -38,6 +38,7 @@ class RefereePreMatchValidationResult {
 /// - Athlete & Spectator Role (Released Tournament Discovery, Details & Matchups Tabs, Offline Apply + QR, Spectator Pass & Verification)
 class TournamentOfflineStore {
   static const String _globalReleasedKey = 'global_released_tournaments_v1';
+  static const String _deletedTombstonesKey = 'deleted_tournament_tombstones_v1';
   static const String _submittedMatchLocksKey =
       'referee_submitted_match_locks_v1';
   static const String _localSpectatorPassesKey = 'local_spectator_passes_v1';
@@ -47,6 +48,30 @@ class TournamentOfflineStore {
   static final Set<String> _memorySubmittedMatchLocks = <String>{};
   static final List<Map<String, dynamic>> _memorySpectatorPasses =
       <Map<String, dynamic>>[];
+  static final Set<String> _deletedTournamentIds = <String>{};
+
+  /// Loads persisted tombstone IDs from Hive cache to permanently filter deleted events.
+  static void _ensureTombstonesLoaded(HiveStorage? hive) {
+    if (hive != null && _deletedTournamentIds.isEmpty) {
+      try {
+        final cached = hive.getCachedData(_deletedTombstonesKey);
+        if (cached is List) {
+          for (final item in cached) {
+            final s = item?.toString().trim() ?? '';
+            if (s.isNotEmpty) {
+              _deletedTournamentIds.add(s);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  /// Returns true if a tournament has been permanently deleted.
+  static bool isTournamentDeleted(String? id) {
+    if (id == null || id.trim().isEmpty) return false;
+    return _deletedTournamentIds.contains(id.trim());
+  }
 
   /// Generates the official Athlete Identity QR string shown in Settings & Profile.
   static String buildSettingsAthleteIdentityQr({
@@ -107,8 +132,10 @@ class TournamentOfflineStore {
 
   /// Returns true if and only if the tournament is Released / Scheduled (NEVER an unreleased operator draft).
   static bool isReleasedTournament(Map<String, dynamic> t) {
+    final id = (t['id'] ?? '').toString();
+    if (isTournamentDeleted(id)) return false;
     final status = (t['status'] ?? '').toString().toUpperCase();
-    if (status == 'DRAFT' || status == 'UNRELEASED' || status == 'CANCELLED') {
+    if (status == 'DRAFT' || status == 'UNRELEASED' || status == 'CANCELLED' || status == 'DELETED') {
       return false;
     }
     if (t['isReleased'] == false) return false;
@@ -121,6 +148,7 @@ class TournamentOfflineStore {
   /// athletes, awards, and spectator settings so Operator, Referee, and Athlete roles
   /// work immediately both online and 100% offline.
   static void _ensureCanonicalReleasedTournamentsSeeded(HiveStorage? hive) {
+    _ensureTombstonesLoaded(hive);
     if (_memoryReleasedTournaments.isEmpty && hive != null) {
       try {
         final cached = hive.getCachedData(_globalReleasedKey);
@@ -129,7 +157,7 @@ class TournamentOfflineStore {
             if (item is Map) {
               final map = Map<String, dynamic>.from(item);
               final id = map['id']?.toString() ?? '';
-              if (id.isNotEmpty && isReleasedTournament(map)) {
+              if (id.isNotEmpty && !isTournamentDeleted(id) && isReleasedTournament(map)) {
                 _memoryReleasedTournaments[id] = _ensureNormalizedTournament(map);
               }
             }
@@ -483,31 +511,66 @@ class TournamentOfflineStore {
     required String tournamentId,
     String? operatorId,
   }) async {
-    _memoryReleasedTournaments.remove(tournamentId);
+    final cleanId = tournamentId.trim();
+    if (cleanId.isEmpty) return;
+
+    _ensureTombstonesLoaded(hive);
+    _deletedTournamentIds.add(cleanId);
+    _memoryReleasedTournaments.remove(cleanId);
+
     if (hive != null) {
       try {
+        await hive.cacheData(_deletedTombstonesKey, _deletedTournamentIds.toList());
+
+        // 1. Evict and purge from 'tournaments_list'
+        final cachedTourneys = hive.getCachedData('tournaments_list');
+        if (cachedTourneys is List) {
+          final updatedTourneys = cachedTourneys.where((e) {
+            if (e is Map) {
+              return e['id']?.toString() != cleanId;
+            }
+            return true;
+          }).toList();
+          await hive.cacheData('tournaments_list', updatedTourneys);
+        }
+        await hive.evictCache('event_detail_$cleanId');
+
+        // 2. Remove from global released store
         final cached = hive.getCachedData(_globalReleasedKey);
         if (cached is List) {
           final updated = cached.where((item) {
             if (item is Map) {
-              return item['id']?.toString() != tournamentId;
+              return item['id']?.toString() != cleanId;
             }
             return true;
           }).toList();
           await hive.cacheData(_globalReleasedKey, updated);
         }
+
+        // 3. Remove from operator's local drafts cache
         if (operatorId != null && operatorId.isNotEmpty) {
           final opKey = 'operator_step1_tournaments_$operatorId';
           final rawOpList = hive.getCachedData(opKey);
           if (rawOpList is List) {
             final updatedOp = rawOpList.where((item) {
               if (item is Map) {
-                return item['id']?.toString() != tournamentId;
+                return item['id']?.toString() != cleanId;
               }
               return true;
             }).toList();
             await hive.cacheData(opKey, updatedOp);
           }
+        }
+        final defaultKey = 'operator_step1_tournaments_operator_default';
+        final rawDefaultList = hive.getCachedData(defaultKey);
+        if (rawDefaultList is List) {
+          final updatedDef = rawDefaultList.where((item) {
+            if (item is Map) {
+              return item['id']?.toString() != cleanId;
+            }
+            return true;
+          }).toList();
+          await hive.cacheData(defaultKey, updatedDef);
         }
       } catch (_) {}
     }
@@ -519,19 +582,19 @@ class TournamentOfflineStore {
     List<Map<String, dynamic>> serverEvents = const [],
     List<Map<String, dynamic>> remoteEvents = const [],
   }) {
+    _ensureTombstonesLoaded(hive);
     _ensureCanonicalReleasedTournamentsSeeded(hive);
     final mergedRemote = <Map<String, dynamic>>[...serverEvents, ...remoteEvents];
     for (final r in mergedRemote) {
-      if (!isReleasedTournament(r)) continue;
       final id = r['id']?.toString() ?? '';
-      if (id.isEmpty) continue;
+      if (id.isEmpty || isTournamentDeleted(id) || !isReleasedTournament(r)) continue;
       // Preserve locally updated tournament state if already present in memory
       if (!_memoryReleasedTournaments.containsKey(id)) {
         _memoryReleasedTournaments[id] = _ensureNormalizedTournament(r);
       }
     }
     return _memoryReleasedTournaments.values
-        .where(isReleasedTournament)
+        .where((t) => !isTournamentDeleted(t['id']?.toString()) && isReleasedTournament(t))
         .toList();
   }
 
@@ -550,7 +613,7 @@ class TournamentOfflineStore {
     );
     final cleanOrgName = (organizationName ?? '').trim().toLowerCase();
     final filtered = all.where((t) {
-      if (!isReleasedTournament(t)) return false;
+      if (!isReleasedTournament(t) || isTournamentDeleted(t['id']?.toString())) return false;
       final orgId = (t['organizationId'] ?? '').toString();
       final tOrgName = (t['organizationName'] ?? '').toString().toLowerCase();
       return orgId.isEmpty ||
@@ -558,7 +621,7 @@ class TournamentOfflineStore {
           t['id'].toString().startsWith(organizationId) ||
           (cleanOrgName.isNotEmpty && tOrgName.contains(cleanOrgName));
     }).toList();
-    return filtered.isNotEmpty ? filtered : all.where(isReleasedTournament).toList();
+    return filtered.isNotEmpty ? filtered : all.where((t) => !isTournamentDeleted(t['id']?.toString()) && isReleasedTournament(t)).toList();
   }
 
   /// Resolves a single Released Tournament by ID with full matchups, athletes, and awards.
@@ -568,22 +631,27 @@ class TournamentOfflineStore {
     List<Map<String, dynamic>> serverEvents = const [],
     Map<String, dynamic>? fallbackEvent,
   }) {
+    _ensureTombstonesLoaded(hive);
+    if (isTournamentDeleted(tournamentId)) return null;
     _ensureCanonicalReleasedTournamentsSeeded(hive);
     for (final s in serverEvents) {
       if (!isReleasedTournament(s)) continue;
       final sId = (s['id'] ?? '').toString();
-      if (sId.isNotEmpty) {
+      if (sId.isNotEmpty && !isTournamentDeleted(sId)) {
         _memoryReleasedTournaments[sId] = _ensureNormalizedTournament(s);
       }
     }
     if (_memoryReleasedTournaments.containsKey(tournamentId)) {
-      return _ensureNormalizedTournament(_memoryReleasedTournaments[tournamentId]!);
+      final t = _memoryReleasedTournaments[tournamentId]!;
+      if (isTournamentDeleted(t['id']?.toString())) return null;
+      return _ensureNormalizedTournament(t);
     }
     if (fallbackEvent != null && fallbackEvent.isNotEmpty) {
       final normalized = _ensureNormalizedTournament({
         ...fallbackEvent,
         'id': tournamentId,
       });
+      if (isTournamentDeleted(normalized['id']?.toString())) return null;
       _memoryReleasedTournaments[tournamentId] = normalized;
       return normalized;
     }
