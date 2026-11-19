@@ -136,7 +136,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('Renders TournamentOperatorDashboardScreen for TOURNAMENT_OPERATOR role', (WidgetTester tester) async {
+    testWidgets('Decouples TOURNAMENT_OPERATOR and routes consumer home to AthleteDashboardScreen', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -156,40 +156,36 @@ void main() {
       );
 
       await tester.pump();
-      expect(find.byType(TournamentOperatorDashboardScreen), findsOneWidget);
-      expect(find.byType(AthleteDashboardScreen), findsNothing);
+      expect(find.byType(AthleteDashboardScreen), findsOneWidget);
+      expect(find.byType(TournamentOperatorDashboardScreen), findsNothing);
       expect(find.byType(RefereeDashboardScreen), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
 
     testWidgets(
-      'Isolates TournamentOperatorDashboardScreen events per account so switching to another account hides previous account events',
+      'Isolates TournamentOperatorDashboardScreen events per organization so other organization events are hidden',
       (WidgetTester tester) async {
         final sharedEvents = [
           {
             'id': 'evt_account_a',
             'name': 'Account A Exclusive Cup',
             'status': 'PUBLISHED',
-            'organizerId': 'user_a',
+            'organizationId': 'org_a',
             'city': 'Lahore',
             'province': 'Punjab',
           },
         ];
 
-        // Log in as Account B in Organization/Tournament Operator role: must NOT see Account A's event
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
               authProvider.overrideWith((ref) => TestAuthNotifier(
                     AuthState(
                       status: AuthStatus.authenticated,
-                      activeRole: 'ORGANIZATION_LEADER',
-                      verifiedRoles: const ['ATHLETE', 'ORGANIZATION_LEADER'],
                       userProfile: const {
                         'id': 'user_b',
                         'displayName': 'Operator B',
-                        'role': 'ORGANIZATION_LEADER',
                       },
                     ),
                   )),
@@ -197,7 +193,12 @@ void main() {
               disputeProvider.overrideWith(() => FakeDisputeNotifier()),
             ],
             child: const MaterialApp(
-              home: Scaffold(body: RoleAwareHomeScreen()),
+              home: Scaffold(
+                body: TournamentOperatorDashboardScreen(
+                  organizationId: 'org_b',
+                  organizationName: 'Federation B',
+                ),
+              ),
             ),
           ),
         );
@@ -205,7 +206,6 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(TournamentOperatorDashboardScreen), findsOneWidget);
         expect(find.text('Account A Exclusive Cup'), findsNothing);
-        expect(find.text('No Tournaments Created Yet'), findsOneWidget);
 
         await tester.pumpWidget(const SizedBox());
         await tester.pump();
