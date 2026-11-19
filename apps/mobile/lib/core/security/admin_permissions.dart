@@ -51,13 +51,11 @@ class AdminPermissions {
     'SUPPORT_AGENT',
   };
 
-  /// All canonical roles in the ArmSphere Federation ecosystem.
+  /// Personal user roles selectable in Account Roles & Persona switcher.
+  /// Organization/Tournament Operator is decoupled into the standalone Organization Portal.
   static const List<String> allFederationRoles = <String>[
     'ATHLETE',
     'REFEREE',
-    'TOURNAMENT_OPERATOR',
-    'ORGANIZATION_LEADER',
-    'ORGANIZATION',
     'SUPPORT_AGENT',
     'COMPLIANCE_OFFICER',
     'PROVINCIAL_DIRECTOR',
@@ -65,8 +63,9 @@ class AdminPermissions {
     'SYSTEM_ADMIN',
   ];
 
-  /// Operator & Organization roles capable of running tournament war rooms when active.
+  /// Institutional / Operator roles capable of running tournament war rooms via Organization Portal or Director oversight.
   static const Set<String> operatorRoles = <String>{
+    'ORGANIZATION_OPERATOR',
     'OPERATOR',
     'ORGANIZATION',
     'ORGANIZATION_LEADER',
@@ -75,6 +74,21 @@ class AdminPermissions {
     'NATIONAL_DIRECTOR',
     'SYSTEM_ADMIN',
   };
+
+  /// Sanitizes a personal user's active role so institutional operator personas
+  /// (`TOURNAMENT_OPERATOR`, `ORGANIZATION_LEADER`, `OPERATOR`, `ORGANIZATION`)
+  /// never activate as a personal shell persona.
+  static String sanitizePersonalRole(String? role) {
+    if (role == null || role.trim().isEmpty) return 'ATHLETE';
+    final upper = role.trim().toUpperCase();
+    if (upper == 'TOURNAMENT_OPERATOR' ||
+        upper == 'ORGANIZATION_LEADER' ||
+        upper == 'OPERATOR' ||
+        upper == 'ORGANIZATION') {
+      return 'ATHLETE';
+    }
+    return upper;
+  }
 
   /// Returns `true` when [role] should present the 5-tab Native Admin Workspace
   /// (`Command`, `Roster`, `Arena Ops`, `Governance`, `Dossier`).
@@ -432,9 +446,9 @@ class AdminPermissions {
   static String roleContextDescription(String? role) {
     switch (role?.trim().toUpperCase()) {
       case 'ATHLETE':
-        return 'Switches your workspace and bottom navigation bar to Athlete Mode (Arena, Discover, Events, Community, Passport) for personal competition, PR logs, and ELO progression.';
+        return 'Compete in sanctioned tournaments, earn ELO, and climb rankings.';
       case 'REFEREE':
-        return 'Switches your workspace to the certified referee console, live table scorepads, foul tracking, and bout evidence submission.';
+        return 'Table-side match officiating, judging, and rule enforcement.';
       case 'TOURNAMENT_OPERATOR':
         return 'Switches your workspace to Tournament Operations, double-elimination brackets, weigh-in locks, and podium awards ceremonies.';
       case 'ORGANIZATION':

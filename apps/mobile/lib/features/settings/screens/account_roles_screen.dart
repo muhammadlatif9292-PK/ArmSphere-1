@@ -45,11 +45,32 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     return AdminPermissions.roleIcon(role);
   }
 
+  String _roleCardSubtitle(String role) {
+    final upper = role.trim().toUpperCase();
+    if (upper == 'ATHLETE') {
+      return 'Compete in sanctioned tournaments, earn ELO, and climb rankings.';
+    }
+    if (upper == 'REFEREE') {
+      return 'Table-side match officiating, judging, and rule enforcement.';
+    }
+    if (AdminPermissions.isAdminWorkspaceRole(upper)) {
+      return 'Federation governance, approvals, rankings oversight, and compliance.';
+    }
+    return _roleContextDescription(role);
+  }
+
   Future<void> _confirmAndSwitchRole(
     String targetRole,
     String currentActiveRole,
   ) async {
-    if (targetRole == currentActiveRole) return;
+    final upperTarget = targetRole.trim().toUpperCase();
+    if (upperTarget == 'TOURNAMENT_OPERATOR' ||
+        upperTarget == 'ORGANIZATION_LEADER' ||
+        upperTarget == 'OPERATOR' ||
+        upperTarget == 'ORGANIZATION') {
+      return;
+    }
+    if (upperTarget == currentActiveRole.trim().toUpperCase()) return;
     if (_isLoading) return;
 
     HapticFeedback.lightImpact();
@@ -164,6 +185,97 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
     }
   }
 
+  Widget _buildRoleSelectionCards(
+    List<String> verifiedRoles,
+    String activeRole,
+  ) {
+    final filteredRoles = verifiedRoles.where((r) {
+      final upper = r.trim().toUpperCase();
+      return upper != 'TOURNAMENT_OPERATOR' &&
+             upper != 'ORGANIZATION_LEADER' &&
+             upper != 'OPERATOR' &&
+             upper != 'ORGANIZATION';
+    }).toList();
+
+    if (filteredRoles.isEmpty) {
+      return const ElevatedActionCard(
+        padding: EdgeInsets.all(AppTheme.space16),
+        child: Text(
+          'No verified roles found for this account.',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+      );
+    }
+
+    return ElevatedActionCard(
+      padding: EdgeInsets.zero,
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: filteredRoles.length,
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+        itemBuilder: (context, index) {
+          final role = filteredRoles[index];
+          final isCurrentActive =
+              role.toUpperCase() == activeRole.toUpperCase();
+
+          return Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.space16,
+                vertical: AppTheme.space4,
+              ),
+              onTap: (isCurrentActive || _isLoading)
+                  ? null
+                  : () => _confirmAndSwitchRole(role, activeRole),
+              leading: Icon(
+                _roleIcon(role),
+                color: isCurrentActive
+                    ? AppTheme.goldPrimary
+                    : AppTheme.textSecondary,
+              ),
+              title: Text(
+                _formatRoleName(role),
+                style: TextStyle(
+                  fontWeight: isCurrentActive
+                      ? FontWeight.bold
+                      : FontWeight.w600,
+                  color: isCurrentActive
+                      ? AppTheme.textPrimary
+                      : AppTheme.textSecondary,
+                ),
+              ),
+              subtitle: Text(
+                _roleCardSubtitle(role),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              trailing: isCurrentActive
+                  ? const Icon(
+                      Icons.check_circle,
+                      color: AppTheme.success,
+                      size: 22,
+                    )
+                  : TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => _confirmAndSwitchRole(
+                                role,
+                                activeRole,
+                              ),
+                      child: const Text('Switch'),
+                    ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -172,15 +284,30 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         authState.userProfile?['isOnboarded'] == true ||
         authState.userProfile?['profile'] != null;
 
-    final List<String> verifiedRoles = rawVerified.isEmpty
+    final List<String> rawWithAthlete = rawVerified.isEmpty
         ? (hasAthleteEligibility ? const <String>['ATHLETE'] : const <String>[])
         : (rawVerified.contains('ATHLETE') || !hasAthleteEligibility
             ? rawVerified
             : <String>['ATHLETE', ...rawVerified]);
 
-    final activeRole = authState.activeRole ??
+    final List<String> verifiedRoles = rawWithAthlete.where((r) {
+      final upper = r.trim().toUpperCase();
+      return upper != 'TOURNAMENT_OPERATOR' &&
+             upper != 'ORGANIZATION_LEADER' &&
+             upper != 'OPERATOR' &&
+             upper != 'ORGANIZATION';
+    }).toList();
+
+    final rawActiveRole = authState.activeRole ??
         (verifiedRoles.isNotEmpty ? verifiedRoles.first : 'ATHLETE');
-    final pendingApplications = authState.pendingRoleApplications;
+    final activeRole = AdminPermissions.sanitizePersonalRole(rawActiveRole);
+    final pendingApplications = authState.pendingRoleApplications.where((app) {
+      final r = (app['role'] ?? '').toString().trim().toUpperCase();
+      return r != 'TOURNAMENT_OPERATOR' &&
+             r != 'ORGANIZATION_LEADER' &&
+             r != 'OPERATOR' &&
+             r != 'ORGANIZATION';
+    }).toList();
     final bool isInAdminMode = AdminPermissions.isAdminWorkspaceRole(activeRole);
     final String? jurisdiction =
         AdminPermissions.resolveJurisdiction(authState.userProfile);
@@ -306,9 +433,9 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                         ],
                       ),
                       const SizedBox(height: AppTheme.space12),
-                      const Text(
-                        'Your active persona determines whether the 5-tab bottom navigation bar presents Athlete Mode (Arena, Discover, Events, Community, Passport) or Admin Mode (Command, Roster, Arena Ops, Governance, Dossier). Server authorization is strictly authoritative.',
-                        style: TextStyle(
+                      Text(
+                        _roleCardSubtitle(activeRole),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
                           height: 1.4,
@@ -336,89 +463,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                 ),
                 const SizedBox(height: AppTheme.space10),
 
-                if (verifiedRoles.isEmpty)
-                  const ElevatedActionCard(
-                    padding: EdgeInsets.all(AppTheme.space16),
-                    child: Text(
-                      'No verified roles found for this account.',
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  )
-                else
-                  ElevatedActionCard(
-                    padding: EdgeInsets.zero,
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: verifiedRoles.length,
-                      separatorBuilder: (_, __) =>
-                          const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                      itemBuilder: (context, index) {
-                        final role = verifiedRoles[index];
-                        final isCurrentActive =
-                            role.toUpperCase() == activeRole.toUpperCase();
-                        final isAdminRole =
-                            AdminPermissions.isAdminWorkspaceRole(role);
-
-                        return Material(
-                          type: MaterialType.transparency,
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppTheme.space16,
-                              vertical: AppTheme.space4,
-                            ),
-                            onTap: (isCurrentActive || _isLoading)
-                                ? null
-                                : () =>
-                                    _confirmAndSwitchRole(role, activeRole),
-                            leading: Icon(
-                              _roleIcon(role),
-                              color: isCurrentActive
-                                  ? AppTheme.goldPrimary
-                                  : AppTheme.textSecondary,
-                            ),
-                            title: Text(
-                              _formatRoleName(role),
-                              style: TextStyle(
-                                fontWeight: isCurrentActive
-                                    ? FontWeight.bold
-                                    : FontWeight.w600,
-                                color: isCurrentActive
-                                    ? AppTheme.textPrimary
-                                    : AppTheme.textSecondary,
-                              ),
-                            ),
-                            subtitle: Text(
-                              isCurrentActive
-                                  ? 'Current Active Persona'
-                                  : (isAdminRole
-                                      ? 'Admin Workspace Mode (5 Admin Tabs)'
-                                      : 'Verified federation grant'),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                            trailing: isCurrentActive
-                                ? const Icon(
-                                    Icons.check_circle,
-                                    color: AppTheme.success,
-                                    size: 22,
-                                  )
-                                : TextButton(
-                                    onPressed: _isLoading
-                                        ? null
-                                        : () => _confirmAndSwitchRole(
-                                              role,
-                                              activeRole,
-                                            ),
-                                    child: const Text('Switch'),
-                                  ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                _buildRoleSelectionCards(verifiedRoles, activeRole),
 
                 const SizedBox(height: AppTheme.space24),
 
@@ -510,14 +555,6 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                   fullWidth: true,
                   accentColor: AppTheme.goldPrimary,
                   onTap: () => context.push('/settings/roles/apply'),
-                ),
-                const SizedBox(height: AppTheme.space12),
-                CrystalActionButton(
-                  label: 'Register Sanctioning Organization',
-                  icon: Icons.shield_outlined,
-                  fullWidth: true,
-                  accentColor: AppTheme.cyan,
-                  onTap: () => context.push('/organizations/create'),
                 ),
                 const SizedBox(height: AppTheme.space16),
               ],

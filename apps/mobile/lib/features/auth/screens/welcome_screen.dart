@@ -33,26 +33,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     _RoleCardData(
       id: 'athlete',
       title: 'ATHLETE',
-      subtitle: 'Compete in brackets & rankings',
+      subtitle: 'Compete in sanctioned brackets & national rankings',
       icon: Icons.sports_kabaddi,
     ),
     _RoleCardData(
       id: 'referee',
       title: 'REFEREE',
-      subtitle: 'Table-side live officiating',
+      subtitle: 'Table-side certified match officiating & judging',
       icon: Icons.gavel_outlined,
-    ),
-    _RoleCardData(
-      id: 'organizer',
-      title: 'ORGANIZER',
-      subtitle: 'Sanctioned tournament brackets',
-      icon: Icons.event_available_outlined,
-    ),
-    _RoleCardData(
-      id: 'spectator',
-      title: 'SPECTATOR',
-      subtitle: 'Live tables, streams & community',
-      icon: Icons.visibility_outlined,
     ),
   ];
 
@@ -268,6 +256,82 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                                       ),
                                     ),
                                     child: const Text('I ALREADY HAVE AN ACCOUNT'),
+                                  ),
+
+                                  const SizedBox(height: 16),
+                                  TactilePressWrapper(
+                                    onTap: () {
+                                      HapticFeedback.mediumImpact();
+                                      context.push('/organization/portal');
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x4D04060B),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: const Color(0x73D4AF37),
+                                          width: 1.2,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 3.5,
+                                            height: 38,
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.goldPrimary,
+                                              borderRadius: BorderRadius.circular(2),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Container(
+                                            padding: const EdgeInsets.all(9),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.goldPrimary.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(10),
+                                              border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.4)),
+                                            ),
+                                            child: const Icon(
+                                              Icons.shield_outlined,
+                                              color: AppTheme.goldPrimary,
+                                              size: 22,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 14),
+                                          const Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'ORGANIZATION & FEDERATION PORTAL',
+                                                  style: TextStyle(
+                                                    fontFamily: 'Space Grotesk',
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 12.5,
+                                                    letterSpacing: 0.8,
+                                                    color: AppTheme.goldPrimary,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 2),
+                                                Text(
+                                                  'Sanctioning Bodies, Promoters & Floor Staff',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: AppTheme.textSecondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: AppTheme.goldPrimary,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),

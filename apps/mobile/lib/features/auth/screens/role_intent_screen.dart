@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/step_header.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
-import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
 import '../providers/auth_provider.dart';
@@ -43,20 +42,6 @@ class _RoleIntentScreenState extends ConsumerState<RoleIntentScreen> {
       icon: Icons.gavel_outlined,
       title: 'Officiate Matches',
       subtitle: 'Judge matches at sanctioned tournaments as a certified referee.',
-      requiresVerification: true,
-    ),
-    _IntentOption(
-      value: 'organizer',
-      icon: Icons.event_available_outlined,
-      title: 'Organize Tournaments',
-      subtitle: 'Create events, manage brackets, and run official weigh-ins.',
-      requiresVerification: true,
-    ),
-    _IntentOption(
-      value: 'organization_leader',
-      icon: Icons.account_balance_outlined,
-      title: 'Lead a Club or Federation',
-      subtitle: 'Manage rosters and represent your armwrestling organization.',
       requiresVerification: true,
     ),
   ];

@@ -63,7 +63,11 @@ import '../../features/admin/screens/admin_governance_screen.dart';
 import '../../features/admin/screens/admin_dossier_screen.dart';
 import '../../features/organization/screens/organization_profile_screen.dart';
 import '../../features/organization/screens/create_organization_screen.dart';
+import '../../features/organization/screens/organization_portal_entry_screen.dart';
+import '../../features/organization/screens/organization_onboarding_screen.dart';
+import '../../features/organization/screens/organization_deck_screen.dart';
 import '../../features/tournament/screens/event_qr_passport_screen.dart';
+import '../providers/organization_session_provider.dart';
 import '../security/admin_permissions.dart';
 import '../widgets/main_shell_screen.dart';
 import 'page_transitions.dart';
@@ -72,17 +76,6 @@ import 'page_transitions.dart';
 bool _isRefereeLandingRole(String? role) {
   const refereeRoles = {'REFEREE'};
   return role != null && refereeRoles.contains(role);
-}
-
-/// Roles that route to the tournament operator / organization dashboard.
-bool _isOperatorLandingRole(String? role) {
-  const operatorRoles = {
-    'OPERATOR',
-    'TOURNAMENT_OPERATOR',
-    'ORGANIZATION',
-    'ORGANIZATION_LEADER',
-  };
-  return role != null && operatorRoles.contains(role);
 }
 
 /// Roles that have permission to access Referee routes.
@@ -113,14 +106,16 @@ bool _canAccessGovernance(String? role) {
 
 String _resolveEffectiveUserRole(AuthState authState) {
   final profileRole = authState.userProfile?['role']?.toString();
-  return authState.activeRole?.toUpperCase() ??
+  final rawRole = authState.activeRole?.toUpperCase() ??
       (authState.verifiedRoles.length == 1
           ? authState.verifiedRoles.first.toUpperCase()
           : (profileRole?.toUpperCase() ?? 'ATHLETE'));
+  return AdminPermissions.sanitizePersonalRole(rawRole);
 }
 
 /// Role-aware personalized home dispatcher widget (Tab 0: `/home`).
 /// Renders the appropriate role-specific dashboard inside the persistent main shell.
+/// Strictly dispatches between Admin, Referee, and Athlete personal workspaces.
 class RoleAwareHomeScreen extends ConsumerWidget {
   const RoleAwareHomeScreen({super.key});
 
@@ -133,9 +128,6 @@ class RoleAwareHomeScreen extends ConsumerWidget {
     }
     if (_isRefereeLandingRole(userRole)) {
       return const RefereeDashboardScreen();
-    }
-    if (_isOperatorLandingRole(userRole)) {
-      return const TournamentOperatorDashboardScreen();
     }
     return const AthleteDashboardScreen();
   }
@@ -252,11 +244,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/register',
         '/forgot-password',
         '/reset-password',
+        '/organization/portal',
+        '/organization/onboarding',
+        '/organization/deck',
       };
+
+      final orgSession = ref.read(organizationSessionProvider);
+      final isOrgAuthenticated = orgSession.isAuthenticated;
 
       switch (status) {
         case AuthStatus.unauthenticated:
-          return publicRoutes.contains(location) ? null : '/welcome';
+          if (publicRoutes.contains(location) || location.startsWith('/organization/')) {
+            return null;
+          }
+          if (isOrgAuthenticated &&
+              (location.startsWith('/tournament') || location.startsWith('/weigh-in'))) {
+            return null;
+          }
+          return '/welcome';
 
         case AuthStatus.mfaRequired:
           return location.startsWith('/mfa/verify') ? null : '/mfa/verify';
@@ -281,10 +286,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           
           if (atEntry) {
             // Check active client persona first; if only 1 role exists use that, otherwise default to ATHLETE
-            final activeRole = authState.activeRole?.toUpperCase() ??
+            final rawActiveRole = authState.activeRole?.toUpperCase() ??
                 (authState.verifiedRoles.length == 1
                     ? authState.verifiedRoles.first.toUpperCase()
                     : 'ATHLETE');
+            final activeRole = AdminPermissions.sanitizePersonalRole(rawActiveRole);
 
             if (_isRefereeLandingRole(activeRole)) {
               return '/referee/dashboard';
@@ -295,8 +301,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           }
           
           // Enforce server-side role-based boundary protection for non-entry routes:
-          final activeRole = authState.activeRole?.toUpperCase();
-          final profileRole = authState.userProfile?['role']?.toString().toUpperCase();
+          final activeRole = authState.activeRole != null
+              ? AdminPermissions.sanitizePersonalRole(authState.activeRole)
+              : null;
+          final profileRole = authState.userProfile?['role'] != null
+              ? AdminPermissions.sanitizePersonalRole(authState.userProfile?['role']?.toString())
+              : null;
           final effectiveRole = activeRole ?? profileRole ?? 'ATHLETE';
           final allUserRoles = <String>{
             ...authState.verifiedRoles.map((r) => r.toUpperCase()),
@@ -320,7 +330,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               location.contains('/operations?');
           final isWeighInRoute = location.endsWith('/weigh-in') ||
               location.contains('/weigh-in?');
-          if ((isOperationsRoute || isWeighInRoute) &&
+          if (!isOrgAuthenticated &&
+              (isOperationsRoute || isWeighInRoute) &&
               (effectiveRole == 'ATHLETE' ||
                   (!AdminPermissions.isOperatorRole(effectiveRole) &&
                       !(isWeighInRoute && effectiveRole == 'REFEREE')))) {
@@ -1526,9 +1537,38 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/organizations/create',
         name: 'create_organization',
+        redirect: (context, state) {
+          // Regular athletes cannot register organizations.
+          // Redirect to the organizations directory.
+          return '/organizations';
+        },
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
           child: const CreateOrganizationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/organization/portal',
+        name: 'organization_portal_entry',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const OrganizationPortalEntryScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/organization/onboarding',
+        name: 'organization_onboarding',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const OrganizationOnboardingScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/organization/deck',
+        name: 'organization_deck',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const OrganizationDeckScreen(),
         ),
       ),
       GoRoute(

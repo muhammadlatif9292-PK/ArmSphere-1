@@ -1069,24 +1069,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     ),
                     const SizedBox(height: 3),
                     const Text(
-                      'Register your armwrestling organization to sanction tournaments.',
+                      'Official sanctioning bodies and regional leagues recognized across Pakistan.',
                       style: TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/organizations/create');
-                      },
-                      child: const Text(
-                        '+ Register Organization →',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 11.5,
-                          color: AppTheme.goldPrimary,
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -1219,30 +1203,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ),
                 );
               },
-            ),
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () {
-                HapticFeedback.selectionClick();
-                context.push('/organizations/create');
-              },
-              icon: const Icon(
-                Icons.add_moderator_rounded,
-                size: 15,
-                color: AppTheme.goldPrimary,
-              ),
-              label: const Text(
-                'Register Sanctioning Organization',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.goldPrimary,
-                ),
-              ),
             ),
           ),
         ],

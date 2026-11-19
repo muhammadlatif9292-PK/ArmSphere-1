@@ -87,7 +87,12 @@ governanceRouter.post(
 governanceRouter.get(
   "/audit/verify", 
   authenticate, 
-  requireRole(UserRole.SYSTEM_ADMIN),
+  requireRole(
+    UserRole.SYSTEM_ADMIN,
+    UserRole.NATIONAL_DIRECTOR,
+    UserRole.PROVINCIAL_DIRECTOR,
+    UserRole.COMPLIANCE_OFFICER
+  ),
   GovernanceController.verifyAuditLedger
 );
 

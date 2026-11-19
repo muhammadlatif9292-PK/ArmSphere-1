@@ -59,18 +59,9 @@ class _OrganizationsDirectoryScreenState
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: [
-          CrystalIconPillButton(
-            icon: Icons.add_moderator_rounded,
-            iconColor: AppTheme.goldPrimary,
-            tooltip: 'Submit Organization',
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              context.push('/organizations/create');
-            },
-          ),
-          const CrystalHomeButton(),
-          const SizedBox(width: 8),
+        actions: const [
+          CrystalHomeButton(),
+          SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -83,13 +74,9 @@ class _OrganizationsDirectoryScreenState
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 48),
               children: [
-                // Header CTA Banner for Promoters
+                // Read-Only Federation Directory Banner
                 ElevatedActionCard(
-                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.45),
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    context.push('/organizations/create');
-                  },
+                  borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
                   child: Row(
                     children: [
                       Container(
@@ -101,7 +88,7 @@ class _OrganizationsDirectoryScreenState
                           ),
                         ),
                         child: const Icon(
-                          Icons.shield_rounded,
+                          Icons.verified_user_rounded,
                           color: AppTheme.goldPrimary,
                           size: 24,
                         ),
@@ -112,7 +99,7 @@ class _OrganizationsDirectoryScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'HOST SANCTIONED TOURNAMENTS',
+                              'SANCTIONED FEDERATIONS DIRECTORY',
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 11,
@@ -123,7 +110,7 @@ class _OrganizationsDirectoryScreenState
                             ),
                             SizedBox(height: 3),
                             Text(
-                              'Register your Federation, League, or Promotion to sanction events, issue QR weigh-ins, and crown champions.',
+                              'Official governing bodies recognized by PAFF / IFA. Tournament operations are managed through the Organization Portal.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.textSecondary,
@@ -132,12 +119,6 @@ class _OrganizationsDirectoryScreenState
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 16,
-                        color: AppTheme.goldPrimary,
                       ),
                     ],
                   ),

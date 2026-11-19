@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { AdministrationController } from "../controllers/administration.js";
+import { OrganizationController } from "../controllers/organization.js";
 import { authenticate, requireRole } from "../middlewares/auth.js";
 import { UserRole } from "@armsphere/types";
 
@@ -282,6 +283,21 @@ adminRouter.post(
     UserRole.NATIONAL_DIRECTOR
   ),
   AdministrationController.grantUserRole
+);
+
+// Admin Organization Provisioning & Code Management
+adminRouter.post(
+  "/organizations",
+  authenticate,
+  requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR),
+  OrganizationController.adminCreate
+);
+
+adminRouter.post(
+  "/organizations/:id/rotate-code",
+  authenticate,
+  requireRole(UserRole.SYSTEM_ADMIN, UserRole.NATIONAL_DIRECTOR),
+  OrganizationController.adminRotateCode
 );
 
 export default adminRouter;

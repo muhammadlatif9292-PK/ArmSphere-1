@@ -257,6 +257,27 @@ export const tickets = pgTable("tickets", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  accessCodeHash: text("access_code_hash").notNull(),
+  presidentName: varchar("president_name", { length: 255 }),
+  foundationDate: timestamp("foundation_date"),
+  province: varchar("province", { length: 100 }).notNull(),
+  city: varchar("city", { length: 100 }),
+  country: varchar("country", { length: 50 }).notNull().default("PK"),
+  contactEmail: varchar("contact_email", { length: 255 }),
+  contactPhone: varchar("contact_phone", { length: 50 }),
+  websiteUrl: varchar("website_url", { length: 1024 }),
+  logoUrl: text("logo_url"),
+  sanctioningBody: varchar("sanctioning_body", { length: 255 }).default("WAF / IFA Affiliated"),
+  status: varchar("status", { length: 50 }).notNull().default("APPROVED"),
+  isOnboarded: boolean("is_onboarded").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const events = pgTable("events", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -272,6 +293,7 @@ export const events = pgTable("events", {
   status: varchar("status", { length: 50 }).notNull().default("DRAFT"),
   paymentQrImageUrl: varchar("payment_qr_image_url", { length: 1024 }),
   organizerId: uuid("organizer_id").references(() => users.id),
+  organizationId: uuid("organization_id").references(() => organizations.id),
   paymentMethod: varchar("payment_method", { length: 50 }).notNull().default("STRIPE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

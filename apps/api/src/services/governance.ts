@@ -169,51 +169,8 @@ export class GovernanceService {
     reason?: string; 
     totalEventsVerified: number; 
   }> {
-    const allEvents = await db
-      .select()
-      .from(auditEvents)
-      .orderBy(asc(auditEvents.createdAt));
-
-    let expectedParentHash = "0000000000000000000000000000000000000000000000000000000000000000";
-
-    for (let i = 0; i < allEvents.length; i++) {
-      const event = allEvents[i];
-
-      // 1. Check parent hash match
-      if (event.parentHash !== expectedParentHash) {
-        return {
-          isValid: false,
-          tamperedEventId: event.id,
-          reason: `Parent hash mismatch at index ${i}. Expected: ${expectedParentHash}, Found: ${event.parentHash}`,
-          totalEventsVerified: i,
-        };
-      }
-
-      // 2. Recompute hash
-      const payloadString = event.payload ? JSON.stringify(event.payload) : "";
-      const inputStr = `${event.parentHash}|${event.eventId}|${event.actorId || "SYSTEM"}|${event.entityType}|${event.entityId}|${event.action}|${payloadString}`;
-      const recalculatedHash = crypto
-        .createHash("sha256")
-        .update(inputStr)
-        .digest("hex");
-
-      if (event.eventHash !== recalculatedHash) {
-        return {
-          isValid: false,
-          tamperedEventId: event.id,
-          reason: `Hash signature invalid at index ${i}. Record was modified directly.`,
-          totalEventsVerified: i,
-        };
-      }
-
-      // Set parent hash for next round
-      expectedParentHash = event.eventHash;
-    }
-
-    return {
-      isValid: true,
-      totalEventsVerified: allEvents.length,
-    };
+    const { AdministrationService } = await import("./administration.js");
+    return AdministrationService.verifyImmutableAuditLedger();
   }
 
 

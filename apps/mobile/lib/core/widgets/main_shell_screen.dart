@@ -308,7 +308,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   String _resolveEffectiveRole(BuildContext context) {
     if (widget.activeRole != null && widget.activeRole!.trim().isNotEmpty) {
-      return widget.activeRole!.trim().toUpperCase();
+      return AdminPermissions.sanitizePersonalRole(widget.activeRole);
     }
     try {
       final container = ProviderScope.containerOf(context);
@@ -318,7 +318,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           (authState.verifiedRoles.length == 1
               ? authState.verifiedRoles.first
               : (profileRole ?? 'ATHLETE'));
-      return effectiveRole.trim().toUpperCase();
+      return AdminPermissions.sanitizePersonalRole(effectiveRole);
     } catch (_) {
       return (widget.isAdminModeOverride ?? false) ? 'SYSTEM_ADMIN' : 'ATHLETE';
     }

@@ -7,6 +7,7 @@ import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/storage/hive_storage.dart';
+import '../../../core/providers/organization_session_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
@@ -67,7 +68,16 @@ enum _OperatorSubView {
 ///    - Separate Awards & Prizes Sub-Screen with checkmark (✓) once configured
 ///    - "Release / Schedule" button
 class TournamentOperatorDashboardScreen extends ConsumerStatefulWidget {
-  const TournamentOperatorDashboardScreen({super.key});
+  final String? organizationId;
+  final String? organizationName;
+  final bool embeddedInOrganizationDeck;
+
+  const TournamentOperatorDashboardScreen({
+    super.key,
+    this.organizationId,
+    this.organizationName,
+    this.embeddedInOrganizationDeck = false,
+  });
 
   @override
   ConsumerState<TournamentOperatorDashboardScreen> createState() =>
@@ -85,7 +95,36 @@ class _TournamentOperatorDashboardScreenState
   // Local Offline-First Drafts & Tournaments Cache (scoped per operator ID)
   final Map<String, Map<String, Map<String, dynamic>>> _operatorDraftStore = {};
 
-  String _resolveOperatorId(Map<String, dynamic> profile) {
+  String? _effectiveOrgId(OrganizationSessionState orgSession) {
+    final explicit = widget.organizationId?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    if (orgSession.isAuthenticated &&
+        orgSession.orgId != null &&
+        orgSession.orgId!.trim().isNotEmpty) {
+      return orgSession.orgId!.trim();
+    }
+    return null;
+  }
+
+  String? _effectiveOrgName(OrganizationSessionState orgSession) {
+    final explicit = widget.organizationName?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    if (orgSession.isAuthenticated &&
+        orgSession.orgName != null &&
+        orgSession.orgName!.trim().isNotEmpty) {
+      return orgSession.orgName!.trim();
+    }
+    return null;
+  }
+
+  String _resolveOperatorId(
+    Map<String, dynamic> profile, [
+    OrganizationSessionState? orgSession,
+  ]) {
+    final orgId = orgSession != null ? _effectiveOrgId(orgSession) : widget.organizationId;
+    if (orgId != null && orgId.trim().isNotEmpty) {
+      return orgId.trim();
+    }
     return (profile['id'] ?? profile['userId'] ?? 'operator_default')
         .toString()
         .trim();
@@ -135,21 +174,26 @@ class _TournamentOperatorDashboardScreenState
     String operatorId,
     Map<String, dynamic> profile,
   ) {
+    final orgSession = ref.read(organizationSessionProvider);
+    final orgId = _effectiveOrgId(orgSession);
+    final orgName = _effectiveOrgName(orgSession);
     final now = DateTime.now();
     final start = now.add(const Duration(days: 14));
     final id = 'draft_${now.millisecondsSinceEpoch}';
     return <String, dynamic>{
       'id': id,
-      'organizerId': operatorId,
+      'organizerId': orgId ?? operatorId,
+      if (orgId != null) 'organizationId': orgId,
       'name': '',
-      'organizationName': (profile['organizationName'] ??
+      'organizationName': (orgName ??
+              profile['organizationName'] ??
               profile['displayName'] ??
               profile['name'] ??
               '')
           .toString(),
       'venue': '',
-      'city': (profile['city'] ?? 'Lahore').toString(),
-      'province': (profile['province'] ?? 'Punjab').toString(),
+      'city': (orgSession.city ?? profile['city'] ?? 'Lahore').toString(),
+      'province': (orgSession.province ?? profile['province'] ?? 'Punjab').toString(),
       'startDate': start.toIso8601String(),
       'endDate': start.add(const Duration(hours: 8)).toIso8601String(),
       'capacity': 64,
@@ -300,14 +344,21 @@ class _TournamentOperatorDashboardScreenState
             'entranceCheckInLog': <Map<String, dynamic>>[],
           };
 
+    final orgSession = ref.read(organizationSessionProvider);
+    final activeOrgId = _effectiveOrgId(orgSession);
+    final activeOrgName = _effectiveOrgName(orgSession);
     final normalizedBase = <String, dynamic>{
       ...merged,
       'id': (merged['id'] ?? 'draft_unknown').toString(),
-      'organizerId': (merged['organizerId'] ?? operatorId).toString(),
+      'organizerId': (merged['organizerId'] ?? activeOrgId ?? operatorId).toString(),
+      if ((merged['organizationId'] ?? activeOrgId) != null)
+        'organizationId': (merged['organizationId'] ?? activeOrgId).toString(),
       'name': (merged['name'] ?? '').toString(),
-      'organizationName': (merged['organizationName'] ??
-              (isReleased ? 'Sanctioned Federation Promotion' : ''))
-          .toString(),
+      'organizationName': (merged['organizationName'] != null &&
+              merged['organizationName'].toString().trim().isNotEmpty)
+          ? merged['organizationName'].toString()
+          : (activeOrgName ??
+              (isReleased ? 'Sanctioned Federation Promotion' : '')),
       'venue': (merged['venue'] ?? merged['city'] ?? '').toString(),
       'city': (merged['city'] ?? 'Lahore').toString(),
       'province': (merged['province'] ?? 'Punjab').toString(),
@@ -981,8 +1032,9 @@ class _TournamentOperatorDashboardScreenState
   Widget build(BuildContext context) {
     final tournamentsAsync = ref.watch(tournamentProvider);
     final authState = ref.watch(authProvider);
+    final orgSession = ref.watch(organizationSessionProvider);
     final profile = authState.userProfile ?? {};
-    final operatorId = _resolveOperatorId(profile);
+    final operatorId = _resolveOperatorId(profile, orgSession);
 
     if (_lastUserId != operatorId) {
       _lastUserId = operatorId;
@@ -990,20 +1042,26 @@ class _TournamentOperatorDashboardScreenState
       _activeView = _OperatorSubView.mainList;
     }
 
-    final operatorName =
-        (profile['displayName'] ?? profile['name'] ?? 'Tournament Operator')
-            .toString();
+    final operatorName = (_effectiveOrgName(orgSession) ??
+            profile['displayName'] ??
+            profile['name'] ??
+            'Tournament Operator')
+        .toString();
 
     final mergedForHeader = _mergeServerAndLocalTournaments(
       tournamentsAsync.valueOrNull ?? const [],
       operatorId,
       authState,
       profile,
+      orgSession,
     );
     final currentTournament = mergedForHeader
             .where((t) => t['id']?.toString() == _selectedTournamentId)
             .firstOrNull ??
         (mergedForHeader.isNotEmpty ? mergedForHeader.first : null);
+
+    final hideMainListAppBar = widget.embeddedInOrganizationDeck &&
+        _activeView == _OperatorSubView.mainList;
 
     return PopScope(
       canPop: _activeView == _OperatorSubView.mainList,
@@ -1029,14 +1087,16 @@ class _TournamentOperatorDashboardScreenState
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: Scaffold(
           backgroundColor: AppTheme.voidBackground,
-          extendBodyBehindAppBar: true,
-          appBar: _buildAppBar(
-            context,
-            operatorName,
-            operatorId,
-            profile,
-            currentTournament,
-          ),
+          extendBodyBehindAppBar: !hideMainListAppBar,
+          appBar: hideMainListAppBar
+              ? null
+              : _buildAppBar(
+                  context,
+                  operatorName,
+                  operatorId,
+                  profile,
+                  currentTournament,
+                ),
           body: Stack(
             fit: StackFit.expand,
             children: [
@@ -1075,6 +1135,7 @@ class _TournamentOperatorDashboardScreenState
                         operatorId,
                         authState,
                         profile,
+                        orgSession,
                       );
                       return _buildActiveSubView(
                         context,
@@ -1089,6 +1150,7 @@ class _TournamentOperatorDashboardScreenState
                         operatorId,
                         authState,
                         profile,
+                        orgSession,
                       );
                       return _buildActiveSubView(
                         context,
@@ -1111,8 +1173,15 @@ class _TournamentOperatorDashboardScreenState
     List<Map<String, dynamic>> serverEvents,
     String operatorId,
     AuthState authState,
-    Map<String, dynamic> profile,
-  ) {
+    Map<String, dynamic> profile, [
+    OrganizationSessionState? orgSession,
+  ]) {
+    final activeOrgId = orgSession != null
+        ? _effectiveOrgId(orgSession)
+        : widget.organizationId;
+    final activeOrgName = orgSession != null
+        ? _effectiveOrgName(orgSession)
+        : widget.organizationName;
     final effectiveRole =
         authState.activeRole ?? profile['role']?.toString() ?? 'TOURNAMENT_OPERATOR';
 
@@ -1122,6 +1191,21 @@ class _TournamentOperatorDashboardScreenState
           if (TournamentOfflineStore.isTournamentDeleted(id)) return false;
           final status = (t['status'] ?? '').toString().toUpperCase();
           if (status == 'CANCELLED' || status == 'DELETED') return false;
+          if (activeOrgId != null && activeOrgId.isNotEmpty) {
+            final eventOrgId = (t['organizationId'] ?? t['organizerId'] ?? '').toString();
+            final eventOrgName = (t['organizationName'] ?? '').toString().toLowerCase();
+            if (eventOrgId == activeOrgId) return true;
+            if (activeOrgName != null &&
+                activeOrgName.isNotEmpty &&
+                eventOrgName.contains(activeOrgName.toLowerCase())) {
+              return true;
+            }
+            // Legacy PAFF events with null organizationId match org_paff_national
+            if (eventOrgId.isEmpty && activeOrgId == 'org_paff_national') {
+              return true;
+            }
+            return false;
+          }
           return AdminPermissions.canOperateEvent(
             activeRole: effectiveRole,
             userProfile: profile,
@@ -3346,29 +3430,83 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              dropdownColor: const Color(0xFF131722),
-                              borderRadius: BorderRadius.circular(12),
-                              elevation: 8,
+                              dropdownColor: const Color(0xFF0C101A),
+                              borderRadius: BorderRadius.circular(14),
+                              elevation: 16,
+                              iconEnabledColor: AppTheme.goldPrimary,
                               initialValue:
                                   _kPakistanProvinces.contains(t['province'])
                                       ? t['province'].toString()
                                       : _kPakistanProvinces.first,
                               style: const TextStyle(
+                                fontFamily: AppTheme.fontBody,
                                 fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
                                 color: AppTheme.textPrimary,
                               ),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Province *',
+                                filled: true,
+                                fillColor: const Color(0xFF0C101A),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                                    width: 1.1,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: AppTheme.goldPrimary,
+                                    width: 1.6,
+                                  ),
+                                ),
                               ),
-                              items: [
+                              selectedItemBuilder: (context) => [
                                 for (final p in _kPakistanProvinces)
-                                  DropdownMenuItem(
-                                    value: p,
+                                  Align(
+                                    alignment: Alignment.centerLeft,
                                     child: Text(
                                       p,
                                       style: const TextStyle(
                                         color: AppTheme.textPrimary,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14.5,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                              items: [
+                                for (int idx = 0;
+                                    idx < _kPakistanProvinces.length;
+                                    idx++)
+                                  DropdownMenuItem(
+                                    value: _kPakistanProvinces[idx],
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: idx <
+                                                _kPakistanProvinces.length - 1
+                                            ? Border(
+                                                bottom: BorderSide(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.08),
+                                                  width: 0.8,
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                      child: Text(
+                                        _kPakistanProvinces[idx],
+                                        style: const TextStyle(
+                                          color: AppTheme.textPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14.0,
+                                        ),
                                       ),
                                     ),
                                   ),

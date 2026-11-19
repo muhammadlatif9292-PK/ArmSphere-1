@@ -367,4 +367,20 @@ class CrystalToast {
       action: action,
     );
   }
+
+  static void error(BuildContext context, String message) {
+    show(context, title: message, type: CrystalToastType.error);
+  }
+
+  static void success(BuildContext context, String message) {
+    show(context, title: message, type: CrystalToastType.success);
+  }
+
+  static void warning(BuildContext context, String message) {
+    show(context, title: message, type: CrystalToastType.warning);
+  }
+
+  static void info(BuildContext context, String message) {
+    show(context, title: message, type: CrystalToastType.info);
+  }
 }
