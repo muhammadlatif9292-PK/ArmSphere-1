@@ -163,54 +163,34 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets(
-      'Isolates TournamentOperatorDashboardScreen events per organization so other organization events are hidden',
-      (WidgetTester tester) async {
-        final sharedEvents = [
-          {
-            'id': 'evt_account_a',
-            'name': 'Account A Exclusive Cup',
-            'status': 'PUBLISHED',
-            'organizationId': 'org_a',
-            'city': 'Lahore',
-            'province': 'Punjab',
-          },
-        ];
-
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              authProvider.overrideWith((ref) => TestAuthNotifier(
-                    AuthState(
-                      status: AuthStatus.authenticated,
-                      userProfile: const {
-                        'id': 'user_b',
-                        'displayName': 'Operator B',
-                      },
-                    ),
-                  )),
-              tournamentProvider.overrideWith(() => FakeTournamentNotifier(sharedEvents)),
-              disputeProvider.overrideWith(() => FakeDisputeNotifier()),
-            ],
-            child: const MaterialApp(
-              home: Scaffold(
-                body: TournamentOperatorDashboardScreen(
-                  organizationId: 'org_b',
-                  organizationName: 'Federation B',
-                ),
-              ),
-            ),
+    testWidgets('Decouples ORGANIZATION_LEADER and routes consumer home to AthleteDashboardScreen', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith((ref) => TestAuthNotifier(
+                  AuthState(
+                    status: AuthStatus.authenticated,
+                    activeRole: 'ORGANIZATION_LEADER',
+                    verifiedRoles: const ['ATHLETE'],
+                    userProfile: {'id': 'user_4', 'displayName': 'Leader B', 'role': 'ORGANIZATION_LEADER'},
+                  ),
+                )),
+            tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
+            disputeProvider.overrideWith(() => FakeDisputeNotifier()),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(body: RoleAwareHomeScreen()),
           ),
-        );
+        ),
+      );
 
-        await tester.pumpAndSettle();
-        expect(find.byType(TournamentOperatorDashboardScreen), findsOneWidget);
-        expect(find.text('Account A Exclusive Cup'), findsNothing);
-
-        await tester.pumpWidget(const SizedBox());
-        await tester.pump();
-      },
-    );
+      await tester.pump();
+      expect(find.byType(AthleteDashboardScreen), findsOneWidget);
+      expect(find.byType(TournamentOperatorDashboardScreen), findsNothing);
+      expect(find.byType(RefereeDashboardScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
 
     testWidgets('Renders AthleteDashboardScreen by default when role is absent', (WidgetTester tester) async {
       await tester.pumpWidget(
