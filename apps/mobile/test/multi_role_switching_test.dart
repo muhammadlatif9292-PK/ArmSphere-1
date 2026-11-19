@@ -263,7 +263,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Switch to Certified Referee?'), findsOneWidget);
-    expect(find.textContaining('Switches your workspace to the certified referee console'), findsOneWidget);
+    expect(find.textContaining('Table-side match officiating'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Switch Role'), findsOneWidget);
 
