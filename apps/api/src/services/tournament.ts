@@ -36,7 +36,7 @@ export class TournamentService {
   // 1. Event Management
   // ==========================================
 
-  static async listEvents(filters?: { status?: string; timeframe?: "upcoming" | "past"; organizerId?: string }) {
+  static async listEvents(filters?: { status?: string; timeframe?: "upcoming" | "past"; organizerId?: string; organizationId?: string }) {
     logger.info({ filters }, "Listing tournament events");
     let query = db.select().from(events);
     const conditions = [];
@@ -49,6 +49,10 @@ export class TournamentService {
 
     if (filters?.organizerId) {
       conditions.push(eq(events.organizerId, filters.organizerId));
+    }
+
+    if (filters?.organizationId) {
+      conditions.push(eq(events.organizationId, filters.organizationId));
     }
 
     if (filters?.timeframe) {

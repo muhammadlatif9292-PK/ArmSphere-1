@@ -123,12 +123,13 @@ export class TournamentController {
   // Event Management
   static async listEvents(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status, timeframe, organizerId } = req.query;
+      const { status, timeframe, organizerId, organizationId } = req.query;
       const parsedTimeframe = timeframe === "upcoming" || timeframe === "past" ? timeframe : undefined;
       const eventsList = await TournamentService.listEvents({
         status: status?.toString(),
         timeframe: parsedTimeframe,
-        organizerId: organizerId?.toString()
+        organizerId: organizerId?.toString(),
+        organizationId: organizationId?.toString(),
       });
       res.json(eventsList);
     } catch (error) {

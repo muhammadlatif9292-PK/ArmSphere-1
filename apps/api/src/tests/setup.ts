@@ -73,7 +73,8 @@ import {
   roleApplications,
   supportTickets,
   supportTicketMessages,
-  sparringInvites
+  sparringInvites,
+  organizations
 } from "@armsphere/db-schema";
 import { createTestUserFixture } from "./factories.js";
 
@@ -161,6 +162,7 @@ export const testDbStore = {
   supportTickets: [] as any[],
   supportTicketMessages: [] as any[],
   sparringInvites: [] as any[],
+  organizations: [] as any[],
 };
 
 // Reset store before each test run
@@ -255,6 +257,7 @@ beforeEach(() => {
   testDbStore.supportTickets = [];
   testDbStore.supportTicketMessages = [];
   testDbStore.sparringInvites = [];
+  testDbStore.organizations = [];
 });
 
 // Helper to evaluate mock query matching conditions
@@ -662,6 +665,8 @@ const mockDrizzle = {
         });
       } else if (table === venuePartners) {
         results = testDbStore.venuePartners;
+      } else if (table === organizations) {
+        results = testDbStore.organizations;
       } else if (table === talentNominations) {
         results = testDbStore.talentNominations;
       } else if (table === refereeCertifications) {
@@ -965,6 +970,8 @@ const mockDrizzle = {
           testDbStore.postComments.push(record);
         } else if (table === venuePartners) {
           testDbStore.venuePartners.push(record);
+        } else if (table === organizations) {
+          testDbStore.organizations.push(record);
         } else if (table === talentNominations) {
           testDbStore.talentNominations.push(record);
         } else if (table === refereeCertifications) {
@@ -1350,6 +1357,15 @@ const mockDrizzle = {
               return updated;
             }
             return vp;
+          });
+        } else if (table === organizations) {
+          testDbStore.organizations = testDbStore.organizations.map((org) => {
+            if (checkMatch(org, expression)) {
+              const updated = { ...org, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return org;
           });
         } else if (table === talentNominations) {
           testDbStore.talentNominations = testDbStore.talentNominations.map((tn) => {

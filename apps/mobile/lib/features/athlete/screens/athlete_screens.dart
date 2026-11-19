@@ -4043,18 +4043,6 @@ class AthleteProfileScreen extends ConsumerWidget {
                   children: [
                     _WorkspaceTile(
                       rowIndex: 0,
-                      icon: Icons.qr_code_2_rounded,
-                      iconColor: AppTheme.emerald,
-                      title: 'My Competitions & QR Passports',
-                      subtitle: null,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/athlete/competitions');
-                      },
-                    ),
-                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                    _WorkspaceTile(
-                      rowIndex: 1,
                       icon: Icons.fitness_center,
                       iconColor: AppTheme.goldPrimary,
                       title: 'Training Log & PRs',

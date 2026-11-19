@@ -4,6 +4,7 @@ import { eq, isNull } from "drizzle-orm";
 import { hashPassword, comparePassword, generateAccessToken } from "@armsphere/cryptography";
 import { BadRequestError, NotFoundError, UnauthorizedError } from "@armsphere/core";
 import crypto from "crypto";
+import env from "../config/env.js";
 
 export class OrganizationService {
   /**
@@ -30,7 +31,7 @@ export class OrganizationService {
       })
       .from(organizations)
       .where(eq(organizations.status, "APPROVED"));
-    return rows;
+    return rows.map(({ accessCodeHash, ...safe }: any) => safe);
   }
 
   /**
@@ -65,7 +66,8 @@ export class OrganizationService {
         role: "ORGANIZATION_OPERATOR",
       },
       undefined,
-      "ORGANIZATION_OPERATOR"
+      "ORGANIZATION_OPERATOR",
+      env.JWT_ACCESS_SECRET
     );
 
     const { accessCodeHash, ...safeOrg } = org;
@@ -232,18 +234,26 @@ export class OrganizationService {
       ];
 
       for (const item of canonicals) {
-        const hash = await hashPassword(item.code);
-        await db.insert(organizations).values({
-          name: item.name,
-          slug: item.slug,
-          accessCodeHash: hash,
-          province: item.province,
-          city: item.city,
-          presidentName: item.presidentName,
-          sanctioningBody: item.sanctioningBody,
-          status: "APPROVED",
-          isOnboarded: true,
-        }).onConflictDoNothing();
+        const [existing] = await db
+          .select({ id: organizations.id })
+          .from(organizations)
+          .where(eq(organizations.slug, item.slug))
+          .limit(1);
+
+        if (!existing) {
+          const hash = await hashPassword(item.code);
+          await db.insert(organizations).values({
+            name: item.name,
+            slug: item.slug,
+            accessCodeHash: hash,
+            province: item.province,
+            city: item.city,
+            presidentName: item.presidentName,
+            sanctioningBody: item.sanctioningBody,
+            status: "APPROVED",
+            isOnboarded: true,
+          });
+        }
       }
     }
 
