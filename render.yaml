@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: armsphere-api
+    runtime: docker
+    dockerfilePath: Dockerfile.api
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      - key: NEON_BRANCH
+        value: staging
+      - key: PORT
+        value: "4000"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: CRON_SECRET
+        sync: false
