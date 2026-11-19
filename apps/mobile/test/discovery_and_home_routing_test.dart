@@ -146,7 +146,16 @@ void main() {
                     userProfile: {'id': 'user_3', 'displayName': 'Director Usman', 'role': 'TOURNAMENT_OPERATOR'},
                   ),
                 )),
+            athleteProfileProvider.overrideWith(() => FakeAthleteProfileNotifier({
+                  'id': 'user_3',
+                  'rightArmElo': 1200,
+                  'leftArmElo': 1200,
+                })),
+            liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
             tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
+            rankingsProvider.overrideWith(() => FakeRankingsNotifier()),
+            trainingLogProvider('user_3').overrideWith((ref) async => <Map<String, dynamic>>[]),
+            trainingLogPRsProvider('user_3').overrideWith((ref) async => <Map<String, dynamic>>[]),
             disputeProvider.overrideWith(() => FakeDisputeNotifier()),
           ],
           child: const MaterialApp(
@@ -175,7 +184,16 @@ void main() {
                     userProfile: {'id': 'user_4', 'displayName': 'Leader B', 'role': 'ORGANIZATION_LEADER'},
                   ),
                 )),
+            athleteProfileProvider.overrideWith(() => FakeAthleteProfileNotifier({
+                  'id': 'user_4',
+                  'rightArmElo': 1200,
+                  'leftArmElo': 1200,
+                })),
+            liveMatchesProvider.overrideWith(() => FakeLiveMatchesNotifier()),
             tournamentProvider.overrideWith(() => FakeTournamentNotifier()),
+            rankingsProvider.overrideWith(() => FakeRankingsNotifier()),
+            trainingLogProvider('user_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
+            trainingLogPRsProvider('user_4').overrideWith((ref) async => <Map<String, dynamic>>[]),
             disputeProvider.overrideWith(() => FakeDisputeNotifier()),
           ],
           child: const MaterialApp(
