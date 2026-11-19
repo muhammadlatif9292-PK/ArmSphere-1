@@ -48,16 +48,21 @@ export class CommunityController {
    * Helper to resolve the active athlete profile ID for a given user ID
    */
   private static async getAthleteProfileIdForUser(userId: string): Promise<string> {
+    const profileId = await CommunityController.getOptionalAthleteProfileIdForUser(userId);
+    if (!profileId) {
+      throw new BadRequestError("An active athlete profile is required to perform this action");
+    }
+    return profileId;
+  }
+
+  private static async getOptionalAthleteProfileIdForUser(userId: string): Promise<string | undefined> {
     const [profile] = await db
       .select({ id: athleteProfiles.id })
       .from(athleteProfiles)
       .where(and(eq(athleteProfiles.userId, userId), eq(athleteProfiles.isDeleted, false)))
       .limit(1);
 
-    if (!profile) {
-      throw new BadRequestError("An active athlete profile is required to perform this action");
-    }
-    return profile.id;
+    return profile?.id;
   }
 
   /**
@@ -139,7 +144,7 @@ export class CommunityController {
   static async getFeed(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = feedQuerySchema.parse(req.query);
-      const athleteId = await CommunityController.getAthleteProfileIdForUser(req.user!.id);
+      const athleteId = await CommunityController.getOptionalAthleteProfileIdForUser(req.user!.id);
 
       const feed = await CommunityService.getFeed({
         limit: validated.limit,

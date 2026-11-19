@@ -42,17 +42,38 @@ export class OrganizationService {
       throw new BadRequestError("Organization ID and Access Code are required.");
     }
 
+    const trimmedId = organizationId.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedId);
+
+    const slugAliasMap: Record<string, string> = {
+      "org_paff_national": "paff",
+      "pakistan-armwrestling-federation": "paff",
+      "org_evw_global": "east-vs-west",
+      "east-vs-west-armwrestling": "east-vs-west",
+      "punjab-armwrestling": "punjab-armwrestling",
+      "kpk-armwrestling": "kpk-armwrestling",
+    };
+    const targetSlug = slugAliasMap[trimmedId.toLowerCase()] || trimmedId.toLowerCase();
+
     const [org] = await db
       .select()
       .from(organizations)
-      .where(eq(organizations.id, organizationId))
+      .where(
+        isUuid
+          ? eq(organizations.id, trimmedId)
+          : eq(organizations.slug, targetSlug)
+      )
       .limit(1);
 
     if (!org || org.status !== "APPROVED") {
       throw new NotFoundError("Organization not found or not approved.");
     }
 
-    const isMatch = await comparePassword(plainCode.trim(), org.accessCodeHash);
+    const upperCode = plainCode.trim().toUpperCase();
+    let isMatch = await comparePassword(upperCode, org.accessCodeHash);
+    if (!isMatch) {
+      isMatch = await comparePassword(plainCode.trim(), org.accessCodeHash);
+    }
     if (!isMatch) {
       throw new UnauthorizedError("Invalid organization access code.");
     }

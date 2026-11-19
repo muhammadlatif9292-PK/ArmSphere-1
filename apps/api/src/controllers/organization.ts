@@ -3,7 +3,7 @@ import { OrganizationService } from "../services/organization.js";
 import { z } from "zod";
 
 const verifyAccessSchema = z.object({
-  organizationId: z.string().uuid("Invalid organization ID format"),
+  organizationId: z.string().min(1, "Organization ID is required"),
   accessCode: z.string().min(4, "Access code must be at least 4 characters"),
 });
 

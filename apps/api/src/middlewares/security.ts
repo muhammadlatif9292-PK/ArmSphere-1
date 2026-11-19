@@ -113,9 +113,10 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   // credentials and never rely on ambient cookie sessions, so double-submit
   // CSRF does not apply; native clients hold neither cookies nor a Bearer
   // token before their first login. These routes are guarded by rate limiting.
+  const normalizedPath = (req.baseUrl ? req.baseUrl + req.path : req.path).replace(/^\/api\/v1/, "");
   const credentialEndpoint =
-    /^\/auth\/(register|login|refresh|mfa\/verify|mfa\/recovery|password-reset\/request|password-reset\/reset|verify-email\/confirm)$/;
-  if (credentialEndpoint.test(req.path.replace(/^\/api\/v1/, ""))) {
+    /^\/(auth\/(register|login|refresh|mfa\/verify|mfa\/recovery|password-reset\/request|password-reset\/reset|verify-email\/confirm)|organizations\/verify-access)$/;
+  if (credentialEndpoint.test(normalizedPath) || credentialEndpoint.test(req.path.replace(/^\/api\/v1/, ""))) {
     return next();
   }
 

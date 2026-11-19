@@ -240,7 +240,9 @@ export class CommunityService {
   static async getFeed(options: { limit?: number; cursor?: string; viewerAthleteId?: string; category?: string }) {
     const limit = options.limit || 20;
     const cursor = options.cursor;
-    const viewerAthleteId = options.viewerAthleteId || "";
+    const rawViewerAthleteId = options.viewerAthleteId?.trim() || "";
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawViewerAthleteId);
+    const viewerAthleteId = isUuid ? rawViewerAthleteId : "";
     const category = options.category;
 
     const conditions = [
@@ -309,10 +311,12 @@ export class CommunityService {
       )
       .leftJoin(
         postLikes,
-        and(
-          eq(communityPosts.id, postLikes.postId),
-          eq(postLikes.athleteId, viewerAthleteId)
-        )
+        viewerAthleteId
+          ? and(
+              eq(communityPosts.id, postLikes.postId),
+              eq(postLikes.athleteId, viewerAthleteId)
+            )
+          : sql`false`
       )
       .where(and(...conditions))
       .orderBy(desc(communityPosts.createdAt))
