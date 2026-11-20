@@ -775,7 +775,6 @@ class _OrganizationPortalEntryScreenState
                   ),
                 ),
               ],
-            ],
             ),
           ),
         ],
