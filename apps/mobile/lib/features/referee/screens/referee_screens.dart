@@ -2100,7 +2100,7 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const SizedBox(height: 155),
+                          const SizedBox(height: AppTheme.space16),
                           ElevatedActionCard(
                             slashVariant: const CrystalSlashVariant.crossedCard(),
                             padding: const EdgeInsets.all(AppTheme.space24),
@@ -2509,8 +2509,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 155px open 3D Referee Control Console stage showcase spacer
-                    const SizedBox(height: 155),
+                    const SizedBox(height: AppTheme.space16),
                     // Mode Toggle Bar with Competition Crimson (#E23B3B) active border and transparent interior
                     Container(
                       margin: const EdgeInsets.only(bottom: AppTheme.space16),
@@ -3056,7 +3055,7 @@ class _AthleteSearchScreenState extends ConsumerState<AthleteSearchScreen> {
               ),
               child: Column(
                 children: [
-                  const SizedBox(height: 155),
+                  const SizedBox(height: AppTheme.space16),
                   TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
@@ -3222,7 +3221,7 @@ class EvidenceUploadScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 155),
+                    const SizedBox(height: AppTheme.space16),
                     ElevatedActionCard(
                       slashVariant: const CrystalSlashVariant.crossedCard(),
                       padding: const EdgeInsets.all(AppTheme.space28),

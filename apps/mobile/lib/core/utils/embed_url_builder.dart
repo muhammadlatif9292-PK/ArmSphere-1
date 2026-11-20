@@ -87,16 +87,45 @@ class EmbedUrlBuilder {
 
   /// Extracts the numeric video ID from TikTok URL formats.
   static String? extractTikTokVideoId(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return null;
+
     final regExp = RegExp(r'\/video\/(\d+)', caseSensitive: false);
-    final match = regExp.firstMatch(url);
+    final match = regExp.firstMatch(trimmed);
     if (match != null && match.groupCount >= 1) {
       return match.group(1);
     }
+
     final regExpV = RegExp(r'\/v\/(\d+)', caseSensitive: false);
-    final matchV = regExpV.firstMatch(url);
+    final matchV = regExpV.firstMatch(trimmed);
     if (matchV != null && matchV.groupCount >= 1) {
       return matchV.group(1);
     }
+
+    final regExpEmbed = RegExp(r'\/embed\/(?:v2\/)?(\d+)', caseSensitive: false);
+    final matchEmbed = regExpEmbed.firstMatch(trimmed);
+    if (matchEmbed != null && matchEmbed.groupCount >= 1) {
+      return matchEmbed.group(1);
+    }
+
+    final regExpParam = RegExp(r'[?&](?:video_id|item_id)=(\d+)', caseSensitive: false);
+    final matchParam = regExpParam.firstMatch(trimmed);
+    if (matchParam != null && matchParam.groupCount >= 1) {
+      return matchParam.group(1);
+    }
+
     return null;
+  }
+
+  /// Builds a direct TikTok embed or clean watch URL for WebView playback.
+  static String? getTikTokEmbedOrWatchUrl(String? rawUrl, {String? embedUrl}) {
+    final candidate = (rawUrl != null && rawUrl.isNotEmpty) ? rawUrl.trim() : (embedUrl ?? '').trim();
+    if (candidate.isEmpty) return null;
+
+    final videoId = extractTikTokVideoId(candidate);
+    if (videoId != null && videoId.isNotEmpty) {
+      return 'https://www.tiktok.com/embed/v2/$videoId';
+    }
+    return candidate;
   }
 }

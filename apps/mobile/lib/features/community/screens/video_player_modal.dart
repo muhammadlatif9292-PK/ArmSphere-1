@@ -35,6 +35,11 @@ bool _isAllowedEmbedDomain(String url) {
       lower.contains('armsphere.app') ||
       lower.contains('tiktok.com') ||
       lower.contains('tiktokcdn.com') ||
+      lower.contains('tiktokv.com') ||
+      lower.contains('byteoversea.com') ||
+      lower.contains('ibytedtos.com') ||
+      lower.contains('musical.ly') ||
+      lower.contains('ttwstatic.com') ||
       lower.contains('facebook.com') ||
       lower.contains('facebook.net') ||
       lower.contains('fbcdn.net');
@@ -264,6 +269,46 @@ String _buildResponsivePlayerHtml({
       }
     }, 4500);
   </script>
+</body>
+</html>
+''';
+  }
+
+  final isTikTok = platform.toUpperCase() == 'TIKTOK' ||
+      rawEmbedUrl.toLowerCase().contains('tiktok.com') ||
+      rawUrl.toLowerCase().contains('tiktok.com');
+  final tikTokId = EmbedUrlBuilder.extractTikTokVideoId(
+    rawUrl.isNotEmpty ? rawUrl : rawEmbedUrl,
+  );
+
+  if (isTikTok) {
+    final targetVideoUrl = rawUrl.isNotEmpty ? rawUrl : rawEmbedUrl;
+    final safeTarget = targetVideoUrl
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    final dataAttr = tikTokId != null ? 'data-video-id="$tikTokId"' : '';
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="origin">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; background-color: #000000; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background-color: #000000; display: flex; align-items: center; justify-content: center; }
+    .player-wrap { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #000000; }
+    blockquote.tiktok-embed { max-width: 100% !important; min-width: 100% !important; margin: 0 auto !important; }
+  </style>
+</head>
+<body>
+  <div class="player-wrap">
+    <blockquote class="tiktok-embed" cite="$safeTarget" $dataAttr>
+      <section></section>
+    </blockquote>
+    <script async src="https://www.tiktok.com/embed.js"></script>
+  </div>
 </body>
 </html>
 ''';
@@ -574,14 +619,25 @@ class _InlineCombatVideoPlayerState extends State<InlineCombatVideoPlayer> {
         );
 
       _configureAndroidGestureFreePlayback(controller);
-      controller.loadHtmlString(
-        _buildResponsivePlayerHtml(
-          rawEmbedUrl: widget.embedUrl,
-          rawUrl: widget.rawUrl,
-          platform: widget.platform,
-        ),
-        baseUrl: 'https://armsphere.app',
+      final isTikTok = widget.platform.toUpperCase() == 'TIKTOK' ||
+          widget.embedUrl.toLowerCase().contains('tiktok.com') ||
+          widget.rawUrl.toLowerCase().contains('tiktok.com');
+      final tikTokTarget = EmbedUrlBuilder.getTikTokEmbedOrWatchUrl(
+        widget.rawUrl,
+        embedUrl: widget.embedUrl,
       );
+      if (isTikTok && tikTokTarget != null) {
+        controller.loadRequest(Uri.parse(tikTokTarget));
+      } else {
+        controller.loadHtmlString(
+          _buildResponsivePlayerHtml(
+            rawEmbedUrl: widget.embedUrl,
+            rawUrl: widget.rawUrl,
+            platform: widget.platform,
+          ),
+          baseUrl: 'https://armsphere.app',
+        );
+      }
       _webViewController = controller;
     } catch (e) {
       _hasError = true;
@@ -1449,14 +1505,25 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
       );
 
     _configureAndroidGestureFreePlayback(_webViewController);
-    _webViewController.loadHtmlString(
-      _buildResponsivePlayerHtml(
-        rawEmbedUrl: widget.embedUrl,
-        rawUrl: widget.rawUrl ?? '',
-        platform: widget.platform,
-      ),
-      baseUrl: 'https://armsphere.app',
+    final isTikTok = widget.platform.toUpperCase() == 'TIKTOK' ||
+        widget.embedUrl.toLowerCase().contains('tiktok.com') ||
+        (widget.rawUrl ?? '').toLowerCase().contains('tiktok.com');
+    final tikTokTarget = EmbedUrlBuilder.getTikTokEmbedOrWatchUrl(
+      widget.rawUrl,
+      embedUrl: widget.embedUrl,
     );
+    if (isTikTok && tikTokTarget != null) {
+      _webViewController.loadRequest(Uri.parse(tikTokTarget));
+    } else {
+      _webViewController.loadHtmlString(
+        _buildResponsivePlayerHtml(
+          rawEmbedUrl: widget.embedUrl,
+          rawUrl: widget.rawUrl ?? '',
+          platform: widget.platform,
+        ),
+        baseUrl: 'https://armsphere.app',
+      );
+    }
   }
 
   void _retry() {
@@ -1466,14 +1533,25 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
       _errorMessage = '';
       _usingCleanTheaterWatchFallback = false;
     });
-    _webViewController.loadHtmlString(
-      _buildResponsivePlayerHtml(
-        rawEmbedUrl: widget.embedUrl,
-        rawUrl: widget.rawUrl ?? '',
-        platform: widget.platform,
-      ),
-      baseUrl: 'https://armsphere.app',
+    final isTikTok = widget.platform.toUpperCase() == 'TIKTOK' ||
+        widget.embedUrl.toLowerCase().contains('tiktok.com') ||
+        (widget.rawUrl ?? '').toLowerCase().contains('tiktok.com');
+    final tikTokTarget = EmbedUrlBuilder.getTikTokEmbedOrWatchUrl(
+      widget.rawUrl,
+      embedUrl: widget.embedUrl,
     );
+    if (isTikTok && tikTokTarget != null) {
+      _webViewController.loadRequest(Uri.parse(tikTokTarget));
+    } else {
+      _webViewController.loadHtmlString(
+        _buildResponsivePlayerHtml(
+          rawEmbedUrl: widget.embedUrl,
+          rawUrl: widget.rawUrl ?? '',
+          platform: widget.platform,
+        ),
+        baseUrl: 'https://armsphere.app',
+      );
+    }
   }
 
   void _copyShareLink(BuildContext context) {
@@ -1644,17 +1722,26 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
 
                         if (_hasError)
                           Container(
-                            color: AppTheme.elevatedSurface,
-                            padding: const EdgeInsets.all(16),
+                            color: const Color(0xF204060B),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                             child: Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.error_outline_rounded, color: AppTheme.error, size: 42),
+                                  Icon(
+                                    widget.platform.toUpperCase() == 'TIKTOK'
+                                        ? Icons.movie_outlined
+                                        : Icons.error_outline_rounded,
+                                    color: AppTheme.goldPrimary,
+                                    size: 42,
+                                  ),
                                   const SizedBox(height: 12),
-                                  const Text(
-                                    'Stream Temporarily Unavailable',
-                                    style: TextStyle(
+                                  Text(
+                                    widget.platform.toUpperCase() == 'TIKTOK'
+                                        ? 'TikTok Stream Protected'
+                                        : 'Stream Temporarily Unavailable',
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
                                       color: AppTheme.textPrimary,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
@@ -1664,20 +1751,48 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                                   Text(
                                     _errorMessage.isNotEmpty
                                         ? _errorMessage
-                                        : 'Please check your connection or retry.',
+                                        : 'Video is protected or connection interrupted. Use the direct link to view.',
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontBody,
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 12,
+                                      height: 1.4,
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
-                                  ElevatedButton.icon(
-                                    onPressed: _retry,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.goldPrimary,
-                                      foregroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    ),
-                                    icon: const Icon(Icons.refresh, size: 16),
-                                    label: const Text('Retry Stream'),
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: _retry,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.goldPrimary,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                                        label: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      ),
+                                      OutlinedButton.icon(
+                                        onPressed: () => _copyShareLink(context),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppTheme.goldLight,
+                                          side: const BorderSide(color: Color(0x73D4AF37)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        icon: const Icon(Icons.copy_rounded, size: 16),
+                                        label: const Text('Copy Link', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

@@ -1019,27 +1019,81 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                                 ),
                               ),
                               // Captain actions or Member Chip
-                              if (canManage && !isMe) ...[
-                                IconButton(
-                                  tooltip: isMemberCaptain ? 'Demote to Member' : 'Promote to Captain',
-                                  icon: Icon(
-                                    isMemberCaptain ? Icons.shield : Icons.shield_outlined,
-                                    size: 18,
-                                    color: AppTheme.goldPrimary,
-                                  ),
-                                  onPressed: _busy ? null : () => _confirmToggleRole(member),
-                                ),
-                                IconButton(
-                                  tooltip: 'Remove from roster',
-                                  icon: const Icon(
-                                    Icons.remove_circle_outline,
-                                    size: 18,
-                                    color: AppTheme.error,
-                                  ),
-                                  onPressed: _busy ? null : () => _confirmRemove(member),
-                                ),
-                              ] else if (isMemberCaptain)
+                              if (isMemberCaptain) ...[
                                 const StatusChip(label: 'CAPTAIN', type: StatusType.warning),
+                                if (canManage && !isMe) const SizedBox(width: 4),
+                              ],
+                              if (canManage && !isMe)
+                                PopupMenuButton<String>(
+                                  tooltip: 'Athlete Options',
+                                  icon: const Icon(
+                                    Icons.more_vert_rounded,
+                                    color: AppTheme.textSecondary,
+                                    size: 20,
+                                  ),
+                                  color: const Color(0xFF101524),
+                                  elevation: 8,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+                                  ),
+                                  onSelected: _busy
+                                      ? null
+                                      : (action) {
+                                          if (action == 'toggle_role') {
+                                            _confirmToggleRole(member);
+                                          } else if (action == 'remove') {
+                                            _confirmRemove(member);
+                                          }
+                                        },
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem<String>(
+                                      value: 'toggle_role',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            isMemberCaptain ? Icons.shield_outlined : Icons.shield_rounded,
+                                            size: 17,
+                                            color: AppTheme.goldPrimary,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            isMemberCaptain ? 'Demote to Member' : 'Make Team Captain',
+                                            style: const TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppTheme.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuDivider(height: 1),
+                                    const PopupMenuItem<String>(
+                                      value: 'remove',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.person_remove_outlined,
+                                            size: 17,
+                                            color: AppTheme.crimson,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            'Remove from Team',
+                                            style: TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppTheme.crimson,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),

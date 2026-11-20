@@ -159,7 +159,7 @@ class TournamentsListScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('tournaments_list_view'),
               padding: EdgeInsets.fromLTRB(
                 16,
-                155,
+                AppTheme.space16,
                 16,
                 MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),
@@ -3157,7 +3157,7 @@ class _TournamentBracketsScreenState extends ConsumerState<TournamentBracketsScr
             data: (brackets) {
               if (brackets.isEmpty) {
                 return ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 140, 20, 32),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                   children: [
                     ElevatedActionCard(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),

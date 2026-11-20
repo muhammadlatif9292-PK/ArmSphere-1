@@ -37,6 +37,21 @@ enum DiscoverCategory {
   final IconData icon;
   final String description;
   const DiscoverCategory(this.label, this.icon, this.description);
+
+  Color get accentColor {
+    switch (this) {
+      case DiscoverCategory.all:
+        return const Color(0xFFD4AF37); // Gold
+      case DiscoverCategory.tournaments:
+        return const Color(0xFFEF4444); // Crimson
+      case DiscoverCategory.athletes:
+        return const Color(0xFF38BDF8); // Cyan
+      case DiscoverCategory.clubsAndVenues:
+        return const Color(0xFF10B981); // Emerald
+      case DiscoverCategory.announcements:
+        return const Color(0xFFF59E0B); // Amber
+    }
+  }
 }
 
 class DiscoverScreen extends ConsumerStatefulWidget {
@@ -148,190 +163,238 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
-      backgroundColor: AppTheme.elevatedSurface,
+      backgroundColor: const Color(0xFF0B0F19),
+      barrierColor: Colors.black.withValues(alpha: 0.82),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLarge)),
-        side: BorderSide(color: AppTheme.border, width: 1),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: Color(0x50D4AF37), width: 1.2),
       ),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppTheme.borderHighlight,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0B0F19),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0x80E23B3B),
-                          width: 1.0,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.tune_rounded,
-                        color: AppTheme.primaryAccent,
-                        size: 18,
+                        color: const Color(0x80D4AF37),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'Directory Navigator',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Divider(color: AppTheme.border, height: 1),
-                const SizedBox(height: 14),
-                const Text(
-                  'DISCOVER VIEW FOCUS',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textMuted,
-                    letterSpacing: 1.0,
                   ),
-                ),
-                const SizedBox(height: 8),
-                ...DiscoverCategory.values.map((category) {
-                  final isSelected = _selectedCategory == category;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _selectCategory(category);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          color: const Color(0xFF141A29),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: isSelected
-                                ? const Color(0x80E23B3B)
-                                : const Color(0x2EFFFFFF),
-                            width: isSelected ? 1.2 : 1.0,
+                            color: const Color(0x80D4AF37),
+                            width: 1.0,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              category.icon,
-                              size: 18,
-                              color: isSelected ? AppTheme.primaryAccent : AppTheme.textSecondary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                category.label,
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12.5,
-                                  color: isSelected
-                                      ? AppTheme.textPrimary
-                                      : AppTheme.textSecondary,
-                                ),
-                              ),
-                            ),
-                            if (isSelected)
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                color: AppTheme.primaryAccent,
-                                size: 18,
-                              )
-                            else
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: AppTheme.textMuted,
-                                size: 18,
-                              ),
-                          ],
+                        child: const Icon(
+                          Icons.tune_rounded,
+                          color: AppTheme.goldPrimary,
+                          size: 18,
                         ),
                       ),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 10),
-                const Text(
-                  'DIRECT FEDERATION PORTALS',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textMuted,
-                    letterSpacing: 1.0,
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Directory Navigator',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDrawerQuickAction(
-                        sheetContext,
-                        icon: Icons.leaderboard_outlined,
-                        label: 'Standings',
-                        route: '/rankings',
-                      ),
+                  const SizedBox(height: 16),
+                  const Divider(color: Color(0x33FFFFFF), height: 1),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'DISCOVER VIEW FOCUS',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textMuted,
+                      letterSpacing: 1.0,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildDrawerQuickAction(
-                        sheetContext,
-                        icon: Icons.emoji_events_outlined,
-                        label: 'Tournaments',
-                        route: '/tournaments',
+                  ),
+                  const SizedBox(height: 8),
+                  ...DiscoverCategory.values.map((category) {
+                    final isSelected = _selectedCategory == category;
+                    final accent = category.accentColor;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          _selectCategory(category);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF161F33) : const Color(0xFF101524),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                            border: Border.all(
+                              color: isSelected
+                                  ? accent
+                                  : const Color(0x38FFFFFF),
+                              width: isSelected ? 1.4 : 1.0,
+                            ),
+                            boxShadow: [
+                              if (isSelected)
+                                BoxShadow(
+                                  color: accent.withValues(alpha: 0.18),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              // Distinctive colored vertical accent indicator line
+                              Container(
+                                width: 3.5,
+                                height: 22,
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: accent,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              Icon(
+                                category.icon,
+                                size: 19,
+                                color: isSelected ? accent : AppTheme.textSecondary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      category.label,
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: isSelected
+                                            ? AppTheme.textPrimary
+                                            : AppTheme.textSecondary,
+                                        letterSpacing: 0.4,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      category.description,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontBody,
+                                        fontSize: 10,
+                                        color: AppTheme.textMuted.withValues(alpha: 0.85),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: accent,
+                                  size: 19,
+                                )
+                              else
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: AppTheme.textMuted,
+                                  size: 18,
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
+                    );
+                  }),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'DIRECT FEDERATION PORTALS',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textMuted,
+                      letterSpacing: 1.0,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildDrawerQuickAction(
-                        sheetContext,
-                        icon: Icons.storefront_outlined,
-                        label: 'Venues',
-                        route: '/venues',
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDrawerQuickAction(
+                          sheetContext,
+                          icon: Icons.leaderboard_outlined,
+                          label: 'Standings',
+                          route: '/rankings',
+                          accentColor: const Color(0xFFD4AF37),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildDrawerQuickAction(
-                        sheetContext,
-                        icon: Icons.handshake_outlined,
-                        label: 'Meetups',
-                        route: '/informal-events',
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDrawerQuickAction(
+                          sheetContext,
+                          icon: Icons.emoji_events_outlined,
+                          label: 'Tournaments',
+                          route: '/tournaments',
+                          accentColor: const Color(0xFFEF4444),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDrawerQuickAction(
+                          sheetContext,
+                          icon: Icons.storefront_outlined,
+                          label: 'Venues',
+                          route: '/venues',
+                          accentColor: const Color(0xFF10B981),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDrawerQuickAction(
+                          sheetContext,
+                          icon: Icons.handshake_outlined,
+                          label: 'Meetups',
+                          route: '/informal-events',
+                          accentColor: const Color(0xFF38BDF8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -344,6 +407,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     required IconData icon,
     required String label,
     required String route,
+    required Color accentColor,
   }) {
     return InkWell(
       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -352,24 +416,36 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         context.push(route);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: const Color(0xFF101524),
           borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+          border: Border.all(
+            color: accentColor.withValues(alpha: 0.45),
+            width: 1.0,
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 17, color: AppTheme.secondaryAccent),
-            const SizedBox(height: 4),
+            Container(
+              width: 18,
+              height: 2.5,
+              margin: const EdgeInsets.only(bottom: 6),
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Icon(icon, size: 18, color: accentColor),
+            const SizedBox(height: 5),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontFamily: AppTheme.fontDisplay,
-                fontSize: 10.5,
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimary,
               ),
@@ -1681,8 +1757,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     List<dynamic> tournaments, {
     required bool showAll,
   }) {
-    final displayed =
-        showAll ? tournaments : tournaments.take(3).toList();
+    final displayed = tournaments;
 
     return _FramedDirectorySection(
       title: 'Tournaments',
@@ -1698,17 +1773,41 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               actionLabel: 'Explore',
               onAction: () => context.push('/tournaments'),
             )
-          : Column(
-              children: displayed
-                  .map((t) =>
-                      _buildTournamentCard(context, t as Map<String, dynamic>))
-                  .toList(),
-            ),
+          : (displayed.length <= 3
+              ? Column(
+                  children: List.generate(
+                    displayed.length,
+                    (idx) => _buildTournamentCard(
+                      context,
+                      displayed[idx] as Map<String, dynamic>,
+                      isLast: idx == displayed.length - 1,
+                    ),
+                  ),
+                )
+              : SizedBox(
+                  height: 236,
+                  child: Scrollbar(
+                    thumbVisibility: true,
+                    radius: const Radius.circular(3),
+                    thickness: 3.5,
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: displayed.length,
+                      itemBuilder: (ctx, idx) => _buildTournamentCard(
+                        ctx,
+                        displayed[idx] as Map<String, dynamic>,
+                        isLast: idx == displayed.length - 1,
+                      ),
+                    ),
+                  ),
+                )),
     );
   }
 
   Widget _buildTournamentCard(
-      BuildContext context, Map<String, dynamic> tournament) {
+      BuildContext context, Map<String, dynamic> tournament,
+      {bool isLast = false}) {
     final id = tournament['id'];
     final name = tournament['name'] ?? 'Tournament';
     final status = tournament['status'] ?? 'UPCOMING';
@@ -1719,7 +1818,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         : null;
 
     return ElevatedActionCard(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
       slashVariant: const CrystalSlashVariant.sequentialRow(1),
       onTap: () {
         if (id != null) {
@@ -1909,8 +2008,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     List<dynamic> topAthletes, {
     required bool showAll,
   }) {
-    final displayed =
-        showAll ? topAthletes : topAthletes.take(5).toList();
+    final displayed = topAthletes;
 
     return _FramedDirectorySection(
       title: 'Top Rankings',
@@ -1926,132 +2024,165 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               actionLabel: 'Standings',
               onAction: () => context.push('/rankings'),
             )
-          : Column(
-              children: List.generate(displayed.length, (idx) {
-                final athlete = displayed[idx] as Map<String, dynamic>;
-                final athleteId = athlete['athleteId'] ?? athlete['id'];
-                final rank = athlete['rank'] ?? (idx + 1);
-                final name = athlete['displayName'] ?? 'Athlete';
-                final division =
-                    athlete['division'] ?? athlete['weightClass'] ?? 'Open';
-                final elo = athlete['eloRating'] ?? 1200;
-                final isLast = idx == displayed.length - 1;
-
-                return ElevatedActionCard(
-                  margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                  backgroundColor: Colors.transparent,
-                  borderRadius: 14,
-                  slashVariant: CrystalSlashVariant.sequentialRow(idx),
-                  borderColor: idx == 0
-                      ? const Color(0x73D4AF37)
-                      : const Color(0x38FFFFFF),
-                  boxShadow: const [],
-                  onTap: () {
-                    if (athleteId != null) {
-                      context.push('/athlete/$athleteId');
-                    } else {
-                      context.push('/rankings');
-                    }
-                  },
-                  semanticLabel:
-                      'Rank $rank: $name, $division division, $elo ELO',
-                  padding:
-                      const EdgeInsets.fromLTRB(12, 11, 8, 11),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 30,
-                        height: 30,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: idx < 3
-                                ? const Color(0x73D4AF37)
-                                : const Color(0x38FFFFFF),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Text(
-                          '#$rank',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            color: idx < 3
-                                ? AppTheme.secondaryAccent
-                                : AppTheme.textSecondary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ChampionshipNameMarquee(
-                              text: name.toString(),
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontBody,
-                                color: AppTheme.textPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              division.toString().toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                color: AppTheme.textSecondary,
-                                fontSize: 10.5,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: idx == 0
-                                ? const Color(0x73D4AF37)
-                                : const Color(0x5238BDF8),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Text(
-                          '$elo ELO',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 11,
-                            color: idx == 0
-                                ? AppTheme.goldPrimary
-                                : AppTheme.info,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: AppTheme.textMuted,
-                        size: 16,
-                      ),
-                    ],
+          : (displayed.length <= 3
+              ? Column(
+                  children: List.generate(
+                    displayed.length,
+                    (idx) => _buildAthleteRankingCard(
+                      context,
+                      displayed[idx] as Map<String, dynamic>,
+                      idx,
+                      isLast: idx == displayed.length - 1,
+                    ),
                   ),
-                );
-              }),
+                )
+              : SizedBox(
+                  height: 220,
+                  child: Scrollbar(
+                    thumbVisibility: true,
+                    radius: const Radius.circular(3),
+                    thickness: 3.5,
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: displayed.length,
+                      itemBuilder: (ctx, idx) => _buildAthleteRankingCard(
+                        ctx,
+                        displayed[idx] as Map<String, dynamic>,
+                        idx,
+                        isLast: idx == displayed.length - 1,
+                      ),
+                    ),
+                  ),
+                )),
+    );
+  }
+
+  Widget _buildAthleteRankingCard(
+    BuildContext context,
+    Map<String, dynamic> athlete,
+    int idx, {
+    bool isLast = false,
+  }) {
+    final athleteId = athlete['athleteId'] ?? athlete['id'];
+    final rank = athlete['rank'] ?? (idx + 1);
+    final name = athlete['displayName'] ?? 'Athlete';
+    final division =
+        athlete['division'] ?? athlete['weightClass'] ?? 'Open';
+    final elo = athlete['eloRating'] ?? 1200;
+
+    return ElevatedActionCard(
+      margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
+      backgroundColor: Colors.transparent,
+      borderRadius: 14,
+      slashVariant: CrystalSlashVariant.sequentialRow(idx),
+      borderColor: idx == 0
+          ? const Color(0x73D4AF37)
+          : const Color(0x38FFFFFF),
+      boxShadow: const [],
+      onTap: () {
+        if (athleteId != null) {
+          context.push('/athlete/$athleteId');
+        } else {
+          context.push('/rankings');
+        }
+      },
+      semanticLabel:
+          'Rank $rank: $name, $division division, $elo ELO',
+      padding:
+          const EdgeInsets.fromLTRB(12, 11, 8, 11),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: idx < 3
+                    ? const Color(0x73D4AF37)
+                    : const Color(0x38FFFFFF),
+                width: 1.0,
+              ),
             ),
+            child: Text(
+              '#$rank',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                color: idx < 3
+                    ? AppTheme.secondaryAccent
+                    : AppTheme.textSecondary,
+                fontWeight: FontWeight.bold,
+                fontSize: 11.5,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ChampionshipNameMarquee(
+                  text: name.toString(),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontBody,
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  division.toString().toUpperCase(),
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    color: AppTheme.textSecondary,
+                    fontSize: 10.5,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: idx == 0
+                    ? const Color(0x73D4AF37)
+                    : const Color(0x5238BDF8),
+                width: 1.0,
+              ),
+            ),
+            child: Text(
+              '$elo ELO',
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+                color: idx == 0
+                    ? AppTheme.goldPrimary
+                    : AppTheme.info,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const SizedBox(width: 3),
+          const Icon(
+            Icons.chevron_right,
+            color: AppTheme.textMuted,
+            size: 16,
+          ),
+        ],
+      ),
     );
   }
 

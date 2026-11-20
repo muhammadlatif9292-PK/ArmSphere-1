@@ -100,7 +100,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
             if (events.isEmpty) {
               return ListView(
                 children: [
-                  const SizedBox(height: 120),
+                  const SizedBox(height: AppTheme.space32),
                   AppEmptyState(
                     icon: Icons.sports_martial_arts_outlined,
                     title: 'No upcoming practice meetups',
@@ -120,7 +120,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('informal_event_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
-                155,
+                AppTheme.space16,
                 AppTheme.space16,
                 MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),

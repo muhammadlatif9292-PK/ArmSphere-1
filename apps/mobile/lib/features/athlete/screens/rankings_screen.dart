@@ -519,7 +519,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                   key: const PageStorageKey<String>('rankings_list_view'),
                   padding: EdgeInsets.fromLTRB(
                     AppTheme.space16,
-                    160,
+                    AppTheme.space16,
                     AppTheme.space16,
                     MainShellScope.bottomClearance(context, additionalPadding: 44),
                   ),
@@ -760,7 +760,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
               error: (err, stack) => ListView(
                 padding: EdgeInsets.fromLTRB(
                   AppTheme.space16,
-                  160,
+                  AppTheme.space16,
                   AppTheme.space16,
                   MainShellScope.bottomClearance(context, additionalPadding: 44),
                 ),

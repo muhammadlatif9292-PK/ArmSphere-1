@@ -16,13 +16,19 @@ import '../../tournament/screens/tournament_operator_dashboard_screen.dart';
 /// It contains ZERO bottom navigation buttons (no Arena, Discover, Events,
 /// Community, or Passport tabs) and hosts the Tournament Operator 4-stage engine
 /// scoped strictly to the authenticated Sanctioning Organization.
-class OrganizationDeckScreen extends ConsumerWidget {
+class OrganizationDeckScreen extends ConsumerStatefulWidget {
   const OrganizationDeckScreen({super.key});
 
-  Future<void> _confirmExitWorkstation(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  @override
+  ConsumerState<OrganizationDeckScreen> createState() =>
+      _OrganizationDeckScreenState();
+}
+
+class _OrganizationDeckScreenState
+    extends ConsumerState<OrganizationDeckScreen> {
+  bool _isSubViewActive = false;
+
+  Future<void> _confirmExitWorkstation(BuildContext context) async {
     HapticFeedback.mediumImpact();
     final confirmed = await showDialog<bool>(
       context: context,
@@ -110,12 +116,12 @@ class OrganizationDeckScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final session = ref.watch(organizationSessionProvider);
     final orgName = (session.orgName != null && session.orgName!.trim().isNotEmpty)
         ? session.orgName!.trim()
-        : 'Pakistan Armwrestling Federation (PAFF)';
-    final orgId = session.orgId ?? 'org_paff_national';
+        : 'Sanctioning Organization';
+    final orgId = session.orgId ?? '';
     final jurisdiction = [
       if (session.city != null && session.city!.isNotEmpty) session.city,
       if (session.province != null && session.province!.isNotEmpty)
@@ -128,251 +134,191 @@ class OrganizationDeckScreen extends ConsumerWidget {
       bottomNavigationBar: null,
       body: Column(
         children: [
-          // Executive Broadcast Top Header
+          // Streamlined Executive Header: ONLY rendered on the main list screen!
+          // Hidden completely on all sub-screens (Card 1 setup, Hub, Brackets, Weigh-ins, etc.)
+          if (!_isSubViewActive)
+            _buildMinimalTopHeader(context, session, orgName, orgId, jurisdiction),
+
+          // Autonomous 4-Stage Tournament Operator Workstation Body
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: !_isSubViewActive,
+              child: TournamentOperatorDashboardScreen(
+                organizationId: orgId,
+                organizationName: orgName,
+                embeddedInOrganizationDeck: true,
+                onSubViewChanged: (isSub) {
+                  if (_isSubViewActive != isSub) {
+                    setState(() {
+                      _isSubViewActive = isSub;
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMinimalTopHeader(
+    BuildContext context,
+    OrganizationSessionState session,
+    String orgName,
+    String orgId,
+    String jurisdiction,
+  ) {
+    final topPadding = MediaQuery.paddingOf(context).top;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, topPadding + 6, 12, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0C101A),
+        border: Border(
+          bottom: BorderSide(
+            color: AppTheme.goldPrimary.withValues(alpha: 0.25),
+            width: 1.0,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Compact Organization Emblem (34x34)
           Container(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              MediaQuery.paddingOf(context).top + 10,
-              16,
-              12,
-            ),
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF121726),
-                  Color(0xFF070A11),
-                ],
+              shape: BoxShape.circle,
+              color: const Color(0xFF141A28),
+              border: Border.all(
+                color: AppTheme.goldPrimary.withValues(alpha: 0.75),
+                width: 1.2,
               ),
-              border: Border(
-                bottom: BorderSide(
-                  color: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                  width: 1.0,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
+            child: const Icon(
+              Icons.account_balance_rounded,
+              color: AppTheme.goldPrimary,
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Organization Name & Status subtitle
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    // Organization Crest Emblem
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0x38D4AF37),
-                            Color(0xFF0B0F1A),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: AppTheme.goldPrimary,
-                          width: 1.4,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.goldPrimary.withValues(alpha: 0.22),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_rounded,
-                        color: AppTheme.goldPrimary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Official Organization Name & Status Badges
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 2.5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.goldPrimary.withValues(alpha: 0.16),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: AppTheme.goldPrimary.withValues(alpha: 0.65),
-                                    width: 0.9,
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.verified_rounded,
-                                      size: 11,
-                                      color: AppTheme.goldPrimary,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'VERIFIED SANCTIONING BODY',
-                                      style: TextStyle(
-                                        fontFamily: AppTheme.fontDisplay,
-                                        fontSize: 9.0,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 0.8,
-                                        color: AppTheme.goldPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            orgName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontSize: 16.5,
-                              fontWeight: FontWeight.w900,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Refresh Button
-                    IconButton(
-                      key: const ValueKey('org_deck_refresh_button'),
-                      tooltip: 'Sync & Refresh Organization Events',
-                      style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFF151C2C),
-                        side: BorderSide(
-                          color: AppTheme.emerald.withValues(alpha: 0.45),
-                        ),
-                      ),
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        try {
-                          ref.read(offlineSyncManagerProvider).syncQueue();
-                        } catch (_) {}
-                        ref.invalidate(tournamentProvider);
-                        CrystalToast.info(
-                          context,
-                          'Synced federation tournament desk.',
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.sync_rounded,
-                        color: AppTheme.emerald,
-                        size: 19,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Lock / Exit Workstation Button
-                    IconButton(
-                      key: const ValueKey('org_deck_lock_exit_button'),
-                      tooltip: 'Lock & Exit Organization Deck',
-                      style: IconButton.styleFrom(
-                        backgroundColor: const Color(0x28EF4444),
-                        side: BorderSide(
-                          color: AppTheme.crimson.withValues(alpha: 0.65),
-                        ),
-                      ),
-                      onPressed: () => _confirmExitWorkstation(context, ref),
-                      icon: const Icon(
-                        Icons.lock_outline_rounded,
-                        color: AppTheme.crimson,
-                        size: 19,
-                      ),
-                    ),
-                  ],
+                Text(
+                  orgName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                // Workstation Indicator Strip
+                const SizedBox(height: 2),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.emerald.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: AppTheme.emerald.withValues(alpha: 0.45),
+                    const Icon(
+                      Icons.verified_rounded,
+                      size: 11,
+                      color: AppTheme.goldPrimary,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        jurisdiction.isNotEmpty
+                            ? '$jurisdiction • Sanctioning Body'
+                            : 'Verified Sanctioning Body',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontBody,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.85),
                         ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.terminal_rounded,
-                            size: 11,
-                            color: AppTheme.emerald,
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'STAFF ACCESS (Floor Device)',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontMono,
-                              fontSize: 10.0,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.emerald,
-                            ),
-                          ),
-                        ],
                       ),
                     ),
-                    if (jurisdiction.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 12,
-                        color: AppTheme.textSecondary.withValues(alpha: 0.8),
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          jurisdiction,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: AppTheme.fontBody,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ],
             ),
           ),
-          // Autonomous 4-Stage Tournament Operator Workstation Body
-          Expanded(
-            child: TournamentOperatorDashboardScreen(
-              organizationId: orgId,
-              organizationName: orgName,
-              embeddedInOrganizationDeck: true,
+          const SizedBox(width: 6),
+
+          // Compact Sync / Refresh Action
+          IconButton(
+            key: const ValueKey('org_deck_refresh_button'),
+            tooltip: 'Sync & Refresh Events',
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF131A29),
+              side: BorderSide(
+                color: AppTheme.emerald.withValues(alpha: 0.4),
+                width: 0.9,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              try {
+                ref.read(offlineSyncManagerProvider).syncQueue();
+              } catch (_) {}
+              ref.invalidate(tournamentProvider);
+              CrystalToast.info(
+                context,
+                'Synced federation tournament desk.',
+              );
+            },
+            icon: const Icon(
+              Icons.sync_rounded,
+              color: AppTheme.emerald,
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // Compact Lock / Exit Action
+          IconButton(
+            key: const ValueKey('org_deck_lock_exit_button'),
+            tooltip: 'Lock & Exit Workstation',
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0x22EF4444),
+              side: BorderSide(
+                color: AppTheme.crimson.withValues(alpha: 0.5),
+                width: 0.9,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => _confirmExitWorkstation(context),
+            icon: const Icon(
+              Icons.lock_outline_rounded,
+              color: AppTheme.crimson,
+              size: 16,
             ),
           ),
         ],

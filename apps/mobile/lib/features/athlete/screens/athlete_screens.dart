@@ -1197,29 +1197,34 @@ class _AthleteDashboardScreenState
                           top: BorderSide(color: Color(0x28D6DCE3), width: 1.0),
                         ),
                       ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          spacing: 16,
-                          runSpacing: 10,
-                          children: [
-                            _buildBioStat('WORLD RANK', rank,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildBioStat('WORLD RANK', rank,
                                 delta: rankDelta,
                                 hasRank: hasRank,
                                 isPodium: isPodium),
-                            _buildBioStat('WEIGHT',
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildBioStat('WEIGHT',
                                 weightKg != null ? '$weightKg kg' : '--'),
-                            _buildBioStat(
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildBioStat(
                                 'WIN RATE', winRate != null ? '$winRate%' : '--',
                                 isEmerald: winRate != null),
-                            _buildBioStat(
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: _buildBioStat(
                                 'DISCIPLINE',
                                 dominantArm != null
                                     ? _disciplineLabel(dominantArm)
                                     : '--'),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1254,11 +1259,9 @@ class _AthleteDashboardScreenState
           width: 1.0,
         ),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 8,
-        runSpacing: 4,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -1369,6 +1372,8 @@ class _AthleteDashboardScreenState
       children: [
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontSize: 8.5,
@@ -1386,6 +1391,8 @@ class _AthleteDashboardScreenState
             children: [
               Text(
                 value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontSize: 14,
@@ -3261,6 +3268,9 @@ class _AthleteDashboardScreenState
     }
     if (lower == 'l' || lower == 'left' || lower == 'left arm') {
       return 'Left Arm';
+    }
+    if (lower == 'ambidextrous' || lower == 'ambidextrous arm' || lower == 'both') {
+      return 'Ambidextrous';
     }
     if (lower.endsWith('arm')) {
       final prefix = trimmed.substring(0, trimmed.length - 3).trim();

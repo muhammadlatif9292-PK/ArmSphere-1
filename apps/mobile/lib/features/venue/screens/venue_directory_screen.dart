@@ -88,7 +88,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
             if (venues.isEmpty) {
               return ListView(
                 children: [
-                  const SizedBox(height: 120),
+                  const SizedBox(height: AppTheme.space32),
                   AppEmptyState(
                     icon: Icons.location_on_outlined,
                     title: 'No venues listed yet',
@@ -108,7 +108,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
               key: const PageStorageKey<String>('venue_directory_list_view'),
               padding: EdgeInsets.fromLTRB(
                 AppTheme.space16,
-                155,
+                AppTheme.space16,
                 AppTheme.space16,
                 MainShellScope.bottomClearance(context, additionalPadding: 44),
               ),

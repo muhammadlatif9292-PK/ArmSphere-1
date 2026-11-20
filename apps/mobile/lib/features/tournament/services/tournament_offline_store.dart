@@ -130,10 +130,26 @@ class TournamentOfflineStore {
     return 'ARMSPHERE-SPECTATOR-QR:$passId:$eventId:$holderId:$holderName:PKR=$feePkr';
   }
 
+  /// Returns true if the tournament is a legacy test/mock tournament that should be removed.
+  static bool isLegacyMockTournament(Map<String, dynamic> t) {
+    final name = (t['name'] ?? '').toString().toLowerCase();
+    final id = (t['id'] ?? '').toString().toLowerCase();
+    if (id.startsWith('tourney_released_') ||
+        id == 'tourn_01' ||
+        id == 'tourn_02' ||
+        id == 'tourn_03' ||
+        name.contains('national open qualifier') ||
+        name.contains('grand prix title showdown') ||
+        name.contains('winter championship finals')) {
+      return true;
+    }
+    return false;
+  }
+
   /// Returns true if and only if the tournament is Released / Scheduled (NEVER an unreleased operator draft).
   static bool isReleasedTournament(Map<String, dynamic> t) {
     final id = (t['id'] ?? '').toString();
-    if (isTournamentDeleted(id)) return false;
+    if (isTournamentDeleted(id) || isLegacyMockTournament(t)) return false;
     final status = (t['status'] ?? '').toString().toUpperCase();
     if (status == 'DRAFT' || status == 'UNRELEASED' || status == 'CANCELLED' || status == 'DELETED') {
       return false;

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -71,12 +72,14 @@ class TournamentOperatorDashboardScreen extends ConsumerStatefulWidget {
   final String? organizationId;
   final String? organizationName;
   final bool embeddedInOrganizationDeck;
+  final ValueChanged<bool>? onSubViewChanged;
 
   const TournamentOperatorDashboardScreen({
     super.key,
     this.organizationId,
     this.organizationName,
     this.embeddedInOrganizationDeck = false,
+    this.onSubViewChanged,
   });
 
   @override
@@ -86,7 +89,44 @@ class TournamentOperatorDashboardScreen extends ConsumerStatefulWidget {
 
 class _TournamentOperatorDashboardScreenState
     extends ConsumerState<TournamentOperatorDashboardScreen> {
-  _OperatorSubView _activeView = _OperatorSubView.mainList;
+  _OperatorSubView _internalActiveView = _OperatorSubView.mainList;
+  _OperatorSubView get _activeView => _internalActiveView;
+  set _activeView(_OperatorSubView view) {
+    if (_internalActiveView == view) return;
+    _internalActiveView = view;
+    _notifySubViewChanged(view != _OperatorSubView.mainList);
+  }
+
+  void _notifySubViewChanged(bool isSub) {
+    if (widget.onSubViewChanged == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onSubViewChanged?.call(isSub);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.onSubViewChanged != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onSubViewChanged?.call(_internalActiveView != _OperatorSubView.mainList);
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(TournamentOperatorDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.onSubViewChanged != widget.onSubViewChanged &&
+        widget.onSubViewChanged != null) {
+      widget.onSubViewChanged?.call(_internalActiveView != _OperatorSubView.mainList);
+    }
+  }
+
   String? _selectedTournamentId;
   String? _selectedAthleteIdForWeighIn;
   String? _lastUserId;
@@ -1039,7 +1079,7 @@ class _TournamentOperatorDashboardScreenState
     if (_lastUserId != operatorId) {
       _lastUserId = operatorId;
       _selectedTournamentId = null;
-      _activeView = _OperatorSubView.mainList;
+      _internalActiveView = _OperatorSubView.mainList;
     }
 
     final operatorName = (_effectiveOrgName(orgSession) ??
@@ -1087,7 +1127,7 @@ class _TournamentOperatorDashboardScreenState
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: Scaffold(
           backgroundColor: AppTheme.voidBackground,
-          extendBodyBehindAppBar: !hideMainListAppBar,
+          extendBodyBehindAppBar: false,
           appBar: hideMainListAppBar
               ? null
               : _buildAppBar(

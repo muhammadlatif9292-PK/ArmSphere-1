@@ -3502,112 +3502,28 @@ class SupportRepository extends BaseRepository {
 class OrganizationRepository extends BaseRepository {
   OrganizationRepository({required super.dioClient, required super.hiveStorage});
 
-  static const List<Map<String, dynamic>> canonicalOrganizations = <Map<String, dynamic>>[
-    {
-      'id': 'c75e2104-f093-4980-a083-c1149f688e2e',
-      'name': 'Pakistan Armwrestling Federation (PAFF)',
-      'slug': 'paff',
-      'country': 'PK',
-      'province': 'Islamabad',
-      'city': 'Islamabad',
-      'promoterName': 'Qaiser Khan',
-      'contactEmail': 'sanctions@paff.org.pk',
-      'contactPhone': '+92 51 8904410',
-      'websiteUrl': 'https://armsphere.com/organizations/paff',
-      'sanctioningBody': 'WAF / IFA Recognized National Federation',
-      'status': 'APPROVED',
-      'featured': true,
-      'foundedYear': 2012,
-      'activeEventsCount': 4,
-      'totalEventsHosted': 28,
-      'sanctionedBeltsCount': 6,
-      'certifiedRefereesCount': 14,
-      'description':
-          'Official national governing body sanctioning provincial qualifiers, national championships, and international team selection across Pakistan.',
-      'socialLinks': {
-        'instagram': '@paff_official',
-        'youtube': 'PAFF Live Arena',
-      },
-    },
-    {
-      'id': 'e2dda2ba-e9ae-4140-8abf-36666c1d5711',
-      'name': 'East vs West Armwrestling',
-      'slug': 'east-vs-west',
-      'country': 'TR',
-      'province': 'International',
-      'city': 'Istanbul',
-      'promoterName': 'Engin Terzi',
-      'contactEmail': 'events@eastvswestarmwrestling.com',
-      'contactPhone': '+90 212 555 0199',
-      'websiteUrl': 'https://eastvswestarmwrestling.com',
-      'sanctioningBody': 'Premier Global Supermatch & Title Promotion',
-      'status': 'APPROVED',
-      'featured': true,
-      'foundedYear': 2021,
-      'activeEventsCount': 2,
-      'totalEventsHosted': 16,
-      'sanctionedBeltsCount': 10,
-      'certifiedRefereesCount': 12,
-      'description':
-          'The world’s premier international armwrestling championship series uniting elite pullers from East and West for undisputed world titles.',
-      'socialLinks': {
-        'instagram': '@eastvswestarmwrestling',
-        'youtube': 'East vs West Armwrestling',
-      },
-    },
-    {
-      'id': 'org_kott_arena',
-      'name': 'King of the Table (KOTT)',
-      'slug': 'king-of-the-table',
-      'country': 'AE',
-      'province': 'Dubai',
-      'city': 'Dubai',
-      'promoterName': 'CoreSports Athletics',
-      'contactEmail': 'athletes@coresports.world',
-      'contactPhone': '+971 4 400 1800',
-      'websiteUrl': 'https://coresports.world',
-      'sanctioningBody': 'International Pro Supermatch League',
-      'status': 'VERIFIED',
-      'featured': true,
-      'foundedYear': 2021,
-      'activeEventsCount': 2,
-      'totalEventsHosted': 13,
-      'sanctionedBeltsCount': 5,
-      'certifiedRefereesCount': 9,
-      'description':
-          'High-stakes championship supermatch promotion hosted in Dubai, featuring 6-round professional title bouts and international qualifiers.',
-      'socialLinks': {
-        'instagram': '@kingofthetable_official',
-        'youtube': 'CoreSports World',
-      },
-    },
-    {
-      'id': 'org_waf_world',
-      'name': 'World Armwrestling Federation (WAF)',
-      'slug': 'world-armwrestling-federation',
-      'country': 'BG',
-      'province': 'Sofia',
-      'city': 'Sofia',
-      'promoterName': 'Assen Hadjitodorov',
-      'contactEmail': 'office@waf-armwrestling.com',
-      'contactPhone': '+359 2 980 2211',
-      'websiteUrl': 'https://waf-armwrestling.com',
-      'sanctioningBody': 'Global Amateur & Pro Sanctioning Authority',
-      'status': 'VERIFIED',
-      'featured': true,
-      'foundedYear': 1967,
-      'activeEventsCount': 3,
-      'totalEventsHosted': 45,
-      'sanctionedBeltsCount': 12,
-      'certifiedRefereesCount': 38,
-      'description':
-          'International federation governing world and continental armwrestling championships, master referee certification, and official weight class rules.',
-      'socialLinks': {
-        'instagram': '@worldarmwrestlingfederation',
-        'youtube': 'WAF Official',
-      },
-    },
-  ];
+  static const List<Map<String, dynamic>> canonicalOrganizations = <Map<String, dynamic>>[];
+
+  static bool isLegacyMockOrganization(Map<String, dynamic> o) {
+    final slug = (o['slug'] ?? '').toString().toLowerCase();
+    final name = (o['name'] ?? '').toString().toLowerCase();
+    final id = (o['id'] ?? '').toString().toLowerCase();
+    return slug == 'paff' ||
+        slug == 'east-vs-west' ||
+        slug == 'king-of-the-table' ||
+        slug == 'world-armwrestling-federation' ||
+        slug == 'punjab-armwrestling' ||
+        slug == 'kpk-armwrestling' ||
+        id == 'c75e2104-f093-4980-a083-c1149f688e2e' ||
+        id == 'e2dda2ba-e9ae-4140-8abf-36666c1d5711' ||
+        id == 'org_kott_arena' ||
+        id == 'org_waf_world' ||
+        id == 'org_paff_national' ||
+        name.contains('pakistan armwrestling federation') ||
+        name.contains('east vs west') ||
+        name.contains('punjab armwrestling') ||
+        name.contains('kpk armwrestling');
+  }
 
   String? _currentSessionUserId() {
     try {
@@ -3630,6 +3546,7 @@ class OrganizationRepository extends BaseRepository {
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .where((org) {
+              if (isLegacyMockOrganization(org)) return false;
               final ownerId = (org['ownerUserId'] ?? org['createdById'] ?? org['organizerId'])?.toString().trim();
               if (ownerId == null || ownerId.isEmpty) return true;
               return currentUserId != null && ownerId == currentUserId;
@@ -3640,12 +3557,14 @@ class OrganizationRepository extends BaseRepository {
 
     final merged = <String, Map<String, dynamic>>{};
     for (final org in remoteOrSeed) {
+      if (isLegacyMockOrganization(org)) continue;
       final id = (org['id'] ?? org['slug'] ?? '').toString();
       if (id.isNotEmpty) {
         merged[id] = {...?merged[id], ...org};
       }
     }
     for (final org in localList) {
+      if (isLegacyMockOrganization(org)) continue;
       final id = (org['id'] ?? org['slug'] ?? '').toString();
       if (id.isNotEmpty) {
         merged[id] = {...?merged[id], ...org};
@@ -3755,11 +3674,13 @@ class OrganizationRepository extends BaseRepository {
       return remote;
     } catch (_) {
       final all = _mergeWithLocalOrganizations(const []);
-      final found = all.firstWhere(
+      final found = all.where(
         (o) => o['id']?.toString() == id || o['slug']?.toString() == id,
-        orElse: () => canonicalOrganizations.first,
-      );
-      return Map<String, dynamic>.from(found);
+      ).firstOrNull;
+      if (found != null) {
+        return Map<String, dynamic>.from(found);
+      }
+      return <String, dynamic>{};
     }
   }
 
@@ -3950,21 +3871,24 @@ class OrganizationRepository extends BaseRepository {
       );
       return Map<String, dynamic>.from(response.data);
     } catch (e) {
-      // Local fallback for offline testing with canonical codes
-      if (accessCode.trim().toUpperCase() == 'PAFF-2026-X89K' ||
-          accessCode.trim().toUpperCase() == 'EVW-2026-GOLD' ||
-          accessCode.trim().toUpperCase() == 'PUNJAB-2026-ARM' ||
-          accessCode.trim().toUpperCase() == 'KPK-2026-ARM') {
-        final localOrg = canonicalOrganizations.firstWhere(
-          (o) => o['id'] == organizationId,
-          orElse: () => canonicalOrganizations.first,
-        );
+      // Local fallback for offline testing with custom/locally created organizations
+      final all = _mergeWithLocalOrganizations(const []);
+      final localOrg = all.where(
+        (o) =>
+            (o['id'] == organizationId || o['slug'] == organizationId) &&
+            (o['accessCode']?.toString().toUpperCase() == accessCode.trim().toUpperCase() ||
+             o['code']?.toString().toUpperCase() == accessCode.trim().toUpperCase()),
+      ).firstOrNull;
+      if (localOrg != null) {
         return {
           'success': true,
-          'token': 'mock_org_token_${DateTime.now().millisecondsSinceEpoch}',
+          'token': 'local_org_token_${DateTime.now().millisecondsSinceEpoch}',
           'organization': {
-            ...localOrg,
-            'isOnboarded': true,
+            'id': localOrg['id'],
+            'name': localOrg['name'],
+            'slug': localOrg['slug'],
+            'status': localOrg['status'] ?? 'APPROVED',
+            'isOnboarded': localOrg['isOnboarded'] ?? false,
           },
         };
       }
