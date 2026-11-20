@@ -45351,6 +45351,9 @@ function isProductionDatabase(url, neonBranch, nodeEnv) {
   const resolvedUrl = (url || process.env.DATABASE_URL || "").toLowerCase();
   const resolvedBranch = (neonBranch || process.env.NEON_BRANCH || "").toLowerCase();
   const resolvedEnv2 = (nodeEnv || process.env.NODE_ENV || "").toLowerCase();
+  if (resolvedBranch === "staging") {
+    return false;
+  }
   if (resolvedEnv2 === "production") {
     return true;
   }
