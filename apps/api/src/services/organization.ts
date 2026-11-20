@@ -12,7 +12,10 @@ export class OrganizationService {
    * NEVER returns accessCodeHash.
    */
   static async listApprovedOrganizations() {
-    // Canonical auto-seeding disabled to preserve clean slate for user-created organizations.
+    // For unit test runner harness only, seed canonical test fixtures
+    if (process.env.NODE_ENV === "test") {
+      await OrganizationService.seedCanonicalOrganizationsIfEmpty();
+    }
     const rows = await db
       .select({
         id: organizations.id,

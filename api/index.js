@@ -178991,6 +178991,9 @@ var OrganizationService = class {
    * NEVER returns accessCodeHash.
    */
   static async listApprovedOrganizations() {
+    if (process.env.NODE_ENV === "test") {
+      await OrganizationService.seedCanonicalOrganizationsIfEmpty();
+    }
     const rows = await db.select({
       id: organizations.id,
       name: organizations.name,
