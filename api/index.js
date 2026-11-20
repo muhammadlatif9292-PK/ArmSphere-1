@@ -179140,7 +179140,7 @@ var OrganizationService = class {
       sanctioningBody: data.sanctioningBody?.trim() || "WAF / IFA Affiliated",
       accessCodeHash: codeHash,
       status: "APPROVED",
-      isOnboarded: true
+      isOnboarded: false
     }).returning();
     const { accessCodeHash, ...safeOrg } = created;
     return {

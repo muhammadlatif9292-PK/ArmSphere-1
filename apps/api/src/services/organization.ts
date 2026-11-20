@@ -230,7 +230,7 @@ export class OrganizationService {
         sanctioningBody: data.sanctioningBody?.trim() || "WAF / IFA Affiliated",
         accessCodeHash: codeHash,
         status: "APPROVED",
-        isOnboarded: true,
+        isOnboarded: false,
       })
       .returning();
 
