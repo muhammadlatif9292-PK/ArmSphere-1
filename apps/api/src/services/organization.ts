@@ -12,7 +12,7 @@ export class OrganizationService {
    * NEVER returns accessCodeHash.
    */
   static async listApprovedOrganizations() {
-    await this.seedCanonicalOrganizationsIfEmpty();
+    // Canonical auto-seeding disabled to preserve clean slate for user-created organizations.
     const rows = await db
       .select({
         id: organizations.id,
@@ -84,10 +84,10 @@ export class OrganizationService {
         sub: org.id,
         orgId: org.id,
         orgName: org.name,
-        role: "ORGANIZATION_OPERATOR",
+        role: "TOURNAMENT_OPERATOR",
       },
       undefined,
-      "ORGANIZATION_OPERATOR",
+      "TOURNAMENT_OPERATOR",
       env.JWT_ACCESS_SECRET
     );
 
@@ -135,6 +135,111 @@ export class OrganizationService {
 
     const { accessCodeHash, ...safeOrg } = updated;
     return safeOrg;
+  }
+
+  /**
+   * Lookup single approved organization by ID or slug.
+   */
+  static async getById(idOrSlug: string) {
+    const trimmed = idOrSlug.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+
+    const [org] = await db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        slug: organizations.slug,
+        province: organizations.province,
+        city: organizations.city,
+        country: organizations.country,
+        logoUrl: organizations.logoUrl,
+        sanctioningBody: organizations.sanctioningBody,
+        status: organizations.status,
+        isOnboarded: organizations.isOnboarded,
+        presidentName: organizations.presidentName,
+        foundationDate: organizations.foundationDate,
+        contactEmail: organizations.contactEmail,
+        contactPhone: organizations.contactPhone,
+        websiteUrl: organizations.websiteUrl,
+        createdAt: organizations.createdAt,
+      })
+      .from(organizations)
+      .where(
+        isUuid
+          ? eq(organizations.id, trimmed)
+          : eq(organizations.slug, trimmed)
+      )
+      .limit(1);
+
+    if (!org) {
+      throw new NotFoundError("Organization not found.");
+    }
+    return org;
+  }
+
+  /**
+   * Public creation of a new sanctioning organization.
+   * Automatically generates entrance access code, hashes it, and approves the org.
+   */
+  static async createOrganization(data: {
+    name: string;
+    province: string;
+    city?: string;
+    country?: string;
+    presidentName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    websiteUrl?: string;
+    sanctioningBody?: string;
+    accessCode?: string;
+  }) {
+    const name = data.name.trim();
+    let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    if (!baseSlug) baseSlug = "org";
+
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const [existing] = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.slug, slug))
+        .limit(1);
+      if (!existing) break;
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    }
+
+    const plainCode =
+      data.accessCode?.trim().toUpperCase() ||
+      `${baseSlug.slice(0, 4).toUpperCase()}-${new Date().getFullYear()}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
+    const codeHash = await hashPassword(plainCode);
+
+    const [created] = await db
+      .insert(organizations)
+      .values({
+        name,
+        slug,
+        province: data.province?.trim() || "National",
+        city: data.city?.trim() || "",
+        country: data.country?.trim() || "PK",
+        presidentName: data.presidentName?.trim() || null,
+        contactEmail: data.contactEmail?.trim() || null,
+        contactPhone: data.contactPhone?.trim() || null,
+        websiteUrl: data.websiteUrl?.trim() || null,
+        sanctioningBody: data.sanctioningBody?.trim() || "WAF / IFA Affiliated",
+        accessCodeHash: codeHash,
+        status: "APPROVED",
+        isOnboarded: true,
+      })
+      .returning();
+
+    const { accessCodeHash, ...safeOrg } = created;
+    return {
+      organization: safeOrg,
+      plainAccessCode: plainCode,
+      accessCode: plainCode,
+    };
   }
 
   /**

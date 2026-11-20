@@ -1537,11 +1537,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/organizations/create',
         name: 'create_organization',
-        redirect: (context, state) {
-          // Regular athletes cannot register organizations.
-          // Redirect to the organizations directory.
-          return '/organizations';
-        },
         pageBuilder: (context, state) => AppTransitionPage(
           key: state.pageKey,
           child: const CreateOrganizationScreen(),

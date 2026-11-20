@@ -131,8 +131,131 @@ class _CreateOrganizationScreenState
         ),
       );
 
-      final newId = created['id']?.toString() ?? 'org_paff_national';
-      context.pushReplacement('/organizations/$newId');
+      final newId = created['id']?.toString() ?? 'org_custom';
+      final accessCode = (created['plainAccessCode'] ?? created['accessCode'])?.toString() ?? '';
+
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: const Color(0xFF0C101A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+              width: 1.4,
+            ),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.verified_rounded, color: AppTheme.goldPrimary, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'ORGANIZATION CREATED',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Congratulations! "${_nameCtrl.text.trim()}" is now registered and approved as a sanctioning organization.',
+                style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.4),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'YOUR ENTRANCE ACCESS CODE:',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.goldPrimary,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151C2C),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        accessCode.isNotEmpty ? accessCode : 'SAVED_SECURELY',
+                        style: const TextStyle(
+                          fontFamily: AppTheme.fontMono,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.goldPrimary,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy_rounded, color: AppTheme.goldPrimary, size: 18),
+                      tooltip: 'Copy Code',
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: accessCode));
+                        CrystalToast.info(dialogContext, 'Access code copied to clipboard!');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Keep this access code safe. You will use it to enter your Organization Portal and manage tournaments.',
+                style: TextStyle(fontSize: 11.5, color: AppTheme.textMuted, height: 1.3),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.pushReplacement('/organizations/$newId');
+              },
+              child: const Text('VIEW DOSSIER', style: TextStyle(color: AppTheme.textSecondary)),
+            ),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.goldPrimary,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.push('/organization/portal');
+              },
+              icon: const Icon(Icons.login_rounded, size: 16),
+              label: const Text(
+                'ENTER PORTAL',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

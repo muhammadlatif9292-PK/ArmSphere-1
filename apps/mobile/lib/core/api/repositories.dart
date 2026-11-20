@@ -3781,89 +3781,10 @@ class OrganizationRepository extends BaseRepository {
           return <Map<String, dynamic>>[];
         },
       );
-      if (remote.isNotEmpty) return remote;
-    } catch (_) {}
-
-    // If this is a newly submitted user organization with 0 events, return empty list
-    // so OrganizationProfileScreen displays the inspiring first-run empty state (Vector 1).
-    try {
-      final localRaw = hiveStorage.getCachedData('local_created_organizations');
-      if (localRaw is List) {
-        final localMatch = localRaw
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .where((o) => o['id']?.toString() == id || o['slug']?.toString() == id)
-            .firstOrNull;
-        if (localMatch != null && ((localMatch['activeEventsCount'] as num?)?.toInt() ?? 0) == 0) {
-          return <Map<String, dynamic>>[];
-        }
-      }
-    } catch (_) {}
-
-    // Fallback: deterministic upcoming & archived events for canonical organizations
-    final now = DateTime.now();
-    return [
-      {
-        'id': '${id}_evt_upcoming_01',
-        'organizationId': id,
-        'name': 'National Open Qualifier & Supermatch Series 2026',
-        'status': 'UPCOMING',
-        'venueName': 'Liaquat National Gymnasium',
-        'city': 'Islamabad',
-        'province': 'Federal Capital',
-        'startDate': now.add(const Duration(days: 18)).toIso8601String(),
-        'endDate': now.add(const Duration(days: 19)).toIso8601String(),
-        'registrationFeeCents': 5000,
-        'registeredCount': 46,
-        'capacity': 64,
-        'ruleset': 'WAF / PAFF Double Elimination',
-        'tablesCount': 4,
-      },
-      {
-        'id': '${id}_evt_live_02',
-        'organizationId': id,
-        'name': 'Grand Prix Title Showdown VII',
-        'status': 'ONGOING',
-        'venueName': 'Titanium Combat Arena',
-        'city': 'Lahore',
-        'province': 'Punjab',
-        'startDate': now.subtract(const Duration(hours: 3)).toIso8601String(),
-        'endDate': now.add(const Duration(hours: 6)).toIso8601String(),
-        'registrationFeeCents': 7500,
-        'registeredCount': 64,
-        'capacity': 64,
-        'ruleset': 'WAF Pro Rules · Running Fouls',
-        'tablesCount': 3,
-      },
-      {
-        'id': '${id}_evt_archive_03',
-        'organizationId': id,
-        'name': 'Winter Championship Finals 2025',
-        'status': 'COMPLETED',
-        'venueName': 'Expo Centre Hall 2',
-        'city': 'Karachi',
-        'province': 'Sindh',
-        'startDate': now.subtract(const Duration(days: 90)).toIso8601String(),
-        'endDate': now.subtract(const Duration(days: 89)).toIso8601String(),
-        'registrationFeeCents': 5000,
-        'registeredCount': 92,
-        'capacity': 96,
-        'podium': [
-          {
-            'division': 'Senior Right -85kg',
-            'gold': 'Sultan Al-Balushi',
-            'silver': 'Kamran Zaidi',
-            'bronze': 'Danyal Qureshi',
-          },
-          {
-            'division': 'Senior Right +105kg',
-            'gold': 'Zafar Iqbal',
-            'silver': 'Hamza Tariq',
-            'bronze': 'Usman Butt',
-          },
-        ],
-      },
-    ];
+      return remote;
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getOrganizationChampions(
@@ -3977,9 +3898,18 @@ class OrganizationRepository extends BaseRepository {
         cancelToken: cancelToken,
       );
       final data = response.data;
-      final inner = (data is Map && data.containsKey('data')) ? data['data'] : data;
+      final inner = (data is Map && data.containsKey('organization'))
+          ? data['organization']
+          : ((data is Map && data.containsKey('data')) ? data['data'] : data);
+      final plainCode = (data is Map ? (data['plainAccessCode'] ?? data['accessCode']) : null)?.toString();
       if (inner is Map) {
-        return {...localOrg, ...Map<String, dynamic>.from(inner)};
+        final res = {...localOrg, ...Map<String, dynamic>.from(inner)};
+        if (plainCode != null && plainCode.isNotEmpty) {
+          res['plainAccessCode'] = plainCode;
+          res['accessCode'] = plainCode;
+        }
+        await hiveStorage.evictCache('organizations_list____');
+        return res;
       }
     } catch (_) {}
 

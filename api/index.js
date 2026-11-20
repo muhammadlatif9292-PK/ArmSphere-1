@@ -174317,8 +174317,16 @@ var TournamentService = class _TournamentService {
   static async createEvent(data, actorId) {
     logger.info({ name: data.name, actorId }, "Creating new tournament event");
     const effectiveActorId = actorId || data.organizerId;
+    let isOrgActor = false;
     if (effectiveActorId) {
-      const [dbActor] = await db.select().from(users).where(eq(users.id, effectiveActorId)).limit(1);
+      let [dbActor] = await db.select().from(users).where(eq(users.id, effectiveActorId)).limit(1);
+      if (!dbActor) {
+        const [orgActor] = await db.select().from(organizations).where(eq(organizations.id, effectiveActorId)).limit(1);
+        if (orgActor && orgActor.status === "APPROVED") {
+          dbActor = { id: orgActor.id, role: UserRole.TOURNAMENT_OPERATOR, isActive: true };
+          isOrgActor = true;
+        }
+      }
       if (!dbActor || dbActor.isActive === false) {
         throw new ForbiddenError("You do not have permission to create a tournament event.");
       }
@@ -174332,7 +174340,7 @@ var TournamentService = class _TournamentService {
       if (!allowedCreatorRoles.includes(canonicalRole)) {
         throw new ForbiddenError("Only tournament operators, directors, or system administrators may create events.");
       }
-      if (canonicalRole === UserRole.TOURNAMENT_OPERATOR && data.organizerId && actorId && data.organizerId !== actorId) {
+      if (canonicalRole === UserRole.TOURNAMENT_OPERATOR && data.organizerId && actorId && data.organizerId !== actorId && !isOrgActor) {
         throw new ForbiddenError("Tournament operators cannot create events on behalf of another organizer.");
       }
       if (canonicalRole === UserRole.PROVINCIAL_DIRECTOR) {
@@ -174356,6 +174364,8 @@ var TournamentService = class _TournamentService {
     if (data.startDate > data.endDate) {
       throw new BadRequestError("Event start date must be before or equal to the end date.");
     }
+    const finalOrganizationId = isOrgActor ? effectiveActorId : data.organizationId || null;
+    const finalOrganizerId = isOrgActor ? null : data.organizerId || actorId || null;
     const [newEvent] = await db.insert(events).values({
       name: data.name,
       startDate: data.startDate,
@@ -174368,7 +174378,8 @@ var TournamentService = class _TournamentService {
       capacity: data.capacity,
       registrationFeeCents: data.registrationFeeCents ?? null,
       status: data.status || "DRAFT",
-      organizerId: data.organizerId || actorId || null,
+      organizerId: finalOrganizerId,
+      organizationId: finalOrganizationId,
       paymentMethod: data.paymentMethod || "STRIPE",
       paymentQrImageUrl: data.paymentQrImageUrl || null
     }).returning();
@@ -174394,7 +174405,18 @@ var TournamentService = class _TournamentService {
     if (!actorId) {
       throw new ForbiddenError(`Authentication required to ${action} this event.`);
     }
-    const [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (event.organizationId && event.organizationId === actorId) {
+      return;
+    }
+    let [dbActor] = await db.select().from(users).where(eq(users.id, actorId)).limit(1);
+    if (!dbActor) {
+      const [orgActor] = await db.select().from(organizations).where(eq(organizations.id, actorId)).limit(1);
+      if (orgActor && orgActor.status === "APPROVED") {
+        if (!event.organizationId || event.organizationId === orgActor.id) {
+          return;
+        }
+      }
+    }
     if (!dbActor || dbActor.isActive === false) {
       throw new ForbiddenError(`You do not have permission to ${action} this event.`);
     }
@@ -177432,12 +177454,12 @@ init_dist3();
 var tournamentRouter = (0, import_express10.Router)();
 tournamentRouter.get(
   "/events",
-  authenticate,
+  optionalAuthenticate,
   TournamentController.listEvents
 );
 tournamentRouter.get(
   "/events/:id",
-  authenticate,
+  optionalAuthenticate,
   TournamentController.getEvent
 );
 tournamentRouter.post(
@@ -178969,7 +178991,6 @@ var OrganizationService = class {
    * NEVER returns accessCodeHash.
    */
   static async listApprovedOrganizations() {
-    await this.seedCanonicalOrganizationsIfEmpty();
     const rows = await db.select({
       id: organizations.id,
       name: organizations.name,
@@ -179024,10 +179045,10 @@ var OrganizationService = class {
         sub: org.id,
         orgId: org.id,
         orgName: org.name,
-        role: "ORGANIZATION_OPERATOR"
+        role: "TOURNAMENT_OPERATOR"
       },
       void 0,
-      "ORGANIZATION_OPERATOR",
+      "TOURNAMENT_OPERATOR",
       env_default.JWT_ACCESS_SECRET
     );
     const { accessCodeHash, ...safeOrg } = org;
@@ -179056,6 +179077,77 @@ var OrganizationService = class {
     }
     const { accessCodeHash, ...safeOrg } = updated;
     return safeOrg;
+  }
+  /**
+   * Lookup single approved organization by ID or slug.
+   */
+  static async getById(idOrSlug) {
+    const trimmed = idOrSlug.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+    const [org] = await db.select({
+      id: organizations.id,
+      name: organizations.name,
+      slug: organizations.slug,
+      province: organizations.province,
+      city: organizations.city,
+      country: organizations.country,
+      logoUrl: organizations.logoUrl,
+      sanctioningBody: organizations.sanctioningBody,
+      status: organizations.status,
+      isOnboarded: organizations.isOnboarded,
+      presidentName: organizations.presidentName,
+      foundationDate: organizations.foundationDate,
+      contactEmail: organizations.contactEmail,
+      contactPhone: organizations.contactPhone,
+      websiteUrl: organizations.websiteUrl,
+      createdAt: organizations.createdAt
+    }).from(organizations).where(
+      isUuid ? eq(organizations.id, trimmed) : eq(organizations.slug, trimmed)
+    ).limit(1);
+    if (!org) {
+      throw new NotFoundError("Organization not found.");
+    }
+    return org;
+  }
+  /**
+   * Public creation of a new sanctioning organization.
+   * Automatically generates entrance access code, hashes it, and approves the org.
+   */
+  static async createOrganization(data) {
+    const name = data.name.trim();
+    let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    if (!baseSlug) baseSlug = "org";
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const [existing] = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, slug)).limit(1);
+      if (!existing) break;
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    }
+    const plainCode = data.accessCode?.trim().toUpperCase() || `${baseSlug.slice(0, 4).toUpperCase()}-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto18.randomBytes(2).toString("hex").toUpperCase()}`;
+    const codeHash = await hashPassword(plainCode);
+    const [created] = await db.insert(organizations).values({
+      name,
+      slug,
+      province: data.province?.trim() || "National",
+      city: data.city?.trim() || "",
+      country: data.country?.trim() || "PK",
+      presidentName: data.presidentName?.trim() || null,
+      contactEmail: data.contactEmail?.trim() || null,
+      contactPhone: data.contactPhone?.trim() || null,
+      websiteUrl: data.websiteUrl?.trim() || null,
+      sanctioningBody: data.sanctioningBody?.trim() || "WAF / IFA Affiliated",
+      accessCodeHash: codeHash,
+      status: "APPROVED",
+      isOnboarded: true
+    }).returning();
+    const { accessCodeHash, ...safeOrg } = created;
+    return {
+      organization: safeOrg,
+      plainAccessCode: plainCode,
+      accessCode: plainCode
+    };
   }
   /**
    * Admin creation with secure code generation and hashing.
@@ -179196,6 +179288,19 @@ var adminCreateSchema = external_exports.object({
   city: external_exports.string().optional(),
   accessCode: external_exports.string().min(4).optional()
 });
+var createOrganizationSchema = external_exports.object({
+  name: external_exports.string().min(3, "Organization name must be at least 3 characters"),
+  province: external_exports.string().min(2, "Province is required"),
+  city: external_exports.string().optional(),
+  country: external_exports.string().optional(),
+  presidentName: external_exports.string().optional(),
+  promoterName: external_exports.string().optional(),
+  contactEmail: external_exports.string().email().optional().or(external_exports.literal("")),
+  contactPhone: external_exports.string().optional(),
+  websiteUrl: external_exports.string().optional(),
+  sanctioningBody: external_exports.string().optional(),
+  accessCode: external_exports.string().min(4).optional()
+});
 var OrganizationController = class {
   static async listApproved(req, res, next) {
     try {
@@ -179232,6 +179337,37 @@ var OrganizationController = class {
         adminUserId: req.user?.id
       });
       res.status(201).json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+  static async create(req, res, next) {
+    try {
+      const validated = createOrganizationSchema.parse(req.body);
+      const result = await OrganizationService.createOrganization({
+        ...validated,
+        presidentName: validated.presidentName || validated.promoterName,
+        contactEmail: validated.contactEmail || void 0
+      });
+      res.status(201).json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+  static async getById(req, res, next) {
+    try {
+      const { id } = req.params;
+      const org = await OrganizationService.getById(id);
+      res.json({ success: true, data: org });
+    } catch (err) {
+      next(err);
+    }
+  }
+  static async listEventsForOrganization(req, res, next) {
+    try {
+      const { id } = req.params;
+      const eventsList = await TournamentService.listEvents({ organizationId: id });
+      res.json({ success: true, data: eventsList });
     } catch (err) {
       next(err);
     }
@@ -183649,7 +183785,10 @@ sparringInviteRouter.post(
 var import_express26 = __toESM(require_express2(), 1);
 var organizationRouter = (0, import_express26.Router)();
 organizationRouter.get("/", OrganizationController.listApproved);
+organizationRouter.post("/", OrganizationController.create);
 organizationRouter.post("/verify-access", OrganizationController.verifyAccess);
+organizationRouter.get("/:id", OrganizationController.getById);
+organizationRouter.get("/:id/events", OrganizationController.listEventsForOrganization);
 organizationRouter.post("/:id/onboard", authenticate, OrganizationController.onboard);
 
 // apps/api/src/app.ts

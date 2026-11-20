@@ -59,9 +59,17 @@ class _OrganizationsDirectoryScreenState
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: const [
-          CrystalHomeButton(),
-          SizedBox(width: 8),
+        actions: [
+          IconButton(
+            tooltip: 'Register Organization',
+            icon: const Icon(Icons.add_circle_outline_rounded, color: AppTheme.goldPrimary),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.push('/organizations/create');
+            },
+          ),
+          const CrystalHomeButton(),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -222,23 +230,60 @@ class _OrganizationsDirectoryScreenState
 
                     if (filtered.isEmpty) {
                       return Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(28),
                         decoration:
                             AppTheme.recessedObsidianWellDecoration(radius: 16),
-                        child: const Column(
+                        child: Column(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.shield_outlined,
-                              size: 36,
-                              color: AppTheme.textMuted,
+                              size: 44,
+                              color: AppTheme.goldPrimary,
                             ),
-                            SizedBox(height: 10),
-                            Text(
-                              'No sanctioning organizations match your filter',
+                            const SizedBox(height: 14),
+                            const Text(
+                              'No Organizations Registered Yet',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
                                 color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Be the first to register your armwrestling federation or promotion to sanction tournaments and manage championship divisions.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: AppTheme.textSecondary,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.goldPrimary,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                HapticFeedback.mediumImpact();
+                                context.push('/organizations/create');
+                              },
+                              icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                              label: const Text(
+                                'REGISTER FIRST ORGANIZATION',
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
                           ],
@@ -441,9 +486,17 @@ class _OrganizationProfileScreenState
             color: AppTheme.textPrimary,
           ),
         ),
-        actions: const [
-          CrystalHomeButton(),
-          SizedBox(width: 8),
+        actions: [
+          IconButton(
+            tooltip: 'Register Organization',
+            icon: const Icon(Icons.add_circle_outline_rounded, color: AppTheme.goldPrimary),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.push('/organizations/create');
+            },
+          ),
+          const CrystalHomeButton(),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(

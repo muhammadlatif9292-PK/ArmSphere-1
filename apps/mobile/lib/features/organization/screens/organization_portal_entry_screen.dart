@@ -58,22 +58,18 @@ class _OrganizationPortalEntryScreenState
     try {
       final repo = ref.read(organizationRepositoryProvider);
       final list = await repo.getOrganizations();
-      final effectiveList = list.isNotEmpty
-          ? list
-          : OrganizationRepository.canonicalOrganizations;
       if (mounted) {
         setState(() {
-          _organizations = effectiveList;
-          _selectedOrganization = effectiveList.first;
+          _organizations = list;
+          _selectedOrganization = list.isNotEmpty ? list.first : null;
           _isLoadingOrganizations = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _organizations = OrganizationRepository.canonicalOrganizations;
-          _selectedOrganization =
-              OrganizationRepository.canonicalOrganizations.first;
+          _organizations = const [];
+          _selectedOrganization = null;
           _isLoadingOrganizations = false;
         });
       }
@@ -152,8 +148,40 @@ class _OrganizationPortalEntryScreenState
                   ],
                 ),
                 const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.separated(
+                if (_organizations.isEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.shield_outlined, size: 40, color: AppTheme.textMuted),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No Organizations Found',
+                          style: TextStyle(
+                            fontFamily: 'Space Grotesk',
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppTheme.goldPrimary,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () {
+                            Navigator.of(sheetContext).pop();
+                            context.push('/organizations/create');
+                          },
+                          icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+                          label: const Text('REGISTER NEW FEDERATION', style: TextStyle(fontWeight: FontWeight.w900)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Flexible(
+                    child: ListView.separated(
                     shrinkWrap: true,
                     physics: const BouncingScrollPhysics(),
                     itemCount: _organizations.length,
@@ -260,6 +288,7 @@ class _OrganizationPortalEntryScreenState
                   ),
                 ),
               ],
+            ],
             ),
           ),
         );
@@ -746,6 +775,7 @@ class _OrganizationPortalEntryScreenState
                   ),
                 ),
               ],
+            ],
             ),
           ),
         ],

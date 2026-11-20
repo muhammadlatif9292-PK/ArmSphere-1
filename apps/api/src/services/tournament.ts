@@ -4,6 +4,7 @@ import { db } from "../config/db.js";
 import crypto from "crypto";
 import { 
   events,
+  organizations,
   eventRegistrations,
   officialWeighins,
   brackets,
@@ -132,8 +133,17 @@ export class TournamentService {
     logger.info({ name: data.name, actorId }, "Creating new tournament event");
 
     const effectiveActorId = actorId || data.organizerId;
+    let isOrgActor = false;
     if (effectiveActorId) {
-      const [dbActor] = await db.select().from(users).where(eq(users.id, effectiveActorId)).limit(1);
+      let [dbActor] = await db.select().from(users).where(eq(users.id, effectiveActorId)).limit(1);
+      if (!dbActor) {
+        const [orgActor] = await db.select().from(organizations).where(eq(organizations.id, effectiveActorId)).limit(1);
+        if (orgActor && orgActor.status === "APPROVED") {
+          dbActor = { id: orgActor.id, role: UserRole.TOURNAMENT_OPERATOR, isActive: true } as any;
+          isOrgActor = true;
+        }
+      }
+
       if (!dbActor || (dbActor as any).isActive === false) {
         throw new ForbiddenError("You do not have permission to create a tournament event.");
       }
@@ -147,7 +157,7 @@ export class TournamentService {
       if (!allowedCreatorRoles.includes(canonicalRole)) {
         throw new ForbiddenError("Only tournament operators, directors, or system administrators may create events.");
       }
-      if (canonicalRole === UserRole.TOURNAMENT_OPERATOR && data.organizerId && actorId && data.organizerId !== actorId) {
+      if (canonicalRole === UserRole.TOURNAMENT_OPERATOR && data.organizerId && actorId && data.organizerId !== actorId && !isOrgActor) {
         throw new ForbiddenError("Tournament operators cannot create events on behalf of another organizer.");
       }
       if (canonicalRole === UserRole.PROVINCIAL_DIRECTOR) {
@@ -177,6 +187,9 @@ export class TournamentService {
       throw new BadRequestError("Event start date must be before or equal to the end date.");
     }
 
+    const finalOrganizationId = isOrgActor ? effectiveActorId : ((data as any).organizationId || null);
+    const finalOrganizerId = isOrgActor ? null : (data.organizerId || actorId || null);
+
     const [newEvent] = await db
       .insert(events)
       .values({
@@ -191,7 +204,8 @@ export class TournamentService {
         capacity: data.capacity,
         registrationFeeCents: data.registrationFeeCents ?? null,
         status: data.status || "DRAFT",
-        organizerId: data.organizerId || actorId || null,
+        organizerId: finalOrganizerId,
+        organizationId: finalOrganizationId,
         paymentMethod: data.paymentMethod || "STRIPE",
         paymentQrImageUrl: data.paymentQrImageUrl || null
       })
@@ -226,11 +240,25 @@ export class TournamentService {
       throw new ForbiddenError(`Authentication required to ${action} this event.`);
     }
 
-    const [dbActor] = await db
+    // 0. Event organization match
+    if (event.organizationId && event.organizationId === actorId) {
+      return;
+    }
+
+    let [dbActor] = await db
       .select()
       .from(users)
       .where(eq(users.id, actorId))
       .limit(1);
+
+    if (!dbActor) {
+      const [orgActor] = await db.select().from(organizations).where(eq(organizations.id, actorId)).limit(1);
+      if (orgActor && orgActor.status === "APPROVED") {
+        if (!event.organizationId || event.organizationId === orgActor.id) {
+          return;
+        }
+      }
+    }
 
     if (!dbActor || (dbActor as any).isActive === false) {
       throw new ForbiddenError(`You do not have permission to ${action} this event.`);

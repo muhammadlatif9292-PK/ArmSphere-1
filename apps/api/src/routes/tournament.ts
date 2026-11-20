@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { TournamentController } from "../controllers/tournament.js";
-import { authenticate, requireRole } from "../middlewares/auth.js";
+import { authenticate, optionalAuthenticate, requireRole } from "../middlewares/auth.js";
 import { UserRole } from "@armsphere/types";
 import { rateLimiter } from "../middlewares/security.js";
 
@@ -9,13 +9,13 @@ export const tournamentRouter = Router();
 // --- Event Management ---
 tournamentRouter.get(
   "/events",
-  authenticate,
+  optionalAuthenticate,
   TournamentController.listEvents
 );
 
 tournamentRouter.get(
   "/events/:id",
-  authenticate,
+  optionalAuthenticate,
   TournamentController.getEvent
 );
 
