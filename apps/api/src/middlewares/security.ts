@@ -115,7 +115,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   // token before their first login. These routes are guarded by rate limiting.
   const normalizedPath = (req.baseUrl ? req.baseUrl + req.path : req.path).replace(/^\/api\/v1/, "");
   const credentialEndpoint =
-    /^\/(auth\/(register|login|refresh|mfa\/verify|mfa\/recovery|password-reset\/request|password-reset\/reset|verify-email\/confirm)|organizations\/verify-access)$/;
+    /^\/(auth\/(register|login|refresh|mfa\/verify|mfa\/recovery|password-reset\/request|password-reset\/reset|verify-email\/confirm)|organizations(\/verify-access)?)$/;
   if (credentialEndpoint.test(normalizedPath) || credentialEndpoint.test(req.path.replace(/^\/api\/v1/, ""))) {
     return next();
   }
