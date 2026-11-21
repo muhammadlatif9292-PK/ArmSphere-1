@@ -266,15 +266,17 @@ export class NotificationService {
 
     try {
       const now = new Date();
-      // Format current HH:MM in timezone
-      let timeString = now.toLocaleTimeString("en-US", {
-        hour12: false,
+      // Format current HH:MM in timezone with strict 24-hour cycle (0-23)
+      const timeString = now.toLocaleTimeString("en-GB", {
+        hourCycle: "h23",
         hour: "2-digit",
         minute: "2-digit",
         timeZone: prefs.quietHoursTimezone || "UTC",
       });
 
-      const [nowH, nowM] = timeString.split(":").map(Number);
+      const match = timeString.match(/(\d+):(\d+)/);
+      const nowH = match ? (parseInt(match[1], 10) % 24) : 0;
+      const nowM = match ? parseInt(match[2], 10) : 0;
       const [startH, startM] = prefs.quietHoursStart.split(":").map(Number);
       const [endH, endM] = prefs.quietHoursEnd.split(":").map(Number);
 
