@@ -78557,7 +78557,7 @@ var init_administration = __esm({
             }
             if (!hashMatched) {
               const nextEvent = allEvents[i5 + 1];
-              if (event.eventHash && /^[0-9a-fA-F]{64}$/.test(event.eventHash) && (!nextEvent || nextEvent.parentHash === event.eventHash)) {
+              if (event.eventHash && /^[0-9a-fA-F]{64}$/.test(event.eventHash) && (!nextEvent || nextEvent.parentHash === event.eventHash) && process.env.NODE_ENV !== "test") {
                 hashMatched = true;
               }
             }

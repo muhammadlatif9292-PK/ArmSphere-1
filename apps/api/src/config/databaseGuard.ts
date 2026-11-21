@@ -29,11 +29,6 @@ export function isProductionDatabase(
   const resolvedBranch = (neonBranch || process.env.NEON_BRANCH || "").toLowerCase();
   const resolvedEnv = (nodeEnv || process.env.NODE_ENV || "").toLowerCase();
 
-  // If explicitly designated as staging branch, it is isolated and non-production
-  if (resolvedBranch === "staging") {
-    return false;
-  }
-
   // 1. Explicit production NODE_ENV
   if (resolvedEnv === "production") {
     return true;

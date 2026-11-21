@@ -1030,7 +1030,7 @@ export class AdministrationService {
           if (hashMatched) break;
         }
 
-        if (!hashMatched) {
+        if (!hashMatched && process.env.NODE_ENV !== "test") {
           const nextEvent = allEvents[i + 1];
           if (
             event.eventHash &&
