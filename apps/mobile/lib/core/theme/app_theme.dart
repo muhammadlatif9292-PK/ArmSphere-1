@@ -494,13 +494,15 @@ class AppTheme {
   /// Whisper-Dark Optical Crystal Lens Outer Card Box Decoration.
   static BoxDecoration smokedGlassDecoration({
     double radius = 18.0,
+    double? borderRadius,
     Color? borderColor,
     Color? surfaceColor,
     List<BoxShadow>? customShadow,
   }) {
+    final effectiveRadius = borderRadius ?? radius;
     return BoxDecoration(
       color: const Color(0x4704060B),
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: BorderRadius.circular(effectiveRadius),
       border: Border.all(
         color: borderColor ?? const Color(0x38FFFFFF),
         width: 1.0,
@@ -512,11 +514,13 @@ class AppTheme {
   /// Whisper-Dark Optical Crystal Inner Well Decoration (`Color(0x4704060B)`, `radius: 14`, `1px #26FFFFFF` border).
   static BoxDecoration recessedObsidianWellDecoration({
     double radius = 14.0,
+    double? borderRadius,
     Color? borderColor,
   }) {
+    final effectiveRadius = borderRadius ?? radius;
     return BoxDecoration(
       color: const Color(0x4704060B),
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: BorderRadius.circular(effectiveRadius),
       border: Border.all(
         color: borderColor ?? const Color(0x26FFFFFF),
         width: 1.0,

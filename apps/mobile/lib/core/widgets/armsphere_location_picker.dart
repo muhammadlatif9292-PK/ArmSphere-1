@@ -60,7 +60,7 @@ class ArmSphereLocationFieldCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: AppTheme.smokedGlassDecoration(
-        borderRadius: AppTheme.radiusMedium,
+        radius: AppTheme.radiusMedium,
         borderColor: _hasCoordinates
             ? AppTheme.goldPrimary.withValues(alpha: 0.65)
             : AppTheme.border,
@@ -629,7 +629,7 @@ class _ArmSphereLocationPickerState extends State<ArmSphereLocationPicker> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: AppTheme.smokedGlassDecoration(
-                    borderRadius: AppTheme.radiusMedium,
+                    radius: AppTheme.radiusMedium,
                     borderColor: AppTheme.border,
                   ),
                   child: Row(
@@ -694,7 +694,7 @@ class _ArmSphereLocationPickerState extends State<ArmSphereLocationPicker> {
                   Container(
                     constraints: const BoxConstraints(maxHeight: 240),
                     decoration: AppTheme.smokedGlassDecoration(
-                      borderRadius: AppTheme.radiusMedium,
+                      radius: AppTheme.radiusMedium,
                       borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
                     ),
                     child: ListView.separated(
@@ -783,7 +783,7 @@ class _ArmSphereLocationPickerState extends State<ArmSphereLocationPicker> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: AppTheme.smokedGlassDecoration(
-                borderRadius: AppTheme.radiusLarge,
+                radius: AppTheme.radiusLarge,
                 borderColor: AppTheme.goldPrimary.withValues(alpha: 0.45),
               ),
               child: Column(
@@ -923,7 +923,7 @@ class _MapControlButton extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: AppTheme.smokedGlassDecoration(
-              borderRadius: AppTheme.radiusMedium,
+              radius: AppTheme.radiusMedium,
               borderColor: isActive ? AppTheme.goldPrimary : AppTheme.border,
             ),
             child: Center(

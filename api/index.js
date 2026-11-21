@@ -20079,14 +20079,14 @@ var require_etag = __commonJS({
   "node_modules/etag/index.js"(exports, module) {
     "use strict";
     module.exports = etag;
-    var crypto19 = __require("crypto");
+    var crypto20 = __require("crypto");
     var Stats = __require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash = crypto19.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash = crypto20.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash + '"';
     }
@@ -21963,7 +21963,7 @@ var require_application = __commonJS({
   "node_modules/express/lib/application.js"(exports, module) {
     "use strict";
     var finalhandler = require_finalhandler();
-    var Router27 = require_router();
+    var Router28 = require_router();
     var methods = require_methods();
     var middleware = require_init();
     var query = require_query();
@@ -22028,7 +22028,7 @@ var require_application = __commonJS({
     };
     app2.lazyrouter = function lazyrouter() {
       if (!this._router) {
-        this._router = new Router27({
+        this._router = new Router28({
           caseSensitive: this.enabled("case sensitive routing"),
           strict: this.enabled("strict routing")
         });
@@ -22979,11 +22979,11 @@ var require_request = __commonJS({
 // node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "node_modules/cookie-signature/index.js"(exports) {
-    var crypto19 = __require("crypto");
+    var crypto20 = __require("crypto");
     exports.sign = function(val, secret) {
       if ("string" !== typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto19.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto20.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports.unsign = function(val, secret) {
       if ("string" !== typeof val) throw new TypeError("Signed cookie string must be provided.");
@@ -22992,7 +22992,7 @@ var require_cookie_signature = __commonJS({
       return sha1(mac) == sha1(val) ? str : false;
     };
     function sha1(str) {
-      return crypto19.createHash("sha1").update(str).digest("hex");
+      return crypto20.createHash("sha1").update(str).digest("hex");
     }
   }
 });
@@ -23892,7 +23892,7 @@ var require_express = __commonJS({
     var mixin = require_merge_descriptors();
     var proto = require_application();
     var Route = require_route();
-    var Router27 = require_router();
+    var Router28 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23915,7 +23915,7 @@ var require_express = __commonJS({
     exports.request = req;
     exports.response = res;
     exports.Route = Route;
-    exports.Router = Router27;
+    exports.Router = Router28;
     exports.json = bodyParser.json;
     exports.query = require_query();
     exports.raw = bodyParser.raw;
@@ -30755,14 +30755,14 @@ var require_buffer_equal_constant_time = __commonJS({
 var require_jwa = __commonJS({
   "node_modules/jwa/index.js"(exports, module) {
     var Buffer2 = require_safe_buffer().Buffer;
-    var crypto19 = __require("crypto");
+    var crypto20 = __require("crypto");
     var formatEcdsa = require_ecdsa_sig_formatter();
     var util2 = __require("util");
     var MSG_INVALID_ALGORITHM = '"%s" is not a valid algorithm.\n  Supported algorithms are:\n  "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512" and "none".';
     var MSG_INVALID_SECRET = "secret must be a string or buffer";
     var MSG_INVALID_VERIFIER_KEY = "key must be a string or a buffer";
     var MSG_INVALID_SIGNER_KEY = "key must be a string, a buffer or an object";
-    var supportsKeyObjects = typeof crypto19.createPublicKey === "function";
+    var supportsKeyObjects = typeof crypto20.createPublicKey === "function";
     if (supportsKeyObjects) {
       MSG_INVALID_VERIFIER_KEY += " or a KeyObject";
       MSG_INVALID_SECRET += "or a KeyObject";
@@ -30852,17 +30852,17 @@ var require_jwa = __commonJS({
       return function sign3(thing, secret) {
         checkIsSecretKey(secret);
         thing = normalizeInput(thing);
-        var hmac = crypto19.createHmac("sha" + bits, secret);
+        var hmac = crypto20.createHmac("sha" + bits, secret);
         var sig = (hmac.update(thing), hmac.digest("base64"));
         return fromBase642(sig);
       };
     }
     var bufferEqual;
-    var timingSafeEqual2 = "timingSafeEqual" in crypto19 ? function timingSafeEqual3(a5, b5) {
+    var timingSafeEqual2 = "timingSafeEqual" in crypto20 ? function timingSafeEqual3(a5, b5) {
       if (a5.byteLength !== b5.byteLength) {
         return false;
       }
-      return crypto19.timingSafeEqual(a5, b5);
+      return crypto20.timingSafeEqual(a5, b5);
     } : function timingSafeEqual3(a5, b5) {
       if (!bufferEqual) {
         bufferEqual = require_buffer_equal_constant_time();
@@ -30879,7 +30879,7 @@ var require_jwa = __commonJS({
       return function sign3(thing, privateKey) {
         checkIsPrivateKey(privateKey);
         thing = normalizeInput(thing);
-        var signer = crypto19.createSign("RSA-SHA" + bits);
+        var signer = crypto20.createSign("RSA-SHA" + bits);
         var sig = (signer.update(thing), signer.sign(privateKey, "base64"));
         return fromBase642(sig);
       };
@@ -30889,7 +30889,7 @@ var require_jwa = __commonJS({
         checkIsPublicKey(publicKey);
         thing = normalizeInput(thing);
         signature = toBase643(signature);
-        var verifier = crypto19.createVerify("RSA-SHA" + bits);
+        var verifier = crypto20.createVerify("RSA-SHA" + bits);
         verifier.update(thing);
         return verifier.verify(publicKey, signature, "base64");
       };
@@ -30898,11 +30898,11 @@ var require_jwa = __commonJS({
       return function sign3(thing, privateKey) {
         checkIsPrivateKey(privateKey);
         thing = normalizeInput(thing);
-        var signer = crypto19.createSign("RSA-SHA" + bits);
+        var signer = crypto20.createSign("RSA-SHA" + bits);
         var sig = (signer.update(thing), signer.sign({
           key: privateKey,
-          padding: crypto19.constants.RSA_PKCS1_PSS_PADDING,
-          saltLength: crypto19.constants.RSA_PSS_SALTLEN_DIGEST
+          padding: crypto20.constants.RSA_PKCS1_PSS_PADDING,
+          saltLength: crypto20.constants.RSA_PSS_SALTLEN_DIGEST
         }, "base64"));
         return fromBase642(sig);
       };
@@ -30912,12 +30912,12 @@ var require_jwa = __commonJS({
         checkIsPublicKey(publicKey);
         thing = normalizeInput(thing);
         signature = toBase643(signature);
-        var verifier = crypto19.createVerify("RSA-SHA" + bits);
+        var verifier = crypto20.createVerify("RSA-SHA" + bits);
         verifier.update(thing);
         return verifier.verify({
           key: publicKey,
-          padding: crypto19.constants.RSA_PKCS1_PSS_PADDING,
-          saltLength: crypto19.constants.RSA_PSS_SALTLEN_DIGEST
+          padding: crypto20.constants.RSA_PKCS1_PSS_PADDING,
+          saltLength: crypto20.constants.RSA_PSS_SALTLEN_DIGEST
         }, signature, "base64");
       };
     }
@@ -35577,7 +35577,7 @@ var require_cert_signatures = __commonJS({
 var require_sasl = __commonJS({
   "node_modules/pg/lib/crypto/sasl.js"(exports, module) {
     "use strict";
-    var crypto19 = require_utils4();
+    var crypto20 = require_utils4();
     var { signatureAlgorithmHashFromCertificate } = require_cert_signatures();
     function saslprep(password) {
       const nonAsciiSpace = /[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g;
@@ -35595,7 +35595,7 @@ var require_sasl = __commonJS({
       if (mechanism === "SCRAM-SHA-256-PLUS" && typeof stream.getPeerCertificate !== "function") {
         throw new Error("SASL: Mechanism SCRAM-SHA-256-PLUS requires a certificate");
       }
-      const clientNonce = crypto19.randomBytes(18).toString("base64");
+      const clientNonce = crypto20.randomBytes(18).toString("base64");
       const gs2Header = mechanism === "SCRAM-SHA-256-PLUS" ? "p=tls-server-end-point" : stream ? "y" : "n";
       return {
         mechanism,
@@ -35637,20 +35637,20 @@ var require_sasl = __commonJS({
         const peerCert = stream.getPeerCertificate().raw;
         let hashName = signatureAlgorithmHashFromCertificate(peerCert);
         if (hashName === "MD5" || hashName === "SHA-1") hashName = "SHA-256";
-        const certHash = await crypto19.hashByName(hashName, peerCert);
+        const certHash = await crypto20.hashByName(hashName, peerCert);
         const bindingData = Buffer.concat([Buffer.from("p=tls-server-end-point,,"), Buffer.from(certHash)]);
         channelBinding = bindingData.toString("base64");
       }
       const clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + sv.nonce;
       const authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
       const saltBytes = Buffer.from(sv.salt, "base64");
-      const saltedPassword = await crypto19.deriveKey(saslprep(password), saltBytes, sv.iteration);
-      const clientKey = await crypto19.hmacSha256(saltedPassword, "Client Key");
-      const storedKey = await crypto19.sha256(clientKey);
-      const clientSignature = await crypto19.hmacSha256(storedKey, authMessage);
+      const saltedPassword = await crypto20.deriveKey(saslprep(password), saltBytes, sv.iteration);
+      const clientKey = await crypto20.hmacSha256(saltedPassword, "Client Key");
+      const storedKey = await crypto20.sha256(clientKey);
+      const clientSignature = await crypto20.hmacSha256(storedKey, authMessage);
       const clientProof = xorBuffers(Buffer.from(clientKey), Buffer.from(clientSignature)).toString("base64");
-      const serverKey = await crypto19.hmacSha256(saltedPassword, "Server Key");
-      const serverSignatureBytes = await crypto19.hmacSha256(serverKey, authMessage);
+      const serverKey = await crypto20.hmacSha256(saltedPassword, "Server Key");
+      const serverSignatureBytes = await crypto20.hmacSha256(serverKey, authMessage);
       session.message = "SASLResponse";
       session.serverSignature = Buffer.from(serverSignatureBytes).toString("base64");
       session.response = clientFinalMessageWithoutProof + ",p=" + clientProof;
@@ -37884,7 +37884,7 @@ var require_client = __commonJS({
     var Query2 = require_query2();
     var defaults2 = require_defaults();
     var Connection2 = require_connection();
-    var crypto19 = require_utils4();
+    var crypto20 = require_utils4();
     var activeQueryDeprecationNotice = nodeUtils.deprecate(
       () => {
       },
@@ -38139,7 +38139,7 @@ var require_client = __commonJS({
       _handleAuthMD5Password(msg) {
         this._getPassword(async () => {
           try {
-            const hashedPassword = await crypto19.postgresMd5PasswordHash(this.user, this.password, msg.salt);
+            const hashedPassword = await crypto20.postgresMd5PasswordHash(this.user, this.password, msg.salt);
             this.connection.password(hashedPassword);
           } catch (e5) {
             this.emit("error", e5);
@@ -44162,6 +44162,7 @@ __export(dist_exports, {
   postLikes: () => postLikes,
   prestigeMetrics: () => prestigeMetrics,
   processedStripeEvents: () => processedStripeEvents,
+  radarBeacons: () => radarBeacons,
   rankingSnapshots: () => rankingSnapshots,
   refereeCertifications: () => refereeCertifications,
   roleApplications: () => roleApplications,
@@ -44186,7 +44187,7 @@ __export(dist_exports, {
   users: () => users,
   venuePartners: () => venuePartners
 });
-var users, userSessions, auditLogs, athleteProfiles, athleteClubs, athleteVerifications, athleteDocuments, athleteBiometrics, athleteMeasurements, athleteSocialLinks, athleteProfileHistory, authTokens, auditEvents, venuePartners, rankingSnapshots, payments, eventRegistrations, processedStripeEvents, ticketTypes, tickets, organizations, events, announcements, matches, disputes, disputeEvidence, disputeComments, sanctions, blockedUsers, eloLedger, brackets, bracketSeeds, matchTables, tournamentMatches, tournamentTableQueue, officialWeighins, pendingActions, syncTombstones, scheduledJobs, informalEvents, informalEventParticipants, userDevices, userDeviceTokens, notifications, refereeCertifications, officialCertificates, talentNominations, teamMembers, teams, communityPosts, postComments, postLikes, championshipTitles, beltLineage, championshipChallenges, prestigeMetrics, conversations, conversationParticipants, messages, userCommunicationPreferences, follows, userRoleGrants, roleApplications, supportTickets, supportTicketMessages, sparringInvites;
+var users, userSessions, auditLogs, athleteProfiles, athleteClubs, athleteVerifications, athleteDocuments, athleteBiometrics, athleteMeasurements, athleteSocialLinks, athleteProfileHistory, authTokens, auditEvents, venuePartners, rankingSnapshots, payments, eventRegistrations, processedStripeEvents, ticketTypes, tickets, organizations, events, announcements, matches, disputes, disputeEvidence, disputeComments, sanctions, blockedUsers, eloLedger, brackets, bracketSeeds, matchTables, tournamentMatches, tournamentTableQueue, officialWeighins, pendingActions, syncTombstones, scheduledJobs, informalEvents, informalEventParticipants, userDevices, userDeviceTokens, notifications, refereeCertifications, officialCertificates, talentNominations, teamMembers, teams, communityPosts, postComments, postLikes, championshipTitles, beltLineage, championshipChallenges, prestigeMetrics, conversations, conversationParticipants, messages, userCommunicationPreferences, follows, userRoleGrants, roleApplications, supportTickets, supportTicketMessages, sparringInvites, radarBeacons;
 var init_dist2 = __esm({
   "packages/db-schema/dist/index.js"() {
     "use strict";
@@ -44260,13 +44261,19 @@ var init_dist2 = __esm({
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow(),
       deletedAt: timestamp("deleted_at"),
-      stripeCustomerId: varchar("stripe_customer_id", { length: 255 })
+      stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+      latitude: real("latitude"),
+      longitude: real("longitude"),
+      locationVisibility: varchar("location_visibility", { length: 20 }).notNull().default("AREA"),
+      locationFuzzSeed: varchar("location_fuzz_seed", { length: 64 })
     });
     athleteClubs = pgTable("athlete_clubs", {
       id: uuid("id").primaryKey().defaultRandom(),
       name: varchar("name", { length: 255 }).notNull(),
       city: varchar("city", { length: 100 }).notNull(),
       province: varchar("province", { length: 100 }).notNull(),
+      latitude: real("latitude"),
+      longitude: real("longitude"),
       isDeleted: boolean("is_deleted").notNull().default(false),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
@@ -44361,6 +44368,8 @@ var init_dist2 = __esm({
       logoUrl: varchar("logo_url", { length: 1024 }),
       ownerUserId: uuid("owner_user_id").references(() => users.id),
       isVerified: boolean("is_verified").notNull().default(false),
+      latitude: real("latitude"),
+      longitude: real("longitude"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     });
@@ -44465,6 +44474,8 @@ var init_dist2 = __esm({
       organizerId: uuid("organizer_id").references(() => users.id),
       organizationId: uuid("organization_id").references(() => organizations.id),
       paymentMethod: varchar("payment_method", { length: 50 }).notNull().default("STRIPE"),
+      latitude: real("latitude"),
+      longitude: real("longitude"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     });
@@ -44700,6 +44711,8 @@ var init_dist2 = __esm({
       scheduledAt: timestamp("scheduled_at").notNull(),
       maxParticipants: integer("max_participants"),
       isPublic: boolean("is_public").notNull().default(true),
+      latitude: real("latitude"),
+      longitude: real("longitude"),
       createdAt: timestamp("created_at").notNull().defaultNow(),
       updatedAt: timestamp("updated_at").notNull().defaultNow()
     });
@@ -45024,6 +45037,23 @@ var init_dist2 = __esm({
         statusIdx: index("idx_sparring_invites_status").on(table.status)
       };
     });
+    radarBeacons = pgTable("radar_beacons", {
+      id: uuid("id").primaryKey().defaultRandom(),
+      userId: uuid("user_id").references(() => users.id).notNull(),
+      beaconType: varchar("beacon_type", { length: 30 }).notNull(),
+      title: varchar("title", { length: 255 }).notNull(),
+      latitude: real("latitude").notNull(),
+      longitude: real("longitude").notNull(),
+      weightClass: varchar("weight_class", { length: 50 }),
+      armPreference: varchar("arm_preference", { length: 20 }),
+      expiresAt: timestamp("expires_at").notNull(),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    }, (table) => {
+      return {
+        expiresAtIdx: index("idx_radar_beacons_expires_at").on(table.expiresAt),
+        userIdIdx: index("idx_radar_beacons_user_id").on(table.userId)
+      };
+    });
   }
 });
 
@@ -45033,7 +45063,7 @@ var require_main = __commonJS({
     var fs3 = __require("fs");
     var path3 = __require("path");
     var os2 = __require("os");
-    var crypto19 = __require("crypto");
+    var crypto20 = __require("crypto");
     var TIPS = [
       "\u25C8 encrypted .env [www.dotenvx.com]",
       "\u25C8 secrets for agents [www.dotenvx.com]",
@@ -45277,7 +45307,7 @@ var require_main = __commonJS({
       const authTag = ciphertext.subarray(-16);
       ciphertext = ciphertext.subarray(12, -16);
       try {
-        const aesgcm = crypto19.createDecipheriv("aes-256-gcm", key, nonce);
+        const aesgcm = crypto20.createDecipheriv("aes-256-gcm", key, nonce);
         aesgcm.setAuthTag(authTag);
         return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
       } catch (error2) {
@@ -45351,9 +45381,6 @@ function isProductionDatabase(url, neonBranch, nodeEnv) {
   const resolvedUrl = (url || process.env.DATABASE_URL || "").toLowerCase();
   const resolvedBranch = (neonBranch || process.env.NEON_BRANCH || "").toLowerCase();
   const resolvedEnv2 = (nodeEnv || process.env.NODE_ENV || "").toLowerCase();
-  if (resolvedBranch === "staging") {
-    return false;
-  }
   if (resolvedEnv2 === "production") {
     return true;
   }
@@ -45853,7 +45880,7 @@ var require_speakeasy = __commonJS({
   "node_modules/speakeasy/index.js"(exports) {
     "use strict";
     var base32 = require_base322();
-    var crypto19 = __require("crypto");
+    var crypto20 = __require("crypto");
     var url = __require("url");
     var util2 = __require("util");
     exports.digest = function digest3(options) {
@@ -45875,7 +45902,7 @@ var require_speakeasy = __commonJS({
         buf[7 - i5] = tmp & 255;
         tmp = tmp >> 8;
       }
-      var hmac = crypto19.createHmac(algorithm, secret);
+      var hmac = crypto20.createHmac(algorithm, secret);
       hmac.update(buf);
       return hmac.digest();
     };
@@ -45979,7 +46006,7 @@ var require_speakeasy = __commonJS({
       return exports.generateSecret(options);
     }, "Speakeasy - Deprecation Notice - `generate_key()` is depreciated, please use `generateSecret()` instead.");
     exports.generateSecretASCII = function generateSecretASCII(length, symbols) {
-      var bytes = crypto19.randomBytes(length || 32);
+      var bytes = crypto20.randomBytes(length || 32);
       var set = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
       if (symbols) {
         set += "!@#$%^&*()<>?/[]{},.:;";
@@ -59188,36 +59215,36 @@ var require_pbkdf2 = __commonJS({
     require_md();
     require_util();
     var pkcs5 = forge.pkcs5 = forge.pkcs5 || {};
-    var crypto19;
+    var crypto20;
     if (forge.util.isNodejs && !forge.options.usePureJavaScript) {
-      crypto19 = __require("crypto");
+      crypto20 = __require("crypto");
     }
     module.exports = forge.pbkdf2 = pkcs5.pbkdf2 = function(p3, s2, c5, dkLen, md, callback) {
       if (typeof md === "function") {
         callback = md;
         md = null;
       }
-      if (forge.util.isNodejs && !forge.options.usePureJavaScript && crypto19.pbkdf2 && (md === null || typeof md !== "object") && (crypto19.pbkdf2Sync.length > 4 || (!md || md === "sha1"))) {
+      if (forge.util.isNodejs && !forge.options.usePureJavaScript && crypto20.pbkdf2 && (md === null || typeof md !== "object") && (crypto20.pbkdf2Sync.length > 4 || (!md || md === "sha1"))) {
         if (typeof md !== "string") {
           md = "sha1";
         }
         p3 = Buffer.from(p3, "binary");
         s2 = Buffer.from(s2, "binary");
         if (!callback) {
-          if (crypto19.pbkdf2Sync.length === 4) {
-            return crypto19.pbkdf2Sync(p3, s2, c5, dkLen).toString("binary");
+          if (crypto20.pbkdf2Sync.length === 4) {
+            return crypto20.pbkdf2Sync(p3, s2, c5, dkLen).toString("binary");
           }
-          return crypto19.pbkdf2Sync(p3, s2, c5, dkLen, md).toString("binary");
+          return crypto20.pbkdf2Sync(p3, s2, c5, dkLen, md).toString("binary");
         }
-        if (crypto19.pbkdf2Sync.length === 4) {
-          return crypto19.pbkdf2(p3, s2, c5, dkLen, function(err2, key) {
+        if (crypto20.pbkdf2Sync.length === 4) {
+          return crypto20.pbkdf2(p3, s2, c5, dkLen, function(err2, key) {
             if (err2) {
               return callback(err2);
             }
             callback(null, key.toString("binary"));
           });
         }
-        return crypto19.pbkdf2(p3, s2, c5, dkLen, md, function(err2, key) {
+        return crypto20.pbkdf2(p3, s2, c5, dkLen, md, function(err2, key) {
           if (err2) {
             return callback(err2);
           }
@@ -75972,13 +75999,15 @@ var init_notification = __esm({
         }
         try {
           const now = /* @__PURE__ */ new Date();
-          let timeString = now.toLocaleTimeString("en-US", {
-            hour12: false,
+          const timeString = now.toLocaleTimeString("en-GB", {
+            hourCycle: "h23",
             hour: "2-digit",
             minute: "2-digit",
             timeZone: prefs.quietHoursTimezone || "UTC"
           });
-          const [nowH, nowM] = timeString.split(":").map(Number);
+          const match = timeString.match(/(\d+):(\d+)/);
+          const nowH = match ? parseInt(match[1], 10) % 24 : 0;
+          const nowM = match ? parseInt(match[2], 10) : 0;
           const [startH, startM] = prefs.quietHoursStart.split(":").map(Number);
           const [endH, endM] = prefs.quietHoursEnd.split(":").map(Number);
           const nowVal = nowH * 60 + nowM;
@@ -78555,9 +78584,9 @@ var init_administration = __esm({
               }
               if (hashMatched) break;
             }
-            if (!hashMatched) {
+            if (!hashMatched && process.env.NODE_ENV !== "test") {
               const nextEvent = allEvents[i5 + 1];
-              if (event.eventHash && /^[0-9a-fA-F]{64}$/.test(event.eventHash) && (!nextEvent || nextEvent.parentHash === event.eventHash) && process.env.NODE_ENV !== "test") {
+              if (event.eventHash && /^[0-9a-fA-F]{64}$/.test(event.eventHash) && (!nextEvent || nextEvent.parentHash === event.eventHash)) {
                 hashMatched = true;
               }
             }
@@ -80101,6 +80130,73 @@ var init_scheduledJobs = __esm({
   }
 });
 
+// apps/api/src/services/locationPrivacy.ts
+import crypto13 from "crypto";
+function generateLocationFuzzSeed(userId) {
+  const secret = `${env.JWT_ACCESS_SECRET}:armsphere:location_fuzz:v1`;
+  return crypto13.createHmac("sha256", secret).update(userId).digest("hex");
+}
+function normalizeLocationVisibility(value) {
+  const upper = (value ?? "").trim().toUpperCase();
+  if (upper === "TRAVEL_ONLY") return "TRAVEL_ONLY";
+  if (upper === "GHOST") return "GHOST";
+  return "AREA";
+}
+function fuzzCoordinates(latitude, longitude, seed) {
+  const digest3 = crypto13.createHash("sha256").update(seed).digest();
+  const angleInt = digest3.readUInt32BE(0);
+  const angleRad = angleInt / 4294967295 * 2 * Math.PI;
+  const radiusInt = digest3.readUInt32BE(4);
+  const radiusMeters = MIN_FUZZ_RADIUS_METERS + radiusInt / 4294967295 * (MAX_FUZZ_RADIUS_METERS - MIN_FUZZ_RADIUS_METERS);
+  const deltaLat = radiusMeters * Math.cos(angleRad) / EARTH_METERS_PER_DEGREE_LAT;
+  const latRad = latitude * Math.PI / 180;
+  const cosLat = Math.max(0.1, Math.cos(latRad));
+  const deltaLng = radiusMeters * Math.sin(angleRad) / (EARTH_METERS_PER_DEGREE_LAT * cosLat);
+  const fuzzedLat = Math.max(-90, Math.min(90, latitude + deltaLat));
+  let fuzzedLng = longitude + deltaLng;
+  if (fuzzedLng > 180) fuzzedLng -= 360;
+  if (fuzzedLng < -180) fuzzedLng += 360;
+  return {
+    latitude: Math.round(fuzzedLat * 1e6) / 1e6,
+    longitude: Math.round(fuzzedLng * 1e6) / 1e6
+  };
+}
+function sanitizeAthleteLocationForViewer(profile, viewerUserId) {
+  const safe = { ...profile };
+  const seed = typeof safe.locationFuzzSeed === "string" && safe.locationFuzzSeed.length > 0 ? safe.locationFuzzSeed : generateLocationFuzzSeed(String(safe.userId || safe.id || "anonymous"));
+  delete safe.locationFuzzSeed;
+  const isOwner = Boolean(viewerUserId && safe.userId && viewerUserId === safe.userId);
+  const visibility = normalizeLocationVisibility(safe.locationVisibility);
+  safe.locationVisibility = visibility;
+  if (isOwner) {
+    return safe;
+  }
+  if (visibility === "GHOST" || visibility === "TRAVEL_ONLY") {
+    safe.latitude = null;
+    safe.longitude = null;
+    return safe;
+  }
+  if (typeof safe.latitude === "number" && typeof safe.longitude === "number" && Number.isFinite(safe.latitude) && Number.isFinite(safe.longitude)) {
+    const fuzzed = fuzzCoordinates(safe.latitude, safe.longitude, seed);
+    safe.latitude = fuzzed.latitude;
+    safe.longitude = fuzzed.longitude;
+  } else {
+    safe.latitude = null;
+    safe.longitude = null;
+  }
+  return safe;
+}
+var EARTH_METERS_PER_DEGREE_LAT, MIN_FUZZ_RADIUS_METERS, MAX_FUZZ_RADIUS_METERS;
+var init_locationPrivacy = __esm({
+  "apps/api/src/services/locationPrivacy.ts"() {
+    "use strict";
+    init_env();
+    EARTH_METERS_PER_DEGREE_LAT = 111320;
+    MIN_FUZZ_RADIUS_METERS = 500;
+    MAX_FUZZ_RADIUS_METERS = 1500;
+  }
+});
+
 // apps/api/src/services/sync.ts
 var sync_exports = {};
 __export(sync_exports, {
@@ -80116,6 +80212,7 @@ var init_sync = __esm({
     init_dist3();
     init_dist();
     init_scheduledJobs();
+    init_locationPrivacy();
     SyncService = class _SyncService {
       /**
        * Registers a new pending offline action for replay orchestration.
@@ -80358,7 +80455,30 @@ var init_sync = __esm({
               fullName: payload.fullName || userRecord.fullName,
               updatedAt: /* @__PURE__ */ new Date()
             }).where(eq(users.id, userId));
-            return { userId, fullName: payload.fullName, status: "PROFILE_SYNCED" };
+            if (payload.latitude !== void 0 || payload.longitude !== void 0 || payload.locationVisibility !== void 0) {
+              const spatialUpdate = {
+                updatedAt: /* @__PURE__ */ new Date(),
+                locationFuzzSeed: generateLocationFuzzSeed(userId)
+              };
+              if (typeof payload.latitude === "number" && payload.latitude >= -90 && payload.latitude <= 90) {
+                spatialUpdate.latitude = payload.latitude;
+              }
+              if (typeof payload.longitude === "number" && payload.longitude >= -180 && payload.longitude <= 180) {
+                spatialUpdate.longitude = payload.longitude;
+              }
+              if (typeof payload.locationVisibility === "string") {
+                spatialUpdate.locationVisibility = normalizeLocationVisibility(payload.locationVisibility);
+              }
+              await db.update(athleteProfiles).set(spatialUpdate).where(eq(athleteProfiles.userId, userId));
+            }
+            return {
+              userId,
+              fullName: payload.fullName,
+              latitude: payload.latitude,
+              longitude: payload.longitude,
+              locationVisibility: payload.locationVisibility,
+              status: "PROFILE_SYNCED"
+            };
           }
           default:
             throw new BadRequestError(`Unsupported offline sync action type: [${actionType}]`);
@@ -150442,7 +150562,7 @@ var require_swagger_jsdoc = __commonJS({
 });
 
 // apps/api/src/app.ts
-var import_express27 = __toESM(require_express2(), 1);
+var import_express28 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 init_dist();
 import path2 from "path";
@@ -152852,7 +152972,7 @@ var import_express2 = __toESM(require_express2(), 1);
 init_sync();
 
 // apps/api/src/services/storage.ts
-import crypto13 from "crypto";
+import crypto14 from "crypto";
 
 // apps/api/src/config/b2.ts
 var import_client_s3 = __toESM(require_dist_cjs16(), 1);
@@ -153093,9 +153213,9 @@ var StorageService = class {
       logger.info({ fileName }, "Sanitizing PNG image and stripping embedded metadata chunks (tEXt/iTXt/zTXt/eXIf)");
       processedBuffer = stripPngMetadata(rawBuffer);
     }
-    const sha256Hash = crypto13.createHash("sha256").update(processedBuffer).digest("hex");
+    const sha256Hash = crypto14.createHash("sha256").update(processedBuffer).digest("hex");
     const extension = fileName.split(".").pop() || "bin";
-    const fileKey = `${fileType.toLowerCase()}s/${crypto13.randomUUID()}.${extension}`;
+    const fileKey = `${fileType.toLowerCase()}s/${crypto14.randomUUID()}.${extension}`;
     const provider = this.getProvider();
     await provider.putObject(rules.bucket, fileKey, processedBuffer, mimeType, sha256Hash);
     logger.info({ fileKey, bucket: rules.bucket, sha256Hash, provider: env_default.STORAGE_PROVIDER }, "Uploaded sanitized file successfully");
@@ -153125,7 +153245,7 @@ var StorageService = class {
       throw new BadRequestError(`MIME type '${mimeType}' is restricted.`);
     }
     const extension = fileName.split(".").pop() || "bin";
-    const fileKey = `${fileType.toLowerCase()}s/${crypto13.randomUUID()}.${extension}`;
+    const fileKey = `${fileType.toLowerCase()}s/${crypto14.randomUUID()}.${extension}`;
     const provider = this.getProvider();
     const policyResult = await provider.generatePresignedPostPolicy(
       rules.bucket,
@@ -153257,6 +153377,7 @@ init_db2();
 init_dist2();
 init_dist();
 init_dist3();
+init_locationPrivacy();
 var AthleteService = class _AthleteService {
   /**
    * Helper to ensure athlete_verification record exists with default UNVERIFIED status
@@ -153297,7 +153418,11 @@ var AthleteService = class _AthleteService {
       height: input.height || null,
       weight: input.weight || null,
       reach: input.reach || null,
-      profilePhoto: input.profilePhoto || null
+      profilePhoto: input.profilePhoto || null,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+      locationVisibility: normalizeLocationVisibility(input.locationVisibility),
+      locationFuzzSeed: generateLocationFuzzSeed(userId)
     }).returning();
     await this.ensureVerificationRecord(userId);
     await db.insert(athleteBiometrics).values({
@@ -153325,7 +153450,7 @@ var AthleteService = class _AthleteService {
       oldData: null,
       newData: profile
     });
-    return profile;
+    return sanitizeAthleteLocationForViewer(profile, userId);
   }
   /**
    * Retrieve complete athlete profile aggregated with verification status, biometrics, measurements, and social links
@@ -153429,7 +153554,7 @@ var AthleteService = class _AthleteService {
     const winRate = totalAll > 0 ? Math.round(wins / totalAll * 1e3) / 10 : 0;
     const isOwner = viewerUserId === ownerUserId;
     const isPrivileged = !!(viewerRole && ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"].includes(viewerRole.toUpperCase()));
-    const safeProfile = { ...profile };
+    const safeProfile = sanitizeAthleteLocationForViewer(profile, viewerUserId);
     if (!isOwner) {
       delete safeProfile.stripeCustomerId;
     }
@@ -153501,6 +153626,14 @@ var AthleteService = class _AthleteService {
     if (input.profilePhoto !== void 0) updatePayload.profilePhoto = input.profilePhoto;
     if (input.profileVisibility !== void 0) updatePayload.profileVisibility = input.profileVisibility;
     if (input.isSearchable !== void 0) updatePayload.isSearchable = input.isSearchable;
+    if (input.latitude !== void 0) updatePayload.latitude = input.latitude;
+    if (input.longitude !== void 0) updatePayload.longitude = input.longitude;
+    if (input.locationVisibility !== void 0) {
+      updatePayload.locationVisibility = normalizeLocationVisibility(input.locationVisibility);
+    }
+    if (!existingProfile.locationFuzzSeed) {
+      updatePayload.locationFuzzSeed = generateLocationFuzzSeed(resolvedUserId);
+    }
     updatePayload.updatedAt = /* @__PURE__ */ new Date();
     const [updatedProfile] = await db.update(athleteProfiles).set(updatePayload).where(eq(athleteProfiles.userId, resolvedUserId)).returning();
     if (input.height !== void 0 || input.weight !== void 0 || input.reach !== void 0) {
@@ -153527,7 +153660,7 @@ var AthleteService = class _AthleteService {
       ipAddress,
       userAgent
     });
-    return updatedProfile;
+    return sanitizeAthleteLocationForViewer(updatedProfile, userId);
   }
   /**
    * Update profile visibility and searchability preferences
@@ -153544,6 +153677,12 @@ var AthleteService = class _AthleteService {
     if (input.isSearchable !== void 0) {
       updatePayload.isSearchable = input.isSearchable;
     }
+    if (input.locationVisibility !== void 0) {
+      updatePayload.locationVisibility = normalizeLocationVisibility(input.locationVisibility);
+    }
+    if (!existingProfile.locationFuzzSeed) {
+      updatePayload.locationFuzzSeed = generateLocationFuzzSeed(userId);
+    }
     updatePayload.updatedAt = /* @__PURE__ */ new Date();
     const [updatedProfile] = await db.update(athleteProfiles).set(updatePayload).where(eq(athleteProfiles.userId, userId)).returning();
     await db.insert(athleteProfileHistory).values({
@@ -153555,11 +153694,16 @@ var AthleteService = class _AthleteService {
     await db.insert(auditLogs).values({
       userId,
       action: "ATHLETE_PROFILE_VISIBILITY_UPDATE",
-      details: { profileId: existingProfile.id, profileVisibility: input.profileVisibility, isSearchable: input.isSearchable },
+      details: {
+        profileId: existingProfile.id,
+        profileVisibility: input.profileVisibility,
+        isSearchable: input.isSearchable,
+        locationVisibility: updatePayload.locationVisibility
+      },
       ipAddress,
       userAgent
     });
-    return updatedProfile;
+    return sanitizeAthleteLocationForViewer(updatedProfile, userId);
   }
   /**
    * Advanced High-Performance search over athletes
@@ -153630,12 +153774,16 @@ var AthleteService = class _AthleteService {
       profilePhoto: athleteProfiles.profilePhoto,
       leftArmElo: athleteProfiles.leftArmElo,
       rightArmElo: athleteProfiles.rightArmElo,
+      latitude: athleteProfiles.latitude,
+      longitude: athleteProfiles.longitude,
+      locationVisibility: athleteProfiles.locationVisibility,
+      locationFuzzSeed: athleteProfiles.locationFuzzSeed,
       verificationStatus: athleteVerifications.status
     }).from(athleteProfiles).leftJoin(
       athleteVerifications,
       eq(athleteProfiles.userId, athleteVerifications.athleteId)
     ).where(and(...queryConditions)).limit(limit).offset(offset).orderBy(desc(athleteProfiles.createdAt));
-    return results;
+    return results.map((r5) => sanitizeAthleteLocationForViewer(r5, filters.viewerUserId));
   }
   /**
    * Submit documents for manual federation review
@@ -153720,11 +153868,13 @@ var AthleteService = class _AthleteService {
   /**
    * Create an athlete club
    */
-  static async createClub(name, city, province) {
+  static async createClub(name, city, province, latitude, longitude) {
     const [club] = await db.insert(athleteClubs).values({
       name,
       city,
-      province
+      province,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null
     }).returning();
     return club;
   }
@@ -153995,12 +154145,16 @@ var createProfileSchema = external_exports.object({
   height: external_exports.number().positive().optional(),
   weight: external_exports.number().positive().optional(),
   reach: external_exports.number().positive().optional(),
-  profilePhoto: external_exports.string().optional()
+  profilePhoto: external_exports.string().optional(),
+  latitude: external_exports.number().min(-90).max(90).nullable().optional(),
+  longitude: external_exports.number().min(-180).max(180).nullable().optional(),
+  locationVisibility: external_exports.enum(["AREA", "TRAVEL_ONLY", "GHOST"]).optional()
 });
 var updateProfileSchema = createProfileSchema.partial();
 var updateVisibilitySchema = external_exports.object({
   profileVisibility: external_exports.enum(["PUBLIC", "GYM_ONLY"]).optional(),
-  isSearchable: external_exports.boolean().optional()
+  isSearchable: external_exports.boolean().optional(),
+  locationVisibility: external_exports.enum(["AREA", "TRAVEL_ONLY", "GHOST"]).optional()
 });
 var searchFilterSchema = external_exports.object({
   displayName: external_exports.string().optional(),
@@ -154047,7 +154201,9 @@ var biometricsUpdateSchema = external_exports.object({
 var createClubSchema = external_exports.object({
   name: external_exports.string().min(2, "Club name must be at least 2 characters"),
   city: external_exports.string().min(1, "City is required"),
-  province: external_exports.string().min(1, "Province is required")
+  province: external_exports.string().min(1, "Province is required"),
+  latitude: external_exports.number().min(-90).max(90).nullable().optional(),
+  longitude: external_exports.number().min(-180).max(180).nullable().optional()
 });
 var getAthleteMatchesQuerySchema = external_exports.object({
   limit: external_exports.preprocess((val) => val ? parseInt(val, 10) : 20, external_exports.number().min(1).max(100)).default(20),
@@ -154321,7 +154477,13 @@ var AthleteController = class {
   static async createClub(req, res, next) {
     try {
       const validated = createClubSchema.parse(req.body);
-      const club = await AthleteService.createClub(validated.name, validated.city, validated.province);
+      const club = await AthleteService.createClub(
+        validated.name,
+        validated.city,
+        validated.province,
+        validated.latitude ?? void 0,
+        validated.longitude ?? void 0
+      );
       res.status(201).json({
         success: true,
         data: club
@@ -156664,7 +156826,7 @@ init_db2();
 init_dist2();
 init_dist();
 init_dist3();
-import crypto16 from "crypto";
+import crypto17 from "crypto";
 
 // node_modules/stripe/esm/Error.js
 var Error_exports = {};
@@ -158797,14 +158959,14 @@ var StripeContext = class _StripeContext {
 };
 
 // node_modules/stripe/esm/platform/NodePlatformFunctions.js
-import * as crypto15 from "crypto";
+import * as crypto16 from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { EventEmitter } from "events";
 
 // node_modules/stripe/esm/crypto/NodeCryptoProvider.js
-import * as crypto14 from "crypto";
+import * as crypto15 from "crypto";
 
 // node_modules/stripe/esm/crypto/CryptoProvider.js
 var CryptoProvider = class {
@@ -158847,7 +159009,7 @@ var CryptoProviderOnlySupportsAsyncError = class extends Error {
 var NodeCryptoProvider = class extends CryptoProvider {
   /** @override */
   computeHMACSignature(payload, secret) {
-    return crypto14.createHmac("sha256", secret).update(payload, "utf8").digest("hex");
+    return crypto15.createHmac("sha256", secret).update(payload, "utf8").digest("hex");
   }
   /** @override */
   async computeHMACSignatureAsync(payload, secret) {
@@ -158856,7 +159018,7 @@ var NodeCryptoProvider = class extends CryptoProvider {
   }
   /** @override */
   async computeSHA256Async(data) {
-    return new Uint8Array(await crypto14.createHash("sha256").update(data).digest());
+    return new Uint8Array(await crypto15.createHash("sha256").update(data).digest());
   }
 };
 
@@ -159225,8 +159387,8 @@ var NodePlatformFunctions = class extends PlatformFunctions {
   }
   /** @override */
   uuid4() {
-    if (crypto15.randomUUID) {
-      return crypto15.randomUUID();
+    if (crypto16.randomUUID) {
+      return crypto16.randomUUID();
     }
     return super.uuid4();
   }
@@ -159272,7 +159434,7 @@ var NodePlatformFunctions = class extends PlatformFunctions {
       }
     } catch {
     }
-    const newId = crypto15.randomBytes(16).toString("hex");
+    const newId = crypto16.randomBytes(16).toString("hex");
     try {
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, newId, "utf8");
@@ -159310,11 +159472,11 @@ var NodePlatformFunctions = class extends PlatformFunctions {
     if (a5.length !== b5.length) {
       return false;
     }
-    if (crypto15.timingSafeEqual) {
+    if (crypto16.timingSafeEqual) {
       const textEncoder = new TextEncoder();
       const aEncoded = textEncoder.encode(a5);
       const bEncoded = textEncoder.encode(b5);
-      return crypto15.timingSafeEqual(aEncoded, bEncoded);
+      return crypto16.timingSafeEqual(aEncoded, bEncoded);
     }
     return super.secureCompare(a5, b5);
   }
@@ -174381,7 +174543,9 @@ var TournamentService = class _TournamentService {
       organizerId: finalOrganizerId,
       organizationId: finalOrganizationId,
       paymentMethod: data.paymentMethod || "STRIPE",
-      paymentQrImageUrl: data.paymentQrImageUrl || null
+      paymentQrImageUrl: data.paymentQrImageUrl || null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null
     }).returning();
     if (data.step1Config && newEvent?.id) {
       eventStep1ConfigMap.set(newEvent.id, data.step1Config);
@@ -175132,7 +175296,7 @@ var TournamentService = class _TournamentService {
         for (let idx = 0; idx < currentRoundPairs.length; idx++) {
           const pair = currentRoundPairs[idx];
           const isRound1 = roundNum === 1;
-          const matchId = crypto16.randomUUID();
+          const matchId = crypto17.randomUUID();
           const athleteAId = isRound1 ? pair[0] : null;
           const athleteBId = isRound1 ? pair[1] : null;
           let status = "PENDING";
@@ -175197,14 +175361,14 @@ var TournamentService = class _TournamentService {
         pairings.push([paddedSeeds[i5], paddedSeeds[powerOf2 - 1 - i5]]);
       }
       const matchesToInsert = [];
-      const gf1Id = crypto16.randomUUID();
-      const gf2Id = crypto16.randomUUID();
+      const gf1Id = crypto17.randomUUID();
+      const gf2Id = crypto17.randomUUID();
       const wbMatchesByRound = {};
       for (let r5 = 1; r5 <= K3; r5++) {
         wbMatchesByRound[r5] = [];
         const matchCount = powerOf2 / Math.pow(2, r5);
         for (let idx = 0; idx < matchCount; idx++) {
-          const matchId = crypto16.randomUUID();
+          const matchId = crypto17.randomUUID();
           let athleteAId = null;
           let athleteBId = null;
           let status = "PENDING";
@@ -175262,7 +175426,7 @@ var TournamentService = class _TournamentService {
         lbMatchesByRound[j5] = [];
         const matchCount = powerOf2 / Math.pow(2, Math.floor((j5 + 3) / 2));
         for (let idx = 0; idx < matchCount; idx++) {
-          const matchId = crypto16.randomUUID();
+          const matchId = crypto17.randomUUID();
           const matchObj = {
             id: matchId,
             bracketId,
@@ -176367,7 +176531,7 @@ var import_client_s33 = __toESM(require_dist_cjs16(), 1);
 var import_s3_request_presigner2 = __toESM(require_dist_cjs17(), 1);
 init_db2();
 init_env();
-import crypto17 from "crypto";
+import crypto18 from "crypto";
 init_dist2();
 init_dist();
 function validatePdfArtifact(buffer) {
@@ -176475,7 +176639,7 @@ var HttpFederationCertificateProvider = class {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     validatePdfArtifact(buffer);
-    const sha256Hash = crypto17.createHash("sha256").update(buffer).digest("hex");
+    const sha256Hash = crypto18.createHash("sha256").update(buffer).digest("hex");
     return {
       pdfBuffer: buffer,
       contentType: "application/pdf",
@@ -176899,7 +177063,9 @@ var createEventSchema = external_exports.object({
   organizerId: external_exports.string().uuid().optional(),
   status: external_exports.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: external_exports.record(external_exports.any()).optional(),
-  idempotencyKey: external_exports.string().optional()
+  idempotencyKey: external_exports.string().optional(),
+  latitude: external_exports.number().min(-90).max(90).nullable().optional(),
+  longitude: external_exports.number().min(-180).max(180).nullable().optional()
 });
 var editEventSchema = external_exports.object({
   name: external_exports.string().min(3).optional(),
@@ -176917,7 +177083,9 @@ var editEventSchema = external_exports.object({
   organizerId: external_exports.string().uuid().optional(),
   status: external_exports.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: external_exports.record(external_exports.any()).optional(),
-  idempotencyKey: external_exports.string().optional()
+  idempotencyKey: external_exports.string().optional(),
+  latitude: external_exports.number().min(-90).max(90).nullable().optional(),
+  longitude: external_exports.number().min(-180).max(180).nullable().optional()
 });
 var registerAthleteSchema = external_exports.object({
   eventId: external_exports.string().uuid("Event ID must be a valid UUID"),
@@ -178984,15 +179152,15 @@ init_dist2();
 init_drizzle_orm();
 init_dist();
 init_env();
-import crypto18 from "crypto";
-var OrganizationService = class {
+import crypto19 from "crypto";
+var OrganizationService = class _OrganizationService {
   /**
    * Public list of approved organizations for selection.
    * NEVER returns accessCodeHash.
    */
   static async listApprovedOrganizations() {
     if (process.env.NODE_ENV === "test") {
-      await OrganizationService.seedCanonicalOrganizationsIfEmpty();
+      await _OrganizationService.seedCanonicalOrganizationsIfEmpty();
     }
     const rows = await db.select({
       id: organizations.id,
@@ -179128,7 +179296,7 @@ var OrganizationService = class {
       counter++;
       slug = `${baseSlug}-${counter}`;
     }
-    const plainCode = data.accessCode?.trim().toUpperCase() || `${baseSlug.slice(0, 4).toUpperCase()}-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto18.randomBytes(2).toString("hex").toUpperCase()}`;
+    const plainCode = data.accessCode?.trim().toUpperCase() || `${baseSlug.slice(0, 4).toUpperCase()}-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto19.randomBytes(2).toString("hex").toUpperCase()}`;
     const codeHash = await hashPassword(plainCode);
     const [created] = await db.insert(organizations).values({
       name,
@@ -179157,7 +179325,7 @@ var OrganizationService = class {
    */
   static async adminCreateOrganization(data) {
     const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-    const plainCode = data.accessCode?.trim() || `${slug.slice(0, 4).toUpperCase()}-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto18.randomBytes(2).toString("hex").toUpperCase()}`;
+    const plainCode = data.accessCode?.trim() || `${slug.slice(0, 4).toUpperCase()}-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto19.randomBytes(2).toString("hex").toUpperCase()}`;
     const codeHash = await hashPassword(plainCode);
     const [created] = await db.insert(organizations).values({
       name: data.name.trim(),
@@ -179182,7 +179350,7 @@ var OrganizationService = class {
    * Admin code rotation.
    */
   static async adminRotateCode(organizationId, newCode, adminUserId) {
-    const plainCode = newCode?.trim() || `ROT-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto18.randomBytes(3).toString("hex").toUpperCase()}`;
+    const plainCode = newCode?.trim() || `ROT-${(/* @__PURE__ */ new Date()).getFullYear()}-${crypto19.randomBytes(3).toString("hex").toUpperCase()}`;
     const codeHash = await hashPassword(plainCode);
     const [updated] = await db.update(organizations).set({ accessCodeHash: codeHash, updatedAt: /* @__PURE__ */ new Date() }).where(eq(organizations.id, organizationId)).returning();
     if (!updated) {
@@ -181567,7 +181735,9 @@ var VenueService = class {
       description: input.description || null,
       logoUrl: input.logoUrl || null,
       ownerUserId: userId,
-      isVerified: false
+      isVerified: false,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null
     }).returning();
     return venue;
   }
@@ -181623,6 +181793,8 @@ var VenueService = class {
     if (input.contactInfo !== void 0) updatePayload.contactInfo = input.contactInfo;
     if (input.description !== void 0) updatePayload.description = input.description;
     if (input.logoUrl !== void 0) updatePayload.logoUrl = input.logoUrl;
+    if (input.latitude !== void 0) updatePayload.latitude = input.latitude;
+    if (input.longitude !== void 0) updatePayload.longitude = input.longitude;
     updatePayload.updatedAt = /* @__PURE__ */ new Date();
     const [updatedVenue] = await db.update(venuePartners).set(updatePayload).where(eq(venuePartners.id, targetVenueId)).returning();
     return updatedVenue;
@@ -181662,7 +181834,9 @@ var createVenueSchema = external_exports.object({
   address: external_exports.string().min(5, "Address must be at least 5 characters"),
   contactInfo: external_exports.string().optional(),
   description: external_exports.string().optional(),
-  logoUrl: external_exports.string().optional()
+  logoUrl: external_exports.string().optional(),
+  latitude: external_exports.number().min(-90).max(90).nullable().optional(),
+  longitude: external_exports.number().min(-180).max(180).nullable().optional()
 });
 var updateVenueSchema = createVenueSchema.partial();
 var getVenuesQuerySchema = external_exports.object({
@@ -182152,7 +182326,9 @@ var InformalEventService = class {
         province: input.province?.trim() || null,
         scheduledAt: scheduledDate,
         maxParticipants: input.maxParticipants || null,
-        isPublic: input.isPublic !== void 0 ? input.isPublic : true
+        isPublic: input.isPublic !== void 0 ? input.isPublic : true,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null
       }).returning();
       await tx.insert(informalEventParticipants).values({
         informalEventId: event.id,
@@ -182325,7 +182501,9 @@ var createEventSchema2 = external_exports.object({
   isPublic: external_exports.preprocess(
     (val) => val === "false" || val === false ? false : true,
     external_exports.boolean().default(true)
-  )
+  ),
+  latitude: external_exports.number().min(-90).max(90).nullable().optional(),
+  longitude: external_exports.number().min(-180).max(180).nullable().optional()
 });
 var getEventsQuerySchema = external_exports.object({
   city: external_exports.string().optional(),
@@ -183794,9 +183972,404 @@ organizationRouter.get("/:id", OrganizationController.getById);
 organizationRouter.get("/:id/events", OrganizationController.listEventsForOrganization);
 organizationRouter.post("/:id/onboard", authenticate, OrganizationController.onboard);
 
+// apps/api/src/routes/radar.ts
+var import_express27 = __toESM(require_express2(), 1);
+
+// apps/api/src/controllers/radar.ts
+init_zod();
+
+// apps/api/src/services/radar.ts
+init_drizzle_orm();
+init_db2();
+init_dist2();
+init_dist();
+init_locationPrivacy();
+function isWithinBounds(lat, lng, bounds) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (lat < bounds.south || lat > bounds.north) return false;
+  if (bounds.west <= bounds.east) {
+    return lng >= bounds.west && lng <= bounds.east;
+  }
+  return lng >= bounds.west || lng <= bounds.east;
+}
+function matchesFilter(value, filter) {
+  if (!filter || filter.trim().length === 0) return true;
+  if (!value) return false;
+  return value.trim().toLowerCase() === filter.trim().toLowerCase();
+}
+function matchesArmPreference(dominantArm, handedness, filter) {
+  if (!filter || filter.trim().length === 0) return true;
+  const target = filter.trim().toUpperCase();
+  if (target === "BOTH" || target === "AMBIDEXTROUS") return true;
+  const dom = (dominantArm ?? "").trim().toUpperCase();
+  const hand = (handedness ?? "").trim().toUpperCase();
+  return dom === target || hand === target || dom === "AMBIDEXTROUS" || hand === "AMBIDEXTROUS";
+}
+var RadarService = class {
+  /**
+   * Returns all spatial pins within a bounding box, applying strict privacy
+   * enforcement on athletes (deterministic 0.5-1.5km fuzzing for AREA, hidden
+   * home base for TRAVEL_ONLY, fully hidden for GHOST) while keeping public
+   * events, venues, clubs, and informal meetups at exact coordinates.
+   */
+  static async getNearby(query) {
+    const { bounds, pinType = "ALL", weightClass, armPreference, limit = 200 } = query;
+    if (bounds.north < bounds.south) {
+      throw new BadRequestError("Bounding box 'north' must be greater than or equal to 'south'.");
+    }
+    const want = (t) => pinType === "ALL" || pinType === t;
+    const now = /* @__PURE__ */ new Date();
+    const eventPins = [];
+    const venuePins = [];
+    const clubPins = [];
+    const informalEventPins = [];
+    const athletePins = [];
+    const beaconPins = [];
+    if (want("EVENT")) {
+      const allEvents = await db.select().from(events).where(
+        and(
+          isNotNull(events.latitude),
+          isNotNull(events.longitude),
+          ne(events.status, "DRAFT"),
+          ne(events.status, "CANCELLED")
+        )
+      );
+      for (const evt of allEvents) {
+        if (typeof evt.latitude !== "number" || typeof evt.longitude !== "number") continue;
+        if (!isWithinBounds(evt.latitude, evt.longitude, bounds)) continue;
+        eventPins.push({
+          id: evt.id,
+          pinType: "EVENT",
+          title: evt.name,
+          subtitle: `${evt.venue}, ${evt.city}`,
+          latitude: evt.latitude,
+          longitude: evt.longitude,
+          city: evt.city,
+          province: evt.province,
+          venue: evt.venue,
+          status: evt.status,
+          startDate: evt.startDate,
+          endDate: evt.endDate,
+          capacity: evt.capacity,
+          isFuzzed: false
+        });
+      }
+    }
+    if (want("VENUE")) {
+      const allVenues = await db.select().from(venuePartners).where(and(isNotNull(venuePartners.latitude), isNotNull(venuePartners.longitude)));
+      for (const v of allVenues) {
+        if (typeof v.latitude !== "number" || typeof v.longitude !== "number") continue;
+        if (!isWithinBounds(v.latitude, v.longitude, bounds)) continue;
+        venuePins.push({
+          id: v.id,
+          pinType: "VENUE",
+          title: v.name,
+          subtitle: v.address,
+          latitude: v.latitude,
+          longitude: v.longitude,
+          city: v.city,
+          province: v.province,
+          address: v.address,
+          isVerified: v.isVerified,
+          logoUrl: v.logoUrl || null,
+          isFuzzed: false
+        });
+      }
+    }
+    if (want("CLUB")) {
+      const allClubs = await db.select().from(athleteClubs).where(
+        and(
+          eq(athleteClubs.isDeleted, false),
+          isNotNull(athleteClubs.latitude),
+          isNotNull(athleteClubs.longitude)
+        )
+      );
+      for (const c5 of allClubs) {
+        if (typeof c5.latitude !== "number" || typeof c5.longitude !== "number") continue;
+        if (!isWithinBounds(c5.latitude, c5.longitude, bounds)) continue;
+        clubPins.push({
+          id: c5.id,
+          pinType: "CLUB",
+          title: c5.name,
+          subtitle: `${c5.city}, ${c5.province}`,
+          latitude: c5.latitude,
+          longitude: c5.longitude,
+          city: c5.city,
+          province: c5.province,
+          isFuzzed: false
+        });
+      }
+    }
+    if (want("INFORMAL_EVENT")) {
+      const allInformal = await db.select().from(informalEvents).where(
+        and(
+          eq(informalEvents.isPublic, true),
+          gt(informalEvents.scheduledAt, now),
+          isNotNull(informalEvents.latitude),
+          isNotNull(informalEvents.longitude)
+        )
+      );
+      for (const ie of allInformal) {
+        if (typeof ie.latitude !== "number" || typeof ie.longitude !== "number") continue;
+        if (!isWithinBounds(ie.latitude, ie.longitude, bounds)) continue;
+        informalEventPins.push({
+          id: ie.id,
+          pinType: "INFORMAL_EVENT",
+          title: ie.title,
+          subtitle: `${ie.city}${ie.province ? `, ${ie.province}` : ""}`,
+          latitude: ie.latitude,
+          longitude: ie.longitude,
+          city: ie.city,
+          province: ie.province || null,
+          scheduledAt: ie.scheduledAt,
+          maxParticipants: ie.maxParticipants || null,
+          isFuzzed: false
+        });
+      }
+    }
+    let allProfiles = [];
+    if (want("ATHLETE") || want("BEACON")) {
+      allProfiles = await db.select().from(athleteProfiles).where(eq(athleteProfiles.isDeleted, false));
+    }
+    const profileByUserId = /* @__PURE__ */ new Map();
+    for (const p3 of allProfiles) {
+      profileByUserId.set(p3.userId, p3);
+    }
+    if (want("ATHLETE")) {
+      for (const p3 of allProfiles) {
+        if (p3.isSearchable === false) continue;
+        if (typeof p3.latitude !== "number" || typeof p3.longitude !== "number") continue;
+        const visibility = normalizeLocationVisibility(p3.locationVisibility);
+        if (visibility !== "AREA") continue;
+        if (!matchesFilter(p3.weightClass, weightClass)) continue;
+        if (!matchesArmPreference(p3.dominantArm, p3.handedness, armPreference)) continue;
+        const seed = typeof p3.locationFuzzSeed === "string" && p3.locationFuzzSeed.length > 0 ? p3.locationFuzzSeed : generateLocationFuzzSeed(p3.userId);
+        const fuzzed = fuzzCoordinates(p3.latitude, p3.longitude, seed);
+        if (!isWithinBounds(fuzzed.latitude, fuzzed.longitude, bounds)) continue;
+        athletePins.push({
+          id: p3.id,
+          userId: p3.userId,
+          pinType: "ATHLETE",
+          title: p3.displayName,
+          subtitle: `${p3.weightClass} \u2022 ${p3.city}, ${p3.province}`,
+          latitude: fuzzed.latitude,
+          longitude: fuzzed.longitude,
+          city: p3.city,
+          province: p3.province,
+          weightClass: p3.weightClass,
+          dominantArm: p3.dominantArm,
+          handedness: p3.handedness,
+          rightArmElo: p3.rightArmElo ?? 1e3,
+          leftArmElo: p3.leftArmElo ?? 1e3,
+          profilePhoto: p3.profilePhoto || null,
+          locationVisibility: visibility,
+          isFuzzed: true
+        });
+      }
+    }
+    if (want("BEACON")) {
+      const activeBeacons = await db.select().from(radarBeacons).where(gt(radarBeacons.expiresAt, now));
+      for (const b5 of activeBeacons) {
+        if (typeof b5.latitude !== "number" || typeof b5.longitude !== "number") continue;
+        if (!isWithinBounds(b5.latitude, b5.longitude, bounds)) continue;
+        const ownerProfile = profileByUserId.get(b5.userId);
+        if (ownerProfile && normalizeLocationVisibility(ownerProfile.locationVisibility) === "GHOST") {
+          continue;
+        }
+        const effectiveWeight = b5.weightClass || ownerProfile?.weightClass || null;
+        const effectiveArm = b5.armPreference || ownerProfile?.dominantArm || null;
+        if (!matchesFilter(effectiveWeight, weightClass)) continue;
+        if (!matchesArmPreference(effectiveArm, ownerProfile?.handedness, armPreference)) continue;
+        beaconPins.push({
+          id: b5.id,
+          userId: b5.userId,
+          pinType: "BEACON",
+          beaconType: b5.beaconType,
+          title: b5.title,
+          subtitle: ownerProfile?.displayName || "Active Puller Beacon",
+          latitude: b5.latitude,
+          longitude: b5.longitude,
+          weightClass: effectiveWeight,
+          armPreference: effectiveArm,
+          expiresAt: b5.expiresAt,
+          createdAt: b5.createdAt,
+          athleteName: ownerProfile?.displayName || null,
+          isFuzzed: false
+        });
+      }
+    }
+    const pins = [
+      ...eventPins,
+      ...venuePins,
+      ...clubPins,
+      ...informalEventPins,
+      ...beaconPins,
+      ...athletePins
+    ].slice(0, limit);
+    return {
+      bounds,
+      counts: {
+        total: pins.length,
+        events: eventPins.length,
+        venues: venuePins.length,
+        clubs: clubPins.length,
+        informalEvents: informalEventPins.length,
+        athletes: athletePins.length,
+        beacons: beaconPins.length
+      },
+      pins,
+      events: eventPins,
+      venues: venuePins,
+      clubs: clubPins,
+      informalEvents: informalEventPins,
+      athletes: athletePins,
+      beacons: beaconPins
+    };
+  }
+  /**
+   * Drops a temporary radar beacon for the authenticated user.
+   */
+  static async createBeacon(userId, input) {
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user) {
+      throw new NotFoundError("User account not found.");
+    }
+    const now = /* @__PURE__ */ new Date();
+    let expiresAt;
+    if (input.expiresAt) {
+      expiresAt = input.expiresAt;
+    } else {
+      const hours = Math.min(336, Math.max(1, input.durationHours ?? 6));
+      expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1e3);
+    }
+    if (isNaN(expiresAt.getTime()) || expiresAt <= now) {
+      throw new BadRequestError("Beacon expiration timestamp must be in the future.");
+    }
+    const [created] = await db.insert(radarBeacons).values({
+      userId,
+      beaconType: input.beaconType.trim().toUpperCase(),
+      title: input.title.trim(),
+      latitude: input.latitude,
+      longitude: input.longitude,
+      weightClass: input.weightClass?.trim() || null,
+      armPreference: input.armPreference?.trim().toUpperCase() || null,
+      expiresAt
+    }).returning();
+    return created;
+  }
+  /**
+   * Deletes an existing radar beacon after enforcing ownership (or admin privilege).
+   */
+  static async deleteBeacon(beaconId, actorUserId, actorRole) {
+    const [existing] = await db.select().from(radarBeacons).where(eq(radarBeacons.id, beaconId)).limit(1);
+    if (!existing) {
+      throw new NotFoundError("Radar beacon not found.");
+    }
+    const isOwner = existing.userId === actorUserId;
+    const isAdmin = Boolean(
+      actorRole && ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR"].includes(actorRole.toUpperCase())
+    );
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenError("You are not authorized to delete this radar beacon.");
+    }
+    await db.delete(radarBeacons).where(eq(radarBeacons.id, beaconId));
+    return { success: true, id: beaconId };
+  }
+};
+
+// apps/api/src/controllers/radar.ts
+var nearbyQuerySchema = external_exports.object({
+  north: external_exports.coerce.number().min(-90).max(90),
+  south: external_exports.coerce.number().min(-90).max(90),
+  east: external_exports.coerce.number().min(-180).max(180),
+  west: external_exports.coerce.number().min(-180).max(180),
+  pinType: external_exports.enum(["ALL", "EVENT", "VENUE", "ATHLETE", "BEACON", "CLUB", "INFORMAL_EVENT"]).optional(),
+  type: external_exports.enum(["ALL", "EVENT", "VENUE", "ATHLETE", "BEACON", "CLUB", "INFORMAL_EVENT"]).optional(),
+  weightClass: external_exports.string().max(50).optional(),
+  armPreference: external_exports.string().max(20).optional(),
+  limit: external_exports.coerce.number().int().min(1).max(500).default(200)
+});
+var createBeaconSchema = external_exports.object({
+  beaconType: external_exports.string().trim().min(2).max(30).default("SPARRING"),
+  title: external_exports.string().trim().min(2, "Beacon title must be at least 2 characters").max(255),
+  latitude: external_exports.number().min(-90).max(90),
+  longitude: external_exports.number().min(-180).max(180),
+  weightClass: external_exports.string().trim().max(50).optional(),
+  armPreference: external_exports.string().trim().max(20).optional(),
+  expiresAt: external_exports.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid expiresAt timestamp" }).transform((val) => new Date(val)).optional(),
+  durationHours: external_exports.number().min(1).max(336).optional()
+});
+var beaconIdParamSchema = external_exports.string().uuid("Invalid radar beacon ID");
+var RadarController = class {
+  /**
+   * GET /api/radar/nearby
+   */
+  static async getNearby(req, res, next) {
+    try {
+      const parsed2 = nearbyQuerySchema.parse(req.query);
+      const effectivePinType = parsed2.pinType || parsed2.type || "ALL";
+      const result = await RadarService.getNearby({
+        bounds: {
+          north: parsed2.north,
+          south: parsed2.south,
+          east: parsed2.east,
+          west: parsed2.west
+        },
+        pinType: effectivePinType,
+        weightClass: parsed2.weightClass,
+        armPreference: parsed2.armPreference,
+        limit: parsed2.limit,
+        viewerUserId: req.user.id
+      });
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * POST /api/radar/beacons
+   */
+  static async createBeacon(req, res, next) {
+    try {
+      const validated = createBeaconSchema.parse(req.body);
+      const beacon = await RadarService.createBeacon(req.user.id, validated);
+      res.status(201).json({
+        success: true,
+        data: beacon
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+  /**
+   * DELETE /api/radar/beacons/:id
+   */
+  static async deleteBeacon(req, res, next) {
+    try {
+      const id = beaconIdParamSchema.parse(req.params.id);
+      const result = await RadarService.deleteBeacon(id, req.user.id, req.user?.role);
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error2) {
+      next(error2);
+    }
+  }
+};
+
+// apps/api/src/routes/radar.ts
+var radarRouter = (0, import_express27.Router)();
+radarRouter.get("/nearby", authenticate, RadarController.getNearby);
+radarRouter.post("/beacons", authenticate, RadarController.createBeacon);
+radarRouter.delete("/beacons/:id", authenticate, RadarController.deleteBeacon);
+
 // apps/api/src/app.ts
 init_env();
-var app = (0, import_express27.default)();
+var app = (0, import_express28.default)();
 app.disable("x-powered-by");
 app.use(securityHeaders);
 app.use((req, res, next) => {
@@ -183834,7 +184407,7 @@ app.use(
   })
 );
 app.use(
-  import_express27.default.json({
+  import_express28.default.json({
     limit: "15mb",
     verify: (req, res, buf) => {
       req.rawBody = buf;
@@ -183899,6 +184472,9 @@ app.use("/sparring-invites", sparringInviteRouter);
 app.use("/api/v1/sparring-invites", sparringInviteRouter);
 app.use("/organizations", organizationRouter);
 app.use("/api/v1/organizations", organizationRouter);
+app.use("/radar", radarRouter);
+app.use("/api/radar", radarRouter);
+app.use("/api/v1/radar", radarRouter);
 app.use("/", ticketRouter);
 var candidateDistPaths = [
   path2.resolve(process.cwd(), "dist"),
@@ -183909,7 +184485,7 @@ var candidateDistPaths = [
   path2.resolve(process.cwd(), ".")
 ];
 var distPath = candidateDistPaths.find((p3) => fs2.existsSync(path2.join(p3, "index.html"))) || candidateDistPaths[0];
-app.use(import_express27.default.static(distPath));
+app.use(import_express28.default.static(distPath));
 var apiPrefixes = [
   "/api",
   "/auth",
@@ -183934,6 +184510,7 @@ var apiPrefixes = [
   "/support",
   "/sparring-invites",
   "/organizations",
+  "/radar",
   "/tickets",
   "/events",
   "/health"
