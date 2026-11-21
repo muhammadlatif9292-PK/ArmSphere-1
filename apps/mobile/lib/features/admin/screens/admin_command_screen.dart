@@ -1039,7 +1039,70 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                   const SizedBox(height: 14),
                 ],
 
-                // 5. Quick Access to Settings Role Switcher
+                // 5. Sanctioning Organizations Directory & Provisioning
+                ElevatedActionCard(
+                  onTap: () => context.push('/organizations'),
+                  padding: const EdgeInsets.all(14),
+                  borderRadius: 16.0,
+                  borderColor: const Color(0x38FFFFFF),
+                  slashVariant: const CrystalSlashVariant.sequentialRow(
+                    1,
+                    1.0,
+                    AppTheme.emerald,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(9),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppTheme.emerald.withValues(alpha: 0.5),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_rounded,
+                          color: AppTheme.emerald,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sanctioning Organizations & Federations',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPure,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Directory of approved bodies • Tap to view or provision a new organization & code',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppTheme.emerald,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // 6. Quick Access to Settings Role Switcher
                 ElevatedActionCard(
                   onTap: () => context.push('/settings/roles'),
                   padding: const EdgeInsets.all(14),
