@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/config/map_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/armsphere_location_picker.dart';
 import '../../../core/widgets/step_header.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -62,6 +64,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // 2. Location
   final _cityController = TextEditingController();
   String _province = 'Punjab';
+  double? _latitude;
+  double? _longitude;
+  String? _resolvedAddress;
 
   // 3. Competition specs
   double _weightKg = 75.0;
@@ -152,10 +157,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
     try {
-      final payload = {
+      final payload = <String, dynamic>{
         'displayName': _displayNameController.text.trim(),
         'city': _cityController.text.trim(),
         'province': _province,
+        if (_latitude != null) 'latitude': _latitude,
+        if (_longitude != null) 'longitude': _longitude,
+        'locationVisibility': 'AREA',
         'weightKg': _weightKg,
         'heightCm': _heightCm,
         'reachCm': _reachCm,
@@ -413,6 +421,47 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ArmSphereLocationFieldCard(
+          title: 'Pin Your Training Area (Optional)',
+          subtitle:
+              'Auto-fill province & city. Exact coordinates are fuzzed ~1 km on Radar for privacy.',
+          latitude: _latitude,
+          longitude: _longitude,
+          resolvedAddress: _resolvedAddress,
+          onPickLocation: () async {
+            final picked = await ArmSphereLocationPicker.show(
+              context,
+              title: 'Select Your Home Area',
+              initialLatitude: _latitude,
+              initialLongitude: _longitude,
+              initialLabel: _resolvedAddress ?? _cityController.text,
+            );
+            if (picked == null || !mounted) return;
+            final normalizedProv = ArmSphereMapConfig.normalizeProvince(
+              picked.province,
+              fallbackCity: picked.city,
+            );
+            setState(() {
+              _latitude = picked.latitude;
+              _longitude = picked.longitude;
+              _resolvedAddress = picked.formattedAddress;
+              if (_provinces.contains(normalizedProv)) {
+                _province = normalizedProv;
+              }
+              if (picked.city.trim().isNotEmpty) {
+                _cityController.text = picked.city.trim();
+              }
+            });
+          },
+          onClear: () {
+            setState(() {
+              _latitude = null;
+              _longitude = null;
+              _resolvedAddress = null;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _province,
           dropdownColor: AppTheme.elevatedSurface,

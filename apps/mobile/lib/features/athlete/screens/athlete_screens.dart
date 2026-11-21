@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/config/map_config.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/armsphere_image.dart';
+import '../../../core/widgets/armsphere_location_picker.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -3948,6 +3950,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      _buildRadarPrivacyBadge(context, mergedProfile),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -4053,6 +4056,18 @@ class AthleteProfileScreen extends ConsumerWidget {
                   children: [
                     _WorkspaceTile(
                       rowIndex: 0,
+                      icon: Icons.radar_rounded,
+                      iconColor: AppTheme.crimson,
+                      title: 'My Radar & Beacons',
+                      subtitle: null,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        context.push('/radar');
+                      },
+                    ),
+                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
+                    _WorkspaceTile(
+                      rowIndex: 1,
                       icon: Icons.fitness_center,
                       iconColor: AppTheme.goldPrimary,
                       title: 'Training Log & PRs',
@@ -4066,7 +4081,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                     _WorkspaceTile(
-                      rowIndex: 1,
+                      rowIndex: 2,
                       icon: Icons.military_tech_outlined,
                       iconColor: AppTheme.goldPrimary,
                       title: 'Athletic Honors',
@@ -4078,7 +4093,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                     _WorkspaceTile(
-                      rowIndex: 2,
+                      rowIndex: 3,
                       icon: Icons.groups_outlined,
                       iconColor: AppTheme.cyan,
                       title: 'Teams & Clubs',
@@ -4090,7 +4105,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                     _WorkspaceTile(
-                      rowIndex: 3,
+                      rowIndex: 4,
                       icon: Icons.emoji_events_outlined,
                       iconColor: AppTheme.goldPrimary,
                       title: 'Championship Titles',
@@ -4102,7 +4117,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                     _WorkspaceTile(
-                      rowIndex: 4,
+                      rowIndex: 5,
                       icon: Icons.settings_outlined,
                       iconColor: AppTheme.textSecondary,
                       title: 'Account & Settings',
@@ -4114,7 +4129,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                     _WorkspaceTile(
-                      rowIndex: 5,
+                      rowIndex: 6,
                       icon: Icons.logout,
                       iconColor: AppTheme.error,
                       title: 'Log Out',
@@ -4139,6 +4154,66 @@ class AthleteProfileScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRadarPrivacyBadge(
+    BuildContext context,
+    Map<String, dynamic> profile,
+  ) {
+    final mode =
+        (profile['locationVisibility']?.toString() ?? 'AREA').toUpperCase();
+    final IconData icon;
+    final String label;
+    final Color accent;
+    if (mode == 'GHOST') {
+      icon = Icons.visibility_off_rounded;
+      label = 'GHOST MODE';
+      accent = AppTheme.textMuted;
+    } else if (mode == 'TRAVEL_ONLY') {
+      icon = Icons.flight_takeoff_rounded;
+      label = 'TRAVEL ONLY';
+      accent = AppTheme.goldPrimary;
+    } else {
+      icon = Icons.radar_rounded;
+      label = 'AREA RADAR';
+      accent = AppTheme.cyan;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        context.push('/settings');
+      },
+      child: Container(
+        key: const ValueKey('profile_radar_privacy_badge'),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: accent.withValues(alpha: 0.48),
+            width: 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: accent),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.65,
+                color: accent,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -4215,6 +4290,25 @@ class AthleteProfileScreen extends ConsumerWidget {
       selectedArm = 'RIGHT';
     }
 
+    const locationModes = ['AREA', 'TRAVEL_ONLY', 'GHOST'];
+    const locationModeLabels = <String, String>{
+      'AREA': 'Approximate Area (~1 km fuzz)',
+      'TRAVEL_ONLY': 'Travel Beacons Only',
+      'GHOST': 'Ghost Mode (Hidden on Radar)',
+    };
+    String selectedLocationVisibility =
+        (profile['locationVisibility']?.toString() ?? 'AREA').toUpperCase();
+    if (!locationModes.contains(selectedLocationVisibility)) {
+      selectedLocationVisibility = 'AREA';
+    }
+    String selectedCity = profile['city']?.toString() ?? '';
+    String selectedProvince = profile['province']?.toString() ?? 'Punjab';
+    double? selectedLat = (profile['latitude'] as num?)?.toDouble();
+    double? selectedLng = (profile['longitude'] as num?)?.toDouble();
+    String? resolvedAddress = selectedCity.trim().isNotEmpty
+        ? '$selectedCity, $selectedProvince'
+        : null;
+
     bool saving = false;
 
     await showModalBottomSheet<void>(
@@ -4237,6 +4331,11 @@ class AthleteProfileScreen extends ConsumerWidget {
                 'dominantArm': selectedArm,
                 'handedness': selectedArm,
                 'biography': bioCtrl.text.trim(),
+                if (selectedCity.trim().isNotEmpty) 'city': selectedCity.trim(),
+                if (selectedProvince.trim().isNotEmpty) 'province': selectedProvince.trim(),
+                if (selectedLat != null) 'latitude': selectedLat,
+                if (selectedLng != null) 'longitude': selectedLng,
+                'locationVisibility': selectedLocationVisibility,
               };
               final w = double.tryParse(weightCtrl.text.trim());
               final h = double.tryParse(heightCtrl.text.trim());
@@ -4526,6 +4625,87 @@ class AthleteProfileScreen extends ConsumerWidget {
                       labelText: 'Athletic Bio',
                       hintText: 'Pulling style, titles, and federation background',
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'HOME BASE & RADAR PRIVACY',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.9,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ArmSphereLocationFieldCard(
+                    title: 'Home Training Location',
+                    subtitle:
+                        'Pin your area for Radar discovery. Non-owners only ever see a ~1 km fuzzed pin.',
+                    latitude: selectedLat,
+                    longitude: selectedLng,
+                    resolvedAddress: resolvedAddress,
+                    onPickLocation: () async {
+                      CrystalModalSheet.unfocusActiveInput(ctx);
+                      final picked = await ArmSphereLocationPicker.show(
+                        ctx,
+                        title: 'Update Home Base',
+                        initialLatitude: selectedLat,
+                        initialLongitude: selectedLng,
+                        initialLabel: resolvedAddress,
+                      );
+                      if (picked == null || !ctx.mounted) return;
+                      setSheetState(() {
+                        selectedLat = picked.latitude;
+                        selectedLng = picked.longitude;
+                        if (picked.city.trim().isNotEmpty) {
+                          selectedCity = picked.city.trim();
+                        }
+                        selectedProvince = ArmSphereMapConfig.normalizeProvince(
+                          picked.province,
+                          fallbackCity: picked.city,
+                        );
+                        resolvedAddress = picked.formattedAddress;
+                      });
+                    },
+                    onClear: () {
+                      setSheetState(() {
+                        selectedLat = null;
+                        selectedLng = null;
+                        resolvedAddress = selectedCity.trim().isNotEmpty
+                            ? '$selectedCity, $selectedProvince'
+                            : null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedLocationVisibility,
+                    isExpanded: true,
+                    dropdownColor: const Color(0xF50E1525),
+                    onTap: () => CrystalModalSheet.unfocusActiveInput(ctx),
+                    decoration: CrystalModalSheet.inputDecoration(
+                      labelText: 'Radar Location Visibility',
+                      prefixIcon: Icons.shield_outlined,
+                    ),
+                    items: locationModes
+                        .map(
+                          (mode) => DropdownMenuItem(
+                            value: mode,
+                            child: Text(
+                              locationModeLabels[mode] ?? mode,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13.5),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) {
+                      CrystalModalSheet.unfocusActiveInput(ctx);
+                      if (v != null) {
+                        setSheetState(() => selectedLocationVisibility = v);
+                      }
+                    },
                   ),
                 ],
               ),

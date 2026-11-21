@@ -30,6 +30,7 @@ import { supportRouter } from "./routes/support.js";
 import { internalRouter } from "./routes/internal.js";
 import { sparringInviteRouter } from "./routes/sparringInvite.js";
 import { organizationRouter } from "./routes/organization.js";
+import { radarRouter } from "./routes/radar.js";
 import env from "./config/env.js";
 
 export const app = express();
@@ -156,6 +157,9 @@ app.use("/sparring-invites", sparringInviteRouter);
 app.use("/api/v1/sparring-invites", sparringInviteRouter);
 app.use("/organizations", organizationRouter);
 app.use("/api/v1/organizations", organizationRouter);
+app.use("/radar", radarRouter);
+app.use("/api/radar", radarRouter);
+app.use("/api/v1/radar", radarRouter);
 app.use("/", ticketRouter);
 
 const candidateDistPaths = [
@@ -194,6 +198,7 @@ const apiPrefixes = [
   "/support",
   "/sparring-invites",
   "/organizations",
+  "/radar",
   "/tickets",
   "/events",
   "/health",

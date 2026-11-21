@@ -545,7 +545,7 @@ class EventQrPassportScreen extends ConsumerWidget {
                             Clipboard.setData(ClipboardData(text: athleteId));
                             ScaffoldMessenger.of(context).showSnackBar(
                               CrystalSnackBar(
-                                content: Text('Athlete ID copied: $athleteId'),
+                                content: const Text('Athlete ID copied to clipboard'),
                                 backgroundColor: AppTheme.emerald,
                                 behavior: SnackBarBehavior.floating,
                               ),

@@ -361,7 +361,7 @@ class AthleteRepository extends BaseRepository {
     }
     final dateOfBirthIso = parsedDob.toUtc().toIso8601String();
 
-    final mappedPayload = {
+    final mappedPayload = <String, dynamic>{
       'displayName': data['displayName'] ?? 'Athlete',
       'biography': 'Professional Athlete',
       'province': data['province'] ?? 'Punjab',
@@ -374,6 +374,11 @@ class AthleteRepository extends BaseRepository {
       'height': (data['heightCm'] as num?)?.toDouble() ?? 175.0,
       'weight': weight,
       'reach': (data['reachCm'] as num?)?.toDouble() ?? 175.0,
+      if (data['latitude'] is num) 'latitude': (data['latitude'] as num).toDouble(),
+      if (data['longitude'] is num) 'longitude': (data['longitude'] as num).toDouble(),
+      if (data['locationVisibility'] != null &&
+          data['locationVisibility'].toString().trim().isNotEmpty)
+        'locationVisibility': data['locationVisibility'].toString().trim().toUpperCase(),
     };
 
     return executeRequest(
@@ -417,6 +422,51 @@ class AthleteRepository extends BaseRepository {
     );
   }
 
+  Future<Map<String, dynamic>> createClub({
+    required String name,
+    required String city,
+    required String province,
+    double? latitude,
+    double? longitude,
+    CancelToken? cancelToken,
+  }) async {
+    final body = <String, dynamic>{
+      'name': name,
+      'city': city,
+      'province': province,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'create_club_${DateTime.now().millisecondsSinceEpoch}',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post(
+          '/athletes/clubs',
+          data: body,
+          cancelToken: token,
+        ),
+        parse: (data) {
+          final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+          return Map<String, dynamic>.from(payload as Map);
+        },
+      );
+    } on OfflineException {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'CREATE_CLUB',
+        endpoint: '/athletes/clubs',
+        method: 'POST',
+        payload: body,
+      );
+      return <String, dynamic>{
+        'id': queued['id'],
+        ...body,
+        'queuedOffline': true,
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> updateBiometrics(String athleteId, double weight, {CancelToken? cancelToken}) async {
     return executeRequest(
       cacheKey: 'athlete_biometrics_$athleteId',
@@ -429,13 +479,20 @@ class AthleteRepository extends BaseRepository {
     );
   }
 
-  Future<Map<String, dynamic>> updateVisibility(String profileVisibility, bool isSearchable, {CancelToken? cancelToken}) async {
+  Future<Map<String, dynamic>> updateVisibility(
+    String profileVisibility,
+    bool isSearchable, {
+    String? locationVisibility,
+    CancelToken? cancelToken,
+  }) async {
     return executeRequest(
       cacheKey: 'athlete_profile_self',
       cancelToken: cancelToken,
       request: (token) => dioClient.dio.patch('/athletes/me/visibility', data: {
         'profileVisibility': profileVisibility,
         'isSearchable': isSearchable,
+        if (locationVisibility != null && locationVisibility.trim().isNotEmpty)
+          'locationVisibility': locationVisibility.trim().toUpperCase(),
       }, cancelToken: token),
       parse: (data) {
         final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
@@ -3152,29 +3209,49 @@ class VenueRepository extends BaseRepository {
     String? contactInfo,
     String? description,
     String? logoUrl,
+    double? latitude,
+    double? longitude,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'submit_venue_${DateTime.now().millisecondsSinceEpoch}',
-      cancelToken: cancelToken,
-      request: (token) => dioClient.dio.post(
-        '/venues',
-        data: {
-          'name': name,
-          'city': city,
-          'province': province,
-          'address': address,
-          if (contactInfo != null) 'contactInfo': contactInfo,
-          if (description != null) 'description': description,
-          if (logoUrl != null) 'logoUrl': logoUrl,
+    final body = <String, dynamic>{
+      'name': name,
+      'city': city,
+      'province': province,
+      'address': address,
+      if (contactInfo != null) 'contactInfo': contactInfo,
+      if (description != null) 'description': description,
+      if (logoUrl != null) 'logoUrl': logoUrl,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'submit_venue_${DateTime.now().millisecondsSinceEpoch}',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post(
+          '/venues',
+          data: body,
+          cancelToken: token,
+        ),
+        parse: (data) {
+          final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+          return Map<String, dynamic>.from(payload);
         },
-        cancelToken: token,
-      ),
-      parse: (data) {
-        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
-        return Map<String, dynamic>.from(payload);
-      },
-    );
+      );
+    } on OfflineException {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'CREATE_VENUE',
+        endpoint: '/venues',
+        method: 'POST',
+        payload: body,
+      );
+      return <String, dynamic>{
+        'id': queued['id'],
+        ...body,
+        'queuedOffline': true,
+      };
+    }
   }
 }
 
@@ -3293,30 +3370,49 @@ class InformalEventRepository extends BaseRepository {
     required String scheduledAt,
     int? maxParticipants,
     bool isPublic = true,
+    double? latitude,
+    double? longitude,
     CancelToken? cancelToken,
   }) async {
-    return executeRequest(
-      cacheKey: 'create_informal_event_${DateTime.now().millisecondsSinceEpoch}',
-      cancelToken: cancelToken,
-      isMutation: true,
-      request: (token) => dioClient.dio.post(
-        '/informal-events',
-        data: {
-          'title': title,
-          'description': description,
-          'city': city,
-          if (province != null) 'province': province,
-          'scheduledAt': scheduledAt,
-          if (maxParticipants != null) 'maxParticipants': maxParticipants,
-          'isPublic': isPublic,
+    final body = <String, dynamic>{
+      'title': title,
+      'description': description,
+      'city': city,
+      if (province != null) 'province': province,
+      'scheduledAt': scheduledAt,
+      if (maxParticipants != null) 'maxParticipants': maxParticipants,
+      'isPublic': isPublic,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+    };
+    try {
+      return await executeRequest(
+        cacheKey: 'create_informal_event_${DateTime.now().millisecondsSinceEpoch}',
+        cancelToken: cancelToken,
+        isMutation: true,
+        request: (token) => dioClient.dio.post(
+          '/informal-events',
+          data: body,
+          cancelToken: token,
+        ),
+        parse: (data) {
+          final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
+          return Map<String, dynamic>.from(payload);
         },
-        cancelToken: token,
-      ),
-      parse: (data) {
-        final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
-        return Map<String, dynamic>.from(payload);
-      },
-    );
+      );
+    } on OfflineException {
+      final queued = await hiveStorage.enqueueAction(
+        actionType: 'CREATE_INFORMAL_EVENT',
+        endpoint: '/informal-events',
+        method: 'POST',
+        payload: body,
+      );
+      return <String, dynamic>{
+        'id': queued['id'],
+        ...body,
+        'queuedOffline': true,
+      };
+    }
   }
 
   Future<Map<String, dynamic>> joinEvent(String id, {CancelToken? cancelToken}) async {
@@ -3926,6 +4022,100 @@ class OrganizationRepository extends BaseRepository {
     }
   }
 }
+
+class RadarRepository extends BaseRepository {
+  RadarRepository({required super.dioClient, required super.hiveStorage});
+
+  Future<Map<String, dynamic>> getNearby({
+    required double north,
+    required double south,
+    required double east,
+    required double west,
+    String? pinType,
+    String? weightClass,
+    String? armPreference,
+    int? limit,
+    CancelToken? cancelToken,
+  }) async {
+    final cacheKey =
+        'radar_nearby_${north.toStringAsFixed(2)}_${south.toStringAsFixed(2)}_${east.toStringAsFixed(2)}_${west.toStringAsFixed(2)}_${pinType ?? 'ALL'}';
+    return executeRequest(
+      cacheKey: cacheKey,
+      cancelToken: cancelToken,
+      request: (token) => dioClient.dio.get(
+        '/radar/nearby',
+        queryParameters: {
+          'north': north,
+          'south': south,
+          'east': east,
+          'west': west,
+          if (pinType != null && pinType.trim().isNotEmpty) 'pinType': pinType.trim().toUpperCase(),
+          if (weightClass != null && weightClass.trim().isNotEmpty) 'weightClass': weightClass.trim(),
+          if (armPreference != null && armPreference.trim().isNotEmpty)
+            'armPreference': armPreference.trim().toUpperCase(),
+          if (limit != null) 'limit': limit,
+        },
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload as Map);
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> createBeacon({
+    required String beaconType,
+    required String title,
+    required double latitude,
+    required double longitude,
+    String? weightClass,
+    String? armPreference,
+    int? durationHours,
+    String? expiresAt,
+    CancelToken? cancelToken,
+  }) async {
+    final body = <String, dynamic>{
+      'beaconType': beaconType.trim().toUpperCase(),
+      'title': title.trim(),
+      'latitude': latitude,
+      'longitude': longitude,
+      if (weightClass != null && weightClass.trim().isNotEmpty) 'weightClass': weightClass.trim(),
+      if (armPreference != null && armPreference.trim().isNotEmpty)
+        'armPreference': armPreference.trim().toUpperCase(),
+      if (durationHours != null) 'durationHours': durationHours,
+      if (expiresAt != null && expiresAt.trim().isNotEmpty) 'expiresAt': expiresAt.trim(),
+    };
+    return executeRequest(
+      cacheKey: 'radar_create_beacon_${DateTime.now().millisecondsSinceEpoch}',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.post(
+        '/radar/beacons',
+        data: body,
+        cancelToken: token,
+      ),
+      parse: (data) {
+        final payload = (data is Map && data['data'] is Map) ? data['data'] : data;
+        return Map<String, dynamic>.from(payload as Map);
+      },
+    );
+  }
+
+  Future<void> deleteBeacon(String beaconId, {CancelToken? cancelToken}) async {
+    await executeRequest(
+      cacheKey: 'radar_delete_beacon_$beaconId',
+      cancelToken: cancelToken,
+      isMutation: true,
+      request: (token) => dioClient.dio.delete(
+        '/radar/beacons/$beaconId',
+        cancelToken: token,
+      ),
+      parse: (data) => data,
+    );
+  }
+}
+
 
 
 

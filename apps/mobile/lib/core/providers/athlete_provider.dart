@@ -24,11 +24,48 @@ class AthleteProfileNotifier extends AutoDisposeAsyncNotifier<Map<String, dynami
     }
   }
 
-  Future<bool> updateVisibility({required String profileVisibility, required bool isSearchable}) async {
+  Future<bool> updateVisibility({
+    required String profileVisibility,
+    required bool isSearchable,
+    String? locationVisibility,
+  }) async {
     try {
       final repo = ref.read(athleteRepositoryProvider);
-      final profile = await repo.updateVisibility(profileVisibility, isSearchable);
+      final profile = await repo.updateVisibility(
+        profileVisibility,
+        isSearchable,
+        locationVisibility: locationVisibility,
+      );
       state = AsyncData(profile);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateLocationVisibility(String locationVisibility) async {
+    final normalized = locationVisibility.trim().toUpperCase();
+    if (normalized != 'AREA' && normalized != 'TRAVEL_ONLY' && normalized != 'GHOST') {
+      return false;
+    }
+    try {
+      final current = state.value ?? <String, dynamic>{};
+      final profileVisibility =
+          (current['profileVisibility']?.toString() ?? 'PUBLIC').toUpperCase();
+      final isSearchable = current['isSearchable'] is bool
+          ? current['isSearchable'] as bool
+          : true;
+      final repo = ref.read(athleteRepositoryProvider);
+      final updated = await repo.updateVisibility(
+        profileVisibility,
+        isSearchable,
+        locationVisibility: normalized,
+      );
+      state = AsyncData({
+        ...current,
+        ...updated,
+        'locationVisibility': normalized,
+      });
       return true;
     } catch (_) {
       return false;

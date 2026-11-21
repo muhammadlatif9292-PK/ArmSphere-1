@@ -99,6 +99,12 @@ final organizationRepositoryProvider = Provider<OrganizationRepository>((ref) {
   return OrganizationRepository(dioClient: dioClient, hiveStorage: hiveStorage);
 });
 
+final radarRepositoryProvider = Provider<RadarRepository>((ref) {
+  final dioClient = ref.watch(dioClientProvider);
+  final hiveStorage = ref.watch(hiveStorageProvider);
+  return RadarRepository(dioClient: dioClient, hiveStorage: hiveStorage);
+});
+
 final athleteComparisonProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, ({String athlete1Id, String athlete2Id})>((ref, args) async {
   final repo = ref.watch(athleteRepositoryProvider);
   return repo.compareAthletes(athlete1Id: args.athlete1Id, athlete2Id: args.athlete2Id);

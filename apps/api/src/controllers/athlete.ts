@@ -25,6 +25,9 @@ const createProfileSchema = z.object({
   weight: z.number().positive().optional(),
   reach: z.number().positive().optional(),
   profilePhoto: z.string().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
+  locationVisibility: z.enum(["AREA", "TRAVEL_ONLY", "GHOST"]).optional(),
 });
 
 const updateProfileSchema = createProfileSchema.partial();
@@ -32,6 +35,7 @@ const updateProfileSchema = createProfileSchema.partial();
 const updateVisibilitySchema = z.object({
   profileVisibility: z.enum(["PUBLIC", "GYM_ONLY"]).optional(),
   isSearchable: z.boolean().optional(),
+  locationVisibility: z.enum(["AREA", "TRAVEL_ONLY", "GHOST"]).optional(),
 });
 
 const searchFilterSchema = z.object({
@@ -85,6 +89,8 @@ const createClubSchema = z.object({
   name: z.string().min(2, "Club name must be at least 2 characters"),
   city: z.string().min(1, "City is required"),
   province: z.string().min(1, "Province is required"),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 const getAthleteMatchesQuerySchema = z.object({
@@ -404,7 +410,13 @@ export class AthleteController {
   static async createClub(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = createClubSchema.parse(req.body);
-      const club = await AthleteService.createClub(validated.name, validated.city, validated.province);
+      const club = await AthleteService.createClub(
+        validated.name,
+        validated.city,
+        validated.province,
+        validated.latitude ?? undefined,
+        validated.longitude ?? undefined
+      );
 
       res.status(201).json({
         success: true,

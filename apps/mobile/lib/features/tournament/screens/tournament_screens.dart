@@ -1593,57 +1593,171 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           ),
           const SizedBox(height: 10),
           if (app != null) ...[
-            Container(
-              padding: const EdgeInsets.all(13),
-              decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                final qrData = (app['qrCode'] ?? 'ARMSPHERE-QR').toString();
+                final athleteLabel = (app['athleteName'] ?? 'Athlete').toString();
+                final athleteCopyId =
+                    (app['athleteId'] ?? app['userId'] ?? qrData).toString();
+                showDialog<void>(
+                  context: context,
+                  builder: (dialogCtx) => Dialog(
+                    backgroundColor: const Color(0xFF0C101A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.6),
+                        width: 1.4,
+                      ),
                     ),
-                    child: ArmSphereQrMatrixView(
-                      data: (app['qrCode'] ?? 'ARMSPHERE-QR').toString(),
-                      size: 84,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(
+                                    Icons.qr_code_2_rounded,
+                                    color: AppTheme.goldPrimary,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'OFFICIAL ATHLETE QR',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13,
+                                      color: AppTheme.goldPrimary,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: AppTheme.textSecondary,
+                                  size: 20,
+                                ),
+                                onPressed: () => Navigator.of(dialogCtx).pop(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: ArmSphereQrMatrixView(
+                              data: qrData,
+                              size: 230,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            athleteLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID: $athleteCopyId',
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontMono,
+                              fontSize: 11,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'OFFICIAL ATHLETE CREDENTIAL ✓',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13,
-                            color: AppTheme.emerald,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${app['athleteName']} • ${app['registeredWeightLabel']} (${app['registeredArm']} Arm)',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12.5,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'QR: ${app['qrCode']} • Scan at Venue Gate & Scale',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.goldPrimary,
-                          ),
-                        ),
-                      ],
+                );
+              },
+              onLongPress: () {
+                HapticFeedback.heavyImpact();
+                final athleteCopyId =
+                    (app['athleteId'] ?? app['userId'] ?? app['qrCode'] ?? '')
+                        .toString();
+                if (athleteCopyId.isNotEmpty) {
+                  Clipboard.setData(ClipboardData(text: athleteCopyId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CrystalSnackBar(
+                      content: const Text('Athlete ID copied to clipboard'),
+                      backgroundColor: AppTheme.emerald,
+                      behavior: SnackBarBehavior.floating,
                     ),
-                  ),
-                ],
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(13),
+                decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ArmSphereQrMatrixView(
+                        data: (app['qrCode'] ?? 'ARMSPHERE-QR').toString(),
+                        size: 84,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'OFFICIAL ATHLETE CREDENTIAL ✓',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              color: AppTheme.emerald,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${app['athleteName']} • ${app['registeredWeightLabel']} (${app['registeredArm']} Arm)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12.5,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'QR: ${app['qrCode']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 10),

@@ -67,6 +67,7 @@ import '../../features/organization/screens/organization_portal_entry_screen.dar
 import '../../features/organization/screens/organization_onboarding_screen.dart';
 import '../../features/organization/screens/organization_deck_screen.dart';
 import '../../features/tournament/screens/event_qr_passport_screen.dart';
+import '../../features/radar/screens/radar_screen.dart';
 import '../providers/organization_session_provider.dart';
 import '../security/admin_permissions.dart';
 import '../widgets/main_shell_screen.dart';
@@ -1576,6 +1577,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: OrganizationProfileScreen(organizationId: orgId),
           );
         },
+      ),
+      GoRoute(
+        path: '/radar',
+        name: 'radar',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const RadarScreen(),
+        ),
       ),
     ],
   );

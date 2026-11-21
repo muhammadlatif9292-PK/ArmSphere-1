@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/map_config.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/state_providers.dart';
@@ -13,6 +14,7 @@ import '../../../core/providers/tournament_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_empty_state.dart';
+import '../../../core/widgets/armsphere_location_picker.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
@@ -861,6 +863,10 @@ class _TournamentOperatorDashboardScreenState
                 'province': releasedRecord['province'] ?? 'Punjab',
                 'city': releasedRecord['city'] ?? 'Lahore',
                 'venue': releasedRecord['venue'],
+                if (releasedRecord['latitude'] is num)
+                  'latitude': (releasedRecord['latitude'] as num).toDouble(),
+                if (releasedRecord['longitude'] is num)
+                  'longitude': (releasedRecord['longitude'] as num).toDouble(),
                 'capacity': releasedRecord['capacity'] ?? 64,
                 'registrationFeeCents': feePkr * 100,
                 'startDate': startDt.toUtc().toIso8601String(),
@@ -877,6 +883,10 @@ class _TournamentOperatorDashboardScreenState
                 'province': releasedRecord['province'] ?? 'Punjab',
                 'city': releasedRecord['city'] ?? 'Lahore',
                 'venue': releasedRecord['venue'],
+                if (releasedRecord['latitude'] is num)
+                  'latitude': (releasedRecord['latitude'] as num).toDouble(),
+                if (releasedRecord['longitude'] is num)
+                  'longitude': (releasedRecord['longitude'] as num).toDouble(),
                 'capacity': releasedRecord['capacity'] ?? 64,
                 'registrationFeeCents': feePkr * 100,
                 'registrationStart': regStart.toUtc().toIso8601String(),
@@ -3584,6 +3594,61 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                               Icon(Icons.location_on_outlined, size: 18),
                         ),
                         onChanged: (val) => _emitPatch({'venue': val}),
+                      ),
+                      const SizedBox(height: 10),
+                      ArmSphereLocationFieldCard(
+                        title: 'Pin Exact Arena Coordinates',
+                        subtitle:
+                            'Drop a 2D map pin to auto-fill city, province, venue address & Radar tournament marker',
+                        latitude: (t['latitude'] as num?)?.toDouble(),
+                        longitude: (t['longitude'] as num?)?.toDouble(),
+                        resolvedAddress:
+                            t['resolvedAddress']?.toString() ?? t['venue']?.toString(),
+                        onPickLocation: () async {
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          final picked = await ArmSphereLocationPicker.show(
+                            context,
+                            title: 'Pin Tournament Venue',
+                            initialLatitude: (t['latitude'] as num?)?.toDouble(),
+                            initialLongitude: (t['longitude'] as num?)?.toDouble(),
+                            initialLabel: t['venue']?.toString(),
+                          );
+                          if (picked == null || !mounted) return;
+                          final canonicalProv = ArmSphereMapConfig.normalizeProvince(
+                            picked.province,
+                            fallbackCity: picked.city,
+                          );
+                          String mappedProv = _kPakistanProvinces.first;
+                          if (canonicalProv == 'Khyber Pakhtunkhwa') {
+                            mappedProv = 'KPK';
+                          } else if (canonicalProv == 'Islamabad Capital Territory') {
+                            mappedProv = 'Islamabad';
+                          } else if (_kPakistanProvinces.contains(canonicalProv)) {
+                            mappedProv = canonicalProv;
+                          }
+                          if (picked.city.trim().isNotEmpty) {
+                            _cityCtrl.text = picked.city.trim();
+                          }
+                          if (picked.formattedAddress.trim().isNotEmpty) {
+                            _venueCtrl.text = picked.formattedAddress.trim();
+                          }
+                          _emitPatch({
+                            'province': mappedProv,
+                            if (picked.city.trim().isNotEmpty) 'city': picked.city.trim(),
+                            if (picked.formattedAddress.trim().isNotEmpty)
+                              'venue': picked.formattedAddress.trim(),
+                            'latitude': picked.latitude,
+                            'longitude': picked.longitude,
+                            'resolvedAddress': picked.formattedAddress,
+                          });
+                        },
+                        onClear: () {
+                          _emitPatch({
+                            'latitude': null,
+                            'longitude': null,
+                            'resolvedAddress': null,
+                          });
+                        },
                       ),
                       const SizedBox(height: 10),
                       Row(

@@ -73,6 +73,10 @@ export const athleteProfiles = pgTable("athlete_profiles", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  locationVisibility: varchar("location_visibility", { length: 20 }).notNull().default("AREA"),
+  locationFuzzSeed: varchar("location_fuzz_seed", { length: 64 }),
 });
 
 export const athleteClubs = pgTable("athlete_clubs", {
@@ -80,6 +84,8 @@ export const athleteClubs = pgTable("athlete_clubs", {
   name: varchar("name", { length: 255 }).notNull(),
   city: varchar("city", { length: 100 }).notNull(),
   province: varchar("province", { length: 100 }).notNull(),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   isDeleted: boolean("is_deleted").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -183,6 +189,8 @@ export const venuePartners = pgTable("venue_partners", {
   logoUrl: varchar("logo_url", { length: 1024 }),
   ownerUserId: uuid("owner_user_id").references(() => users.id),
   isVerified: boolean("is_verified").notNull().default(false),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -295,6 +303,8 @@ export const events = pgTable("events", {
   organizerId: uuid("organizer_id").references(() => users.id),
   organizationId: uuid("organization_id").references(() => organizations.id),
   paymentMethod: varchar("payment_method", { length: 50 }).notNull().default("STRIPE"),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -548,6 +558,8 @@ export const informalEvents = pgTable("informal_events", {
   scheduledAt: timestamp("scheduled_at").notNull(),
   maxParticipants: integer("max_participants"),
   isPublic: boolean("is_public").notNull().default(true),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -897,5 +909,23 @@ export const sparringInvites = pgTable("sparring_invites", {
     senderTeamIdx: index("idx_sparring_invites_sender_team").on(table.senderTeamId),
     recipientTeamIdx: index("idx_sparring_invites_recipient_team").on(table.recipientTeamId),
     statusIdx: index("idx_sparring_invites_status").on(table.status),
+  };
+});
+
+export const radarBeacons = pgTable("radar_beacons", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  beaconType: varchar("beacon_type", { length: 30 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  latitude: real("latitude").notNull(),
+  longitude: real("longitude").notNull(),
+  weightClass: varchar("weight_class", { length: 50 }),
+  armPreference: varchar("arm_preference", { length: 20 }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    expiresAtIdx: index("idx_radar_beacons_expires_at").on(table.expiresAt),
+    userIdIdx: index("idx_radar_beacons_user_id").on(table.userId),
   };
 });

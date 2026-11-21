@@ -24,6 +24,7 @@ import '../../../core/providers/visual_preferences_provider.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../tournament/services/tournament_offline_store.dart';
+import '../../radar/widgets/radar_entry_card.dart';
 
 /// Federation Discovery Segment Categories
 enum DiscoverCategory {
@@ -502,10 +503,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           SliverToBoxAdapter(
                             child: _buildFilterChips(),
                           ),
-                          // Balanced 26px vertical gap between Filter Chips row and Federation Hub
+                          if (_activeQuery.isEmpty)
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  AppTheme.space16,
+                                  14.0,
+                                  AppTheme.space16,
+                                  0.0,
+                                ),
+                                child: RadarDiscoverEntryCard(),
+                              ),
+                            ),
+                          // Balanced vertical gap between Radar entry / Filter Chips and Federation Hub
                           SliverToBoxAdapter(
                             child: SizedBox(
-                              height: _activeQuery.isEmpty ? 26.0 : 14.0,
+                              height: _activeQuery.isEmpty ? 18.0 : 14.0,
                             ),
                           ),
                           SliverPadding(

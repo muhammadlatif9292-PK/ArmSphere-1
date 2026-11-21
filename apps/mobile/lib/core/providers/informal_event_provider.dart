@@ -136,6 +136,8 @@ class InformalEventCreationNotifier extends AutoDisposeAsyncNotifier<Map<String,
     required String scheduledAt,
     int? maxParticipants,
     bool isPublic = true,
+    double? latitude,
+    double? longitude,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -148,6 +150,8 @@ class InformalEventCreationNotifier extends AutoDisposeAsyncNotifier<Map<String,
         scheduledAt: scheduledAt,
         maxParticipants: maxParticipants,
         isPublic: isPublic,
+        latitude: latitude,
+        longitude: longitude,
       );
       state = AsyncValue.data(newEvent);
       ref.invalidate(informalEventListProvider);

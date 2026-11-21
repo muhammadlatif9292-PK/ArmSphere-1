@@ -88,6 +88,40 @@ class OfflineSyncManager {
     _isSyncing = false;
   }
 
+  /// Additive helper for queueing offline spatial profile or entity mutations
+  /// with validated `latitude`, `longitude`, and `locationVisibility` fields.
+  Future<Map<String, dynamic>> enqueueSpatialMutation({
+    required String actionType,
+    required String endpoint,
+    required String method,
+    required Map<String, dynamic> payload,
+    double? latitude,
+    double? longitude,
+    String? locationVisibility,
+    String? idempotencyKey,
+  }) {
+    final enriched = Map<String, dynamic>.from(payload);
+    if (latitude != null && latitude.isFinite && latitude >= -90 && latitude <= 90) {
+      enriched['latitude'] = latitude;
+    }
+    if (longitude != null && longitude.isFinite && longitude >= -180 && longitude <= 180) {
+      enriched['longitude'] = longitude;
+    }
+    if (locationVisibility != null && locationVisibility.trim().isNotEmpty) {
+      final normalized = locationVisibility.trim().toUpperCase();
+      if (normalized == 'AREA' || normalized == 'TRAVEL_ONLY' || normalized == 'GHOST') {
+        enriched['locationVisibility'] = normalized;
+      }
+    }
+    return hiveStorage.enqueueAction(
+      actionType: actionType,
+      endpoint: endpoint,
+      method: method,
+      payload: enriched,
+      idempotencyKey: idempotencyKey,
+    );
+  }
+
   /// Processes individual transaction with conflict resolution, /sync/queue envelope support, and replay safety
   Future<bool> _processQueueItem(String itemId, Map<String, dynamic> item) async {
     final String endpoint = item['endpoint']?.toString() ?? '/sync/queue';
@@ -95,6 +129,39 @@ class OfflineSyncManager {
     final String actionType = item['actionType']?.toString() ?? 'GENERIC_MUTATION';
     final Map<String, dynamic> rawPayload = Map<String, dynamic>.from(item['payload'] ?? {});
     final String idempotencyKey = item['idempotencyKey']?.toString() ?? itemId;
+
+    // Normalize optional spatial fields (latitude, longitude, locationVisibility) if present
+    // so queued profile/club/event/venue mutations preserve exact numeric types on replay.
+    if (rawPayload['latitude'] != null) {
+      final parsedLat = rawPayload['latitude'] is num
+          ? (rawPayload['latitude'] as num).toDouble()
+          : double.tryParse(rawPayload['latitude'].toString());
+      if (parsedLat != null && parsedLat.isFinite && parsedLat >= -90 && parsedLat <= 90) {
+        rawPayload['latitude'] = parsedLat;
+      } else {
+        rawPayload.remove('latitude');
+      }
+    }
+    if (rawPayload['longitude'] != null) {
+      final parsedLng = rawPayload['longitude'] is num
+          ? (rawPayload['longitude'] as num).toDouble()
+          : double.tryParse(rawPayload['longitude'].toString());
+      if (parsedLng != null && parsedLng.isFinite && parsedLng >= -180 && parsedLng <= 180) {
+        rawPayload['longitude'] = parsedLng;
+      } else {
+        rawPayload.remove('longitude');
+      }
+    }
+    if (rawPayload['locationVisibility'] != null) {
+      final normalizedVis = rawPayload['locationVisibility'].toString().trim().toUpperCase();
+      if (normalizedVis == 'AREA' ||
+          normalizedVis == 'TRAVEL_ONLY' ||
+          normalizedVis == 'GHOST') {
+        rawPayload['locationVisibility'] = normalizedVis;
+      } else {
+        rawPayload.remove('locationVisibility');
+      }
+    }
 
     // Idempotency and Replay Protection: pass item ID as request header/key
     rawPayload['idempotencyKey'] = idempotencyKey;

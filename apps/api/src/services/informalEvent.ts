@@ -11,6 +11,8 @@ export interface CreateInformalEventInput {
   scheduledAt: string; // ISO string
   maxParticipants?: number;
   isPublic?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export class InformalEventService {
@@ -70,6 +72,8 @@ export class InformalEventService {
           scheduledAt: scheduledDate,
           maxParticipants: input.maxParticipants || null,
           isPublic: input.isPublic !== undefined ? input.isPublic : true,
+          latitude: input.latitude ?? null,
+          longitude: input.longitude ?? null,
         })
         .returning();
 

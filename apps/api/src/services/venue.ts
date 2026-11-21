@@ -11,6 +11,8 @@ export interface CreateVenueInput {
   contactInfo?: string;
   description?: string;
   logoUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface UpdateVenueInput {
@@ -21,6 +23,8 @@ export interface UpdateVenueInput {
   contactInfo?: string;
   description?: string;
   logoUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export class VenueService {
@@ -51,6 +55,8 @@ export class VenueService {
         logoUrl: input.logoUrl || null,
         ownerUserId: userId,
         isVerified: false,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
       })
       .returning();
 
@@ -143,6 +149,8 @@ export class VenueService {
     if (input.contactInfo !== undefined) updatePayload.contactInfo = input.contactInfo;
     if (input.description !== undefined) updatePayload.description = input.description;
     if (input.logoUrl !== undefined) updatePayload.logoUrl = input.logoUrl;
+    if (input.latitude !== undefined) updatePayload.latitude = input.latitude;
+    if (input.longitude !== undefined) updatePayload.longitude = input.longitude;
 
     updatePayload.updatedAt = new Date();
 

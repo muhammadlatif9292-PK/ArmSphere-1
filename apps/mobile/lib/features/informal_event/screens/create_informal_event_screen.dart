@@ -2,8 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/map_config.dart';
 import '../../../core/providers/informal_event_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/armsphere_location_picker.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -33,6 +35,9 @@ class _CreateInformalEventScreenState
   final _provinceController = TextEditingController();
   final _maxParticipantsController = TextEditingController();
   DateTime? _scheduledAt;
+  double? _latitude;
+  double? _longitude;
+  String? _resolvedAddress;
 
   @override
   void dispose() {
@@ -113,6 +118,8 @@ class _CreateInformalEventScreenState
             scheduledAt: _scheduledAt!.toIso8601String(),
             maxParticipants:
                 int.tryParse(_maxParticipantsController.text.trim()),
+            latitude: _latitude,
+            longitude: _longitude,
           );
       if (!mounted) return;
       HapticFeedback.mediumImpact();
@@ -259,6 +266,48 @@ class _CreateInformalEventScreenState
                       borderSide: const BorderSide(color: AppTheme.goldPrimary),
                     ),
                   ),
+                ),
+                const SizedBox(height: AppTheme.space16),
+
+                ArmSphereLocationFieldCard(
+                  title: 'Pin Practice Table Location',
+                  subtitle:
+                      'Drop a 2D map pin to auto-fill city & province and broadcast on Radar',
+                  latitude: _latitude,
+                  longitude: _longitude,
+                  resolvedAddress: _resolvedAddress,
+                  onPickLocation: () async {
+                    final picked = await ArmSphereLocationPicker.show(
+                      context,
+                      title: 'Pin Meetup Spot',
+                      initialLatitude: _latitude,
+                      initialLongitude: _longitude,
+                      initialLabel: _resolvedAddress ?? _cityController.text,
+                    );
+                    if (picked == null || !mounted) return;
+                    final normProv = ArmSphereMapConfig.normalizeProvince(
+                      picked.province,
+                      fallbackCity: picked.city,
+                    );
+                    setState(() {
+                      _latitude = picked.latitude;
+                      _longitude = picked.longitude;
+                      _resolvedAddress = picked.formattedAddress;
+                      if (picked.city.trim().isNotEmpty) {
+                        _cityController.text = picked.city.trim();
+                      }
+                      if (normProv.trim().isNotEmpty) {
+                        _provinceController.text = normProv;
+                      }
+                    });
+                  },
+                  onClear: () {
+                    setState(() {
+                      _latitude = null;
+                      _longitude = null;
+                      _resolvedAddress = null;
+                    });
+                  },
                 ),
                 const SizedBox(height: AppTheme.space16),
 

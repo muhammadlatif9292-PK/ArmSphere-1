@@ -24,6 +24,11 @@ import {
   logger 
 } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
+import {
+  generateLocationFuzzSeed,
+  normalizeLocationVisibility,
+  sanitizeAthleteLocationForViewer,
+} from "./locationPrivacy.js";
 
 export interface CreateProfileInput {
   displayName: string;
@@ -40,6 +45,9 @@ export interface CreateProfileInput {
   weight?: number;
   reach?: number;
   profilePhoto?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationVisibility?: string;
 }
 
 export interface UpdateProfileInput {
@@ -59,6 +67,9 @@ export interface UpdateProfileInput {
   profilePhoto?: string;
   profileVisibility?: string;
   isSearchable?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationVisibility?: string;
 }
 
 export class AthleteService {
@@ -125,6 +136,10 @@ export class AthleteService {
         weight: input.weight || null,
         reach: input.reach || null,
         profilePhoto: input.profilePhoto || null,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+        locationVisibility: normalizeLocationVisibility(input.locationVisibility),
+        locationFuzzSeed: generateLocationFuzzSeed(userId),
       })
       .returning();
 
@@ -166,7 +181,7 @@ export class AthleteService {
       newData: profile,
     });
 
-    return profile;
+    return sanitizeAthleteLocationForViewer(profile, userId);
   }
 
   /**
@@ -338,7 +353,7 @@ export class AthleteService {
     const isOwner = viewerUserId === ownerUserId;
     const isPrivileged = !!(viewerRole && ["SYSTEM_ADMIN", "NATIONAL_DIRECTOR", "PROVINCIAL_DIRECTOR"].includes(viewerRole.toUpperCase()));
 
-    const safeProfile = { ...profile };
+    const safeProfile = sanitizeAthleteLocationForViewer(profile, viewerUserId);
     if (!isOwner) {
       delete (safeProfile as any).stripeCustomerId;
     }
@@ -440,6 +455,14 @@ export class AthleteService {
     if (input.profilePhoto !== undefined) updatePayload.profilePhoto = input.profilePhoto;
     if (input.profileVisibility !== undefined) updatePayload.profileVisibility = input.profileVisibility;
     if (input.isSearchable !== undefined) updatePayload.isSearchable = input.isSearchable;
+    if (input.latitude !== undefined) updatePayload.latitude = input.latitude;
+    if (input.longitude !== undefined) updatePayload.longitude = input.longitude;
+    if (input.locationVisibility !== undefined) {
+      updatePayload.locationVisibility = normalizeLocationVisibility(input.locationVisibility);
+    }
+    if (!existingProfile.locationFuzzSeed) {
+      updatePayload.locationFuzzSeed = generateLocationFuzzSeed(resolvedUserId);
+    }
 
     updatePayload.updatedAt = new Date();
 
@@ -488,7 +511,7 @@ export class AthleteService {
       userAgent,
     });
 
-    return updatedProfile;
+    return sanitizeAthleteLocationForViewer(updatedProfile, userId);
   }
 
   /**
@@ -496,7 +519,7 @@ export class AthleteService {
    */
   static async updateVisibility(
     userId: string,
-    input: { profileVisibility?: string; isSearchable?: boolean },
+    input: { profileVisibility?: string; isSearchable?: boolean; locationVisibility?: string },
     ipAddress?: string,
     userAgent?: string
   ) {
@@ -516,6 +539,12 @@ export class AthleteService {
     }
     if (input.isSearchable !== undefined) {
       updatePayload.isSearchable = input.isSearchable;
+    }
+    if (input.locationVisibility !== undefined) {
+      updatePayload.locationVisibility = normalizeLocationVisibility(input.locationVisibility);
+    }
+    if (!existingProfile.locationFuzzSeed) {
+      updatePayload.locationFuzzSeed = generateLocationFuzzSeed(userId);
     }
 
     updatePayload.updatedAt = new Date();
@@ -538,12 +567,17 @@ export class AthleteService {
     await db.insert(auditLogs).values({
       userId,
       action: "ATHLETE_PROFILE_VISIBILITY_UPDATE",
-      details: { profileId: existingProfile.id, profileVisibility: input.profileVisibility, isSearchable: input.isSearchable },
+      details: {
+        profileId: existingProfile.id,
+        profileVisibility: input.profileVisibility,
+        isSearchable: input.isSearchable,
+        locationVisibility: updatePayload.locationVisibility,
+      },
       ipAddress,
       userAgent,
     });
 
-    return updatedProfile;
+    return sanitizeAthleteLocationForViewer(updatedProfile, userId);
   }
 
   /**
@@ -643,6 +677,10 @@ export class AthleteService {
         profilePhoto: athleteProfiles.profilePhoto,
         leftArmElo: athleteProfiles.leftArmElo,
         rightArmElo: athleteProfiles.rightArmElo,
+        latitude: athleteProfiles.latitude,
+        longitude: athleteProfiles.longitude,
+        locationVisibility: athleteProfiles.locationVisibility,
+        locationFuzzSeed: athleteProfiles.locationFuzzSeed,
         verificationStatus: athleteVerifications.status,
       })
       .from(athleteProfiles)
@@ -655,7 +693,7 @@ export class AthleteService {
       .offset(offset)
       .orderBy(desc(athleteProfiles.createdAt));
 
-    return results;
+    return results.map((r) => sanitizeAthleteLocationForViewer(r, filters.viewerUserId));
   }
 
   /**
@@ -804,13 +842,21 @@ export class AthleteService {
   /**
    * Create an athlete club
    */
-  static async createClub(name: string, city: string, province: string) {
+  static async createClub(
+    name: string,
+    city: string,
+    province: string,
+    latitude?: number,
+    longitude?: number
+  ) {
     const [club] = await db
       .insert(athleteClubs)
       .values({
         name,
         city,
         province,
+        latitude: latitude ?? null,
+        longitude: longitude ?? null,
       })
       .returning();
 

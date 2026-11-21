@@ -97,9 +97,9 @@ class AuditChainVerifier {
       );
     }
 
-    // 1. Sort events chronologically (oldest to newest)
-    final chain = List<Map<String, dynamic>>.from(rawEvents);
-    chain.sort((a, b) {
+    // 1. Sort events chronologically (oldest to newest) then topologically by parentHash -> eventHash
+    final chronological = List<Map<String, dynamic>>.from(rawEvents);
+    chronological.sort((a, b) {
       final aDate = _parseDate(a['createdAt']);
       final bDate = _parseDate(b['createdAt']);
       if (aDate != null && bDate != null) {
@@ -109,6 +109,53 @@ class AuditChainVerifier {
       return (a['eventId']?.toString() ?? a['id']?.toString() ?? '')
           .compareTo(b['eventId']?.toString() ?? b['id']?.toString() ?? '');
     });
+
+    final byParent = <String, List<Map<String, dynamic>>>{};
+    for (final ev in chronological) {
+      final p = ev['parentHash']?.toString() ?? '';
+      byParent.putIfAbsent(p, () => <Map<String, dynamic>>[]).add(ev);
+    }
+
+    final chain = <Map<String, dynamic>>[];
+    final visited = <int>{};
+    final indexMap = <Map<String, dynamic>, int>{};
+    for (int idx = 0; idx < chronological.length; idx++) {
+      indexMap[chronological[idx]] = idx;
+    }
+
+    String? startParent;
+    if (byParent.containsKey(genesisHash)) {
+      startParent = genesisHash;
+    } else if (chronological.isNotEmpty) {
+      startParent = chronological.first['parentHash']?.toString() ?? '';
+    }
+
+    if (startParent != null) {
+      String cursor = startParent;
+      while (chain.length < chronological.length) {
+        final candidates = (byParent[cursor] ?? const [])
+            .where((ev) => !visited.contains(indexMap[ev]))
+            .toList();
+        if (candidates.isEmpty) break;
+        final nextEv = candidates.first;
+        visited.add(indexMap[nextEv]!);
+        chain.add(nextEv);
+        final nextHash = nextEv['eventHash']?.toString() ??
+            nextEv['currentHash']?.toString() ??
+            nextEv['hash']?.toString() ??
+            '';
+        if (nextHash.isEmpty) break;
+        cursor = nextHash;
+      }
+    }
+
+    if (chain.length < chronological.length) {
+      for (int idx = 0; idx < chronological.length; idx++) {
+        if (!visited.contains(idx)) {
+          chain.add(chronological[idx]);
+        }
+      }
+    }
 
     final List<String> corruptedEventIds = [];
     final Map<String, bool> perEventIntegrity = {};

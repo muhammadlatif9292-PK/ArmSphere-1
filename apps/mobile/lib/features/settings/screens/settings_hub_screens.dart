@@ -13,6 +13,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../tournament/screens/event_qr_passport_screen.dart';
 import '../../tournament/services/tournament_offline_store.dart';
 import '../widgets/biometric_settings_tile.dart';
+import '../../../core/providers/athlete_provider.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
 /// Account & Settings hub (spec §36). Every section maps to a real surface.
@@ -86,7 +87,7 @@ class SettingsHubScreen extends ConsumerWidget {
                       Clipboard.setData(ClipboardData(text: userId));
                       ScaffoldMessenger.of(context).showSnackBar(
                         CrystalSnackBar(
-                          content: Text('Athlete ID copied to clipboard: $userId'),
+                          content: const Text('Athlete ID copied to clipboard'),
                           backgroundColor: AppTheme.emerald,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -197,6 +198,13 @@ class SettingsHubScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: AppTheme.space20),
+
+                  _sectionHeader(context, 'RADAR & LOCATION PRIVACY'),
+                  _RadarLocationPrivacyCard(
+                    fallbackVisibility:
+                        profile?['locationVisibility']?.toString(),
                   ),
                   const SizedBox(height: AppTheme.space20),
 
@@ -1038,6 +1046,243 @@ class _LegalBody extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(fontSize: 13, height: 1.5, color: AppTheme.textSecondary),
+      ),
+    );
+  }
+}
+
+class _RadarLocationPrivacyCard extends ConsumerStatefulWidget {
+  final String? fallbackVisibility;
+
+  const _RadarLocationPrivacyCard({this.fallbackVisibility});
+
+  @override
+  ConsumerState<_RadarLocationPrivacyCard> createState() =>
+      _RadarLocationPrivacyCardState();
+}
+
+class _RadarLocationPrivacyCardState
+    extends ConsumerState<_RadarLocationPrivacyCard> {
+  String? _optimisticMode;
+  bool _saving = false;
+
+  static const _options = <({
+    String value,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color accent,
+  })>[
+    (
+      value: 'AREA',
+      title: 'Area Visible',
+      subtitle:
+          'Show approximate city/area (~1 km fuzzed, never your exact home address).',
+      icon: Icons.radar_rounded,
+      accent: AppTheme.cyan,
+    ),
+    (
+      value: 'TRAVEL_ONLY',
+      title: 'Traveling Only',
+      subtitle:
+          'Stay hidden by default. Only appear on Radar when you drop a Travel or Sparring Beacon.',
+      icon: Icons.flight_takeoff_rounded,
+      accent: AppTheme.goldPrimary,
+    ),
+    (
+      value: 'GHOST',
+      title: 'Ghost Mode',
+      subtitle:
+          'Completely invisible on ArmSphere Radar — hides both your home area and beacons.',
+      icon: Icons.visibility_off_rounded,
+      accent: AppTheme.crimson,
+    ),
+  ];
+
+  String _resolveCurrentMode(AsyncValue<Map<String, dynamic>> profileAsync) {
+    if (_optimisticMode != null) return _optimisticMode!;
+    final fromAsync = profileAsync.valueOrNull?['locationVisibility']?.toString();
+    final raw = (fromAsync ?? widget.fallbackVisibility ?? 'AREA').toUpperCase();
+    if (raw == 'TRAVEL_ONLY' || raw == 'GHOST' || raw == 'AREA') {
+      return raw;
+    }
+    return 'AREA';
+  }
+
+  Future<void> _selectMode(String mode, String label) async {
+    if (_saving) return;
+    HapticFeedback.selectionClick();
+    final previous = _optimisticMode;
+    setState(() {
+      _optimisticMode = mode;
+      _saving = true;
+    });
+
+    try {
+      await ref
+          .read(athleteProfileProvider.notifier)
+          .updateLocationVisibility(mode);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: Text('Radar privacy updated: $label'),
+          backgroundColor: AppTheme.emerald,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _optimisticMode = previous;
+        _saving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: Text(
+            'Could not update Radar privacy. Check your connection and try again.',
+          ),
+          backgroundColor: AppTheme.crimson,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(athleteProfileProvider);
+    final selectedMode = _resolveCurrentMode(profileAsync);
+
+    return ElevatedActionCard(
+      key: const ValueKey('settings_radar_location_privacy_card'),
+      padding: EdgeInsets.zero,
+      enableSlashes: false,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Column(
+          children: [
+            for (var i = 0; i < _options.length; i++) ...[
+              Builder(
+                builder: (context) {
+                  final opt = _options[i];
+                  final isSelected = selectedMode == opt.value;
+                  return InkWell(
+                    onTap: _saving
+                        ? null
+                        : () => _selectMode(opt.value, opt.title),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? opt.accent.withValues(alpha: 0.09)
+                            : Colors.transparent,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: opt.accent.withValues(
+                                alpha: isSelected ? 0.22 : 0.10,
+                              ),
+                              border: Border.all(
+                                color: opt.accent.withValues(
+                                  alpha: isSelected ? 0.85 : 0.30,
+                                ),
+                              ),
+                            ),
+                            child: Icon(
+                              opt.icon,
+                              size: 17,
+                              color: isSelected
+                                  ? opt.accent
+                                  : AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        opt.title,
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13.5,
+                                          color: isSelected
+                                              ? AppTheme.textPure
+                                              : AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSelected && _saving)
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppTheme.goldPrimary,
+                                        ),
+                                      )
+                                    else
+                                      Icon(
+                                        isSelected
+                                            ? Icons.radio_button_checked_rounded
+                                            : Icons.radio_button_off_rounded,
+                                        size: 20,
+                                        color: isSelected
+                                            ? opt.accent
+                                            : AppTheme.textMuted,
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  opt.subtitle,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    height: 1.35,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: Color(0x22FFFFFF),
+              ),
+            ],
+            _SettingsTile(
+              rowIndex: 2,
+              icon: Icons.radar_rounded,
+              iconColor: AppTheme.crimson,
+              title: 'Open ArmSphere Radar',
+              onTap: () {
+                HapticFeedback.selectionClick();
+                context.push('/radar');
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

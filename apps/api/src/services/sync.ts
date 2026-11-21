@@ -4,6 +4,7 @@ import { pendingActions, auditLogs, users, athleteProfiles, matches, syncTombsto
 import { SyncStatus } from "@armsphere/types";
 import { ConflictError, BadRequestError, NotFoundError, logger } from "@armsphere/core";
 import { processedJobsTracker } from "./scheduledJobs.js";
+import { generateLocationFuzzSeed, normalizeLocationVisibility } from "./locationPrivacy.js";
 
 export class SyncService {
   /**
@@ -332,7 +333,39 @@ export class SyncService {
           })
           .where(eq(users.id, userId));
 
-        return { userId, fullName: payload.fullName, status: "PROFILE_SYNCED" };
+        // Propagate spatial profile updates if provided in offline sync payload
+        if (
+          payload.latitude !== undefined ||
+          payload.longitude !== undefined ||
+          payload.locationVisibility !== undefined
+        ) {
+          const spatialUpdate: Record<string, any> = {
+            updatedAt: new Date(),
+            locationFuzzSeed: generateLocationFuzzSeed(userId),
+          };
+          if (typeof payload.latitude === "number" && payload.latitude >= -90 && payload.latitude <= 90) {
+            spatialUpdate.latitude = payload.latitude;
+          }
+          if (typeof payload.longitude === "number" && payload.longitude >= -180 && payload.longitude <= 180) {
+            spatialUpdate.longitude = payload.longitude;
+          }
+          if (typeof payload.locationVisibility === "string") {
+            spatialUpdate.locationVisibility = normalizeLocationVisibility(payload.locationVisibility);
+          }
+          await db
+            .update(athleteProfiles)
+            .set(spatialUpdate)
+            .where(eq(athleteProfiles.userId, userId));
+        }
+
+        return {
+          userId,
+          fullName: payload.fullName,
+          latitude: payload.latitude,
+          longitude: payload.longitude,
+          locationVisibility: payload.locationVisibility,
+          status: "PROFILE_SYNCED",
+        };
       }
 
       default:

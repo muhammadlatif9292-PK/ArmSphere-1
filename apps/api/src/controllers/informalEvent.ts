@@ -17,6 +17,8 @@ const createEventSchema = z.object({
     (val) => (val === "false" || val === false ? false : true),
     z.boolean().default(true)
   ),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 const getEventsQuerySchema = z.object({

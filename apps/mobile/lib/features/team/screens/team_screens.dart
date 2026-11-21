@@ -5,12 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
+import '../../../core/config/map_config.dart';
 import '../../../core/providers/social_provider.dart';
 import '../../../core/providers/athlete_provider.dart';
+import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
+import '../../../core/widgets/armsphere_location_picker.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -1942,6 +1945,203 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     }
   }
 
+  Future<void> _showCreateClubDialog() async {
+    final clubNameCtrl = TextEditingController();
+    final clubCityCtrl = TextEditingController();
+    String selectedProvince = ArmSphereMapConfig.pakistanProvinces.first;
+    double? clubLat;
+    double? clubLng;
+    String? resolvedAddress;
+    bool creatingClub = false;
+    final dialogFormKey = GlobalKey<FormState>();
+
+    final created = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierColor: const Color(0xCC030509),
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppTheme.background,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                side: BorderSide(color: AppTheme.goldPrimary.withValues(alpha: 0.45)),
+              ),
+              title: const Text(
+                'Register New Club / Gym',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: dialogFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: clubNameCtrl,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: const InputDecoration(
+                          labelText: 'Club / Gym Name *',
+                          hintText: 'e.g. Lahore Iron Table Club',
+                        ),
+                        validator: (v) =>
+                            (v == null || v.trim().length < 2) ? 'Enter a club name' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      ArmSphereLocationFieldCard(
+                        title: 'Pin Club / Gym Location',
+                        subtitle:
+                            'Pin your training table location to appear on ArmSphere Radar',
+                        latitude: clubLat,
+                        longitude: clubLng,
+                        resolvedAddress: resolvedAddress,
+                        onPickLocation: () async {
+                          final picked = await ArmSphereLocationPicker.show(
+                            ctx,
+                            title: 'Pin Club / Gym Location',
+                            initialLatitude: clubLat,
+                            initialLongitude: clubLng,
+                            initialLabel: resolvedAddress ?? clubCityCtrl.text,
+                          );
+                          if (picked == null || !ctx.mounted) return;
+                          final normProv = ArmSphereMapConfig.normalizeProvince(
+                            picked.province,
+                            fallbackCity: picked.city,
+                          );
+                          setDialogState(() {
+                            clubLat = picked.latitude;
+                            clubLng = picked.longitude;
+                            resolvedAddress = picked.formattedAddress;
+                            if (picked.city.trim().isNotEmpty) {
+                              clubCityCtrl.text = picked.city.trim();
+                            }
+                            if (ArmSphereMapConfig.pakistanProvinces.contains(normProv)) {
+                              selectedProvince = normProv;
+                            }
+                          });
+                        },
+                        onClear: () {
+                          setDialogState(() {
+                            clubLat = null;
+                            clubLng = null;
+                            resolvedAddress = null;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedProvince,
+                        dropdownColor: AppTheme.titanium,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: const InputDecoration(labelText: 'Province *'),
+                        items: ArmSphereMapConfig.pakistanProvinces
+                            .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) setDialogState(() => selectedProvince = v);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: clubCityCtrl,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: const InputDecoration(
+                          labelText: 'City *',
+                          hintText: 'e.g. Lahore',
+                        ),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? 'City is required' : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: creatingClub ? null : () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: creatingClub
+                      ? null
+                      : () async {
+                          if (!dialogFormKey.currentState!.validate()) return;
+                          setDialogState(() => creatingClub = true);
+                          try {
+                            final club = await ref.read(athleteRepositoryProvider).createClub(
+                                  name: clubNameCtrl.text.trim(),
+                                  city: clubCityCtrl.text.trim(),
+                                  province: selectedProvince,
+                                  latitude: clubLat,
+                                  longitude: clubLng,
+                                );
+                            if (ctx.mounted) {
+                              Navigator.of(ctx).pop(club);
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              setDialogState(() => creatingClub = false);
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                CrystalSnackBar(
+                                  content: Text(AppErrorFormatter.format(e)),
+                                  backgroundColor: AppTheme.error,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.goldPrimary,
+                    foregroundColor: AppTheme.voidBackground,
+                  ),
+                  child: creatingClub
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.voidBackground,
+                          ),
+                        )
+                      : const Text(
+                          'Register Club',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    clubNameCtrl.dispose();
+    clubCityCtrl.dispose();
+
+    if (created != null && mounted) {
+      ref.invalidate(clubsProvider);
+      final newClubId = created['id']?.toString();
+      if (newClubId != null && newClubId.isNotEmpty && created['queuedOffline'] != true) {
+        setState(() => _clubId = newClubId);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: Text(
+            created['queuedOffline'] == true
+                ? 'Club saved offline — will sync automatically when back online.'
+                : '${created['name'] ?? 'Club'} registered and selected.',
+          ),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final clubsAsync = ref.watch(clubsProvider);
@@ -2124,7 +2324,28 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                     onChanged: (value) => setState(() => _clubId = value),
                   ),
                 ),
-                const SizedBox(height: AppTheme.space16),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _showCreateClubDialog,
+                    icon: const Icon(
+                      Icons.add_location_alt_outlined,
+                      size: 16,
+                      color: AppTheme.goldPrimary,
+                    ),
+                    label: const Text(
+                      'Register New Club / Gym with Map Pin',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppTheme.space12),
 
                 InkWell(
                   onTap: _pickFoundedDate,

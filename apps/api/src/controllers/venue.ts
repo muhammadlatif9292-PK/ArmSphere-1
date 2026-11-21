@@ -11,6 +11,8 @@ const createVenueSchema = z.object({
   contactInfo: z.string().optional(),
   description: z.string().optional(),
   logoUrl: z.string().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 const updateVenueSchema = createVenueSchema.partial();

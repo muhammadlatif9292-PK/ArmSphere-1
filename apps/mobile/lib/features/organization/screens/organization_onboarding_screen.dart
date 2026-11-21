@@ -298,18 +298,78 @@ class _OrganizationOnboardingScreenState extends ConsumerState<OrganizationOnboa
             DropdownButtonFormField<String>(
               value: _selectedProvince,
               dropdownColor: const Color(0xFF0C101A),
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              borderRadius: BorderRadius.circular(14),
+              elevation: 16,
+              iconEnabledColor: AppTheme.goldPrimary,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
               decoration: _buildInputDecoration(
                 label: 'Provincial Jurisdiction',
                 hint: 'Select Province',
                 icon: Icons.map_outlined,
+              ).copyWith(
+                fillColor: const Color(0xFF0C101A),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.35),
+                    width: 1.1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppTheme.goldPrimary,
+                    width: 1.6,
+                  ),
+                ),
               ),
-              items: _kProvinces.map((prov) {
-                return DropdownMenuItem(
-                  value: prov,
-                  child: Text(prov),
-                );
-              }).toList(),
+              selectedItemBuilder: (context) => _kProvinces
+                  .map(
+                    (prov) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        prov,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+              items: [
+                for (int idx = 0; idx < _kProvinces.length; idx++)
+                  DropdownMenuItem(
+                    value: _kProvinces[idx],
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: idx < _kProvinces.length - 1
+                            ? Border(
+                                bottom: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  width: 0.8,
+                                ),
+                              )
+                            : null,
+                      ),
+                      child: Text(
+                        _kProvinces[idx],
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
               onChanged: (val) {
                 if (val != null) setState(() => _selectedProvince = val);
               },

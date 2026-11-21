@@ -22,6 +22,8 @@ const createEventSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: z.record(z.any()).optional(),
   idempotencyKey: z.string().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 const editEventSchema = z.object({
@@ -41,6 +43,8 @@ const editEventSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: z.record(z.any()).optional(),
   idempotencyKey: z.string().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 const registerAthleteSchema = z.object({

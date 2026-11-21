@@ -74,7 +74,8 @@ import {
   supportTickets,
   supportTicketMessages,
   sparringInvites,
-  organizations
+  organizations,
+  radarBeacons
 } from "@armsphere/db-schema";
 import { createTestUserFixture } from "./factories.js";
 
@@ -163,6 +164,7 @@ export const testDbStore = {
   supportTicketMessages: [] as any[],
   sparringInvites: [] as any[],
   organizations: [] as any[],
+  radarBeacons: [] as any[],
 };
 
 // Reset store before each test run
@@ -258,6 +260,7 @@ beforeEach(() => {
   testDbStore.supportTicketMessages = [];
   testDbStore.sparringInvites = [];
   testDbStore.organizations = [];
+  testDbStore.radarBeacons = [];
 });
 
 // Helper to evaluate mock query matching conditions
@@ -708,6 +711,8 @@ const mockDrizzle = {
         results = testDbStore.supportTicketMessages;
       } else if (table === sparringInvites) {
         results = testDbStore.sparringInvites;
+      } else if (table === radarBeacons) {
+        results = testDbStore.radarBeacons;
       }
 
       const chain = {
@@ -867,6 +872,7 @@ const mockDrizzle = {
         } else if (table === athleteProfiles) {
           testDbStore.athleteProfiles.push({
             profileVisibility: "PUBLIC",
+            locationVisibility: "AREA",
             isSearchable: true,
             ...record
           });
@@ -1002,6 +1008,8 @@ const mockDrizzle = {
           testDbStore.supportTicketMessages.push(record);
         } else if (table === sparringInvites) {
           testDbStore.sparringInvites.push(record);
+        } else if (table === radarBeacons) {
+          testDbStore.radarBeacons.push(record);
         }
       });
 
@@ -1540,6 +1548,15 @@ const mockDrizzle = {
             }
             return ac;
           });
+        } else if (table === radarBeacons) {
+          testDbStore.radarBeacons = testDbStore.radarBeacons.map((rb) => {
+            if (checkMatch(rb, expression)) {
+              const updated = { ...rb, ...updateValues };
+              matched.push(updated);
+              return updated;
+            }
+            return rb;
+          });
         }
         
         const returnObj = {
@@ -1661,6 +1678,8 @@ const mockDrizzle = {
         testDbStore.supportTicketMessages = filterFn(testDbStore.supportTicketMessages);
       } else if (table === sparringInvites) {
         testDbStore.sparringInvites = filterFn(testDbStore.sparringInvites);
+      } else if (table === radarBeacons) {
+        testDbStore.radarBeacons = filterFn(testDbStore.radarBeacons);
       }
 
       return {
@@ -1721,6 +1740,7 @@ const mockDrizzle = {
       supportTickets: [...testDbStore.supportTickets],
       supportTicketMessages: [...testDbStore.supportTicketMessages],
       sparringInvites: [...testDbStore.sparringInvites],
+      radarBeacons: [...testDbStore.radarBeacons],
     };
 
     try {
@@ -1766,6 +1786,7 @@ const mockDrizzle = {
       testDbStore.supportTickets = snapshot.supportTickets;
       testDbStore.supportTicketMessages = snapshot.supportTicketMessages;
       testDbStore.sparringInvites = snapshot.sparringInvites;
+      testDbStore.radarBeacons = snapshot.radarBeacons;
 
       throw error;
     }

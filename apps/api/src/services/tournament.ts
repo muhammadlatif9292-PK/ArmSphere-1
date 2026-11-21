@@ -129,6 +129,8 @@ export class TournamentService {
     status?: string;
     step1Config?: Record<string, any>;
     idempotencyKey?: string;
+    latitude?: number | null;
+    longitude?: number | null;
   }, actorId?: string) {
     logger.info({ name: data.name, actorId }, "Creating new tournament event");
 
@@ -207,7 +209,9 @@ export class TournamentService {
         organizerId: finalOrganizerId,
         organizationId: finalOrganizationId,
         paymentMethod: data.paymentMethod || "STRIPE",
-        paymentQrImageUrl: data.paymentQrImageUrl || null
+        paymentQrImageUrl: data.paymentQrImageUrl || null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
       })
       .returning();
 
@@ -364,6 +368,8 @@ export class TournamentService {
     organizerId: string;
     paymentMethod: string;
     paymentQrImageUrl: string | null;
+    latitude: number | null;
+    longitude: number | null;
   }>, actorId?: string) {
     logger.info({ id, actorId }, "Editing tournament event");
 
