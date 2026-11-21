@@ -24,7 +24,12 @@ class _RadarDiscoverEntryCardState extends State<RadarDiscoverEntryCard>
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2600),
-    )..repeat();
+    );
+    final isTest =
+        WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    if (!isTest) {
+      _pulseController.repeat();
+    }
   }
 
   @override

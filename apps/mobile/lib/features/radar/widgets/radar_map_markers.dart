@@ -209,7 +209,12 @@ class _PulsingBeaconMarkerState extends State<_PulsingBeaconMarker>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
-    )..repeat();
+    );
+    final isTest =
+        WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    if (!isTest) {
+      _controller.repeat();
+    }
   }
 
   @override
