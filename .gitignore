@@ -24,4 +24,10 @@ keystore.properties
 *.keystore
 release-builds/
 *.apk
+*.aab
+build_output/
 build-artifacts/
+
+# Python / Scripts
+__pycache__/
+*.pyc

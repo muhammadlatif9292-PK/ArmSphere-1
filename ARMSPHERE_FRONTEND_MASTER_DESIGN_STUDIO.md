@@ -1,0 +1,1721 @@
+# ARMSPHERE MASTER FRONTEND SPECIFICATION & FOUR PREMIUM DESIGN ARCHITECTURES
+## Authoritative Screen-by-Screen Engineering Blueprint for Google AI Studio & Flutter Monorepo
+**Document Version**: 5.1.0 (Supreme Armwrestling Combat Edition — Quad-Design Architecture)  
+**Root Path**: `e:\ArmSphere\ARMSPHERE_FRONTEND_MASTER_DESIGN_STUDIO.md`  
+**Mirror Path**: `e:\ArmSphere\docs\design\MASTER_AI_STUDIO_3_DESIGN_BLUEPRINT.md`  
+**Purpose**: Central design authority, full feature catalog, and screen-by-screen engineering blueprint to feed directly into Google AI Studio for generating high-end, 100% sport-authentic frontends without generic drift.
+
+---
+
+> [!IMPORTANT]
+> ### THE CONSTITUTIONAL ARMWRESTLING MANDATE
+> Every pixel, button, curve, and interaction in ArmSphere must **look, feel, and sound like competitive armwrestling**.
+> - It is **NOT** a generic fitness tracker, a crypto dashboard, or a corporate SaaS portal.
+> - It embodies the physical reality of the sport: **knurled steel grip pegs, 7x7" high-density elbow pads, 4x2x14" angled pin pads, 1" nylon strap buckles, magnesium carbonate chalk dust, referee leveling grips, dual-arm ELO independence, and 400ms pin hold locks**.
+> - An athlete, referee, or promoter opening ArmSphere must immediately feel: *"This was engineered by people who know the chalk, the table, and the strap."*
+
+---
+
+# TABLE OF CONTENTS
+
+1. [Executive Forensic Audit & The Sport-Authentic Core](#1-executive-forensic-audit--the-sport-authentic-core)
+   - 1.1 Why Generic AI Frontends Fail for Armwrestling
+   - 1.2 Physical Anatomy of Regulation Table Hardware
+   - 1.3 The 16 Anti-Slop Constitutional Standards
+2. [Complete 69-Surface Screen & Modal Catalog](#2-complete-69-surface-screen--modal-catalog)
+3. [User Roles, Security Access & Federation RBAC Matrix](#3-user-roles-security-access--federation-rbac-matrix)
+   - 3.1 Server-Authoritative Multi-Role Model
+   - 3.2 Tournament Operator vs. System Admin Distinct Architecture
+   - 3.3 Dual-Role Persona Switcher Protocol
+4. [The Four Premium Armwrestling Design Philosophies](#4-the-four-premium-armwrestling-design-philosophies)
+   - 4.1 Style A: **FORGE** (Tactical Brutalist · Industrial Steel & Welds)
+   - 4.2 Style B: **APEX** (Refined Luxury Sport · Hand-Stitched Leather & Gold)
+   - 4.3 Style C: **ARENA** (Modern Athletic Command · DAZN/ESPN Broadcast HUD)
+   - 4.4 Style D: **TITANIUM** (Stealth Combat OS · Brushed Titanium & Smoked Graphite Glass)
+   - 4.5 Sport-Specific Component Token Comparison Table (4-Style Matrix)
+5. [Smart Architectural Strategies & Proprietary Combat Interactions](#5-smart-architectural-strategies)
+   - 5.1 The Peg Dock & Quick Tool Rack (Athlete Domain)
+   - 5.2 The Ring-Side Emergency Rail & Foul Flash (Referee Domain)
+   - 5.3 The Table Dispatch Sheet & Weigh-In Tare Station (Operator Domain)
+   - 5.4 The Multi-Angle Video Scrim & Protest Docket (Governance Domain)
+   - 5.5 The Dual-Role Persona Switcher Protocol (<50ms Swap)
+   - 5.6 The Eight Canonical Signature Combat Interactions (SIG-1 to SIG-8)
+6. [Exhaustive Screen-by-Screen Specifications & Diagrams (All 15 Domains)](#6-exhaustive-screen-by-screen-specifications)
+   - 6.1 Domain 1: Authentication, MFA & Recovery (Screens 01–11)
+   - 6.2 Domain 2: Athlete Core, Biometrics & ELO Dashboard (Screens 12–16)
+   - 6.3 Domain 3: Competition Discovery & Global Search (Screens 17–18)
+   - 6.4 Domain 4: Tournaments, Brackets & Operations Desk (Screens 19–27)
+   - 6.5 Domain 5: Referee Officiating & Live Table Scorepad (Screens 28–33 + Modal M1)
+   - 6.6 Domain 6: Championships, Title Belts & Prestige Lineage (Screens 34–36)
+   - 6.7 Domain 7: Head-to-Head & Match Scoring Engine (Screens 37–38)
+   - 6.8 Domain 8: Community Media, Clip Feeds & Video Player (Screens 39–41 + Modal M2)
+   - 6.9 Domain 9: Direct Messaging & Federation Bulletins (Screens 42–44)
+   - 6.10 Domain 10: Real-Time Notifications & Match Calls (Screen 45)
+   - 6.11 Domain 11: Federation Governance, Disputes & Sanctions (Screens 46–48)
+   - 6.12 Domain 12: Team Clubs, Rosters & Sparring Challenges (Screens 49–51)
+   - 6.13 Domain 13: Certified Venues & Grassroots Meetups (Screens 52–57)
+   - 6.14 Domain 14: Talent Scouting & Grassroots Nominations (Screens 58–59)
+   - 6.15 Domain 15: Settings Hub, Payments, Active Sessions & GDPR (Screens 60–66 + Modal M3)
+7. [Admin Web Command Center Architecture & Reconciliation](#7-admin-web-command-center-architecture--reconciliation)
+8. [Google AI Studio Prompting Playbook (4-Style Edition)](#8-google-ai-studio-prompting-playbook)
+9. [Component Library & Interactive Token Dictionary](#9-component-library--interactive-token-dictionary)
+10. [React / Tailwind to Flutter Monorepo Conversion Guide](#10-react--tailwind-to-flutter-monorepo-conversion-guide)
+
+---
+
+# 1. EXECUTIVE FORENSIC AUDIT & THE SPORT-AUTHENTIC CORE
+
+### 1.1 Why Generic AI Frontends Fail for Armwrestling
+Previous prototypes generated by generic AI models lost product credibility because:
+1. **Hallucinated Generic Fitness Metrics**: Generic models generated running distances, calorie burning, and step counts. Armwrestling is an anaerobic isometric combat sport requiring **Cupping 1RM, Pronation Torque, Rising Height, Backpressure, Hand Span, Palm Thickness, and Wrist Circumference**.
+2. **Single Average ELO Collapse**: An armwrestler might be ranked #1 nationally on their **Right Arm (2150 ELO)** while competing as an unranked novice on their **Left Arm (1420 ELO)**. Collapsing these into a single rating destroys competitive integrity.
+3. **Ignored Ring-Side Physical Reality**: Referees operate with magnesium carbonate chalk on their fingers and sweat on their palms. Standard 32dp buttons and fragile gestures lead to misclicks. Ring-side table controllers require **64dp minimum hit targets**, instantaneous haptics, and a fail-safe **400ms Pin Hold Lock**.
+4. **Ignored Official Table Hardware**: Standard federation tables (WAF, IFA, WAL) have specific hardware constraints that must shape visual affordances:
+   - **Elbow Pads**: $7 \times 7 \text{ inches}$, 2 inches thick, high-density vinyl/leather foam.
+   - **Pin Pads**: $4 \times 2 \times 14 \text{ inches}$, angled at $30^\circ$ toward competitor.
+   - **Grip Pegs**: 1-inch diameter solid steel rods, 6 inches high, diamond knurled.
+   - **The Straps**: 1-inch wide nylon webbing with heavy-duty metal cam buckle.
+   - **The Ready-Go Protocol**: "Shoulders square... Wrists straight... Thumbs covered... Don't move... READY... GO!"
+   - **The 1-Minute Grip Clock**: Transitioning to an enforced **Referee's Grip** if athletes fail to grip within 60 seconds.
+
+### 1.2 The 16 Anti-Slop Constitutional Standards (`docs/design/24_ANTI_SLOP_RULES.md`)
+1. **No Home Screen Dump**: Do not dump raw feeds or endless flat tables on Tab 0. Use curated radar modules.
+2. **No Desktop Squeezing**: Never cram multi-column spreadsheet desktop tables into mobile cards.
+3. **No Universal Glassmorphism**: Forbid glass backdrops in scrolling lists; use solid surfaces with 1px hairline borders.
+4. **No Meaningless Glow Rings**: Forbid box-shadow blurs >12dp on standard unselected cards.
+5. **No Floating Decorative Geometry**: Forbid floating geometric rings, bubbles, or random shapes.
+6. **No Purposeless Ambient Particles**: Forbid active particle loops running continuously on idle viewports.
+7. **No Fake AI Athletes / Faces**: Strictly real user avatars or crisp athletic initials monograms.
+8. **No Uncontrolled Pill Shapes**: Forbid 999dp pill buttons on primary rectangular actions (strictly 6dp, 10dp, 12dp, or 16dp).
+9. **No "Fade Everything" Motion**: Every transition must have directional vector momentum.
+10. **No Carousels for Data Tables**: Forbid horizontal swiping carousels for rankings and leaderboards.
+11. **No Text Over Raw Photos**: Every image must have an authoritative 4-stop gradient scrim.
+12. **No Hidden Critical Actions**: Ring-side referee and operator controls must be reachable within $\le 2$ taps.
+13. **No Dialog Fatigue**: Forbid modal popups for non-destructive routine operations.
+14. **No Low-Contrast Gray Typography**: Strictly adhere to WCAG AA 4.5:1 contrast against dark substrates.
+15. **No Inline Video Autoplay**: Feed videos display lightweight posters with lazy-loaded modal players.
+16. **No Inconsistent Back Behavior**: Back navigation must preserve scroll positions and tab state.
+
+---
+
+# 2. COMPLETE 69-SURFACE SCREEN & MODAL CATALOG
+
+ArmSphere comprises **66 dedicated screens and 3 specialized modals** organized into 15 functional domains:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                ARMSPHERE COMPLETE SURFACE CATALOG                                │
+├────┬─────────────────────────────┬──────┬────────────────────────────────────┬───────────────────┤
+│ ID │ Screen Name                 │ Type │ Canonical Route                    │ Signature / Touch │
+├────┼─────────────────────────────┼──────┼────────────────────────────────────┼───────────────────┤
+│ 01 │ SplashScreen                │ Full │ /                                  │ Insignia Decrypt  │
+│ 02 │ WelcomeScreen               │ Full │ /welcome                           │ Scrim + Chalk Grain│
+│ 03 │ RoleIntentScreen            │ Full │ /role-intent                       │ Combat Persona Ring│
+│ 04 │ RegisterScreen              │ Full │ /register                          │ Athlete Passport  │
+│ 05 │ LoginScreen                 │ Full │ /login                             │ Biometric Trigger │
+│ 06 │ OnboardingScreen            │ Full │ /onboarding                        │ 3-Step Calipers   │
+│ 07 │ ForgotPasswordScreen        │ Full │ /forgot-password                   │ OTP Dispatcher    │
+│ 08 │ ResetPasswordScreen         │ Full │ /reset-password                    │ Entropy Meter     │
+│ 09 │ MfaSetupScreen              │ Full │ /mfa/setup                         │ Knurled QR Frame  │
+│ 10 │ MfaVerificationScreen       │ Full │ /mfa/verify                        │ Tactile 6-Pin Pad │
+│ 11 │ RecoveryCodesScreen         │ Full │ /recovery-codes                    │ Encrypted Vault   │
+│ 12 │ AthleteDashboardScreen      │ Full │ /home (Branch 0: Athlete)          │ SIG-4 3D Flip ELO │
+│ 13 │ AthleteProfileScreen        │ Full │ /athlete/profile (Branch 4)        │ Biometric Passport│
+│ 14 │ PublicAthleteProfileScreen  │ Full │ /athlete/:athleteId                │ Tale of Tape Hook │
+│ 15 │ AthleteTrainingLogScreen    │ Full │ /athlete/:athleteId/training-log   │ Cupping/Pronation │
+│ 16 │ AthleteAchievementsScreen   │ Full │ /athlete/:athleteId/achievements   │ Title Belt Shelf  │
+│ 17 │ DiscoverScreen              │ Full │ /discover (Branch 1)               │ Arena Spotlight   │
+│ 18 │ GlobalSearchScreen          │ Full │ /search                            │ Tactical Filter   │
+│ 19 │ TournamentsListScreen       │ Full │ /tournaments (Branch 2)            │ Live Stage Badges │
+│ 20 │ TournamentDetailScreen      │ Full │ /tournament/:tournamentId          │ Multi-Table Grid  │
+│ 21 │ EventRegistrationScreen     │ Full │ /tournament/:tournamentId/register │ Arm/Division Pick │
+│ 22 │ TournamentBracketsScreen    │ Full │ /tournament/:tournamentId/brackets │ SIG-6 Lightning   │
+│ 23 │ TournamentOperationsScreen  │ Full │ /tournament/:tournamentId/operation│ 5 Ops Workbenches │
+│ 24 │ TournamentOperatorDashboard │ Full │ /home (Branch 0: Operator)         │ Event Desk WarRoom│
+│ 25 │ TournamentWeighInScreen     │ Full │ /tournament/:tournamentId/weigh-in │ SIG-5 Rubber Stamp│
+│ 26 │ TournamentAwardsCeremony    │ Full │ /tournament/:tournamentId/awards   │ Podium Unboxing   │
+│ 27 │ MatchDetailScreen           │ Full │ /matches/:matchId                  │ Round Pin Timeline│
+│ 28 │ RefereeDashboardScreen      │ Full │ /home (Branch 0: Referee)          │ Active Table Desk │
+│ 29 │ OfficialScorepadScreen      │ Full │ /referee/scorepad                  │ SIG-2 400ms Pin   │
+│ 30 │ MatchSubmissionScreen       │ Full │ /referee/matches/submit            │ Referee Sign-Off  │
+│ 31 │ RefereeCertificationsScreen │ Full │ /referee/certifications            │ WAF License Badge │
+│ 32 │ AthleteSearchScreen         │ Full │ /referee/athletes/search           │ Staging Photo ID  │
+│ 33 │ EvidenceUploadScreen        │ Full │ /referee/evidence                  │ Multi-Cam Scrim   │
+│ 34 │ ChampionshipsListScreen     │ Full │ /championship/titles               │ Title Belt Gallery│
+│ 35 │ ChampionshipDetailScreen    │ Full │ /championship/:championshipId      │ Belt Spec 3D Card │
+│ 36 │ PrestigeRankingsScreen      │ Full │ /championship/pfp-rankings         │ P4P Formula Radar │
+│ 37 │ HeadToHeadScreen            │ Full │ /matches/head-to-head              │ SIG-1 Shear Split │
+│ 38 │ NationalRankingsScreen      │ Full │ /rankings                          │ Division Tier Ranks│
+│ 39 │ CommunityFeedScreen         │ Full │ /community/feed (Branch 3)         │ Technique Stream  │
+│ 40 │ CreatePostScreen            │ Full │ /community/post/create             │ Lift Logger       │
+│ 41 │ PostCommentsScreen          │ Full │ /community/post/:postId/comments   │ Technique Debate  │
+│ 42 │ ConversationsListScreen     │ Full │ /messages                          │ Sparring Inboxes  │
+│ 43 │ ChatScreen                  │ Full │ /messages/:conversationId          │ Match Call Beacon │
+│ 44 │ AnnouncementsListScreen     │ Full │ /announcements                     │ Federation Gazette│
+│ 45 │ NotificationsListScreen     │ Full │ /notifications                     │ Table Call Alerts │
+│ 46 │ GovernanceDashboardScreen   │ Full │ /home (Branch 0: Governance)       │ Sanction Ledger   │
+│ 47 │ DisputeDetailScreen         │ Full │ /governance/dispute/:disputeId     │ Dual Video Scrub  │
+│ 48 │ SubmitComplaintScreen       │ Full │ /governance/submit-complaint       │ Violation Escrow  │
+│ 49 │ TeamsListScreen             │ Full │ /teams                             │ Club Crest Gallery│
+│ 50 │ TeamDetailScreen            │ Full │ /teams/:teamId                     │ Club Table Roster │
+│ 51 │ CreateTeamScreen            │ Full │ /teams/create                      │ Club Founding Form│
+│ 52 │ VenueDirectoryScreen        │ Full │ /venues                            │ Certified Table Map│
+│ 53 │ VenueDetailScreen           │ Full │ /venues/:venueId                   │ Table Specs & Chalk│
+│ 54 │ SubmitVenueScreen           │ Full │ /venues/submit                     │ Pad Spec Validator│
+│ 55 │ InformalEventDirectoryScreen│ Full │ /informal-events                   │ Grassroots Meetups│
+│ 56 │ InformalEventDetailScreen   │ Full │ /informal-events/:eventId          │ Sparring Table Roster
+│ 57 │ CreateInformalEventScreen   │ Full │ /informal-events/create            │ Garage Pulling Form
+│ 58 │ MyNominationsScreen         │ Full │ /nominations/mine                  │ Scout Bounty Desk │
+│ 59 │ NominateTalentScreen        │ Full │ /nominations/create                │ Grassroots Scout  │
+│ 60 │ SettingsHubScreen           │ Full │ /settings                          │ Security & Themes │
+│ 61 │ PaymentMethodsScreen        │ Full │ /settings/payment-methods          │ Federation Wallet │
+│ 62 │ MyTicketsScreen             │ Full │ /settings/tickets                  │ QR Table Passes   │
+│ 63 │ BlockedUsersScreen          │ Full │ /settings/blocked                  │ Match Exclusion   │
+│ 64 │ ActiveSessionsListScreen    │ Full │ /session                           │ Cryptographic Auth│
+│ 65 │ ActiveSessionControlScreen  │ Full │ /athlete/session/:sessionId        │ Kill Remote Token │
+│ 66 │ AccountDeletionScreen       │ Full │ /settings/deletion                 │ GDPR Crypt-Purge  │
+│ M1 │ FoulSheetModal              │ Modal│ [Triggered from Scorepad]          │ WAF Table Taxonomy│
+│ M2 │ VideoPlayerModal            │ Modal│ [Triggered from Feed/Disputes]     │ Lazy Frame Scrub  │
+│ M3 │ EloSurgeModal               │ Modal│ [Triggered on Bout Victory]        │ SIG-3 Surge & Bell│
+└────┴─────────────────────────────┴──────┴────────────────────────────────────┴───────────────────┘
+```
+
+---
+
+# 3. USER ROLES, SECURITY ACCESS & FEDERATION RBAC MATRIX
+
+ArmSphere enforces a strict **Server-Authoritative Multi-Role Model** (`UserRoleService`). Users can hold multiple verified roles (e.g. an Athlete who is also a Certified Referee and Club Captain).
+
+| Role Key | Role Title | Mobile Home (Branch 0) | Core Operational Authority |
+| :--- | :--- | :--- | :--- |
+| `ATHLETE` | Competitor | Athlete Dashboard | Register for events, view ELO, log PRs, join clubs, challenge rivals. |
+| `REFEREE` | Table Official | Referee Dashboard | Live table scorepads, 400ms pin hold, foul sheets, weigh-in checks. |
+| `TOURNAMENT_OPERATOR` | Event Director | Operator Dashboard | Bracket generator, table queue dispatch, weigh-in desk, call bouts. |
+| `ORGANIZATION_LEADER` | Club Captain | Athlete Dashboard + Teams | Manage club roster, issue sparring challenges, register team. |
+| `PROVINCIAL_DIRECTOR` | Provincial Exec | Governance Dashboard | Scoped to assigned province: approve events, resolve local disputes. |
+| `NATIONAL_DIRECTOR` | Federation Exec | Governance Dashboard | Universal national championships, belt vacating, licensing sanctions. |
+| `COMPLIANCE_OFFICER` | Integrity/Ethics | Governance Dashboard | Audit ledger review, evidence inspection, anti-doping hearing sheets. |
+| `SUPPORT_AGENT` | Helpdesk | Support Queue | Triage tickets, athlete account recovery, customer inquiries. |
+| `SYSTEM_ADMIN` | Root Administrator| Admin Console | System health, ELO replay engine, SHA-256 ledger verification. |
+
+### 3.2 Tournament Operator vs. System Admin Distinct Architecture
+A critical architectural boundary separates the **Tournament Operator** from the **System Admin**:
+- **Tournament Operator (`TOURNAMENT_OPERATOR`)**:
+  - Operates on the physical arena floor.
+  - Controls live table queues (`match_tables`), athlete staging, official scales (`WeighInScreen`), bracket advances, and podium awards.
+  - Lands on the dedicated **Tournament Operator Dashboard (`TournamentOperatorDashboardScreen` / Screen 24)**.
+  - Can NEVER access system cryptographic secrets, DB migrations, or multi-tenant configuration.
+- **System Admin (`SYSTEM_ADMIN`)**:
+  - Operates at the infrastructure and platform level.
+  - Oversees database schemas, cloud infrastructure, federation licensing, and global ELO replay engines.
+  - Uses the web-based Admin Console (`apps/admin-web`).
+
+### 3.3 Dual-Role Persona Switcher Protocol
+When a user holds multiple verified roles (e.g. `ATHLETE` + `REFEREE` or `ATHLETE` + `TOURNAMENT_OPERATOR`), the persistent top bar exposes the **Dual-Role Persona Switcher**:
+- Tapping switches active context in **<50ms** without re-authenticating.
+- Switching to `REFEREE` swaps Tab 0 to the **Referee Dashboard**, revealing ring-side tools.
+- Switching to `TOURNAMENT_OPERATOR` swaps Tab 0 to the **Operator Dashboard**, revealing arena tables.
+- Switching to `ATHLETE` swaps Tab 0 to the **Athlete Dashboard**, revealing training, rankings, and upcoming matches.
+- Bottom tabs 1–4 (Discover, Tournaments, Feed, Profile) remain accessible in all modes.
+
+---
+
+# 4. THE FOUR PREMIUM ARMWRESTLING DESIGN PHILOSOPHIES
+
+Every visual component in ArmSphere derives directly from physical armwrestling table hardware, chalk room culture, competition gear, and precision combat telemetry.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                FOUR PREMIUM ARMWRESTLING DESIGNS                                 │
+├─────────────────────┬──────────────────────────────┬────────────────────────┬────────────────────┤
+│ STYLE A: FORGE      │ STYLE B: APEX                │ STYLE C: ARENA         │ STYLE D: TITANIUM  │
+│ Tactical Brutalist  │ Refined Luxury Sport         │ Athletic Command HUD   │ Stealth Combat OS  │
+├─────────────────────┼──────────────────────────────┼────────────────────────┼────────────────────┤
+│ Industrial Power    │ Championship Leather & Belt  │ Live Sports Broadcast  │ Aerospace Precision│
+│ Diamond Knurled Steel│ Top-Grain Stitched Vinyl     │ Matte Carbon Fiber     │ Brushed Titanium   │
+│ 6dp Welded Chamfers │ 12dp Hand-Stitched Curves    │ 16dp Impact Rubber     │ 8dp Silver Chamfer │
+│ Molten Forge Gold   │ Champagne Gold Belt Metal    │ Athletic Amber & Cyan  │ Polished Silver    │
+│ JetBrains Mono Data │ Space Grotesk + Playfair     │ Space Grotesk Black    │ Tabular Grotesk    │
+│ The Peg Dock        │ Floating Frosted Capsule     │ Full-Width Strip       │ Smoked Glass Tray  │
+│ "The Workshop"      │ "The Sovereign Belt"         │ "The Pit-Wall Command" │ "The Precision OS" │
+└─────────────────────┴──────────────────────────────┴────────────────────────┴────────────────────┘
+```
+
+### 4.1 Style A: FORGE (Tactical Brutalist · Industrial Power)
+- **Metaphor**: A custom armwrestling steel fabrication workshop. Heavy welding, raw magnesium chalk, heavy dumbbell loading pins, steel grip pegs.
+- **Canvas Substrate**: `#08090D` (Raw Forged Iron) | Card Panels: `#12141C` (Milled Tool Steel) | Elevated: `#1A1D28`
+- **Accents**: `#D4AF37` (Molten Forge Gold), `#E85D3A` (Hot Weld Orange), `#EF4444` (Table Foul Red), `#10B981` (Cleared Green).
+- **Physical Textures**: Subtle 1px cross-hatch knurling along headers; 1px weld-seam borders (`#2A2E3A`) with corner hex bolt ornaments.
+- **Corner Geometry**: Sharp `6dp` machined chamfers. Zero pill buttons.
+- **Navigation**: **The Peg Dock** — a raised bottom steel tray with knurled peg-styled icons; right-edge slide-out **Chalk Rack Drawer**.
+
+### 4.2 Style B: APEX (Refined Luxury Sport · Championship Grade)
+- **Metaphor**: High-stakes international supermatches (King of the Table / East vs West VIP production).
+- **Canvas Substrate**: `#0A0E18` (Midnight Sapphire) | Card Panels: `#111827` (Padded Vinyl Table Bed) | Elevated: `#1E293B`
+- **Accents**: `#C9A84C` (Championship Title Gold), `#E2C878` (Specular Gold Sheen), `#DC2626` (Red Corner), `#059669` (Passed).
+- **Physical Textures**: Subtle perimeter French stitching lines (`border-dashed border-amber-500/20`); sweeping 45° metallic sheen gradients across cards.
+- **Corner Geometry**: `12dp` rounded pad corners inspired by regulation elbow pads.
+- **Navigation**: **Floating Frosted Capsule Dock** (16dp above bottom); left-edge **Championship Dossier Drawer** with wax-seal credentials.
+
+### 4.3 Style C: ARENA (Modern Athletic Command · Sports OS)
+- **Metaphor**: Modern combat sports broadcast telemetry (DAZN, ESPN, UFC Fight Pass, Olympic combat HUD).
+- **Canvas Substrate**: `#0C0F16` (Carbon Fiber Table) | Card Panels: `#161B26` (Dense Neoprene) | Elevated: `#1F2535`
+- **Accents**: `#F5A623` (Athletic Amber), `#FF6B35` (Competition Orange), `#00F0FF` (Laser Telemetry Cyan), `#FF4757` (Disqualification Red).
+- **Physical Textures**: High-grip rubberized tactile borders; active corner LED table lighting indicators (pulsing Red vs Blue table edges).
+- **Corner Geometry**: `16dp` impact-absorbing rounded corners; high-contrast broadcast micro-labels (`Inter SemiBold 10sp UPPERCASE`).
+- **Navigation**: **Full-Width Table Command Strip**; full-screen centered **War Room Overlay Menu**.
+
+### 4.4 Style D: TITANIUM (Stealth Combat OS · Brushed Titanium & Smoked Glass)
+- **Metaphor**: Precision aerospace military combat tool and technical federation operating system. Monochrome stealth depth, brushed titanium surfaces, smoked graphite glass trays, and surgical data clarity.
+- **Canvas Substrate**: `#070A11` (Deep Void) | Application Viewport: `#0B0F19` (Graphite) | Solid Cards: `#151B24` (Solid Titanium) | Elevated Surfaces: `#202832` (Silver Plane).
+- **Accents**: `#D6DCE3` (Polished Silver Edge), `#A8B0BA` (Brushed Silver), `#E23B3B` (Restrained Crimson Foul), `#D4AF37` (Championship Gold), `#10B981` (Cleared Emerald), `#38BDF8` (Laser Cyan Telemetry).
+- **Physical Textures**: 1px laser-etched silver borders (`#D6DCE3` / `#2A364F`), micro-brushed vertical grain, smoked translucent overlays (`backdrop-blur-md bg-[#0B0F19]/80`) strictly on floating trays and modals.
+- **Corner Geometry**: `8dp` precision-machined chamfers and `10dp` subtle curves.
+- **Navigation**: **The Smoked Titanium Glass Tray** — a floating translucent dark graphite tray with polished silver hairline rim and silver-backlit active icon.
+
+---
+
+### 4.5 Sport-Specific Component Token Comparison Table (4-Style Matrix)
+
+| Component | FORGE (Brutalist) | APEX (Luxury Sport) | ARENA (Broadcast HUD) | TITANIUM (Stealth Combat OS) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Primary Action Button** | 52dp, 8dp radius, knurled grip border, molten gold fill | 52dp, 12dp radius, champagne gold gradient with 45° specular sheen | 48dp, 12dp radius, athletic amber solid fill with subtle drop shadow | 50dp, 8dp radius, brushed titanium solid with 1px polished silver edge |
+| **Pin Lock Button** | 64dp solid steel circular pad with hex perimeter | 64dp padded leather vinyl pad with gold ring | 64dp high-grip neoprene pad with radial LED progress | 64dp cold-rolled titanium disk with 4px circular silver sweep |
+| **Table Foul Flash** | 3.5px Coral Red perimeter flash + double heavy haptic | 2.5px Crimson border glow + double heavy haptic | 4.0px Red corner strobe + table LED flash + haptic | 3.0px Surgical Crimson perimeter pulse (#E23B3B) + haptic |
+| **Arm Switch Card** | 3D perspective flip with knurled steel toggle | 3D perspective flip with gold belt-buckle toggle | Dual-channel telemetry cards with active amber border | 3D flip card with brushed silver segmented toggle |
+| **Weigh-In Clearance** | Physical rubber stamp descent (`-12°` tilt, 140ms drop) | Shimmering gold wax seal emboss with ribbon | Digital green holographic laser watermark | Monochromatic titanium certification seal with emerald tick |
+| **Tournament Bracket Line** | Dual-pass molten gold laser progression line | Luminous champagne filament with winner bloom | High-voltage electric cyan broadcast connector stroke | Razor-thin 1.5px polished silver vector stroke with node pulse |
+
+---
+
+# 5. SMART ARCHITECTURAL STRATEGIES
+
+### 5.1 The Peg Dock & Quick Tool Rack (Athlete Domain)
+- **Problem**: Competitors waiting for bouts need instant access to **Grip Recovery Timers**, **Strap Match Slip Odds**, and **Club Chat** without losing their place on the bracket.
+- **Solution**: Swiping left from the right bezel reveals the **Knurled Steel Tool Rack**:
+  - **Tendon Readiness Gauge**: Real-time recovery estimator based on days since last heavy pulling session.
+  - **Hand-Span vs Opponent Lever Calculator**: Instant reach and lever advantage readouts against upcoming bracket rivals.
+  - **Chalk Room Audio Beacon**: High-contrast flashing alert when match table queue enters top 2 on deck.
+
+### 5.2 The Ring-Side Emergency Rail & Foul Flash (Referee Domain)
+- **Problem**: When two 250lb heavyweights are locked on the table, a referee cannot look down at a phone screen to navigate menus.
+- **Solution**: A tactile swipe from the left bezel reveals the **Emergency Referee Rail**:
+  - **EMERGENCY MEDICAL STOP**: Instantly freezes arena clocks and alerts table marshals.
+  - **MANDATORY STRAP BUTTON**: Initiates the 30-second official strap timer.
+  - **OFFICIAL TABLE BELL**: Broadcasts audible ring chime to table audio speaker.
+  - **TABLE PROTEST FREEZE**: Freezes live match results pending video review.
+
+### 5.3 The Table Dispatch Sheet & Weigh-In Station (Operator Domain)
+- **Problem**: Operator desk bottlenecks occur during weigh-ins when athletes are slightly over category limits.
+- **Solution**: The **Digital Tare Weigh-In Station** includes an automated **30-Minute Sweat-Out Grace Period Timer** and a 1-tap **Division Reassignment Engine** that dynamically recalculates bracket seeds without corrupting tournament trees.
+
+### 5.4 The Multi-Angle Video Scrim & Protest Docket (Governance Domain)
+- **Problem**: Disputed elbow fouls and intentional slips require frame-by-frame scrubbing.
+- **Solution**: The **Dispute Dossier Drawer** opens a dual-angle synchronized video player with $0.25\times$ slow-motion playback and referee pad contact alignment.
+
+### 5.5 The Dual-Role Persona Switcher Protocol
+- **Problem**: Referees and Operators frequently compete in their own off-duty weight categories.
+- **Solution**: Switch persona in <50ms with zero re-authentication. The UI morphs Tab 0 instantly while maintaining background subscriptions.
+
+### 5.6 The Eight Canonical Signature Combat Interactions (SIG-1 to SIG-8)
+
+| Signature ID | Interaction Name | Trigger View | Frame Budget | Latency Constraint | Primary Sensory Cue |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **SIG-1** | Match Reveal Walkout | Schedule / Match Detail | <16.6ms | <30ms push | Medium + Heavy Impact |
+| **SIG-2** | 400ms Pin Hold Lock | Referee Scorepad | <16.6ms | **0ms instantaneous** | Sustained rumble + Heavy Impact + Bell |
+| **SIG-3** | ELO Surge Bell | Match Summary / Profile | <16.6ms | <50ms calculation | Counter ticks + Medium Impact |
+| **SIG-4** | Arm-Switch Flip | Profile / Rankings | <16.6ms | <20ms toggle | 3D Perspective Flip + Selection click |
+| **SIG-5** | Rubber Stamp Clearance | Weigh-In Registration | <16.6ms | <30ms stamp | Heavy Impact + Shockwave |
+| **SIG-6** | Bracket Advance Line | Tournament Bracket | <16.6ms | <40ms update | Vector path pulse + Medium Impact |
+| **SIG-7** | Chalk Dust Pull Refresh | Feeds / Standings | <16.6ms | <15ms pull | Tension click + Light Impact |
+| **SIG-8** | Referee Foul Flash | Referee Scorepad | <16.6ms | **0ms instantaneous** | Double Heavy Impact + Screen border pulse |
+
+#### Detailed Sensory & Choreography Specs for SIG-1 to SIG-8:
+- **SIG-1: Match Reveal Walkout**: 15° diagonal shear split across viewport. Left athlete panel slides in from left (Red corner #EF4444), right athlete panel slides in from right (Blue corner #38BDF8). 2px Champagne Gold laser divider slices down center at 200ms (`HapticFeedback.mediumImpact()`). At 350ms, central "VS" emblem locks and ELO ratings slam in (`HapticFeedback.heavyImpact()`). Total 500ms sequence.
+- **SIG-2: 400ms Pin Hold Lock**: 64dp circular pad. Instant touch scale compression (1.00 to 0.96) with 0ms visual feedback. 4px radial progress stroke sweeps clockwise in linear 400ms. If released at <400ms, collapses instantly to 0 with light error click. At 400ms, triggers 80ms white flash, locks "PIN CONFIRMED", fires `HapticFeedback.heavyImpact()` and Federation Bell chime.
+- **SIG-3: ELO Surge Bell**: On match summary, current rating is highlighted with gold glow. Numbers roll through intervening values over 300ms (`FontFeature.tabularFigures()`). Floating badge (+28) ascends 16dp. Expanding 1px ring wave dissolves outward with Federation chime.
+- **SIG-4: Arm-Switch Flip**: 3D Y-axis perspective rotation (`Matrix4.identity()..setEntry(3, 2, 0.0015)..rotateY(angle)`). Rotates 0° to 90° in 120ms (`Curves.easeInCubic`), swaps Right Arm (Crimson) to Left Arm (Sky Blue), completes 90° to 180° in 120ms (`Curves.easeOutCubic`).
+- **SIG-5: Rubber Stamp Clearance**: At official weigh-in check-in, an octagonal technical stamp ("CLEARED - 85.0 KG") descends from Scale 2.50 to 1.00 at -12° rotation in 150ms (`Curves.easeInQuad`). Impacts with `HapticFeedback.heavyImpact()`, dissipates 8 chalk dust shockwave particles over 120ms, and locks into Emerald Green watermark.
+- **SIG-6: Bracket Advance Lightning Line**: On bracket result, winning match node illuminates border to Gold (`#D4AF37`) or Polished Silver. Glowing 2px vector stroke pulses along tree connector path to next round slot over 250ms (`Curves.easeInOutCubic`). Target slot expands 1.03x and athlete name slides in with `HapticFeedback.mediumImpact()`.
+- **SIG-7: Chalk Dust Pull-to-Refresh**: Technical steel cable descends on scroll pull. At 80dp threshold, cable snaps into tension lock with light chalk dust dissipation and `HapticFeedback.mediumImpact()`. Industrial spinner rotates during sync, resolves to checkmark, retracts in 150ms.
+- **SIG-8: Referee Foul Flash**: On referee foul call, screen perimeter instantly strobes a 4px Coral Red border (`#EF4444` / `#E23B3B`) with 0ms latency. Offending athlete panel flashes 15% red tint. Double heavy haptic pulse fires (`HapticFeedback.heavyImpact()` x 2 at 60ms interval). Fades to dark slate over 180ms, leaving persistent foul pip counter illuminated.
+
+
+---
+
+# 6. EXHAUSTIVE SCREEN-BY-SCREEN SPECIFICATIONS (ALL 15 DOMAINS)
+
+---
+
+## 6.1 DOMAIN 1: AUTHENTICATION, MFA & BIOMETRIC RECOVERY (SCREENS 01–11)
+
+### SCREEN 01: SplashScreen (`/`)
+- **Roles**: All (pre-authentication).
+- **Purpose**: App cold start, cryptographic keystore validation, token decryption, and silent routing.
+- **Armwrestling Touch**: Crossed forearms insignia with specular rim lighting and knurled steel loading progression bar.
+- **Key Interactions**: Tap to fast-forward animation (<400ms); silent session restoration.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│                                                        │
+│                                                        │
+│                 [ DEEP VOID #070A11 ]                  │
+│                                                        │
+│               ┌───────────────────────┐                │
+│               │     ⚔️  ARMSPHERE      │                │  ← 56dp Gold primary crest
+│               │    ◄═════════════►    │                │     specular rim lighting
+│               └───────────────────────┘                │
+│                                                        │
+│                "FORGED FOR THE TABLE"                  │  ← Space Grotesk 14sp, tracked +2.0
+│                                                        │
+│               ═════════◄●►═════════                    │  ← Knurled steel loading bar
+│                     (Verifying)                        │  ← Inter 11sp muted
+│                                                        │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 01.1 | Canvas Viewport | Full Screen | Tap anywhere skips animation directly to resolved route | Micro-click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Raw iron substrate `#08090D`; cross-hatched knurling around the logo perimeter; molten gold progress bead.
+  - **Style B (APEX)**: Midnight sapphire `#0A0E18`; gold-leaf crest with 45° specular shimmer; champagne filament progress line.
+  - **Style C (ARENA)**: Carbon fiber weave `#0C0F16`; athletic amber crest with cyan edge backlight; dual-channel telemetry progress ticks.
+  - **Style D (TITANIUM)**: Deep void canvas `#070A11`; laser-etched silver crossed forearms crest; 1px polished silver edge; cold-rolled brushed titanium loading bead.
+
+---
+
+### SCREEN 02: WelcomeScreen (`/welcome`)
+- **Roles**: Public / Unauthenticated.
+- **Purpose**: First-touch institutional onboarding establishing federation authority and core pillars.
+- **Armwrestling Touch**: Arena table hero with 4-stop gradient scrim, 1.5% magnesium chalk grain, and championship belt showcase.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ HERO: Mazurenko Regulation Table & Magnesium Chalk │ │  ← 4-stop gradient scrim
+│ │ Rim-Lit World Heavyweight Title Belt               │ │     1.5% chalk grain overlay
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│  THE WORLD'S COMPETITIVE                               │  ← Space Grotesk 28sp Bold
+│  ARMWRESTLING PLATFORM                                 │     #F8FAFC High Contrast
+│                                                        │
+│  ┌─ FEDERATION PILLARS ──────────────────────────────┐ │
+│  │ ⚡ Compete on Official Federation Tables          │ │  ← Solid #121826 surface
+│  │ 📊 Track Dual-Arm Independent ELO Ratings         │ │     1px hairline border
+│  │ 🏆 Challenge Sanctioned Championship Belts        │ │     Top gold accent line
+│  │ 👥 Connect with Local Pullers & Clubs             │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │        ⚡ ENTER THE ARENA                         │ │  ← Btn 02.1: Primary CTA (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │        ALREADY FORGED? SIGN IN                    │ │  ← Btn 02.2: Secondary Outlined (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  [ Explore Anonymously as Spectator ]                  │  ← Btn 02.3: Text link (44dp)
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 02.1 | "ENTER THE ARENA" | 52dp height, full width | Navigates to `/role-intent` | `HapticFeedback.mediumImpact()` |
+  | 02.2 | "ALREADY FORGED? SIGN IN"| 52dp height, full width | Navigates to `/login` | `HapticFeedback.lightImpact()` |
+  | 02.3 | "Explore Anonymously" | 44dp height | Navigates to `/discover` as Guest | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Welded border cards; 6dp machined chamfer corners; knurled steel primary CTA button.
+  - **Style B (APEX)**: Hand-stitched French border cards; 12dp pad corners; champagne gold gradient CTA with 45° specular sheen.
+  - **Style C (ARENA)**: Matte rubber borders; 16dp rounded corners; athletic amber solid CTA with neon cyan indicator glow.
+  - **Style D (TITANIUM)**: Solid titanium cards (`#151B24`); 1px polished silver hairline borders (`#D6DCE3`); 8dp chamfers; brushed titanium primary CTA with laser-etched lettering.
+
+---
+
+### SCREEN 03: RoleIntentScreen (`/role-intent`)
+- **Roles**: Newly registering users.
+- **Purpose**: Establishes user's primary combat persona to customize onboarding without client-side privilege escalation.
+- **Armwrestling Touch**: 4 combat persona tiles: Competitor (Puller), Table Official (Referee), Arena Director (Operator), Federation Fan.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                     STEP 1 OF 3│
+│                                                        │
+│  SELECT YOUR PRIMARY CALLING                           │  ← Space Grotesk 22sp Bold
+│  Choose your starting role in the federation.          │
+│                                                        │
+│  ┌─ ROLE SELECTION GRID ─────────────────────────────┐ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ ⚔️ COMPETITOR (PULLER)               [● ACTIVE]│ │ │  ← Tile 03.1: 72dp card
+│  │ │ Pull on tables, track ELO, challenge belts    │ │ │     Gold border on select
+│  │ └───────────────────────────────────────────────┘ │ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ ⚖️ TABLE REFEREE                      [○]      │ │ │  ← Tile 03.2: 72dp card
+│  │ │ Officiate bouts, call fouls, live scorepad   │ │ │
+│  │ └───────────────────────────────────────────────┘ │ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ ⏱️ TOURNAMENT OPERATOR                [○]      │ │ │  ← Tile 03.3: 72dp card
+│  │ │ Run brackets, weigh-in desk, table queues    │ │ │
+│  │ └───────────────────────────────────────────────┘ │ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ 🛡️ FEDERATION SUPPORTER / FAN         [○]      │ │ │  ← Tile 03.4: 72dp card
+│  │ │ Stream supermatches, scout pullers, tickets  │ │ │
+│  │ └───────────────────────────────────────────────┘ │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       CONTINUE TO COMBAT REGISTRATION             ║ │  ← Btn 03.5: Sticky CTA (52dp)
+│  ╚═══════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 03.1–03.4| Role Cards | 72dp per tile | Selects active intent; updates selection ring | `HapticFeedback.selectionClick()` |
+  | 03.5 | "CONTINUE TO COMBAT REGISTRATION" | 52dp height | Navigates to `/register?role={selected}` | `HapticFeedback.mediumImpact()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Heavy iron card slabs with stamped badge rivets; dark gold active border.
+  - **Style B (APEX)**: Padded vinyl cards with gold perimeter piping; soft amber active backlight.
+  - **Style C (ARENA)**: Neoprene cards with neon corner cornerstones; high-voltage active glow.
+  - **Style D (TITANIUM)**: Cold-rolled titanium tiles (`#151B24`); silver-etched icons; active card displays 1.5px polished silver border with subtle cyan telemetry dot.
+
+---
+
+### SCREEN 04: RegisterScreen (`/register`)
+- **Roles**: Unauthenticated.
+- **Purpose**: Official federation athlete registration capturing credentials and legal declaration.
+- **Armwrestling Touch**: Weight division initial class selector, athlete callsign handle, and federation terms.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                     STEP 2 OF 3│
+│  CREATE FEDERATION PASSPORT                            │
+│                                                        │
+│  FULL ATHLETE NAME                                     │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ Ahmad Ali                                         │ │  ← Input 04.1 (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  ATHLETE CALLSIGN / HANDLE                             │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ @IronGrip_Ali                                     │ │  ← Input 04.2 (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  EMAIL ADDRESS                                         │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ ahmad@armsphere.com                                │ │  ← Input 04.3 (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  SECURE PASSWORD                                       │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ ••••••••••••••••••                          [👁️] │ │  ← Input 04.4 (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  [■] I agree to the Official WAF/IFA Table Rulebook    │  ← Checkbox 04.5
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       REGISTER ATHLETE PASSPORT                   ║ │  ← Btn 04.6: Sticky CTA (52dp)
+│  ╚═══════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 04.1–04.4| Input Fields | 52dp height | Focus & input text | Soft keyboard haptic |
+  | 04.5 | Federation Rules Checkbox | 48dp box | Toggle agreement state | `HapticFeedback.selectionClick()` |
+  | 04.6 | "REGISTER ATHLETE PASSPORT" | 52dp height | Submits auth registration -> `/onboarding` | `HapticFeedback.heavyImpact()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: 1px steel border text inputs; bold uppercase labels; knurled submit button.
+  - **Style B (APEX)**: Soft gold-accented inputs; refined serif section headers; champagne gradient submit button.
+  - **Style C (ARENA)**: Dark graphite inputs with laser-cyan focus rings; athletic amber submit button.
+  - **Style D (TITANIUM)**: Solid graphite input boxes (`#0B0F19`); 1px silver border; high-contrast white text (`#F4F7FA`); brushed silver submit button with 1px polished silver edge.
+
+---
+
+### SCREEN 05: LoginScreen (`/login`)
+- **Roles**: Returning users.
+- **Purpose**: Fast, high-security login supporting password and biometric fingerprint/face authentication.
+- **Armwrestling Touch**: Instant biometric trigger with federation crest; quick-switch recovery.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                                │
+│  WELCOME BACK TO THE TABLE                             │
+│  Enter your credentials or authenticate via biometrics │
+│                                                        │
+│  CALLSIGN OR EMAIL                                     │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ @IronGrip_Ali                                     │ │  ← Input 05.1 (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  PASSWORD                                              │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ ••••••••••••••••••                          [👁️] │ │  ← Input 05.2 (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│  [ Forgot Password? ]                                  │  ← Link 05.3: to /forgot-password
+│                                                        │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │             ⚡ SIGN IN                             │ │  ← Btn 05.4: Primary (52dp)
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ─── OR AUTHENTICATE WITH BIOMETRICS ────────────────  │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │   [ 🔲 BIOMETRIC SENSOR: FINGERPRINT / FACE ]      │ │  ← Btn 05.5: Biometric (56dp)
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  Don't have an athlete passport? [ Register Now ]      │  ← Link 05.6: to /register
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 05.4 | "SIGN IN" | 52dp height | Validates credentials; navigates to `/home` | `HapticFeedback.mediumImpact()` |
+  | 05.5 | Biometric Sensor Button | 56dp height | Triggers local hardware biometric prompt | Sensor haptic pulse |
+  | 05.3 | "Forgot Password?" | 44dp height | Navigates to `/forgot-password` | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Iron bolt accents; raw steel input containers; knurled sensor frame.
+  - **Style B (APEX)**: Velvet navy backdrop; gold badge sensor; champagne glowing sign-in button.
+  - **Style C (ARENA)**: Neon cyan focus rings; high-voltage amber sign-in button; telemetry sensor icon.
+  - **Style D (TITANIUM)**: Titanium container (`#151B24`); silver-etched biometric rings; 1px polished edge on primary buttons.
+
+---
+
+### SCREEN 06: OnboardingScreen (`/onboarding` - 3-Step Combat Wizard)
+- **Roles**: Newly registered Athlete.
+- **Purpose**: Captures vital armwrestling biometrics, combat styles, arm dominance, and bodyweight class.
+- **Armwrestling Touch**: Hand span digital caliper, pulling styles (**Toproll**, **Hook**, **Press**, **Defense**), arm dominance, and bodyweight class stepper.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  STEP 3 OF 3: COMBAT BIOMETRICS              [SAVE]    │  ← StepHeader component
+│  ■■■■■■■■■■■■■■■■■■■■■■■■□□□□                          │  ← Gold progress indicator
+│                                                        │
+│  DOMINANT PULLING ARM                                  │  ← Space Grotesk 16sp Bold
+│  ┌───────────────┬───────────────┬───────────────────┐ │
+│  │  RIGHT        │   LEFT        │  BOTH (DUAL ARM)  │ │  ← 3-way segmented card
+│  │  ● Active     │   ○           │  ○                │ │     52dp height per segment
+│  └───────────────┴───────────────┴───────────────────┘ │
+│                                                        │
+│  PRIMARY COMBAT STYLE                                  │
+│  ┌───────────────┬───────────────┐                     │
+│  │ 🦅 TOPROLL    │ 🪝 HOOK       │                     │  ← 2x2 selection grid
+│  ├───────────────┼───────────────┤                     │     Tactile tap with
+│  │ ⚡ PRESS      │ 🛡️ DEFENSE    │                     │     gold halo on selected
+│  └───────────────┴───────────────┘                     │
+│                                                        │
+│  BODYWEIGHT CLASS (KG)                                 │
+│  ┌─ SCALE CALIBRATION ───────────────────────────────┐ │
+│  │  84.5 KG   [- 0.5]  [+ 0.5]                       │ │  ← High-contrast stepper
+│  │  Official Division: Middleweight (-85 KG)         │ │     Space Grotesk monospace
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  DIGITAL CALIPER: HAND SPAN & WRIST                    │
+│  Hand Span: 22.5 cm  │  Wrist Circumference: 19.5 cm   │  ← Dual slider controls
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       CONFIRM & ENTER ARENA                       ║ │  ← Btn 06.1: Sticky CTA (52dp)
+│  ╚═══════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 06.1 | "CONFIRM & ENTER ARENA"| 52dp height | Saves biometrics -> navigates to `/home` | `HapticFeedback.heavyImpact()` |
+  | 06.2 | Style Selector Cards | 56dp height each | Toggles selected pulling style | `HapticFeedback.selectionClick()` |
+  | 06.3 | Stepper [-0.5] / [+0.5]| 48dp width each | Increments weight class | Light tick |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Cast iron segmented arm toggles; knurled slider thumbs; stamped metal division box.
+  - **Style B (APEX)**: Padded vinyl arm cards; gold belt-buckle style badges; fine leather slider rails.
+  - **Style C (ARENA)**: Telemetry segmented buttons with cyan LED indicator; neon amber slider thumb; digital scale LCD.
+  - **Style D (TITANIUM)**: Cold-rolled titanium segmented bar; silver caliper sliders; surgical tabular typography.
+
+---
+
+### SCREENS 07–11: Password Recovery & MFA Security Suite
+- **SCREEN 07: ForgotPasswordScreen (`/forgot-password`)**: Email input for password reset with federation security warning.
+- **SCREEN 08: ResetPasswordScreen (`/reset-password`)**: OTP verification code + New Password + Confirm Password with live entropy strength meter.
+- **SCREEN 09: MfaSetupScreen (`/mfa/setup`)**: Authenticator QR code with knurled steel or titanium border frame, manual secret key copy button, and 6-digit test code input.
+- **SCREEN 10: MfaVerificationScreen (`/mfa/verify`)**: High-tactile 6-pin OTP entry boxes with automatic forward focus, biometric alternative button, and "Use Emergency Recovery Code" fallback.
+- **SCREEN 11: RecoveryCodesScreen (`/recovery-codes`)**: 10 single-use encrypted alphanumeric recovery tokens in 2-column format. Actions: "COPY ALL TO CLIPBOARD", "DOWNLOAD ENCRYPTED PDF", and mandatory confirmation checkbox.
+- **Style D (TITANIUM) Treatment for Screens 07–11**: Solid titanium input surfaces, 1px polished silver borders, monochrome QR frame with silver corner alignment marks, tabular figure pin boxes.
+
+---
+
+## 6.2 DOMAIN 2: ATHLETE CORE, BIOMETRICS & ELO DASHBOARD (SCREENS 12–16)
+
+### SCREEN 12: AthleteDashboardScreen (`/home` for Athletes)
+- **Roles**: Athlete (Default).
+- **Purpose**: Dynamic athletic briefing radar answering *"When is my next match?"* and *"What is my standing today?"*.
+- **Armwrestling Touch**: **Interactive 3D Arm Switch ELO Card (SIG-4)**, **1-Second Live Arena Countdown**, **Tendon Readiness Barometer**, **Arena Table Call Beacon**.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│ ┌─ FORGE TOP RADAR ──────────────────────────────────┐ │
+│ │ ⚔️ ArmSphere        💬(2)  🔔(3)  [ 👤 ATHLETE v ] │ │  ← Persona Switcher + Alerts
+│ └────────────────────────────────────────────────────┘ │
+│                                                        │
+│  ↕ Pull to Refresh (Chalk Dust Pull SIG-7)             │
+│                                                        │
+│  ┌─ DUAL-ARM ELO RADAR (SIG-4 3D FLIP) ──────────────┐ │
+│  │  AHMAD "IRONGRIP" ALI                             │ │  ← Competitor Name
+│  │  ┌──────────────────────────────────────────────┐ │ │
+│  │  │ [RIGHT ARM]    (Left Arm)  ◄─ Tap to Flip    │ │ │  ← Btn 12.1: 3D Flip Toggle
+│  │  │  1923 ELO                                    │ │ │     42sp Space Grotesk
+│  │  │  ▲ +48 pts this month                        │ │ │     Tabular monospace
+│  │  │  Rank #8 National (-85 KG Division)          │ │ │
+│  │  │  Record: 32W - 8L (80.0% Win Rate)           │ │ │
+│  │  │  Style: High Post Toproll                    │ │ │
+│  │  └──────────────────────────────────────────────┘ │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ─── NEXT BATTLE ARENA ──────────────────────────────  │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ 🏆 PAKISTAN NATIONAL OPEN 2026                    │ │  ← Event card with
+│  │ ⏱ T-3d 14h 22m 08s                                │ │     1-second live countdown
+│  │ 📍 Table 1 (Red Corner vs Bilal Khan)             │ │
+│  │ Status: Registered & Weighed OK                   │ │
+│  │ [ VIEW MATCH CARD ]         [ ARENA BRACKET ]     │ │  ← Btn 12.2 / 12.3: Actions
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ─── TENDON READINESS & RECOVERY ────────────────────  │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ 🟢 92% OPTIMAL RECOVERY                           │ │  ← Forearm tendon recovery
+│  │ Last Heavy Pull: 3 days ago (Sparring)            │ │     estimator for pullers
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ─── TACTICAL QUICK GRID ────────────────────────────  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────┐  │
+│  │ 📊       │ │ 🏋️       │ │ ⚔️       │ │ 👥        │  │  ← 4-Column Action Tiles
+│  │ RANKINGS │ │ PR LOG   │ │ H2H TAPE │ │ MY CLUB   │  │     48dp touch target
+│  └──────────┘ └──────────┘ └──────────┘ └───────────┘  │
+│                                                        │
+│  ─── RECENT VERIFIED BOUTS ──────────────────────────  │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │ W  vs Bilal Khan (1850 ELO)                       │ │  ← Unbundled 1px hairline rows
+│  │    PIN 2-1 · +28 ELO · R.ARM · 14s Toproll        │ │     Emerald left border
+│  ├───────────────────────────────────────────────────┤ │
+│  │ L  vs Zaid Afridi (1980 ELO)                      │ │  ← Coral Red left border
+│  │    FOUL 1-2 · -14 ELO · L.ARM · Strap Slip        │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│ ┌─ PERSISTENT 5-BRANCH DOCK ─────────────────────────┐ │
+│ │  🏠        🧭          ⚔️         📡         👤   │ │  ← Persistent Shell Navigation
+│ │ Home     Scout       Arena      Feed       Self    │ │
+│ └────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 12.1 | ELO 3D Flip Card | Full card width | Flips Right Arm <-> Left Arm (SIG-4) | `HapticFeedback.lightImpact()` |
+  | 12.2 | "VIEW MATCH CARD" | 44dp height | Navigates to `/matches/:matchId` | Selection click |
+  | 12.3 | "ARENA BRACKET" | 44dp height | Navigates to `/tournament/:id/brackets` | Selection click |
+  | 12.4 | Rankings Quick Tile | 48dp box | Navigates to `/rankings` | `HapticFeedback.selectionClick()` |
+  | 12.5 | PR Log Quick Tile | 48dp box | Navigates to `/athlete/:id/training-log` | `HapticFeedback.selectionClick()` |
+  | 12.6 | H2H Tape Quick Tile | 48dp box | Navigates to `/matches/head-to-head` | `HapticFeedback.selectionClick()` |
+  | 12.7 | My Club Quick Tile | 48dp box | Navigates to `/teams` | `HapticFeedback.selectionClick()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Welded tool steel cards; knurled steel toggle; raw hex accents; JetBrains Mono tabular stats; The Peg Dock with physical knurled steel grip pegs.
+  - **Style B (APEX)**: Padded vinyl table cards; gold belt-buckle toggle; French perimeter stitching; champagne gold accents; Floating Frosted Capsule Dock.
+  - **Style C (ARENA)**: Carbon fiber cards; neon cyan corner LED accents; active amber telemetry borders; Full-Width Table Command Strip.
+  - **Style D (TITANIUM)**: Solid titanium cards (`#151B24`); brushed silver 3D flip toggle; high-contrast polished silver `1923 ELO` with tabular figures; emerald `+48 pts` badge; 4-tile titanium quick grid with silver icons; **Smoked Titanium Glass Tray** floating dock with polished silver hairline rim.
+
+---
+
+### SCREENS 13–16: Athlete Profile, Passport, Training PRs & Trophy Case
+- **SCREEN 13: AthleteProfileScreen (`/athlete/profile`)**: Full biometric passport (Forearm 41.5cm, Bicep 44cm, Hand Span 22.5cm, Wrist 19.5cm), verified federation badges, role switcher, and account settings access.
+- **SCREEN 14: PublicAthleteProfileScreen (`/athlete/:athleteId`)**: Competitor scouting profile, "Tale of the Tape" walkout launcher (SIG-1), head-to-head history with viewing athlete, verified win streak.
+- **SCREEN 15: AthleteTrainingLogScreen (`/athlete/:athleteId/training-log`)**: Armwrestling-specific lift tracker:
+  - **Cupping**: Rolling handle wrist curls, wrist wrench (1RM kg).
+  - **Pronation**: Judo belt pronation off floor, high-cable pronation (kg).
+  - **Rising**: Multi-spinner strap rising (kg).
+  - **Backpressure**: Table bicep lock, 90° static hammer holds (kg / seconds).
+  - **Side Pressure**: Mazurenko pulley drive (kg).
+- **SCREEN 16: AthleteAchievementsScreen (`/athlete/:athleteId/achievements`)**: Digital trophy shelf showcasing gold/silver/bronze tournament medals, sanctioned title belts, and "Master of Arms" federation rank insignia.
+- **Style D (TITANIUM) Treatment for Screens 13–16**: Brushed titanium biometric passport calipers, silver-trimmed trophy plaques, monochrome PR progression graphs with precision telemetry axes.
+
+---
+
+## 6.3 DOMAIN 3: COMPETITION DISCOVERY & GLOBAL SEARCH (SCREENS 17–18)
+
+### SCREEN 17: DiscoverScreen (`/discover` - Branch 1)
+- **Roles**: All users.
+- **Purpose**: Global exploration hub showcasing sanctioned championships, trending supermatches, nearby certified tables, and top pullers.
+- **Armwrestling Touch**: Spotlight supermatch banners with Tale of the Tape preview, certified table club cards.
+
+### SCREEN 18: GlobalSearchScreen (`/search`)
+- **Roles**: All users.
+- **Purpose**: Instant multi-entity query engine across Athletes, Tournaments, Teams, Certified Venues, and Disciplinary Dockets.
+- **Armwrestling Touch**: Category filter chips (`[PULLERS] [EVENTS] [TABLES] [CLUBS]`), division weight tags (-85kg, etc.).
+- **Style D (TITANIUM) Treatment for Screens 17–18**: Solid titanium search bar with silver focus ring, smoked glass filter trays, high-contrast monochrome cards with cyan telemetry pins.
+
+---
+
+## 6.4 DOMAIN 4: TOURNAMENTS, BRACKETS & OPERATIONS DESK (SCREENS 19–27)
+
+### SCREEN 20: TournamentDetailScreen (`/tournament/:tournamentId`)
+- **Roles**: All.
+- **Purpose**: Official tournament portal showing countdowns, weight divisions, live multi-table status, and rulebook.
+- **Armwrestling Touch**: **Live Multi-Table Arena Grid** showing Table 1, Table 2, Table 3 with active pulling pairs, Red/Blue corner badges, and table stage status.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                      Share  ⋮  │
+│                                                        │
+│  ┌─ HERO BANNER ─────────────────────────────────────┐ │
+│  │  ████████████████████████████████████████████████ │ │  ← Arena background
+│  │  ██ PAKISTAN NATIONAL OPEN 2026 █████████████████ │ │     4-stop gradient scrim
+│  │  📍 Lahore Sports Complex · Hall B                │ │
+│  │  ⏱ T-3d 14h 22m 08s                              │ │  ← 1s live countdown
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ── WEIGHT & DIVISION TRAY ──────────────────────────  │
+│  [-75 KG] [-85 KG] [-95 KG] [+105] [OPEN RIGHT] [LEFT] │  ← Category filter tray
+│                                                        │
+│  ── MULTI-TABLE LIVE ARENA STATUS ───────────────────  │
+│  ┌───────────────────────┐   ┌───────────────────────┐ │
+│  │ TABLE 1               │   │ TABLE 2               │ │  ← Emerald border = active
+│  │ ● IN PROGRESS         │   │ ● ON DECK             │ │     Red/Blue corner badges
+│  │ 🔴 R: Tariq Khan      │   │ 🔴 R: Bilal Aslam     │ │     Bout ID: R2-M3
+│  │ 🔵 B: Zaid Afridi     │   │ 🔵 B: Hamza Malik     │ │
+│  │ [ WATCH LIVE ]        │   │ [ CALL QUEUE ]        │ │
+│  └───────────────────────┘   └───────────────────────┘ │
+│                                                        │
+│  ── TABLE HARDWARE SPECIFICATION ────────────────────  │
+│  Tables: 3x WAF Mazurenko Certified · Steel Grip Pegs  │
+│  Elbow Pads: 7x7" High Density Vinyl · Angled Pin Pads │
+│  Straps: 1" Heavy Nylon Cam-Buckle                     │
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       REGISTER FOR COMPETITION                    ║ │  ← Btn 20.1: Sticky CTA (52dp)
+│  ╚═══════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 20.1 | "REGISTER FOR COMPETITION"| 52dp height | Navigates to `/tournament/:id/register` | `HapticFeedback.mediumImpact()` |
+  | 20.2 | Table 1 "WATCH LIVE" | 40dp height | Opens live match view `/matches/:matchId` | Selection click |
+  | 20.3 | Division Chips | 36dp height | Filters brackets and tables by weight class | Light tick |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Welded tool steel cards; knurled steel register button; raw metal hardware spec panel.
+  - **Style B (APEX)**: Hand-stitched banner frame; gold registration CTA; champagne division pills.
+  - **Style C (ARENA)**: Carbon fiber card backing; neon cyan telemetry borders; active corner LED table lights.
+  - **Style D (TITANIUM)**: Solid titanium cards (`#151B24`); 1px polished silver edge; cold-rolled brushed titanium sticky button; surgical typography.
+
+---
+
+### SCREEN 22: TournamentBracketsScreen (`/tournament/:tournamentId/brackets`)
+- **Roles**: All.
+- **Purpose**: Real-time Double and Single Elimination bracket tree viewer with Winner and Loser pools.
+- **Armwrestling Touch**: Gold/Silver lightning progression lines (**SIG-6**), active table indicator badges on match nodes, Grand Final double-elimination reset match tracking.
+
+---
+
+### SCREEN 24: TournamentOperatorDashboardScreen (`/home` for Operators)
+- **Roles**: `TOURNAMENT_OPERATOR`.
+- **Purpose**: Dedicated operational command center for event directors & arena operators.
+- **Armwrestling Touch**: Active Tournament switcher dropdown, Event War Room launcher card, Live Match Tables & Queue status card, Official Weigh-In Desk card, Brackets seeding card, Awards podium card, and recent operational dispatch audit log.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  🟢 ARENA OPERATIONS COMMAND                           │  ← Gold status pill
+│  Muhammad Hamad Latif (Event Director)      [🔄] [🛡️]  │  ← Refresh & Roles buttons
+│                                                        │
+│  SELECT ACTIVE TOURNAMENT: [ Pak National Open 2026 v ]│  ← Dropdown 24.1
+│                                                        │
+│  ┌─ PRIMARY EVENT WAR ROOM LAUNCHER ─────────────────┐ │
+│  │ 🏟️ PAKISTAN NATIONAL OPEN 2026           [ACTIVE] │ │
+│  │ 📍 Lahore Sports Complex · Hall B                 │ │
+│  │ 📅 28/10/2026 - 30/10/2026                        │ │
+│  │                                                   │ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │   🚀 LAUNCH EVENT OPERATIONS DESK             │ │ │  ← Btn 24.2 (48dp height)
+│  │ └───────────────────────────────────────────────┘ │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ── ARENA MANAGEMENT SUITE ──────────────────────────  │
+│  ┌─ MATCH TABLES & ARENA QUEUE ──────────────────────┐ │
+│  │ 🍽️ 3 Arena Tables Active                 [Manage] │ │  ← Card 24.3
+│  │ ┌─────────────────┬──────────────┬──────────────┐ │ │
+│  │ │ ACTIVE PULL: 2  │ IDLE/READY: 1│ TOTAL: 3     │ │ │  ← Metric status pills
+│  │ └─────────────────┴──────────────┴──────────────┘ │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ┌─ OFFICIAL WEIGH-IN DESK ──────────────────────────┐ │
+│  │ ⚖️ 48 Total Registered Competitors   [Open Scale] │ │  ← Card 24.4 (Btn 24.5)
+│  │ ┌────────────────────────┬──────────────────────┐ │ │
+│  │ │ APPROVED PASSES: 42    │ PENDING CHECK-IN: 6  │ │ │  ← Metric status pills
+│  │ └────────────────────────┴──────────────────────┘ │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ┌─ BRACKETS & SEEDING ────┐  ┌─ AWARDS CEREMONY ────┐ │
+│  │ 🌳 6 Brackets Active    │  │ 🏆 18 Medals Ready   │ │  ← Cards 24.6 & 24.7
+│  │ [ View Tree Seeding ]   │  │ [ Launch Podium ]    │ │
+│  └─────────────────────────┘  └──────────────────────┘ │
+│                                                        │
+│ ┌─ PERSISTENT 5-BRANCH DOCK ─────────────────────────┐ │
+│ │  🏠        🧭          ⚔️         📡         👤   │ │  ← Branch 0 = Operator Desk
+│ │ Ops      Scout       Arena      Feed       Self    │ │
+│ └────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 24.1 | Tournament Dropdown | 44dp height | Switches active tournament context | Selection click |
+  | 24.2 | "LAUNCH EVENT OPERATIONS DESK" | 48dp height | Navigates to `/tournament/:id/operations` | `HapticFeedback.mediumImpact()` |
+  | 24.3 | "Manage" Match Tables | 44dp height | Opens Operations Desk Table tab | Selection click |
+  | 24.5 | "Open Scale" Weigh-In | 36dp height | Navigates to `/tournament/:id/weigh-in` | `HapticFeedback.lightImpact()` |
+  | 24.6 | "View Tree Seeding" | 32dp height | Navigates to `/tournament/:id/brackets` | Selection click |
+  | 24.7 | "Launch Podium" | 32dp height | Navigates to `/tournament/:id/awards` | `HapticFeedback.mediumImpact()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Industrial operator console; knurled steel launch buttons; stamped table counters.
+  - **Style B (APEX)**: VIP tournament director leather dossier; gold-accented action cards; luxury status indicators.
+  - **Style C (ARENA)**: Pit-wall broadcast command center; neon telemetry pills; active flashing table indicators.
+  - **Style D (TITANIUM)**: Cold-rolled titanium command center (`#151B24`); brushed silver active table counters; smoked glass operations card; high-contrast metric pills with 1px polished silver borders.
+
+---
+
+### SCREEN 25: TournamentWeighInScreen (`/tournament/:tournamentId/weigh-in`)
+- **Roles**: Tournament Operator, Weigh-In Marshal, Referee.
+- **Purpose**: Official scale weigh-in station with digital keypad and rubber-stamp certification clearance.
+- **Armwrestling Touch**: **30-Minute Sweat-Out Grace Period Timer** for overweight pullers, digital tare scale, SHA-256 seal, **Rubber Stamp Animation (SIG-5)**.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  OFFICIAL WEIGH-IN DESK                      TABLE 1   │
+│                                                        │
+│  PULLER SELECTOR: [ Tariq Khan - @TKhan v ]            │  ← Dropdown 25.1
+│  DIVISION: Senior Men -85 KG (Limit: 78.1 - 85.0 KG)   │
+│                                                        │
+│  ┌─ SCALE DIGITAL DISPLAY ───────────────────────────┐ │
+│  │                                                   │ │
+│  │                 84.20 KG                          │ │  ← Space Grotesk 48sp
+│  │                ● CLEARED                          │ │     Emerald if within limit
+│  │                                                   │ │     Pulsing Amber/Red if over
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  QUICK NUDGE: [-0.5] [-0.1] [+0.1] [+0.5]              │  ← Steppers 25.2
+│                                                        │
+│  ┌─── HIGH-TACTILE KEYPAD ───────────────────────────┐ │
+│  │     [ 1 ]             [ 2 ]            [ 3 ]      │ │  ← 64dp hit targets
+│  │     [ 4 ]             [ 5 ]            [ 6 ]      │ │     Continuous tactile ticks
+│  │     [ 7 ]             [ 8 ]            [ 9 ]      │ │
+│  │     [ . ]             [ 0 ]            [ ⌫ ]      │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       CERTIFY & LOCK WEIGH-IN                     ║ │  ← Btn 25.3: Rubber Stamp CTA
+│  ╚═══════════════════════════════════════════════════╝ │     Executes SIG-5 stamp
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 25.1 | Puller Dropdown | 48dp height | Selects athlete in staging queue | Selection click |
+  | 25.2 | High-Tactile Keypad | 64dp per key | Numeric weight input | `HapticFeedback.selectionClick()` |
+  | 25.3 | "CERTIFY & LOCK WEIGH-IN" | 56dp height | Triggers Rubber Stamp Animation (SIG-5) | `HapticFeedback.heavyImpact()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Cast iron keypad plates; red/green high-visibility LEDs; physical rubber stamp descent.
+  - **Style B (APEX)**: Padded vinyl scale surround; gold wax seal emboss animation; champagne numerals.
+  - **Style C (ARENA)**: Telemetry LCD scale panel; cyan tactile keys; holographic green laser watermark.
+  - **Style D (TITANIUM)**: Solid titanium scale panel (`#151B24`); 64dp brushed silver keys; surgical tabular readout; monochromatic titanium certification watermark (`SIG-5`).
+
+---
+
+### SCREENS 21, 23, 26, 27: Event Registration, Operations, Awards & Match Detail
+- **SCREEN 21: EventRegistrationScreen (`/tournament/:tournamentId/register`)**: Arm selection (Right, Left, Both), weight category confirmation, federation license check, entry fee summary, Stripe/EasyPaisa checkout.
+- **SCREEN 23: TournamentOperationsScreen (`/tournament/:tournamentId/operations`)**: 5-Tab Operational Hub: War Room, Table Dispatcher, Weigh-In Desk, Brackets, Audio Caller.
+- **SCREEN 26: TournamentAwardsCeremony (`/tournament/:tournamentId/awards`)**: Interactive 3-tier podium (Gold #1, Silver #2, Bronze #3), citation scroll generator, digital trophy unboxing ceremony, ELO surge broadcast trigger.
+- **SCREEN 27: MatchDetailScreen (`/matches/:matchId`)**: Bout breakdown: Table number, referee roster, round-by-round pin timeline (Pin at 0:14 Toproll, Foul at 1:02 Slip), round scores, video replay link.
+
+---
+
+## 6.5 DOMAIN 5: REFEREE OFFICIATING & LIVE TABLE SCOREPAD (SCREENS 28–33 + MODAL M1)
+
+### SCREEN 29: OfficialScorepadScreen (`/referee/scorepad`)
+- **Roles**: Certified `REFEREE`.
+- **Purpose**: High-stress ring-side table controller operated with chalked, sweaty hands.
+- **Armwrestling Touch**: **The 400ms Pin Hold Lock (SIG-2)**, **The Table Foul Flash (SIG-8)**, Ready-Go 60-Second Setup Timer with referee's grip prompt, Strap Mode toggle.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  TABLE 1  ·  R2-M3  ·  SENIOR MEN -85KG  ·  RIGHT ARM  │  ← Match Info Header
+│  SETUP CLOCK:  00 : 42 (GRIP TIME)          [🔔 BELL]  │  ← 60s grip countdown
+│                                                        │
+│  ┌─ RED CORNER ───────────┬─ BLUE CORNER ────────────┐ │
+│  │ Ahmad "IronGrip" Ali   │ Bilal Khan               │ │  ← Competitor names & ELO
+│  │ ELO: 1923              │ ELO: 1847                │ │
+│  │                        │                          │ │
+│  │       SCORE: [ 2 ]     │       SCORE: [ 1 ]       │ │  ← 52sp Score readout
+│  │                        │                          │ │
+│  │ ⚠️ FOULS: [ 1 ]        │ ⚠️ FOULS: [ 0 ]          │ │  ← Foul pip counter
+│  │ [ + RED FOUL (SIG-8) ] │ [ + BLUE FOUL (SIG-8) ]  │ │  ← 48dp Foul trigger
+│  └────────────────────────┴──────────────────────────┘ │
+│                                                        │
+│  ── TABLE ACTIONS ───────────────────────────────────  │
+│  ┌────────────────────────┬──────────────────────────┐ │
+│  │ [ 🪢 STRAPS APPLIED ]  │ [ ⚠️ INTENTIONAL SLIP ]  │ │  ← Table status toggles
+│  ├────────────────────────┼──────────────────────────┤ │
+│  │ [ ⚖️ REFEREE'S GRIP ]  │ [ 📋 FOUL SHEET (M1) ]   │ │  ← Enforced referee's grip
+│  └────────────────────────┴──────────────────────────┘ │
+│                                                        │
+│  ┌── THE 400MS PIN HOLD LOCK (SIG-2) ────────────────┐ │
+│  │                                                   │ │
+│  │        HOLD 400ms TO CONFIRM VICTORY PIN          │ │  ← Btn 29.1: 64dp Target
+│  │        [ ═══════════════════....... 210ms ]       │ │     Progressive haptics
+│  │                                                   │ │     Snap-locks victory
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  [ 🚨 SLIDE FROM LEFT FOR EMERGENCY REFEREE RAIL ]   │  ← Slide-out emergency rail
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 29.1 | 400ms Pin Hold Button | 64x64dp minimum | Hold 400ms to lock match pin victory | Sustained rumble -> Heavy Impact + Bell |
+  | 29.2 | "+ RED FOUL" Button | 48dp height | Triggers Table Foul Flash (SIG-8) & increments | Double heavy impact pulse |
+  | 29.3 | "+ BLUE FOUL" Button| 48dp height | Triggers Table Foul Flash (SIG-8) & increments | Double heavy impact pulse |
+  | 29.4 | "STRAPS APPLIED" | 44dp height | Toggles match strap status | `HapticFeedback.lightImpact()` |
+  | 29.5 | "FOUL SHEET" | 44dp height | Opens FoulSheetModal (Modal M1) | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Solid steel circular pads with hex perimeter; molten gold progress arc; coral red foul flashes.
+  - **Style B (APEX)**: Padded leather vinyl buttons; gold ring perimeter; crimson foul glow.
+  - **Style C (ARENA)**: Dense neoprene buttons; high-grip tactile borders; high-voltage red corner strobe lights.
+  - **Style D (TITANIUM)**: Cold-rolled 64dp titanium buttons; 4px circular polished silver sweep; surgical crimson perimeter pulse (`#E23B3B`); smoked glass emergency rail.
+
+---
+
+### SCREENS 28, 30–33 + MODAL M1: Referee Dashboard, Submissions, Certifications, Search & Foul Sheet
+- **SCREEN 28: RefereeDashboardScreen (`/home` for Referees)**: Assigned table desk, today's schedule, incident docket, "Launch Table Scorepad" button.
+- **SCREEN 30: MatchSubmissionScreen (`/referee/matches/submit`)**: Post-match scorecard review, victory method (Pin, Disqualification, Default), digital referee signature pad, cryptographic ledger submit.
+- **SCREEN 31: RefereeCertificationsScreen (`/referee/certifications`)**: WAF/IFA Master/Senior/Provincial license passport, expiration dates, officiating tournament log.
+- **SCREEN 32: AthleteSearchScreen (`/referee/athletes/search`)**: Ring-side athlete identification, photo comparison, division weight eligibility verification.
+- **SCREEN 33: EvidenceUploadScreen (`/referee/evidence`)**: Match protest video upload (table cam angles), incident timestamp tag, report submission.
+- **MODAL M1: FoulSheetModal**: Categorized WAF/IFA foul sheet sliding up on long-press:
+  1. *Elbow Fouls*: Elbow off pad, tricep separation from pad, intentional slip in losing position.
+  2. *Technical Fouls*: Early start before "GO!", thumb covering violation, wrist buckle during Ref Grip.
+  3. *Conduct Fouls*: Profanity, refusal to take grip, dangerous break-arm shoulder position.
+- **Style D (TITANIUM) Treatment for M1**: Smoked graphite modal backdrop (`backdrop-blur-md bg-[#0B0F19]/90`); titanium rule rows; surgical crimson selection markers; polished silver confirmation button.
+
+
+---
+
+## 6.6 DOMAIN 6: CHAMPIONSHIPS, TITLE BELTS & PRESTIGE LINEAGE (SCREENS 34–36)
+
+### SCREEN 34: ChampionshipsListScreen (`/championship/titles`)
+- **Roles**: All users.
+- **Purpose**: Official federation title gallery showcasing sanctioned Championship Belts across weight categories and arm divisions.
+- **Armwrestling Touch**: High-resolution rendered championship belts with gold metal plates, hand-tooled leather straps, and lineal champion heritage.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                      Search 🔍 │
+│  FEDERATION SANCTIONED TITLE BELTS                     │
+│                                                        │
+│  DIVISION FILTER: [ ALL ] [-85 KG] [-95 KG] [+105 KG]  │
+│  ARM SELECTION:   [ RIGHT ARM (●) ]  [ LEFT ARM (○) ]  │
+│                                                        │
+│  ┌─ TITLE BELT CARD ─────────────────────────────────┐ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ 🏆 NATIONAL HEAVYWEIGHT CHAMPIONSHIP (+105KG) │ │ │  ← Title Banner
+│  │ └───────────────────────────────────────────────┘ │ │
+│  │              [ 3D TITLE BELT RENDERING ]          │ │  ← Gold plates & leather
+│  │  CURRENT TITLE HOLDER: Tariq "The Bull" Khan      │ │  ← Champion Callout
+│  │  Reign: 412 Days · 4 Successful Title Defenses    │ │
+│  │  Lineage: 3 Champions in Federation History       │ │
+│  │                                                   │ │
+│  │  [ VIEW TITLE DOSSIER ]   [ MANDATORY CHALLENGER] │ │  ← Action buttons
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ┌─ TITLE BELT CARD (VACANT) ────────────────────────┐ │
+│  │ 🏆 PROVINCIAL MIDDLEWEIGHT CROWN (-85KG) [VACANT] │ │
+│  │ Finalists: Ahmad Ali vs. Bilal Khan               │ │
+│  │ Supermatch Date: 28 Oct 2026 at National Open     │ │
+│  │ [ VIEW MATCH BRACKET ]                            │ │
+│  └───────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 34.1 | "VIEW TITLE DOSSIER" | 44dp height | Navigates to `/championship/:id` | Selection click |
+  | 34.2 | "MANDATORY CHALLENGER"| 44dp height | Navigates to `/athlete/:challengerId` | Selection click |
+  | 34.3 | Arm Selection Toggle | 40dp height | Toggles between Right and Left Arm titles | `HapticFeedback.lightImpact()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Welded tool steel frames; heavy metal plate renders; knurled challenger buttons.
+  - **Style B (APEX)**: Hand-stitched leather card frames; 24k gold title plate renders; champagne gold buttons.
+  - **Style C (ARENA)**: Carbon fiber card frames; neon amber championship badges; live broadcast challenger tags.
+  - **Style D (TITANIUM)**: Solid titanium cards (`#151B24`); laser-etched title plates; 1px polished silver edge; cold-rolled brushed titanium action buttons.
+
+---
+
+### SCREEN 35: ChampionshipDetailScreen (`/championship/:championshipId`)
+- **Roles**: All users.
+- **Purpose**: Full 3D historical dossier of a sanctioned Championship Belt: belt specifications, lineage ledger, and mandatory defense clock.
+- **Armwrestling Touch**: Physical belt specifications (Solid brass 4mm center plate, 24k gold plating, genuine saddle leather, weight 4.2 kg), complete lineage tree of past champions with reign dates, defense logs, and challenger rankings.
+- **Style D (TITANIUM) Treatment**: 3D titanium belt pedestal, brushed silver lineage ledger cards with tabular reign dates, monochrome mandatory challenger countdown.
+
+---
+
+### SCREEN 36: PrestigeRankingsScreen (`/championship/pfp-rankings`)
+- **Roles**: All users.
+- **Purpose**: Algorithmic Pound-for-Pound (P4P) rankings determining the most dominant armwrestler across all weight classes.
+- **Armwrestling Touch**: Multi-factor prestige radar: ELO rating, Title defense count, Dual-Arm dominance ratio, and Strength of Opponents defeated.
+- **Style D (TITANIUM) Treatment**: Surgical titanium multi-axis radar chart, brushed silver rank pips, tabular Space Grotesk typography.
+
+---
+
+## 6.7 DOMAIN 7: HEAD-TO-HEAD & MATCH SCORING ENGINE (SCREENS 37–38)
+
+### SCREEN 37: HeadToHeadScreen (`/matches/head-to-head`)
+- **Roles**: All users.
+- **Purpose**: Canary 5 "Tale of the Tape" combat walkout comparison before title bouts or rival challenges.
+- **Armwrestling Touch**: **15° Diagonal Shear Split (SIG-1)**, bilateral forearm/hand span leverage bars, combat style matchup radar (**Toproll vs Hook win probability**).
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                TALE OF THE TAPE│
+│                                                        │
+│  ┌─ 15° DIAGONAL SHEAR SPLIT (SIG-1) ────────────────┐ │
+│  │ 🔴 RED CORNER           │ 🔵 BLUE CORNER          │ │  ← Red (#EF4444) vs Blue (#38BDF8)
+│  │ Ahmad "IronGrip" Ali    │ Bilal "The Hook" Khan   │ │     Gold laser divider line
+│  │ 1923 ELO · Master       │ 1847 ELO · Senior Pro   │ │     Central "VS" medallion
+│  └─────────────────────────┴─────────────────────────┘ │
+│                                                        │
+│  [ ARM: RIGHT ARM (SIG-4 3D Flip) ↔ ]                  │  ← 3D perspective flip
+│                                                        │
+│  ── BILATERAL LEVERAGE & PHYSICAL MEASUREMENTS ──────  │
+│  Ahmad (Red Corner)               Bilal (Blue Corner)  │
+│  41.5 cm   ◄────── FOREARM ──────►   39.0 cm           │  ← Expanding center-axis bars
+│  44.0 cm   ◄─────── BICEP ───────►   41.0 cm           │     Space Grotesk monospace
+│  22.5 cm   ◄───── HAND SPAN ─────►   20.0 cm           │
+│  19.5 cm   ◄─────── WRIST ───────►   18.5 cm           │
+│  182 cm    ◄─────── HEIGHT ──────►   178 cm            │
+│  84.5 kg   ◄─────── WEIGHT ──────►   84.8 kg           │
+│  80.0%     ◄────── WIN RATE ─────►   74.2%             │
+│                                                        │
+│  ── COMBAT STYLE MATCHUP RADAR ──────────────────────  │
+│  High Toproll (70%) vs Deep Hook (65%)                 │  ← Style matchup prediction
+│  "Toproll holds lever advantage if strap is avoided."  │
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       INITIATE COMBAT CHALLENGE                   ║ │  ← Btn 37.1: Sticky CTA (52dp)
+│  ╚═══════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 37.1 | "INITIATE COMBAT CHALLENGE" | 52dp height | Sends sparring match invite to opponent | `HapticFeedback.heavyImpact()` |
+  | 37.2 | Arm Toggle Flip Button | 44dp height | Flips bilateral data Right <-> Left (SIG-4) | `HapticFeedback.lightImpact()` |
+  | 37.3 | Red Corner Profile Link | 48dp height | Navigates to `/athlete/:redId` | Selection click |
+  | 37.4 | Blue Corner Profile Link | 48dp height | Navigates to `/athlete/:blueId` | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Heavy raw iron split panels; molten gold laser divider; knurled combat challenge button.
+  - **Style B (APEX)**: Padded leather corners; champagne gold specular divider; gold-embroidered challenge button.
+  - **Style C (ARENA)**: High-voltage neon red vs neon blue split; electric cyan laser divider; athletic amber challenge button.
+  - **Style D (TITANIUM)**: Precision titanium split panels (`#151B24`); razor-thin 2px polished silver laser line; surgical crimson (`#E23B3B`) vs cyan (`#38BDF8`); expanding brushed silver leverage bars; cold-rolled titanium sticky challenge CTA.
+
+---
+
+### SCREEN 38: NationalRankingsScreen (`/rankings`)
+- **Roles**: All users.
+- **Purpose**: Official federation national leaderboard.
+- **Armwrestling Touch**: Weight division filter pills (-75kg, -85kg, -95kg, +105kg, Open), Left vs Right Arm persistent tab bar, tier badges (**Grandmaster**, **Master**, **Senior Pro**, **Contender**), and movement deltas (▲ +3, ▼ -1).
+- **Style D (TITANIUM) Treatment**: Solid titanium ranking rows with 1px silver hairline borders, tabular Space Grotesk numbers, polished silver rank medals for top 3.
+
+---
+
+## 6.8 DOMAIN 8: COMMUNITY MEDIA, CLIP FEEDS & VIDEO PLAYER (SCREENS 39–41 + MODAL M2)
+
+### SCREEN 39: CommunityFeedScreen (`/community/feed` - Branch 3)
+- **Roles**: All users.
+- **Purpose**: Technique breakdowns, match highlights, and PR gym lift clips.
+- **Armwrestling Touch**: Technique badges (**HOOK**, **TOPROLL**, **PRESS**, **STRAP BATTLE**), dual view (Feed Cards vs 9:16 vertical clips), isolated `VideoPlayerModal` player.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  COMMUNITY WAR ROOM                          [ + POST ]│  ← Header & Create Post CTA
+│  FEED VIEW: [ 🗂️ CARDS ]   [ 📱 VERTICAL CLIPS ]       │  ← View Mode Switcher
+│  TAGS: [ALL] [TOPROLL] [HOOK] [PRESS] [PR LIFTS]       │  ← Filter Tags
+│                                                        │
+│  ┌─ COMMUNITY POST CARD ─────────────────────────────┐ │
+│  │ 👤 Tariq Khan (@TKhan) · Lahore Arm Club · 2h ago │ │
+│  │ 🏆 "New Rolling Handle PR: 62.5 KG for 3 reps"     │ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ VIDEO POSTER: [ ▶️ 00:24 · PLAY TECHNIQUE ]   │ │ │  ← Video Poster (M2 Trigger)
+│  │ └───────────────────────────────────────────────┘ │ │
+│  │ [ 🦅 TOPROLL ]  [ 🏋️ 1RM PR ]   [ Mazurenko Table ]│ │  ← Badges
+│  │ 💬 18 Comments   🔥 142 Chalk Claps   ↗️ Share     │ │  ← Social Actions
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│ ┌─ PERSISTENT 5-BRANCH DOCK ─────────────────────────┐ │
+│ │  🏠        🧭          ⚔️         📡         👤   │ │  ← Branch 3 = Community Feed
+│ │ Home     Scout       Arena      Feed       Self    │ │
+│ └────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 39.1 | Video Poster Play | 120dp area | Opens VideoPlayerModal (Modal M2) | `HapticFeedback.lightImpact()` |
+  | 39.2 | "+ POST" Header Action | 44dp button | Navigates to `/community/post/create` | Selection click |
+  | 39.3 | Chalk Claps Button | 48dp height | Claps post; triggers micro-chalk particle | Light tick |
+  | 39.4 | Comments Link | 48dp height | Navigates to `/community/post/:id/comments` | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Cast iron card slabs; stamped metal technique tags; knurled post creation button.
+  - **Style B (APEX)**: Padded vinyl cards; gold-threaded tags; champagne gold post button.
+  - **Style C (ARENA)**: Carbon fiber cards; high-contrast neon badges; athletic amber post button.
+  - **Style D (TITANIUM)**: Solid titanium cards (`#151B24`); brushed silver technique chips; 1px polished silver borders; smoked glass clip view switcher.
+
+---
+
+### SCREENS 40–41 + MODAL M2: Post Creation, Comments & Lazy Video Player
+- **SCREEN 40: CreatePostScreen (`/community/post/create`)**: Video attachment, armwrestling technique tagging (Hook, Toproll, Press, Side Pressure), lift weight & repetitions input, gym table shoutout.
+- **SCREEN 41: PostCommentsScreen (`/community/post/:postId/comments`)**: Threaded discussion with verified athlete badges, timestamped technique breakdown comments (e.g. *"Look at the wrist angle at 0:12"*).
+- **MODAL M2: VideoPlayerModal**: Isolated lazy video embed player supporting YouTube, TikTok, Facebook, and raw MP4 streams with frame-by-frame scrub controls ($0.25	imes, 0.5	imes, 1.0	imes$) and pad contact alignment.
+- **Style D (TITANIUM) Treatment for M2**: Smoked graphite modal backdrop (`backdrop-blur-md bg-[#0B0F19]/95`); 1px polished silver border; frame-by-frame jog wheel with cold-rolled titanium control buttons.
+
+---
+
+## 6.9 DOMAIN 9: DIRECT MESSAGING & FEDERATION BULLETINS (SCREENS 42–44)
+
+### SCREEN 42: ConversationsListScreen (`/messages`)
+- **Roles**: Authenticated users.
+- **Purpose**: Direct competitor-to-competitor messaging, club team channels, and official tournament director notifications.
+- **Armwrestling Touch**: Match call beacon indicators, club sparring group chats, and opponent challenge threads.
+
+### SCREEN 43: ChatScreen (`/messages/:conversationId`)
+- **Roles**: Conversation participants.
+- **Purpose**: Real-time encrypted athlete chat with embedded interactive challenge cards.
+- **Armwrestling Touch**: **Interactive Sparring Challenge Card** with "ACCEPT CHALLENGE", "PROPOSE NEW WEIGHT", "DECLINE", and table location sharing.
+
+### SCREEN 44: AnnouncementsListScreen (`/announcements`)
+- **Roles**: All users.
+- **Purpose**: Official federation gazette publishing rule amendments, tournament sanction decrees, and national team selections.
+- **Style D (TITANIUM) Treatment for Screens 42–44**: Solid titanium message containers, brushed silver challenge cards, polished silver status beacons.
+
+---
+
+## 6.10 DOMAIN 10: REAL-TIME NOTIFICATIONS & MATCH CALLS (SCREEN 45)
+
+### SCREEN 45: NotificationsListScreen (`/notifications`)
+- **Roles**: Authenticated users.
+- **Purpose**: High-priority alert clearinghouse for tournament desk calls, ELO calculations, sparring invites, and governance decisions.
+- **Armwrestling Touch**: **URGENT ARENA TABLE CALL BEACONS**: High-contrast flashing banner: *"REPORT TO TABLE 2 — BOUT IN 3 MINUTES"*, direct check-in button.
+- **Style D (TITANIUM) Treatment**: Titanium notification cards (`#151B24`); pulsing surgical silver/crimson warning frame for urgent table calls; high-contrast action buttons.
+
+
+---
+
+## 6.11 DOMAIN 11: FEDERATION GOVERNANCE, DISPUTES & SANCTIONS (SCREENS 46–48)
+
+### SCREEN 46: GovernanceDashboardScreen (`/home` for Governance)
+- **Roles**: `PROVINCIAL_DIRECTOR`, `NATIONAL_DIRECTOR`, `COMPLIANCE_OFFICER`.
+- **Purpose**: Official executive arbitration and regulatory workbench for hearing table protests, managing club sanctions, and validating referee accreditations.
+- **Armwrestling Touch**: Active protest docket with video review triggers, table incident logs, referee rating audits.
+- **Style D (TITANIUM) Treatment**: Solid titanium docket surfaces (`#151B24`), brushed silver status chips, cold-rolled arbitration action buttons.
+
+---
+
+### SCREEN 47: DisputeDetailScreen (`/governance/dispute/:disputeId`)
+- **Roles**: Compliance Officers, Directors, Competitors.
+- **Purpose**: Official arbitration hearing docket for disputed match calls, elbow slips, and table protests.
+- **Armwrestling Touch**: Multi-angle slow-motion video scrub, referee table report, pad contact confirmation.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                  DISPUTE #1042 │
+│  MATCH PROTEST: Ahmad Ali vs. Bilal Khan (Table 1)     │
+│  Status: [ UNDER FORMAL REVIEW ]            Urgency: 🔴│
+│                                                        │
+│  ┌─ MULTI-ANGLE VIDEO SCRIM (M2 EMBED) ──────────────┐ │
+│  │ ┌───────────────────────────────────────────────┐ │ │
+│  │ │ 🎥 TABLE CAM A: SIDE PAD (0.25x SLOW MOTION)  │ │ │  ← Synchronized angles
+│  │ └───────────────────────────────────────────────┘ │ │
+│  │ [◀◀] [▶ Play 0.25x] [▶▶] [ Frame-by-Frame Scrub ] │ │
+│  │ Table Contact Time: 00:14.28 (Elbow Pad Margin)   │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ── ARBITRATION EVIDENCE SUMMARY ────────────────────  │
+│  Protest Reason: Intentional slip in losing position   │
+│  Head Referee Report: Foul called at 00:14 on Red      │
+│  Appealing Athlete: Bilal Khan (Blue Corner)           │
+│                                                        │
+│  ── ARBITRATION PANEL ACTION ────────────────────────  │
+│  ┌────────────────────────┬──────────────────────────┐ │
+│  │ [ 🟢 UPHELD (NO FOUL) ]│ [ 🔴 CONFIRM REFEREE ]   │ │  ← Decision buttons
+│  └────────────────────────┴──────────────────────────┘ │
+│  [ ⚖️ ORDER IMMEDIATE RE-PULL AT TABLE 1 ]             │  ← Emergency Order
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 47.1 | Video Scrub Controller | 48dp controls | Frame-by-frame jog wheel | Selection click |
+  | 47.2 | "CONFIRM REFEREE" | 52dp button | Upholds match result on official ledger | `HapticFeedback.heavyImpact()` |
+  | 47.3 | "ORDER IMMEDIATE RE-PULL"| 52dp button | Broadcasts table re-pull call to arena | `HapticFeedback.heavyImpact()` |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Cast iron evidence box; knurled jog wheel; stamped seal decisions.
+  - **Style B (APEX)**: Padded leather docket frame; gold decision buttons; formal wax seal verification.
+  - **Style C (ARENA)**: Telemetry replay HUD; cyan scrub slider; neon red/green broadcast decision alerts.
+  - **Style D (TITANIUM)**: Solid titanium docket (`#151B24`); smoked glass video scrim (`backdrop-blur-md bg-[#0B0F19]/90`); cold-rolled jog wheel; surgical crimson (`#E23B3B`) confirmation button with 1px silver border.
+
+---
+
+### SCREEN 48: SubmitComplaintScreen (`/governance/submit-complaint`)
+- **Roles**: Competitors, Team Captains.
+- **Purpose**: Official dispute filing: Tournament & match selector, violation category (Elbow foul protest, Unsportsmanlike conduct, Weigh-in dispute), evidence attachment, arbitration fee escrow.
+- **Style D (TITANIUM) Treatment**: Solid titanium form containers, brushed silver file dropzones, tabular escrow fee calculations.
+
+---
+
+## 6.12 DOMAIN 12: TEAM CLUBS, ROSTERS & SPARRING CHALLENGES (SCREENS 49–51)
+
+### SCREEN 49: TeamsListScreen (`/teams`)
+- **Roles**: All users.
+- **Purpose**: National club directory showcasing certified armwrestling training teams, captain profiles, and club vs. club challenge records.
+- **Armwrestling Touch**: Club crests, active table counts, roster size, win/loss club record, "Challenge Club" button.
+- **Style D (TITANIUM) Treatment**: Titanium club cards with laser-etched borders, brushed silver table counts, cold-rolled challenge buttons.
+
+---
+
+### SCREEN 50: TeamDetailScreen (`/teams/:teamId`)
+- **Roles**: All users.
+- **Purpose**: Club war room: Club roster ranked by ELO, home training table location, scheduled practice sparring sessions, club trophy showcase.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                     Share Club │
+│  ┌─ CLUB BANNER ─────────────────────────────────────┐ │
+│  │ 🛡️ LAHORE IRON ARMS CLUB                 [CAPTAIN]│ │  ← Club Crest & Banner
+│  │ 📍 Lahore Sports Complex · 4 Mazurenko Tables     │ │
+│  │ 👥 24 Certified Pullers · 1850 Average ELO        │ │
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ── CLUB ROSTER & TABLE RANKINGS ────────────────────  │
+│  1. 🥇 Tariq Khan (Heavyweight · 2150 ELO)           │ │  ← Pullers ranked by ELO
+│  2. 🥈 Ahmad Ali (Middleweight · 1923 ELO)           │ │
+│  3. 🥉 Hamza Malik (Lightweight · 1740 ELO)          │ │
+│                                                        │
+│  ── SPARRING SCHEDULE & GARAGE TABLES ───────────────  │
+│  📅 Tuesday 19:00 - Heavy Pulling & Straps           │ │
+│  📅 Saturday 16:00 - Table Sparring & Tournament Prep │ │
+│                                                        │
+│  ╔═══════════════════════════════════════════════════╗ │
+│  ║       CHALLENGE CLUB TO SPARRING DUAL             ║ │  ← Btn 50.1: Sticky CTA (52dp)
+│  ╚═══════════════════════════════════════════════════╝ │
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 50.1 | "CHALLENGE CLUB TO SPARRING" | 52dp height | Sends inter-club challenge invitation | `HapticFeedback.heavyImpact()` |
+  | 50.2 | Roster Athlete Row | 52dp height | Navigates to `/athlete/:id` | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Welded tool steel banner; knurled challenge button; stamped brass roster rank badges.
+  - **Style B (APEX)**: Padded vinyl banner; gold club crest; champagne gold challenge button.
+  - **Style C (ARENA)**: Carbon fiber banner; neon telemetry roster bars; athletic amber challenge button.
+  - **Style D (TITANIUM)**: Solid titanium banner card (`#151B24`); brushed silver roster table; 1px polished silver edge; cold-rolled titanium sticky challenge CTA.
+
+---
+
+### SCREEN 51: CreateTeamScreen (`/teams/create`)
+- **Roles**: Verified Athletes.
+- **Purpose**: Club founding portal: Club name, custom insignia emblem upload, home facility location, captain contact, and federation charter submission.
+- **Style D (TITANIUM) Treatment**: Precision titanium form fields, silver logo upload frame, cold-rolled charter submission button.
+
+---
+
+## 6.13 DOMAIN 13: CERTIFIED VENUES & GRASSROOTS MEETUPS (SCREENS 52–57)
+
+### SCREENS 52–54: Certified Table Venues & Gym Directory
+- **SCREEN 52: VenueDirectoryScreen (`/venues`)**: Interactive map and directory of certified armwrestling clubs and gyms. Filter by: Mazurenko Tables, Chalk Available, Straps Available.
+- **SCREEN 53: VenueDetailScreen (`/venues/:venueId`)**: Facility specifications: Number of regulation tables, floor rubber matting, pulley gym equipment, drop-in table fee, directions.
+- **SCREEN 54: SubmitVenueScreen (`/venues/submit`)**: Venue certification form: Table dimensions audit ($7	imes 7''$ pads, $1''$ knurled steel grip pegs), photos of tables, safety clearance inspection.
+- **Style D (TITANIUM) Treatment for Screens 52–54**: Titanium venue cards, brushed silver pad specification badges, high-contrast capacity indicators.
+
+---
+
+### SCREENS 55–57: Grassroots Practice Pullings & Garage Meetups
+- **SCREEN 55: InformalEventDirectoryScreen (`/informal-events`)**: Community practice pullings calendar: Weekend garage table sessions, friendly open table meetups.
+- **SCREEN 56: InformalEventDetailScreen (`/informal-events/:eventId`)**: Sparring session details: Host puller, table capacity, participant roster, skill levels welcomed, RSVP button.
+- **SCREEN 57: CreateInformalEventScreen (`/informal-events/create`)**: Host your own table session: Date/time, location, number of tables, maximum pullers, entry fee (if any), RSVP limit.
+- **Style D (TITANIUM) Treatment for Screens 55–57**: Solid titanium garage session cards, brushed silver RSVP buttons, tabular participant counters.
+
+---
+
+## 6.14 DOMAIN 14: TALENT SCOUTING & GRASSROOTS NOMINATIONS (SCREENS 58–59)
+
+### SCREEN 58: MyNominationsScreen (`/nominations/mine`)
+- **Roles**: Athletes, Coaches, Scouts.
+- **Purpose**: Scout portfolio tracking grassroots talent nominated for federation licensing and national development camps.
+
+### SCREEN 59: NominateTalentScreen (`/nominations/create`)
+- **Roles**: Verified Athletes.
+- **Purpose**: Nominate raw powerhouse pullers from gyms, colleges, and rural circuits: athlete name, estimated weight category, video link, scout appraisal.
+- **Style D (TITANIUM) Treatment for Screens 58–59**: Titanium scout dossiers, brushed silver appraisal forms, tabular bounty tracking.
+
+---
+
+## 6.15 DOMAIN 15: SETTINGS HUB, PAYMENTS, ACTIVE SESSIONS & GDPR (SCREENS 60–66 + MODAL M3)
+
+### SCREEN 60: SettingsHubScreen (`/settings`)
+- **Roles**: All users.
+- **Purpose**: Central account configuration, multi-role persona manager, theme tokens, and privacy controls.
+- **Armwrestling Touch**: **Active Persona Switcher Desk** (`/settings/roles`), Biometric Face/Fingerprint auth toggle, Chalk Sound effects volume.
+- **Wireframe Diagram**:
+```
+┌────────────────────────────────────────────────────────┐
+│  ← Back                                     SETTINGS   │
+│                                                        │
+│  ┌─ ATHLETE PASSPORT & ROLES ────────────────────────┐ │
+│  │ 👤 Ahmad Ali (@IronGrip_Ali)                      │ │
+│  │ Active Role: [ ⚔️ ATHLETE ]                       │ │
+│  │ Verified Roles: Athlete, Referee, Operator        │ │
+│  │ [ 🔄 SWITCH ACTIVE ROLE PROTOCOL ]                 │ │  ← Tile 60.1
+│  └───────────────────────────────────────────────────┘ │
+│                                                        │
+│  ── FEDERATION PREFERENCES ──────────────────────────  │
+│  [ 💳 Payment Methods & Wallets ]        ───────────► │  ← To Screen 61
+│  [ 🎟️ My Event Tickets & Weigh-In Badges] ──────────► │  ← To Screen 62
+│  [ 🚫 Blocked Competitors & Exclusion ]  ───────────► │  ← To Screen 63
+│  [ 🛡️ Active Security Sessions (Crypt)]   ──────────► │  ← To Screen 64
+│                                                        │
+│  ── HARDWARE & SENSORY ──────────────────────────────  │
+│  [■] Haptic Combat Vibrations (60ms Pulses)            │
+│  [■] Chalk Dust Audio Sound FX                         │
+│  [■] Biometric Fingerprint / Face Unlock               │
+│                                                        │
+│  ── LEGAL & COMPLIANCE ──────────────────────────────  │
+│  WAF/IFA Official Rulebook Edition 2026                │
+│  [ 🗑️ Permanent Account & Cryptographic Deletion ]    │  ← To Screen 66
+└────────────────────────────────────────────────────────┘
+```
+- **Component & Action Buttons**:
+  | ID | Element | Hit Target | Action / Target Route | Sensory / Haptic |
+  | :--- | :--- | :--- | :--- | :--- |
+  | 60.1 | Role Switcher Card | 52dp height | Navigates to `/settings/roles` | `HapticFeedback.mediumImpact()` |
+  | 60.2 | Payment Methods Tile | 48dp height | Navigates to `/settings/payment-methods` | Selection click |
+  | 60.3 | My Tickets Tile | 48dp height | Navigates to `/settings/tickets` | Selection click |
+  | 60.4 | Active Sessions Tile | 48dp height | Navigates to `/session` | Selection click |
+  | 60.5 | Account Deletion Tile| 48dp height | Navigates to `/settings/deletion` | Selection click |
+- **Four-Style Design Treatment**:
+  - **Style A (FORGE)**: Cast iron toggle switches; knurled role switcher card; weld-seam section headers.
+  - **Style B (APEX)**: Padded leather card frames; gold-embossed role passport; champagne slider controls.
+  - **Style C (ARENA)**: Carbon fiber tiles; neon amber status indicators; cyan telemetry switches.
+  - **Style D (TITANIUM)**: Solid titanium settings cards (`#151B24`); smoked glass role switcher card; 1px polished silver hairline borders; surgical toggle controls.
+
+---
+
+### SCREENS 61–66: Payments, Tickets, Sessions & GDPR Deletion
+- **SCREEN 61: PaymentMethodsScreen (`/settings/payment-methods`)**: Saved cards, EasyPaisa/JazzCash, Stripe tokens, tournament entry receipts.
+- **SCREEN 62: MyTicketsScreen (`/settings/tickets`)**: High-contrast QR codes for tournament check-in, spectator passes, and weigh-in badges.
+- **SCREEN 63: BlockedUsersScreen (`/settings/blocked`)**: Blocked users list, chat restrictions, and match matchmaking exclusion.
+- **SCREEN 64: ActiveSessionsListScreen (`/session`)**: Cryptographic session list with device model, IP address, and "TERMINATE ALL OTHER SESSIONS" button.
+- **SCREEN 65: ActiveSessionControlScreen (`/athlete/session/:sessionId`)**: Granular session drilldown with remote kill trigger.
+- **SCREEN 66: AccountDeletionScreen (`/settings/deletion`)**: GDPR crypt-purge: Permanent cryptographic key erasure, match record anonymization policy, confirmation input.
+- **Style D (TITANIUM) Treatment for Screens 61–66**: Precision titanium security cards, silver QR ticket borders, cold-rolled cryptographic session kill buttons, surgical crimson account deletion confirmations.
+
+---
+
+### MODAL M3: EloSurgeModal
+- **Trigger**: Match victory declared or tournament award confirmed.
+- **Visual Choreography**:
+  - Modal ascends with high-impact deceleration.
+  - Winner gold/silver medal burst.
+  - ELO numbers roll up rapidly (e.g. `1845` -> `1873`, `+28`) with tabular figure monospace tracking (**SIG-3**).
+  - Official Federation Bell chime.
+  - "SHARE MATCH VICTORY" button.
+- **Style D (TITANIUM) Treatment**: Smoked graphite modal backdrop (`backdrop-blur-md bg-[#0B0F19]/90`); cold-rolled titanium victory medallion; rapid silver-to-gold tabular ELO count-up; polished silver share button.
+
+
+---
+
+# 7. ADMIN WEB COMMAND CENTER ARCHITECTURE & RECONCILIATION
+
+The ArmSphere ecosystem encompasses both the **Mobile Flutter Application** (Athlete, Referee, Operator, Fan) and the **Desktop Admin Web Command Center** (`apps/admin-web`).
+
+### 7.1 Desktop 60 / 25 / 15 Information Composition
+On wide desktop viewports ($\ge 1280	ext{px}$), admin surfaces follow the rigorous **60 / 25 / 15 Layout Rule**:
+- **60% Primary Operational Surface**: Sticky-header data tables, bracket seed tree orchestrators, live match queues, or dispute video arbitration canvases.
+- **25% Contextual Evidence Rail**: Athlete biometric dossiers, referee incident sheets, historical ELO replay logs, or club charters.
+- **15% Command & Navigation Rail**: Compact vertical titanium navigation rail, active federation role indicator, system health status, and quick triage shortcuts.
+
+### 7.2 Admin Web Surface Catalog & Reconciliation
+The following desktop surfaces in `apps/admin-web` adhere to the **Style D: TITANIUM** architecture:
+1. **Admin Login & Keystore Unlock** (`/admin/login`): Multi-factor biometric/hardware token authorization.
+2. **Federation Command Dashboard** (`/admin`): Real-time national match velocity, active table telemetry, server node status.
+3. **Championships & Belts Registry** (`/admin/championships`): Sanctioned title belts, vacancy declarations, mandatory defense calendar.
+4. **Governance & Dispute Tribunal** (`/admin/governance`): Full-screen multi-angle video arbitration scrub, disciplinary hearings, sanction enforcement ledger.
+5. **National Athletes & Licensing** (`/admin/athletes`): Identity verification, weight class certification, dual-arm ELO audit ledger.
+6. **Moderation & Media Queue** (`/admin/moderation`): Community clip review, report triage, anti-slop enforcement.
+7. **Certified Venues & Clubs** (`/admin/venues`, `/admin/teams`): Table dimension audits ($7	imes 7''$ pads, $1''$ knurled pegs), gym charters.
+8. **Talent Scouting & Nominations** (`/admin/nominations`): Grassroots athlete intake, scout bounty authorization.
+9. **System Infrastructure & Audit Logs** (`/admin/system`): Cryptographic SHA-256 audit ledger, database migration health, Cloudflare gateway status.
+
+---
+
+# 8. GOOGLE AI STUDIO PROMPTING PLAYBOOK (4-STYLE EDITION)
+
+To guarantee flawless generation in Google AI Studio without generic drift or missing armwrestling mechanics, feed prompts into Google AI Studio **one or two screens at a time**.
+
+Always include the **Constitutional Armwrestling System Prompt** followed by the specific screen prompt pack, specifying your chosen style:
+- **Style A: FORGE** (Tactical Brutalist · Raw Forged Iron & Welds)
+- **Style B: APEX** (Refined Luxury Sport · Hand-Stitched Leather & Championship Gold)
+- **Style C: ARENA** (Modern Athletic Command · DAZN/ESPN Broadcast HUD)
+- **Style D: TITANIUM** (Stealth Combat OS · Brushed Titanium & Smoked Graphite Glass)
+
+```markdown
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                     GOOGLE AI STUDIO SYSTEM INSTRUCTION PREAMBLE                       │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ You are a Principal UI/UX Frontend Architect building pure-frontend prototypes         │
+│ for ArmSphere—the International Armwrestling Federation digital platform.              │
+│ Tech Stack: React 18 + Tailwind CSS + Lucide React + Framer Motion.                    │
+│ Target Viewport: Mobile (430px container width, dark luxury background #08090D).      │
+│ Target Style: [INSERT STYLE: Forge / Apex / Arena / Titanium].                         │
+│                                                                                        │
+│ MANDATORY ARMWRESTLING RULES:                                                          │
+│ 1. NEVER create generic fitness trackers (no steps, running, calorie burns).           │
+│ 2. Use authentic armwrestling biometrics: Cupping 1RM, Pronation Torque, Rising       │
+│    Height, Backpressure, Hand Span, Palm Thickness, and Wrist Circumference.           │
+│ 3. Maintain Left vs Right Arm independent ELO ratings (never collapse into average).   │
+│ 4. Referees have chalked hands: All ring-side buttons must have min 48dp-64dp targets. │
+│ 5. Follow the selected style strictly.                                                 │
+│ 6. Output complete, self-contained, working React code with interactive state.        │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### PROMPT SESSION 01: Onboarding & Role Intent (Screens 02 & 03)
+```markdown
+BUILD THESE TWO SCREENS IN A UNIFIED INTERACTIVE REACT CONTAINER:
+1. SCREEN 02: Welcome Screen (/welcome)
+   - Arena table photo with 4-stop gradient scrim and 1.5% chalk dust grain overlay.
+   - 4 pillar value cards (Official Federation Tables, Dual-Arm ELO, Sanctioned Belts, Local Clubs).
+   - 52dp Primary CTA: "ENTER THE ARENA" (tactile scale 0.97x on press, style-specific fill).
+   - 52dp Secondary CTA: "ALREADY FORGED? SIGN IN" (1px border).
+2. SCREEN 03: Role Intent Screen (/role-intent)
+   - 4 combat persona tiles: Competitor (Puller), Table Referee, Tournament Operator, Fan/Supporter.
+   - Interactive selection state: Selected tile gets glowing border and active badge.
+   - Sticky bottom action bar with 52dp "CONTINUE TO COMBAT REGISTRATION" button.
+
+Include an in-header toggle to switch between Screen 02 and Screen 03. Complete, production-ready React code.
+```
+
+---
+
+### PROMPT SESSION 02: The Combat Biometrics Wizard (Screen 06)
+```markdown
+BUILD SCREEN 06: Onboarding Combat Biometrics Wizard (/onboarding) IN COMPLETE REACT:
+- Step 3 of 3 Combat Wizard with gold progress indicator.
+- Dominant Arm Selector: 3-way toggle (Right Arm / Left Arm / Dual-Arm Puller).
+- Primary Combat Style 2x2 Grid: Toproll (Eagle), Hook (Hook), Press (Lightning), Defense (Shield).
+- Bodyweight Class Stepper: Middleweight (-85 KG) with [-0.5] and [+0.5] high-contrast steppers.
+- Digital Caliper Dual Sliders: Hand Span (18.0 - 26.0 cm) and Wrist Circumference (16.0 - 24.0 cm).
+- Sticky bottom CTA: "CONFIRM & ENTER ARENA" (52dp height).
+- Interactive state: Changing weight recalculates division name dynamically.
+```
+
+---
+
+### PROMPT SESSION 03: The Athlete ELO Command Radar (Screens 12 & 37)
+```markdown
+BUILD THESE TWO SCREENS IN ONE INTERACTIVE REACT CONTAINER:
+1. SCREEN 12: Athlete Dashboard (/home)
+   - Dual-Arm ELO Radar Card with interactive 3D perspective flip (240ms Y-axis flip) switching between Right Arm (1923 ELO) and Left Arm (1847 ELO).
+   - Next Battle Arena Card with live 1-second countdown ticker ("T-3d 14h 22m 08s").
+   - Tendon Readiness & Recovery gauge (armwrestler recovery tracking at 92%).
+   - 4-column tactical quick grid (Rankings, Training PR Log, H2H Compare, My Club).
+   - Recent verified matches list with Emerald/Coral win/loss badges and tabular monospace scores.
+   - Persistent 5-tab bottom navigation dock.
+2. SCREEN 37: Head-to-Head & Tale of the Tape (/matches/head-to-head)
+   - 15° diagonal shear divider splitting Red Corner (Ahmad Ali) vs Blue Corner (Bilal Khan).
+   - Central "VS" medallion and arm toggle flip.
+   - Bilateral expanding center-axis metric bars: Forearm, Bicep, Hand Span, Wrist, Reach, Weight, ELO.
+   - Style matchup prediction box: High Toproll (70%) vs Deep Hook (65%).
+   - "Initiate Combat Challenge" action button.
+```
+
+---
+
+### PROMPT SESSION 04: The Ring-Side Referee Console (Screen 29 + Modal M1)
+```markdown
+BUILD THE OFFICIAL RING-SIDE REFEREE CONTROLLER IN COMPLETE REACT:
+1. SCREEN 29: Official Referee Table Scorepad (/referee/scorepad)
+   - Table Header: Table 1, Match R2-M3, Senior Men -85kg, 60-Second Setup Clock with Pause/Bell.
+   - Red Corner vs Blue Corner athlete panels with 52sp monospace scores.
+   - Foul and Warning pips with 48dp tactile increment buttons.
+   - Table status toggles: Straps Applied, Slip Called, Referee's Grip Enforced.
+   - THE 400MS PIN HOLD LOCK BUTTON: Dedicated 64dp button requiring 400ms hold with circular SVG progress animation to declare a pin victory. Releasing early aborts.
+   - Slide-out Emergency Action Rail (accessible via swipe or header button) with Medical Stop, Table Bell, and Protest Freeze.
+2. MODAL M1: FoulSheetModal
+   - Bottom sheet sliding up on long-press of foul button.
+   - Categorized WAF/IFA foul list: Elbow Fouls, Technical Fouls, Conduct Violations.
+```
+
+---
+
+### PROMPT SESSION 05: Tournament Operations & Weigh-In Desk (Screens 24 & 25)
+```markdown
+BUILD THE TOURNAMENT DESK IN ONE INTERACTIVE REACT CONTAINER:
+1. SCREEN 24: Tournament Operator Dashboard (/home for Operators)
+   - Active Tournament dropdown switcher with quick arena refresh.
+   - Primary Event War Room launcher card with "LAUNCH EVENT OPERATIONS DESK" button.
+   - Arena Management Suite:
+     * Match Tables & Arena Queue card: 3 Tables Active (2 Active Pulling, 1 Idle/Ready), "Manage" button.
+     * Official Weigh-In Desk card: 48 Registered Competitors (42 Approved, 6 Pending), "Open Scale" button.
+     * Brackets Seeding card (6 Brackets Active, "View Tree" button).
+     * Awards Podium card (18 Medals Ready, "Launch Podium" button).
+2. SCREEN 25: Tournament Weigh-In Station (/tournament/:id/weigh-in)
+   - Puller selector dropdown and allowed weight class ceiling indicator (78.1 - 85.0 KG).
+   - Digital Scale display with monospace weight ("84.20 KG") and Cleared/Overweight status.
+   - 30-Minute Sweat-Out Grace Period countdown timer for overweight pullers.
+   - High-Tactile 64dp numeric keypad (0–9, dot, backspace) with quick steppers.
+   - "CERTIFY & LOCK WEIGH-IN" button triggering the Rubber Stamp clearance animation (SIG-5).
+```
+
+---
+
+### PROMPT SESSION 06: Tournament Details & Brackets (Screens 20 & 22)
+```markdown
+BUILD THESE TWO SCREENS IN ONE INTERACTIVE REACT CONTAINER:
+1. SCREEN 20: Tournament Detail Screen (/tournament/:id)
+   - Hero banner with countdown ticker, venue details, and sanctioning seal.
+   - Weight & Division filter tray (-75kg, -85kg, -95kg, +105kg, Open Right, Open Left).
+   - Multi-Table Live Arena Grid: Table 1, Table 2, Table 3 cards with active bouts, Red/Blue corner badges, and table status.
+   - Table Hardware Specification card (Mazurenko tables, 7x7" pads, 1" nylon straps).
+   - Sticky bottom action bar: "REGISTER FOR COMPETITION" (52dp).
+2. SCREEN 22: Tournament Brackets Screen (/tournament/:id/brackets)
+   - Interactive double-elimination bracket tree (Winners & Losers pools).
+   - Gold lightning vector connector lines indicating winner advance path (SIG-6).
+   - Match node cards with competitor names, seeds, scores, and active table badges.
+```
+
+---
+
+### PROMPT SESSION 07: Armwrestling Training PR Log & Achievements (Screens 15 & 16)
+```markdown
+BUILD THE COMBAT TRAINING & TROPHY SUITE IN COMPLETE REACT:
+1. SCREEN 15: Athlete Training Log Screen (/athlete/:id/training-log)
+   - Specialized armwrestling lift tracker: Cupping 1RM, Pronation Torque, Rising Height, Backpressure Holds, Side Pressure.
+   - Visual progress line charts showing 1RM progression over time.
+   - "Log New Table Lift" quick bottom modal with weight and repetition steppers.
+2. SCREEN 16: Athlete Achievements Screen (/athlete/:id/achievements)
+   - Digital trophy room showcasing Sanctioned Gold/Silver/Bronze Medals.
+   - 3D Title Belts Showcase with defense count badges.
+   - Federation Rank Insignia ("Master of Arms", "Senior Contender").
+```
+
+---
+
+### PROMPT SESSION 08: Direct Athlete Messaging & Sparring Challenges (Screens 42 & 43)
+```markdown
+BUILD ATHLETE MESSAGING & CHALLENGES IN COMPLETE REACT:
+1. SCREEN 42: Conversations List Screen (/messages)
+   - Direct message threads, Club group channels, and Tournament Desk announcements.
+   - Urgent table call beacon alert at the top of the inbox.
+2. SCREEN 43: Chat Screen (/messages/:id)
+   - Real-time conversation thread with embedded Interactive Sparring Challenge Card:
+     * Proposed Weight Class, Table Location, Proposed Arm (Right/Left).
+     * Action buttons: "ACCEPT CHALLENGE", "COUNTER OFFER", "DECLINE".
+```
+
+---
+
+### PROMPT SESSION 09: Federation Governance & Dispute Arbitration (Screens 46 & 47)
+```markdown
+BUILD THE GOVERNANCE ARBITRATION SUITE IN COMPLETE REACT:
+1. SCREEN 46: Governance Dashboard Screen (/home for Governance)
+   - Active Protest Docket, Disciplinary Hearing List, Club Sanctions, Referee Accreditations.
+2. SCREEN 47: Dispute Detail & Video Review Screen (/governance/dispute/:id)
+   - Multi-angle slow-motion video player with frame-by-frame scrub controls (0.25x, 0.5x, 1.0x).
+   - Referee table incident report and appealing competitor claim.
+   - Arbitration Panel decision buttons: "UPHELD (NO FOUL)", "CONFIRM REFEREE CALL", "ORDER RE-PULL".
+```
+
+---
+
+### PROMPT SESSION 10: Settings Hub & Persona Switcher Protocol (Screen 60)
+```markdown
+BUILD SCREEN 60: Settings Hub & Role Switcher (/settings) IN COMPLETE REACT:
+- Active Athlete Passport card showing callsign, verified roles, and active role pill.
+- The Persona Switcher Modal/Sheet: Instant <50ms context swap between Athlete, Referee, and Operator modes.
+- Hardware & Sensory toggles: Combat Haptic Vibrations, Chalk Audio Sound FX, Biometric Login.
+- Federation links: Payment Methods, My Tickets & Weigh-In Passes, Active Sessions, and GDPR Account Deletion.
+```
+
+---
+
+# 9. COMPONENT LIBRARY & INTERACTIVE TOKEN DICTIONARY
+
+### 9.1 Spacing & Layout Tokens
+- **Grid Substrate**: 4dp baseline grid. Standard gutters: `16dp` mobile edges, `12dp` card interior padding, `8dp` element spacing.
+- **Touch Target Floor**: Standard interactive elements $\ge 48	ext{dp}$; Ring-side Referee & Operator controls $\ge 64	ext{dp}$.
+- **Container Max-Width**: Mobile viewport constrained to `430dp` width, centered on tablet/desktop displays with dark slate margins.
+
+### 9.2 Color Palette Tokens (Quad-Style Matrix)
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                              ARMSPHERE DESIGN COLOR TOKENS                             │
+├─────────────────────┬──────────────┬───────────────────────────────────────────────────┤
+│ Token Name          │ Hex Value    │ Physical Combat Sports Semantics                  │
+├─────────────────────┼──────────────┼───────────────────────────────────────────────────┤
+│ voidBackground      │ #070A11      │ Ultra-deep arena abyss; high-contrast backdrop    │
+│ forgeCanvas         │ #08090D      │ Raw forged iron table frame (Style A: Forge)      │
+│ apexCanvas          │ #0A0E18      │ Midnight sapphire championship table (Style B)    │
+│ arenaCanvas         │ #0C0F16      │ Dense carbon fiber & neoprene table (Style C)     │
+│ titaniumCanvas      │ #0B0F19      │ Cold graphite stealth viewport (Style D)          │
+│ titaniumCard        │ #151B24      │ Solid titanium card substrate (Style D)           │
+│ silverPlane         │ #202832      │ Elevated silver plane surface (Style D)           │
+│ polishedSilver      │ #D6DCE3      │ Rare 1px high-focus polished silver edge (Style D)│
+│ brushedSilver       │ #A8B0BA      │ Structural highlight & icon metal (Style D)       │
+│ cardSurface         │ #121826      │ High-density padded table substrate (Default)     │
+│ cardElevated        │ #1E293B      │ Elevated interactive cards and modals             │
+│ cardBorder          │ #2A364F      │ 1px hairline perimeter border                      │
+│ goldPrimary         │ #D4AF37      │ Official championship gold; primary CTA accent     │
+│ goldSheen           │ #F3E5AB      │ Specular reflection on gold title plates          │
+│ redCorner           │ #EF4444      │ Table Red Corner; referee foul flash; stop        │
+│ surgicalCrimson     │ #E23B3B      │ Restrained competition foul / defeat (Style D)    │
+│ blueCorner          │ #38BDF8      │ Table Blue Corner; international telemetry sky    │
+│ mintCleared         │ #10B981      │ Weigh-in cleared; pin victory confirmed           │
+│ weldOrange          │ #E85D3A      │ Forge heat weld; warning alert; pending           │
+│ telemetryCyan       │ #00F0FF      │ Arena digital broadcast HUD telemetry accent      │
+│ textPrimary         │ #F8FAFC      │ 100% white-slate high contrast typography         │
+│ textSecondary       │ #94A3B8      │ Muted metadata, division limits, timestamps       │
+└─────────────────────┴──────────────┴───────────────────────────────────────────────────┘
+```
+
+### 9.3 Typography Tokens
+- **Display Headings**: `Space Grotesk` Bold & Black (24sp–32sp, letter spacing -0.5px).
+- **Brand Wordmark**: `Space Grotesk` Bold (20sp, letter spacing +2.0px uppercase).
+- **Micro-Labels & Headers**: `Inter` SemiBold (10sp–12sp, letter spacing +1.5px uppercase).
+- **Body & Prose**: `Inter` Regular & Medium (14sp–16sp, line height 1.5).
+- **Numeric & Scores**: `Space Grotesk` or `JetBrains Mono` with **`FontFeature.tabularFigures()`** enabled.
+
+---
+
+# 10. REACT / TAILWIND TO FLUTTER MONOREPO CONVERSION GUIDE
+
+When converting React prototypes generated by Google AI Studio into production Flutter widgets for the ArmSphere monorepo, adhere to this mapping table:
+
+| React / Tailwind Construct | Flutter Implementation Equivalent | Authoritative Monorepo File Path |
+| :--- | :--- | :--- |
+| `bg-[#070A11]` (Abyss Void) | `AppTheme.voidBackground` | `apps/mobile/lib/core/theme/app_theme.dart` |
+| `bg-[#151B24] border border-[#D6DCE3]/30` | `ElevatedActionCard(child: ...)` (Titanium) | `apps/mobile/lib/core/widgets/elevated_action_card.dart` |
+| `text-[#D4AF37]` (Championship Gold) | `AppTheme.goldPrimary` | `apps/mobile/lib/core/theme/app_theme.dart` |
+| `text-[#D6DCE3]` (Polished Silver) | `AppTheme.silverHighlight` | `apps/mobile/lib/core/theme/app_theme.dart` |
+| `font-mono tabular-nums` | `TextStyle(fontFeatures: [FontFeature.tabularFigures()])` | `apps/mobile/lib/core/theme/app_theme.dart` |
+| `scale-95 transition-transform` | `TactilePressWrapper(onTap: ..., child: ...)` | `apps/mobile/lib/core/widgets/tactile_press_wrapper.dart` |
+| Sticky Footer Action Button | `StickyBottomActionBar(action: ...)` | `apps/mobile/lib/core/widgets/sticky_bottom_action_bar.dart` |
+| Dual-Arm 3D Flip Card | `ArmSwitchEloCard(arm: ...)` | `apps/mobile/lib/features/athlete/screens/athlete_screens.dart` |
+| 400ms Pin Hold Lock | `LiveScorepadController` hold gesture | `apps/mobile/lib/features/referee/widgets/live_scorepad_controller.dart` |
+| Rubber Stamp Clearance | `RubberStampClearanceAnimation` (SIG-5) | `apps/mobile/lib/core/widgets/signature_ceremonies.dart` |
+| Table Foul Flash | `RefereeFoulFlashOverlay` (SIG-8) | `apps/mobile/lib/features/referee/widgets/live_scorepad_controller.dart` |
+| Status Badge Pill | `StatusChip(label: ..., variant: ...)` | `apps/mobile/lib/core/widgets/status_chip.dart` |
+| Multi-Role Switcher | `ref.read(authProvider.notifier).switchActiveRole(...)` | `apps/mobile/lib/features/auth/providers/auth_provider.dart` |
+| Operator War Room Dashboard | `TournamentOperatorDashboardScreen` | `apps/mobile/lib/features/tournament/screens/tournament_operator_dashboard_screen.dart` |
+| Weigh-In Station Desk | `TournamentWeighInScreen` | `apps/mobile/lib/features/tournament/screens/tournament_weigh_in_screen.dart` |
+| Brackets Seeding Tree | `TournamentBracketsScreen` | `apps/mobile/lib/features/tournament/screens/tournament_brackets_screen.dart` |
+
+---
+*ArmSphere Master Frontend Specification v5.1.0. End of Document.*

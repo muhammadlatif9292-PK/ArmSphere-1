@@ -1,0 +1,61 @@
+Role_Context,Canonical_Route,Screen_Name,Widget_Class,Reachability_Status,Evidence_Status,Prerequisites_Or_Blocker
+Athlete,/home,Athlete Dashboard,AthleteDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Authenticated with active persona ATHLETE
+Athlete,/discover,Discover Hub,DiscoverScreen,REACHABLE,VERIFIED_CAPTURED,Bottom navigation Tab 1
+Athlete,/tournaments,Events & Competitions Hub,TournamentsListScreen,REACHABLE,VERIFIED_CAPTURED,Bottom navigation Tab 2
+Athlete,/community/feed,Community Feed,CommunityFeedScreen,REACHABLE,VERIFIED_CAPTURED,Bottom navigation Tab 3
+Athlete,/athlete/profile,Athlete Passport Profile,AthleteProfileScreen,REACHABLE,VERIFIED_CAPTURED,Bottom navigation Tab 4
+Athlete,/athlete/training-log,Training Log & PR Tracker,TrainingLogScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Dashboard or Profile Workspaces
+Athlete,/athlete/achievements,Athletic Honors & Cryptographic Badges,AchievementsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Profile Workspaces
+Athlete,/notifications,Notifications & Alerts Hub,NotificationsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Dashboard AppBar bell icon
+Athlete,/search,Global Athlete Search,AthleteSearchScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Dashboard AppBar search icon
+Athlete,/community/create,Post Clip Creation Sheet,CreatePostScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Community Tab '+' FAB
+Athlete,/community/reels,Vertical Clip Reels Player,ReelsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Community Feed Reels card
+Athlete,/settings,Account & Security Settings Hub,SettingsHubScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Profile AppBar gear icon
+Athlete,/settings/roles,Account Roles & Persona Selection,AccountRolesScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Account tile
+Athlete,/session,Security Vault & Active Sessions,SessionScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Security tile
+Athlete,/settings/payment-methods,Payment Methods & Billing,PaymentMethodsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Preferences tile
+Athlete,/settings/tickets,My Tickets & Passes,TicketsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Preferences tile
+Athlete,/settings/blocked,Blocked Users & Moderation,BlockedUsersScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Preferences tile
+Athlete,/settings/terms,Federation Terms of Service,TermsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Legal tile
+Athlete,/settings/privacy,Federation Privacy Policy,PrivacyPolicyScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Legal tile
+Athlete,/settings/deletion,Account Deletion & Data Privacy Vault,AccountDeletionScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Danger Zone tile
+Athlete,/settings/roles/apply,Apply for Federation Role,ApplyRoleScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Account Roles Screen
+Athlete,/settings (Modal),ArmSphere Helpdesk Support Modal,SettingsHubScreen._showSupportModal,REACHABLE,VERIFIED_CAPTURED,Navigated from Settings Hub Support Requests tile
+Athlete,/matches/head-to-head,Match Head-to-Head Comparison,HeadToHeadScreen,REACHABLE,VERIFIED_CAPTURED,Deep-linked canonical route; authentic Tale of the Tape demo preview rendered
+Athlete,/tournament/:id/register,Tournament Registration Flow,EventRegistrationScreen,REACHABLE,VERIFIED_CAPTURED,Deep-linked /events/:id/register; authentic registration form rendered
+Athlete,/tournament/:id/brackets,Live Championship Brackets,TournamentBracketsScreen,REACHABLE,VERIFIED_CAPTURED,Deep-linked /tournaments/bracket; authentic bracket canvas rendered
+Referee,/home (REFEREE),Referee Operations Console,RefereeDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Active persona set to CERTIFIED_REFEREE
+Referee,/referee/dashboard,Referee Dashboard,RefereeDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Direct navigation /referee/dashboard
+Referee,/referee/submit-scorepad,Official Referee Scorepad,ScorepadScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Referee Panel Official Actions
+Referee,/referee/certifications,Referee Certifications & Licensing,CertificationsScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Referee Panel Official Actions
+Referee,/referee/upload-evidence,Referee Evidence Uploader,UploadEvidenceScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Referee Panel Official Actions
+Referee,/referee/search-athletes,Referee Athlete Search Directory,AthleteSearchScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Referee Panel Official Actions
+Tournament Operator,/home (OPERATOR),Arena Operations Command Dashboard,TournamentOperatorDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Active persona set to TOURNAMENT_OPERATOR
+Tournament Operator,/tournament/operations,Tournament Operations Console,TournamentOperationsScreen,INACCESSIBLE,BLOCKED_NO_LIVE_DATA,Requires active event assigned in operator queue; unpopulated container when missing
+Tournament Operator,/tournament/:id/weigh-in,Official Weigh-In Operations,TournamentWeighInScreen,REACHABLE,VERIFIED_CAPTURED,Deep-linked /weigh-in; official desk header and fallback state rendered
+Tournament Operator,/tournament/:id/awards,Podium & Awards Management,AwardsScreen,REACHABLE,VERIFIED_CAPTURED,Deep-linked /awards; authentic Official Podium Pending empty state rendered
+System Administrator,/home (SYSTEM_ADMIN),Governance & Arbitration Dashboard,GovernanceDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Active persona set to SYSTEM_ADMIN
+System Administrator,/governance,Governance Dashboard,GovernanceDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Direct navigation /governance
+System Administrator,/governance/submit-complaint,Submit Arbitration Complaint,SubmitComplaintScreen,REACHABLE,VERIFIED_CAPTURED,Navigated from Governance Dashboard File a complaint
+System Administrator,/governance/dispute/:id,Arbitration Docket Detail,DisputeDetailScreen,REACHABLE,VERIFIED_CAPTURED,Deep-linked /governance/dispute/:id; authentic Dispute Dossier fallback state rendered
+Signed-Out / Auth,/welcome,Welcome Splash Landing,WelcomeScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,Bypassed by active authorized test account
+Signed-Out / Auth,/login,Login Credentials Screen,LoginScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,Bypassed by active authorized test account
+Signed-Out / Auth,/register,Account Registration Screen,RegisterScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,Bypassed by active authorized test account
+Signed-Out / Auth,/forgot-password,Password Recovery Screen,ForgotPasswordScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,Reached from Login Screen
+Signed-Out / Auth,/mfa/verify,MFA Challenge Verification,MfaVerifyScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,Reached only during login when MFA enabled
+Signed-Out / Auth,/onboarding,Athlete Profile Onboarding,OnboardingScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,First-time signup flow only
+Signed-Out / Auth,/role-intent,Role Intent Selection,RoleIntentScreen,INACCESSIBLE,PRESERVED_AUTH_SESSION,First-time registration flow only
+Mixed-Role Mode,/athlete/profile (Official),Passport in Official Mode,AthleteProfileScreen,REACHABLE,VERIFIED_CAPTURED,Toggled Official Mode switch on Athlete Passport
+Mixed-Role Mode,/home (Official),Arena Tab in Official Mode,RefereeDashboardScreen,REACHABLE,VERIFIED_CAPTURED,Arena Tab 1 dynamically rendering Referee Panel
+Athlete,/messages,Athlete Inbox Conversations,ConversationsListScreen,REACHABLE,VERIFIED_CAPTURED,Direct messaging conversation list empty state
+Athlete,/messages/:conversationId,Match Discussion Chat Thread,ChatScreen,REACHABLE,VERIFIED_CAPTURED,Athlete chat conversation thread with input field
+Athlete,/championship/titles,Championship Titles,ChampionshipsListScreen,REACHABLE,VERIFIED_CAPTURED,Sanctioned championship titles directory fallback state
+Athlete,/announcements,Federation Bulletins,AnnouncementsListScreen,REACHABLE,VERIFIED_CAPTURED,Federation announcements feed empty state
+Athlete,/venues,Armwrestling Venues Directory,VenueDirectoryScreen,REACHABLE,VERIFIED_CAPTURED,Certified gym and table directory empty state
+Athlete,/venues/submit,Register Training Venue Intake,SubmitVenueScreen,REACHABLE,VERIFIED_CAPTURED,Gym and table certification intake form
+Athlete,/informal-events,Practice Meetups Directory,InformalEventDirectoryScreen,REACHABLE,VERIFIED_CAPTURED,Grassroots sparring meetups directory empty state
+Athlete,/informal-events/create,Host Practice Meetup Intake,CreateInformalEventScreen,REACHABLE,VERIFIED_CAPTURED,Grassroots meetup creation form
+Athlete,/nominations/my,My Talent Nominations,MyNominationsScreen,REACHABLE,VERIFIED_CAPTURED,Scout talent nominations tracker fallback state
+Athlete,/nominate,Nominate Talent Intake,NominateTalentScreen,REACHABLE,VERIFIED_CAPTURED,Grassroots scout recommendation form
+Athlete,/teams,My Teams & Clubs,TeamsListScreen,REACHABLE,VERIFIED_CAPTURED,Competitive squads directory fallback state
+Athlete,/teams/create,Register New Team Intake,CreateTeamScreen,REACHABLE,VERIFIED_CAPTURED,Official squad registry intake form

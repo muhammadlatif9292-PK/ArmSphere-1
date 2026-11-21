@@ -1,0 +1,63 @@
+Capture_Number,Screen_ID,Screen_Name,File_Name,Canonical_Route,Audit_Classification,Interaction_Tested,Functionally_Verified,Notes
+001,S-001,Athlete Dashboard (Top),001-S-001-dashboard-top.png,/home,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Initial authenticated athlete dashboard with live radar banner and ELO overview
+002,S-001,Athlete Dashboard (Left Arm),002-S-001-dashboard-left-arm.png,/home,CAPTURED_STATE_VARIANT,Yes,Yes,Toggled dynamic ELO pill to LEFT arm view
+003,S-001,Athlete Dashboard (Right Arm),003-S-001-dashboard-right-arm.png,/home,CAPTURED_STATE_VARIANT,Yes,Yes,Toggled dynamic ELO pill back to RIGHT arm view
+004,S-001,Athlete Dashboard (Scroll 1),004-S-001-dashboard-scroll-01.png,/home,CAPTURED_STATE_VARIANT,Yes,Yes,Scrolled dashboard showing Arena Schedule and training highlights
+005,S-001,Athlete Dashboard (Scroll 2),005-S-001-dashboard-scroll-02.png,/home,CAPTURED_STATE_VARIANT,Yes,Yes,Lower dashboard showing Intel and Recent Verifications
+006,S-002,Notifications Hub,006-S-002-notifications-initial.png,/notifications,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Federation notification feed and match alerts
+007,S-003,Global Athlete Search,007-S-003-search-initial.png,/search,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Global search filter input and athlete discovery query
+008,S-004,Sanctioned Arena Radar,008-S-004-explore-arena-radar.png,/tournaments,DUPLICATE_OR_REDUNDANT,Yes,Yes,Duplicate of TournamentsListScreen reached via Banner Explore CTA
+009,S-005,Athlete Profile Modal,009-S-005-athlete-profile-modal-or-screen.png,/athlete/profile,DUPLICATE_OR_REDUNDANT,Yes,Yes,Duplicate of AthleteProfileScreen (same widget as S-010)
+010,S-006,Athlete Training Log & Recovery,010-S-006-training-log-screen.png,/athlete/training-log,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,PR Tracker and recovery log screen
+011,S-007,Discover Hub (Main),011-S-007-discover-tab-main.png,/discover,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Main Discover feed showing categories and federation highlights
+012,S-007,Discover Hub (Tournaments Pill),012-S-007-discover-filter-tournaments.png,/discover,CAPTURED_STATE_VARIANT,Yes,Yes,Discover tab filtered by Tournaments category pill
+013,S-007,Discover Hub (Athletes Pill),013-S-007-discover-filter-athletes.png,/discover,CAPTURED_STATE_VARIANT,Yes,Yes,Discover tab filtered by Athletes category pill
+014,S-008,Events & Competitions Hub,014-S-008-events-tab-main.png,/tournaments,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official tournament directory list screen
+015,S-009,Community Feed,015-S-009-community-tab-main.png,/community/feed,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Community social stream and pulling clips
+016,S-010,Athlete Passport Profile (Top),016-S-010-passport-profile-top.png,/athlete/profile,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Identity passport card with ELO and certifications
+017,S-010,Athlete Passport (Workspaces),017-S-010-passport-profile-workspaces.png,/athlete/profile,CAPTURED_STATE_VARIANT,Yes,Yes,Passport lower section showing Account & Federation Workspaces
+018,S-011,Athletic Honors & Achievements,018-S-011-athletic-honors-achievements.png,/athlete/achievements,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Championship honors and cryptographic achievement badges
+019,S-012,Referee Operations Console,019-S-012-referee-operations-console.png,/referee/dashboard,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official referee dashboard with assignments and table tools
+020,S-013,Account & Security Settings Hub,020-S-013-settings-hub-main.png,/settings,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Top section of settings hub showing Account tiles
+021,S-014,Official Referee Scorepad,021-S-014-referee-submit-scorepad.png,/referee/submit-scorepad,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Table-side digital match scoring instrument
+022,S-015,Referee Certifications & Licensing,022-S-015-referee-certifications.png,/referee/certifications,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official referee licensing credentials and grade
+023,S-016,Referee Evidence Uploader,023-S-016-referee-upload-evidence.png,/referee/upload-evidence,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Disciplinary and match video evidence submission
+024,S-017,Account Roles & Persona Selection,024-S-017-settings-account-roles.png,/settings/roles,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Role switcher with multi-role verified federation grants
+025,S-018,Security Vault & Active Sessions,025-S-018-settings-security-sessions.png,/session,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Authorized device sessions and MFA configuration
+026,S-019,Competition Tickets & Passes,026-S-019-settings-tickets-passes.png,/settings/tickets,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Tournament registration tickets and QR badge passes
+027,S-020,Community Clip Creation Sheet,027-S-020-community-post-clip-creation.png,/community/create,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Video clip upload form with technique tags
+028,S-021,Vertical Clip Reels Player,028-S-021-community-vertical-clip-reels.png,/community/reels,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Full screen vertical short-form reels viewer
+029,S-022,Official Mode Switched on Passport,029-S-022-official-mode-active.png,/athlete/profile,CAPTURED_STATE_VARIANT,Yes,Yes,State variant of AthleteProfileScreen with Official Mode toggle active
+030,S-023,Official Mode Arena Dashboard,030-S-023-official-mode-arena-dashboard.png,/home,CAPTURED_STATE_VARIANT,Yes,Yes,State variant of Tab 1 rendering Referee Panel when Official Mode active
+031,S-024,Athlete Mode Restored on Passport,031-S-024-athlete-mode-restored.png,/athlete/profile,CAPTURED_STATE_VARIANT,Yes,Yes,State variant of AthleteProfileScreen returning to Athlete Mode
+032,S-013,Settings Hub Lower Scrolled,032-S-013-settings-hub-lower-scrolled.png,/settings,CAPTURED_STATE_VARIANT,Yes,Yes,Lower scrolled section of Settings Hub showing Support and Legal tiles
+033,S-026,Payment Methods & Billing,033-S-026-settings-payment-methods.png,/settings/payment-methods,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Payment cards and billing details screen
+034,S-027,Privacy & Blocked Users,034-S-027-settings-blocked-users.png,/settings/blocked,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Blocked athlete list and privacy settings
+035,S-028,Referee Athlete Search Directory,035-S-028-referee-search-athletes.png,/referee/search-athletes,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Dedicated referee roster verification search directory
+036,S-029,ArmSphere Helpdesk Support Modal,036-S-029-settings-support-modal.png,/settings (Modal),CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official Helpdesk modal bottom sheet with direct email support
+037,S-030,Federation Terms of Service,037-S-030-settings-terms-of-service.png,/settings/terms,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official federation rules and athlete code of conduct
+038,S-031,Federation Privacy Policy,038-S-031-settings-privacy-policy.png,/settings/privacy,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Biometric data handling and media rights policy
+039,S-032,Account Deletion & Data Vault,039-S-032-settings-account-deletion.png,/settings/deletion,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Permanent account deletion disclosure and confirmation screen
+040,S-033,Apply for Federation Role,040-S-033-apply-federation-role.png,/settings/roles/apply,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official application for Referee Operator or Director role
+041,S-034,Tournament Operator Command Center,041-S-034-tournament-operator-dashboard-top.png,/home (TOURNAMENT_OPERATOR),CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Arena Operations Command console for tournament operators
+042,S-035,Governance & Arbitration Dashboard,042-S-035-governance-arbitration-dashboard-top.png,/home (SYSTEM_ADMIN) or /governance,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Federation Arbitration & Disputes case docket command center
+043,S-036,Submit Arbitration Complaint,043-S-036-governance-submit-complaint.png,/governance/submit-complaint,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Disciplinary and official ethics complaint filing form
+044,S-037,Match Head-to-Head (Tale of Tape),044-S-037-match-head-to-head-tale-of-tape.png,/matches/head-to-head,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Authentic Tale of the Tape demo preview comparison between Red & Blue contenders across ELO and anthropometric metrics
+045,S-038,Tournament Detail (Error/Fallback State),045-S-038-tournament-detail-error-state.png,/tournament/:tournamentId,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Authentic fallback error card with warning icon and retry control for unresolved event ID
+046,S-039,Tournament Brackets (Canvas Loading),046-S-039-tournament-brackets-loading.png,/tournaments/bracket,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Canonical tournament bracket viewer canvas with gold indicator
+047,S-040,Official Weigh-In Desk (Fallback State),047-S-040-tournament-weigh-in-error-state.png,/weigh-in,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official Weigh-In Desk header and authentic fallback state when no registration ID active
+048,S-041,Awards & Podium Ceremony (Empty State),048-S-041-tournament-awards-ceremony-empty.png,/awards,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official Podium Pending empty state with gold federation medallion and Refresh Results CTA
+049,S-042,Athlete Inbox (Empty State),049-S-042-athlete-inbox-empty-conversations.png,/messages,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Direct messaging conversations list empty state with sparring matchmaking callout
+050,S-043,Championship Titles (Fallback State),050-S-043-championship-titles-error-state.png,/championship/titles,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Sanctioned championship titles directory with session status error card
+051,S-044,Official Event Registration Form,051-S-044-official-event-registration-form.png,/events/:eventId/register,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Complete interactive tournament registration form with division weight and arm choice dropdowns
+052,S-045,Dispute Dossier (Fallback State),052-S-045-dispute-dossier-error-state.png,/governance/dispute/:disputeId,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official governance dispute case review docket with session status error card
+053,S-046,Match Discussion Chat Thread,053-S-046-match-discussion-chat-screen.png,/messages/:conversationId,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Individual athlete chat conversation thread with active message input field and send action
+054,S-047,Federation Bulletins (Empty State),054-S-047-federation-bulletins-empty-state.png,/announcements,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Federation announcements feed with No Active Bulletins empty state
+055,S-048,Armwrestling Venues (Empty State),055-S-048-armwrestling-venues-empty-state.png,/venues,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Certified table and gym directory with empty state and Submit a Venue action
+056,S-049,Register Training Venue Intake Form,056-S-049-submit-training-venue-form.png,/venues/submit,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Full intake form for gym/club verification with venue name and city inputs
+057,S-050,Practice Meetups Directory (Empty State),057-S-050-practice-meetups-empty-state.png,/informal-events,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Grassroots sparring meetups directory with empty state and Host a Meetup action
+058,S-051,Host Practice Meetup Intake Form,058-S-051-host-practice-meetup-form.png,/informal-events/create,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Comprehensive grassroots meetup submission form with title hardware specs and scheduling picker
+059,S-052,My Nominations (Fallback State),059-S-052-my-nominations-error-state.png,/nominations/my,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Scout talent nominations tracker with fallback error card and nominate shortcut
+060,S-053,Nominate Talent Intake Form,060-S-053-nominate-talent-form.png,/nominate,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Grassroots scout recommendation intake form with candidate name and evaluation fields
+061,S-054,My Teams & Clubs (Fallback State),061-S-054-my-teams-clubs-error-state.png,/teams,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Competitive squads roster directory with fallback error card and create team shortcut
+062,S-055,Register New Team Intake Form,062-S-055-register-new-team-form.png,/teams/create,CAPTURED_AND_VISUALLY_REVIEWED,Yes,Yes,Official squad registry intake form with team name creed and founding date picker

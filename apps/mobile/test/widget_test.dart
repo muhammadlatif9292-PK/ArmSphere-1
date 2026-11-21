@@ -206,10 +206,16 @@ void main() {
 
     testWidgets('Calls submitVenue when form is valid', (WidgetTester tester) async {
       when(() => mockVenueRepository.submitVenue(
-            name: 'Metro Armwrestling Club',
-            city: '456 College St',
-            province: 'UNKNOWN',
-            address: '456 College St',
+            name: any(named: 'name'),
+            city: any(named: 'city'),
+            province: any(named: 'province'),
+            address: any(named: 'address'),
+            contactInfo: any(named: 'contactInfo'),
+            description: any(named: 'description'),
+            logoUrl: any(named: 'logoUrl'),
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            cancelToken: any(named: 'cancelToken'),
           )).thenAnswer((_) async => {
             'id': 'venue_823',
             'name': 'Metro Armwrestling Club',
@@ -248,8 +254,14 @@ void main() {
       verify(() => mockVenueRepository.submitVenue(
             name: 'Metro Armwrestling Club',
             city: '456 College St',
-            province: 'UNKNOWN',
+            province: any(named: 'province'),
             address: '456 College St',
+            contactInfo: any(named: 'contactInfo'),
+            description: any(named: 'description'),
+            logoUrl: any(named: 'logoUrl'),
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            cancelToken: any(named: 'cancelToken'),
           )).called(1);
     });
   });

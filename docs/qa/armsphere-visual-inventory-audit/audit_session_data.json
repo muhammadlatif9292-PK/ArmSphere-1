@@ -1,0 +1,177 @@
+{
+  "shots": [
+    {
+      "number": 35,
+      "screen_id": "S-028",
+      "name": "Referee Athlete Search Directory",
+      "slug": "referee-search-athletes",
+      "filename": "035-S-028-referee-search-athletes.png",
+      "route": "/referee/search-athletes",
+      "state": "Table-side athlete search and licensing verification directory for certified referees.",
+      "source": "S-012",
+      "action": "Tap 'Search Athletes' tile in Referee Panel",
+      "size": 132780
+    },
+    {
+      "number": 36,
+      "screen_id": "S-029",
+      "name": "ArmSphere Helpdesk Support Modal",
+      "slug": "settings-support-modal",
+      "filename": "036-S-029-settings-support-modal.png",
+      "route": "/settings (Modal Sheet)",
+      "state": "ArmSphere Helpdesk bottom sheet with direct email support contact (support@armsphere.pk) and inquiry routing.",
+      "source": "S-013",
+      "action": "Tap 'Support Requests' tile in Settings Hub",
+      "size": 179542
+    },
+    {
+      "number": 37,
+      "screen_id": "S-030",
+      "name": "Federation Terms of Service",
+      "slug": "settings-terms-of-service",
+      "filename": "037-S-030-settings-terms-of-service.png",
+      "route": "/settings/terms",
+      "state": "Official federation terms of service, athlete code of conduct, and competition rules.",
+      "source": "S-013",
+      "action": "Tap 'Terms of Service' tile in Settings Hub",
+      "size": 393191
+    },
+    {
+      "number": 38,
+      "screen_id": "S-031",
+      "name": "Federation Privacy Policy",
+      "slug": "settings-privacy-policy",
+      "filename": "038-S-031-settings-privacy-policy.png",
+      "route": "/settings/privacy",
+      "state": "Federation data collection disclosure, profile visibility controls, data retention & deletion policy.",
+      "source": "S-013",
+      "action": "Tap 'Privacy Policy' tile in Settings Hub",
+      "size": 325929
+    },
+    {
+      "number": 39,
+      "screen_id": "S-032",
+      "name": "Account Deletion & Data Privacy Vault",
+      "slug": "settings-account-deletion",
+      "filename": "039-S-032-settings-account-deletion.png",
+      "route": "/settings/deletion",
+      "state": "Account deletion disclosure, permanent anonymization warnings, and data erasure confirmation.",
+      "source": "S-013",
+      "action": "Tap 'Delete Account' tile in Settings Hub",
+      "size": 218417
+    },
+    {
+      "number": 40,
+      "screen_id": "S-033",
+      "name": "Apply for Federation Role Screen",
+      "slug": "apply-federation-role",
+      "filename": "040-S-033-apply-federation-role.png",
+      "route": "/settings/roles/apply",
+      "state": "Official application form to apply for Certified Referee, Tournament Operator, or Provincial Director roles.",
+      "source": "S-017",
+      "action": "Tap 'Apply for Federation Role' button on Account Roles screen",
+      "size": 218069
+    },
+    {
+      "number": 41,
+      "screen_id": "S-034",
+      "name": "Tournament Operator Command Dashboard",
+      "slug": "tournament-operator-dashboard-top",
+      "filename": "041-S-034-tournament-operator-dashboard-top.png",
+      "route": "/home (when active role = TOURNAMENT_OPERATOR)",
+      "state": "Arena Operations Command center with operator header, tournament status, and Browse Competitions action.",
+      "source": "S-017",
+      "action": "Switch active persona to 'Tournament Operator' and navigate to Home",
+      "size": 156866
+    },
+    {
+      "number": 42,
+      "screen_id": "S-035",
+      "name": "Governance & Arbitration Dashboard",
+      "slug": "governance-arbitration-dashboard-top",
+      "filename": "042-S-035-governance-arbitration-dashboard-top.png",
+      "route": "/home (when active role = SYSTEM_ADMIN) or /governance",
+      "state": "Federation Arbitration & Disputes command center showing case docket empty state and File a complaint action.",
+      "source": "S-017",
+      "action": "Switch active persona to 'System Administrator' and navigate to Home",
+      "size": 148801
+    },
+    {
+      "number": 43,
+      "screen_id": "S-036",
+      "name": "Submit Arbitration Complaint Screen",
+      "slug": "governance-submit-complaint",
+      "filename": "043-S-036-governance-submit-complaint.png",
+      "route": "/governance/submit-complaint",
+      "state": "Formal arbitration complaint form with incident subject, detailed explanation & evidence, and file request action.",
+      "source": "S-035",
+      "action": "Tap 'File a complaint' button in Governance Dashboard",
+      "size": 205298
+    }
+  ],
+  "transitions": [
+    {
+      "source": "S-012",
+      "action": "Tap 'Search Athletes' tile in Referee Panel",
+      "destination": "S-028",
+      "state": "Table-side athlete search and licensing verification directory for certified referees.",
+      "screenshot": "035-S-028-referee-search-athletes.png"
+    },
+    {
+      "source": "S-013",
+      "action": "Tap 'Support Requests' tile in Settings Hub",
+      "destination": "S-029",
+      "state": "ArmSphere Helpdesk bottom sheet with direct email support contact (support@armsphere.pk) and inquiry routing.",
+      "screenshot": "036-S-029-settings-support-modal.png"
+    },
+    {
+      "source": "S-013",
+      "action": "Tap 'Terms of Service' tile in Settings Hub",
+      "destination": "S-030",
+      "state": "Official federation terms of service, athlete code of conduct, and competition rules.",
+      "screenshot": "037-S-030-settings-terms-of-service.png"
+    },
+    {
+      "source": "S-013",
+      "action": "Tap 'Privacy Policy' tile in Settings Hub",
+      "destination": "S-031",
+      "state": "Federation data collection disclosure, profile visibility controls, data retention & deletion policy.",
+      "screenshot": "038-S-031-settings-privacy-policy.png"
+    },
+    {
+      "source": "S-013",
+      "action": "Tap 'Delete Account' tile in Settings Hub",
+      "destination": "S-032",
+      "state": "Account deletion disclosure, permanent anonymization warnings, and data erasure confirmation.",
+      "screenshot": "039-S-032-settings-account-deletion.png"
+    },
+    {
+      "source": "S-017",
+      "action": "Tap 'Apply for Federation Role' button on Account Roles screen",
+      "destination": "S-033",
+      "state": "Official application form to apply for Certified Referee, Tournament Operator, or Provincial Director roles.",
+      "screenshot": "040-S-033-apply-federation-role.png"
+    },
+    {
+      "source": "S-017",
+      "action": "Switch active persona to 'Tournament Operator' and navigate to Home",
+      "destination": "S-034",
+      "state": "Arena Operations Command center with operator header, tournament status, and Browse Competitions action.",
+      "screenshot": "041-S-034-tournament-operator-dashboard-top.png"
+    },
+    {
+      "source": "S-017",
+      "action": "Switch active persona to 'System Administrator' and navigate to Home",
+      "destination": "S-035",
+      "state": "Federation Arbitration & Disputes command center showing case docket empty state and File a complaint action.",
+      "screenshot": "042-S-035-governance-arbitration-dashboard-top.png"
+    },
+    {
+      "source": "S-035",
+      "action": "Tap 'File a complaint' button in Governance Dashboard",
+      "destination": "S-036",
+      "state": "Formal arbitration complaint form with incident subject, detailed explanation & evidence, and file request action.",
+      "screenshot": "043-S-036-governance-submit-complaint.png"
+    }
+  ]
+}
