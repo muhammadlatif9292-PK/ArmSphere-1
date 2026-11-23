@@ -928,85 +928,87 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                                   ),
                                 ],
                               ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'This action will clear all live scoring progress recorded for this bout:',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppTheme.textSecondary,
-                                      height: 1.4,
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'This action will clear all live scoring progress recorded for this bout:',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppTheme.textSecondary,
+                                        height: 1.4,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: AppTheme.space12),
-                                  Container(
-                                    padding: const EdgeInsets.all(AppTheme.space12),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.elevatedSurface,
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                      border: Border.all(color: AppTheme.cardBorder),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '• Current Score: Red $_scoreRed — White $_scoreWhite',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '• Fouls: Red $_foulsRed/2 — White $_foulsWhite/2',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppTheme.textSecondary,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '• Warnings: Red $_warningsRed/2 — White $_warningsWhite/2',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppTheme.textSecondary,
-                                          ),
-                                        ),
-                                        if (_inStraps) ...[
-                                          const SizedBox(height: 2),
-                                          const Text(
-                                            '• In-Straps: Engaged (will disengage)',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppTheme.textSecondary,
+                                    const SizedBox(height: AppTheme.space12),
+                                    Container(
+                                      padding: const EdgeInsets.all(AppTheme.space12),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.elevatedSurface,
+                                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                        border: Border.all(color: AppTheme.cardBorder),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '• Current Score: Red $_scoreRed — White $_scoreWhite',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13,
                                             ),
                                           ),
-                                        ],
-                                        if (_secondsElapsed > 0) ...[
-                                          const SizedBox(height: 2),
+                                          const SizedBox(height: 4),
                                           Text(
-                                            '• Match Clock: ${_secondsElapsed}s elapsed',
+                                            '• Fouls: Red $_foulsRed/2 — White $_foulsWhite/2',
                                             style: const TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textSecondary,
                                             ),
                                           ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '• Warnings: Red $_warningsRed/2 — White $_warningsWhite/2',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.textSecondary,
+                                            ),
+                                          ),
+                                          if (_inStraps) ...[
+                                            const SizedBox(height: 2),
+                                            const Text(
+                                              '• In-Straps: Engaged (will disengage)',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                          if (_secondsElapsed > 0) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '• Match Clock: ${_secondsElapsed}s elapsed',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textSecondary,
+                                              ),
+                                            ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: AppTheme.space12),
-                                  const Text(
-                                    'Score data cannot be recovered once reset. Keep existing scores if this was triggered accidentally.',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppTheme.textMuted,
-                                      height: 1.3,
+                                    const SizedBox(height: AppTheme.space12),
+                                    const Text(
+                                      'Score data cannot be recovered once reset. Keep existing scores if this was triggered accidentally.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.textMuted,
+                                        height: 1.3,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                               actions: [
                                 TextButton(

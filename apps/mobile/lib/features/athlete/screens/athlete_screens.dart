@@ -168,8 +168,8 @@ class _AthleteDashboardScreenState
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
-        : 12.0;
+        ? (kFloatingDockTotalHeight + 4.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -3249,13 +3249,15 @@ class _AthleteDashboardScreenState
             color: AppTheme.goldPrimary,
             onTap: () async {
               HapticFeedback.selectionClick();
-              final ok = await ref
-                  .read(authProvider.notifier)
-                  .switchActiveRole('REFEREE');
-              if (context.mounted) {
-                if (ok) {
+              try {
+                await ref
+                    .read(authProvider.notifier)
+                    .switchActiveRole('REFEREE');
+                if (context.mounted) {
                   context.go('/home');
-                } else {
+                }
+              } catch (_) {
+                if (context.mounted) {
                   context.push('/settings/roles');
                 }
               }

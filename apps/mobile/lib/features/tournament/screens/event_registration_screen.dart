@@ -105,7 +105,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     }
 
     if (!mounted) return;
-    final currentEvent = ref.read(tournamentDetailProvider(widget.tournamentId)).valueOrNull;
+    final currentEvent = ref.read(eventDetailProvider(widget.tournamentId)).valueOrNull;
     final feeCents = (currentEvent?['registrationFeeCents'] as num?)?.toInt() ?? 0;
     final feePkr = (currentEvent?['entryFeePkr'] as num?)?.toInt() ?? 0;
     final isFreeEvent = feeCents <= 0 && feePkr <= 0;

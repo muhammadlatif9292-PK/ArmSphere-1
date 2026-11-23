@@ -785,7 +785,7 @@ class CrystalVaporDissolve extends StatelessWidget {
         return const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          stops: <double>[0.0, 0.04, 0.96, 1.0],
+          stops: <double>[0.0, 0.015, 0.985, 1.0],
           colors: <Color>[
             Color(0x00FFFFFF),
             Color(0xFFFFFFFF),
@@ -797,16 +797,15 @@ class CrystalVaporDissolve extends StatelessWidget {
       child: scrollAwareChild,
     );
 
+    // When soft keyboard is visible, suppress bottom margin completely
+    final double keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    if (keyboardInset > 0) {
+      return masked;
+    }
+
     if (bottomMargin > 0) {
-      // If MainShellScreen's Scaffold(extendBody: true) already injected the 76px
-      // floating dock height into MediaQuery.paddingOf(context).bottom (>= 76.0),
-      // only add the 18px gap above the dock top border. Otherwise add 64 + 12 + 18 + mediaBottom.
-      final double mediaBottom = MediaQuery.paddingOf(context).bottom;
-      final double calibratedBottomGap = mediaBottom >= 76.0
-          ? (mediaBottom + 18.0)
-          : (64.0 + 12.0 + 18.0 + mediaBottom);
       masked = Padding(
-        padding: EdgeInsets.only(bottom: calibratedBottomGap),
+        padding: EdgeInsets.only(bottom: bottomMargin),
         child: masked,
       );
     }

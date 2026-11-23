@@ -1892,7 +1892,11 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
               primary: AppTheme.goldPrimary,
-              surface: AppTheme.cardSurface,
+              surface: AppTheme.overlayG6Surface,
+              onSurface: AppTheme.textPure,
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.overlayG6Surface,
             ),
           ),
           child: child!,

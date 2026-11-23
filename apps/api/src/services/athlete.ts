@@ -243,68 +243,76 @@ export class AthleteService {
       activeTitles,
     ] = await Promise.all([
       profile.clubId
-        ? db
-            .select()
-            .from(athleteClubs)
-            .where(eq(athleteClubs.id, profile.clubId))
-            .limit(1)
-            .catch(() => [])
+        ? Promise.resolve(
+            db
+              .select()
+              .from(athleteClubs)
+              .where(eq(athleteClubs.id, profile.clubId))
+              .limit(1)
+          ).catch(() => [])
         : Promise.resolve([]),
-      db
-        .select()
-        .from(athleteVerifications)
-        .where(eq(athleteVerifications.athleteId, ownerUserId))
-        .limit(1)
-        .catch(() => []),
-      db
-        .select()
-        .from(athleteBiometrics)
-        .where(eq(athleteBiometrics.athleteId, ownerUserId))
-        .limit(1)
-        .catch(() => []),
-      db
-        .select()
-        .from(athleteMeasurements)
-        .where(eq(athleteMeasurements.athleteId, ownerUserId))
-        .limit(1)
-        .catch(() => []),
-      db
-        .select()
-        .from(athleteSocialLinks)
-        .where(eq(athleteSocialLinks.athleteId, ownerUserId))
-        .limit(1)
-        .catch(() => []),
-      db
-        .select()
-        .from(matches)
-        .where(
-          and(
-            or(
-              inArray(matches.challengerId, candidateIds),
-              inArray(matches.opponentId, candidateIds)
-            ),
-            inArray(matches.status, ["VERIFIED", "COMPLETED"])
+      Promise.resolve(
+        db
+          .select()
+          .from(athleteVerifications)
+          .where(eq(athleteVerifications.athleteId, ownerUserId))
+          .limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db
+          .select()
+          .from(athleteBiometrics)
+          .where(eq(athleteBiometrics.athleteId, ownerUserId))
+          .limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db
+          .select()
+          .from(athleteMeasurements)
+          .where(eq(athleteMeasurements.athleteId, ownerUserId))
+          .limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db
+          .select()
+          .from(athleteSocialLinks)
+          .where(eq(athleteSocialLinks.athleteId, ownerUserId))
+          .limit(1)
+      ).catch(() => []),
+      Promise.resolve(
+        db
+          .select()
+          .from(matches)
+          .where(
+            and(
+              or(
+                inArray(matches.challengerId, candidateIds),
+                inArray(matches.opponentId, candidateIds)
+              ),
+              inArray(matches.status, ["VERIFIED", "COMPLETED"])
+            )
           )
-        )
-        .catch(() => []),
-      db
-        .select()
-        .from(tournamentMatches)
-        .where(
-          and(
-            or(
-              inArray(tournamentMatches.athleteAId, candidateIds),
-              inArray(tournamentMatches.athleteBId, candidateIds)
-            ),
-            inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+      ).catch(() => []),
+      Promise.resolve(
+        db
+          .select()
+          .from(tournamentMatches)
+          .where(
+            and(
+              or(
+                inArray(tournamentMatches.athleteAId, candidateIds),
+                inArray(tournamentMatches.athleteBId, candidateIds)
+              ),
+              inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+            )
           )
-        )
-        .catch(() => []),
-      db
-        .select()
-        .from(championshipTitles)
-        .where(eq(championshipTitles.activeChampionId, profile.id))
-        .catch(() => []),
+      ).catch(() => []),
+      Promise.resolve(
+        db
+          .select()
+          .from(championshipTitles)
+          .where(eq(championshipTitles.activeChampionId, profile.id))
+      ).catch(() => []),
     ]);
 
     const club = clubRows[0] || null;
@@ -906,29 +914,31 @@ export class AthleteService {
 
     // Query both H2H sources concurrently
     const [tourneyH2H, sanctionedH2H] = await Promise.all([
-      db
-        .select()
-        .from(tournamentMatches)
-        .where(
-          and(
-            sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
-            inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+      Promise.resolve(
+        db
+          .select()
+          .from(tournamentMatches)
+          .where(
+            and(
+              sql`(${tournamentMatches.athleteAId} = ${athlete1.id} AND ${tournamentMatches.athleteBId} = ${athlete2.id}) OR (${tournamentMatches.athleteAId} = ${athlete2.id} AND ${tournamentMatches.athleteBId} = ${athlete1.id})`,
+              inArray(tournamentMatches.status, ["COMPLETED", "VERIFIED"])
+            )
           )
-        )
-        .catch(() => [] as any[]),
-      db
-        .select()
-        .from(matches)
-        .where(
-          and(
-            or(
-              and(inArray(matches.challengerId, a1Ids), inArray(matches.opponentId, a2Ids)),
-              and(inArray(matches.challengerId, a2Ids), inArray(matches.opponentId, a1Ids))
-            ),
-            inArray(matches.status, ["VERIFIED", "COMPLETED"])
+      ).catch(() => [] as any[]),
+      Promise.resolve(
+        db
+          .select()
+          .from(matches)
+          .where(
+            and(
+              or(
+                and(inArray(matches.challengerId, a1Ids), inArray(matches.opponentId, a2Ids)),
+                and(inArray(matches.challengerId, a2Ids), inArray(matches.opponentId, a1Ids))
+              ),
+              inArray(matches.status, ["VERIFIED", "COMPLETED"])
+            )
           )
-        )
-        .catch(() => [] as any[]),
+      ).catch(() => [] as any[]),
     ]);
 
     const seenIds = new Set<string>();

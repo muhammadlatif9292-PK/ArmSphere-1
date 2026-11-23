@@ -497,12 +497,14 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
         ref.read(radarProvider.notifier).refreshCurrentViewport();
         CrystalToast.show(
           context,
+          title: 'Radar Visibility',
           message: 'Radar visibility set to Area (Discoverable).',
           type: CrystalToastType.success,
         );
       } else {
         CrystalToast.show(
           context,
+          title: 'Update Failed',
           message: 'Could not update visibility right now.',
           type: CrystalToastType.error,
         );

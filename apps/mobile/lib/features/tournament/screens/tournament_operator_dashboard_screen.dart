@@ -1170,11 +1170,10 @@ class _TournamentOperatorDashboardScreenState
               SafeArea(
                 bottom: false,
                 child: CrystalVaporDissolve(
-                  bottomMargin: MainShellScope.isInsideShell(context)
-                      ? (kFloatingDockTotalHeight +
-                          MediaQuery.paddingOf(context).bottom +
-                          10.0)
-                      : 12.0,
+                  bottomMargin: (_activeView == _OperatorSubView.mainList &&
+                          MainShellScope.isInsideShell(context))
+                      ? (kFloatingDockTotalHeight + 6.0)
+                      : 0.0,
                   child: tournamentsAsync.when(
                     loading: () => ListView.separated(
                       padding: const EdgeInsets.fromLTRB(
@@ -5610,69 +5609,72 @@ class _AwardsPrizesSubScreenViewState
         ),
 
         // Fixed Bottom Save Bar
-        Container(
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.space16,
-            10,
-            AppTheme.space16,
-            16,
-          ),
-          decoration: const BoxDecoration(
-            color: Color(0xF5060911),
-            border: Border(
-              top: BorderSide(color: Color(0x2EFFFFFF)),
+        SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.space16,
+              10,
+              AppTheme.space16,
+              12,
             ),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 96,
-                height: 52,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0x45FFFFFF)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  onPressed: () {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    widget.onCancel();
-                  },
-                  child: const Text(
-                    '< Back',
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ),
+            decoration: const BoxDecoration(
+              color: Color(0xF5060911),
+              border: Border(
+                top: BorderSide(color: Color(0x2EFFFFFF)),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _ForgedGoldCrystalButton(
-                  key: const ValueKey('save_awards_prizes_button'),
-                  label: '✓ SAVE CASH PRIZES',
-                  icon: Icons.payments_rounded,
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 96,
                   height: 52,
-                  onTap: () {
-                    FocusManager.instance.primaryFocus?.unfocus();
-                    HapticFeedback.mediumImpact();
-                    widget.onSaveAwards({
-                      'isConfigured': true,
-                      'rewardType': 'CASH_PKR',
-                      'winnerStructure': _winnerStructure,
-                      'topNCount': _topNCount,
-                      'tiers': _tiers,
-                    });
-                  },
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0x45FFFFFF)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    onPressed: () {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      widget.onCancel();
+                    },
+                    child: const Text(
+                      '< Back',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ForgedGoldCrystalButton(
+                    key: const ValueKey('save_awards_prizes_button'),
+                    label: '✓ SAVE CASH PRIZES',
+                    icon: Icons.payments_rounded,
+                    height: 52,
+                    onTap: () {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      HapticFeedback.mediumImpact();
+                      widget.onSaveAwards({
+                        'isConfigured': true,
+                        'rewardType': 'CASH_PKR',
+                        'winnerStructure': _winnerStructure,
+                        'topNCount': _topNCount,
+                        'tiers': _tiers,
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

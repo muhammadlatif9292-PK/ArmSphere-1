@@ -1553,7 +1553,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           guestCount: guestCount,
                           elo: (profile['eloRating'] as num?)?.toInt() ??
                               (profile['elo'] as num?)?.toInt() ??
-                              1200,
+                              1000,
                         );
                         if (!ctx.mounted) return;
                         Navigator.of(ctx).pop();

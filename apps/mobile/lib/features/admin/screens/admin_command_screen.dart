@@ -230,9 +230,11 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
     final String notes = appItem['notes']?.toString() ??
         appItem['experienceSummary']?.toString() ??
         'Submitted for official federation credential review.';
+    final String currentStatus =
+        (appItem['status'] ?? 'PENDING').toString().toUpperCase();
 
     final notesCtrl = TextEditingController();
-    String decision = 'APPROVED';
+    String decision = currentStatus == 'APPROVED' ? 'REJECTED' : 'APPROVED';
     bool isSubmitting = false;
 
     await showModalBottomSheet<void>(
@@ -243,14 +245,22 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
       builder: (sheetCtx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
+            final String primaryLabel = currentStatus == 'APPROVED'
+                ? 'Revoke & Reject Role'
+                : (currentStatus == 'REJECTED'
+                    ? 'Re-open & Approve Role'
+                    : (decision == 'APPROVED'
+                        ? 'Approve & Grant Role'
+                        : 'Reject Application'));
+
             return CrystalModalSheet(
-              title: 'REVIEW ROLE APPLICATION',
+              title: currentStatus == 'APPROVED'
+                  ? 'ROLE CREDENTIAL RECORD'
+                  : 'REVIEW ROLE APPLICATION',
               subtitle:
                   '$applicantName • ${AdminPermissions.formatRoleName(targetRole)}',
               headerIcon: Icons.assignment_ind_rounded,
-              primaryActionLabel: decision == 'APPROVED'
-                  ? 'Approve & Grant Role'
-                  : 'Reject Application',
+              primaryActionLabel: primaryLabel,
               primaryActionIcon: decision == 'APPROVED'
                   ? Icons.check_circle_rounded
                   : Icons.cancel_rounded,
@@ -314,7 +324,12 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                                 color: AppTheme.goldPrimary,
                               ),
                             ),
-                            const StatusChip.warning(label: 'PENDING'),
+                            if (currentStatus == 'APPROVED')
+                              const StatusChip.success(label: 'APPROVED ✓')
+                            else if (currentStatus == 'REJECTED')
+                              const StatusChip.error(label: 'REJECTED')
+                            else
+                              const StatusChip.warning(label: 'PENDING'),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -339,35 +354,104 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CrystalActionButton(
-                          label: 'APPROVE',
-                          icon: Icons.verified_rounded,
-                          isPrimary: decision == 'APPROVED',
-                          accentColor: AppTheme.success,
-                          onTap: () =>
-                              setSheetState(() => decision = 'APPROVED'),
+                  if (currentStatus == 'PENDING') ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CrystalActionButton(
+                            label: 'APPROVE',
+                            icon: Icons.verified_rounded,
+                            isPrimary: decision == 'APPROVED',
+                            accentColor: AppTheme.success,
+                            onTap: () =>
+                                setSheetState(() => decision = 'APPROVED'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: CrystalActionButton(
+                            label: 'REJECT',
+                            icon: Icons.block_rounded,
+                            isPrimary: decision == 'REJECTED',
+                            accentColor: AppTheme.crimson,
+                            onTap: () =>
+                                setSheetState(() => decision = 'REJECTED'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else if (currentStatus == 'APPROVED') ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.emerald.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.emerald.withValues(alpha: 0.3),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: CrystalActionButton(
-                          label: 'REJECT',
-                          icon: Icons.block_rounded,
-                          isPrimary: decision == 'REJECTED',
-                          accentColor: AppTheme.crimson,
-                          onTap: () =>
-                              setSheetState(() => decision = 'REJECTED'),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.check_circle_rounded,
+                              color: AppTheme.emerald, size: 20),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'This role credential is active and verified. Tap below if you need to revoke or disqualify.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textPure,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.crimson.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.crimson.withValues(alpha: 0.3),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.cancel_rounded,
+                              color: AppTheme.crimson, size: 20),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'This application was rejected. Tap below to re-evaluate and grant the role credential.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textPure,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   TextField(
                     controller: notesCtrl,
                     maxLines: 3,
+                    style: const TextStyle(
+                      color: AppTheme.textPure,
+                      fontSize: 13.5,
+                    ),
+                    decoration: CrystalModalSheet.inputDecoration(
+                      labelText: currentStatus == 'APPROVED'
+                          ? 'Revocation / Audit Reason'
+                          : 'Official Review Notes',
+                      hintText: currentStatus == 'APPROVED'
+                          ? 'State mandatory reason to revoke this granted credential...'
+                          : 'Add verification notes or reason for rejection...',
+                    ),
+                  ),
                     style: const TextStyle(
                       color: AppTheme.textPure,
                       fontSize: 13.5,
@@ -615,8 +699,8 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
-        : 12.0;
+        ? (kFloatingDockTotalHeight + 4.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,

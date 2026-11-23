@@ -463,18 +463,24 @@ class _CrystalToastPillBody extends StatelessWidget {
 class CrystalToast {
   static void show(
     BuildContext context, {
-    required String title,
+    String? title,
     String? message,
     CrystalToastType type = CrystalToastType.info,
     Duration duration = const Duration(milliseconds: 2200),
     SnackBarAction? action,
   }) {
+    final effectiveTitle = title ??
+        (type == CrystalToastType.error
+            ? 'Error'
+            : (type == CrystalToastType.success
+                ? 'Success'
+                : (type == CrystalToastType.warning ? 'Notice' : 'Information')));
     final textWidget = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          title,
+          effectiveTitle,
           style: const TextStyle(
             fontWeight: FontWeight.w700,
             fontSize: 13,
@@ -496,7 +502,7 @@ class CrystalToast {
 
     showCrystalSnackBar(
       context,
-      message: message ?? title,
+      message: message ?? effectiveTitle,
       content: textWidget,
       type: type,
       duration: duration,

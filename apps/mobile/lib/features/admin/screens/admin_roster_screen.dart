@@ -212,106 +212,572 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // TAB 0: IDENTITY VERIFICATION REVIEW
+                      // TAB 0: IDENTITY VERIFICATION & FEDERATION STANDING
                       if (activeActionTab == 0) ...[
-                        ElevatedActionCard(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Current Status: $currentStatus',
-                                style: const TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.goldPrimary,
+                        if (currentStatus == 'VERIFIED') ...[
+                          // Authoritative Verified Status Card
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.emerald.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: AppTheme.emerald.withValues(alpha: 0.4),
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.verified_rounded,
+                                        color: AppTheme.emerald,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: const [
+                                          Text(
+                                            'OFFICIALLY VERIFIED ATHLETE',
+                                            style: TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w900,
+                                              color: AppTheme.emerald,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            'In good standing • Authorized to compete & officiate',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Weight Class: ${weightCtrl.text} • Right ELO: ${rightEloCtrl.text} • Left ELO: ${leftEloCtrl.text}',
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  color: AppTheme.textSecondary,
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x66080C14),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0x22FFFFFF)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          const Text(
+                                            'WEIGHT CLASS',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.textMuted,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            weightCtrl.text,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.textPure,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(width: 1, height: 24, color: const Color(0x22FFFFFF)),
+                                      Column(
+                                        children: [
+                                          const Text(
+                                            'RIGHT ARM ELO',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.textMuted,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            rightEloCtrl.text,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.goldPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(width: 1, height: 24, color: const Color(0x22FFFFFF)),
+                                      Column(
+                                        children: [
+                                          const Text(
+                                            'LEFT ARM ELO',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppTheme.textMuted,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            leftEloCtrl.text,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                              color: AppTheme.goldPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        TextField(
-                          controller: reasonCtrl,
-                          maxLines: 2,
-                          style: const TextStyle(
-                            color: AppTheme.textPure,
-                            fontSize: 13.5,
-                          ),
-                          decoration: CrystalModalSheet.inputDecoration(
-                            labelText: 'Verification / Review Note',
-                            hintText:
-                                'CNIC / passport verified or reason for rejection...',
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        if (!canReview)
-                          const Text(
-                            'Your role or provincial jurisdiction does not permit reviewing this athlete.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.warning,
+                              ],
                             ),
-                          )
-                        else
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Quick Administrative Navigation
                           Row(
                             children: [
                               Expanded(
-                                child: CrystalActionButton(
-                                  label: currentStatus == 'VERIFIED'
-                                      ? 'VERIFIED ✓'
-                                      : 'APPROVE (VERIFY)',
-                                  icon: Icons.verified_rounded,
-                                  accentColor: currentStatus == 'VERIFIED'
-                                      ? AppTheme.textMuted
-                                      : AppTheme.success,
-                                  isLoading: isSubmitting,
-                                  onTap: currentStatus == 'VERIFIED'
-                                      ? null
-                                      : () => runMutation(
-                                            () => ref
-                                                .read(adminRepositoryProvider)
-                                                .reviewAthlete(
-                                                  athleteId: athleteId,
-                                                  status: 'VERIFIED',
-                                                  reason: reasonCtrl.text.trim(),
-                                                ),
-                                            'Verified athlete $displayName',
-                                          ),
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  onPressed: () => setSheetState(() => activeActionTab = 1),
+                                  icon: const Icon(Icons.tune_rounded, size: 16, color: AppTheme.goldPrimary),
+                                  label: const Text(
+                                    'Tune ELO / Profile',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppTheme.textPure,
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
-                                child: CrystalActionButton(
-                                  label: 'REJECT',
-                                  icon: Icons.cancel_rounded,
-                                  accentColor: AppTheme.crimson,
-                                  isLoading: isSubmitting,
-                                  onTap: () => runMutation(
-                                    () => ref
-                                        .read(adminRepositoryProvider)
-                                        .reviewAthlete(
-                                          athleteId: athleteId,
-                                          status: 'REJECTED',
-                                          reason: reasonCtrl.text.trim().isEmpty
-                                              ? 'Identity documents incomplete'
-                                              : reasonCtrl.text.trim(),
-                                        ),
-                                    'Rejected athlete $displayName',
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: AppTheme.crimson.withValues(alpha: 0.5)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  onPressed: () => setSheetState(() => activeActionTab = 3),
+                                  icon: const Icon(Icons.gavel_rounded, size: 16, color: AppTheme.crimson),
+                                  label: const Text(
+                                    'Sanction / Suspend',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppTheme.textPure,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
+
+                          // Status Revocation / Rejection Section (only if permitted)
+                          if (canReview) ...[
+                            TextField(
+                              controller: reasonCtrl,
+                              maxLines: 2,
+                              style: const TextStyle(
+                                color: AppTheme.textPure,
+                                fontSize: 13.5,
+                              ),
+                              decoration: CrystalModalSheet.inputDecoration(
+                                labelText: 'Revocation / Corrective Note',
+                                hintText: 'State reason to revoke verification or reject credentials...',
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            CrystalActionButton(
+                              label: 'REVOKE VERIFICATION & REJECT',
+                              icon: Icons.cancel_outlined,
+                              accentColor: AppTheme.crimson,
+                              isLoading: isSubmitting,
+                              onTap: () {
+                                if (reasonCtrl.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    CrystalSnackBar(
+                                      content: const Text('An audit reason is required to revoke athlete verification.'),
+                                      backgroundColor: AppTheme.error,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                runMutation(
+                                  () => ref.read(adminRepositoryProvider).reviewAthlete(
+                                        athleteId: athleteId,
+                                        status: 'REJECTED',
+                                        reason: reasonCtrl.text.trim(),
+                                      ),
+                                  'Revoked verification for $displayName',
+                                );
+                              },
+                            ),
+                          ],
+                        ] else if (currentStatus == 'REJECTED') ...[
+                          // Rejected Status Card
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.crimson.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: AppTheme.crimson.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.cancel_rounded,
+                                    color: AppTheme.crimson,
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        'REGISTRATION REJECTED',
+                                        style: TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppTheme.crimson,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Athlete is currently disqualified from sanctioned events.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: reasonCtrl,
+                            maxLines: 2,
+                            style: const TextStyle(
+                              color: AppTheme.textPure,
+                              fontSize: 13.5,
+                            ),
+                            decoration: CrystalModalSheet.inputDecoration(
+                              labelText: 'Re-evaluation / Justification Note',
+                              hintText: 'Record updated identity document check or appeal note...',
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          if (!canReview)
+                            const Text(
+                              'Your role or provincial jurisdiction does not permit reviewing this athlete.',
+                              style: TextStyle(fontSize: 12, color: AppTheme.warning),
+                            )
+                          else
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CrystalActionButton(
+                                    label: 'RE-EVALUATE & APPROVE',
+                                    icon: Icons.verified_rounded,
+                                    accentColor: AppTheme.success,
+                                    isLoading: isSubmitting,
+                                    onTap: () => runMutation(
+                                      () => ref.read(adminRepositoryProvider).reviewAthlete(
+                                            athleteId: athleteId,
+                                            status: 'VERIFIED',
+                                            reason: reasonCtrl.text.trim().isEmpty
+                                                ? 'Re-evaluated and approved by Federation Administrator'
+                                                : reasonCtrl.text.trim(),
+                                          ),
+                                      'Approved athlete $displayName after re-evaluation',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ] else if (currentStatus == 'SUSPENDED' || currentStatus == 'BLACKLISTED') ...[
+                          // Disciplinary Status Card
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.crimson.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: AppTheme.crimson.withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.gavel_rounded,
+                                    color: AppTheme.crimson,
+                                    size: 22,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        currentStatus == 'BLACKLISTED' ? 'PERMANENTLY BLACKLISTED' : 'DISCIPLINARY SUSPENSION',
+                                        style: const TextStyle(
+                                          fontFamily: AppTheme.fontDisplay,
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppTheme.crimson,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text(
+                                        'Athlete is serving an active federation sanction.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: reasonCtrl,
+                            maxLines: 2,
+                            style: const TextStyle(
+                              color: AppTheme.textPure,
+                              fontSize: 13.5,
+                            ),
+                            decoration: CrystalModalSheet.inputDecoration(
+                              labelText: 'Reinstatement Audit Reason',
+                              hintText: 'Record executive ruling or completed suspension period...',
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          if (!canDiscipline)
+                            const Text(
+                              'Reinstating sanctioned athletes requires National Director or System Admin authority.',
+                              style: TextStyle(fontSize: 12, color: AppTheme.warning),
+                            )
+                          else
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CrystalActionButton(
+                                    label: 'LIFT SANCTION & REINSTATE',
+                                    icon: Icons.restore_rounded,
+                                    accentColor: AppTheme.success,
+                                    isLoading: isSubmitting,
+                                    onTap: () {
+                                      if (reasonCtrl.text.trim().isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          CrystalSnackBar(
+                                            content: const Text('An audit reason is required to reinstate a sanctioned athlete.'),
+                                            backgroundColor: AppTheme.error,
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      runMutation(
+                                        () => ref.read(adminRepositoryProvider).recoverAthlete(
+                                              athleteId: athleteId,
+                                              reason: reasonCtrl.text.trim(),
+                                            ),
+                                        'Reinstated $displayName to good standing',
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                    ),
+                                    onPressed: () => setSheetState(() => activeActionTab = 3),
+                                    icon: const Icon(Icons.gavel_rounded, size: 16, color: AppTheme.goldPrimary),
+                                    label: const Text(
+                                      'Sanction Log',
+                                      style: TextStyle(
+                                        fontFamily: AppTheme.fontDisplay,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.textPure,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ] else ...[
+                          // PENDING Review Status Card
+                          ElevatedActionCard(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.goldPrimary.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: AppTheme.goldPrimary.withValues(alpha: 0.4),
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.pending_actions_rounded,
+                                        color: AppTheme.goldPrimary,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: const [
+                                          Text(
+                                            'PENDING FEDERATION REVIEW',
+                                            style: TextStyle(
+                                              fontFamily: AppTheme.fontDisplay,
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w900,
+                                              color: AppTheme.goldPrimary,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                          SizedBox(height: 2),
+                                          Text(
+                                            'Awaiting official verification to compete',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Weight Class: ${weightCtrl.text} • Right ELO: ${rightEloCtrl.text} • Left ELO: ${leftEloCtrl.text}',
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          TextField(
+                            controller: reasonCtrl,
+                            maxLines: 2,
+                            style: const TextStyle(
+                              color: AppTheme.textPure,
+                              fontSize: 13.5,
+                            ),
+                            decoration: CrystalModalSheet.inputDecoration(
+                              labelText: 'Verification / Review Note',
+                              hintText: 'CNIC / passport verified or reason for rejection...',
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          if (!canReview)
+                            const Text(
+                              'Your role or provincial jurisdiction does not permit reviewing this athlete.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.warning,
+                              ),
+                            )
+                          else
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CrystalActionButton(
+                                    label: 'APPROVE (VERIFY)',
+                                    icon: Icons.verified_rounded,
+                                    accentColor: AppTheme.success,
+                                    isLoading: isSubmitting,
+                                    onTap: () => runMutation(
+                                      () => ref.read(adminRepositoryProvider).reviewAthlete(
+                                            athleteId: athleteId,
+                                            status: 'VERIFIED',
+                                            reason: reasonCtrl.text.trim(),
+                                          ),
+                                      'Verified athlete $displayName',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: CrystalActionButton(
+                                    label: 'REJECT',
+                                    icon: Icons.cancel_rounded,
+                                    accentColor: AppTheme.crimson,
+                                    isLoading: isSubmitting,
+                                    onTap: () => runMutation(
+                                      () => ref.read(adminRepositoryProvider).reviewAthlete(
+                                            athleteId: athleteId,
+                                            status: 'REJECTED',
+                                            reason: reasonCtrl.text.trim().isEmpty
+                                                ? 'Identity documents incomplete'
+                                                : reasonCtrl.text.trim(),
+                                          ),
+                                      'Rejected athlete $displayName',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ],
 
                       // TAB 1: PROFILE & ELO MANUAL OVERRIDE
@@ -1012,8 +1478,8 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
-        : 12.0;
+        ? (kFloatingDockTotalHeight + 4.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,

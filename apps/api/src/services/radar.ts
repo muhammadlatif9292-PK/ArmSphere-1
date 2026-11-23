@@ -237,16 +237,19 @@ export class RadarService {
     const excludedUserIds = new Set<string>();
     if (want("ATHLETE") || want("BEACON")) {
       const [profilesRows, verificationRows, userRows, sanctionRows] = await Promise.all([
-        db
-          .select()
-          .from(athleteProfiles)
-          .where(eq(athleteProfiles.isDeleted, false)),
-        db.select().from(athleteVerifications).catch(() => []),
-        db
-          .select({ id: users.id, isActive: users.isActive })
-          .from(users)
-          .catch(() => []),
-        db.select().from(sanctions).catch(() => []),
+        Promise.resolve(
+          db
+            .select()
+            .from(athleteProfiles)
+            .where(eq(athleteProfiles.isDeleted, false))
+        ).catch(() => []),
+        Promise.resolve(db.select().from(athleteVerifications)).catch(() => []),
+        Promise.resolve(
+          db
+            .select({ id: users.id, isActive: users.isActive })
+            .from(users)
+        ).catch(() => []),
+        Promise.resolve(db.select().from(sanctions)).catch(() => []),
       ]);
 
       allProfiles = profilesRows;

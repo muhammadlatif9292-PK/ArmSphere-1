@@ -200,8 +200,8 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 10.0)
-        : 12.0;
+        ? (kFloatingDockTotalHeight + 4.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
