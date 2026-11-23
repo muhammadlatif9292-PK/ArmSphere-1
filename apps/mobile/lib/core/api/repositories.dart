@@ -3308,8 +3308,8 @@ class NominationRepository extends BaseRepository {
   Future<Map<String, dynamic>> nominateTalent(String nomineeName, String notes, {CancelToken? cancelToken}) {
     return submitNomination(
       nomineeName: nomineeName,
-      city: 'UNKNOWN',
-      province: 'UNKNOWN',
+      city: '',
+      province: '',
       notes: notes,
       cancelToken: cancelToken,
     );
@@ -3822,54 +3822,10 @@ class OrganizationRepository extends BaseRepository {
           return <Map<String, dynamic>>[];
         },
       );
-      if (remote.isNotEmpty) return remote;
-    } catch (_) {}
-
-    return [
-      {
-        'id': '${id}_belt_85r',
-        'organizationId': id,
-        'titleName': 'Undisputed Senior -85kg Right Arm Championship Belt',
-        'weightClass': '-85kg',
-        'arm': 'RIGHT',
-        'holderName': 'Sultan Al-Balushi',
-        'holderElo': 1845,
-        'defenses': 3,
-        'awardedAt': '2025-11-18',
-        'lineage': [
-          {'champion': 'Sultan Al-Balushi', 'event': 'Winter Championship Finals 2025', 'date': 'Nov 2025'},
-          {'champion': 'Kamran Zaidi', 'event': 'Summer Open Classic 2025', 'date': 'Jun 2025'},
-        ],
-      },
-      {
-        'id': '${id}_belt_105r',
-        'organizationId': id,
-        'titleName': 'Super Heavyweight +105kg Right Arm Crown',
-        'weightClass': '+105kg',
-        'arm': 'RIGHT',
-        'holderName': 'Zafar Iqbal',
-        'holderElo': 1910,
-        'defenses': 2,
-        'awardedAt': '2025-12-04',
-        'lineage': [
-          {'champion': 'Zafar Iqbal', 'event': 'Winter Championship Finals 2025', 'date': 'Dec 2025'},
-        ],
-      },
-      {
-        'id': '${id}_belt_75l',
-        'organizationId': id,
-        'titleName': 'Senior -75kg Left Arm Sovereign Title',
-        'weightClass': '-75kg',
-        'arm': 'LEFT',
-        'holderName': 'Danyal Qureshi',
-        'holderElo': 1760,
-        'defenses': 1,
-        'awardedAt': '2026-01-22',
-        'lineage': [
-          {'champion': 'Danyal Qureshi', 'event': 'New Year Qualifier 2026', 'date': 'Jan 2026'},
-        ],
-      },
-    ];
+      return remote;
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
   }
 
   Future<Map<String, dynamic>> createOrganization(

@@ -1,1 +1,1 @@
-ALTER TABLE "users" ADD COLUMN "regional_coverage" varchar(100);
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "regional_coverage" varchar(100);

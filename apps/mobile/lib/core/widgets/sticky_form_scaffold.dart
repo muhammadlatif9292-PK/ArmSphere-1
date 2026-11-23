@@ -76,6 +76,9 @@ class StickyFormScaffold extends StatelessWidget {
   /// Functional stage domain for full-screen crystal-clear background.
   final ArmSphereStageDomain stageDomain;
 
+  /// Optional obsidian veil opacity over the 3D stage backdrop for form legibility.
+  final double? backdropScrimOpacity;
+
   const StickyFormScaffold({
     super.key,
     this.appBar,
@@ -99,6 +102,7 @@ class StickyFormScaffold extends StatelessWidget {
     this.bottomBarBorderColor,
     this.resizeToAvoidBottomInset = true,
     this.stageDomain = ArmSphereStageDomain.arena,
+    this.backdropScrimOpacity,
   });
 
   @override
@@ -180,7 +184,10 @@ class StickyFormScaffold extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Positioned.fill(
-            child: CrystalStageBackdrop(domain: stageDomain),
+            child: CrystalStageBackdrop(
+              domain: stageDomain,
+              scrimOpacity: backdropScrimOpacity,
+            ),
           ),
           Scaffold(
             backgroundColor: Colors.transparent,
@@ -190,6 +197,54 @@ class StickyFormScaffold extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Standard generous bottom scroll padding for form inputs so focused fields
+/// remain cleanly above the soft keyboard and below sticky headers.
+const EdgeInsets kFormFieldScrollPadding = EdgeInsets.only(bottom: 140);
+
+/// Wraps any form input widget and automatically calls [Scrollable.ensureVisible]
+/// when focus enters the child, preventing focused fields from being pushed
+/// beneath sticky headers or obscured by the soft keyboard.
+class KeyboardSafeFocusWrapper extends StatelessWidget {
+  final Widget child;
+  final double alignment;
+
+  const KeyboardSafeFocusWrapper({
+    super.key,
+    required this.child,
+    this.alignment = 0.32,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      skipTraversal: true,
+      canRequestFocus: false,
+      onFocusChange: (hasFocus) {
+        if (!hasFocus) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          Scrollable.ensureVisible(
+            context,
+            alignment: alignment,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
+        });
+        Future<void>.delayed(const Duration(milliseconds: 280), () {
+          if (!context.mounted) return;
+          Scrollable.ensureVisible(
+            context,
+            alignment: alignment,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+          );
+        });
+      },
+      child: child,
     );
   }
 }

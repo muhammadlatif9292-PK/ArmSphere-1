@@ -142,7 +142,7 @@ class _NominateTalentScreenState extends ConsumerState<NominateTalentScreen> {
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText: 'Candidate Athlete / Referee Name',
-                hintText: 'e.g. John Doe',
+                hintText: 'e.g. Bilal Ahmed',
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) return 'Please provide candidate name';

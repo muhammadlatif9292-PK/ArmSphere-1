@@ -1,4 +1,5 @@
 // lib/core/widgets/crystal_stage_scaffold.dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,10 @@ class CrystalStageBackdrop extends ConsumerWidget {
   final String? customImageOverride;
   final Alignment viewportAlignment;
   final bool isHeaderBar;
+  /// Optional dark obsidian veil opacity (e.g., 0.78) applied over busy 3D
+  /// backdrops on secondary screens so forms, lists, and KPIs remain legible
+  /// without killing the full-height 3D stage atmosphere.
+  final double? scrimOpacity;
 
   const CrystalStageBackdrop({
     super.key,
@@ -32,6 +37,7 @@ class CrystalStageBackdrop extends ConsumerWidget {
     this.customImageOverride,
     this.viewportAlignment = Alignment.topCenter,
     this.isHeaderBar = false,
+    this.scrimOpacity,
   });
 
   @override
@@ -129,6 +135,32 @@ class CrystalStageBackdrop extends ConsumerWidget {
                     ),
                   ),
 
+                  // 3B. Optional G1/G2 Obsidian Content-Zone Veil for busy 3D stages
+                  if (!isHeaderBar && scrimOpacity != null && scrimOpacity! > 0)
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.0, 0.14, 0.85, 1.0],
+                          colors: [
+                            AppTheme.voidBackground.withValues(
+                              alpha: (scrimOpacity! * 0.72).clamp(0.0, 0.92),
+                            ),
+                            AppTheme.voidBackground.withValues(
+                              alpha: scrimOpacity!.clamp(0.0, 0.92),
+                            ),
+                            AppTheme.voidBackground.withValues(
+                              alpha: (scrimOpacity! * 1.04).clamp(0.0, 0.94),
+                            ),
+                            AppTheme.voidBackground.withValues(
+                              alpha: (scrimOpacity! * 1.08).clamp(0.0, 0.96),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
                   // 4. Smart Scroll-Linked Stage Spotlight Dimmer (10px -> 70px -> Color(0x7304060B))
                   if (!isHeaderBar) const StageScrollContrastVeil(),
                 ],
@@ -141,10 +173,11 @@ class CrystalStageBackdrop extends ConsumerWidget {
   }
 }
 
-/// Full-Bleed Crystal Stage Top Header Scrim for `AppBar.flexibleSpace`.
+/// Frosted Dark Obsidian Top Header Scrim for `AppBar.flexibleSpace`.
 ///
-/// Renders the top slice of the full-viewport [CrystalStageBackdrop] aligned seamlessly
-/// with the screen body, preserving 100% clarity in the top 38% 3D showcase zone.
+/// Renders a crisp frosted `#070A11` (~82% opacity) blur bar with a subtle
+/// bottom hairline so scrolled content never collides behind `<` back buttons
+/// or AppBar titles, whether `extendBodyBehindAppBar` is true or false.
 class CrystalHeaderStageBar extends StatelessWidget {
   final ArmSphereStageDomain domain;
   final String? customImageOverride;
@@ -158,21 +191,38 @@ class CrystalHeaderStageBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scaffold = Scaffold.maybeOf(context);
-    if (scaffold != null && scaffold.widget.extendBodyBehindAppBar) {
-      return const SizedBox.expand();
-    }
+    final bool extendsBehind =
+        scaffold != null && scaffold.widget.extendBodyBehindAppBar;
     return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const ColoredBox(color: AppTheme.voidBackground),
-          CrystalStageBackdrop(
-            domain: domain,
-            customImageOverride: customImageOverride,
-            viewportAlignment: Alignment.topCenter,
-            isHeaderBar: true,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (!extendsBehind) ...[
+                const ColoredBox(color: AppTheme.voidBackground),
+                CrystalStageBackdrop(
+                  domain: domain,
+                  customImageOverride: customImageOverride,
+                  viewportAlignment: Alignment.topCenter,
+                  isHeaderBar: true,
+                ),
+              ],
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppTheme.frostedAppBarSurface,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: AppTheme.overlayG6Border,
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -191,10 +241,11 @@ Future<void> showVisualCustomizationSheet(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
-    backgroundColor: const Color(0xEB0B0F19),
+    backgroundColor: AppTheme.overlayG6Surface,
+    barrierColor: AppTheme.overlayG6Barrier,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+      side: BorderSide(color: AppTheme.overlayG6Border, width: 1.0),
     ),
     builder: (sheetContext) {
       return _VisualCustomizationStudioSheet(

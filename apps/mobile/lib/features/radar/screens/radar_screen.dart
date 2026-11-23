@@ -31,7 +31,12 @@ import '../widgets/radar_map_markers.dart';
 /// - Floating Drop Beacon FAB (above carousel) with optimistic offline queue + long-press/button deletion
 /// - Offline resilience with cached last-updated banner and offline empty state
 class RadarScreen extends ConsumerStatefulWidget {
-  const RadarScreen({super.key});
+  final bool personalBeaconsOnly;
+
+  const RadarScreen({
+    super.key,
+    this.personalBeaconsOnly = false,
+  });
 
   @override
   ConsumerState<RadarScreen> createState() => _RadarScreenState();
@@ -45,11 +50,18 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
   bool _isSatellite = false;
   bool _isLocatingGps = false;
   bool _mapReady = false;
+  bool _personalScopeOnly = false;
+  bool _isUpdatingVisibility = false;
   LatLng? _userGpsLocation;
+  LatLng? _savedHomeLocation;
   LatLng _currentCenter = const LatLng(
     ArmSphereMapConfig.defaultLatitude,
     ArmSphereMapConfig.defaultLongitude,
   );
+
+  /// Distance origin is strictly the user's real GPS fix or saved home base —
+  /// never the panned map camera center.
+  LatLng? get _distanceOrigin => _userGpsLocation ?? _savedHomeLocation;
 
   // Anti-loop guards preventing infinite Carousel <-> Map feedback loops.
   bool _isAnimatingCamera = false;
@@ -59,6 +71,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
   @override
   void initState() {
     super.initState();
+    _personalScopeOnly = widget.personalBeaconsOnly;
     _carouselController = PageController(viewportFraction: 0.86);
     _seedInitialCenterFromProfile();
   }
@@ -69,7 +82,9 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
     final lat = (profile?['latitude'] as num?)?.toDouble();
     final lng = (profile?['longitude'] as num?)?.toDouble();
     if (lat != null && lng != null && lat.isFinite && lng.isFinite) {
-      _currentCenter = LatLng(lat, lng);
+      final home = LatLng(lat, lng);
+      _savedHomeLocation = home;
+      _currentCenter = home;
     }
   }
 
@@ -127,7 +142,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
         if (mounted && _mapReady) {
           ref.read(radarProvider.notifier).scheduleViewportFetch(
                 _mapController.camera.visibleBounds,
-                referenceCenter: _userGpsLocation ?? destLocation,
+                referenceCenter: _distanceOrigin,
               );
         }
       }
@@ -141,7 +156,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
     final bounds = _mapController.camera.visibleBounds;
     ref.read(radarProvider.notifier).scheduleViewportFetch(
           bounds,
-          referenceCenter: _userGpsLocation ?? _currentCenter,
+          referenceCenter: _distanceOrigin,
           immediate: true,
         );
     // Attempt silent GPS lock if permission is already granted (never prompts aggressively on launch).
@@ -386,7 +401,13 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
       final convId = conv['id']?.toString();
       if (!mounted) return;
       if (convId != null && convId.isNotEmpty) {
-        context.push('/messages/$convId');
+        final recipientName = pin.title.trim();
+        context.push(
+          '/messages/$convId',
+          extra: recipientName.isNotEmpty
+              ? {'recipientName': recipientName}
+              : null,
+        );
       } else {
         context.push('/messages');
       }
@@ -462,49 +483,102 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
     }
   }
 
+  Future<void> _enableAreaVisibilityFromGhostMode() async {
+    if (_isUpdatingVisibility) return;
+    HapticFeedback.selectionClick();
+    setState(() => _isUpdatingVisibility = true);
+    try {
+      final ok = await ref
+          .read(athleteProfileProvider.notifier)
+          .updateLocationVisibility('AREA');
+      if (!mounted) return;
+      if (ok) {
+        ref.invalidate(athleteProfileProvider);
+        ref.read(radarProvider.notifier).refreshCurrentViewport();
+        CrystalToast.show(
+          context,
+          message: 'Radar visibility set to Area (Discoverable).',
+          type: CrystalToastType.success,
+        );
+      } else {
+        CrystalToast.show(
+          context,
+          message: 'Could not update visibility right now.',
+          type: CrystalToastType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingVisibility = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final radarState = ref.watch(radarProvider);
     final authProfile = ref.watch(authProvider).userProfile;
+    final athleteProfile = ref.watch(athleteProfileProvider).valueOrNull;
     final currentUserId =
         (authProfile?['id'] ?? authProfile?['userId'])?.toString().trim();
 
-    final visiblePins = radarState.visiblePins;
-    final hasOwnBeacon = radarState.hasOwnActiveBeacon(currentUserId);
-    final showEmptyBeaconPrompt = !hasOwnBeacon && !radarState.isOfflineNoCache;
-    final totalCarouselItems =
-        visiblePins.length + (showEmptyBeaconPrompt ? 1 : 0);
+    final locationVisibility = (athleteProfile?['locationVisibility'] ??
+            authProfile?['locationVisibility'] ??
+            'AREA')
+        .toString()
+        .trim()
+        .toUpperCase();
+    final isGhostMode = locationVisibility == 'GHOST';
+
+    final allVisiblePins = radarState.visiblePins;
+    final visiblePins = _personalScopeOnly
+        ? allVisiblePins
+            .where((pin) =>
+                pin.pinType == RadarPinType.beacon &&
+                pin.isOwnedBy(currentUserId))
+            .toList()
+        : allVisiblePins;
+    final totalCarouselItems = visiblePins.length;
 
     final topPadding = MediaQuery.paddingOf(context).top;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
-    return Scaffold(
-      backgroundColor: AppTheme.voidBackground,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 1. Full-Screen 2D Tactical FlutterMap
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentCenter,
-              initialZoom: ArmSphereMapConfig.defaultZoom,
-              minZoom: 3.0,
-              maxZoom: 18.0,
-              backgroundColor: AppTheme.voidBackground,
-              onMapReady: _onMapReady,
-              onPositionChanged: (camera, hasGesture) {
-                _currentCenter = camera.center;
-                // Anti-loop guard: only fetch on genuine user gesture or after animation settles.
-                if (hasGesture && !_isAnimatingCamera) {
-                  ref.read(radarProvider.notifier).scheduleViewportFetch(
-                        camera.visibleBounds,
-                        referenceCenter: _userGpsLocation ?? camera.center,
-                      );
-                }
-              },
-            ),
-            children: [
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppTheme.voidBackground,
+        extendBodyBehindAppBar: true,
+        extendBody: true,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. Full-Screen 2D Tactical FlutterMap (extends edge-to-edge behind status bar)
+            Positioned.fill(
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _currentCenter,
+                  initialZoom: ArmSphereMapConfig.defaultZoom,
+                  minZoom: 3.0,
+                  maxZoom: 18.0,
+                  backgroundColor: AppTheme.voidBackground,
+                  onMapReady: _onMapReady,
+                  onPositionChanged: (camera, hasGesture) {
+                    _currentCenter = camera.center;
+                    // Anti-loop guard: only fetch on genuine user gesture or after animation settles.
+                    if (hasGesture && !_isAnimatingCamera) {
+                      ref.read(radarProvider.notifier).scheduleViewportFetch(
+                            camera.visibleBounds,
+                            referenceCenter: _distanceOrigin,
+                          );
+                    }
+                  },
+                ),
+                children: [
               TileLayer(
                 key: ValueKey<bool>(_isSatellite),
                 urlTemplate: _isSatellite
@@ -569,6 +643,29 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
               ),
             ],
           ),
+          ),
+
+          // 1B. Smooth top status-bar gradient fade (eliminates abrupt top spotlight sliver)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topPadding + 28,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppTheme.voidBackground.withValues(alpha: 0.72),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
 
           // 2. Top Tactical Header Bar (Back + Radar Title + Search + Filters)
           Positioned(
@@ -581,7 +678,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xE60B0F19),
+                    color: AppTheme.overlayG6Surface,
                     borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                     border: Border.all(
                       color: AppTheme.goldPrimary.withValues(alpha: 0.4),
@@ -604,20 +701,30 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                           children: [
                             Row(
                               children: [
-                                const Icon(
-                                  Icons.radar_rounded,
-                                  color: AppTheme.goldPrimary,
+                                Icon(
+                                  _personalScopeOnly
+                                      ? Icons.podcasts_rounded
+                                      : Icons.radar_rounded,
+                                  color: _personalScopeOnly
+                                      ? AppTheme.crimson
+                                      : AppTheme.goldPrimary,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 6),
-                                const Text(
-                                  'ARMSPHERE RADAR',
-                                  style: TextStyle(
-                                    fontFamily: AppTheme.fontDisplay,
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
-                                    color: AppTheme.textPure,
+                                Flexible(
+                                  child: Text(
+                                    _personalScopeOnly
+                                        ? 'MY RADAR & BEACONS'
+                                        : 'ARMSPHERE RADAR',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                      color: AppTheme.textPure,
+                                    ),
                                   ),
                                 ),
                                 if (radarState.isLoading) ...[
@@ -634,7 +741,9 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                               ],
                             ),
                             Text(
-                              '${visiblePins.length} active signal${visiblePins.length == 1 ? '' : 's'} in sector',
+                              _personalScopeOnly
+                                  ? '${visiblePins.length} active personal beacon${visiblePins.length == 1 ? '' : 's'}'
+                                  : '${visiblePins.length} active signal${visiblePins.length == 1 ? '' : 's'} in sector',
                               style: const TextStyle(
                                 fontFamily: AppTheme.fontMono,
                                 fontSize: 10.5,
@@ -678,6 +787,126 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                   ),
                 ),
 
+                // Personal Scope Banner: Ghost Mode notice + quick toggle & Personal/Public scope switch
+                if (_personalScopeOnly) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.overlayG6Surface,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: isGhostMode
+                            ? AppTheme.warning.withValues(alpha: 0.7)
+                            : AppTheme.goldPrimary.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              isGhostMode
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.podcasts_rounded,
+                              size: 16,
+                              color: isGhostMode
+                                  ? AppTheme.warning
+                                  : AppTheme.goldPrimary,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                isGhostMode
+                                    ? 'Ghost Mode is ON — you are hidden from nearby athletes'
+                                    : (visiblePins.isEmpty
+                                        ? 'No active beacons yet. Tap Drop Beacon to broadcast a session.'
+                                        : 'Showing your ${visiblePins.length} active beacon${visiblePins.length == 1 ? '' : 's'}'),
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontBody,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textPure,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            if (isGhostMode) ...[
+                              FilledButton.icon(
+                                onPressed: _isUpdatingVisibility
+                                    ? null
+                                    : _enableAreaVisibilityFromGhostMode,
+                                style: AppTheme.primaryGoldButtonStyle.copyWith(
+                                  padding: const WidgetStatePropertyAll(
+                                    EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                  ),
+                                  minimumSize: const WidgetStatePropertyAll(
+                                    Size(0, 32),
+                                  ),
+                                ),
+                                icon: _isUpdatingVisibility
+                                    ? const SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.8,
+                                          color: AppTheme.voidBackground,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.visibility_rounded,
+                                        size: 14,
+                                      ),
+                                label: const Text(
+                                  'Switch to Area Mode',
+                                  style: TextStyle(fontSize: 11.5),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                setState(() => _personalScopeOnly = false);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.textPure,
+                                side: const BorderSide(
+                                  color: AppTheme.overlayG6Border,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                minimumSize: const Size(0, 32),
+                              ),
+                              icon: const Icon(Icons.public_rounded, size: 14),
+                              label: const Text(
+                                'View Public Radar',
+                                style: TextStyle(fontSize: 11.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // Offline Cache Banner ("Cached — Last updated X minutes ago")
                 if (radarState.isFromCache) ...[
                   const SizedBox(height: 8),
@@ -687,7 +916,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xEB151B24),
+                      color: AppTheme.overlayG6Surface,
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       border: Border.all(
                         color: AppTheme.warning.withValues(alpha: 0.6),
@@ -769,10 +998,12 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
               ),
             ),
 
-          // 4. Right-Side Tactical Controls (Satellite Toggle + Center on Me + Drop Beacon FAB)
+          // 4. Right-Side Tactical Controls (Satellite Toggle + Center on Me + single Drop Beacon FAB)
           Positioned(
             right: 14,
-            bottom: bottomPadding + 196,
+            bottom: totalCarouselItems > 0
+                ? bottomPadding + 196
+                : bottomPadding + 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -823,7 +1054,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
             ),
           ),
 
-          // 5. Bottom Horizontally Scrollable Pin Carousel Overlay
+          // 5. Bottom Horizontally Scrollable Pin Carousel Overlay (active pins only)
           if (totalCarouselItems > 0)
             Positioned(
               left: 0,
@@ -840,13 +1071,6 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                     }
                   },
                   itemBuilder: (context, index) {
-                    if (index >= visiblePins.length) {
-                      return Center(
-                        child: RadarEmptyBeaconPromptCard(
-                          onDropBeacon: _openDropBeaconSheet,
-                        ),
-                      );
-                    }
                     final pin = visiblePins[index];
                     final isOwned = pin.isOwnedBy(currentUserId);
                     final isSelected = radarState.selectedPinId == pin.id;
@@ -856,7 +1080,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                         pin: pin,
                         isSelected: isSelected,
                         isOwned: isOwned,
-                        referenceCenter: _userGpsLocation ?? _currentCenter,
+                        referenceCenter: _distanceOrigin,
                         onTapCard: () {
                           ref.read(radarProvider.notifier).selectPin(pin.id);
                           _animatedMapMove(
@@ -882,7 +1106,8 @@ class _RadarScreenState extends ConsumerState<RadarScreen>
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }

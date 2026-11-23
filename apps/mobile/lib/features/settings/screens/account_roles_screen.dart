@@ -75,6 +75,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
 
     HapticFeedback.lightImpact();
     final bool isTargetAdmin = AdminPermissions.isAdminWorkspaceRole(targetRole);
+    final bool isTargetReferee = upperTarget == 'REFEREE';
 
     final confirm = await showModalBottomSheet<bool>(
       context: context,
@@ -85,7 +86,9 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         title: 'Switch to ${_formatRoleName(targetRole)}?',
         subtitle: isTargetAdmin
             ? 'Activates 5-Tab Native Admin Dock (Command, Roster, Arena Ops, Governance, Dossier)'
-            : 'Activates Standard Athlete Workspace & Navigation Dock',
+            : (isTargetReferee
+                ? 'Activates Certified Referee Workspace'
+                : 'Activates Standard Athlete Workspace & Navigation Dock'),
         headerIcon: _roleIcon(targetRole),
         primaryActionLabel: 'Switch Role',
         primaryActionIcon: Icons.swap_horiz_rounded,
@@ -322,7 +325,7 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
         flexibleSpace:
             const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(),
-        title: const Text('Account Roles & Persona'),
+        title: const Text('Account Roles'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -332,7 +335,6 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
             },
             tooltip: 'Refresh Roles',
           ),
-          const CrystalHomeButton(),
         ],
       ),
       body: Stack(
@@ -395,7 +397,10 @@ class _AccountRolesScreenState extends ConsumerState<AccountRolesScreen> {
                                 Text(
                                   isInAdminMode
                                       ? 'Active Client Persona • ADMIN MODE'
-                                      : 'Active Client Persona • ATHLETE MODE',
+                                      : (activeRole.trim().toUpperCase() ==
+                                              'REFEREE'
+                                          ? 'Active Client Persona • REFEREE MODE'
+                                          : 'Active Client Persona • ATHLETE MODE'),
                                   style: const TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,

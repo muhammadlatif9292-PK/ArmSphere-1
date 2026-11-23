@@ -7,6 +7,7 @@ import '../../../core/providers/admin_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
@@ -524,7 +525,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
               subtitle:
                   'Create an official national or divisional championship title',
               headerIcon: Icons.workspace_premium_rounded,
-              primaryActionLabel: 'Create Championship Title',
+              primaryActionLabel: 'Create Belt',
               primaryActionIcon: Icons.emoji_events_rounded,
               isPrimaryLoading: isSubmitting,
               secondaryActionLabel: 'Cancel',
@@ -597,7 +598,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: selectedArm,
-                          dropdownColor: const Color(0xF50B101B),
+                          dropdownColor: AppTheme.overlayG6Surface,
                           style: const TextStyle(
                             color: AppTheme.textPure,
                             fontSize: 13.5,
@@ -624,7 +625,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: selectedDivision,
-                          dropdownColor: const Color(0xF50B101B),
+                          dropdownColor: AppTheme.overlayG6Surface,
                           style: const TextStyle(
                             color: AppTheme.textPure,
                             fontSize: 13.5,
@@ -1249,7 +1250,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '$arm ARM • $weight',
+                          '${ArmSphereFormatters.formatArmLabel(arm, uppercase: true)} • $weight',
                           style: const TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 11,
@@ -1346,68 +1347,65 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(
-              child: Text(
-                'OFFICIAL CHAMPIONSHIP BELTS',
-                style: TextStyle(
-                  fontFamily: AppTheme.fontDisplay,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0,
-                  color: AppTheme.goldPrimary,
-                ),
-              ),
-            ),
-            if (canManageChampionships)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CrystalHeaderActionPill(
-                    label: 'SYNC PRESTIGE',
-                    icon: Icons.auto_fix_high_rounded,
-                    accentColor: AppTheme.info,
-                    onTap: () async {
-                      try {
-                        await ref
-                            .read(adminRepositoryProvider)
-                            .recomputePrestigeScores();
-                        await AdminCrossAppSync.syncChampionshipMutations(ref);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            CrystalSnackBar(
-                              content: const Text(
-                                'Pound-for-pound championship prestige scores recalculated.',
-                              ),
-                              backgroundColor: AppTheme.success,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            CrystalSnackBar(
-                              content: Text('Prestige sync failed: $e'),
-                              backgroundColor: AppTheme.error,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  CrystalHeaderActionPill(
-                    label: 'CREATE BELT',
-                    icon: Icons.add_rounded,
-                    accentColor: AppTheme.goldPrimary,
-                    onTap: _openCreateBeltSheet,
-                  ),
-                ],
-              ),
-          ],
+        const Text(
+          'OFFICIAL CHAMPIONSHIP BELTS',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: AppTheme.fontDisplay,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.0,
+            color: AppTheme.goldPrimary,
+          ),
         ),
+        if (canManageChampionships) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              CrystalHeaderActionPill(
+                label: 'Sync Prestige',
+                icon: Icons.auto_fix_high_rounded,
+                accentColor: AppTheme.info,
+                onTap: () async {
+                  try {
+                    await ref
+                        .read(adminRepositoryProvider)
+                        .recomputePrestigeScores();
+                    await AdminCrossAppSync.syncChampionshipMutations(ref);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        CrystalSnackBar(
+                          content: const Text(
+                            'Pound-for-pound championship prestige scores recalculated.',
+                          ),
+                          backgroundColor: AppTheme.success,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        CrystalSnackBar(
+                          content: Text('Prestige sync failed: $e'),
+                          backgroundColor: AppTheme.error,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              CrystalHeaderActionPill(
+                label: 'Create Belt',
+                icon: Icons.add_rounded,
+                accentColor: AppTheme.goldPrimary,
+                onTap: _openCreateBeltSheet,
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 10),
         if (titles.isEmpty)
           const AppEmptyState(
@@ -1471,7 +1469,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            '$div • $arm ARM • $weight • Holder: $holder',
+                            '$div • ${ArmSphereFormatters.formatArmLabel(arm)} • $weight • Holder: $holder',
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondary,

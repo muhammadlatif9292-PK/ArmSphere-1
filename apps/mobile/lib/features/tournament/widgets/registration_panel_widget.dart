@@ -23,6 +23,28 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
 
   String _selectedCategory = 'Senior Men -80kg Right Arm';
 
+  String _formatTournamentFee() {
+    final dynamic rawPkr = widget.tournament['entryFeePkr'];
+    int feePkr = 0;
+    if (rawPkr is num) {
+      feePkr = rawPkr.toInt();
+    } else if (rawPkr is String && int.tryParse(rawPkr.trim()) != null) {
+      feePkr = int.parse(rawPkr.trim());
+    } else {
+      final dynamic rawCents = widget.tournament['registrationFeeCents'];
+      final int cents = rawCents is num
+          ? rawCents.toInt()
+          : (int.tryParse('${rawCents ?? ''}') ?? 0);
+      feePkr = cents ~/ 100;
+    }
+    if (feePkr <= 0) return 'Free';
+    final formatted = feePkr.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
+    return 'PKR $formatted';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -198,9 +220,9 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                           ),
-                          child: const Text(
-                            'PKR 2,500 (\$1\$50 USD)',
-                            style: TextStyle(
+                          child: Text(
+                            _formatTournamentFee(),
+                            style: const TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
@@ -423,8 +445,10 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                         child: _buildStatusMatrixTile(
                           icon: Icons.monetization_on_rounded,
                           title: 'PAYMENT',
-                          status: 'PAID • PKR 2,500',
-                          sub: 'Stripe Gateway #PAY-88219',
+                          status: _formatTournamentFee() == 'Free'
+                              ? 'CONFIRMED • FREE'
+                              : 'PAID • ${_formatTournamentFee()}',
+                          sub: 'Official Tournament Ledger',
                           accentColor: AppTheme.goldPrimary,
                         ),
                       ),

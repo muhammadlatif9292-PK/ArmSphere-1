@@ -194,16 +194,12 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
     final rawLeftWins = (a['leftArmWins'] as num?)?.toInt() ?? 0;
     final rawLeftLosses = (a['leftArmLosses'] as num?)?.toInt() ?? 0;
 
-    final careerRate = (rawWins + rawLosses) > 0
-        ? (rawWins / (rawWins + rawLosses)) * 100.0
-        : 0.0;
-    final winRateRight = (a['winRateRight'] as num?)?.toDouble() ?? careerRate;
-    final winRateLeft = (a['winRateLeft'] as num?)?.toDouble() ?? careerRate;
-
     final dominant = (a['dominantArm']?.toString() ?? 'RIGHT').toUpperCase();
 
     int rightWins = rawRightWins;
     int leftWins = rawLeftWins;
+    int rightLosses = rawRightLosses;
+    int leftLosses = rawLeftLosses;
     if (rightWins == 0 && leftWins == 0 && rawWins > 0) {
       if (dominant == 'LEFT') {
         leftWins = rawWins;
@@ -211,14 +207,34 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
         rightWins = rawWins;
       }
     }
-    if (rightWins == 0 && (winRateRight > 0.0 || (eloRight > 1000 && eloRight != 1500))) {
-      rightWins = math.max(1, ((eloRight - 1000) / 32).ceil());
+    if (rightLosses == 0 && leftLosses == 0 && rawLosses > 0) {
+      if (dominant == 'LEFT') {
+        leftLosses = rawLosses;
+      } else {
+        rightLosses = rawLosses;
+      }
     }
-    if (leftWins == 0 && (winRateLeft > 0.0 || (eloLeft > 1000 && eloLeft != 1500))) {
-      leftWins = math.max(1, ((eloLeft - 1000) / 32).ceil());
-    }
+
     final totalWins = math.max(rawWins, rightWins + leftWins);
-    final totalLosses = math.max(rawLosses, rawRightLosses + rawLeftLosses);
+    final totalLosses = math.max(rawLosses, rightLosses + leftLosses);
+    final careerRate = (totalWins + totalLosses) > 0
+        ? (totalWins / (totalWins + totalLosses)) * 100.0
+        : 0.0;
+    final rightTotal = rightWins + rightLosses;
+    final leftTotal = leftWins + leftLosses;
+    final computedRightRate =
+        rightTotal > 0 ? (rightWins / rightTotal) * 100.0 : 0.0;
+    final computedLeftRate =
+        leftTotal > 0 ? (leftWins / leftTotal) * 100.0 : 0.0;
+
+    final rawRightRate = (a['winRateRight'] as num?)?.toDouble();
+    final rawLeftRate = (a['winRateLeft'] as num?)?.toDouble();
+    final winRateRight = (rawRightRate != null && rawRightRate > 0.0)
+        ? rawRightRate
+        : (rightTotal > 0 ? computedRightRate : careerRate);
+    final winRateLeft = (rawLeftRate != null && rawLeftRate > 0.0)
+        ? rawLeftRate
+        : (leftTotal > 0 ? computedLeftRate : careerRate);
 
     final forearmCm = (biometrics?['forearmCircumference'] as num?)?.toDouble() ??
         (measurements?['forearmCircumference'] as num?)?.toDouble() ??
@@ -451,27 +467,43 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     semanticLabel: 'Official Federation Sanctioned Match',
                   ),
                   SizedBox(width: 6),
-                  Text(
-                    'TALE OF THE TAPE',
-                    style: TextStyle(
-                      fontFamily: 'Space Grotesk',
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
-                      color: Colors.white,
-                      letterSpacing: 0.6,
+                  Flexible(
+                    child: Text(
+                      'TALE OF THE TAPE',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Space Grotesk',
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ],
               ),
-              Text(
-                '${red['weightClass']} • ${_isRightArm ? 'RIGHT ARM' : 'LEFT ARM'} DIVISION',
-                style: const TextStyle(
-                  fontFamily: 'Space Grotesk',
-                  fontSize: 10.5,
-                  color: AppTheme.textMuted,
-                ),
-              ),
             ],
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(26),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+            alignment: Alignment.center,
+            child: Text(
+              '${red['weightClass']} • ${_isRightArm ? 'RIGHT ARM' : 'LEFT ARM'} DIVISION',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Space Grotesk',
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+                color: AppTheme.textSecondary,
+              ),
+            ),
           ),
         ),
         actions: [
@@ -778,7 +810,11 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                         color: Colors.transparent,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 20, top: 18, right: 60),
+                        padding: EdgeInsets.only(
+                          left: 16,
+                          top: 18,
+                          right: (MediaQuery.sizeOf(context).width * 0.5) + 30,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -839,6 +875,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                             const SizedBox(height: 4),
                             Text(
                               '${red['rank']} • ${red['province']}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'Space Grotesk',
                                 fontSize: 10,
@@ -880,7 +918,11 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                         color: Colors.transparent,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 20, top: 18, left: 60),
+                        padding: EdgeInsets.only(
+                          right: 16,
+                          top: 18,
+                          left: (MediaQuery.sizeOf(context).width * 0.5) + 30,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -943,6 +985,8 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                             Text(
                               '${blue['rank']} • ${blue['province']}',
                               textAlign: TextAlign.right,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'Space Grotesk',
                                 fontSize: 10,
@@ -999,7 +1043,7 @@ class _HeadToHeadScreenState extends ConsumerState<HeadToHeadScreen>
                     height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.transparent,
+                      color: AppTheme.overlayG6Surface,
                       border: Border.all(color: AppTheme.goldPrimary, width: 2.0),
                       boxShadow: const [],
                     ),

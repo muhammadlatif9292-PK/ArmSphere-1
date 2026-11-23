@@ -118,8 +118,18 @@ export class CommunityService {
     }
 
     // 4. Validate category if provided
-    if (category && !["HIGHLIGHTS", "TUTORIALS", "GYM"].includes(category.toUpperCase())) {
-      throw new BadRequestError("Invalid category. Allowed categories are HIGHLIGHTS, TUTORIALS, or GYM.");
+    const allowedCategories = [
+      "TECHNIQUE",
+      "SPARRING",
+      "HIGHLIGHTS",
+      "TOURNAMENTS",
+      "TUTORIALS",
+      "GYM",
+    ];
+    if (category && !allowedCategories.includes(category.toUpperCase())) {
+      throw new BadRequestError(
+        "Invalid category. Allowed categories are TECHNIQUE, SPARRING, HIGHLIGHTS, TOURNAMENTS, TUTORIALS, or GYM."
+      );
     }
 
     // 5. Exercise/GYM Validation & Daily Limit Enforcements

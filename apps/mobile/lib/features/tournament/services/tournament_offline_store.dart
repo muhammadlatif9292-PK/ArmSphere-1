@@ -107,6 +107,17 @@ class TournamentOfflineStore {
     );
   }
 
+  /// Prevents raw local `draft_...` tokens from ever leaking into official QR payloads.
+  static String sanitizeQrEventCode(String eventId) {
+    final trimmed = eventId.trim();
+    if (trimmed.isEmpty) return 'EVENT';
+    if (trimmed.toLowerCase().startsWith('draft_')) {
+      final tail = trimmed.length > 6 ? trimmed.substring(trimmed.length - 6) : trimmed;
+      return 'PENDING-$tail';
+    }
+    return trimmed;
+  }
+
   /// Generates a deterministic Tournament Registration QR string.
   static String buildTournamentRegistrationQr({
     required String registrationId,
@@ -116,7 +127,8 @@ class TournamentOfflineStore {
     required String categoryLabel,
     int guestCount = 0,
   }) {
-    return 'ARMSPHERE-QR:$registrationId:$athleteId:$categoryLabel:EVENT=$eventId:NAME=$athleteName:GUESTS=$guestCount';
+    final safeEvent = sanitizeQrEventCode(eventId);
+    return 'ARMSPHERE-QR:$registrationId:$athleteId:$categoryLabel:EVENT=$safeEvent:NAME=$athleteName:GUESTS=$guestCount';
   }
 
   /// Generates a deterministic Spectator Pass QR string.
@@ -127,7 +139,8 @@ class TournamentOfflineStore {
     required String holderName,
     required int feePkr,
   }) {
-    return 'ARMSPHERE-SPECTATOR-QR:$passId:$eventId:$holderId:$holderName:PKR=$feePkr';
+    final safeEvent = sanitizeQrEventCode(eventId);
+    return 'ARMSPHERE-SPECTATOR-QR:$passId:$safeEvent:$holderId:$holderName:PKR=$feePkr';
   }
 
   /// Returns true if the tournament is a legacy test/mock tournament that should be removed.
@@ -411,14 +424,14 @@ class TournamentOfflineStore {
           'athleteAId': a['id'].toString(),
           'athleteAAthleteId': a['athleteId']?.toString() ?? a['id'].toString(),
           'athleteAName': a['athleteName'].toString(),
-          'athleteAElo': (a['eloRating'] as num?)?.toInt() ?? 1750,
+          'athleteAElo': (a['eloRating'] as num?)?.toInt() ?? 1200,
           'athleteAPrKg': (a['prKg'] as num?)?.toDouble() ?? 62.0,
           'athleteAMaxLiftKg': (a['maxLiftKg'] as num?)?.toDouble() ?? 70.0,
           'athleteALosses': (a['lossesCount'] as num?)?.toInt() ?? 0,
           'athleteBId': b['id'].toString(),
           'athleteBAthleteId': b['athleteId']?.toString() ?? b['id'].toString(),
           'athleteBName': b['athleteName'].toString(),
-          'athleteBElo': (b['eloRating'] as num?)?.toInt() ?? 1700,
+          'athleteBElo': (b['eloRating'] as num?)?.toInt() ?? 1200,
           'athleteBPrKg': (b['prKg'] as num?)?.toDouble() ?? 60.0,
           'athleteBMaxLiftKg': (b['maxLiftKg'] as num?)?.toDouble() ?? 68.0,
           'athleteBLosses': (b['lossesCount'] as num?)?.toInt() ?? 0,

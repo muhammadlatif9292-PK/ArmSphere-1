@@ -38,6 +38,25 @@ const RefreshSchema = z.object({
   refreshToken: z.string().min(1, { message: "Refresh token is required." }),
 });
 
+function extractClientIp(req: Request): string {
+  const cfIp = req.headers["cf-connecting-ip"];
+  const xRealIp = req.headers["x-real-ip"];
+  const xForwardedFor = req.headers["x-forwarded-for"];
+  let raw = "";
+  if (typeof cfIp === "string" && cfIp.trim()) {
+    raw = cfIp.trim();
+  } else if (typeof xForwardedFor === "string" && xForwardedFor.trim()) {
+    raw = xForwardedFor.split(",")[0].trim();
+  } else if (Array.isArray(xForwardedFor) && xForwardedFor.length > 0) {
+    raw = String(xForwardedFor[0]).split(",")[0].trim();
+  } else if (typeof xRealIp === "string" && xRealIp.trim()) {
+    raw = xRealIp.trim();
+  } else {
+    raw = req.ip || req.socket?.remoteAddress || "";
+  }
+  return raw.replace(/^::ffff:/i, "").trim() || "unknown-ip";
+}
+
 export class AuthController {
   /**
    * Handles user registration POST /auth/register
@@ -56,7 +75,7 @@ export class AuthController {
         fullName: parsed.data.fullName,
         role: parsed.data.role,
       }, {
-        ipAddress: req.ip,
+        ipAddress: extractClientIp(req),
         userAgent: req.headers["user-agent"],
       });
 
@@ -83,7 +102,7 @@ export class AuthController {
         parsed.data.email,
         parsed.data.password,
         {
-          ipAddress: req.ip,
+          ipAddress: extractClientIp(req),
           userAgent: req.headers["user-agent"],
           mfaCode: parsed.data.mfaCode,
         }
@@ -137,7 +156,7 @@ export class AuthController {
       }
 
       const result = await AuthService.rotateSession(parsed.data.refreshToken, {
-        ipAddress: req.ip,
+        ipAddress: extractClientIp(req),
         userAgent: req.headers["user-agent"],
       });
 

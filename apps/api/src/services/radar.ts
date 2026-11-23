@@ -1,12 +1,14 @@
-import { eq, and, gt, isNotNull, ne } from "drizzle-orm";
+import { eq, and, gt, isNotNull, ne, inArray } from "drizzle-orm";
 import { db } from "../config/db.js";
 import {
   athleteProfiles,
   athleteClubs,
+  athleteVerifications,
   events,
   venuePartners,
   informalEvents,
   radarBeacons,
+  sanctions,
   users,
 } from "@armsphere/db-schema";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@armsphere/core";
@@ -230,13 +232,47 @@ export class RadarService {
       }
     }
 
-    // Fetch athlete profiles once if needed for athlete pins OR to check GHOST status for beacons
+    // Fetch athlete profiles + moderation status once if needed for athlete pins OR beacons
     let allProfiles: any[] = [];
+    const excludedUserIds = new Set<string>();
     if (want("ATHLETE") || want("BEACON")) {
-      allProfiles = await db
-        .select()
-        .from(athleteProfiles)
-        .where(eq(athleteProfiles.isDeleted, false));
+      const [profilesRows, verificationRows, userRows, sanctionRows] = await Promise.all([
+        db
+          .select()
+          .from(athleteProfiles)
+          .where(eq(athleteProfiles.isDeleted, false)),
+        db.select().from(athleteVerifications).catch(() => []),
+        db
+          .select({ id: users.id, isActive: users.isActive })
+          .from(users)
+          .catch(() => []),
+        db.select().from(sanctions).catch(() => []),
+      ]);
+
+      allProfiles = profilesRows;
+
+      for (const u of userRows as any[]) {
+        if (u && u.isActive === false) {
+          excludedUserIds.add(u.id);
+        }
+      }
+      for (const v of verificationRows as any[]) {
+        const status = (v?.status || "").toString().toUpperCase();
+        if (status === "REJECTED" || status === "SUSPENDED") {
+          if (v.athleteId) excludedUserIds.add(v.athleteId);
+        }
+      }
+      for (const s of sanctionRows as any[]) {
+        const sType = (s?.type || "").toString().toUpperCase();
+        const isActiveSanction =
+          !s?.expiresAt || new Date(s.expiresAt).getTime() > now.getTime();
+        if (
+          isActiveSanction &&
+          (sType === "SUSPENSION" || sType === "PERMANENT_BAN" || sType === "BAN")
+        ) {
+          if (s.userId) excludedUserIds.add(s.userId);
+        }
+      }
     }
 
     const profileByUserId = new Map<string, any>();
@@ -247,6 +283,7 @@ export class RadarService {
     // 5. Privacy-filtered, deterministically fuzzed athlete home-base pins
     if (want("ATHLETE")) {
       for (const p of allProfiles) {
+        if (excludedUserIds.has(p.userId) || excludedUserIds.has(p.id)) continue;
         if (p.isSearchable === false) continue;
         if (typeof p.latitude !== "number" || typeof p.longitude !== "number") continue;
 
@@ -297,6 +334,7 @@ export class RadarService {
         .where(gt(radarBeacons.expiresAt, now));
 
       for (const b of activeBeacons) {
+        if (excludedUserIds.has(b.userId)) continue;
         if (typeof b.latitude !== "number" || typeof b.longitude !== "number") continue;
         if (!isWithinBounds(b.latitude, b.longitude, bounds)) continue;
 
@@ -372,11 +410,13 @@ export class RadarService {
 
     const now = new Date();
     let expiresAt: Date;
-    if (input.expiresAt) {
+    if (typeof input.durationHours === "number" && Number.isFinite(input.durationHours)) {
+      const hours = Math.min(336, Math.max(1, input.durationHours));
+      expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1000);
+    } else if (input.expiresAt) {
       expiresAt = input.expiresAt;
     } else {
-      const hours = Math.min(336, Math.max(1, input.durationHours ?? 6));
-      expiresAt = new Date(now.getTime() + hours * 60 * 60 * 1000);
+      expiresAt = new Date(now.getTime() + 6 * 60 * 60 * 1000);
     }
 
     if (isNaN(expiresAt.getTime()) || expiresAt <= now) {

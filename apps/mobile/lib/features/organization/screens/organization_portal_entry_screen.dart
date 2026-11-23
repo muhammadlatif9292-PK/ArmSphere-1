@@ -6,6 +6,7 @@ import '../../../core/api/repositories.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/organization_session_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -191,13 +192,14 @@ class _OrganizationPortalEntryScreenState
                       final orgId = org['id']?.toString() ?? '';
                       final isSelected =
                           _selectedOrganization?['id']?.toString() == orgId;
-                      final name =
-                          (org['name'] ?? 'Sanctioning Organization').toString();
-                      final province = (org['province'] ?? '').toString();
-                      final city = (org['city'] ?? '').toString();
-                      final locationLabel = [city, province]
-                          .where((s) => s.trim().isNotEmpty)
-                          .join(' • ');
+                      final name = ArmSphereFormatters.formatOrganizationName(
+                        org['name']?.toString(),
+                        fallback: 'Sanctioning Organization',
+                      );
+                      final locationLabel = ArmSphereFormatters.formatCleanAddress([
+                        org['city']?.toString(),
+                        org['province']?.toString(),
+                      ]);
 
                       return TactilePressWrapper(
                         onTap: () {
@@ -352,17 +354,18 @@ class _OrganizationPortalEntryScreenState
 
   @override
   Widget build(BuildContext context) {
-    final orgName =
-        (_selectedOrganization?['name'] ?? 'Select Approved Federation')
-            .toString();
-    final orgProvince = (_selectedOrganization?['province'] ?? '').toString();
-    final orgCity = (_selectedOrganization?['city'] ?? '').toString();
-    final orgSanction =
-        (_selectedOrganization?['sanctioningBody'] ?? 'Approved Federation')
-            .toString();
-    final locationSubtitle = [orgCity, orgProvince]
-        .where((s) => s.trim().isNotEmpty)
-        .join(' • ');
+    final orgName = ArmSphereFormatters.formatOrganizationName(
+      _selectedOrganization?['name']?.toString(),
+      fallback: 'Select Approved Federation',
+    );
+    final orgSanction = ArmSphereFormatters.formatOrganizationName(
+      _selectedOrganization?['sanctioningBody']?.toString(),
+      fallback: 'Approved Federation',
+    );
+    final locationSubtitle = ArmSphereFormatters.formatCleanAddress([
+      _selectedOrganization?['city']?.toString(),
+      _selectedOrganization?['province']?.toString(),
+    ]);
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,

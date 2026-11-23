@@ -139,24 +139,15 @@ class CrystalModalSheet extends StatelessWidget {
         maxHeight: media.size.height * maxHeightFactor,
       ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xF00B101B),
-            Color(0xF5080C14),
-            Color(0xF8060910),
-          ],
-          stops: [0.0, 0.55, 1.0],
-        ),
+        color: AppTheme.overlayG6Surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(
-          color: const Color(0x33FFFFFF),
+          color: AppTheme.overlayG6Border,
           width: 1.0,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0xB3000000),
+            color: AppTheme.overlayG6Barrier,
             blurRadius: 32,
             spreadRadius: 2,
             offset: Offset(0, -8),

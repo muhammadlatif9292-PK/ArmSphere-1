@@ -47,7 +47,7 @@ class TeamsListScreen extends ConsumerWidget {
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.teams),
         leading: const CrystalBackButton(),
         title: const Text(
-          'My Teams & Clubs',
+          'My Teams',
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontWeight: FontWeight.bold,
@@ -56,7 +56,7 @@ class TeamsListScreen extends ConsumerWidget {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: CrystalHeaderActionPill(
                 key: const ValueKey('teams_list_create_button'),
@@ -66,7 +66,6 @@ class TeamsListScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const CrystalHomeButton(),
         ],
       ),
       body: Stack(
@@ -369,11 +368,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
     final name = member['displayName']?.toString() ?? 'this athlete';
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierColor: AppTheme.overlayG6Barrier,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.overlayG6Surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          side: const BorderSide(color: AppTheme.border, width: 1.0),
+          side: const BorderSide(color: AppTheme.overlayG6Border, width: 1.0),
         ),
         title: const Text(
           'Remove Member',
@@ -425,11 +425,12 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierColor: AppTheme.overlayG6Barrier,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.overlayG6Surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          side: const BorderSide(color: AppTheme.border, width: 1.0),
+          side: const BorderSide(color: AppTheme.overlayG6Border, width: 1.0),
         ),
         title: Text(
           actionTitle,
@@ -763,29 +764,39 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                           ),
                           const SizedBox(width: AppTheme.space12),
                           Expanded(
-                            child: Text(
-                              team['name']?.toString() ?? 'Team',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary,
-                              ),
-                              maxLines: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  team['name']?.toString() ?? 'Team',
+                                  style: const TextStyle(
+                                    fontFamily: AppTheme.fontDisplay,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textPrimary,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (canManage) ...[
+                                  const SizedBox(height: 6),
+                                  const StatusChip(
+                                    label: 'YOU ARE CAPTAIN',
+                                    type: StatusType.warning,
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
-                          if (canManage) ...[
+                          if (canManage)
                             IconButton(
                               key: const ValueKey('edit_team_button'),
                               tooltip: 'Edit Team Metadata',
+                              visualDensity: VisualDensity.compact,
                               icon: const Icon(Icons.edit_outlined, size: 18, color: AppTheme.goldPrimary),
                               onPressed: _busy ? null : () => _openEditTeamSheet(team),
                             ),
-                            const StatusChip(
-                              label: 'YOU ARE CAPTAIN',
-                              type: StatusType.warning,
-                            ),
-                          ],
                         ],
                       ),
                       if ((team['description'] as String?)?.isNotEmpty == true) ...[
@@ -1010,22 +1021,25 @@ class _TeamDetailScreenState extends ConsumerState<TeamDetailScreen> {
                                         ],
                                       ],
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      isMemberCaptain ? 'Team Captain' : 'Team Member',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: isMemberCaptain ? AppTheme.goldPrimary : AppTheme.textSecondary,
-                                      ),
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          isMemberCaptain ? 'Team Captain' : 'Team Member',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isMemberCaptain ? AppTheme.goldPrimary : AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                        if (isMemberCaptain) ...[
+                                          const SizedBox(width: 8),
+                                          const StatusChip(label: 'CAPTAIN', type: StatusType.warning),
+                                        ],
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
-                              // Captain actions or Member Chip
-                              if (isMemberCaptain) ...[
-                                const StatusChip(label: 'CAPTAIN', type: StatusType.warning),
-                                if (canManage && !isMe) const SizedBox(width: 4),
-                              ],
                               if (canManage && !isMe)
                                 PopupMenuButton<String>(
                                   tooltip: 'Athlete Options',

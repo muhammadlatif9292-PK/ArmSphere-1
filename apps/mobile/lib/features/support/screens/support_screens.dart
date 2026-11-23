@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/providers/support_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 import '../../../core/utils/error_formatter.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
@@ -80,7 +81,7 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
         ),
         leading: CrystalBackButton.maybeForInnerScreen(context),
         title: Text(
-          isStaff ? 'Helpdesk Triage Queue' : 'Support & Helpdesk',
+          isStaff ? 'Helpdesk Triage' : 'Helpdesk',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -114,13 +115,12 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
               Container(
                 height: 48,
                 color: AppTheme.glassSurface,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _filters.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final item = _filters[index];
+                alignment: Alignment.centerLeft,
+                child: CrystalHorizontalChipStrip(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  spacing: 8,
+                  children: _filters.map((item) {
                     final selected = _statusFilter == item['value'];
                     return Center(
                       child: ChoiceChip(
@@ -143,7 +143,7 @@ class _SupportTicketsScreenState extends ConsumerState<SupportTicketsScreen> {
                         },
                       ),
                     );
-                  },
+                  }).toList(),
                 ),
               ),
               const Divider(height: 1, color: AppTheme.borderTitanium),
@@ -421,8 +421,8 @@ class _CreateSupportTicketScreenState
               children: [
                 DropdownButtonFormField<String>(
                   initialValue: _category,
-                  dropdownColor: AppTheme.cardSurface,
-                  style: const TextStyle(color: AppTheme.textPrimary),
+                  dropdownColor: AppTheme.overlayG6Surface,
+                  style: const TextStyle(color: AppTheme.textPure),
                   decoration: InputDecoration(
                     labelText: 'Category',
                     filled: true,
@@ -442,8 +442,8 @@ class _CreateSupportTicketScreenState
                 const SizedBox(height: AppTheme.space16),
                 DropdownButtonFormField<String>(
                   initialValue: _priority,
-                  dropdownColor: AppTheme.cardSurface,
-                  style: const TextStyle(color: AppTheme.textPrimary),
+                  dropdownColor: AppTheme.overlayG6Surface,
+                  style: const TextStyle(color: AppTheme.textPure),
                   decoration: InputDecoration(
                     labelText: 'Priority',
                     filled: true,

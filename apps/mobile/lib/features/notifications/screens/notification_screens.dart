@@ -155,7 +155,6 @@ class _NotificationsListScreenState
               icon: Icons.done_all_rounded,
               onTap: _markAllRead,
             ),
-          const CrystalHomeButton(),
         ],
       ),
       body: Stack(

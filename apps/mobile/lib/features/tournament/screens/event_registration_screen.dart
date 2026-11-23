@@ -17,6 +17,7 @@ import '../../../features/auth/providers/auth_provider.dart';
 import '../services/tournament_offline_store.dart';
 import 'event_qr_passport_screen.dart';
 import 'tournament_screens.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
 class EventRegistrationScreen extends ConsumerStatefulWidget {
@@ -53,13 +54,13 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
 
   String _currentAthleteName() {
     final profile = ref.read(athleteProfileProvider).valueOrNull;
-    final name = profile?['displayName'] ?? profile?['name'];
+    final name = profile?['displayName'] ?? profile?['fullName'] ?? profile?['name'];
     if (name != null && name.toString().trim().isNotEmpty) {
       return name.toString().trim();
     }
     final auth = ref.read(authProvider);
     final user = auth.userProfile?['user'] as Map<String, dynamic>? ?? auth.userProfile ?? {};
-    return (user['displayName'] ?? user['name'] ?? 'ArmSphere Athlete').toString();
+    return (user['displayName'] ?? user['fullName'] ?? user['name'] ?? 'ArmSphere Athlete').toString();
   }
 
   Future<void> _submit() async {
@@ -104,25 +105,38 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
     }
 
     if (!mounted) return;
+    final currentEvent = ref.read(tournamentDetailProvider(widget.tournamentId)).valueOrNull;
+    final feeCents = (currentEvent?['registrationFeeCents'] as num?)?.toInt() ?? 0;
+    final feePkr = (currentEvent?['entryFeePkr'] as num?)?.toInt() ?? 0;
+    final isFreeEvent = feeCents <= 0 && feePkr <= 0;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registration Recorded! Spot held pending payment.'),
+      CrystalSnackBar(
+        content: Text(
+          isFreeEvent
+              ? 'Registration Confirmed! Your official QR credential is ready.'
+              : 'Registration Recorded! Complete event fee check-in to finalize.',
+        ),
         backgroundColor: AppTheme.emerald,
+        behavior: SnackBarBehavior.floating,
       ),
     );
     await _showOfflineSafeSubmittedQrDialog(localEntry);
   }
 
   Future<void> _showOfflineSafeSubmittedQrDialog(Map<String, dynamic> localEntry) async {
-    final qrData = (localEntry['qrCode'] ?? 'ARMSPHERE-QR').toString();
+    final qrData = (localEntry['qrCode'] ?? localEntry['qrCodePayload'] ?? 'ARMSPHERE-QR').toString();
+    final armLabel = ArmSphereFormatters.formatArmLabel(
+      (localEntry['registeredArm'] ?? localEntry['arm'] ?? _armChoice).toString(),
+    );
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
+      barrierColor: AppTheme.overlayG6Barrier,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.cardSurface,
+        backgroundColor: AppTheme.overlayG6Surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppTheme.emerald, width: 1.5),
+          side: const BorderSide(color: AppTheme.overlayG6Border, width: 1.4),
         ),
         title: const Row(
           children: [
@@ -130,7 +144,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'SUBMITTED / DONE ✓',
+                'REGISTRATION CONFIRMED',
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w900,
@@ -145,7 +159,7 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${localEntry['athleteName']} • ${localEntry['registeredWeightLabel']} (${localEntry['registeredArm']} Arm)',
+              '${localEntry['athleteName']} • ${localEntry['registeredWeightLabel'] ?? localEntry['weightCategory'] ?? _selectedWeightClass} ($armLabel)',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontFamily: AppTheme.fontDisplay,
@@ -353,7 +367,6 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
             tooltip: 'View Event QR Passport',
             onPressed: () => context.push('/tournament/${widget.tournamentId}/qr'),
           ),
-          const CrystalHomeButton(),
         ],
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -472,74 +485,90 @@ class _EventRegistrationScreenState extends ConsumerState<EventRegistrationScree
                               ),
                             ),
                             const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                for (final preset in const [
-                                  ('SENIOR', '-70kg', 'RIGHT', '12/16', 'FILLING UP'),
-                                  ('SENIOR', '-78kg', 'RIGHT', '11/16', 'OPEN'),
-                                  ('SENIOR', '-85kg', 'RIGHT', '10/16', 'OPEN'),
-                                  ('SENIOR', '-85kg', 'BOTH', '8/16', 'OPEN'),
-                                  ('SENIOR', '-95kg', 'RIGHT', '14/16', 'FILLING UP'),
-                                  ('SENIOR', '+95kg', 'BOTH', '9/16', 'OPEN'),
-                                ])
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedDivision = preset.$1;
-                                        _selectedWeightClass = preset.$2;
-                                        _armChoice = preset.$3;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: (_selectedDivision == preset.$1 &&
-                                                  _selectedWeightClass == preset.$2 &&
-                                                  _armChoice == preset.$3)
-                                              ? AppTheme.goldPrimary
-                                              : const Color(0x33FFFFFF),
-                                          width: (_selectedDivision == preset.$1 &&
-                                                  _selectedWeightClass == preset.$2 &&
-                                                  _armChoice == preset.$3)
-                                              ? 1.4
-                                              : 1.0,
+                            Builder(
+                              builder: (context) {
+                                final eventData = eventAsync.valueOrNull;
+                                final rawCats = (eventData?['weightCategories'] is List)
+                                    ? (eventData!['weightCategories'] as List).whereType<Map>().toList()
+                                    : const <Map>[];
+                                final dynamicPresets = rawCats.isNotEmpty
+                                    ? rawCats
+                                        .where((c) => c['enabled'] != false)
+                                        .map((c) => (
+                                              (c['division'] ?? 'SENIOR').toString().toUpperCase(),
+                                              (c['weightLabel'] ?? c['label'] ?? '-85kg').toString(),
+                                              (c['arm'] ?? 'RIGHT').toString().toUpperCase(),
+                                            ))
+                                        .toList()
+                                    : const <(String, String, String)>[
+                                        ('SENIOR', '-70kg', 'RIGHT'),
+                                        ('SENIOR', '-78kg', 'RIGHT'),
+                                        ('SENIOR', '-85kg', 'RIGHT'),
+                                        ('SENIOR', '-85kg', 'BOTH'),
+                                        ('SENIOR', '-95kg', 'RIGHT'),
+                                        ('SENIOR', '+95kg', 'BOTH'),
+                                      ];
+                                return Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    for (final preset in dynamicPresets)
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedDivision = preset.$1;
+                                            _selectedWeightClass = preset.$2;
+                                            _armChoice = preset.$3;
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(10),
+                                            border: Border.all(
+                                              color: (_selectedDivision == preset.$1 &&
+                                                      _selectedWeightClass == preset.$2 &&
+                                                      _armChoice == preset.$3)
+                                                  ? AppTheme.goldPrimary
+                                                  : const Color(0x33FFFFFF),
+                                              width: (_selectedDivision == preset.$1 &&
+                                                      _selectedWeightClass == preset.$2 &&
+                                                      _armChoice == preset.$3)
+                                                  ? 1.4
+                                                  : 1.0,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                '${preset.$2} • ${ArmSphereFormatters.formatArmLabel(preset.$3)}',
+                                                style: const TextStyle(
+                                                  fontFamily: AppTheme.fontDisplay,
+                                                  fontSize: 11.5,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${ArmSphereFormatters.formatDivisionLabel(preset.$1)} • Open',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: AppTheme.emerald,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '${preset.$2} • ${preset.$3 == "BOTH" ? "R+L Arms" : "${preset.$3} Arm"}',
-                                            style: const TextStyle(
-                                              fontFamily: AppTheme.fontDisplay,
-                                              fontSize: 11.5,
-                                              fontWeight: FontWeight.w800,
-                                              color: AppTheme.textPrimary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            '${preset.$4} Spots • ${preset.$5}',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: preset.$5 == 'FILLING UP'
-                                                  ? AppTheme.goldPrimary
-                                                  : AppTheme.emerald,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         ),

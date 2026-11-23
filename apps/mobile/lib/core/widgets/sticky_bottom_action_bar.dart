@@ -111,11 +111,11 @@ class StickyBottomActionBar extends StatelessWidget {
         Row(
           children: [
             if (secondaryAction != null) ...[
-              Expanded(flex: 1, child: secondaryAction!),
-              const SizedBox(width: AppTheme.space12),
+              Expanded(flex: 5, child: secondaryAction!),
+              const SizedBox(width: 10),
             ],
             Expanded(
-              flex: secondaryAction != null ? 2 : 1,
+              flex: secondaryAction != null ? 6 : 1,
               child: TactilePressWrapper(
                 onTap: !isEnabled
                     ? null

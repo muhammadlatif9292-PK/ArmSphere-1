@@ -102,8 +102,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
       stageDomain: ArmSphereStageDomain.passport,
       appBar: AppBar(
         leading: const CrystalBackButton(fallbackRoute: '/settings/roles'),
-        title: const Text('Apply for Federation Role'),
-        actions: const [CrystalHomeButton()],
+        title: const Text('Role Application'),
       ),
       primaryActionLabel: 'Submit Application',
       primaryActionIcon: Icons.badge_outlined,

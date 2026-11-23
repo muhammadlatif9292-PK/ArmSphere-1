@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
@@ -116,7 +117,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
     final suspendDaysCtrl = TextEditingController(text: '30');
 
     final certAuthorityCtrl = TextEditingController(
-      text: 'Pakistan Armwrestling Federation (PAF)',
+      text: 'Pakistan Armwrestling Federation (PAFF)',
     );
     final certExpiryCtrl = TextEditingController(text: '2027-12-31');
     final certNotesCtrl = TextEditingController();
@@ -124,6 +125,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
 
     int activeActionTab = 0; // 0: Review, 1: Override, 2: Certs, 3: Discipline
     bool isSubmitting = false;
+    String? sanctionReasonError;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -265,20 +267,26 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                             children: [
                               Expanded(
                                 child: CrystalActionButton(
-                                  label: 'APPROVE (VERIFY)',
+                                  label: currentStatus == 'VERIFIED'
+                                      ? 'VERIFIED ✓'
+                                      : 'APPROVE (VERIFY)',
                                   icon: Icons.verified_rounded,
-                                  accentColor: AppTheme.success,
+                                  accentColor: currentStatus == 'VERIFIED'
+                                      ? AppTheme.textMuted
+                                      : AppTheme.success,
                                   isLoading: isSubmitting,
-                                  onTap: () => runMutation(
-                                    () => ref
-                                        .read(adminRepositoryProvider)
-                                        .reviewAthlete(
-                                          athleteId: athleteId,
-                                          status: 'VERIFIED',
-                                          reason: reasonCtrl.text.trim(),
-                                        ),
-                                    'Verified athlete $displayName',
-                                  ),
+                                  onTap: currentStatus == 'VERIFIED'
+                                      ? null
+                                      : () => runMutation(
+                                            () => ref
+                                                .read(adminRepositoryProvider)
+                                                .reviewAthlete(
+                                                  athleteId: athleteId,
+                                                  status: 'VERIFIED',
+                                                  reason: reasonCtrl.text.trim(),
+                                                ),
+                                            'Verified athlete $displayName',
+                                          ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -474,8 +482,10 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                                 c['certificationLevel']?.toString() ??
                                     c['level']?.toString() ??
                                     'PROVINCIAL';
-                            final authority =
-                                c['issuingAuthority']?.toString() ?? 'PAF';
+                            final authority = ArmSphereFormatters.formatOrganizationName(
+                              c['issuingAuthority']?.toString(),
+                              fallback: 'PAFF',
+                            );
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: ElevatedActionCard(
@@ -645,17 +655,33 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                         TextField(
                           controller: reasonCtrl,
                           maxLines: 3,
+                          onChanged: (_) {
+                            if (sanctionReasonError != null) {
+                              setSheetState(() => sanctionReasonError = null);
+                            }
+                          },
                           style: const TextStyle(
                             color: AppTheme.textPure,
                             fontSize: 13.5,
                           ),
                           decoration: CrystalModalSheet.inputDecoration(
                             labelText:
-                                'Mandatory Disciplinary / Reinstatement Reason',
+                                'Disciplinary Reason (Required for Suspension)',
                             hintText:
                                 'Cite rulebook article or executive ruling...',
                           ),
                         ),
+                        if (sanctionReasonError != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            sanctionReasonError!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.crimson,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 14),
                         if (!canDiscipline)
                           const Text(
@@ -675,7 +701,13 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                                   accentColor: AppTheme.warning,
                                   isLoading: isSubmitting,
                                   onTap: () {
-                                    if (reasonCtrl.text.trim().isEmpty) return;
+                                    if (reasonCtrl.text.trim().isEmpty) {
+                                      setSheetState(() {
+                                        sanctionReasonError =
+                                            'Please enter a disciplinary reason before suspending this athlete.';
+                                      });
+                                      return;
+                                    }
                                     runMutation(
                                       () => ref
                                           .read(adminRepositoryProvider)
@@ -699,7 +731,13 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                                   accentColor: AppTheme.crimson,
                                   isLoading: isSubmitting,
                                   onTap: () {
-                                    if (reasonCtrl.text.trim().isEmpty) return;
+                                    if (reasonCtrl.text.trim().isEmpty) {
+                                      setSheetState(() {
+                                        sanctionReasonError =
+                                            'Please enter a disciplinary reason before blacklisting this athlete.';
+                                      });
+                                      return;
+                                    }
                                     runMutation(
                                       () => ref
                                           .read(adminRepositoryProvider)
@@ -722,7 +760,13 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                             accentColor: AppTheme.success,
                             isLoading: isSubmitting,
                             onTap: () {
-                              if (reasonCtrl.text.trim().isEmpty) return;
+                              if (reasonCtrl.text.trim().isEmpty) {
+                                setSheetState(() {
+                                  sanctionReasonError =
+                                      'Please enter a reinstatement note before updating standing.';
+                                });
+                                return;
+                              }
                               runMutation(
                                 () => ref
                                     .read(adminRepositoryProvider)
@@ -756,9 +800,11 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
     required String? jurisdiction,
   }) async {
     final String refereeId = referee['id']?.toString() ?? '';
-    final String name = referee['displayName']?.toString() ??
-        referee['name']?.toString() ??
-        'Certified Referee';
+    final String name = (referee['fullName'] ??
+            referee['displayName'] ??
+            referee['name'] ??
+            'Certified Official')
+        .toString();
     String selectedLevel = (referee['licenseLevel'] ??
             referee['certificationLevel'] ??
             'PROVINCIAL')
@@ -1266,9 +1312,11 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
           )
         else
           ...filtered.map((referee) {
-            final name = referee['displayName']?.toString() ??
-                referee['name']?.toString() ??
-                'Official Referee';
+            final name = (referee['fullName'] ??
+                    referee['displayName'] ??
+                    referee['name'] ??
+                    'Certified Official')
+                .toString();
             final level = (referee['licenseLevel'] ??
                     referee['certificationLevel'] ??
                     'PROVINCIAL')

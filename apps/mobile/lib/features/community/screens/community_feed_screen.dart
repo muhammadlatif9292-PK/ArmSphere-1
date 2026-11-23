@@ -22,6 +22,7 @@ import 'video_player_modal.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/championship_name_marquee.dart';
+import '../models/community_video_category.dart';
 
 /// Opens a creative Forged-Crystal Share Sheet for a Community Arena clip.
 void _showCreativeShareSheet(
@@ -253,17 +254,13 @@ class CommunityFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
-  String _selectedCategory = 'ALL';
+  CommunityVideoCategory? _selectedCategory;
   bool _isVerticalClipsMode = false;
   final ValueNotifier<String?> _activeVideoPostId = ValueNotifier<String?>(null);
 
-  final List<String> _categories = const [
-    'ALL',
-    'TECHNIQUE',
-    'SPARRING',
-    'TOURNAMENTS',
-    'PODCASTS',
-    'REFEREE',
+  static const List<CommunityVideoCategory?> _filterOptions = [
+    null, // All
+    ...CommunityVideoCategory.values,
   ];
 
   @override
@@ -419,11 +416,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 3),
-                    itemCount: _categories.length,
+                    itemCount: _filterOptions.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
-                      final cat = _categories[index];
+                      final cat = _filterOptions[index];
                       final isSelected = cat == _selectedCategory;
+                      final pillLabel = cat?.label.toUpperCase() ?? 'ALL';
                       return GestureDetector(
                         onTap: () {
                           HapticFeedback.selectionClick();
@@ -450,7 +448,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            cat,
+                            pillLabel,
                             style: TextStyle(
                               fontFamily: 'Space Grotesk',
                               fontSize: 11,
@@ -491,23 +489,21 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                                 ref.read(authProvider.notifier).logout(),
                           ),
                           data: (allPosts) {
-                            final posts = _selectedCategory == 'ALL'
-                                ? allPosts
-                                : allPosts.where((p) {
-                                    final cat = p['category']
-                                            ?.toString()
-                                            .toUpperCase() ??
-                                        '';
-                                    return cat.contains(_selectedCategory);
-                                  }).toList();
+                            final posts = allPosts
+                                .where((p) =>
+                                    CommunityVideoCategory.matchesFilter(
+                                      p['category']?.toString(),
+                                      _selectedCategory,
+                                    ))
+                                .toList();
                             if (posts.isEmpty) {
                               return Center(
                                 child: AppEmptyState(
                                   icon: Icons.videocam_off_outlined,
                                   title: 'No clips found',
-                                  subtitle: _selectedCategory == 'ALL'
+                                  subtitle: _selectedCategory == null
                                       ? 'Be the first to share a training or match video.'
-                                      : 'No clips currently tagged with $_selectedCategory.',
+                                      : 'No clips currently tagged with ${_selectedCategory!.label}.',
                                   ctaLabel: 'Share a video',
                                   onCtaTap: () =>
                                       context.push('/community/post/create'),
@@ -549,15 +545,13 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                                   ref.read(authProvider.notifier).logout(),
                             ),
                             data: (allPosts) {
-                              final posts = _selectedCategory == 'ALL'
-                                  ? allPosts
-                                  : allPosts.where((p) {
-                                      final cat = p['category']
-                                              ?.toString()
-                                              .toUpperCase() ??
-                                          '';
-                                      return cat.contains(_selectedCategory);
-                                    }).toList();
+                              final posts = allPosts
+                                  .where((p) =>
+                                      CommunityVideoCategory.matchesFilter(
+                                        p['category']?.toString(),
+                                        _selectedCategory,
+                                      ))
+                                  .toList();
 
                               if (posts.isEmpty) {
                                 return SingleChildScrollView(
@@ -566,9 +560,9 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                                   child: AppEmptyState(
                                     icon: Icons.videocam_off_outlined,
                                     title: 'No clips found',
-                                    subtitle: _selectedCategory == 'ALL'
+                                    subtitle: _selectedCategory == null
                                         ? 'Be the first to share a training or match video from YouTube, TikTok, or Facebook.'
-                                        : 'No clips currently tagged with $_selectedCategory. Check back soon or upload one!',
+                                        : 'No clips currently tagged with ${_selectedCategory!.label}. Check back soon or upload one!',
                                     ctaLabel: 'Share a video',
                                     onCtaTap: () => context
                                         .push('/community/post/create'),
@@ -651,16 +645,20 @@ class _TacticalFeedCard extends ConsumerWidget {
     final platform = (post['platform']?.toString() ?? 'YOUTUBE').toUpperCase();
     final rawUrl = post['externalUrl']?.toString() ?? '';
     final embedUrl = EmbedUrlBuilder.getEmbedUrl(rawUrl, platform) ?? rawUrl;
-    final category = (post['category']?.toString() ?? 'TECHNIQUE').toUpperCase();
+    final rawCategory = post['category']?.toString();
+    final resolvedCategory = CommunityVideoCategory.fromWire(rawCategory);
+    final category = CommunityVideoCategory.displayLabelFor(rawCategory).toUpperCase();
     final caption = post['caption']?.toString() ?? '';
     final rawDate = post['createdAt']?.toString() ?? '';
     final dateDisplay = rawDate.isNotEmpty ? rawDate.split('T').first : '';
     final postId = post['id']?.toString() ?? '';
     final ytId = EmbedUrlBuilder.extractYouTubeId(rawUrl);
     final thumbnailUrl = ytId != null ? 'https://img.youtube.com/vi/$ytId/hqdefault.jpg' : null;
-    final fallbackCombatAsset = (category == 'SPARRING' || category == 'TECHNIQUE')
-        ? ArmSphereAssets.clipFallbackSparring
-        : ArmSphereAssets.clipFallbackMatch;
+    final fallbackCombatAsset =
+        (resolvedCategory == CommunityVideoCategory.sparring ||
+                resolvedCategory == CommunityVideoCategory.technique)
+            ? ArmSphereAssets.clipFallbackSparring
+            : ArmSphereAssets.clipFallbackMatch;
 
     return RepaintBoundary(
       child: Container(
@@ -1012,12 +1010,15 @@ class _VerticalClipsFeedState extends ConsumerState<_VerticalClipsFeed> {
         final platform = (post['platform']?.toString() ?? 'YOUTUBE').toUpperCase();
         final rawUrl = post['externalUrl']?.toString() ?? '';
         final embedUrl = EmbedUrlBuilder.getEmbedUrl(rawUrl, platform) ?? rawUrl;
-        final category = (post['category']?.toString() ?? 'TECHNIQUE').toUpperCase();
+        final rawCategory = post['category']?.toString();
+        final resolvedCategory = CommunityVideoCategory.fromWire(rawCategory);
+        final category = CommunityVideoCategory.displayLabelFor(rawCategory).toUpperCase();
         final caption = post['caption']?.toString() ?? '';
         final postId = post['id']?.toString() ?? '';
         final ytId = EmbedUrlBuilder.extractYouTubeId(rawUrl);
         final thumbnailUrl = ytId != null ? 'https://img.youtube.com/vi/$ytId/hqdefault.jpg' : null;
-        final fallbackCombatAsset = (category == 'SPARRING' || category == 'TECHNIQUE')
+        final fallbackCombatAsset = (resolvedCategory == CommunityVideoCategory.sparring ||
+                resolvedCategory == CommunityVideoCategory.technique)
             ? ArmSphereAssets.heroGrip
             : ArmSphereAssets.heroArena;
 
@@ -1170,20 +1171,7 @@ class _VerticalClipsFeedState extends ConsumerState<_VerticalClipsFeed> {
 }
 
 Color _getCategoryColor(String cat) {
-  switch (cat) {
-    case 'HOOK':
-      return AppTheme.goldPrimary;
-    case 'TOPROLL':
-      return AppTheme.info;
-    case 'PRESS':
-      return AppTheme.error;
-    case 'SPARRING':
-      return AppTheme.warning;
-    case 'REFEREE':
-      return AppTheme.success;
-    default:
-      return AppTheme.goldPrimary;
-  }
+  return CommunityVideoCategory.accentColorFor(cat);
 }
 
 String _initial(String? name) {

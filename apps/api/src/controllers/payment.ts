@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getStripe } from "../services/stripe.js";
+import { getStripe, isStripeConfigured } from "../services/stripe.js";
 import { env } from "../config/env.js";
 import { db } from "../config/db.js";
 import { payments, eventRegistrations, athleteProfiles, processedStripeEvents, ticketTypes, tickets } from "@armsphere/db-schema";
@@ -170,6 +170,17 @@ export class PaymentController {
 
   static async getPaymentMethods(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!isStripeConfigured()) {
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          data: [],
+        });
+        return;
+      }
+
       const stripe = getStripe();
       const userId = req.user!.id;
       const email = req.user!.email;
@@ -181,7 +192,13 @@ export class PaymentController {
         .limit(1);
 
       if (!profile) {
-        throw new NotFoundError("Athlete profile not found");
+        res.status(200).json({
+          success: true,
+          enabled: true,
+          meta: { paymentConfigured: true },
+          data: [],
+        });
+        return;
       }
 
       let stripeCustomerId = profile.stripeCustomerId;
@@ -214,8 +231,30 @@ export class PaymentController {
         expYear: pm.card?.exp_year || 0,
       }));
 
-      res.status(200).json({ success: true, data: formattedMethods });
-    } catch (error) {
+      res.status(200).json({
+        success: true,
+        enabled: true,
+        meta: { paymentConfigured: true },
+        data: formattedMethods,
+      });
+    } catch (error: any) {
+      // If Stripe rejects an unconfigured/invalid API key, degrade gracefully instead of HTTP 500
+      const msg = String(error?.message || "");
+      if (
+        error?.type === "StripeAuthenticationError" ||
+        msg.includes("STRIPE_SECRET_KEY") ||
+        msg.includes("Invalid API Key")
+      ) {
+        logger.warn({ err: msg }, "Stripe gateway not configured; returning graceful disabled state");
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          data: [],
+        });
+        return;
+      }
       next(error);
     }
   }
@@ -262,6 +301,17 @@ export class PaymentController {
 
   static async createSetupIntent(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (!isStripeConfigured()) {
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          clientSecret: null,
+        });
+        return;
+      }
+
       const stripe = getStripe();
       const userId = req.user!.id;
       const email = req.user!.email;
@@ -300,10 +350,27 @@ export class PaymentController {
 
       res.status(201).json({
         success: true,
+        enabled: true,
+        meta: { paymentConfigured: true },
         clientSecret: setupIntent.client_secret,
         customerId: stripeCustomerId,
       });
-    } catch (error) {
+    } catch (error: any) {
+      const msg = String(error?.message || "");
+      if (
+        error?.type === "StripeAuthenticationError" ||
+        msg.includes("STRIPE_SECRET_KEY") ||
+        msg.includes("Invalid API Key")
+      ) {
+        res.status(200).json({
+          success: true,
+          enabled: false,
+          reason: "not_configured",
+          meta: { paymentConfigured: false },
+          clientSecret: null,
+        });
+        return;
+      }
       next(error);
     }
   }

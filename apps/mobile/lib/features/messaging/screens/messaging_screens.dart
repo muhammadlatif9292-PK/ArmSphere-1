@@ -108,7 +108,10 @@ class ConversationsListScreen extends ConsumerWidget {
                 return RepaintBoundary(
                   child: ElevatedActionCard(
                     padding: const EdgeInsets.all(AppTheme.space14),
-                    onTap: () => context.push('/messages/${c['id']}'),
+                    onTap: () => context.push(
+                      '/messages/${c['id']}',
+                      extra: {'recipientName': name},
+                    ),
                     child: Row(
                       children: [
                         // Avatar with 2px Ring
@@ -220,8 +223,13 @@ class ConversationsListScreen extends ConsumerWidget {
 /// - Dark input composer adhering to InputDecorationTheme with tactile haptic impulse.
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
+  final String? recipientName;
 
-  const ChatScreen({super.key, required this.conversationId});
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    this.recipientName,
+  });
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -273,13 +281,71 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  String _resolveRecipientName({
+    required AsyncValue<List<Map<String, dynamic>>> conversationsAsync,
+    required AsyncValue<List<Map<String, dynamic>>> messagesAsync,
+    required String? myUserId,
+  }) {
+    final direct = widget.recipientName?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+
+    final conversations = conversationsAsync.valueOrNull;
+    if (conversations != null) {
+      for (final c in conversations) {
+        if (c['id']?.toString() == widget.conversationId) {
+          final other = c['otherParticipant'] is Map
+              ? c['otherParticipant'] as Map
+              : null;
+          final candidate = (other?['displayName'] ??
+                  other?['fullName'] ??
+                  other?['name'] ??
+                  c['participantName'] ??
+                  c['otherParticipantName'] ??
+                  c['title'])
+              ?.toString()
+              .trim();
+          if (candidate != null && candidate.isNotEmpty) {
+            return candidate;
+          }
+        }
+      }
+    }
+
+    final messages = messagesAsync.valueOrNull;
+    if (messages != null) {
+      for (final m in messages) {
+        final senderId = m['senderId']?.toString();
+        if (myUserId == null || senderId != myUserId) {
+          final sender = m['sender'] is Map ? m['sender'] as Map : null;
+          final candidate = (m['senderName'] ??
+                  sender?['displayName'] ??
+                  sender?['fullName'] ??
+                  sender?['name'])
+              ?.toString()
+              .trim();
+          if (candidate != null && candidate.isNotEmpty) {
+            return candidate;
+          }
+        }
+      }
+    }
+
+    return 'Direct Message';
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync =
         ref.watch(messageThreadProvider(widget.conversationId));
+    final conversationsAsync = ref.watch(conversationsProvider);
     final myUserId =
         ref.watch(authProvider).userProfile?['id']?.toString();
     final isDisconnected = messagesAsync.hasError;
+    final headerTitle = _resolveRecipientName(
+      conversationsAsync: conversationsAsync,
+      messagesAsync: messagesAsync,
+      myUserId: myUserId,
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -288,9 +354,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.community),
         elevation: 0,
         leading: const CrystalBackButton(),
-        title: const Text(
-          'Match Discussion',
-          style: TextStyle(
+        title: Text(
+          headerTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,

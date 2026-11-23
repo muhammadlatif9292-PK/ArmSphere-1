@@ -112,7 +112,7 @@ class RadarPin {
   /// Human-readable countdown until beacon expiry.
   String? get expiryRemainingLabel {
     if (expiresAt == null) return null;
-    final diff = expiresAt!.difference(DateTime.now());
+    final diff = expiresAt!.toUtc().difference(DateTime.now().toUtc());
     if (diff.isNegative) return 'Expired';
     if (diff.inDays >= 1) {
       final remHours = diff.inHours % 24;
@@ -595,7 +595,6 @@ class RadarNotifier extends AutoDisposeNotifier<RadarState> {
         weightClass: weightClass,
         armPreference: armPreference,
         durationHours: durationHours,
-        expiresAt: expiresAt.toIso8601String(),
       );
 
       final serverPin = RadarPin(

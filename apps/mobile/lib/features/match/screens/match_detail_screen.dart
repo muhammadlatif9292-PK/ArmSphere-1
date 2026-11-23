@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/void_stage_scaffold.dart';
 import '../../../core/widgets/championship_name_marquee.dart';
 import '../../community/screens/video_player_modal.dart';
@@ -731,7 +732,7 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
                       border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.35)),
                     ),
                     child: Text(
-                      '$arm ARM',
+                      ArmSphereFormatters.formatArmLabel(arm, uppercase: true),
                       style: TextStyle(fontFamily: AppTheme.fontDisplay, 
                         color: AppTheme.goldPrimary,
                         fontSize: 10.5,

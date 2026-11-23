@@ -651,9 +651,9 @@ class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.4,
                     color: AppTheme.textPure,
                   ),
                 )
@@ -663,3 +663,6 @@ class CrystalAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+
+/// Canonical frosted AppBar alias for ArmSphere secondary screens.
+typedef ArmSphereAppBar = CrystalAppBar;

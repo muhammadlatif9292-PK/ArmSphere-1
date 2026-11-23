@@ -49,6 +49,15 @@ export class OrganizationController {
     }
   }
 
+  static async listFeatured(req: Request, res: Response, next: NextFunction) {
+    try {
+      const orgs = await OrganizationService.listFeaturedOrganizations();
+      res.json({ success: true, data: orgs });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async verifyAccess(req: Request, res: Response, next: NextFunction) {
     try {
       const validated = verifyAccessSchema.parse(req.body);
@@ -112,6 +121,16 @@ export class OrganizationController {
       const { id } = req.params;
       const eventsList = await TournamentService.listEvents({ organizationId: id });
       res.json({ success: true, data: eventsList });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async listChampionsForOrganization(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const champions = await OrganizationService.getChampionsForOrganization(id);
+      res.json({ success: true, data: champions });
     } catch (err) {
       next(err);
     }

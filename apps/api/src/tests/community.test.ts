@@ -57,6 +57,36 @@ describe("Community & Training Log System Tests", () => {
       expect(response.body.data.exerciseType).toBeNull();
     });
 
+    it("should accept all unified Community Arena video categories and reject unknown categories", async () => {
+      const unifiedCategories = ["TECHNIQUE", "SPARRING", "HIGHLIGHTS", "TOURNAMENTS", "TUTORIALS"];
+
+      for (const category of unifiedCategories) {
+        const res = await request(app)
+          .post("/community/links")
+          .set("Authorization", authHeader(UserRole.ATHLETE, athleteUserId))
+          .send({
+            externalUrl: `https://www.youtube.com/watch?v=${category.toLowerCase()}`,
+            category,
+            caption: `Clip for ${category}`,
+          });
+
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.category).toBe(category);
+      }
+
+      const invalidRes = await request(app)
+        .post("/community/links")
+        .set("Authorization", authHeader(UserRole.ATHLETE, athleteUserId))
+        .send({
+          externalUrl: "https://www.youtube.com/watch?v=invalid",
+          category: "RANDOM_UNSUPPORTED",
+          caption: "Should fail",
+        });
+
+      expect(invalidRes.status).toBe(400);
+    });
+
     it("should reject exercise fields on non-GYM posts", async () => {
       const response = await request(app)
         .post("/community/links")

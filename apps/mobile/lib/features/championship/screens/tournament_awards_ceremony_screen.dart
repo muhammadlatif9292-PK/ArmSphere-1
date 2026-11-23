@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
@@ -132,7 +133,9 @@ class _TournamentAwardsCeremonyScreenState
     final parts = <String>[];
     if (division != null && division.isNotEmpty) parts.add(division.toUpperCase());
     if (weightClass != null && weightClass.isNotEmpty) parts.add(weightClass.toUpperCase());
-    if (arm != null && arm.isNotEmpty) parts.add('${arm.toUpperCase()} ARM');
+    if (arm != null && arm.isNotEmpty) {
+      parts.add(ArmSphereFormatters.formatArmLabel(arm, uppercase: true));
+    }
     if (parts.isNotEmpty) return parts.join(' • ');
     final bracketName = bracket['bracketName']?.toString().trim();
     if (bracketName != null && bracketName.isNotEmpty) return bracketName.toUpperCase();

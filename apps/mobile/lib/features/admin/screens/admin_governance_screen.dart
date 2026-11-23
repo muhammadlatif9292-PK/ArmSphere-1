@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/admin_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
@@ -1014,7 +1015,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
       children: [
         AdminCrystalSearchBar(
           controller: _venueSearchCtrl,
-          hintText: 'Search partner gyms & arm-wrestling clubs...',
+          hintText: 'Search arm-wrestling gyms...',
           onChanged: (v) => setState(() => _venueSearch = v),
           onClear: () {
             _venueSearchCtrl.clear();
@@ -1077,7 +1078,13 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$city${province.isNotEmpty ? ", $province" : ""} • $tablesCount Pro Tables',
+                      () {
+                        final loc = ArmSphereFormatters.formatCleanAddress([city, province]);
+                        final tablesLabel = ArmSphereFormatters.formatProTables(
+                          int.tryParse(tablesCount.toString()) ?? 0,
+                        );
+                        return loc.isNotEmpty ? '$loc • $tablesLabel' : tablesLabel;
+                      }(),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppTheme.textSecondary,

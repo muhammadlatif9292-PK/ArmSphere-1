@@ -7,6 +7,7 @@ import '../../../core/constants/asset_paths.dart';
 import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
@@ -41,6 +42,14 @@ class _OrganizationsDirectoryScreenState
   @override
   Widget build(BuildContext context) {
     final orgsAsync = ref.watch(allOrganizationsProvider);
+    final authState = ref.watch(authProvider);
+    final activeRole = (authState.activeRole ??
+            authState.userProfile?['role']?.toString() ??
+            'ATHLETE')
+        .trim()
+        .toUpperCase();
+    final bool isSystemAdmin =
+        activeRole == 'SYSTEM_ADMIN' || activeRole == 'SUPER_ADMIN';
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -48,10 +57,13 @@ class _OrganizationsDirectoryScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        flexibleSpace: const CrystalHeaderStageBar(
+          domain: ArmSphereStageDomain.governance,
+        ),
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
-          'Sanctioning Organizations',
+          'Organizations',
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontWeight: FontWeight.w800,
@@ -60,15 +72,18 @@ class _OrganizationsDirectoryScreenState
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Register Organization',
-            icon: const Icon(Icons.add_circle_outline_rounded, color: AppTheme.goldPrimary),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              context.push('/organizations/create');
-            },
-          ),
-          const CrystalHomeButton(),
+          if (isSystemAdmin)
+            IconButton(
+              tooltip: 'Register Organization',
+              icon: const Icon(
+                Icons.add_circle_outline_rounded,
+                color: AppTheme.goldPrimary,
+              ),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                context.push('/organizations/create');
+              },
+            ),
           const SizedBox(width: 8),
         ],
       ),
@@ -319,14 +334,19 @@ class _OrganizationDirectoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = (org['id'] ?? org['slug'] ?? 'org_paff_national').toString();
-    final name = (org['name'] ?? 'Sanctioning Organization').toString();
+    final name = ArmSphereFormatters.formatOrganizationName(
+      org['name']?.toString(),
+      fallback: 'Sanctioning Organization',
+    );
     final city = (org['city'] ?? '').toString();
     final country = (org['country'] ?? '').toString();
-    final promoter = (org['promoterName'] ?? 'Federation President').toString();
+    final promoter = (org['promoterName'] ?? org['presidentName'] ?? 'Sanctioning Official').toString();
     final status = (org['status'] ?? 'VERIFIED').toString().toUpperCase();
-    final isVerified = status == 'VERIFIED';
+    final isVerified = status == 'VERIFIED' || status == 'APPROVED';
     final activeEvents = (org['activeEventsCount'] as num?)?.toInt() ?? 0;
-    final belts = (org['sanctionedBeltsCount'] as num?)?.toInt() ?? 0;
+    final belts = (org['sanctionedBeltsCount'] as num?)?.toInt() ??
+        (org['titleBeltsCount'] as num?)?.toInt() ??
+        0;
 
     return ElevatedActionCard(
       onTap: () {
@@ -520,20 +540,27 @@ class _OrganizationProfileScreenState
                 ),
               ),
               data: (org) {
-                final name =
-                    (org['name'] ?? 'Sanctioning Organization').toString();
+                final name = ArmSphereFormatters.formatOrganizationName(
+                  org['name']?.toString(),
+                  fallback: 'Sanctioning Organization',
+                );
                 final promoter =
-                    (org['promoterName'] ?? 'Federation President').toString();
-                final sanctioningBody = (org['sanctioningBody'] ??
-                        'Official Sanctioning Authority')
-                    .toString();
+                    (org['promoterName'] ?? org['presidentName'] ?? 'Sanctioning Official').toString();
+                final sanctioningBody = ArmSphereFormatters.formatOrganizationName(
+                  org['sanctioningBody']?.toString(),
+                  fallback: 'Official Sanctioning Authority',
+                );
                 final city = (org['city'] ?? '').toString();
                 final country = (org['country'] ?? '').toString();
                 final description = (org['description'] ?? '').toString();
                 final status =
                     (org['status'] ?? 'VERIFIED').toString().toUpperCase();
-                final isVerified = status == 'VERIFIED';
-                final foundedYear = org['foundedYear']?.toString() ?? '2020';
+                final isVerified = status == 'VERIFIED' || status == 'APPROVED';
+                final foundationParsed = org['foundationDate'] != null
+                    ? DateTime.tryParse(org['foundationDate'].toString())?.year
+                    : null;
+                final foundedYear =
+                    org['foundedYear']?.toString() ?? foundationParsed?.toString() ?? '2020';
 
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 48),
@@ -1098,12 +1125,47 @@ class _OrganizationProfileScreenState
       ),
       error: (e, _) => Text('Error: $e'),
       data: (belts) {
+        if (belts.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: AppTheme.recessedObsidianWellDecoration(radius: 16),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.workspace_premium_outlined,
+                  color: AppTheme.goldPrimary,
+                  size: 38,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'No Championship Belts Awarded Yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Official sanctioned title belts and champion lineages will appear here once awarded by this authority.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
         return Column(
           children: belts.map((belt) {
             final titleName =
                 (belt['titleName'] ?? 'Championship Belt').toString();
             final holder = (belt['holderName'] ?? 'Vacant').toString();
-            final elo = belt['holderElo']?.toString() ?? '1800';
+            final elo = belt['holderElo'] != null ? belt['holderElo'].toString() : '—';
             final defenses = (belt['defenses'] as num?)?.toInt() ?? 0;
             final lineage = (belt['lineage'] as List?) ?? const [];
 

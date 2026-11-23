@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -433,7 +434,7 @@ class AdminCrystalSearchBar extends StatelessWidget {
         if (filterOptions.isNotEmpty && onFilterSelected != null) ...[
           const SizedBox(height: 10),
           SizedBox(
-            height: 34,
+            height: 36,
             width: double.infinity,
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -446,19 +447,16 @@ class AdminCrystalSearchBar extends StatelessWidget {
                   alignment: Alignment.center,
                   minWidth: bleedWidth,
                   maxWidth: bleedWidth,
-                  minHeight: 34,
-                  maxHeight: 34,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+                  minHeight: 36,
+                  maxHeight: 36,
+                  child: CrystalHorizontalChipStrip(
+                    height: 36,
+                    spacing: 8,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        for (int i = 0; i < filterOptions.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 8),
-                          _buildFilterChip(context, filterOptions[i]),
-                        ],
-                      ],
-                    ),
+                    children: [
+                      for (final option in filterOptions)
+                        _buildFilterChip(context, option),
+                    ],
                   ),
                 );
               },

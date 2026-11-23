@@ -299,7 +299,25 @@ export class AdministrationController {
 
   static async getAuditEvents(req: any, res: any, next: NextFunction) {
     try {
-      const list = await AdministrationService.getAuditEvents();
+      const actionType =
+        typeof req.query?.actionType === "string" && req.query.actionType.trim().length > 0
+          ? req.query.actionType.trim()
+          : undefined;
+      const actorId =
+        typeof req.query?.actorId === "string" && req.query.actorId.trim().length > 0
+          ? req.query.actorId.trim()
+          : undefined;
+      const parsedLimit =
+        req.query?.limit !== undefined ? Number.parseInt(String(req.query.limit), 10) : undefined;
+      const limit =
+        parsedLimit !== undefined && Number.isFinite(parsedLimit) && parsedLimit > 0
+          ? Math.min(parsedLimit, 250)
+          : undefined;
+      const list = await AdministrationService.getAuditEvents({
+        actionType,
+        actorId,
+        limit,
+      });
       res.status(200).json({ success: true, data: list });
     } catch (err) {
       next(err);

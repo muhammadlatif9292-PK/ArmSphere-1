@@ -123,42 +123,45 @@ export class RankingsService {
       .orderBy(desc(eloField), asc(athleteProfiles.id))
       .limit(limit + 1);
 
+    const bucketFromKg = (kg: number): string => {
+      if (kg <= 65) return "65kg";
+      if (kg <= 75) return "75kg";
+      if (kg <= 85) return "85kg";
+      if (kg <= 95) return "95kg";
+      if (kg <= 105) return "105kg";
+      return "105kg+";
+    };
+
+    const normalizeWeightToken = (wc: string): string =>
+      wc.trim().toLowerCase().replace(/\s+/g, "").replace(/^-/, "");
+
     const resolveWeightClass = (rec: any, filterWeightClass?: string): string => {
       const rawWc = typeof rec.weightClass === "string" ? rec.weightClass.trim() : "";
       if (rawWc && rawWc.toUpperCase() !== "OPEN") {
-        const lower = rawWc.toLowerCase().replace(/\s+/g, "");
-        if (lower.includes("105+") || lower.includes("+105") || lower.includes(">105")) {
-          return "105kg+";
-        }
-        const numMatch = lower.match(/(\d+(\.\d+)?)/);
-        if (numMatch) {
-          const val = parseFloat(numMatch[1]);
-          if (val <= 65) return "65kg";
-          if (val <= 75) return "75kg";
-          if (val <= 85) return "85kg";
-          if (val <= 95) return "95kg";
-          if (val <= 105) return "105kg";
-          return "105kg+";
-        }
         return rawWc;
       }
       if (typeof rec.weight === "number" && rec.weight > 0) {
-        if (rec.weight <= 65) return "65kg";
-        if (rec.weight <= 75) return "75kg";
-        if (rec.weight <= 85) return "85kg";
-        if (rec.weight <= 95) return "95kg";
-        if (rec.weight <= 105) return "105kg";
-        return "105kg+";
+        return bucketFromKg(rec.weight);
       }
       return filterWeightClass || rawWc || "OPEN";
     };
 
+    const matchesWeightClassFilter = (rec: any, targetFilter: string): boolean => {
+      const resolved = resolveWeightClass(rec);
+      const normResolved = normalizeWeightToken(resolved);
+      const normTarget = normalizeWeightToken(targetFilter);
+      if (normResolved === normTarget) return true;
+      const numMatch = normResolved.match(/(\d+(\.\d+)?)/);
+      if (numMatch) {
+        const bucket = normalizeWeightToken(bucketFromKg(parseFloat(numMatch[1])));
+        if (bucket === normTarget) return true;
+      }
+      return false;
+    };
+
     const filteredRecords =
       weightClass && weightClass.toUpperCase() !== "ALL" && weightClass.toUpperCase() !== "OPEN"
-        ? records.filter(
-            (rec) =>
-              resolveWeightClass(rec).toLowerCase() === weightClass.trim().toLowerCase()
-          )
+        ? records.filter((rec) => matchesWeightClassFilter(rec, weightClass))
         : records;
 
     // Calculate ranking offset (or simple relative rank starting from 1 for the view slice)

@@ -3,6 +3,7 @@ import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
@@ -849,11 +850,39 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
           .toList();
     }
 
+    if (eligible.length < 2) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text(
+            'Add at least 2 verified athletes to generate matchups.',
+          ),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final generated = _generateSmartRandomMatchupsList(
       categoryLabel: _selectedCategory,
       roundNumber: _selectedRound,
       candidates: eligible,
     );
+
+    if (generated.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text(
+            'Add at least 2 verified athletes to generate matchups.',
+          ),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _setMatchesForCategory(_selectedCategory, [...otherRounds, ...generated]);
@@ -1293,13 +1322,13 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
       'isBye': false,
       'athleteAId': finalistA['id'].toString(),
       'athleteAName': finalistA['athleteName'].toString(),
-      'athleteAElo': ((finalistA['eloRating'] as num?)?.toInt() ?? 1800) + 18,
+      'athleteAElo': ((finalistA['eloRating'] as num?)?.toInt() ?? 1200) + 18,
       'athleteAPrKg': (finalistA['prKg'] as num?)?.toDouble() ?? 65.0,
       'athleteAMaxLiftKg': (finalistA['maxLiftKg'] as num?)?.toDouble() ?? 73.0,
       'athleteALosses': 0,
       'athleteBId': finalistB['id'].toString(),
       'athleteBName': finalistB['athleteName'].toString(),
-      'athleteBElo': ((finalistB['eloRating'] as num?)?.toInt() ?? 1750) - 18,
+      'athleteBElo': ((finalistB['eloRating'] as num?)?.toInt() ?? 1200) - 18,
       'athleteBPrKg': (finalistB['prKg'] as num?)?.toDouble() ?? 62.0,
       'athleteBMaxLiftKg': (finalistB['maxLiftKg'] as num?)?.toDouble() ?? 70.0,
       'athleteBLosses': _maxLossesBeforeElimination,
@@ -2092,7 +2121,7 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
                                 SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
-                                    '+ MANUAL BOUT',
+                                    'MANUAL BOUT',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -2200,286 +2229,270 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
         // 2. CLEAN CONTEXT-AWARE FILTER STRIPS (ZERO CLUTTER)
         // =====================================================================
         // Row 1: Horizontal Weight & Arm Division chips (70kg R, 70kg L, 80kg R...)
-        SingleChildScrollView(
+        CrystalHorizontalChipStrip(
           key: const ValueKey('card3_weight_category_filter_bar'),
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final cat in categories)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: InkWell(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          spacing: 8,
+          children: [
+            for (final cat in categories)
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _selectedCategory = cat;
+                    _selectedRound = 1;
+                    _synchronizeDynamicFreeTableActiveSlots(cat);
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: _selectedCategory == cat
+                        ? const LinearGradient(
+                            colors: [Color(0xFF2B2210), Color(0xFF141008)],
+                          )
+                        : const LinearGradient(
+                            colors: [Color(0xFF151923), Color(0xFF0C0F16)],
+                          ),
                     borderRadius: BorderRadius.circular(10),
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedCategory = cat;
-                        _selectedRound = 1;
-                        _synchronizeDynamicFreeTableActiveSlots(cat);
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                    border: Border.all(
+                      color: _selectedCategory == cat
+                          ? AppTheme.goldPrimary
+                          : const Color(0x28FFFFFF),
+                      width: _selectedCategory == cat ? 1.3 : 1.0,
+                    ),
+                  ),
+                  child: Text(
+                    '${_isCategoryFinalCompleted(cat) ? "🏆 " : ""}${compactDiv(cat)} (${_athletesInCategory(cat).length})',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11.5,
+                      color: _selectedCategory == cat
+                          ? AppTheme.goldPrimary
+                          : AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Row 2: Compact Segmented Bar for [ Matched ] vs [ Unmatched ] + Status Pills (All, Pending, Completed)
+        CrystalHorizontalChipStrip(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          spacing: 6,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1017),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x28FFFFFF)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    key: const ValueKey('card3_filter_matched_up'),
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () =>
+                        setState(() => _pairingFilter = 'MATCHED_UP'),
+                    child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        gradient: _selectedCategory == cat
-                            ? const LinearGradient(
-                                colors: [Color(0xFF2B2210), Color(0xFF141008)],
-                              )
-                            : const LinearGradient(
-                                colors: [Color(0xFF151923), Color(0xFF0C0F16)],
-                              ),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: _selectedCategory == cat
-                              ? AppTheme.goldPrimary
-                              : const Color(0x28FFFFFF),
-                          width: _selectedCategory == cat ? 1.3 : 1.0,
-                        ),
+                        color: _pairingFilter == 'MATCHED_UP'
+                            ? const Color(0xFFE23B3B).withValues(alpha: 0.22)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: _pairingFilter == 'MATCHED_UP'
+                            ? Border.all(color: const Color(0xFFE23B3B))
+                            : null,
                       ),
                       child: Text(
-                        '${_isCategoryFinalCompleted(cat) ? "🏆 " : ""}${compactDiv(cat)} (${_athletesInCategory(cat).length})',
+                        'Matched (${roundMatches.length})',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
+                          fontSize: 11,
                           fontWeight: FontWeight.w900,
-                          fontSize: 11.5,
-                          color: _selectedCategory == cat
-                              ? AppTheme.goldPrimary
+                          color: _pairingFilter == 'MATCHED_UP'
+                              ? AppTheme.textPrimary
                               : AppTheme.textSecondary,
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Row 2: Compact Segmented Bar for [ Matched ] vs [ Unmatched ] + Status Pills (All, Pending, Completed)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0D1017),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0x28FFFFFF)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InkWell(
-                      key: const ValueKey('card3_filter_matched_up'),
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () =>
-                          setState(() => _pairingFilter = 'MATCHED_UP'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _pairingFilter == 'MATCHED_UP'
-                              ? const Color(0xFFE23B3B).withValues(alpha: 0.22)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          border: _pairingFilter == 'MATCHED_UP'
-                              ? Border.all(color: const Color(0xFFE23B3B))
-                              : null,
-                        ),
-                        child: Text(
-                          'Matched (${roundMatches.length})',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: _pairingFilter == 'MATCHED_UP'
-                                ? AppTheme.textPrimary
-                                : AppTheme.textSecondary,
-                          ),
-                        ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    key: const ValueKey('card3_filter_non_matched_up'),
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () =>
+                        setState(() => _pairingFilter = 'NON_MATCHED_UP'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    InkWell(
-                      key: const ValueKey('card3_filter_non_matched_up'),
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () =>
-                          setState(() => _pairingFilter = 'NON_MATCHED_UP'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _pairingFilter == 'NON_MATCHED_UP'
-                              ? AppTheme.warning.withValues(alpha: 0.22)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          border: _pairingFilter == 'NON_MATCHED_UP'
-                              ? Border.all(color: AppTheme.warning)
-                              : null,
-                        ),
-                        child: Text(
-                          'Unmatched (${nonMatchedAthletes.length})',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: _pairingFilter == 'NON_MATCHED_UP'
-                                ? AppTheme.warning
-                                : AppTheme.textSecondary,
-                          ),
-                        ),
+                      decoration: BoxDecoration(
+                        color: _pairingFilter == 'NON_MATCHED_UP'
+                            ? AppTheme.warning.withValues(alpha: 0.22)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: _pairingFilter == 'NON_MATCHED_UP'
+                            ? Border.all(color: AppTheme.warning)
+                            : null,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_pairingFilter == 'MATCHED_UP') ...[
-                const SizedBox(width: 8),
-                for (final comp in [
-                  ('ALL', 'All (${roundMatches.length})'),
-                  ('PENDING', 'Pending ($pendingInRoundCount)'),
-                  ('DONE', 'Completed ($doneInRoundCount)'),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      key: ValueKey('card3_completion_filter_${comp.$1}'),
-                      label: Text(
-                        comp.$2,
-                        style: const TextStyle(
+                      child: Text(
+                        'Unmatched (${nonMatchedAthletes.length})',
+                        style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: _pairingFilter == 'NON_MATCHED_UP'
+                              ? AppTheme.warning
+                              : AppTheme.textSecondary,
                         ),
                       ),
-                      selected: _completionFilter == comp.$1,
-                      onSelected: (_) =>
-                          setState(() => _completionFilter = comp.$1),
                     ),
                   ),
-              ],
-            ],
-          ),
+                ],
+              ),
+            ),
+            if (_pairingFilter == 'MATCHED_UP')
+              for (final comp in [
+                ('ALL', 'All (${roundMatches.length})'),
+                ('PENDING', 'Pending ($pendingInRoundCount)'),
+                ('DONE', 'Completed ($doneInRoundCount)'),
+              ])
+                ChoiceChip(
+                  key: ValueKey('card3_completion_filter_${comp.$1}'),
+                  label: Text(
+                    comp.$2,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  selected: _completionFilter == comp.$1,
+                  onSelected: (_) =>
+                      setState(() => _completionFilter = comp.$1),
+                ),
+          ],
         ),
 
         // Row 3 (Shown ONLY for Elimination): Round Progression Pills with Connecting Line
         if (!_isSuperfights) ...[
           const SizedBox(height: 8),
-          SingleChildScrollView(
+          CrystalHorizontalChipStrip(
             key: const ValueKey('card3_elimination_round_filter_bar'),
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (int i = 0; i < roundTabs.length; i++) ...[
-                  if (i > 0)
-                    Container(
-                      width: 14,
-                      height: 2,
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.45),
-                    ),
-                  Builder(
-                    builder: (_) {
-                      final rt = roundTabs[i];
-                      final rNum = rt['round'] as int;
-                      final isSel = _selectedRound == rNum;
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedRound = rNum;
-                            _synchronizeDynamicFreeTableActiveSlots(
-                                _selectedCategory);
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            spacing: 0,
+            children: [
+              for (int i = 0; i < roundTabs.length; i++) ...[
+                if (i > 0)
+                  Container(
+                    width: 14,
+                    height: 2,
+                    color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                  ),
+                Builder(
+                  builder: (_) {
+                    final rt = roundTabs[i];
+                    final rNum = rt['round'] as int;
+                    final isSel = _selectedRound == rNum;
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedRound = rNum;
+                          _synchronizeDynamicFreeTableActiveSlots(
+                              _selectedCategory);
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSel
+                              ? AppTheme.goldPrimary.withValues(alpha: 0.2)
+                              : const Color(0xFF131722),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
                             color: isSel
-                                ? AppTheme.goldPrimary.withValues(alpha: 0.2)
-                                : const Color(0xFF131722),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSel
-                                  ? AppTheme.goldPrimary
-                                  : const Color(0x28FFFFFF),
-                              width: isSel ? 1.3 : 1.0,
-                            ),
-                          ),
-                          child: Text(
-                            rt['label'].toString(),
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 11,
-                              color: isSel
-                                  ? AppTheme.goldPrimary
-                                  : AppTheme.textSecondary,
-                            ),
+                                ? AppTheme.goldPrimary
+                                : const Color(0x28FFFFFF),
+                            width: isSel ? 1.3 : 1.0,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ],
+                        child: Text(
+                          rt['label'].toString(),
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                            color: isSel
+                                ? AppTheme.goldPrimary
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
-            ),
+            ],
           ),
         ],
 
         // Row 4 (Shown ONLY when Tables > 1): Table Filter Pills
         if (_tableCount > 1) ...[
           const SizedBox(height: 8),
-          SingleChildScrollView(
+          CrystalHorizontalChipStrip(
             key: const ValueKey('card3_table_filter_bar'),
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            spacing: 6,
+            children: [
+              ChoiceChip(
+                label: const Text(
+                  'All Tables',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                selected: _selectedTableFilter == 'ALL',
+                onSelected: (_) =>
+                    setState(() => _selectedTableFilter = 'ALL'),
+              ),
+              for (final tName in _tableNames)
                 ChoiceChip(
-                  label: const Text(
-                    'All Tables',
-                    style: TextStyle(
+                  label: Text(
+                    tName,
+                    style: const TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 10.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  selected: _selectedTableFilter == 'ALL',
+                  selected: _selectedTableFilter == tName,
                   onSelected: (_) =>
-                      setState(() => _selectedTableFilter = 'ALL'),
+                      setState(() => _selectedTableFilter = tName),
                 ),
-                const SizedBox(width: 6),
-                for (final tName in _tableNames)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      label: Text(
-                        tName,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      selected: _selectedTableFilter == tName,
-                      onSelected: (_) =>
-                          setState(() => _selectedTableFilter = tName),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
           const SizedBox(height: 10),
           _buildDynamicFreeTableQueuePanel(roundMatches),
@@ -2553,29 +2566,56 @@ class _Card3MatchupsBracketsViewState extends State<Card3MatchupsBracketsView> {
         if (_pairingFilter == 'NON_MATCHED_UP')
           _buildNonMatchedUpAthletesList(nonMatchedAthletes)
         else if (completionFilteredMatches.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: const Color(0xFF121620),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x28FFFFFF)),
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'No bouts in this filter view.',
-                    style:
-                        TextStyle(fontSize: 12.5, color: AppTheme.textSecondary),
+          Builder(
+            builder: (context) {
+              final eligibleCount = _athletesInCategory(_selectedCategory).length;
+              final canSmartPair = eligibleCount >= 2;
+              return Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF121620),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: canSmartPair
+                        ? const Color(0x28FFFFFF)
+                        : AppTheme.warning.withValues(alpha: 0.45),
                   ),
                 ),
-                OutlinedButton.icon(
-                  onPressed: _handleSmartRandomMatchupsForCurrentRound,
-                  icon: const Icon(Icons.bolt_rounded, size: 16),
-                  label: const Text('SMART PAIR'),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            canSmartPair
+                                ? 'No bouts in this filter view.'
+                                : 'Add at least 2 verified athletes to generate matchups.',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: canSmartPair
+                                  ? FontWeight.w500
+                                  : FontWeight.w600,
+                              color: canSmartPair
+                                  ? AppTheme.textSecondary
+                                  : AppTheme.warning,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: canSmartPair
+                          ? _handleSmartRandomMatchupsForCurrentRound
+                          : null,
+                      icon: const Icon(Icons.bolt_rounded, size: 16),
+                      label: const Text('SMART PAIR'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           )
         else
           for (final match in completionFilteredMatches) ...[

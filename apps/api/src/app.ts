@@ -35,6 +35,10 @@ import env from "./config/env.js";
 
 export const app = express();
 
+// Trust reverse-proxy headers (X-Forwarded-For / X-Real-IP) so Active Sessions
+// record real client IPs instead of loopback 127.0.0.1 behind load balancers.
+app.set("trust proxy", true);
+
 // Disable standard x-powered-by header for security hardening
 app.disable("x-powered-by");
 

@@ -14,6 +14,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/widgets/crystal_toast.dart';
+import '../models/community_video_category.dart';
 
 /// Compose screen — submits a real video-link post via POST /community/links.
 /// The backend only accepts YouTube/TikTok/Facebook URLs; exercise details
@@ -38,8 +39,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   bool _submitting = false;
   String? _previewThumbnailUrl;
 
-  static const _categories = ['HIGHLIGHTS', 'TUTORIALS', 'GYM'];
-
   static const List<({String id, String label})> _canonicalGymMoves = [
     (id: 'PRONATION', label: 'Pronation'),
     (id: 'RISER', label: 'Riser'),
@@ -57,9 +56,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
-    final incoming = widget.initialCategory?.toUpperCase();
-    if (incoming != null && _categories.contains(incoming)) {
-      _category = incoming;
+    final incoming = widget.initialCategory?.trim().toUpperCase();
+    if (incoming == 'GYM') {
+      _category = 'GYM';
+    } else {
+      final parsed = CommunityVideoCategory.fromWire(incoming);
+      _category = (parsed ?? CommunityVideoCategory.highlights).wireValue;
     }
     _exerciseTypeController.text = _selectedGymMove;
     _urlController.addListener(_onUrlChanged);
@@ -342,21 +344,30 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 ),
               ],
               const SizedBox(height: AppTheme.space16),
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                decoration: const InputDecoration(
-                  labelText: 'Content Category',
-                  prefixIcon: Icon(Icons.category_outlined, color: AppTheme.textSecondary),
+              if (!_isGym)
+                DropdownButtonFormField<String>(
+                  initialValue: _category,
+                  decoration: const InputDecoration(
+                    labelText: 'Content Category',
+                    prefixIcon: Icon(
+                      Icons.category_outlined,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  dropdownColor: AppTheme.overlayG6Surface,
+                  items: CommunityVideoCategory.values
+                      .map(
+                        (c) => DropdownMenuItem<String>(
+                          value: c.wireValue,
+                          child: Text(c.label),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    HapticFeedback.lightImpact();
+                    setState(() => _category = value);
+                  },
                 ),
-                dropdownColor: AppTheme.cardSurface,
-                items: _categories
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (value) {
-                  HapticFeedback.lightImpact();
-                  setState(() => _category = value);
-                },
-              ),
               if (_isGym) ...[
                 const SizedBox(height: AppTheme.space16),
                 const Text(

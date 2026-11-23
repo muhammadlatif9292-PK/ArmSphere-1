@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -313,7 +314,10 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                   isExpanded: true,
                   items: [
                     for (final a in allArms)
-                      DropdownMenuItem(value: a, child: Text('$a ARM')),
+                      DropdownMenuItem(
+                        value: a,
+                        child: Text(ArmSphereFormatters.formatArmLabel(a)),
+                      ),
                   ],
                   onChanged: (v) => setDialogState(() => arm = v ?? arm),
                   decoration: const InputDecoration(labelText: 'Competition Arm'),
@@ -1100,7 +1104,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                 ),
               ),
               data: (event) {
-                final status = (event['status']?.toString() ?? 'UNKNOWN').toUpperCase();
+                final status = (event['status']?.toString() ?? 'SCHEDULED').toUpperCase();
                 final showLifecycleControls =
                     canManageTables && (status == 'DRAFT' || status == 'PUBLISHED');
                 return ElevatedActionCard(
@@ -1761,7 +1765,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                   ),
                 ),
                 StatusChip(
-                  label: status.isEmpty ? 'UNKNOWN' : status,
+                  label: status.isEmpty ? 'PENDING' : status,
                   type: _resolveOperationStatusType(status),
                 ),
               ],
@@ -2397,7 +2401,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                   ),
                 ),
                 StatusChip(
-                  label: status.isEmpty ? 'UNKNOWN' : status,
+                  label: status.isEmpty ? 'PENDING' : status,
                   type: _resolveOperationStatusType(status),
                 ),
               ],

@@ -247,7 +247,7 @@ class _CreateInformalEventScreenState
                   maxLines: 3,
                   style: const TextStyle(color: AppTheme.textPrimary),
                   decoration: InputDecoration(
-                    labelText: 'Session Focus & Hardware Specs',
+                    labelText: 'Focus & Equipment',
                     labelStyle: const TextStyle(color: AppTheme.textSecondary),
                     hintText: 'Number of tables, beginner-friendly, chalk available...',
                     hintStyle: const TextStyle(color: AppTheme.textMuted),
@@ -347,7 +347,7 @@ class _CreateInformalEventScreenState
                         controller: _provinceController,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Province (optional)',
+                          labelText: 'Province',
                           labelStyle:
                               const TextStyle(color: AppTheme.textSecondary),
                           hintText: 'e.g. Punjab',

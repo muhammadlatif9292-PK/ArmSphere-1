@@ -32,7 +32,19 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
     try {
       final notifier = ref.read(paymentMethodsProvider.notifier);
       final setupIntentData = await notifier.createSetupIntent();
-      final clientSecret = setupIntentData['clientSecret'] as String;
+      final clientSecret = setupIntentData['clientSecret']?.toString();
+      if (setupIntentData['enabled'] == false || clientSecret == null || clientSecret.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CrystalSnackBar(
+              content: const Text('Online Card Vault Launching Soon — Cash/PKR at Venue Active.'),
+              backgroundColor: AppTheme.goldPrimary,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
 
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
@@ -166,10 +178,10 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.credit_card_off_outlined, size: 32, color: AppTheme.goldPrimary),
+                        Icon(Icons.account_balance_wallet_outlined, size: 32, color: AppTheme.goldPrimary),
                         SizedBox(height: AppTheme.space8),
                         Text(
-                          'Online Card Vault Not Enabled',
+                          'Online Card Vault Launching Soon — Cash/PKR at Venue Active',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontWeight: FontWeight.bold,
@@ -180,7 +192,7 @@ class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
                         ),
                         SizedBox(height: AppTheme.space4),
                         Text(
-                          'Stripe card vaulting is not configured on this server environment. Tournament entry fees can still be settled on-site at official weigh-in.',
+                          'Online card vaulting is not yet active in this environment. All tournament entry fees and spectator passes can be settled in PKR at the venue gate or official weigh-in.',
                           style: TextStyle(color: AppTheme.textSecondary, fontSize: 12.5, height: 1.4),
                           textAlign: TextAlign.center,
                         ),

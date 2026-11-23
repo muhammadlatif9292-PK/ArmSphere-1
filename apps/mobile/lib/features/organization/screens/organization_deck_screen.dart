@@ -7,6 +7,7 @@ import '../../../core/providers/dependency_providers.dart';
 import '../../../core/providers/organization_session_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../tournament/screens/tournament_operator_dashboard_screen.dart';
 
@@ -118,15 +119,15 @@ class _OrganizationDeckScreenState
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(organizationSessionProvider);
-    final orgName = (session.orgName != null && session.orgName!.trim().isNotEmpty)
-        ? session.orgName!.trim()
-        : 'Sanctioning Organization';
+    final orgName = ArmSphereFormatters.formatOrganizationName(
+      session.orgName,
+      fallback: 'Sanctioning Organization',
+    );
     final orgId = session.orgId ?? '';
-    final jurisdiction = [
-      if (session.city != null && session.city!.isNotEmpty) session.city,
-      if (session.province != null && session.province!.isNotEmpty)
-        session.province,
-    ].join(', ');
+    final jurisdiction = ArmSphereFormatters.formatCleanAddress([
+      session.city,
+      session.province,
+    ]);
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,

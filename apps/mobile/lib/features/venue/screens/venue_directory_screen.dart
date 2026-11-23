@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/venue_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
@@ -35,7 +36,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
         elevation: 0,
         leading: const CrystalBackButton(),
         title: const Text(
-          'Armwrestling Venues',
+          'Training Venues',
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontWeight: FontWeight.bold,
@@ -44,7 +45,7 @@ class VenueDirectoryScreen extends ConsumerWidget {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: CrystalHeaderActionPill(
                 key: const ValueKey('venue_directory_create_button'),
@@ -54,7 +55,6 @@ class VenueDirectoryScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const CrystalHomeButton(),
         ],
       ),
       body: Stack(
@@ -119,11 +119,11 @@ class VenueDirectoryScreen extends ConsumerWidget {
                 final id = v['id']?.toString() ?? '';
                 final name = v['name']?.toString() ?? 'Venue';
                 final city = v['city']?.toString() ?? '';
-                final addressLine = [
+                final addressLine = ArmSphereFormatters.formatCleanAddress([
                   v['address']?.toString(),
                   city,
                   v['province']?.toString(),
-                ].where((part) => part != null && part.isNotEmpty).join(', ');
+                ]);
                 final verificationStatus =
                     (v['verificationStatus']?.toString() ?? 'VERIFIED').toUpperCase();
                 final isVerified = verificationStatus == 'VERIFIED';

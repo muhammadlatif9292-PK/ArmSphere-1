@@ -214,8 +214,11 @@ class _TournamentOperatorDashboardScreenState
 
   Map<String, dynamic> _createFreshDraft(
     String operatorId,
-    Map<String, dynamic> profile,
-  ) {
+    Map<String, dynamic> profile, {
+    String initialName = '',
+    String initialFormatCategory = '',
+    String initialEliminationSubFormat = '',
+  }) {
     final orgSession = ref.read(organizationSessionProvider);
     final orgId = _effectiveOrgId(orgSession);
     final orgName = _effectiveOrgName(orgSession);
@@ -226,7 +229,7 @@ class _TournamentOperatorDashboardScreenState
       'id': id,
       'organizerId': orgId ?? operatorId,
       if (orgId != null) 'organizationId': orgId,
-      'name': '',
+      'name': initialName.trim(),
       'organizationName': (orgName ??
               profile['organizationName'] ??
               profile['displayName'] ??
@@ -245,8 +248,8 @@ class _TournamentOperatorDashboardScreenState
         {'id': 'wc-90', 'label': '90 kg', 'enabled': true, 'arm': 'RIGHT'},
         {'id': 'wc-open', 'label': 'Open', 'enabled': true, 'arm': 'RIGHT'},
       ],
-      'formatCategory': '', // 'SUPERFIGHTS' | 'ELIMINATION'
-      'eliminationSubFormat': '', // 'SINGLE_ELIMINATION' | 'DOUBLE_ELIMINATION' | 'THREE_LOSS_ELIMINATION' | 'LAST_ONE_STANDING'
+      'formatCategory': initialFormatCategory, // 'SUPERFIGHTS' | 'ELIMINATION'
+      'eliminationSubFormat': initialEliminationSubFormat, // 'SINGLE_ELIMINATION' | 'DOUBLE_ELIMINATION' | 'THREE_LOSS_ELIMINATION' | 'LAST_ONE_STANDING'
       'tableCount': 1,
       'tableAssignmentMode': 'SINGLE_TABLE_DEFAULT',
       'tables': <Map<String, dynamic>>[
@@ -260,7 +263,7 @@ class _TournamentOperatorDashboardScreenState
       'entryFeePkr': null,
       'entryFeeConfigured': false,
       'awardsConfig': <String, dynamic>{
-        'isConfigured': false,
+        'isConfigured': true,
         'rewardType': 'CASH_PKR',
         'winnerStructure': 'PER_CATEGORY_WINNERS', // 'OVERALL_WINNERS' | 'PER_CATEGORY_WINNERS'
         'topNCount': 3,
@@ -591,13 +594,22 @@ class _TournamentOperatorDashboardScreenState
       missing.add('Entry / Application Fee in PKR (0 for free or PKR amount)');
     }
 
-    // 7. Separate Awards & Prizes Sub-Screen
+    // 7. Awards & Prizes (auto-ready when valid defaults or custom tiers are populated)
     final awardsConfig = record['awardsConfig'] is Map
         ? Map<String, dynamic>.from(record['awardsConfig'] as Map)
         : <String, dynamic>{};
-    final awardsValid = awardsConfig['isConfigured'] == true;
+    final rawAwardTiers = (awardsConfig['tiers'] is List)
+        ? (awardsConfig['tiers'] as List).whereType<Map>().toList()
+        : const <Map>[];
+    final hasPopulatedAwardTiers = rawAwardTiers.any((tier) {
+      final cash = (tier['cashAmountPkr'] as num?)?.toInt() ?? 0;
+      final title = (tier['awardTitle'] ?? '').toString().trim();
+      return cash > 0 || title.isNotEmpty;
+    });
+    final awardsValid =
+        awardsConfig['isConfigured'] == true || hasPopulatedAwardTiers;
     if (!awardsValid) {
-      missing.add('Awards & Prizes configuration (open sub-screen and save)');
+      missing.add('Awards & Prizes configuration in Stage 01');
     }
 
     final flags = [
@@ -767,11 +779,11 @@ class _TournamentOperatorDashboardScreenState
     final validation = _validateCard1(record);
     if (validation['isComplete'] != true) {
       final firstMissing = ((validation['missing'] as List?)?.firstOrNull ??
-              'Please complete all mandatory fields in Card 1.')
+              'Please complete all mandatory fields in Stage 01.')
           .toString();
       ScaffoldMessenger.of(context).showSnackBar(
         CrystalSnackBar(
-          content: Text('Complete Card 1 before releasing: $firstMissing'),
+          content: Text('Complete Stage 01 before releasing: $firstMissing'),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
         ),
@@ -808,7 +820,7 @@ class _TournamentOperatorDashboardScreenState
       operatorId,
       customBanner: wasAlreadyReleased
           ? 'Permitted Edits Saved & Synced • Released Tournament Updated!'
-          : 'Released & Scheduled • Cards 2, 3 & 4 Unlocked!',
+          : 'Released & Scheduled • Stages 02, 03 & 04 Unlocked!',
       skipDefaultQueue: true,
     );
 
@@ -909,7 +921,7 @@ class _TournamentOperatorDashboardScreenState
           content: Text(
             wasAlreadyReleased
                 ? 'Permitted Edits Saved! Released tournament updated locally and queued for sync.'
-                : 'Tournament Released & Scheduled! Cards 2, 3, and 4 are now UNLOCKED and athletes can apply.',
+                : 'Tournament Released & Scheduled! Stages 02, 03, and 04 are now UNLOCKED and athletes can apply.',
           ),
           backgroundColor: AppTheme.emerald,
           behavior: SnackBarBehavior.floating,
@@ -1137,6 +1149,7 @@ class _TournamentOperatorDashboardScreenState
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: Scaffold(
           backgroundColor: AppTheme.voidBackground,
+          resizeToAvoidBottomInset: true,
           extendBodyBehindAppBar: false,
           appBar: hideMainListAppBar
               ? null
@@ -1682,7 +1695,153 @@ class _TournamentOperatorDashboardScreenState
     Map<String, dynamic> profile,
   ) async {
     HapticFeedback.mediumImpact();
-    final draft = _createFreshDraft(operatorId, profile);
+    final nameController = TextEditingController();
+    String selectedFormatOption = 'DOUBLE_ELIMINATION';
+    String? nameError;
+
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      barrierColor: AppTheme.overlayG6Barrier,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppTheme.overlayG6Surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                side: const BorderSide(color: AppTheme.overlayG6Border),
+              ),
+              title: const Row(
+                children: [
+                  Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppTheme.goldPrimary,
+                    size: 22,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'New Tournament Draft',
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPure,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Enter a tournament name to initialize Stage 01 setup. No blank draft is saved until you confirm.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: AppTheme.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: nameController,
+                      autofocus: true,
+                      textCapitalization: TextCapitalization.words,
+                      style: const TextStyle(color: AppTheme.textPure),
+                      decoration: InputDecoration(
+                        labelText: 'Tournament Name *',
+                        hintText: 'e.g. Punjab Open Armwrestling Cup',
+                        errorText: nameError,
+                      ),
+                      onChanged: (_) {
+                        if (nameError != null) {
+                          setDialogState(() => nameError = null);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedFormatOption,
+                      dropdownColor: AppTheme.overlayG6Surface,
+                      decoration: const InputDecoration(
+                        labelText: 'Format (Optional)',
+                        prefixIcon: Icon(
+                          Icons.account_tree_outlined,
+                          color: AppTheme.goldPrimary,
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'DOUBLE_ELIMINATION',
+                          child: Text('Double Elimination'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'SINGLE_ELIMINATION',
+                          child: Text('Single Elimination'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'SUPERFIGHTS',
+                          child: Text('Superfights Card'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedFormatOption = val);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
+                ),
+                FilledButton(
+                  style: AppTheme.primaryGoldButtonStyle,
+                  onPressed: () {
+                    final entered = nameController.text.trim();
+                    if (entered.length < 3) {
+                      setDialogState(() {
+                        nameError = 'Enter at least 3 characters';
+                      });
+                      return;
+                    }
+                    Navigator.of(dialogContext).pop({
+                      'name': entered,
+                      'format': selectedFormatOption,
+                    });
+                  },
+                  child: const Text('Create Draft'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    nameController.dispose();
+    if (result == null || !mounted) return;
+
+    final chosenName = result['name'] ?? '';
+    final chosenFormat = result['format'] ?? 'DOUBLE_ELIMINATION';
+    final bool isSuperfights = chosenFormat == 'SUPERFIGHTS';
+
+    final draft = _createFreshDraft(
+      operatorId,
+      profile,
+      initialName: chosenName,
+      initialFormatCategory: isSuperfights ? 'SUPERFIGHTS' : 'ELIMINATION',
+      initialEliminationSubFormat: isSuperfights ? '' : chosenFormat,
+    );
     await _autoSaveTournamentRecord(
       draft,
       operatorId,
@@ -2473,8 +2632,8 @@ class _TournamentOperatorDashboardScreenState
                   _ForgedGoldCrystalButton(
                     key: const ValueKey('hub_release_schedule_button'),
                     label: isCard1Complete
-                        ? 'RELEASE & PUBLISH TOURNAMENT'
-                        : 'COMPLETE STAGE 01 ($doneCount/$totalCount) TO RELEASE',
+                        ? 'Release Tournament'
+                        : 'Complete $doneCount/$totalCount to Release',
                     icon: isCard1Complete
                         ? Icons.rocket_launch_rounded
                         : Icons.lock_clock_outlined,
@@ -2683,7 +2842,7 @@ class _TournamentOperatorDashboardScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       CrystalSnackBar(
         content: const Text(
-          'Card Locked: Complete all mandatory details in Card 1 AND click "Release / Schedule" first.',
+          'Stage Locked: Complete all mandatory details in Stage 01 AND click "Release & Publish Tournament" first.',
         ),
         backgroundColor: AppTheme.warning,
         behavior: SnackBarBehavior.floating,
@@ -3162,7 +3321,8 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
           final name = (r['displayName'] ?? r['fullName'] ?? r['name'] ?? '').toString().trim();
           if (id.isEmpty || name.isEmpty) continue;
           final club = (r['clubName'] ?? r['club'] ?? r['city'] ?? 'ArmSphere Official').toString().trim();
-          final elo = (r['eloRating'] ?? r['elo'] ?? 1750).toString().trim();
+          final rawElo = r['eloRating'] ?? r['elo'];
+          final elo = rawElo != null ? rawElo.toString().trim() : '';
           list.add({
             'id': id,
             'name': name,
@@ -3317,7 +3477,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
     final awardsConfig = t['awardsConfig'] is Map
         ? Map<String, dynamic>.from(t['awardsConfig'] as Map)
         : <String, dynamic>{};
-    final isAwardsConfigured = awardsConfig['isConfigured'] == true;
+    final isAwardsConfigured = v['awardsValid'] == true;
 
     final stepPills = <(String, bool, String)>[
       ('1. Info', v['basicValid'] == true, '01. Event & Venue Information'),
@@ -3326,7 +3486,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
       ('4. Tables', v['tablesValid'] == true, '04. Arena Tables & Queue Mode'),
       ('5. Referees', v['refereesValid'] == true, '05. Certified Athlete-Referees (Min 2 per Table)'),
       ('6. Entry Fee', v['entryFeeValid'] == true, '06. Entry / Application Fee (PKR)'),
-      ('7. Cash Prizes', isAwardsConfigured, '07. Mandatory Cash Prizes (PKR)'),
+      ('7. Cash Prizes', isAwardsConfigured, '07. Cash Prizes (PKR)'),
     ];
 
     final rawTiers = (awardsConfig['tiers'] is List)
@@ -3432,24 +3592,25 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
         Expanded(
           child: ListView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               AppTheme.space16,
               14,
               AppTheme.space16,
-              40,
+              MediaQuery.viewInsetsOf(context).bottom + 120,
             ),
             children: [
               // SECTION 1: EVENT & VENUE INFO
               Container(
                 key: _stepKeys[0],
                 child: _buildSectionCard(
-                  stepLabel: '01. EVENT & VENUE INFO',
+                  stepLabel: '01. EVENT BASICS',
                   isValid: v['basicValid'] == true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextField(
                         controller: _nameCtrl,
+                        scrollPadding: const EdgeInsets.only(bottom: 140),
                         onTapOutside: (_) =>
                             FocusManager.instance.primaryFocus?.unfocus(),
                         style: const TextStyle(fontSize: 14.5),
@@ -3464,6 +3625,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                       const SizedBox(height: 10),
                       TextField(
                         controller: _orgCtrl,
+                        scrollPadding: const EdgeInsets.only(bottom: 140),
                         onTapOutside: (_) =>
                             FocusManager.instance.primaryFocus?.unfocus(),
                         style: const TextStyle(fontSize: 14.5),
@@ -3571,6 +3733,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                           Expanded(
                             child: TextField(
                               controller: _cityCtrl,
+                              scrollPadding: const EdgeInsets.only(bottom: 140),
                               onTapOutside: (_) =>
                                   FocusManager.instance.primaryFocus?.unfocus(),
                               style: const TextStyle(fontSize: 14.5),
@@ -3584,6 +3747,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                       const SizedBox(height: 10),
                       TextField(
                         controller: _venueCtrl,
+                        scrollPadding: const EdgeInsets.only(bottom: 140),
                         onTapOutside: (_) =>
                             FocusManager.instance.primaryFocus?.unfocus(),
                         style: const TextStyle(fontSize: 14.5),
@@ -3699,6 +3863,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                                   'Max Athletes Capacity: ${_maxAthletesCtrl.text}',
                               child: TextField(
                                 controller: _maxAthletesCtrl,
+                                scrollPadding: const EdgeInsets.only(bottom: 140),
                                 onTapOutside: (_) => FocusManager
                                     .instance.primaryFocus
                                     ?.unfocus(),
@@ -3727,7 +3892,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
               Container(
                 key: _stepKeys[1],
                 child: _buildSectionCard(
-                  stepLabel: '02. WEIGHT CATEGORIES & ARMS',
+                  stepLabel: '02. DIVISIONS',
                   isValid: v['weightsValid'] == true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3805,6 +3970,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                           Expanded(
                             child: TextField(
                               controller: _customWeightCtrl,
+                              scrollPadding: const EdgeInsets.only(bottom: 140),
                               onTapOutside: (_) =>
                                   FocusManager.instance.primaryFocus?.unfocus(),
                               style: const TextStyle(fontSize: 14),
@@ -3851,7 +4017,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
               Container(
                 key: _stepKeys[2],
                 child: _buildSectionCard(
-                  stepLabel: '03. MATCH FORMAT & BRACKET SYSTEM',
+                  stepLabel: '03. MATCH FORMAT',
                   isValid: v['formatValid'] == true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3936,7 +4102,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                             Expanded(
                               child: _buildBracketGridCard(
                                 codeBadge: '∞',
-                                title: 'Last-One-Standing',
+                                title: 'Last Standing',
                                 subtitle: 'Undefeated Survival',
                                 selected: elimSub == 'LAST_ONE_STANDING',
                                 onTap: () => _emitPatch({
@@ -3958,7 +4124,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
               Container(
                 key: _stepKeys[3],
                 child: _buildSectionCard(
-                  stepLabel: '04. ARENA TABLES & QUEUE MODE',
+                  stepLabel: '04. ARENA TABLES',
                   isValid: v['tablesValid'] == true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -4144,7 +4310,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
               Container(
                 key: _stepKeys[4],
                 child: _buildSectionCard(
-                  stepLabel: '05. CERTIFIED REFEREES (MIN 2 / TABLE)',
+                  stepLabel: '05. REFEREES (MIN 2)',
                   isValid: v['refereesValid'] == true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -4203,6 +4369,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                       const SizedBox(height: 10),
                       TextField(
                         controller: _entryFeeCtrl,
+                        scrollPadding: const EdgeInsets.only(bottom: 140),
                         onTapOutside: (_) =>
                             FocusManager.instance.primaryFocus?.unfocus(),
                         keyboardType: TextInputType.number,
@@ -4285,7 +4452,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                                 children: [
                                   const Flexible(
                                     child: Text(
-                                      '07. CASH PRIZES (PKR)',
+                                      '07. CASH PRIZES',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
@@ -4299,7 +4466,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                                   const SizedBox(width: 8),
                                   StatusChip(
                                     label: isAwardsConfigured
-                                        ? 'CONFIGURED ✓'
+                                        ? 'READY ✓'
                                         : 'REQUIRED',
                                     type: isAwardsConfigured
                                         ? StatusType.success
@@ -4344,10 +4511,10 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
               _ForgedGoldCrystalButton(
                 key: const ValueKey('card1_release_schedule_button'),
                 label: isReleased
-                    ? 'SAVE & UPDATE RELEASED TOURNAMENT'
+                    ? 'Save & Update Tournament'
                     : (isComplete
-                        ? 'RELEASE & PUBLISH TOURNAMENT'
-                        : 'COMPLETE 7/7 SECTIONS TO RELEASE (${v['doneCount']}/${v['totalCount']})'),
+                        ? 'Release Tournament'
+                        : 'Complete 7/7 to Release'),
                 icon: isReleased
                     ? Icons.verified_rounded
                     : (isComplete
@@ -4779,6 +4946,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
             const SizedBox(height: 10),
             TextField(
               controller: searchCtrl,
+              scrollPadding: const EdgeInsets.only(bottom: 140),
               onTapOutside: (_) =>
                   FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(fontSize: 13.5),
@@ -4866,10 +5034,15 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                   separatorBuilder: (_, __) => const SizedBox(height: 6),
                   itemBuilder: (context, idx) {
                     final refAthlete = matchingReferees[idx];
+                    final refElo = (refAthlete['elo'] ?? '').trim();
+                    final refClub = (refAthlete['club'] ?? 'Certified Referee').trim();
+                    final refSubtitle = refElo.isNotEmpty
+                        ? '$refClub • ELO $refElo'
+                        : refClub;
                     return HoldToInspectText(
                       title: refAthlete['name'] ?? 'Athlete-Referee',
                       fullText:
-                          '${refAthlete['name']}\n${refAthlete['badge']}\nELO: ${refAthlete['elo'] ?? "1750"}',
+                          '${refAthlete['name']}\n${refAthlete['badge']}${refElo.isNotEmpty ? "\nELO: $refElo" : ""}',
                       child: InkWell(
                         onTap: () {
                           _toggleRefereeSelection(
@@ -4916,7 +5089,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                                       ),
                                     ),
                                     Text(
-                                      '${refAthlete['club'] ?? "Certified Referee"} • ELO ${refAthlete['elo'] ?? "1750"}',
+                                      refSubtitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -5544,15 +5717,17 @@ class _AwardsPrizesSubScreenViewState
               width: selected ? 1.4 : 1.0,
             ),
           ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: AppTheme.fontDisplay,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w900,
-              color: selected ? AppTheme.textPrimary : AppTheme.textSecondary,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                fontFamily: AppTheme.fontDisplay,
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: selected ? AppTheme.textPrimary : AppTheme.textSecondary,
+              ),
             ),
           ),
         ),

@@ -59,10 +59,14 @@ export class MatchService {
       throw new BadRequestError("Winner must be either the Challenger or the Opponent.");
     }
 
-    // 4. Validate scoreLine format (e.g. "3-0", "3-2")
+    // 4. Validate scoreLine format (e.g. "3-0", "3-2") and reject ties
     const scoreRegex = /^\d+-\d+$/;
     if (!scoreRegex.test(input.scoreLine)) {
       throw new BadRequestError("Score line must be formatted as 'X-Y' (e.g. '3-1').");
+    }
+    const [scoreA, scoreB] = input.scoreLine.split("-").map((n) => Number.parseInt(n, 10));
+    if (scoreA === scoreB) {
+      throw new BadRequestError("Official match scoreline cannot be a tie (e.g. '3-3').");
     }
 
     // 5. Idempotency protection check — look up by the dedicated column, not
@@ -100,6 +104,11 @@ export class MatchService {
 
     if (!opponentProfile) {
       throw new NotFoundError("Opponent athlete profile not found");
+    }
+
+    // 6b. Integrity check: a referee cannot officiate their own rated match
+    if (challengerProfile.userId === refereeId || opponentProfile.userId === refereeId) {
+      throw new ForbiddenError("Referees cannot officiate their own rated match.");
     }
 
     // 7. Verify referee is registered and holds an authorized role. Match

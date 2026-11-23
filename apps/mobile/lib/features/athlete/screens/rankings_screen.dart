@@ -15,7 +15,7 @@ import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
-import '../../../core/widgets/championship_name_marquee.dart';
+import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 
 class RankingsScreen extends ConsumerStatefulWidget {
   const RankingsScreen({super.key});
@@ -216,9 +216,11 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              ChampionshipNameMarquee(
-                name: name,
+              Text(
+                name,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.w700,
@@ -307,54 +309,50 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
         ),
         const SizedBox(height: AppTheme.space10),
         // Weight Class Filter Strip
-        SizedBox(
-          height: 36,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _weightClasses.length,
-            separatorBuilder: (_, __) => const SizedBox(width: AppTheme.space8),
-            itemBuilder: (context, idx) {
-              final wc = _weightClasses[idx];
-              final isSelected = selectedWeightClass == wc ||
-                  (wc == 'ALL' && selectedWeightClass.isEmpty);
-              final label = (wc.isEmpty || wc == 'ALL')
-                  ? 'ALL DIVISIONS'
-                  : wc.toUpperCase();
-              return ChoiceChip(
-                label: Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                    color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
-                  ),
+        CrystalHorizontalChipStrip(
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          spacing: AppTheme.space8,
+          children: _weightClasses.map((wc) {
+            final isSelected = selectedWeightClass == wc ||
+                (wc == 'ALL' && selectedWeightClass.isEmpty);
+            final label = (wc.isEmpty || wc == 'ALL')
+                ? 'All Divisions'
+                : wc.toUpperCase();
+            return ChoiceChip(
+              label: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                  color: isSelected ? AppTheme.goldPrimary : const Color(0xFFCBD5E1),
                 ),
-                selected: isSelected,
-                selectedColor: Colors.transparent,
-                backgroundColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                elevation: 0,
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(0x73D4AF37)
-                        : const Color(0x2EFFFFFF),
-                    width: isSelected ? 1.2 : 1.0,
-                  ),
+              ),
+              selected: isSelected,
+              selectedColor: Colors.transparent,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              elevation: 0,
+              showCheckmark: false,
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                side: BorderSide(
+                  color: isSelected
+                      ? const Color(0x73D4AF37)
+                      : const Color(0x2EFFFFFF),
+                  width: isSelected ? 1.2 : 1.0,
                 ),
-                onSelected: (_) {
-                  HapticFeedback.selectionClick();
-                  ref.read(rankingsWeightClassProvider.notifier).state = wc;
-                },
-              );
-            },
-          ),
+              ),
+              onSelected: (_) {
+                HapticFeedback.selectionClick();
+                ref.read(rankingsWeightClassProvider.notifier).state = wc;
+              },
+            );
+          }).toList(),
         ),
         const SizedBox(height: AppTheme.space8),
         Row(
@@ -613,11 +611,11 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 38,
-                                    height: 38,
+                                    width: 34,
+                                    height: 34,
                                     decoration: BoxDecoration(
                                       color: Colors.transparent,
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(9),
                                       border: Border.all(
                                         color: color.withValues(
                                             alpha: rank <= 3 ? 0.55 : 0.30),
@@ -630,7 +628,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                         style: TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           color: color,
                                           fontFeatures: const [
                                             FontFeature.tabularFigures()
@@ -639,31 +637,34 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: AppTheme.space12),
+                                  const SizedBox(width: 10),
                                   ArmSphereImage.avatar(
                                     imageUrl: (athlete['avatarUrl'] ??
                                             athlete['profilePhoto'])
                                         ?.toString(),
                                     initial: name,
-                                    size: 40,
+                                    size: 38,
                                     cacheWidth: 80,
                                     cacheHeight: 80,
                                     fallbackAsset:
                                         ArmSphereAssets.avatarNeutralDark,
                                     semanticLabel: 'Athlete Avatar for $name',
                                   ),
-                                  const SizedBox(width: AppTheme.space12),
+                                  const SizedBox(width: 10),
                                   Expanded(
+                                    flex: 3,
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        ChampionshipNameMarquee(
-                                          name: name,
+                                        Text(
+                                          name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             fontFamily: AppTheme.fontDisplay,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 15,
+                                            fontSize: 14.5,
                                             color: AppTheme.textPrimary,
                                           ),
                                         ),
@@ -678,6 +679,8 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                                 provinceValue.isNotEmpty)
                                               provinceValue,
                                           ].join(' • '),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                               fontSize: 12,
                                               color: AppTheme.textSecondary),
@@ -685,7 +688,7 @@ class _RankingsScreenState extends ConsumerState<RankingsScreen> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: AppTheme.space8),
+                                  const SizedBox(width: 8),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [

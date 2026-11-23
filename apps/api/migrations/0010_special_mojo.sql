@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS "scheduled_jobs" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "organizer_id" uuid;--> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "payment_method" varchar(50) DEFAULT 'STRIPE' NOT NULL;--> statement-breakpoint
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "organizer_id" uuid;--> statement-breakpoint
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "payment_method" varchar(50) DEFAULT 'STRIPE' NOT NULL;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_scheduled_jobs_status" ON "scheduled_jobs" ("status");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_scheduled_jobs_type" ON "scheduled_jobs" ("job_type");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_scheduled_jobs_scheduled_for" ON "scheduled_jobs" ("scheduled_for");--> statement-breakpoint

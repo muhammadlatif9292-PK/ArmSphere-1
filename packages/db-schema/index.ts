@@ -33,7 +33,11 @@ export const userSessions = pgTable("user_sessions", {
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_user_sessions_user_id").on(table.userId),
+  userRevokedIdx: index("idx_user_sessions_user_revoked").on(table.userId, table.isRevoked),
+  createdAtIdx: index("idx_user_sessions_created_at").on(table.createdAt),
+}));
 
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -43,7 +47,11 @@ export const auditLogs = pgTable("audit_logs", {
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_audit_logs_user_id").on(table.userId),
+  actionIdx: index("idx_audit_logs_action").on(table.action),
+  createdAtIdx: index("idx_audit_logs_created_at").on(table.createdAt),
+}));
 
 export const athleteProfiles = pgTable("athlete_profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -77,7 +85,13 @@ export const athleteProfiles = pgTable("athlete_profiles", {
   longitude: real("longitude"),
   locationVisibility: varchar("location_visibility", { length: 20 }).notNull().default("AREA"),
   locationFuzzSeed: varchar("location_fuzz_seed", { length: 64 }),
-});
+}, (table) => ({
+  provinceIdx: index("idx_athlete_profiles_province").on(table.province),
+  weightClassIdx: index("idx_athlete_profiles_weight_class").on(table.weightClass),
+  rightEloIdx: index("idx_athlete_profiles_right_elo").on(table.rightArmElo),
+  leftEloIdx: index("idx_athlete_profiles_left_elo").on(table.leftArmElo),
+  searchableDeletedIdx: index("idx_athlete_profiles_searchable_deleted").on(table.isSearchable, table.isDeleted),
+}));
 
 export const athleteClubs = pgTable("athlete_clubs", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -99,7 +113,10 @@ export const athleteVerifications = pgTable("athlete_verifications", {
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  athleteIdIdx: index("idx_athlete_verifications_athlete_id").on(table.athleteId),
+  statusIdx: index("idx_athlete_verifications_status").on(table.status),
+}));
 
 export const athleteDocuments = pgTable("athlete_documents", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -176,7 +193,11 @@ export const auditEvents = pgTable("audit_events", {
   action: varchar("action", { length: 255 }).notNull(),
   payload: jsonb("payload"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  actionIdx: index("idx_audit_events_action").on(table.action),
+  actorIdIdx: index("idx_audit_events_actor_id").on(table.actorId),
+  createdAtIdx: index("idx_audit_events_created_at").on(table.createdAt),
+}));
 
 export const venuePartners = pgTable("venue_partners", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -235,7 +256,12 @@ export const eventRegistrations = pgTable("event_registrations", {
   paymentConfirmedAt: timestamp("payment_confirmed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  eventIdIdx: index("idx_event_registrations_event_id").on(table.eventId),
+  athleteIdIdx: index("idx_event_registrations_athlete_id").on(table.athleteId),
+  eventAthleteIdx: index("idx_event_registrations_event_athlete").on(table.eventId, table.athleteId),
+  statusIdx: index("idx_event_registrations_status").on(table.status),
+}));
 
 export const processedStripeEvents = pgTable("processed_stripe_events", {
   id: varchar("id", { length: 255 }).primaryKey(),
@@ -307,7 +333,12 @@ export const events = pgTable("events", {
   longitude: real("longitude"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  organizationIdIdx: index("idx_events_organization_id").on(table.organizationId),
+  organizerIdIdx: index("idx_events_organizer_id").on(table.organizerId),
+  statusIdx: index("idx_events_status").on(table.status),
+  startDateIdx: index("idx_events_start_date").on(table.startDate),
+}));
 
 export const announcements = pgTable("announcements", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -342,6 +373,11 @@ export const matches = pgTable("matches", {
 }, (table) => {
   return {
     provinceIdx: index("idx_matches_province").on(table.province),
+    challengerIdIdx: index("idx_matches_challenger_id").on(table.challengerId),
+    opponentIdIdx: index("idx_matches_opponent_id").on(table.opponentId),
+    refereeIdIdx: index("idx_matches_referee_id").on(table.refereeId),
+    statusIdx: index("idx_matches_status").on(table.status),
+    createdAtIdx: index("idx_matches_created_at").on(table.createdAt),
   };
 });
 
@@ -391,7 +427,9 @@ export const sanctions = pgTable("sanctions", {
   province: varchar("province", { length: 100 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  userStatusIdx: index("idx_sanctions_user_status").on(table.userId, table.status),
+}));
 
 export const blockedUsers = pgTable("blocked_users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -436,7 +474,9 @@ export const brackets = pgTable("brackets", {
   seedingLocked: boolean("seeding_locked").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  eventIdIdx: index("idx_brackets_event_id").on(table.eventId),
+}));
 
 export const bracketSeeds = pgTable("bracket_seeds", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -484,6 +524,11 @@ export const tournamentMatches = pgTable("tournament_matches", {
 }, (table) => {
   return {
     provinceIdx: index("idx_tournament_matches_province").on(table.province),
+    bracketIdIdx: index("idx_tournament_matches_bracket_id").on(table.bracketId),
+    athleteAIdIdx: index("idx_tournament_matches_athlete_a_id").on(table.athleteAId),
+    athleteBIdIdx: index("idx_tournament_matches_athlete_b_id").on(table.athleteBId),
+    refereeIdIdx: index("idx_tournament_matches_referee_id").on(table.refereeId),
+    statusIdx: index("idx_tournament_matches_status").on(table.status),
   };
 });
 
@@ -613,7 +658,11 @@ export const notifications = pgTable("notifications", {
   lastAttemptAt: timestamp("last_attempt_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_notifications_user_id").on(table.userId),
+  userStatusIdx: index("idx_notifications_user_status").on(table.userId, table.status),
+  createdAtIdx: index("idx_notifications_created_at").on(table.createdAt),
+}));
 
 export const refereeCertifications = pgTable("referee_certifications", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -625,7 +674,10 @@ export const refereeCertifications = pgTable("referee_certifications", {
   status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_referee_certifications_user_id").on(table.userId),
+  statusIdx: index("idx_referee_certifications_status").on(table.status),
+}));
 
 export const officialCertificates = pgTable("official_certificates", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -777,7 +829,11 @@ export const conversationParticipants = pgTable("conversation_participants", {
   userId: uuid("user_id").references(() => users.id).notNull(),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
   lastReadAt: timestamp("last_read_at"),
-});
+}, (table) => ({
+  userIdIdx: index("idx_conversation_participants_user_id").on(table.userId),
+  conversationIdIdx: index("idx_conversation_participants_conv_id").on(table.conversationId),
+  convUserUnique: uniqueIndex("idx_conversation_participants_conv_user").on(table.conversationId, table.userId),
+}));
 
 export const messages = pgTable("messages", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -790,7 +846,10 @@ export const messages = pgTable("messages", {
   sequence: integer("sequence").notNull().default(1),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (table) => ({
+  convCreatedIdx: index("idx_messages_conv_created_at").on(table.conversationId, table.createdAt),
+  senderIdIdx: index("idx_messages_sender_id").on(table.senderId),
+}));
 
 export const userCommunicationPreferences = pgTable("user_communication_preferences", {
   id: uuid("id").primaryKey().defaultRandom(),

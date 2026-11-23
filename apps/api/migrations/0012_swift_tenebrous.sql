@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS "sync_tombstones" (
 	"deleted_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "matches" ADD COLUMN "updated_at" timestamp DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "matches" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now() NOT NULL;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_tombstones_owner_deleted" ON "sync_tombstones" ("owner_user_id","deleted_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_tombstones_table_record" ON "sync_tombstones" ("table_name","record_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_matches_updated_at" ON "matches" ("updated_at");--> statement-breakpoint

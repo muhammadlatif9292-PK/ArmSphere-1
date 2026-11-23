@@ -47,7 +47,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.venues),
         leading: const CrystalBackButton(),
         title: const Text(
-          'Practice Meetups',
+          'Pickup Meetups',
           style: TextStyle(
             fontFamily: AppTheme.fontDisplay,
             fontWeight: FontWeight.bold,
@@ -56,7 +56,7 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: CrystalHeaderActionPill(
                 key: const ValueKey('informal_event_directory_create_button'),
@@ -66,7 +66,6 @@ class InformalEventDirectoryScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const CrystalHomeButton(),
         ],
       ),
       body: Stack(

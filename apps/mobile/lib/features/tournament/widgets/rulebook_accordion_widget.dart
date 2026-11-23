@@ -105,7 +105,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
       'accentColor': Colors.orangeAccent,
       'content': [
         '• Formal protest must be lodged within 15 minutes of match conclusion.',
-        '• Protest Fee: PKR 5,000 / \$5\$10 USD refundable if appeal is upheld by jury panel.',
+        '• Protest Fee: PKR 5,000 refundable if appeal is upheld by jury panel.',
         '• Jury consists of Head Referee, PAFF Technical Delegate, and Neutral Official.',
       ],
     },

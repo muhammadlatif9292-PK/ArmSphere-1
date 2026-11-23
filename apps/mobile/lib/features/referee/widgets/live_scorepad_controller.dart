@@ -481,8 +481,8 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
               // -------------------------------------------------------------------
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.space12,
-                  vertical: AppTheme.space10,
+                  horizontal: AppTheme.space10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0x4704060B),
@@ -495,38 +495,46 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'REGULATION MATCH FORMAT',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                            color: AppTheme.textSecondary,
+                        Expanded(
+                          child: Text(
+                            _isMatchDecided
+                                ? 'REGULATION • FINAL $_scoreRed-$_scoreWhite'
+                                : (_formatRounds >= 99
+                                    ? 'SUPERMATCH • ROUND ${_scoreRed + _scoreWhite + 1}'
+                                    : 'REGULATION • ROUND $currentRoundNumber OF $_formatRounds'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                              color: _isMatchDecided ? AppTheme.success : AppTheme.goldPrimary,
+                            ),
                           ),
                         ),
-                        Text(
-                          _isMatchDecided
-                              ? 'BOUT LOCKED • FINAL $_scoreRed-$_scoreWhite'
-                              : (_formatRounds >= 99
-                                  ? 'ROUND ${_scoreRed + _scoreWhite + 1} • SUPERMATCH CUSTOM'
-                                  : 'ROUND $currentRoundNumber OF $_formatRounds • FIRST TO $_targetWins ${_targetWins == 1 ? 'PIN' : 'PINS'}'),
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                            color: _isMatchDecided ? AppTheme.success : AppTheme.goldPrimary,
+                        if (!_isMatchDecided && _formatRounds < 99) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            'FIRST TO $_targetWins',
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                              color: AppTheme.textSecondary,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 5),
                     Row(
                       children: [
                         for (int i = 0; i < _kSupportedFormats.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 6),
+                          if (i > 0) const SizedBox(width: 5),
                           Expanded(
                             child: _FormatSegmentChip(
                               formatRounds: _kSupportedFormats[i],
@@ -542,15 +550,15 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                 ),
               ),
 
-              const SizedBox(height: AppTheme.space12),
+              const SizedBox(height: AppTheme.space8),
 
               // -------------------------------------------------------------------
-              // Table Telemetry & Timer Strip
+              // Table Telemetry & Timer Strip (Compact Single-Row)
               // -------------------------------------------------------------------
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.space16,
-                  vertical: AppTheme.space12,
+                  horizontal: AppTheme.space10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: AppTheme.elevatedSurface,
@@ -564,10 +572,10 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                     Row(
                       children: [
                         ArmIndicatorPill(isRightArm: widget.arm.toUpperCase() == 'RIGHT'),
-                        const SizedBox(width: AppTheme.space8),
+                        const SizedBox(width: 6),
                         if (_inStraps)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppTheme.secondaryAccent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -578,7 +586,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 color: AppTheme.secondaryAccent,
                               ),
                             ),
@@ -596,7 +604,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                         onTap: _isMatchDecided ? null : _toggleTimer,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: _timerRunning
                                 ? AppTheme.info.withValues(alpha: 0.15)
@@ -620,7 +628,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontFeatures: const [FontFeature.tabularFigures()],
                                   color: _timerRunning ? AppTheme.info : AppTheme.textPrimary,
                                 ),
@@ -641,19 +649,20 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                         onPressed: _isMatchDecided ? null : _toggleStraps,
                         icon: Icon(
                           Icons.link,
-                          size: 14,
+                          size: 13,
                           color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
                         ),
                         label: Text(
                           _inStraps ? 'Release' : 'Straps',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             color: _inStraps ? AppTheme.secondaryAccent : AppTheme.textSecondary,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(44, 34),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: const Size(40, 30),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           side: BorderSide(
                             color: _inStraps ? AppTheme.secondaryAccent : AppTheme.border,
                           ),
@@ -664,7 +673,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                 ),
               ),
 
-              const SizedBox(height: AppTheme.space16),
+              const SizedBox(height: AppTheme.space8),
 
               // -------------------------------------------------------------------
               // Prominent Crystal Victory Banner (Shown immediately on Win-Lock)
@@ -809,9 +818,9 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                     ),
                   ),
 
-                  const SizedBox(width: AppTheme.space12),
+                  const SizedBox(width: AppTheme.space8),
 
-                  // Right Column: Corner White/Cyan (Opponent)
+                  // Right Column: Corner White (Opponent — Platinum-White Accent)
                   Expanded(
                     child: _CornerScoringCard(
                       cornerName: 'CORNER WHITE',
@@ -819,7 +828,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                       score: _scoreWhite,
                       fouls: _foulsWhite,
                       warnings: _warningsWhite,
-                      cornerColor: AppTheme.cyanAccent,
+                      cornerColor: AppTheme.cornerWhiteAccent,
                       isFoulFlashing: _isFoulFlashing && _foulFlashSide == 'WHITE',
                       isMatchLocked: _isMatchDecided,
                       onAddPoint: () =>
@@ -837,21 +846,20 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                 ],
               ),
 
-              const SizedBox(height: AppTheme.space24),
+              const SizedBox(height: AppTheme.space10),
               const Divider(height: 1, color: AppTheme.borderSubtle),
-              const SizedBox(height: AppTheme.space12),
+              const SizedBox(height: AppTheme.space8),
 
               // -------------------------------------------------------------------
-              // Table Utility Bar (Reset Clock / Reset Score)
-              // Spatially separated from active corner scoring and pin-lock targets
+              // Compact Single-Row Table Utility Bar (Clock / Undo / Reset Score)
               // -------------------------------------------------------------------
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.space12,
-                  vertical: AppTheme.space8,
+                  horizontal: AppTheme.space8,
+                  vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardSurface.withValues(alpha: 0.5),
+                  color: AppTheme.cardSurface.withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   border: Border.all(color: AppTheme.cardBorder),
                 ),
@@ -863,23 +871,48 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
                       label: 'Reset match clock',
                       child: TextButton.icon(
                         onPressed: _resetTimer,
-                        icon: const Icon(Icons.replay, size: 16),
-                        label: const Text('Reset Clock', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                        icon: const Icon(Icons.replay, size: 15),
+                        label: const Text('Clock', style: TextStyle(fontSize: 11.5)),
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      label: 'Undo last point',
+                      child: TextButton.icon(
+                        onPressed: (_scoreRed > 0 || _scoreWhite > 0)
+                            ? _undoLastPoint
+                            : null,
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          foregroundColor: AppTheme.goldPrimary,
+                        ),
+                        icon: const Icon(Icons.undo_rounded, size: 15),
+                        label: const Text('Undo', style: TextStyle(fontSize: 11.5)),
                       ),
                     ),
                     Semantics(
                       button: true,
                       label: 'Reset score and bout state',
                       child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                        ),
                         onPressed: () async {
                           HapticFeedback.selectionClick();
                           final confirm = await showDialog<bool>(
                             context: context,
+                            barrierColor: AppTheme.overlayG6Barrier,
                             builder: (ctx) => AlertDialog(
-                              backgroundColor: AppTheme.cardSurface,
+                              backgroundColor: AppTheme.overlayG6Surface,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                                side: const BorderSide(color: AppTheme.cardBorder),
+                                side: const BorderSide(color: AppTheme.overlayG6Border),
                               ),
                               title: const Row(
                                 children: [
@@ -1041,7 +1074,7 @@ class _FormatSegmentChip extends StatelessWidget {
         onTap: isLocked ? null : onTap,
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 3),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppTheme.primaryAccent.withValues(alpha: 0.18)
@@ -1140,7 +1173,7 @@ class _CornerScoringCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       ),
       child: ElevatedActionCard(
-        padding: const EdgeInsets.all(AppTheme.space12),
+        padding: const EdgeInsets.all(AppTheme.space10),
         borderColor: isFoulFlashing
             ? AppTheme.competitionCrimson
             : cornerColor.withValues(alpha: 0.4),
@@ -1149,7 +1182,7 @@ class _CornerScoringCard extends StatelessWidget {
           children: [
             // Corner Header Pill
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 3),
               decoration: BoxDecoration(
                 color: isFoulFlashing
                     ? AppTheme.competitionCrimson.withValues(alpha: 0.25)
@@ -1166,14 +1199,14 @@ class _CornerScoringCard extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontWeight: FontWeight.bold,
-                  fontSize: 11,
+                  fontSize: 10.5,
                   color: isFoulFlashing ? AppTheme.competitionCrimson : cornerColor,
                   letterSpacing: 0.5,
                 ),
               ),
             ),
 
-            const SizedBox(height: AppTheme.space8),
+            const SizedBox(height: 5),
 
             // Athlete Name
             Text(
@@ -1182,16 +1215,16 @@ class _CornerScoringCard extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: AppTheme.fontBody,
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: 13,
                 color: AppTheme.textPrimary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
 
-            const SizedBox(height: AppTheme.space8),
+            const SizedBox(height: 4),
 
-            // Giant Score Readout (SpaceGrotesk 52sp, Tabular Figures)
+            // Score Readout (Compact Single-Viewport SpaceGrotesk 42sp, Tabular Figures)
             Semantics(
               label: 'Score for $athleteName: $score',
               child: Center(
@@ -1200,16 +1233,16 @@ class _CornerScoringCard extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.w800,
-                    fontSize: 52,
+                    fontSize: 42,
                     fontFeatures: [FontFeature.tabularFigures()],
                     color: AppTheme.textPrimary,
-                    height: 1.1,
+                    height: 1.0,
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(height: AppTheme.space8),
+            const SizedBox(height: 5),
 
             // Fouls and Warnings Badges
             Row(
@@ -1234,7 +1267,7 @@ class _CornerScoringCard extends StatelessWidget {
                       'F: $fouls/2',
                       style: TextStyle(
                         fontFamily: AppTheme.fontDisplay,
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         fontFeatures: const [FontFeature.tabularFigures()],
                         color: fouls > 0 ? AppTheme.primaryAccent : AppTheme.textSecondary,
@@ -1262,7 +1295,7 @@ class _CornerScoringCard extends StatelessWidget {
                       'W: $warnings/2',
                       style: TextStyle(
                         fontFamily: AppTheme.fontDisplay,
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         fontFeatures: const [FontFeature.tabularFigures()],
                         color: warnings > 0 ? AppTheme.secondaryAccent : AppTheme.textSecondary,
@@ -1273,13 +1306,13 @@ class _CornerScoringCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: AppTheme.space12),
+            const SizedBox(height: AppTheme.space8),
 
             // -------------------------------------------------------------------
-            // Primary 64×64dp Point Increment Button
+            // Primary Point Increment Button (Single-Viewport 50dp Hit Target)
             // -------------------------------------------------------------------
             SizedBox(
-              height: 64.0, // Strict 64dp hit target for chalked hands
+              height: 50.0,
               child: Semantics(
                 button: true,
                 enabled: !isMatchLocked,
@@ -1299,14 +1332,14 @@ class _CornerScoringCard extends StatelessWidget {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add, size: 22),
+                      Icon(Icons.add, size: 20),
                       SizedBox(width: 4),
                       Text(
                         'POINT',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontWeight: FontWeight.w800,
-                          fontSize: 15,
+                          fontSize: 14,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -1316,10 +1349,10 @@ class _CornerScoringCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: AppTheme.space8),
+            const SizedBox(height: 6),
 
             // -------------------------------------------------------------------
-            // Secondary 64dp Foul Button & Point Deduct Button
+            // Secondary Foul Button & Point Deduct Button (48dp Hit Targets)
             // -------------------------------------------------------------------
             Row(
               children: [
@@ -1327,7 +1360,7 @@ class _CornerScoringCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: SizedBox(
-                    height: 64.0, // Strict 64dp hit target per Canary 7 spec
+                    height: 48.0,
                     child: Semantics(
                       button: true,
                       enabled: !isMatchLocked,
@@ -1340,7 +1373,7 @@ class _CornerScoringCard extends StatelessWidget {
                         ),
                         child: const Text(
                           '-1',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                         ),
                       ),
                     ),
@@ -1351,7 +1384,7 @@ class _CornerScoringCard extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: SizedBox(
-                    height: 64.0, // Strict 64dp hit target per Canary 7 spec
+                    height: 48.0,
                     child: Semantics(
                       button: true,
                       enabled: !isMatchLocked,
@@ -1367,7 +1400,7 @@ class _CornerScoringCard extends StatelessWidget {
                         ),
                         child: const Text(
                           'FOUL',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                         ),
                       ),
                     ),
@@ -1376,11 +1409,11 @@ class _CornerScoringCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: AppTheme.space6),
+            const SizedBox(height: 6),
 
             // Warning Button (Compact)
             SizedBox(
-              height: 38.0,
+              height: 34.0,
               child: Semantics(
                 button: true,
                 enabled: !isMatchLocked,
@@ -1401,7 +1434,7 @@ class _CornerScoringCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: AppTheme.space10),
+            const SizedBox(height: 6),
 
             // -------------------------------------------------------------------
             // 400ms Long-Press Pin Confirmation Button (SIG-2)
@@ -1558,7 +1591,7 @@ class _PinHoldButtonState extends State<_PinHoldButton>
               duration: disableAnimations ? Duration.zero : const Duration(milliseconds: 50),
               curve: Curves.easeOutQuad,
               child: Container(
-                height: 64.0, // Strict 64dp hit target per Canary 7 spec
+                height: 50.0,
                 decoration: BoxDecoration(
                   color: _isLocked
                       ? Colors.white
@@ -1618,8 +1651,8 @@ class _PinHoldButtonState extends State<_PinHoldButton>
                                 : (_isLocked
                                     ? 'PIN CONFIRMED'
                                     : (_isHolding
-                                        ? 'LOCKING PIN: ${remainingMs}ms'
-                                        : 'HOLD TO PIN (400ms)')),
+                                        ? 'LOCKING PIN...'
+                                        : 'HOLD TO PIN')),
                             style: TextStyle(
                               fontFamily: AppTheme.fontDisplay,
                               fontWeight: FontWeight.bold,

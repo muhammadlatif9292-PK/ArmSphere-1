@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, not, isNull, sql, lte } from "drizzle-orm";
+import { eq, and, desc, asc, not, isNull, sql, lte, ilike, or } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { 
   users, 
@@ -890,8 +890,53 @@ export class AdministrationService {
   /**
    * 8. Immutable Audit Explorer
    */
-  static async getAuditEvents() {
-    return db.select().from(auditEvents).orderBy(desc(auditEvents.createdAt));
+  static async getAuditEvents(filters?: {
+    actionType?: string;
+    actorId?: string;
+    limit?: number;
+  }) {
+    const conditions: any[] = [];
+    const rawAction = filters?.actionType?.trim().toUpperCase();
+    if (rawAction && rawAction !== "ALL") {
+      if (rawAction === "DISPUTE" || rawAction === "DISPUTE_RESOLVED") {
+        conditions.push(ilike(auditEvents.action, "%DISPUTE%"));
+      } else if (rawAction === "ATHLETE_REVIEW") {
+        conditions.push(
+          or(
+            eq(auditEvents.action, "ATHLETE_REVIEW"),
+            ilike(auditEvents.action, "ATHLETE_VERIF%"),
+            ilike(auditEvents.action, "ATHLETE_REVIEW%"),
+            ilike(auditEvents.action, "ATHLETE_REJECT%"),
+            ilike(auditEvents.action, "ATHLETE_APPROV%")
+          )
+        );
+      } else if (rawAction === "MATCH_OVERRIDE") {
+        conditions.push(
+          or(
+            eq(auditEvents.action, "MATCH_OVERRIDE"),
+            ilike(auditEvents.action, "MATCH_%OVERRIDE%"),
+            ilike(auditEvents.action, "MATCH_VOID%"),
+            ilike(auditEvents.action, "MATCH_CORRECT%")
+          )
+        );
+      } else {
+        conditions.push(eq(auditEvents.action, rawAction));
+      }
+    }
+
+    const rawActorId = filters?.actorId?.trim();
+    if (rawActorId) {
+      conditions.push(ilike(auditEvents.actorId, `%${rawActorId}%`));
+    }
+
+    const baseQuery = db.select().from(auditEvents);
+    const filteredQuery =
+      conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+    const orderedQuery = filteredQuery.orderBy(desc(auditEvents.createdAt));
+    if (filters?.limit && filters.limit > 0) {
+      return orderedQuery.limit(filters.limit);
+    }
+    return orderedQuery;
   }
 
   static async verifyImmutableAuditLedger() {

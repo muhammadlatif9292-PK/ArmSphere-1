@@ -44,44 +44,58 @@ function sha256(content: string): string {
 }
 
 // --- User Agent Regex Parser for Device Management ---
-function parseUserAgent(uaString: string = ""): { device: string; os: string; browser: string } {
+export function parseUserAgent(uaString: string = ""): { device: string; os: string; browser: string } {
   let device = "Desktop";
   let os = "Unknown OS";
   let browser = "Unknown Browser";
 
   const lowerUA = uaString.toLowerCase();
 
-  // Parse Device Type
-  if (lowerUA.includes("mobi") || lowerUA.includes("iphone") || lowerUA.includes("android")) {
+  // Parse Device Type (including Flutter/Dart native mobile clients)
+  if (
+    lowerUA.includes("armsphere-mobile") ||
+    lowerUA.includes("armsphere mobile") ||
+    lowerUA.includes("flutter") ||
+    lowerUA.includes("dart/") ||
+    lowerUA.includes("mobi") ||
+    lowerUA.includes("iphone") ||
+    lowerUA.includes("android")
+  ) {
     device = "Mobile";
   } else if (lowerUA.includes("tablet") || lowerUA.includes("ipad")) {
     device = "Tablet";
   }
 
   // Parse OS
-  if (lowerUA.includes("windows")) {
-    os = "Windows";
-  } else if (lowerUA.includes("macintosh") || lowerUA.includes("mac os")) {
-    os = "macOS";
-  } else if (lowerUA.includes("iphone") || lowerUA.includes("ipad")) {
+  if (lowerUA.includes("iphone") || lowerUA.includes("ipad") || lowerUA.includes("ios")) {
     os = "iOS";
   } else if (lowerUA.includes("android")) {
     os = "Android";
+  } else if (lowerUA.includes("windows")) {
+    os = "Windows";
+  } else if (lowerUA.includes("macintosh") || lowerUA.includes("mac os") || lowerUA.includes("macos")) {
+    os = "macOS";
   } else if (lowerUA.includes("linux")) {
     os = "Linux";
+  } else if (lowerUA.includes("dart/") || lowerUA.includes("flutter")) {
+    os = "Mobile OS";
   }
 
-  // Parse Browser
-  if (lowerUA.includes("firefox")) {
+  // Parse Browser / Client Application
+  if (lowerUA.includes("armsphere-mobile") || lowerUA.includes("armsphere mobile")) {
+    browser = "ArmSphere Mobile App";
+  } else if (lowerUA.includes("flutter") || lowerUA.includes("dart/")) {
+    browser = "ArmSphere Mobile App";
+  } else if (lowerUA.includes("edg/") || lowerUA.includes("edge")) {
+    browser = "Edge";
+  } else if (lowerUA.includes("opera") || lowerUA.includes("opr")) {
+    browser = "Opera";
+  } else if (lowerUA.includes("firefox")) {
     browser = "Firefox";
   } else if (lowerUA.includes("chrome") && !lowerUA.includes("chromium")) {
     browser = "Chrome";
   } else if (lowerUA.includes("safari") && !lowerUA.includes("chrome")) {
     browser = "Safari";
-  } else if (lowerUA.includes("edge")) {
-    browser = "Edge";
-  } else if (lowerUA.includes("opera") || lowerUA.includes("opr")) {
-    browser = "Opera";
   }
 
   return { device, os, browser };
@@ -284,16 +298,20 @@ export class AuthService {
     // Password verified! Clear failed attempts
     cacheDel(attemptsKey);
 
-    // 3. Evaluate Session Security / Threat Analysis (Impossible Travel, New Devices, etc.)
-    const securityAnalysis = await SessionSecurityService.evaluateLoginSession(
+    // 3. Kick off Session Security / Threat Analysis in parallel with MFA/post-auth work
+    const securityPromise = SessionSecurityService.evaluateLoginSession(
       user.id,
       ip,
       userAgent
-    );
+    ).catch((secErr) => {
+      logger.warn({ err: secErr, userId: user.id }, "Non-fatal session security analysis error");
+      return null;
+    });
 
     // 4. Multi-Factor Authentication (MFA) Guard (DB-backed)
     if (userAny.mfaEnabled) {
       if (!context?.mfaCode) {
+        await securityPromise;
         return {
           mfaRequired: true,
           userId: user.id,
@@ -333,17 +351,6 @@ export class AuthService {
     const refreshTokenHash = sha256(refreshToken);
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 Days
 
-    // Save Session Row
-    await db.insert(userSessions).values({
-      userId: user.id,
-      tokenFamily,
-      refreshTokenHash,
-      isRevoked: false,
-      expiresAt,
-      ipAddress: ip,
-      userAgent: userAgent,
-    });
-
     // Device Trust Cookie Check / Setup ("Remember this device")
     let deviceTrustToken = null;
     if (context?.rememberDevice) {
@@ -355,23 +362,33 @@ export class AuthService {
       deviceTrustToken = jwt.sign(deviceTrustPayload, env.JWT_ACCESS_SECRET, { expiresIn: "30d" });
     }
 
-    // Write Audit Log
-    await db.insert(auditLogs).values({
-      userId: user.id,
-      action: "AUTH_LOGIN",
-      details: { tokenFamily, rememberDevice: !!context?.rememberDevice },
-      ipAddress: ip,
-      userAgent: userAgent,
-    });
-
-    const [athleteProfile] = await db
-      .select()
-      .from(athleteProfiles)
-      .where(and(eq(athleteProfiles.userId, user.id), eq(athleteProfiles.isDeleted, false)))
-      .limit(1);
-    const isOnboarded = !!athleteProfile;
-
-    const rolesOverview = await UserRoleService.getUserRolesOverview(user.id);
+    // Parallelize independent DB round-trips (session insert, audit log, profile, roles overview)
+    const [, , , athleteProfileRows, rolesOverview] = await Promise.all([
+      securityPromise,
+      db.insert(userSessions).values({
+        userId: user.id,
+        tokenFamily,
+        refreshTokenHash,
+        isRevoked: false,
+        expiresAt,
+        ipAddress: ip,
+        userAgent: userAgent,
+      }),
+      db.insert(auditLogs).values({
+        userId: user.id,
+        action: "AUTH_LOGIN",
+        details: { tokenFamily, rememberDevice: !!context?.rememberDevice },
+        ipAddress: ip,
+        userAgent: userAgent,
+      }),
+      db
+        .select({ id: athleteProfiles.id })
+        .from(athleteProfiles)
+        .where(and(eq(athleteProfiles.userId, user.id), eq(athleteProfiles.isDeleted, false)))
+        .limit(1),
+      UserRoleService.getUserRolesOverview(user.id),
+    ]);
+    const isOnboarded = athleteProfileRows.length > 0;
 
     const { passwordHash, ...userResponse } = user;
     return {

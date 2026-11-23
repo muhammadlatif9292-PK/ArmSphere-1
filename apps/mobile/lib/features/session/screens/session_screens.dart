@@ -12,7 +12,6 @@ import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../settings/widgets/biometric_settings_tile.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
 Future<bool> _showRevokeConfirmationDialog({
@@ -23,11 +22,12 @@ Future<bool> _showRevokeConfirmationDialog({
 }) async {
   final result = await showDialog<bool>(
     context: context,
+    barrierColor: AppTheme.overlayG6Barrier,
     builder: (ctx) => AlertDialog(
-      backgroundColor: AppTheme.cardSurface,
+      backgroundColor: AppTheme.overlayG6Surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        side: const BorderSide(color: AppTheme.cardBorder),
+        side: const BorderSide(color: AppTheme.overlayG6Border),
       ),
       title: Row(
         children: [
@@ -90,8 +90,7 @@ class ActiveSessionsListScreen extends ConsumerWidget {
         backgroundColor: AppTheme.voidBackground,
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(fallbackRoute: '/settings'),
-        title: const Text('Active Sessions & Security'),
-        actions: const [CrystalHomeButton()],
+        title: const Text('Active Sessions'),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -111,20 +110,6 @@ class ActiveSessionsListScreen extends ConsumerWidget {
                 : kFloatingDockTotalHeight + MediaQuery.paddingOf(context).bottom + 36,
           ),
           children: [
-            Text(
-              'DEVICE SECURITY',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: AppTheme.space8),
-            const ElevatedActionCard(
-              padding: EdgeInsets.zero,
-              child: BiometricSettingsTile(),
-            ),
-            const SizedBox(height: AppTheme.space24),
             Text(
               'SIGNED-IN DEVICES',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -372,7 +357,6 @@ class ActiveSessionControlScreen extends ConsumerWidget {
         flexibleSpace: const CrystalHeaderStageBar(domain: ArmSphereStageDomain.passport),
         leading: const CrystalBackButton(fallbackRoute: '/athlete/sessions'),
         title: const Text('Session Details'),
-        actions: const [CrystalHomeButton()],
       ),
       body: Stack(
         fit: StackFit.expand,

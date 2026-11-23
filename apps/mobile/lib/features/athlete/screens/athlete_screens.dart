@@ -8,6 +8,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../core/config/map_config.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/armsphere_location_picker.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -1717,7 +1718,7 @@ class _AthleteDashboardScreenState
                         children: [
                           Expanded(
                             child: Text(
-                              'RECOVERY STATUS',
+                              'TRAINING & PRS',
                               textScaler: MediaQuery.textScalerOf(context)
                                   .clamp(maxScaleFactor: 1.4),
                               style: const TextStyle(
@@ -1752,7 +1753,8 @@ class _AthleteDashboardScreenState
                                   width: 16,
                                   height: 16,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: AppTheme.cyan),
+                                      strokeWidth: 2,
+                                      color: AppTheme.goldPrimary),
                                 ),
                               ),
                             ),
@@ -1867,10 +1869,10 @@ class _AthleteDashboardScreenState
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: Colors.transparent,
-            border: Border.all(color: const Color(0x38FFFFFF), width: 1.0),
+            border: Border.all(color: const Color(0x55D4AF37), width: 1.0),
           ),
           child: const Center(
-            child: Icon(Icons.add, size: 18, color: AppTheme.cyan),
+            child: Icon(Icons.add, size: 18, color: AppTheme.goldPrimary),
           ),
         ),
         const SizedBox(width: 8),
@@ -1880,18 +1882,18 @@ class _AthleteDashboardScreenState
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'No Data',
+                'Log Big 5 PRs',
                 style: TextStyle(
                   fontFamily: AppTheme.fontDisplay,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.textPure,
                   height: 1.1,
                 ),
               ),
               SizedBox(height: 2),
               Text(
-                'Tap to log',
+                'Log & track Big 5 PRs',
                 style: TextStyle(
                   fontSize: 9,
                   color: AppTheme.textMuted,
@@ -3178,6 +3180,12 @@ class _AthleteDashboardScreenState
         ? (56.0 + 16.0 * (textScale - 1.0))
         : (68.0 + 22.0 * (textScale - 1.0));
 
+    final authState = ref.watch(authProvider);
+    final bool hasCertifiedRefereeRole = authState.verifiedRoles
+            .any((r) => r.trim().toUpperCase() == 'REFEREE') ||
+        (authState.userProfile?['role']?.toString().trim().toUpperCase() ==
+            'REFEREE');
+
     return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -3189,29 +3197,8 @@ class _AthleteDashboardScreenState
         mainAxisExtent: tileExtent,
       ),
       children: [
-        if (isOfficial)
-          _ShortcutButton(
-            rowIndex: 0,
-            icon: Icons.sports,
-            label: 'Referee Console',
-            color: AppTheme.cyan,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              context.push('/referee/dashboard');
-            },
-          ),
         _ShortcutButton(
-          rowIndex: 1,
-          icon: Icons.sports_kabaddi,
-          label: 'Scorepad Entry',
-          color: AppTheme.crimson,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            context.push('/referee/submit-scorepad');
-          },
-        ),
-        _ShortcutButton(
-          rowIndex: 2,
+          rowIndex: 0,
           icon: Icons.emoji_events_outlined,
           label: 'Tournaments',
           color: AppTheme.goldPrimary,
@@ -3221,7 +3208,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
-          rowIndex: 3,
+          rowIndex: 1,
           icon: Icons.fitness_center,
           label: 'Training Log',
           color: AppTheme.emerald,
@@ -3235,7 +3222,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
-          rowIndex: 4,
+          rowIndex: 2,
           icon: Icons.group_outlined,
           label: 'Clubs & Teams',
           color: AppTheme.cyan,
@@ -3245,7 +3232,7 @@ class _AthleteDashboardScreenState
           },
         ),
         _ShortcutButton(
-          rowIndex: 5,
+          rowIndex: 3,
           icon: Icons.inbox_outlined,
           label: 'Messages',
           color: AppTheme.textSecondary,
@@ -3254,6 +3241,26 @@ class _AthleteDashboardScreenState
             context.push('/messages');
           },
         ),
+        if (hasCertifiedRefereeRole)
+          _ShortcutButton(
+            rowIndex: 4,
+            icon: Icons.swap_horiz_rounded,
+            label: 'Switch to Referee Mode',
+            color: AppTheme.goldPrimary,
+            onTap: () async {
+              HapticFeedback.selectionClick();
+              final ok = await ref
+                  .read(authProvider.notifier)
+                  .switchActiveRole('REFEREE');
+              if (context.mounted) {
+                if (ok) {
+                  context.go('/home');
+                } else {
+                  context.push('/settings/roles');
+                }
+              }
+            },
+          ),
       ],
     );
   }
@@ -3936,12 +3943,12 @@ class AthleteProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              role.toUpperCase(),
+                              ArmSphereFormatters.formatRoleLabel(role),
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
-                                fontSize: 10,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 0.7,
+                                letterSpacing: 0.4,
                                 color: isOfficial
                                     ? AppTheme.crimson
                                     : AppTheme.goldPrimary,
@@ -4062,7 +4069,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                       subtitle: null,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        context.push('/radar');
+                        context.push('/radar?scope=mine');
                       },
                     ),
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
@@ -4118,18 +4125,6 @@ class AthleteProfileScreen extends ConsumerWidget {
                     const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
                     _WorkspaceTile(
                       rowIndex: 5,
-                      icon: Icons.settings_outlined,
-                      iconColor: AppTheme.textSecondary,
-                      title: 'Account & Settings',
-                      subtitle: null,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        context.push('/settings');
-                      },
-                    ),
-                    const Divider(height: 1, thickness: 1, color: Color(0x22FFFFFF)),
-                    _WorkspaceTile(
-                      rowIndex: 6,
                       icon: Icons.logout,
                       iconColor: AppTheme.error,
                       title: 'Log Out',
@@ -4415,7 +4410,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        flex: 6,
+                        flex: 5,
                         child: DropdownButtonFormField<String>(
                           initialValue: selectedWeightClass,
                           isExpanded: true,
@@ -4431,7 +4426,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                                   child: Text(
                                     weightClassLabels[wc] ?? wc,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13.5),
+                                    style: const TextStyle(fontSize: 12.5),
                                   ),
                                 ),
                               )
@@ -4460,9 +4455,10 @@ class AthleteProfileScreen extends ConsumerWidget {
                                 (a) => DropdownMenuItem(
                                   value: a,
                                   child: Text(
-                                    a,
+                                    ArmSphereFormatters.formatArmLabel(a),
+                                    maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13.5),
+                                    style: const TextStyle(fontSize: 12.5),
                                   ),
                                 ),
                               )

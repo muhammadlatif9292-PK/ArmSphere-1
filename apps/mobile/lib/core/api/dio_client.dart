@@ -150,6 +150,23 @@ class DioClient {
     return envUrl.isNotEmpty ? envUrl : defaultStagingUrl;
   }
 
+  static String _buildClientUserAgent() {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'ArmSphere-Mobile/1.0 (Android; Flutter)';
+      case TargetPlatform.iOS:
+        return 'ArmSphere-Mobile/1.0 (iOS; Flutter)';
+      case TargetPlatform.macOS:
+        return 'ArmSphere-Mobile/1.0 (macOS; Flutter)';
+      case TargetPlatform.windows:
+        return 'ArmSphere-Mobile/1.0 (Windows; Flutter)';
+      case TargetPlatform.linux:
+        return 'ArmSphere-Mobile/1.0 (Linux; Flutter)';
+      case TargetPlatform.fuchsia:
+        return 'ArmSphere-Mobile/1.0 (Fuchsia; Flutter)';
+    }
+  }
+
   DioClient({
     required this.secureStorage,
     required this.connectivity,
@@ -161,6 +178,10 @@ class DioClient {
           receiveTimeout: const Duration(seconds: 30),
           sendTimeout: const Duration(seconds: 30),
           contentType: 'application/json',
+          headers: <String, dynamic>{
+            if (!kIsWeb) 'User-Agent': _buildClientUserAgent(),
+            'X-Client-App': _buildClientUserAgent(),
+          },
         )) {
     _initializeInterceptors();
   }

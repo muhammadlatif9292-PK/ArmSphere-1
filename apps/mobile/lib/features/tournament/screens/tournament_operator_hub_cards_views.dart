@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/status_chip.dart';
 
@@ -884,95 +885,89 @@ class _Card2AppliedAthletesViewState extends State<Card2AppliedAthletesView> {
         ),
         children: [
           // 1. Division Filter Bar (Horizontally Scrollable Forged-Crystal Chips with Live Counts)
-          SingleChildScrollView(
+          CrystalHorizontalChipStrip(
             key: const ValueKey('card2_category_filter_bar'),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                for (int i = 0; i < chips.length; i++) ...[
-                  Builder(
-                    builder: (_) {
-                      final chip = chips[i];
-                      final isSelected = _selectedCategoryFilter == chip['key'];
-                      final isAll = chip['key'] == 'ALL';
-                      final activeColor = isAll
-                          ? const Color(0xFFE23B3B) // Competition Crimson
-                          : AppTheme.goldPrimary; // 24k Gold
-                      final fullChipText =
-                          chip['fullLabel'] ?? '${chip['label']} (${chip['count']})';
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: HoldToInspectText(
-                          title: 'Division Filter',
-                          fullText: fullChipText,
-                          child: InkWell(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            spacing: 8,
+            children: [
+              for (int i = 0; i < chips.length; i++)
+                Builder(
+                  builder: (_) {
+                    final chip = chips[i];
+                    final isSelected = _selectedCategoryFilter == chip['key'];
+                    final isAll = chip['key'] == 'ALL';
+                    final activeColor = isAll
+                        ? const Color(0xFFE23B3B) // Competition Crimson
+                        : AppTheme.goldPrimary; // 24k Gold
+                    final fullChipText =
+                        chip['fullLabel'] ?? '${chip['label']} (${chip['count']})';
+                    return HoldToInspectText(
+                      title: 'Division Filter',
+                      fullText: fullChipText,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(11),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          setState(() {
+                            _selectedCategoryFilter = chip['key'] ?? 'ALL';
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 13,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isAll
+                                        ? const [
+                                            Color(0xFF3A1216),
+                                            Color(0xFF1A090B),
+                                          ]
+                                        : const [
+                                            Color(0xFF2B2210),
+                                            Color(0xFF141008),
+                                          ],
+                                  )
+                                : const LinearGradient(
+                                    colors: [
+                                      Color(0xFF141821),
+                                      Color(0xFF0C0F15),
+                                    ],
+                                  ),
                             borderRadius: BorderRadius.circular(11),
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              FocusManager.instance.primaryFocus?.unfocus();
-                              setState(() {
-                                _selectedCategoryFilter = chip['key'] ?? 'ALL';
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 13,
-                                vertical: 9,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: isSelected
-                                    ? LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: isAll
-                                            ? const [
-                                                Color(0xFF3A1216),
-                                                Color(0xFF1A090B),
-                                              ]
-                                            : const [
-                                                Color(0xFF2B2210),
-                                                Color(0xFF141008),
-                                              ],
-                                      )
-                                    : const LinearGradient(
-                                        colors: [
-                                          Color(0xFF141821),
-                                          Color(0xFF0C0F15),
-                                        ],
-                                      ),
-                                borderRadius: BorderRadius.circular(11),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? activeColor
-                                      : const Color(0x28FFFFFF),
-                                  width: isSelected ? 1.3 : 1.0,
-                                ),
-                              ),
-                              child: Text(
-                                '${chip['label']} (${chip['count']})',
-                                style: TextStyle(
-                                  fontFamily: AppTheme.fontDisplay,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  color: isSelected
-                                      ? AppTheme.textPrimary
-                                      : AppTheme.textSecondary,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures()
-                                  ],
-                                ),
-                              ),
+                            border: Border.all(
+                              color: isSelected
+                                  ? activeColor
+                                  : const Color(0x28FFFFFF),
+                              width: isSelected ? 1.3 : 1.0,
+                            ),
+                          ),
+                          child: Text(
+                            '${chip['label']} (${chip['count']})',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: isSelected
+                                  ? AppTheme.textPrimary
+                                  : AppTheme.textSecondary,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ],
-              ],
-            ),
+                      ),
+                    );
+                  },
+                ),
+            ],
           ),
           const SizedBox(height: 12),
 
@@ -1224,7 +1219,7 @@ class _Card2AppliedAthletesViewState extends State<Card2AppliedAthletesView> {
             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
             decoration: InputDecoration(
               isDense: true,
-              hintText: 'Search athlete name, club, or division...',
+              hintText: 'Search name, club, division',
               prefixIcon: const Icon(
                 Icons.search_rounded,
                 size: 18,
@@ -1706,7 +1701,7 @@ class _Card4WeighInVerificationViewState
       },
       bannerMessage: targetStatus == 'VERIFIED'
           ? 'Weight Verified (${measuredKg.toStringAsFixed(1)} kg)'
-          : 'Marked Unmatch (${measuredKg.toStringAsFixed(1)} kg)',
+          : 'Marked Unmatched (${measuredKg.toStringAsFixed(1)} kg)',
     );
 
     if (mounted) {
@@ -2018,6 +2013,7 @@ class _Card4WeighInVerificationViewState
                       // Full-width QR / Name input so text is never squished or cut off
                       TextField(
                         controller: _qrScanController,
+                        scrollPadding: const EdgeInsets.only(bottom: 140),
                         onTapOutside: (_) =>
                             FocusManager.instance.primaryFocus?.unfocus(),
                         style: const TextStyle(
@@ -2159,6 +2155,7 @@ class _Card4WeighInVerificationViewState
                         TextField(
                           key: const ValueKey('card4_measured_weight_input'),
                           controller: _measuredWeightController,
+                          scrollPadding: const EdgeInsets.only(bottom: 140),
                           keyboardType:
                               const TextInputType.numberWithOptions(
                             decimal: true,
@@ -2380,6 +2377,7 @@ class _Card4WeighInVerificationViewState
 
           // 2. Searchable Athlete Weigh-In Roster + Status Filter Pills
           TextField(
+            scrollPadding: const EdgeInsets.only(bottom: 140),
             onChanged: (v) => setState(() => _manualSearchQuery = v),
             onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
@@ -2403,39 +2401,34 @@ class _Card4WeighInVerificationViewState
             ),
           ),
           const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                for (final st in [
-                  ('ALL', 'All (${_athletesList.length})'),
-                  ('PENDING', 'Pending ($pendingCount)'),
-                  ('VERIFIED', 'Verified ($verifiedCount)'),
-                  ('UNMATCHED', 'Unmatch ($unmatchedCount)'),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      selected: _statusFilter == st.$1,
-                      selectedColor:
-                          AppTheme.goldPrimary.withValues(alpha: 0.22),
-                      label: Text(
-                        st.$2,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      onSelected: (_) {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        setState(() => _statusFilter = st.$1);
-                      },
+          CrystalHorizontalChipStrip(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            spacing: 8,
+            children: [
+              for (final st in [
+                ('ALL', 'All (${_athletesList.length})'),
+                ('PENDING', 'Pending ($pendingCount)'),
+                ('VERIFIED', 'Verified ($verifiedCount)'),
+                ('UNMATCHED', 'Unmatched ($unmatchedCount)'),
+              ])
+                ChoiceChip(
+                  selected: _statusFilter == st.$1,
+                  selectedColor:
+                      AppTheme.goldPrimary.withValues(alpha: 0.22),
+                  label: Text(
+                    st.$2,
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-              ],
-            ),
+                  onSelected: (_) {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    setState(() => _statusFilter = st.$1);
+                  },
+                ),
+            ],
           ),
           const SizedBox(height: 10),
 
@@ -2978,7 +2971,19 @@ class _SpectatorEntranceQrGateViewState
   void _issueInstantSpectatorQrPass() {
     FocusManager.instance.primaryFocus?.unfocus();
     final idx = _passes.length + 1;
-    final tId = (widget.tournament['id'] ?? 'TRN').toString();
+    final rawId = (widget.tournament['id'] ?? 'TRN').toString().trim();
+    final status = (widget.tournament['status'] ?? '').toString().toUpperCase();
+    if (status == 'DRAFT' || rawId.toLowerCase().startsWith('draft_')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text('Publish this tournament before issuing official spectator QR passes.'),
+          backgroundColor: AppTheme.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final tId = rawId.isEmpty ? 'TRN' : rawId;
     final price = _spectatorMode == 'FREE'
         ? 0
         : (int.tryParse(_ticketPricePkrController.text.trim()) ?? 1000);
@@ -3354,41 +3359,44 @@ class _SpectatorEntranceQrGateViewState
                     ),
                   ],
                   const SizedBox(height: 10),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(
-                        child: Text(
-                          'Guests per Competing Athlete:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textSecondary,
-                          ),
+                      const Text(
+                        'Guests per Competing Athlete',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textSecondary,
                         ),
                       ),
-                      for (final count in [0, 1, 2, 3])
-                        Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: ChoiceChip(
-                            key: ValueKey('athlete_guest_allowance_$count'),
-                            selected: _athleteGuestAllowance == count,
-                            selectedColor:
-                                AppTheme.goldPrimary.withValues(alpha: 0.25),
-                            label: Text(
-                              '$count',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 11,
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          for (final count in [0, 1, 2, 3])
+                            ChoiceChip(
+                              key: ValueKey('athlete_guest_allowance_$count'),
+                              selected: _athleteGuestAllowance == count,
+                              selectedColor:
+                                  AppTheme.goldPrimary.withValues(alpha: 0.25),
+                              label: Text(
+                                '$count',
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 11.5,
+                                ),
                               ),
+                              onSelected: (_) {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                                setState(() => _athleteGuestAllowance = count);
+                                _pushConfigUpdate();
+                              },
                             ),
-                            onSelected: (_) {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                              setState(() => _athleteGuestAllowance = count);
-                              _pushConfigUpdate();
-                            },
-                          ),
-                        ),
+                        ],
+                      ),
                     ],
                   ),
                 ],

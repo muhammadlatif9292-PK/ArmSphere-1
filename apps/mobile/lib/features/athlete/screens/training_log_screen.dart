@@ -18,6 +18,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 import '../../../core/services/sensory_feedback_service.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/skeleton_placeholder.dart';
@@ -367,10 +368,11 @@ class _AthleteTrainingLogScreenState
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
+      barrierColor: AppTheme.overlayG6Barrier,
+      backgroundColor: AppTheme.overlayG6Surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-        side: BorderSide(color: Color(0x59D4AF37), width: 1.0),
+        side: BorderSide(color: AppTheme.overlayG6Border, width: 1.0),
       ),
       builder: (sheetCtx) {
         return StatefulBuilder(
@@ -432,7 +434,7 @@ class _AthleteTrainingLogScreenState
                                   ),
                                   SizedBox(height: 2),
                                   Text(
-                                    'Select move & weight. Video URL is optional (good to have).',
+                                    'Select an exercise and log your verified max lift.',
                                     style: TextStyle(
                                       fontSize: 11.5,
                                       color: AppTheme.textSecondary,
@@ -532,13 +534,8 @@ class _AthleteTrainingLogScreenState
                                   decimal: true,
                                 ),
                                 decoration: const InputDecoration(
-                                  labelText: 'Weight (kg) *',
+                                  labelText: 'Weight (kg)',
                                   hintText: 'e.g. 35',
-                                  prefixIcon: Icon(
-                                    Icons.fitness_center_rounded,
-                                    color: AppTheme.goldPrimary,
-                                    size: 18,
-                                  ),
                                 ),
                                 validator: (v) {
                                   final text = v?.trim() ?? '';
@@ -577,11 +574,8 @@ class _AthleteTrainingLogScreenState
                           controller: urlCtrl,
                           keyboardType: TextInputType.url,
                           decoration: const InputDecoration(
-                            labelText: 'Video URL (Optional — good to have)',
-                            hintText:
-                                'Optional YouTube, TikTok, or Facebook link...',
-                            helperText:
-                                'Not compulsory — good to have a video URL for lift proof',
+                            labelText: 'Video URL (Optional)',
+                            hintText: 'YouTube, TikTok, or Facebook link',
                             prefixIcon: Icon(
                               Icons.link_rounded,
                               color: AppTheme.textSecondary,
@@ -1252,52 +1246,48 @@ class _AthleteTrainingLogScreenState
                     //    (All Lifts, Pronation, Riser, Back pressure, Side pressure,
                     //     Cupping, Containment, Hammer curl, Curve biceps curl, Lat Drag)
                     // ========================================================
-                    SizedBox(
-                      height: 36,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _disciplines.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, idx) {
-                          final d = _disciplines[idx];
-                          final isSelected = _selectedDiscipline == d.id;
-                          return ChoiceChip(
-                            label: Text(
-                              d.label,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected
-                                    ? AppTheme.goldPrimary
-                                    : const Color(0xFFCBD5E1),
-                              ),
+                    CrystalHorizontalChipStrip(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      spacing: 8,
+                      children: _disciplines.map((d) {
+                        final isSelected = _selectedDiscipline == d.id;
+                        return ChoiceChip(
+                          label: Text(
+                            d.label,
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? AppTheme.goldPrimary
+                                  : const Color(0xFFCBD5E1),
                             ),
-                            selected: isSelected,
-                            selectedColor: Colors.transparent,
-                            backgroundColor: Colors.transparent,
-                            surfaceTintColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            elevation: 0,
-                            showCheckmark: false,
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(AppTheme.radiusSmall),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0x73D4AF37)
-                                    : const Color(0x2EFFFFFF),
-                                width: isSelected ? 1.2 : 1.0,
-                              ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: Colors.transparent,
+                          backgroundColor: Colors.transparent,
+                          surfaceTintColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          elevation: 0,
+                          showCheckmark: false,
+                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusSmall),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? const Color(0x73D4AF37)
+                                  : const Color(0x2EFFFFFF),
+                              width: isSelected ? 1.2 : 1.0,
                             ),
-                            onSelected: (_) {
-                              HapticFeedback.selectionClick();
-                              setState(() => _selectedDiscipline = d.id);
-                            },
-                          );
-                        },
-                      ),
+                          ),
+                          onSelected: (_) {
+                            HapticFeedback.selectionClick();
+                            setState(() => _selectedDiscipline = d.id);
+                          },
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 16),
 

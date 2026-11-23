@@ -1,12 +1,115 @@
 import { db } from "../config/db.js";
-import { organizations, auditLogs, events } from "@armsphere/db-schema";
-import { eq, isNull } from "drizzle-orm";
+import {
+  organizations,
+  auditLogs,
+  events,
+  championshipTitles,
+  beltLineage,
+  athleteProfiles,
+} from "@armsphere/db-schema";
+import { eq, isNull, inArray, desc } from "drizzle-orm";
 import { hashPassword, comparePassword, generateAccessToken } from "@armsphere/cryptography";
 import { BadRequestError, NotFoundError, UnauthorizedError } from "@armsphere/core";
 import crypto from "crypto";
 import env from "../config/env.js";
 
 export class OrganizationService {
+  private static readonly ACTIVE_EVENT_STATUSES = new Set([
+    "REGISTRATION_OPEN",
+    "PUBLISHED",
+    "UPCOMING",
+    "LIVE",
+    "IN_PROGRESS",
+    "CHECK_IN",
+  ]);
+
+  private static titleBelongsToOrg(
+    title: { name?: string | null; division?: string | null },
+    org: { name?: string | null; slug?: string | null; province?: string | null }
+  ): boolean {
+    const titleName = (title.name || "").toLowerCase();
+    const orgSlug = (org.slug || "").toLowerCase();
+    const orgName = (org.name || "").toLowerCase();
+    const orgProvince = (org.province || "").toLowerCase();
+
+    if (orgSlug && titleName.includes(orgSlug)) return true;
+    if (orgName && orgName.length >= 4 && titleName.includes(orgName)) return true;
+    if (orgProvince && orgProvince !== "international" && orgProvince !== "national" && titleName.includes(orgProvince)) {
+      return true;
+    }
+    if (orgSlug === "paff" && (titleName.includes("national") || titleName.includes("pakistan") || titleName.includes("paff"))) {
+      return true;
+    }
+    if (orgSlug === "east-vs-west" && (titleName.includes("east vs west") || titleName.includes("evw") || titleName.includes("world"))) {
+      return true;
+    }
+    return false;
+  }
+
+  private static async enrichOrganizationsWithCounts<T extends Record<string, any>>(orgs: T[]) {
+    if (orgs.length === 0) return [];
+    const orgIds = orgs.map((o) => o.id).filter(Boolean);
+
+    const [orgEvents, allTitles] = await Promise.all([
+      orgIds.length > 0
+        ? db
+            .select({
+              id: events.id,
+              organizationId: events.organizationId,
+              status: events.status,
+            })
+            .from(events)
+            .where(inArray(events.organizationId, orgIds))
+        : Promise.resolve([]),
+      db
+        .select({
+          id: championshipTitles.id,
+          name: championshipTitles.name,
+          division: championshipTitles.division,
+          activeChampionId: championshipTitles.activeChampionId,
+        })
+        .from(championshipTitles),
+    ]);
+
+    const activeCountByOrg = new Map<string, number>();
+    const totalHostedByOrg = new Map<string, number>();
+
+    for (const evt of orgEvents) {
+      if (!evt.organizationId) continue;
+      const status = (evt.status || "").toUpperCase();
+      if (status !== "DRAFT" && status !== "CANCELLED") {
+        totalHostedByOrg.set(evt.organizationId, (totalHostedByOrg.get(evt.organizationId) || 0) + 1);
+      }
+      if (OrganizationService.ACTIVE_EVENT_STATUSES.has(status)) {
+        activeCountByOrg.set(evt.organizationId, (activeCountByOrg.get(evt.organizationId) || 0) + 1);
+      }
+    }
+
+    return orgs.map((org) => {
+      const { accessCodeHash, ...safe } = org;
+      const activeEventsCount = activeCountByOrg.get(org.id) || 0;
+      const totalEventsHosted = totalHostedByOrg.get(org.id) || 0;
+      const titleBeltsCount = allTitles.filter((t) =>
+        OrganizationService.titleBelongsToOrg(t, org)
+      ).length;
+      const foundedYear = org.foundationDate
+        ? new Date(org.foundationDate).getUTCFullYear()
+        : org.createdAt
+          ? new Date(org.createdAt).getUTCFullYear()
+          : undefined;
+
+      return {
+        ...safe,
+        promoterName: safe.presidentName || null,
+        foundedYear,
+        activeEventsCount,
+        totalEventsHosted,
+        sanctionedBeltsCount: titleBeltsCount,
+        titleBeltsCount,
+      };
+    });
+  }
+
   /**
    * Public list of approved organizations for selection.
    * NEVER returns accessCodeHash.
@@ -34,7 +137,117 @@ export class OrganizationService {
       })
       .from(organizations)
       .where(eq(organizations.status, "APPROVED"));
-    return rows.map(({ accessCodeHash, ...safe }: any) => safe);
+    return OrganizationService.enrichOrganizationsWithCounts(rows);
+  }
+
+  /**
+   * Featured organizations for Discover & Directory surfaces.
+   */
+  static async listFeaturedOrganizations() {
+    const approved = await OrganizationService.listApprovedOrganizations();
+    return approved.sort((a, b) => {
+      const eventDiff = (b.activeEventsCount || 0) - (a.activeEventsCount || 0);
+      if (eventDiff !== 0) return eventDiff;
+      return (b.titleBeltsCount || 0) - (a.titleBeltsCount || 0);
+    });
+  }
+
+  /**
+   * Real championship belts and reigning titleholders for an organization.
+   */
+  static async getChampionsForOrganization(idOrSlug: string) {
+    const org = await OrganizationService.getById(idOrSlug);
+    const allTitles = await db.select().from(championshipTitles);
+    const matchedTitles = allTitles.filter((t) =>
+      OrganizationService.titleBelongsToOrg(t, org)
+    );
+
+    if (matchedTitles.length === 0) return [];
+
+    const titleIds = matchedTitles.map((t) => t.id);
+    const holderIds = Array.from(
+      new Set(
+        matchedTitles
+          .map((t) => t.activeChampionId)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    const [holders, lineageRows] = await Promise.all([
+      holderIds.length > 0
+        ? db
+            .select()
+            .from(athleteProfiles)
+            .where(inArray(athleteProfiles.id, holderIds))
+        : Promise.resolve([]),
+      db
+        .select()
+        .from(beltLineage)
+        .where(inArray(beltLineage.titleId, titleIds))
+        .orderBy(desc(beltLineage.acquiredAt)),
+    ]);
+
+    const lineageAthleteIds = Array.from(
+      new Set(lineageRows.map((l) => l.athleteId).filter(Boolean))
+    );
+    const missingAthleteIds = lineageAthleteIds.filter(
+      (id) => !holderIds.includes(id)
+    );
+    const extraAthletes =
+      missingAthleteIds.length > 0
+        ? await db
+            .select()
+            .from(athleteProfiles)
+            .where(inArray(athleteProfiles.id, missingAthleteIds))
+        : [];
+
+    const athleteMap = new Map(
+      [...holders, ...extraAthletes].map((a) => [a.id, a])
+    );
+
+    const lineageByTitle = new Map<string, typeof lineageRows>();
+    for (const row of lineageRows) {
+      const arr = lineageByTitle.get(row.titleId) || [];
+      arr.push(row);
+      lineageByTitle.set(row.titleId, arr);
+    }
+
+    return matchedTitles.map((title) => {
+      const holder = title.activeChampionId
+        ? athleteMap.get(title.activeChampionId)
+        : undefined;
+      const history = lineageByTitle.get(title.id) || [];
+      const currentReign = history.find((h) => !h.vacatedAt) || history[0];
+      const armUpper = (title.arm || "RIGHT").toUpperCase();
+      const holderElo = holder
+        ? armUpper === "LEFT"
+          ? holder.leftArmElo
+          : holder.rightArmElo
+        : null;
+
+      return {
+        id: title.id,
+        organizationId: org.id,
+        titleName: title.name,
+        weightClass: title.weightClass,
+        division: title.division,
+        arm: armUpper,
+        holderId: holder?.id || null,
+        holderName: holder?.displayName || "Vacant",
+        holderElo: holderElo ?? null,
+        defenses: currentReign?.defensesCount ?? 0,
+        awardedAt: currentReign?.acquiredAt
+          ? new Date(currentReign.acquiredAt).toISOString().slice(0, 10)
+          : null,
+        lineage: history.map((h) => ({
+          champion: athleteMap.get(h.athleteId)?.displayName || "Unknown Athlete",
+          event: h.reason || "Sanctioned Championship",
+          date: h.acquiredAt
+            ? new Date(h.acquiredAt).toISOString().slice(0, 10)
+            : "",
+        })),
+      };
+    });
   }
 
   /**
@@ -177,7 +390,8 @@ export class OrganizationService {
     if (!org) {
       throw new NotFoundError("Organization not found.");
     }
-    return org;
+    const [enriched] = await OrganizationService.enrichOrganizationsWithCounts([org]);
+    return enriched;
   }
 
   /**

@@ -1,4 +1,4 @@
-ALTER TABLE "match_tables" ADD COLUMN "event_id" uuid NOT NULL;
+ALTER TABLE "match_tables" ADD COLUMN IF NOT EXISTS "event_id" uuid NOT NULL;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "match_tables" ADD CONSTRAINT "match_tables_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "events"("id") ON DELETE cascade ON UPDATE no action;

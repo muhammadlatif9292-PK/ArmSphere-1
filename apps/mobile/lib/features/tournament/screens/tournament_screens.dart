@@ -9,6 +9,7 @@ import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/app_empty_state.dart';
 import '../../../core/widgets/app_error_view.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/sticky_bottom_action_bar.dart';
@@ -65,15 +66,22 @@ Color eventStatusColor(String status) {
 Widget _buildStatusChip(String status) {
   switch (status.toUpperCase()) {
     case 'ONGOING':
-      return const StatusChip.live(label: 'LIVE NOW');
+    case 'LIVE':
+    case 'IN_PROGRESS':
+      return const StatusChip.live(label: 'Live Now');
     case 'PUBLISHED':
-      return const StatusChip.success(label: 'REGISTRATION OPEN');
+    case 'REGISTRATION_OPEN':
+    case 'OPEN':
+      return const StatusChip.success(label: 'Registration Open');
     case 'COMPLETED':
-      return const StatusChip.neutral(label: 'COMPLETED');
+    case 'FINISHED':
+      return const StatusChip.neutral(label: 'Completed');
     case 'CANCELLED':
-      return const StatusChip.error(label: 'CANCELLED');
+      return const StatusChip.error(label: 'Cancelled');
     default:
-      return StatusChip.info(label: status.isEmpty ? 'UPCOMING' : status);
+      return StatusChip.info(
+        label: ArmSphereFormatters.formatTournamentStatus(status),
+      );
   }
 }
 
@@ -167,11 +175,11 @@ class TournamentsListScreen extends ConsumerWidget {
               separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 final t = visible[index];
-                final status = (t['status']?.toString() ?? 'UNKNOWN').toUpperCase();
-                final location = [
+                final status = (t['status']?.toString() ?? 'SCHEDULED').toUpperCase();
+                final location = ArmSphereFormatters.formatCleanAddress([
                   t['city']?.toString(),
                   t['province']?.toString(),
-                ].where((part) => part != null && part.isNotEmpty).join(', ');
+                ]);
 
                 return ElevatedActionCard(
                   onTap: () {
@@ -396,16 +404,18 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         final rawOrgId = event['organizationId']?.toString() ?? '';
         final isIndependentPromotion = rawOrgId.isEmpty;
         final hostOrgId = isIndependentPromotion ? 'org_paff_national' : rawOrgId;
-        final hostOrgName = (event['organizationName'] ??
-                (isIndependentPromotion
-                    ? 'Independent Promotion · Verified Organizer'
-                    : 'Pakistan Armwrestling Federation (PAFF)'))
-            .toString();
-        final location = [
+        final hostOrgName = ArmSphereFormatters.formatOrganizationName(
+          (event['organizationName'] ??
+                  (isIndependentPromotion
+                      ? 'Independent Promotion · Verified Organizer'
+                      : 'Pakistan Armwrestling Federation (PAFF)'))
+              .toString(),
+        );
+        final location = ArmSphereFormatters.formatCleanAddress([
           event['venueName']?.toString(),
           event['city']?.toString(),
           event['province']?.toString(),
-        ].where((part) => part != null && part.isNotEmpty).join(', ');
+        ]);
         final dates = {
           formatEventDate(event['startDate']),
           formatEventDate(event['endDate']),
@@ -1118,59 +1128,74 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           ),
           bottomNavigationBar: StickyBottomActionBar(
             primaryActionLabel: canRegister
-                ? '⚡ APPLY TO COMPETE'
+                ? 'Apply to Compete'
                 : (status == 'ONGOING'
                     ? 'Track Live Matches'
-                    : (status == 'COMPLETED' ? 'View Awards & Ceremony' : '⚡ APPLY TO COMPETE')),
+                    : (status == 'COMPLETED' ? 'View Awards & Ceremony' : 'Apply to Compete')),
             primaryActionIcon: Icons.bolt_rounded,
             onPrimaryAction: () {
               HapticFeedback.selectionClick();
               _openOptimisticApplyModal(context, event);
             },
-            secondaryAction: OutlinedButton.icon(
-              onPressed: () async {
-                HapticFeedback.mediumImpact();
-                final auth = ref.read(authProvider);
-                final profile = auth.userProfile ?? {};
-                final userId = (profile['id'] ?? 'spec-local-01').toString();
-                final userName =
-                    (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator').toString();
-                final hive = ref.read(hiveStorageProvider);
-                OfflineSyncManager? syncManager;
-                try {
-                  syncManager = ref.read(offlineSyncManagerProvider);
-                } catch (_) {}
-                final passPricePkr =
-                    (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
-                final issued =
-                    await TournamentOfflineStore.claimOrPurchaseSpectatorPassOfflineSafe(
-                  hive: hive,
-                  syncManager: syncManager,
-                  tournamentId: widget.tournamentId,
-                  userId: userId,
-                  userName: userName,
-                  pricePkr: passPricePkr,
-                );
-                if (mounted) {
-                  setState(() => _localIssuedSpectatorPass = issued);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CrystalSnackBar(
-                      content: Text(
-                        'Official Spectator Pass (${issued['qrCode']}) issued & ready for Gate QR scan!',
-                      ),
-                      backgroundColor: AppTheme.emerald,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+            secondaryAction: SizedBox(
+              height: 50,
+              child: OutlinedButton(
+                onPressed: () async {
+                  HapticFeedback.mediumImpact();
+                  final auth = ref.read(authProvider);
+                  final profile = auth.userProfile ?? {};
+                  final userId = (profile['id'] ?? 'spec-local-01').toString();
+                  final userName =
+                      (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator').toString();
+                  final hive = ref.read(hiveStorageProvider);
+                  OfflineSyncManager? syncManager;
+                  try {
+                    syncManager = ref.read(offlineSyncManagerProvider);
+                  } catch (_) {}
+                  final passPricePkr =
+                      (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
+                  final issued =
+                      await TournamentOfflineStore.claimOrPurchaseSpectatorPassOfflineSafe(
+                    hive: hive,
+                    syncManager: syncManager,
+                    tournamentId: widget.tournamentId,
+                    userId: userId,
+                    userName: userName,
+                    pricePkr: passPricePkr,
                   );
-                }
-              },
-              icon: const Icon(Icons.confirmation_number_rounded, size: 15),
-              label: const Text('🎟 GET SPECTATOR PASS'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.goldPrimary,
-                side: const BorderSide(color: AppTheme.goldPrimary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  if (mounted) {
+                    setState(() => _localIssuedSpectatorPass = issued);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CrystalSnackBar(
+                        content: Text(
+                          'Official Spectator Pass (${issued['qrCode']}) issued & ready for Gate QR scan!',
+                        ),
+                        backgroundColor: AppTheme.emerald,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.goldPrimary,
+                  side: const BorderSide(color: AppTheme.goldPrimary, width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '🎟 Spectator Pass',
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1361,13 +1386,21 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     String selectedWeight = weightCategories.first;
     String selectedArm = 'RIGHT';
     int guestCount = 0;
+    final int maxGuests = ((event['maxGuestsPerAthlete'] ??
+                event['guestsPerCompetingAthlete'] ??
+                event['athleteGuestAllowance'] ??
+                event['step1Config']?['maxGuestsPerAthlete']) as num?)
+            ?.toInt() ??
+        2;
 
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.cardSurface,
+      barrierColor: AppTheme.overlayG6Barrier,
+      backgroundColor: AppTheme.overlayG6Surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: AppTheme.overlayG6Border, width: 1.0),
       ),
       builder: (ctx) {
         return StatefulBuilder(
@@ -1390,7 +1423,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          '⚡ APPLY TO COMPETE',
+                          'APPLY TO COMPETE',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontWeight: FontWeight.w900,
@@ -1408,6 +1443,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: selectedWeight,
+                    dropdownColor: AppTheme.overlayG6Surface,
+                    style: const TextStyle(color: AppTheme.textPure, fontSize: 14),
                     decoration: const InputDecoration(
                       labelText: 'Select Weight Category',
                       prefixIcon: Icon(Icons.scale_outlined, size: 18),
@@ -1422,6 +1459,8 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
                     initialValue: selectedArm,
+                    dropdownColor: AppTheme.overlayG6Surface,
+                    style: const TextStyle(color: AppTheme.textPure, fontSize: 14),
                     decoration: const InputDecoration(
                       labelText: 'Select Competition Arm / Hand',
                       prefixIcon: Icon(Icons.front_hand_outlined, size: 18),
@@ -1437,42 +1476,44 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     onChanged: (v) =>
                         setSheetState(() => selectedArm = v ?? 'RIGHT'),
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Spectator Guests Included',
-                        style:
-                            TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: guestCount > 0
-                                ? () => setSheetState(() => guestCount--)
-                                : null,
-                            icon: const Icon(Icons.remove_circle_outline),
-                          ),
-                          Text(
-                            '$guestCount',
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 15,
-                              color: AppTheme.goldPrimary,
+                  if (maxGuests > 0) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Spectator Guests (Max $maxGuests)',
+                          style:
+                              const TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: guestCount > 0
+                                  ? () => setSheetState(() => guestCount--)
+                                  : null,
+                              icon: const Icon(Icons.remove_circle_outline),
                             ),
-                          ),
-                          IconButton(
-                            onPressed: guestCount < 5
-                                ? () => setSheetState(() => guestCount++)
-                                : null,
-                            icon: const Icon(Icons.add_circle_outline),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            Text(
+                              '$guestCount',
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                color: AppTheme.goldPrimary,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: guestCount < maxGuests
+                                  ? () => setSheetState(() => guestCount++)
+                                  : null,
+                              icon: const Icon(Icons.add_circle_outline),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 50,
@@ -1490,6 +1531,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                             (profile['id'] ?? profile['userId'] ?? 'ath-pk-local')
                                 .toString();
                         final athleteName = (profile['displayName'] ??
+                                profile['fullName'] ??
                                 profile['name'] ??
                                 'ArmSphere Athlete')
                             .toString();
@@ -1509,7 +1551,9 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           weightCategory: selectedWeight,
                           arm: selectedArm,
                           guestCount: guestCount,
-                          elo: (profile['elo'] as num?)?.toInt() ?? 1820,
+                          elo: (profile['eloRating'] as num?)?.toInt() ??
+                              (profile['elo'] as num?)?.toInt() ??
+                              1200,
                         );
                         if (!ctx.mounted) return;
                         Navigator.of(ctx).pop();
@@ -1520,7 +1564,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           ScaffoldMessenger.of(context).showSnackBar(
                             CrystalSnackBar(
                               content: Text(
-                                'Submitted / Done ✓ • Registered for $selectedWeight ($selectedArm Arm). Official QR Credential generated!',
+                                'Registered for $selectedWeight (${ArmSphereFormatters.formatArmLabel(selectedArm)}). Official QR Credential generated!',
                               ),
                               backgroundColor: AppTheme.emerald,
                               behavior: SnackBarBehavior.floating,
@@ -1782,8 +1826,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                     child: Center(
                       child: Text(
                         app != null
-                            ? '⚡ UPDATE DIVISION / QR'
-                            : '⚡ APPLY TO COMPETE',
+                            ? 'Update Division / QR'
+                            : 'Apply to Compete',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontWeight: FontWeight.w900,
@@ -1793,16 +1839,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                       ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () =>
-                    context.push('/tournament/${widget.tournamentId}/register'),
-                icon: const Icon(Icons.open_in_new_rounded, size: 15),
-                label: const Text(
-                  'FULL FORM',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -1953,8 +1989,10 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               child: Center(
                 child: Text(
                   passPricePkr <= 0
-                      ? '🎟 GET SPECTATOR PASS (FREE QR)'
-                      : '🎟 GET SPECTATOR PASS (PKR $passPricePkr)',
+                      ? '🎟 Spectator Pass (Free)'
+                      : '🎟 Spectator Pass (PKR $passPricePkr)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.w900,

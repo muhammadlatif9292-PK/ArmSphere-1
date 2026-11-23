@@ -12,6 +12,7 @@ import '../../../core/providers/discover_provider.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/providers/venue_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/widgets/championship_name_marquee.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -403,6 +404,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
+  void _navigateFromDiscover(BuildContext context, String route) {
+    if (route == '/tournaments' ||
+        route == '/community/feed' ||
+        route == '/home' ||
+        route == '/discover' ||
+        route == '/athlete/profile') {
+      MainShellScope.goToMainTabByPath(context, route);
+      return;
+    }
+    context.push(route);
+  }
+
   Widget _buildDrawerQuickAction(
     BuildContext sheetContext, {
     required IconData icon,
@@ -414,7 +427,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
       onTap: () {
         Navigator.of(sheetContext).pop();
-        context.push(route);
+        _navigateFromDiscover(context, route);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
@@ -592,7 +605,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   shadows: AppTheme.crystalTextShadows,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search athletes, events, clubs...',
+                  hintText: 'Search athletes, clubs, events',
                   hintStyle: const TextStyle(
                     fontFamily: AppTheme.fontBody,
                     color: Color(0xFFCBD5E1),
@@ -1125,8 +1138,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final orgs = orgsAsync.valueOrNull ?? const [];
     if (orgs.isEmpty) {
       return _FramedDirectorySection(
-        title: 'Sanctioning Organizations & Leagues',
-        subtitle: 'Official federations, promotions & championship bodies',
+        title: 'Federations & Leagues',
+        subtitle: 'Official sanctioning organizations & championship bodies',
         icon: Icons.shield_outlined,
         accentColor: AppTheme.goldPrimary,
         child: ElevatedActionCard(
@@ -1170,8 +1183,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       );
     }
     return _FramedDirectorySection(
-      title: 'Sanctioning Organizations & Leagues',
-      subtitle: 'Official federations, promotions & championship bodies',
+      title: 'Federations & Leagues',
+      subtitle: 'Official sanctioning organizations & championship bodies',
       icon: Icons.shield_outlined,
       accentColor: AppTheme.goldPrimary,
       actionLabel: 'View All',
@@ -1191,11 +1204,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               itemBuilder: (context, index) {
                 final org = orgs[index];
                 final id = (org['id'] ?? 'org_paff_national').toString();
-                final name = (org['name'] ?? 'Organization').toString();
+                final name = ArmSphereFormatters.formatOrganizationName(
+                  org['name']?.toString(),
+                  fallback: 'Organization',
+                );
                 final country = (org['country'] ?? 'PK').toString();
                 final city = (org['city'] ?? '').toString();
                 final activeCount =
-                    (org['activeEventsCount'] as num?)?.toInt() ?? 2;
+                    (org['activeEventsCount'] as num?)?.toInt() ?? 0;
 
                 return SizedBox(
                   width: 248,
@@ -1332,7 +1348,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         tag: 'SOCIAL',
         icon: Icons.forum_outlined,
         color: AppTheme.info,
-        route: '/community',
+        route: '/community/feed',
         bgAsset: ArmSphereAssets.resolveSemanticAsset(
           ArmSphereAssets.semanticDiscoverHubCommunityFeedTile,
         ),
@@ -1431,7 +1447,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildBentoPortalTile(BuildContext context, _HubItem item) {
     return TactilePressWrapper(
-      onTap: () => context.push(item.route),
+      onTap: () => _navigateFromDiscover(context, item.route),
       semanticLabel: item.title,
       child: Container(
         height: 132,
@@ -1770,51 +1786,32 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     List<dynamic> tournaments, {
     required bool showAll,
   }) {
-    final displayed = tournaments;
+    final displayed = showAll ? tournaments : tournaments.take(3).toList();
 
     return _FramedDirectorySection(
       title: 'Tournaments',
       icon: Icons.emoji_events_outlined,
       accentColor: AppTheme.primaryAccent,
       actionLabel: 'All Events',
-      onActionTap: () => context.push('/tournaments'),
+      onActionTap: () => _navigateFromDiscover(context, '/tournaments'),
       child: displayed.isEmpty
           ? _CompactEmptyBanner(
               icon: Icons.emoji_events_outlined,
               accentColor: AppTheme.secondaryAccent,
               title: 'No upcoming tournaments',
               actionLabel: 'Explore',
-              onAction: () => context.push('/tournaments'),
+              onAction: () => _navigateFromDiscover(context, '/tournaments'),
             )
-          : (displayed.length <= 3
-              ? Column(
-                  children: List.generate(
-                    displayed.length,
-                    (idx) => _buildTournamentCard(
-                      context,
-                      displayed[idx] as Map<String, dynamic>,
-                      isLast: idx == displayed.length - 1,
-                    ),
-                  ),
-                )
-              : SizedBox(
-                  height: 236,
-                  child: Scrollbar(
-                    thumbVisibility: true,
-                    radius: const Radius.circular(3),
-                    thickness: 3.5,
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: displayed.length,
-                      itemBuilder: (ctx, idx) => _buildTournamentCard(
-                        ctx,
-                        displayed[idx] as Map<String, dynamic>,
-                        isLast: idx == displayed.length - 1,
-                      ),
-                    ),
-                  ),
-                )),
+          : Column(
+              children: List.generate(
+                displayed.length,
+                (idx) => _buildTournamentCard(
+                  context,
+                  displayed[idx] as Map<String, dynamic>,
+                  isLast: idx == displayed.length - 1,
+                ),
+              ),
+            ),
     );
   }
 
@@ -1837,7 +1834,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         if (id != null) {
           context.push('/tournaments/$id');
         } else {
-          context.push('/tournaments');
+          _navigateFromDiscover(context, '/tournaments');
         }
       },
       semanticLabel: 'Tournament: $name in $location',
@@ -1915,14 +1912,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       icon: Icons.storefront_outlined,
       accentColor: AppTheme.success,
       actionLabel: 'Directory',
-      onActionTap: () => context.push('/venues'),
+      onActionTap: () => _navigateFromDiscover(context, '/venues'),
       child: displayed.isEmpty
           ? _CompactEmptyBanner(
               icon: Icons.storefront_outlined,
               accentColor: AppTheme.secondaryAccent,
               title: 'No venues listed yet',
               actionLabel: 'Venues',
-              onAction: () => context.push('/venues'),
+              onAction: () => _navigateFromDiscover(context, '/venues'),
             )
           : Column(
               children: displayed
@@ -2021,7 +2018,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     List<dynamic> topAthletes, {
     required bool showAll,
   }) {
-    final displayed = topAthletes;
+    final displayed = showAll ? topAthletes : topAthletes.take(3).toList();
 
     return _FramedDirectorySection(
       title: 'Top Rankings',
@@ -2037,37 +2034,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               actionLabel: 'Standings',
               onAction: () => context.push('/rankings'),
             )
-          : (displayed.length <= 3
-              ? Column(
-                  children: List.generate(
-                    displayed.length,
-                    (idx) => _buildAthleteRankingCard(
-                      context,
-                      displayed[idx] as Map<String, dynamic>,
-                      idx,
-                      isLast: idx == displayed.length - 1,
-                    ),
-                  ),
-                )
-              : SizedBox(
-                  height: 220,
-                  child: Scrollbar(
-                    thumbVisibility: true,
-                    radius: const Radius.circular(3),
-                    thickness: 3.5,
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: displayed.length,
-                      itemBuilder: (ctx, idx) => _buildAthleteRankingCard(
-                        ctx,
-                        displayed[idx] as Map<String, dynamic>,
-                        idx,
-                        isLast: idx == displayed.length - 1,
-                      ),
-                    ),
-                  ),
-                )),
+          : Column(
+              children: List.generate(
+                displayed.length,
+                (idx) => _buildAthleteRankingCard(
+                  context,
+                  displayed[idx] as Map<String, dynamic>,
+                  idx,
+                  isLast: idx == displayed.length - 1,
+                ),
+              ),
+            ),
     );
   }
 
@@ -2252,7 +2229,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     ? eventName
                     : (venueName != null && venueName.isNotEmpty
                         ? venueName
-                        : '$arm ARM • $teamSummary');
+                        : '${ArmSphereFormatters.formatArmLabel(arm)} • $teamSummary');
 
                 return ElevatedActionCard(
                   margin: const EdgeInsets.only(bottom: 8),

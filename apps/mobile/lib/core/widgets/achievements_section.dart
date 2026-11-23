@@ -288,7 +288,7 @@ class _OlympicMedalBadgeState extends State<OlympicMedalBadge>
             Text(
               item.isUnlocked
                   ? item.medalTier.toUpperCase()
-                  : '${(item.progress * 100).toInt()}% LOCK',
+                  : '${(item.progress * 100).toInt()}% Progress',
               style: TextStyle(
                 fontFamily: AppTheme.fontDisplay,
                 fontSize: 9,

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../providers/radar_provider.dart';
 
@@ -161,7 +162,7 @@ class RadarCarouselCard extends StatelessWidget {
       metaChips.add(pin.weightClass!);
     }
     if (pin.armPreference != null && pin.armPreference!.isNotEmpty) {
-      metaChips.add('${pin.armPreference!.toUpperCase()} ARM');
+      metaChips.add(ArmSphereFormatters.formatArmLabel(pin.armPreference));
     }
     if (pin.pinType == RadarPinType.beacon && pin.expiryRemainingLabel != null) {
       metaChips.add(pin.expiryRemainingLabel!);

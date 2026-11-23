@@ -86,6 +86,93 @@ class AppTheme {
   /// Backward-compatible alias for background (#0B0F19).
   static const Color surfaceDark = background;
 
+  /// Canonical G6 opaque overlay surface (#0E1118 at 96% opacity) for dialogs,
+  /// bottom sheets, dropdown menus, popup menus, and date/time pickers.
+  static const Color overlayG6Surface = Color(0xF50E1118);
+
+  /// Canonical G6 overlay border (rgba(255, 255, 255, 0.16) = 0x29FFFFFF).
+  static const Color overlayG6Border = Color(0x29FFFFFF);
+
+  /// Canonical G6 backdrop scrim (70% black = 0xB3000000).
+  static const Color overlayG6Barrier = Color(0xB3000000);
+
+  /// Canonical G1/G2 scrimmed dark charcoal card fill (~83% opaque) for legible
+  /// data cards & form containers over detailed 3D backdrops.
+  static const Color scrimmedCardSurface = Color(0xD40B0F18);
+
+  /// Canonical frosted dark obsidian AppBar surface (~82% #070A11).
+  static const Color frostedAppBarSurface = Color(0xD1070A11);
+
+  /// Crisp white/platinum-silver accent for Referee White Corner controls.
+  static const Color cornerWhiteAccent = Color(0xFFE2E8F0);
+
+  /// Standardized Gold Standard primary button style (24k Championship Gold).
+  static ButtonStyle get primaryGoldButtonStyle => ElevatedButton.styleFrom(
+        backgroundColor: goldPrimary,
+        foregroundColor: voidBackground,
+        disabledBackgroundColor: const Color(0x40D4AF37),
+        disabledForegroundColor: textMuted,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontWeight: FontWeight.w800,
+          fontSize: 14,
+          letterSpacing: 0.4,
+        ),
+      );
+
+  /// Standardized Gold Standard destructive button style (Competition Crimson).
+  static ButtonStyle get destructiveCrimsonButtonStyle => ElevatedButton.styleFrom(
+        backgroundColor: crimson,
+        foregroundColor: textPure,
+        disabledBackgroundColor: const Color(0x40E23B3B),
+        disabledForegroundColor: textMuted,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontWeight: FontWeight.w800,
+          fontSize: 14,
+          letterSpacing: 0.4,
+        ),
+      );
+
+  /// Standardized Gold Standard neutral dark glass button style.
+  static ButtonStyle get neutralDarkGlassButtonStyle => ElevatedButton.styleFrom(
+        backgroundColor: scrimmedCardSurface,
+        foregroundColor: textPure,
+        disabledBackgroundColor: const Color(0x800B0F18),
+        disabledForegroundColor: textMuted,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        side: const BorderSide(color: overlayG6Border, width: 1.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+          letterSpacing: 0.3,
+        ),
+      );
+
   // ---------------------------------------------------------------------------
   // 2. Accents & Semantics (Championship Illumination)
   // ---------------------------------------------------------------------------
@@ -573,18 +660,30 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
-      canvasColor: const Color(0xFF131722),
+      canvasColor: overlayG6Surface,
       primaryColor: goldPrimary,
       colorScheme: const ColorScheme.dark(
-        surface: Colors.transparent,
-        surfaceContainer: Colors.transparent,
+        surface: overlayG6Surface,
+        surfaceContainerLowest: voidBackground,
+        surfaceContainerLow: background,
+        surfaceContainer: overlayG6Surface,
+        surfaceContainerHigh: Color(0xFF141926),
+        surfaceContainerHighest: Color(0xFF1A2030),
         primary: goldPrimary,
         secondary: secondaryAccent,
         error: error,
-        onSurface: textPrimary,
-        onPrimary: textPure,
-        onSecondary: textPure,
+        onSurface: textPure,
+        onSurfaceVariant: textSecondary,
+        onPrimary: voidBackground,
+        onSecondary: voidBackground,
+        onError: textPure,
         outline: border,
+        outlineVariant: overlayG6Border,
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: goldPrimary,
+        circularTrackColor: Color(0x26D4AF37),
+        linearTrackColor: Color(0x26D4AF37),
       ),
       dividerColor: const Color(0x22FFFFFF),
       dividerTheme: const DividerThemeData(
@@ -865,33 +964,188 @@ class AppTheme {
         }),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xEB0B0F19),
+        backgroundColor: overlayG6Surface,
         surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
+        shadowColor: Colors.black,
+        barrierColor: overlayG6Barrier,
+        elevation: 8,
+        titleTextStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontWeight: FontWeight.w800,
+          fontSize: 18,
+          color: textPure,
+        ),
+        contentTextStyle: const TextStyle(
+          fontFamily: fontBody,
+          fontSize: 14,
+          color: textPrimary,
+          height: 1.45,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+          side: const BorderSide(color: overlayG6Border, width: 1.0),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Color(0xF00B101B),
+        backgroundColor: overlayG6Surface,
         surfaceTintColor: Colors.transparent,
-        modalBackgroundColor: Color(0xF00B101B),
-        modalBarrierColor: Color(0xAA030509),
-        elevation: 0,
-        modalElevation: 0,
+        modalBackgroundColor: overlayG6Surface,
+        modalBarrierColor: overlayG6Barrier,
+        elevation: 8,
+        modalElevation: 8,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          side: BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+          side: BorderSide(color: overlayG6Border, width: 1.0),
         ),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: const Color(0xEB0B0F19),
+        color: overlayG6Surface,
         surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
+        shadowColor: Colors.black,
+        elevation: 8,
+        textStyle: const TextStyle(
+          fontFamily: fontBody,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: textPure,
+        ),
+        labelTextStyle: const WidgetStatePropertyAll(
+          TextStyle(
+            fontFamily: fontBody,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: textPure,
+          ),
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMedium),
-          side: const BorderSide(color: Color(0x38FFFFFF), width: 1.0),
+          side: const BorderSide(color: overlayG6Border, width: 1.0),
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(overlayG6Surface),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          shadowColor: const WidgetStatePropertyAll(Colors.black),
+          elevation: const WidgetStatePropertyAll(8),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: overlayG6Border, width: 1.0),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radiusMedium),
+            ),
+          ),
+        ),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: const TextStyle(
+          fontFamily: fontBody,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: textPure,
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(overlayG6Surface),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          shadowColor: const WidgetStatePropertyAll(Colors.black),
+          elevation: const WidgetStatePropertyAll(8),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: overlayG6Border, width: 1.0),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radiusMedium),
+            ),
+          ),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: overlayG6Surface,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black,
+        elevation: 10,
+        headerBackgroundColor: const Color(0xFF141926),
+        headerForegroundColor: textPure,
+        weekdayStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          color: textSecondary,
+        ),
+        dayStyle: const TextStyle(
+          fontFamily: fontBody,
+          fontWeight: FontWeight.w600,
+          fontSize: 13.5,
+          color: textPure,
+        ),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return voidBackground;
+          if (states.contains(WidgetState.disabled)) return textMuted;
+          return textPure;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return goldPrimary;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return voidBackground;
+          return goldPrimary;
+        }),
+        todayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return goldPrimary;
+          return Colors.transparent;
+        }),
+        todayBorder: const BorderSide(color: goldPrimary, width: 1.2),
+        yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return voidBackground;
+          return textPure;
+        }),
+        yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return goldPrimary;
+          return Colors.transparent;
+        }),
+        dividerColor: overlayG6Border,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: overlayG6Border, width: 1.0),
+        ),
+        confirmButtonStyle: TextButton.styleFrom(
+          foregroundColor: goldPrimary,
+          textStyle: const TextStyle(
+            fontFamily: fontDisplay,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        cancelButtonStyle: TextButton.styleFrom(
+          foregroundColor: textSecondary,
+          textStyle: const TextStyle(
+            fontFamily: fontDisplay,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: overlayG6Surface,
+        elevation: 10,
+        dialBackgroundColor: const Color(0xFF141926),
+        dialHandColor: goldPrimary,
+        dialTextColor: textPure,
+        hourMinuteColor: const Color(0xFF1A2030),
+        hourMinuteTextColor: textPure,
+        dayPeriodColor: const Color(0xFF1A2030),
+        dayPeriodTextColor: textPure,
+        dayPeriodBorderSide: const BorderSide(color: overlayG6Border),
+        entryModeIconColor: goldPrimary,
+        helpTextStyle: const TextStyle(
+          fontFamily: fontDisplay,
+          fontWeight: FontWeight.w700,
+          color: textSecondary,
+          letterSpacing: 0.8,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: overlayG6Border, width: 1.0),
         ),
       ),
       actionIconTheme: ActionIconThemeData(

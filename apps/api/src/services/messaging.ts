@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, not, isNull, sql, or } from "drizzle-orm";
+import { eq, and, desc, asc, not, isNull, sql, or, inArray } from "drizzle-orm";
 import { db } from "../config/db.js";
 import { 
   conversations, 
@@ -87,6 +87,9 @@ export class MessagingService {
       }
     }
 
+    const directPairKey =
+      type === "DIRECT" ? [creatorId, participantId].sort().join(":") : null;
+
     // For DIRECT, check if conversation already exists between these two users
     if (type === "DIRECT") {
       const existingCPs = await db
@@ -94,43 +97,64 @@ export class MessagingService {
         .from(conversationParticipants)
         .where(eq(conversationParticipants.userId, creatorId));
 
-      for (const cp of existingCPs) {
-        // Find if the same conversation contains the other participant
-        const [otherPart] = await db
-          .select()
-          .from(conversationParticipants)
-          .where(and(
-            eq(conversationParticipants.conversationId, cp.conversationId),
-            eq(conversationParticipants.userId, participantId)
-          ));
-
-        if (otherPart) {
-          const [conv] = await db
+      const candidateConvIds = existingCPs.map((cp) => cp.conversationId);
+      if (candidateConvIds.length > 0) {
+        const [matchingOtherParts, candidateConvs] = await Promise.all([
+          db
+            .select()
+            .from(conversationParticipants)
+            .where(
+              and(
+                inArray(conversationParticipants.conversationId, candidateConvIds),
+                eq(conversationParticipants.userId, participantId)
+              )
+            ),
+          db
             .select()
             .from(conversations)
-            .where(and(eq(conversations.id, cp.conversationId), eq(conversations.type, "DIRECT")));
+            .where(
+              and(
+                inArray(conversations.id, candidateConvIds),
+                eq(conversations.type, "DIRECT")
+              )
+            ),
+        ]);
 
-          if (conv) {
-            return { conversation: conv, isNew: false };
-          }
+        const matchingConvIdSet = new Set(
+          matchingOtherParts.map((p) => p.conversationId)
+        );
+        const matchedConvs = candidateConvs
+          .filter((c) => matchingConvIdSet.has(c.id))
+          .sort(
+            (a, b) =>
+              new Date(b.updatedAt || b.createdAt).getTime() -
+              new Date(a.updatedAt || a.createdAt).getTime()
+          );
+
+        if (matchedConvs.length > 0) {
+          return { conversation: matchedConvs[0], isNew: false };
         }
       }
     }
 
-    // Provision new conversation
+    // Provision new conversation with canonical directPairKey metadata
     const [newConv] = await db
       .insert(conversations)
       .values({
         type,
-        metadata: {},
+        metadata: directPairKey ? { directPairKey } : {},
       })
       .returning();
 
     // Attach participants
-    await db.insert(conversationParticipants).values([
-      { conversationId: newConv.id, userId: creatorId, lastReadAt: new Date() },
-      { conversationId: newConv.id, userId: participantId, lastReadAt: new Date(0) }
-    ]);
+    const participantRows =
+      creatorId === participantId
+        ? [{ conversationId: newConv.id, userId: creatorId, lastReadAt: new Date() }]
+        : [
+            { conversationId: newConv.id, userId: creatorId, lastReadAt: new Date() },
+            { conversationId: newConv.id, userId: participantId, lastReadAt: new Date(0) },
+          ];
+    await db.insert(conversationParticipants).values(participantRows);
 
     return { conversation: newConv, isNew: true };
   }
@@ -386,41 +410,76 @@ export class MessagingService {
       .from(conversationParticipants)
       .where(eq(conversationParticipants.userId, userId));
 
-    const conversationList = [];
+    if (userPartList.length === 0) return [];
 
-    for (const part of userPartList) {
-      const conversationId = part.conversationId;
+    const convIds = Array.from(new Set(userPartList.map((p) => p.conversationId)));
 
-      const [conv] = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.id, conversationId));
-
-      if (!conv) continue;
-
-      const otherParts = await db
+    // Batched queries in parallel — eliminates 6x N+1 per-thread round trips
+    const [convRows, allPartRows, allMsgRows] = await Promise.all([
+      db.select().from(conversations).where(inArray(conversations.id, convIds)),
+      db
         .select()
         .from(conversationParticipants)
-        .where(and(
-          eq(conversationParticipants.conversationId, conversationId),
-          not(eq(conversationParticipants.userId, userId))
-        ));
+        .where(inArray(conversationParticipants.conversationId, convIds)),
+      db
+        .select()
+        .from(messages)
+        .where(inArray(messages.conversationId, convIds))
+        .orderBy(desc(messages.createdAt)),
+    ]);
 
+    const otherUserIds = Array.from(
+      new Set(
+        allPartRows
+          .filter((p) => p.userId !== userId)
+          .map((p) => p.userId)
+      )
+    );
+
+    const [otherUsers, otherProfiles] =
+      otherUserIds.length > 0
+        ? await Promise.all([
+            db.select().from(users).where(inArray(users.id, otherUserIds)),
+            db
+              .select()
+              .from(athleteProfiles)
+              .where(inArray(athleteProfiles.userId, otherUserIds)),
+          ])
+        : [[], []];
+
+    const convMap = new Map(convRows.map((c) => [c.id, c]));
+    const userMap = new Map(otherUsers.map((u) => [u.id, u]));
+    const profileMap = new Map(otherProfiles.map((p) => [p.userId, p]));
+
+    const otherPartsByConv = new Map<string, typeof allPartRows>();
+    for (const p of allPartRows) {
+      if (p.userId === userId) continue;
+      const arr = otherPartsByConv.get(p.conversationId) || [];
+      arr.push(p);
+      otherPartsByConv.set(p.conversationId, arr);
+    }
+
+    const msgsByConv = new Map<string, typeof allMsgRows>();
+    for (const m of allMsgRows) {
+      const arr = msgsByConv.get(m.conversationId) || [];
+      arr.push(m);
+      msgsByConv.set(m.conversationId, arr);
+    }
+
+    const rawList = [];
+
+    for (const part of userPartList) {
+      const conv = convMap.get(part.conversationId);
+      if (!conv) continue;
+
+      const otherParts = otherPartsByConv.get(conv.id) || [];
       let otherParticipantProfile = null;
+      let otherUserId: string | null = null;
       if (otherParts.length > 0) {
-        const otherUserId = otherParts[0].userId;
-
-        const [otherUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, otherUserId));
-
+        otherUserId = otherParts[0].userId;
+        const otherUser = userMap.get(otherUserId);
         if (otherUser) {
-          const [profile] = await db
-            .select()
-            .from(athleteProfiles)
-            .where(eq(athleteProfiles.userId, otherUserId));
-
+          const profile = profileMap.get(otherUserId);
           otherParticipantProfile = {
             id: otherUserId,
             displayName: profile?.displayName || otherUser.fullName,
@@ -429,44 +488,61 @@ export class MessagingService {
         }
       }
 
-      const [lastMsg] = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversationId, conversationId))
-        .orderBy(desc(messages.createdAt))
-        .limit(1);
-
+      const convMsgs = msgsByConv.get(conv.id) || [];
+      const lastMsg = convMsgs.length > 0 ? convMsgs[0] : null;
       const lastRead = part.lastReadAt ? new Date(part.lastReadAt) : new Date(0);
-      const allMsgs = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversationId, conversationId));
+      const unreadCount = convMsgs.filter(
+        (m) => new Date(m.createdAt) > lastRead && m.senderId !== userId
+      ).length;
 
-      const unreadCount = allMsgs.filter((m) => {
-        return new Date(m.createdAt) > lastRead && m.senderId !== userId;
-      }).length;
+      const directPairKey =
+        conv.type === "DIRECT" && otherUserId
+          ? [userId, otherUserId].sort().join(":")
+          : null;
 
-      conversationList.push({
+      rawList.push({
         id: conv.id,
         type: conv.type,
         metadata: conv.metadata,
         createdAt: conv.createdAt,
         updatedAt: conv.updatedAt,
         otherParticipant: otherParticipantProfile,
-        lastMessage: lastMsg ? {
-          id: lastMsg.id,
-          senderId: lastMsg.senderId,
-          content: lastMsg.content,
-          createdAt: lastMsg.createdAt,
-        } : null,
+        lastMessage: lastMsg
+          ? {
+              id: lastMsg.id,
+              senderId: lastMsg.senderId,
+              content: lastMsg.content,
+              createdAt: lastMsg.createdAt,
+            }
+          : null,
         unreadCount,
-        lastActiveAt: lastMsg ? new Date(lastMsg.createdAt) : new Date(conv.updatedAt || conv.createdAt),
+        lastActiveAt: lastMsg
+          ? new Date(lastMsg.createdAt)
+          : new Date(conv.updatedAt || conv.createdAt),
+        _directPairKey: directPairKey,
       });
     }
 
-    conversationList.sort((a, b) => b.lastActiveAt.getTime() - a.lastActiveAt.getTime());
+    rawList.sort((a, b) => b.lastActiveAt.getTime() - a.lastActiveAt.getTime());
 
-    return conversationList.map(({ lastActiveAt, ...rest }) => rest);
+    // Deduplicate any legacy duplicate DIRECT conversations for the same participant pair,
+    // keeping the most recently active thread and rolling up unread counts.
+    const seenDirectPairs = new Map<string, (typeof rawList)[number]>();
+    const deduped: typeof rawList = [];
+
+    for (const item of rawList) {
+      if (item._directPairKey) {
+        const existing = seenDirectPairs.get(item._directPairKey);
+        if (existing) {
+          existing.unreadCount += item.unreadCount;
+          continue;
+        }
+        seenDirectPairs.set(item._directPairKey, item);
+      }
+      deduped.push(item);
+    }
+
+    return deduped.map(({ lastActiveAt, _directPairKey, ...rest }) => rest);
   }
 
   /**
@@ -478,24 +554,37 @@ export class MessagingService {
       .from(conversationParticipants)
       .where(eq(conversationParticipants.userId, userId));
 
+    if (userPartList.length === 0) {
+      return { totalUnread: 0, conversationCounts: {} as Record<string, number> };
+    }
+
+    const convIds = Array.from(new Set(userPartList.map((p) => p.conversationId)));
+    const allMsgs = await db
+      .select()
+      .from(messages)
+      .where(inArray(messages.conversationId, convIds));
+
+    const lastReadByConv = new Map(
+      userPartList.map((p) => [
+        p.conversationId,
+        p.lastReadAt ? new Date(p.lastReadAt) : new Date(0),
+      ])
+    );
+
     let totalUnread = 0;
     const conversationCounts: Record<string, number> = {};
+    for (const cid of convIds) {
+      conversationCounts[cid] = 0;
+    }
 
-    for (const part of userPartList) {
-      const lastRead = part.lastReadAt ? new Date(part.lastReadAt) : new Date(0);
-
-      // Select messages since last read
-      const allMsgs = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversationId, part.conversationId));
-
-      const unreadCount = allMsgs.filter((m) => {
-        return new Date(m.createdAt) > lastRead && m.senderId !== userId;
-      }).length;
-
-      conversationCounts[part.conversationId] = unreadCount;
-      totalUnread += unreadCount;
+    for (const m of allMsgs) {
+      if (m.senderId === userId) continue;
+      const lastRead = lastReadByConv.get(m.conversationId) || new Date(0);
+      if (new Date(m.createdAt) > lastRead) {
+        conversationCounts[m.conversationId] =
+          (conversationCounts[m.conversationId] || 0) + 1;
+        totalUnread += 1;
+      }
     }
 
     return {

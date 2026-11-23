@@ -405,7 +405,7 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
               subtitle:
                   'Generate an official federation snapshot in CSV or JSON format',
               headerIcon: Icons.download_rounded,
-              primaryActionLabel: 'Generate & Export $selectedFormat',
+              primaryActionLabel: 'Export $selectedFormat',
               primaryActionIcon: Icons.file_download_done_rounded,
               isPrimaryLoading: isExporting,
               secondaryActionLabel: 'Cancel',
@@ -751,15 +751,17 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                       const Expanded(
                         child: Text(
                           'FEDERATION ROLE APPLICATIONS',
+                          maxLines: 2,
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
+                            letterSpacing: 0.8,
                             color: AppTheme.goldPrimary,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 12),
                       CrystalHeaderActionPill(
                         label: 'GRANT ROLE',
                         icon: Icons.add_moderator_rounded,
@@ -895,23 +897,27 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                   children: [
                     const Expanded(
                       child: Text(
-                        'ECOSYSTEM TELEMETRY & ELO CURVE',
+                        'ECOSYSTEM TELEMETRY',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
+                          letterSpacing: 0.9,
                           color: AppTheme.goldPrimary,
                         ),
                       ),
                     ),
-                    if (canExport)
+                    if (canExport) ...[
+                      const SizedBox(width: 10),
                       CrystalHeaderActionPill(
                         label: 'EXPORT REPORT',
                         icon: Icons.download_rounded,
                         accentColor: AppTheme.info,
                         onTap: _openExportReportSheet,
                       ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -958,8 +964,8 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             CrystalActionButton(
-                              label: 'RUN DUE SYNC',
-                              icon: Icons.play_circle_outline_rounded,
+                              label: 'Sync Standings',
+                              icon: Icons.sync_rounded,
                               fullWidth: true,
                               accentColor: AppTheme.info,
                               onTap: () async {

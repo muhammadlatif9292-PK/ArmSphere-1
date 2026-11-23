@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/asset_paths.dart';
 import '../../../core/widgets/armsphere_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tactile_press_wrapper.dart';
@@ -751,7 +752,7 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                                           const SizedBox(height: 2),
                                           Text(
                                             [
-                                              '$armLabel ARM',
+                                              ArmSphereFormatters.formatArmLabel(armLabel, uppercase: true),
                                               'VERIFIED BOUT',
                                               if (eloDeltaLabel != null) eloDeltaLabel,
                                             ].join(' • '),
@@ -861,7 +862,17 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
         );
         return;
       }
-      context.push('/messages/${conversation['id']}');
+      final recipientName = (profile['displayName'] ??
+              profile['fullName'] ??
+              profile['name'])
+          ?.toString()
+          .trim();
+      context.push(
+        '/messages/${conversation['id']}',
+        extra: recipientName != null && recipientName.isNotEmpty
+            ? {'recipientName': recipientName}
+            : null,
+      );
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

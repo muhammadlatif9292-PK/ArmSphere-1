@@ -1463,15 +1463,9 @@ class _RefereeDashboardScreenState
                         ),
                         const SizedBox(height: AppTheme.space12),
                         if (refereeAssignments.isEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF121620),
-                              borderRadius: BorderRadius.circular(16),
-                              border:
-                                  Border.all(color: const Color(0x28FFFFFF)),
-                            ),
-                            child: const Text(
+                          const ElevatedActionCard(
+                            padding: EdgeInsets.all(20),
+                            child: Text(
                               'No tournament assignments for your referee account yet. You will only see assignments here when a Tournament Operator selects you for a table.',
                               style: TextStyle(
                                 fontSize: 13,
@@ -2161,7 +2155,7 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
                     itemBuilder: (context, index) {
                       final c = certs[index];
-                      final status = c['status']?.toString() ?? 'UNKNOWN';
+                      final status = c['status']?.toString() ?? 'PENDING';
                       final expires = c['expiresAt']?.toString();
                       return RepaintBoundary(
                         child: ElevatedActionCard(
@@ -2330,7 +2324,42 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
       );
       return;
     }
-    final winnerId = _winnerSide == 'challenger' ? challengerId : opponentId;
+
+    // Prevent self-officiation on rated bouts
+    final authUser = ref.read(authProvider).userProfile;
+    final userNode = authUser?['user'] is Map ? authUser!['user'] as Map : authUser;
+    final currentUserId = (userNode?['id'] ?? userNode?['userId'] ?? '').toString().trim();
+    final currentAthleteId = (userNode?['athleteProfileId'] ?? authUser?['athleteProfileId'] ?? '').toString().trim();
+    final cUserId = (_challenger?['userId'] ?? '').toString().trim();
+    final oUserId = (_opponent?['userId'] ?? '').toString().trim();
+    final isSelfOfficiating =
+        (currentUserId.isNotEmpty && (currentUserId == cUserId || currentUserId == oUserId || currentUserId == challengerId || currentUserId == opponentId)) ||
+        (currentAthleteId.isNotEmpty && (currentAthleteId == challengerId || currentAthleteId == opponentId));
+    if (isSelfOfficiating) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text('Referees cannot officiate their own rated match.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Derive winner strictly from the scoreline so score and winner can never contradict
+    final scoreParts = _score.split('-').map((p) => int.tryParse(p.trim())).toList();
+    if (scoreParts.length != 2 || scoreParts[0] == null || scoreParts[1] == null || scoreParts[0] == scoreParts[1]) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text('Select a decisive non-tie scoreline before submitting.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final derivedWinnerSide = scoreParts[0]! > scoreParts[1]! ? 'challenger' : 'opponent';
+    final winnerId = derivedWinnerSide == 'challenger' ? challengerId : opponentId;
 
     setState(() => _isLoading = true);
     try {
@@ -2436,7 +2465,7 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
         headerIcon: Icons.emoji_events_rounded,
         secondaryActionLabel: 'Review Score',
         onSecondaryAction: () => Navigator.of(ctx).pop(),
-        primaryActionLabel: 'SUBMIT OFFICIAL RESULT',
+        primaryActionLabel: 'Submit Official Result',
         primaryActionIcon: Icons.verified_rounded,
         isPrimaryLoading: _isLoading,
         onPrimaryAction: _isLoading
@@ -2709,9 +2738,9 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _athleteTile(label: 'Challenger (Winner A-side)', athlete: _challenger, onTap: () => _pickAthlete(true)),
+                    _athleteTile(label: 'Challenger (Red Corner)', athlete: _challenger, onTap: () => _pickAthlete(true)),
                     const SizedBox(height: AppTheme.space12),
-                    _athleteTile(label: 'Opponent', athlete: _opponent, onTap: () => _pickAthlete(false)),
+                    _athleteTile(label: 'Opponent (White Corner)', athlete: _opponent, onTap: () => _pickAthlete(false)),
                     const SizedBox(height: AppTheme.space20),
                     SegmentedButton<String>(
                       style: ButtonStyle(
@@ -2763,12 +2792,32 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                       selected: {_winnerSide},
                       onSelectionChanged: (v) {
                         HapticFeedback.lightImpact();
-                        setState(() => _winnerSide = v.first);
+                        final nextSide = v.first;
+                        final parts = _score.split('-');
+                        String syncedScore = _score;
+                        if (parts.length == 2) {
+                          final a = int.tryParse(parts[0].trim()) ?? 3;
+                          final b = int.tryParse(parts[1].trim()) ?? 0;
+                          if (nextSide == 'challenger' && a < b) {
+                            syncedScore = '$b-$a';
+                          } else if (nextSide == 'opponent' && a > b) {
+                            syncedScore = '$b-$a';
+                          }
+                        }
+                        setState(() {
+                          _winnerSide = nextSide;
+                          if (_kScoreOptions.contains(syncedScore)) {
+                            _score = syncedScore;
+                          }
+                        });
                       },
                     ),
                     const SizedBox(height: AppTheme.space16),
                     DropdownButtonFormField<String>(
+                      key: ValueKey('quick_score_$_score'),
                       initialValue: _score,
+                      dropdownColor: AppTheme.overlayG6Surface,
+                      style: const TextStyle(color: AppTheme.textPure),
                       decoration: const InputDecoration(labelText: 'Outcome Score'),
                       items: [
                         for (final s in _kScoreOptions)
@@ -2779,19 +2828,34 @@ class _MatchSubmissionScreenState extends ConsumerState<MatchSubmissionScreen> {
                               style: const TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontWeight: FontWeight.bold,
+                                color: AppTheme.textPure,
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
                           ),
                       ],
                       onChanged: (val) {
-                        if (val != null) setState(() => _score = val);
+                        if (val != null) {
+                          final parts = val.split('-');
+                          final a = int.tryParse(parts.first.trim()) ?? 3;
+                          final b = int.tryParse(parts.last.trim()) ?? 0;
+                          setState(() {
+                            _score = val;
+                            if (a > b) {
+                              _winnerSide = 'challenger';
+                            } else if (b > a) {
+                              _winnerSide = 'opponent';
+                            }
+                          });
+                        }
                       },
                     ),
                     const SizedBox(height: AppTheme.space24),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submit,
-                      child: _isLoading ? const CircularProgressIndicator() : const Text('SUBMIT OFFICIAL RESULT'),
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text('Submit Official Result'),
                     ),
                   ],
                 ),
@@ -2911,11 +2975,22 @@ class _AthleteSearchSheetState extends ConsumerState<_AthleteSearchSheet> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: AppTheme.space8),
-                        itemCount: _results.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space8),
-                        itemBuilder: (context, index) {
+                  : (_results.isEmpty && _searchController.text.trim().isNotEmpty && _error == null)
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text(
+                              'No athletes matched your search. Try a different name or spelling.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: AppTheme.space8),
+                          itemCount: _results.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space8),
+                          itemBuilder: (context, index) {
                           final item = _results[index];
                           final id = item['id']?.toString();
                           if (widget.excludeId != null && widget.excludeId == id) return const SizedBox.shrink();

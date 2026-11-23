@@ -443,7 +443,7 @@ class _OfficialScorepadScreenState
               ],
             ),
             Text(
-              'PAF Engine v1.0',
+              'PAFF Engine v1.0',
               style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
             ),
           ],
@@ -1550,9 +1550,10 @@ class _OfficialScorepadScreenState
             'category': foulData['category'],
             'round': foulData['round'],
             'time': 'Just now',
-            'referee': ref.read(authProvider).userProfile?['fullName'] ??
+            'referee': ref.read(authProvider).userProfile?['displayName'] ??
+                ref.read(authProvider).userProfile?['fullName'] ??
                 ref.read(authProvider).userProfile?['name'] ??
-                'Official Referee',
+                'Assigned Official',
           });
         });
       },
@@ -2125,7 +2126,7 @@ class _OfficialScorepadScreenState
   // PART 13: REFEREE CONFIRMATION IDENTITY
   // ==========================================
   Widget _buildRefereeIdentityCard(Map<String, dynamic> user) {
-    final refName = user['fullName'] ?? user['name'] ?? 'Official Referee';
+    final refName = user['displayName'] ?? user['fullName'] ?? user['name'] ?? 'Assigned Official';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2179,7 +2180,7 @@ class _OfficialScorepadScreenState
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'PAF Official • Digital Signature Ready',
+                  'PAFF Official • Digital Signature Ready',
                   style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
                 ),
               ],
@@ -2451,7 +2452,7 @@ class _OfficialScorepadScreenState
       await matchRepository.certifyMatchResult(widget.match?['id']?.toString() ?? '', refereeId, winner, score);
       
       final ts = DateTime.now().toIso8601String();
-      final hash = 'PAF-CERT-2026-${DateTime.now().millisecondsSinceEpoch}';
+      final hash = 'PAFF-CERT-2026-${DateTime.now().millisecondsSinceEpoch}';
 
       if (mounted) {
         setState(() {

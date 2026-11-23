@@ -1198,9 +1198,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'messaging_thread',
         pageBuilder: (context, state) {
           final conversationId = state.pathParameters['conversationId'] ?? '';
+          String? recipientName;
+          if (state.extra is String) {
+            recipientName = state.extra as String;
+          } else if (state.extra is Map) {
+            final extraMap = state.extra as Map;
+            recipientName = (extraMap['recipientName'] ??
+                    extraMap['displayName'] ??
+                    extraMap['name'])
+                ?.toString();
+          }
           return AppTransitionPage(
             key: state.pageKey,
-            child: ChatScreen(conversationId: conversationId),
+            child: ChatScreen(
+              conversationId: conversationId,
+              recipientName: recipientName,
+            ),
           );
         },
       ),
@@ -1581,10 +1594,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/radar',
         name: 'radar',
-        pageBuilder: (context, state) => AppTransitionPage(
-          key: state.pageKey,
-          child: const RadarScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final scope = state.uri.queryParameters['scope']?.toLowerCase();
+          return AppTransitionPage(
+            key: state.pageKey,
+            child: RadarScreen(
+              personalBeaconsOnly: scope == 'mine' || scope == 'personal',
+            ),
+          );
+        },
       ),
     ],
   );

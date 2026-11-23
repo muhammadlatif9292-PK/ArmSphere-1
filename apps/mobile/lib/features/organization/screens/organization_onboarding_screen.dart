@@ -7,6 +7,7 @@ import '../../../core/providers/organization_session_provider.dart';
 import '../../../core/providers/state_providers.dart';
 import '../../../core/providers/tournament_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/elevated_action_card.dart';
@@ -148,7 +149,10 @@ class _OrganizationOnboardingScreenState extends ConsumerState<OrganizationOnboa
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(organizationSessionProvider);
-    final orgName = session.orgName ?? 'Sanctioning Organization';
+    final orgName = ArmSphereFormatters.formatOrganizationName(
+      session.orgName,
+      fallback: 'Sanctioning Organization',
+    );
 
     return StickyFormScaffold(
       appBar: AppBar(
