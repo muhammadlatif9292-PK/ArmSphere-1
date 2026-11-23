@@ -452,16 +452,6 @@ class _AdminCommandScreenState extends ConsumerState<AdminCommandScreen> {
                           : 'Add verification notes or reason for rejection...',
                     ),
                   ),
-                    style: const TextStyle(
-                      color: AppTheme.textPure,
-                      fontSize: 13.5,
-                    ),
-                    decoration: CrystalModalSheet.inputDecoration(
-                      labelText: 'Official Review Notes',
-                      hintText:
-                          'Add verification notes or reason for rejection...',
-                    ),
-                  ),
                 ],
               ),
             );
