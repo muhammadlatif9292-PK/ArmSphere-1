@@ -209,7 +209,6 @@ void main() {
 
       // Tap '-85 KG • Right Arm' filter chip in filter tray
       final chipFinder85 = find.text('-85 KG • Right Arm').first;
-      await tester.ensureVisible(chipFinder85);
       await tester.tap(chipFinder85);
       await settleScreen(tester);
 
@@ -219,7 +218,6 @@ void main() {
 
       // Tap 'ALL' filter chip to restore full view
       final allChipFinder = find.text('ALL').first;
-      await tester.ensureVisible(allChipFinder);
       await tester.tap(allChipFinder);
       await settleScreen(tester);
 

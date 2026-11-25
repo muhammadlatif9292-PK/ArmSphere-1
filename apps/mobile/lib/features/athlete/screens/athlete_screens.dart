@@ -1263,104 +1263,119 @@ class _AthleteDashboardScreenState
           width: 1.0,
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.bolt_rounded,
-                size: 14,
-                color: isPodium ? AppTheme.goldLight : AppTheme.goldPrimary,
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      armTag,
-                      style: const TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 8.0,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.7,
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      eloText,
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontDisplay,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.2,
-                        color: isPodium
-                            ? AppTheme.goldLight
-                            : AppTheme.textPure,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ],
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.bolt_rounded,
+                  size: 14,
+                  color: isPodium ? AppTheme.goldLight : AppTheme.goldPrimary,
                 ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(
-                color: hasDelta
-                    ? (isPositive
-                        ? const Color(0x6610B981)
-                        : const Color(0x80E23B3B))
-                    : const Color(0x73D4AF37),
-                width: 1.0,
-              ),
-            ),
-            child: hasDelta
-                ? Row(
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isPositive
-                            ? Icons.arrow_drop_up_rounded
-                            : Icons.arrow_drop_down_rounded,
-                        size: 13,
-                        color: isPositive ? AppTheme.emerald : AppTheme.crimson,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          armTag,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 8.0,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.7,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
                       ),
-                      Text(
-                        '${isPositive ? '+' : ''}$eloDelta',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                          color: isPositive
-                              ? AppTheme.emerald
-                              : AppTheme.crimson,
+                      const SizedBox(height: 1),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          eloText,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.2,
+                            color: isPodium
+                                ? AppTheme.goldLight
+                                : AppTheme.textPure,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ),
                     ],
-                  )
-                : Text(
-                    currentElo != null ? 'ACTIVE' : 'PENDING',
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                      color: AppTheme.goldPrimary,
-                    ),
                   ),
-          ),
-        ],
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: hasDelta
+                      ? (isPositive
+                          ? const Color(0x6610B981)
+                          : const Color(0x80E23B3B))
+                      : const Color(0x73D4AF37),
+                  width: 1.0,
+                ),
+              ),
+              child: hasDelta
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isPositive
+                              ? Icons.arrow_drop_up_rounded
+                              : Icons.arrow_drop_down_rounded,
+                          size: 13,
+                          color: isPositive ? AppTheme.emerald : AppTheme.crimson,
+                        ),
+                        Text(
+                          '${isPositive ? '+' : ''}$eloDelta',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontDisplay,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: isPositive
+                                ? AppTheme.emerald
+                                : AppTheme.crimson,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      currentElo != null ? 'ACTIVE' : 'PENDING',
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

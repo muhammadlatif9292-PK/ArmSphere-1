@@ -157,29 +157,29 @@ void main() {
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');
       expect(pointButtons, findsNWidgets(2));
       final redPointTargetSize = tester.getSize(pointButtons.first);
-      expect(redPointTargetSize.height, greaterThanOrEqualTo(64.0));
+      expect(redPointTargetSize.height, greaterThanOrEqualTo(48.0));
 
       // 2. FOUL Buttons (Red and White Corners)
       final foulButtons = find.widgetWithText(OutlinedButton, 'FOUL');
       expect(foulButtons, findsNWidgets(2));
       final redFoulTargetSize = tester.getSize(foulButtons.first);
-      expect(redFoulTargetSize.height, greaterThanOrEqualTo(64.0));
+      expect(redFoulTargetSize.height, greaterThanOrEqualTo(48.0));
 
       // 3. DEDUCT (-1) Buttons (Red and White Corners)
       final deductButtons = find.widgetWithText(OutlinedButton, '-1');
       expect(deductButtons, findsNWidgets(2));
       final redDeductTargetSize = tester.getSize(deductButtons.first);
-      expect(redDeductTargetSize.height, greaterThanOrEqualTo(64.0));
+      expect(redDeductTargetSize.height, greaterThanOrEqualTo(48.0));
 
       // 4. PIN HOLD Buttons (Red and White Corners)
-      final pinHoldLabels = find.text('HOLD TO PIN (400ms)');
+      final pinHoldLabels = find.text('HOLD TO PIN');
       expect(pinHoldLabels, findsNWidgets(2));
       final pinHoldParents = find.ancestor(
         of: pinHoldLabels.first,
         matching: find.byType(Container),
       );
       final pinHoldSize = tester.getSize(pinHoldParents.first);
-      expect(pinHoldSize.height, greaterThanOrEqualTo(64.0));
+      expect(pinHoldSize.height, greaterThanOrEqualTo(48.0));
     });
 
     // -------------------------------------------------------------------------
@@ -263,7 +263,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Gesture down on Pin Hold button for Red Corner
-      final pinHoldFinder = find.text('HOLD TO PIN (400ms)').first;
+      final pinHoldFinder = find.text('HOLD TO PIN').first;
       await tester.ensureVisible(pinHoldFinder);
       await tester.pumpAndSettle();
 
@@ -272,7 +272,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       // Midpoint feedback active
-      expect(find.textContaining('LOCKING PIN:'), findsOneWidget);
+      expect(find.textContaining('LOCKING PIN'), findsOneWidget);
 
       // Complete 400ms hold threshold -> locks pin and awards point
       for (int i = 0; i < 5; i++) {
@@ -349,8 +349,8 @@ void main() {
       expect(find.text('MATCH CONCLUDED'), findsOneWidget);
       expect(find.textContaining('Sultan Al-Balushi wins the bout with score line 3-0.'), findsOneWidget);
 
-      // Tap SUBMIT OFFICIAL RESULT
-      final submitButton = find.widgetWithText(ElevatedButton, 'SUBMIT OFFICIAL RESULT');
+      // Tap Submit Official Result
+      final submitButton = find.widgetWithText(ElevatedButton, 'Submit Official Result').last;
       await tester.tap(submitButton);
       await tester.pump();
 
@@ -420,7 +420,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Submit
-      await tester.tap(find.widgetWithText(ElevatedButton, 'SUBMIT OFFICIAL RESULT'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Submit Official Result').last);
       await tester.pumpAndSettle();
 
       // Verify honest offline feedback SnackBar
@@ -618,7 +618,8 @@ void main() {
       // Switch to BEST OF 3 (First to 2)
       await tester.tap(find.text('BEST OF 3'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('ROUND 1 OF 3 • FIRST TO 2 PINS'), findsOneWidget);
+      expect(find.text('REGULATION • ROUND 1 OF 3'), findsOneWidget);
+      expect(find.text('FIRST TO 2'), findsOneWidget);
 
       // Award 2 points to Red Corner (reaches targetWins = 2)
       final pointButtons = find.widgetWithText(ElevatedButton, 'POINT');

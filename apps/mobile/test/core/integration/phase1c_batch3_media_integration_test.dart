@@ -26,6 +26,7 @@ void main() {
       final mockTournament = {
         'id': tourneyId,
         'name': 'National Armwrestling Championship 2026',
+        'organizationName': 'ArmSphere Verified',
         'status': 'PUBLISHED',
         'startDate': '2026-10-15T09:00:00Z',
         'endDate': '2026-10-17T18:00:00Z',

@@ -80,7 +80,7 @@ void main() {
       expect(avatarFinder, findsOneWidget);
 
       // 2. Verify centered vault role pill is rendered
-      expect(find.text('ATHLETE'), findsOneWidget);
+      expect(find.text('Athlete'), findsOneWidget);
 
       // 3. Verify competitor identity texts
       expect(find.text('Sultan Khan'), findsOneWidget);
@@ -200,18 +200,18 @@ void main() {
       );
       expect(sealFinder, findsOneWidget);
 
-      // 2. Scroll to ensure leaderboard list rows are built, then verify bounded avatars (40x40, cache 80x80)
+      // 2. Scroll to ensure leaderboard list rows are built, then verify bounded avatars (38x38, cache 80x80)
       await tester.ensureVisible(find.text('1950'));
       await tester.pumpAndSettle();
 
       final avatarFinders = find.byWidgetPredicate(
         (widget) =>
             widget is ArmSphereImage &&
-            widget.width == 40 &&
-            widget.height == 40 &&
+            widget.width == 38 &&
+            widget.height == 38 &&
             widget.cacheWidth == 80 &&
             widget.cacheHeight == 80 &&
-            widget.fallbackAsset == ArmSphereAssets.defaultAvatar,
+            widget.fallbackAsset == ArmSphereAssets.avatarNeutralDark,
       );
       expect(avatarFinders, findsNWidgets(2));
 

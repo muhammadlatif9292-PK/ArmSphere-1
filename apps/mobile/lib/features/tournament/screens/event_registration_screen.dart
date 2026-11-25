@@ -495,8 +495,10 @@ class _EventRegistrationScreenState
         widget.initialEvent;
 
     final isEventLoading = eventAsync.isLoading && resolvedEvent == null;
-    final realDivisions = resolvedEvent != null
+    final List<Map<String, dynamic>> realDivisions = resolvedEvent != null
         ? TournamentOfflineStore.extractRealTournamentDivisions(resolvedEvent)
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
         : <Map<String, dynamic>>[];
 
     final authProfile =

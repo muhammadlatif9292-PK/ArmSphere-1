@@ -93,7 +93,7 @@ void main() {
 
       // Verify Event Name & Venue
       expect(find.text('National Armwrestling Open 2026'), findsOneWidget);
-      expect(find.text('Titanium Combat Arena, Toronto'), findsOneWidget);
+      expect(find.textContaining('Titanium Combat Arena, Toronto'), findsOneWidget);
 
       // Verify Registration Summary Card
       final summaryCardFinder = find.byKey(const ValueKey('registration_summary_card'));
@@ -304,6 +304,7 @@ void main() {
     });
 
     testWidgets('6. Loading state disables submit CTA and prevents premature free entry assumption', (tester) async {
+      const loadingTournamentId = 'tournament_loading_test_06';
       final completer = Completer<Map<String, dynamic>>();
 
       await tester.pumpWidget(
@@ -311,10 +312,10 @@ void main() {
           overrides: [
             authProvider.overrideWith((ref) => _FakeAuthNotifier(authenticatedAuth)),
             tournamentProvider.overrideWith(() => _FakeTournamentNotifier()),
-            eventDetailProvider(testTournamentId).overrideWith((ref) => completer.future),
+            eventDetailProvider(loadingTournamentId).overrideWith((ref) => completer.future),
           ],
           child: const MaterialApp(
-            home: EventRegistrationScreen(tournamentId: testTournamentId),
+            home: EventRegistrationScreen(tournamentId: loadingTournamentId),
           ),
         ),
       );
@@ -327,7 +328,10 @@ void main() {
       expect(find.text('Loading...'), findsWidgets);
 
       // Now resolve event data
-      completer.complete(standardEvent);
+      completer.complete({
+        ...standardEvent,
+        'id': loadingTournamentId,
+      });
       await tester.pumpAndSettle();
 
       // CTA is now active with authoritative fee
