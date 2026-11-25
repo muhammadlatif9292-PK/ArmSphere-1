@@ -8,6 +8,8 @@ declare global {
         email: string;
         role: UserRole;
         province?: string | null;
+        orgId?: string;
+        orgName?: string;
       };
       log?: any;
     }

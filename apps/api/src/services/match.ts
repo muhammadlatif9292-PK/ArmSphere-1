@@ -308,7 +308,7 @@ export class MatchService {
       const refereeName =
         refereeUser?.fullName ||
         refereeUser?.username ||
-        "PAFF Certified Referee";
+        "Certified Official";
       const refereeRole = refereeUser?.role || "REFEREE";
 
       const rawScore = String(r.scoreLine ?? "0-0");
@@ -368,8 +368,8 @@ export class MatchService {
       const effectiveVenue =
         event?.venueName ??
         (effectiveProvince
-          ? `${effectiveProvince} Federation Arena`
-          : "PAFF Sanctioned Championship Arena");
+          ? `${effectiveProvince} Arena`
+          : "Sanctioned Championship Arena");
       const weightClass =
         bracket?.division ??
         challenger?.weightClass ??

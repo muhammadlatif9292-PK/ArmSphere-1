@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/api/offline_sync.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_slash_painter.dart';
@@ -353,12 +354,17 @@ class _RefereeDashboardScreenState
                                 ath['name'] ??
                                 'Athlete ${idx + 1}')
                             .toString();
-                        final athId =
-                            (ath['athleteId'] ?? ath['id'] ?? 'ath-$idx')
-                                .toString();
-                        final qrPayload = (ath['settingsIdentityQr'] ??
-                                ath['qrCodePayload'] ??
-                                'ARMSPHERE-ATHLETE-QR:$athId:$athName')
+                        final athUserId = (ath['userId'] ??
+                                ath['athleteId'] ??
+                                ath['id'] ??
+                                'ath-$idx')
+                            .toString();
+                        final qrPayload = (ath['profileQrCode'] ??
+                                ath['settingsIdentityQr'] ??
+                                TournamentOfflineStore
+                                    .buildSettingsAthleteIdentityQr(
+                                  athleteId: athUserId,
+                                ))
                             .toString();
                         final isAlreadySlot1 = slotNumber == 2 &&
                             (_scannedAthlete1?['id']?.toString() ==
@@ -1392,7 +1398,7 @@ class _RefereeDashboardScreenState
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return GestureDetector(
@@ -1400,6 +1406,7 @@ class _RefereeDashboardScreenState
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       child: Scaffold(
         backgroundColor: AppTheme.voidBackground,
+        extendBody: true,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
@@ -1439,7 +1446,7 @@ class _RefereeDashboardScreenState
                     AppTheme.space16,
                     kToolbarHeight + 12,
                     AppTheme.space16,
-                    36,
+                    74,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2117,7 +2124,8 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: AppTheme.space12),
                                 const Text(
-                                  'No certifications on file.',
+                                  'No organization-issued certifications yet',
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontFamily: AppTheme.fontDisplay,
                                     fontWeight: FontWeight.bold,
@@ -2127,12 +2135,38 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: AppTheme.space8),
                                 const Text(
-                                  'Official licenses and credentials are confirmed and issued directly by national federation administrators.',
+                                  'Referee certifications are issued directly by registered ArmSphere sanctioning organizations. Apply for a referee role under an organization to receive your official credential.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: AppTheme.textSecondary,
                                     height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: AppTheme.space16),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    context.push('/settings/roles/apply');
+                                  },
+                                  icon: const Icon(
+                                    Icons.how_to_reg_rounded,
+                                    size: 16,
+                                    color: AppTheme.goldPrimary,
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                      color: Color(0x80D4AF37),
+                                    ),
+                                  ),
+                                  label: const Text(
+                                    'Apply for Referee Role',
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12.5,
+                                      color: AppTheme.goldPrimary,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -2145,7 +2179,7 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                   return ListView.separated(
                     padding: const EdgeInsets.fromLTRB(
                       AppTheme.space16,
-                      kToolbarHeight + 163,
+                      kToolbarHeight + 16,
                       AppTheme.space16,
                       120,
                     ),
@@ -2153,8 +2187,29 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                     separatorBuilder: (_, __) => const SizedBox(height: AppTheme.space12),
                     itemBuilder: (context, index) {
                       final c = certs[index];
-                      final status = c['status']?.toString() ?? 'PENDING';
+                      final status = c['status']?.toString() ?? 'ACTIVE';
+                      final issuedAt = c['issuedAt']?.toString();
                       final expires = c['expiresAt']?.toString();
+                      final rawIssuer = (c['issuingOrganizationName'] ??
+                              c['issuingBody'] ??
+                              '')
+                          .toString()
+                          .trim();
+                      final issuerName =
+                          ArmSphereFormatters.formatOrganizationName(
+                        rawIssuer,
+                        fallback: 'ArmSphere Verified Organization',
+                      );
+                      final issuedLabel = (issuedAt != null &&
+                              issuedAt.isNotEmpty &&
+                              issuedAt != 'null')
+                          ? 'Issued ${issuedAt.split('T').first}'
+                          : null;
+                      final expiryLabel = (expires == null ||
+                              expires.isEmpty ||
+                              expires == 'null')
+                          ? 'Active Credential'
+                          : 'Expires ${expires.split('T').first}';
                       return RepaintBoundary(
                         child: ElevatedActionCard(
                           slashVariant: index == 0
@@ -2182,7 +2237,7 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      c['certificationLevel']?.toString() ?? 'Certification',
+                                      c['certificationLevel']?.toString() ?? 'Certified Referee',
                                       style: const TextStyle(
                                         fontFamily: AppTheme.fontDisplay,
                                         fontWeight: FontWeight.bold,
@@ -2192,23 +2247,49 @@ class RefereeCertificationsScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: AppTheme.space4),
                                     Text(
-                                      c['issuingBody']?.toString() ?? 'Federation Official Board',
-                                      style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                                      'Issued by: $issuerName',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.goldPrimary,
+                                      ),
                                     ),
                                     const SizedBox(height: AppTheme.space8),
-                                    Row(
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 4,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
                                       children: [
-                                        const Icon(Icons.event_outlined, size: 13, color: AppTheme.textMuted),
-                                        const SizedBox(width: AppTheme.space4),
-                                        Text(
-                                          expires == null || expires.isEmpty || expires == 'null'
-                                              ? 'Permanent License'
-                                              : 'Expires ${expires.split('T').first}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: AppTheme.textMuted,
-                                            fontFeatures: [FontFeature.tabularFigures()],
+                                        if (issuedLabel != null)
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.calendar_today_outlined, size: 12, color: AppTheme.textMuted),
+                                              const SizedBox(width: AppTheme.space4),
+                                              Text(
+                                                issuedLabel,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppTheme.textSecondary,
+                                                  fontFeatures: [FontFeature.tabularFigures()],
+                                                ),
+                                              ),
+                                            ],
                                           ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.event_outlined, size: 13, color: AppTheme.textMuted),
+                                            const SizedBox(width: AppTheme.space4),
+                                            Text(
+                                              expiryLabel,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: AppTheme.textMuted,
+                                                fontFeatures: [FontFeature.tabularFigures()],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),

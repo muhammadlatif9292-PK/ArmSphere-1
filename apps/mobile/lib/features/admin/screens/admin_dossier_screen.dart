@@ -200,11 +200,12 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
@@ -265,7 +266,7 @@ class _AdminDossierScreenState extends ConsumerState<AdminDossierScreen> {
                           16,
                           12,
                           16,
-                          28,
+                          66,
                         ),
                         children: [
                           // Official Federation Credential Card

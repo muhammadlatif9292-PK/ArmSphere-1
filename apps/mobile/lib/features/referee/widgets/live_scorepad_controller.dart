@@ -22,7 +22,7 @@ import '../../../core/widgets/crystal_toast.dart';
 /// - Symmetrical Corner Red vs Corner White/Cyan layout.
 /// - Minimum 64×64dp point and foul hit targets for chalk/sweat tolerance.
 /// - 400ms long-press PIN lock with radial progress ring and haptic crescendo.
-/// - WAF Foul & Warning Escalation Integrity (2 Warnings = 1 Foul, 2 Fouls = 1 Opponent Point).
+/// - Official Foul & Warning Escalation Integrity (2 Warnings = 1 Foul, 2 Fouls = 1 Opponent Point).
 class LiveScorepadController extends StatefulWidget {
   final String challengerName;
   final String opponentName;
@@ -316,7 +316,7 @@ class _LiveScorepadControllerState extends State<LiveScorepadController> {
       if (isRed) {
         _foulsRed++;
         if (_foulsRed >= 2) {
-          // 2 fouls = automatic point to opponent per WAF rules
+          // 2 fouls = automatic point to opponent per standard armwrestling rules
           _foulsRed = 0;
           if (_scoreWhite < _targetWins) {
             _scoreWhite++;

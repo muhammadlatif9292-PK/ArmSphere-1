@@ -378,7 +378,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
         title: 'SUPERMATCH MASTER',
         subtitle: 'Win 25 verified official Supermatch bouts',
         description:
-            'Awarded by the Pakistan Armwrestling Federation for achieving 25 verified career victories ($wins/25 recorded).',
+            'Awarded on ArmSphere for achieving 25 verified career victories ($wins/25 recorded).',
         category: 'Official Circuit',
         medalTier: 'Gold',
         icon: Icons.emoji_events_rounded,
@@ -406,7 +406,7 @@ class _AchievementsSectionState extends State<AchievementsSection> {
         title: 'NATIONAL CHAMPION',
         subtitle: 'Hold an active $weightClass Championship Title',
         description:
-            'Gold medal championship status in a sanctioned Pakistan Armwrestling Federation division ($titlesCount active title${titlesCount == 1 ? '' : 's'}).',
+            'Gold medal championship status in an officially sanctioned ArmSphere division ($titlesCount active title${titlesCount == 1 ? '' : 's'}).',
         category: 'National Title',
         medalTier: 'Gold',
         icon: Icons.military_tech_rounded,

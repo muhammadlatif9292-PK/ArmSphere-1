@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/display_formatters.dart';
+import '../../../core/widgets/crystal_modal_sheet.dart';
 import '../../../core/widgets/crystal_stage_scaffold.dart';
 import '../../../core/widgets/crystal_glass_nav_controls.dart';
 import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/sticky_form_scaffold.dart';
 import '../../../core/providers/state_providers.dart';
+import '../../../core/providers/tournament_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
@@ -21,6 +24,8 @@ class ApplyRoleScreen extends ConsumerStatefulWidget {
 class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
   final _formKey = GlobalKey<FormState>();
   String _selectedRole = 'REFEREE';
+  String? _selectedOrgId;
+  String? _selectedOrgName;
   final _experienceController = TextEditingController();
   final _certificationController = TextEditingController();
   bool _isSubmitting = false;
@@ -29,22 +34,26 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
     {
       'key': 'REFEREE',
       'label': 'Certified Referee',
-      'description': 'Officiate standard and tournament matches, table scorepads, and referee reports.',
+      'description':
+          'Apply to a registered ArmSphere organization for official referee certification.',
     },
     {
       'key': 'TOURNAMENT_OPERATOR',
       'label': 'Tournament / Club Operator',
-      'description': 'Manage weigh-ins, table assignments, bracket operations, and club rosters.',
+      'description':
+          'Manage weigh-ins, table assignments, bracket operations, and club rosters.',
     },
     {
       'key': 'ORGANIZATION_LEADER',
       'label': 'Organization / Club Leader',
-      'description': 'Register official clubs, lead team rosters, and coordinate inter-team sparring invites.',
+      'description':
+          'Register official clubs, lead team rosters, and coordinate inter-team sparring invites.',
     },
     {
       'key': 'SUPPORT_AGENT',
       'label': 'Support Agent',
-      'description': 'Assist federation athletes and officials via the ArmSphere Helpdesk ticket system.',
+      'description':
+          'Assist athletes and officials via the ArmSphere Helpdesk ticket system.',
     },
   ];
 
@@ -55,8 +64,140 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
     super.dispose();
   }
 
+  Future<void> _openOrganizationPicker(
+      List<Map<String, dynamic>> organizations) async {
+    HapticFeedback.selectionClick();
+    final picked = await CrystalModalSheet.show<Map<String, dynamic>>(
+      context: context,
+      title: 'SELECT CERTIFYING ORGANIZATION',
+      subtitle:
+          'Your referee certification request will be routed directly to this organization.',
+      icon: Icons.account_balance_rounded,
+      accentColor: AppTheme.goldPrimary,
+      builder: (sheetCtx) {
+        if (organizations.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'No registered organizations are currently available. Please check back soon.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+          );
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: organizations.map((org) {
+            final id = (org['id'] ?? '').toString();
+            final name = ArmSphereFormatters.formatOrganizationName(
+              org['name']?.toString(),
+              fallback: 'Organization',
+            );
+            final loc = ArmSphereFormatters.formatCleanAddress([
+              org['city']?.toString(),
+              org['province']?.toString(),
+            ]);
+            final isSelected = _selectedOrgId == id;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => Navigator.of(sheetCtx).pop(org),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.goldPrimary.withValues(alpha: 0.14)
+                        : const Color(0xFF141B29),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppTheme.goldPrimary
+                          : const Color(0x28FFFFFF),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.verified_outlined,
+                        color: AppTheme.goldPrimary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: AppTheme.fontDisplay,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                color: AppTheme.textPure,
+                              ),
+                            ),
+                            if (loc.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                loc,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppTheme.goldPrimary,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedOrgId = picked['id']?.toString();
+        _selectedOrgName = ArmSphereFormatters.formatOrganizationName(
+          picked['name']?.toString(),
+          fallback: 'Selected Organization',
+        );
+      });
+    }
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedRole == 'REFEREE' &&
+        (_selectedOrgId == null || _selectedOrgId!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CrystalSnackBar(
+          content: const Text(
+            'Please select a registered ArmSphere organization to apply for Referee certification.',
+          ),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+      return;
+    }
 
     HapticFeedback.lightImpact();
     setState(() => _isSubmitting = true);
@@ -65,6 +206,8 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
       final repo = ref.read(authRepositoryProvider);
       await repo.applyForRole(
         role: _selectedRole,
+        targetOrganizationId:
+            _selectedRole == 'REFEREE' ? _selectedOrgId : null,
         experienceDetails: _experienceController.text.trim(),
         certificationNumber: _certificationController.text.trim().isNotEmpty
             ? _certificationController.text.trim()
@@ -74,9 +217,12 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
       await ref.read(authProvider.notifier).refreshUserRoles();
 
       if (mounted) {
+        final msg = _selectedRole == 'REFEREE' && _selectedOrgName != null
+            ? 'Referee certification request sent to $_selectedOrgName.'
+            : 'Application submitted successfully for review.';
         ScaffoldMessenger.of(context).showSnackBar(
           CrystalSnackBar(
-            content: Text('Application submitted successfully for federation review.'),
+            content: Text(msg),
             backgroundColor: AppTheme.success,
           ),
         );
@@ -98,6 +244,8 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final orgsAsync = ref.watch(organizationsProvider);
+
     return StickyFormScaffold(
       stageDomain: ArmSphereStageDomain.passport,
       appBar: AppBar(
@@ -118,14 +266,15 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, color: AppTheme.goldPrimary, size: 22),
+                const Icon(Icons.info_outline,
+                    color: AppTheme.goldPrimary, size: 22),
                 const SizedBox(width: AppTheme.space12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Server-Authoritative Role Review',
+                    children: [
+                      const Text(
+                        'Verified Organization & Role Review',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontWeight: FontWeight.bold,
@@ -133,10 +282,16 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
                           color: AppTheme.textPrimary,
                         ),
                       ),
-                      SizedBox(height: AppTheme.space4),
+                      const SizedBox(height: AppTheme.space4),
                       Text(
-                        'Applying for a role does not grant permissions. All federation roles require formal verification and review by authorized leadership.',
-                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.4),
+                        _selectedRole == 'REFEREE'
+                            ? 'Referee certifications are issued directly by registered ArmSphere organizations. Select the organization you are applying to below.'
+                            : 'Applying for a role does not grant permissions immediately. All roles require verification and review by authorized leadership.',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -146,7 +301,7 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
           ),
           const SizedBox(height: AppTheme.space20),
 
-          // Role Selection Dropdown / Radio Cards
+          // Role Selection Radio Cards
           const Text(
             'SELECT ROLE',
             style: TextStyle(
@@ -167,13 +322,19 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
                   title: Text(
                     roleInfo['label']!,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? AppTheme.textPrimary : AppTheme.textSecondary,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isSelected
+                          ? AppTheme.textPrimary
+                          : AppTheme.textSecondary,
                     ),
                   ),
                   subtitle: Text(
                     roleInfo['description']!,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                   value: roleInfo['key']!,
                   groupValue: _selectedRole,
@@ -187,9 +348,122 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
           ),
           const SizedBox(height: AppTheme.space20),
 
-          // Certification Number (Optional or required for Referee)
+          // Required Organization Picker for REFEREE
+          if (_selectedRole == 'REFEREE') ...[
+            const Text(
+              'CERTIFYING ORGANIZATION *',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.1,
+                color: AppTheme.goldPrimary,
+              ),
+            ),
+            const SizedBox(height: AppTheme.space8),
+            orgsAsync.when(
+              loading: () => const ElevatedActionCard(
+                padding: EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.goldPrimary,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Loading registered organizations...',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              error: (_, __) => ElevatedActionCard(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: AppTheme.crimson, size: 18),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Unable to load organizations. Tap to retry.',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.invalidate(organizationsProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+              data: (organizations) {
+                return InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => _openOrganizationPicker(organizations),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0x990D121D),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _selectedOrgId != null
+                            ? AppTheme.goldPrimary
+                            : const Color(0x38FFFFFF),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.account_balance_rounded,
+                          color: AppTheme.goldPrimary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _selectedOrgName ??
+                                'Choose a registered ArmSphere organization',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: _selectedOrgName != null
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: _selectedOrgName != null
+                                  ? AppTheme.textPure
+                                  : AppTheme.textMuted,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: AppTheme.space20),
+          ],
+
+          // Certification Number (Optional)
           const Text(
-            'CERTIFICATION OR LICENSE NUMBER (OPTIONAL)',
+            'EXISTING LICENSE OR REFERENCE NUMBER (OPTIONAL)',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -200,8 +474,9 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
           const SizedBox(height: AppTheme.space8),
           TextFormField(
             controller: _certificationController,
+            scrollPadding: const EdgeInsets.only(bottom: 140),
             decoration: const InputDecoration(
-              hintText: 'e.g. PAFF-REF-2026-081',
+              hintText: 'e.g. ORG-REF-2026-081',
             ),
           ),
           const SizedBox(height: AppTheme.space20),
@@ -220,8 +495,10 @@ class _ApplyRoleScreenState extends ConsumerState<ApplyRoleScreen> {
           TextFormField(
             controller: _experienceController,
             maxLines: 4,
+            scrollPadding: const EdgeInsets.only(bottom: 140),
             decoration: const InputDecoration(
-              hintText: 'Describe your armwrestling officiating, organizing, or club background...',
+              hintText:
+                  'Describe your armwrestling officiating, organizing, or club background...',
             ),
             validator: (value) {
               if (value == null || value.trim().length < 10) {

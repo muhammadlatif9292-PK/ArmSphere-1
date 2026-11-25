@@ -39,7 +39,7 @@ class _OfficialDocumentsWidgetState extends ConsumerState<OfficialDocumentsWidge
           'title': title.toString(),
           'type': type.contains('PNG') || type.contains('JPG') || type.contains('JPEG') ? 'IMAGE' : 'PDF',
           'size': doc['size']?.toString() ?? 'Official File',
-          'tag': doc['tag']?.toString() ?? 'PAFF OFFICIAL',
+          'tag': doc['tag']?.toString() ?? 'OFFICIAL DOC',
           'icon': _resolveDocIcon(title.toString()),
           'accentColor': _resolveDocColor(title.toString()),
           'downloadState': 'idle',

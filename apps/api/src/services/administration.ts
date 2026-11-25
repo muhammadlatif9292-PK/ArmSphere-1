@@ -17,7 +17,8 @@ import {
   auditEvents, 
   auditLogs,
   refereeCertifications,
-  userRoleGrants
+  userRoleGrants,
+  organizations
 } from "@armsphere/db-schema";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, logger } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
@@ -423,7 +424,20 @@ export class AdministrationService {
     const refereeUsers = [...primaryReferees, ...additionalReferees];
     const allMatches = await db.select().from(matches);
     const allTMatches = await db.select().from(tournamentMatches);
-    const allCertifications = await db.select().from(refereeCertifications);
+    const allCertifications = await db
+      .select({
+        id: refereeCertifications.id,
+        userId: refereeCertifications.userId,
+        issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+        certificationLevel: refereeCertifications.certificationLevel,
+        issuedAt: refereeCertifications.issuedAt,
+        expiresAt: refereeCertifications.expiresAt,
+        issuingBody: refereeCertifications.issuingBody,
+        status: refereeCertifications.status,
+        organizationName: organizations.name,
+      })
+      .from(refereeCertifications)
+      .leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id));
     const allDisputes = await db.select().from(disputes);
 
     return refereeUsers.map(user => {
@@ -457,7 +471,17 @@ export class AdministrationService {
       // otherwise fall back to their most recent certification of any status.
       const ownCertifications = allCertifications
         .filter(c => c.userId === user.id)
-        .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime());
+        .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())
+        .map(c => ({
+          id: c.id,
+          certificationLevel: c.certificationLevel,
+          issuingOrganizationId: c.issuingOrganizationId,
+          issuingOrganizationName: c.organizationName || c.issuingBody,
+          issuingBody: c.organizationName || c.issuingBody,
+          issuedAt: c.issuedAt,
+          expiresAt: c.expiresAt,
+          status: c.status,
+        }));
       const bestCertification =
         ownCertifications.find(c => c.status === "ACTIVE") || ownCertifications[0] || null;
 
@@ -469,6 +493,9 @@ export class AdministrationService {
         createdAt: user.createdAt,
         licenseClass: bestCertification?.certificationLevel ?? null,
         certificationStatus: bestCertification?.status ?? null,
+        issuingOrganizationId: bestCertification?.issuingOrganizationId ?? null,
+        issuingOrganizationName: bestCertification?.issuingOrganizationName ?? null,
+        certifications: ownCertifications,
         region: user.regionalCoverage ?? null,
         performance: {
           totalMatches: totalMatchesRefereed,

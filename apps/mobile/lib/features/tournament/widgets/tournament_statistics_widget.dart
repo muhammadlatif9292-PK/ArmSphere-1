@@ -99,7 +99,7 @@ class _TournamentStatisticsWidgetState extends State<TournamentStatisticsWidget>
         'suffix': ' Officials',
         'icon': Icons.gavel_rounded,
         'accentColor': const Color(0xFFA855F7),
-        'subtitle': 'Certified PAFF Officials',
+        'subtitle': 'Certified Officials',
       },
       {
         'id': 'prize_pool',

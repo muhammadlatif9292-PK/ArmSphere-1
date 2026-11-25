@@ -160,6 +160,7 @@ app.use("/api/v1/support", supportRouter);
 app.use("/sparring-invites", sparringInviteRouter);
 app.use("/api/v1/sparring-invites", sparringInviteRouter);
 app.use("/organizations", organizationRouter);
+app.use("/api/organizations", organizationRouter);
 app.use("/api/v1/organizations", organizationRouter);
 app.use("/radar", radarRouter);
 app.use("/api/radar", radarRouter);

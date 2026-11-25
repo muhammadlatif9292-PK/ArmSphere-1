@@ -1033,11 +1033,12 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
@@ -1053,7 +1054,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: AdminAuthorityHeader(
-                    title: 'Arena Operations',
+                    title: 'Bouts',
                     subtitle:
                         'Sanctioned bout score overrides, championship belts, and tournament desks',
                     activeRole: activeRole,
@@ -1074,7 +1075,7 @@ class _AdminArenaOpsScreenState extends ConsumerState<AdminArenaOpsScreen> {
                           16,
                           12,
                           16,
-                          28,
+                          66,
                         ),
                         children: [
                           AdminSegmentedDeck(

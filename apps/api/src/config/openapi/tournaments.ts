@@ -18,7 +18,7 @@ export const tournamentPaths = {
                 title: { type: "string", example: "Pacific Regional Armwrestling Open" },
                 startDate: { type: "string", format: "date-time", example: "2026-08-15T09:00:00Z" },
                 location: { type: "string", example: "Richmond Olympic Oval, BC" },
-                ruleset: { type: "string", example: "WAF Standard" },
+                ruleset: { type: "string", example: "Standard Double Elimination" },
               },
             },
           },

@@ -10,8 +10,7 @@ import '../../../core/widgets/elevated_action_card.dart';
 import '../../../core/widgets/main_shell_screen.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../tournament/screens/event_qr_passport_screen.dart';
-import '../../tournament/services/tournament_offline_store.dart';
+import '../../../core/widgets/profile_qr_matrix_view.dart';
 import '../widgets/biometric_settings_tile.dart';
 import '../../../core/providers/athlete_provider.dart';
 import '../../../core/widgets/crystal_toast.dart';
@@ -24,7 +23,7 @@ class SettingsHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
     final auth = ref.watch(authProvider);
     final profile = auth.userProfile;
@@ -42,6 +41,7 @@ class SettingsHubScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -70,7 +70,7 @@ class SettingsHubScreen extends ConsumerWidget {
                   AppTheme.space16,
                   AppTheme.space16,
                   insideRootShell
-                      ? 28.0
+                      ? 66.0
                       : kFloatingDockTotalHeight +
                           MediaQuery.paddingOf(context).bottom +
                           36,

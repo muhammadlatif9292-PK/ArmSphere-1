@@ -201,14 +201,19 @@ export class AuthService {
       logger.warn({ requestedRole: input.role, email: emailLower }, "Ignoring privileged role supplied during public registration.");
     }
 
-    // Insert user
+    const userId = uuidv4();
+    const canonicalProfileQrCode = `ARMSPHERE-ATHLETE-QR:${userId}`;
+
+    // Insert user with permanent canonical Profile QR Code
     const [newUser] = await db
       .insert(users)
       .values({
+        id: userId,
         email: emailLower,
         username: usernameTrim,
         passwordHash: hashedPassword,
         fullName: input.fullName.trim(),
+        profileQrCode: canonicalProfileQrCode,
         role: safeRole,
         isActive: true,
       })
@@ -391,10 +396,13 @@ export class AuthService {
     const isOnboarded = athleteProfileRows.length > 0;
 
     const { passwordHash, ...userResponse } = user;
+    const profileQrCode =
+      (user as any).profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
       mfaRequired: false,
       user: {
         ...userResponse,
+        profileQrCode,
         isOnboarded,
         verifiedRoles: rolesOverview.verifiedRoles,
         roleGrants: rolesOverview.roleGrants,
@@ -484,10 +492,13 @@ export class AuthService {
     const rolesOverview = await UserRoleService.getUserRolesOverview(user.id);
 
     const { passwordHash, ...userResponse } = user;
+    const profileQrCode =
+      (user as any).profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
       mfaRequired: false,
       user: {
         ...userResponse,
+        profileQrCode,
         isOnboarded,
         verifiedRoles: rolesOverview.verifiedRoles,
         roleGrants: rolesOverview.roleGrants,
@@ -625,8 +636,11 @@ export class AuthService {
     const rolesOverview = await UserRoleService.getUserRolesOverview(userId);
 
     const { passwordHash, ...profile } = user;
+    const profileQrCode =
+      (user as any).profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
       ...profile,
+      profileQrCode,
       isOnboarded,
       verifiedRoles: rolesOverview.verifiedRoles,
       roleGrants: rolesOverview.roleGrants,

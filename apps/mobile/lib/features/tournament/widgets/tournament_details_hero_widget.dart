@@ -38,7 +38,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
   Widget build(BuildContext context) {
     final t = widget.tournament;
     final name = t['name'] ?? 'Pakistan National Armwrestling Championship 2026';
-    final organizer = t['organizer'] ?? t['organizerName'] ?? 'PAFF Executive Council';
+    final organizer = t['organizationName'] ?? t['organizer'] ?? t['organizerName'] ?? 'Host Organization';
     final province = t['province'] ?? 'Punjab';
     final venue = t['venue'] ?? t['location'] ?? 'Nishtar Sports Complex, Lahore';
     final status = (t['status'] ?? 'UPCOMING').toString().toUpperCase();
@@ -227,7 +227,7 @@ class _TournamentDetailsHeroWidgetState extends State<TournamentDetailsHeroWidge
                                       ),
                                       SizedBox(width: 4),
                                       Text(
-                                        'PAFF OFFICIAL',
+                                        'ARMSPHERE VERIFIED',
                                         style: TextStyle(
                                           fontFamily: AppTheme.fontDisplay,
                                           fontSize: 8.5,

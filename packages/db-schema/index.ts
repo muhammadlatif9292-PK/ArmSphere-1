@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, text, timestamp, integer, boolean, uuid, jsonb, real, varchar, numeric, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -7,6 +8,10 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: varchar("role", { length: 50 }).notNull().default("ATHLETE"),
   fullName: varchar("full_name", { length: 255 }).notNull(),
+  profileQrCode: varchar("profile_qr_code", { length: 255 })
+    .notNull()
+    .unique()
+    .default(sql`'ARMSPHERE-ATHLETE-QR:' || gen_random_uuid()::text`),
   isActive: boolean("is_active").notNull().default(true),
   mfaSecret: text("mfa_secret"),
   mfaEnabled: boolean("mfa_enabled").notNull().default(false),
@@ -20,6 +25,7 @@ export const users = pgTable("users", {
 }, (table) => {
   return {
     provinceIdx: index("idx_users_province").on(table.province),
+    profileQrCodeIdx: uniqueIndex("idx_users_profile_qr_code").on(table.profileQrCode),
   };
 });
 
@@ -85,12 +91,14 @@ export const athleteProfiles = pgTable("athlete_profiles", {
   longitude: real("longitude"),
   locationVisibility: varchar("location_visibility", { length: 20 }).notNull().default("AREA"),
   locationFuzzSeed: varchar("location_fuzz_seed", { length: 64 }),
+  profileQrCode: varchar("profile_qr_code", { length: 255 }),
 }, (table) => ({
   provinceIdx: index("idx_athlete_profiles_province").on(table.province),
   weightClassIdx: index("idx_athlete_profiles_weight_class").on(table.weightClass),
   rightEloIdx: index("idx_athlete_profiles_right_elo").on(table.rightArmElo),
   leftEloIdx: index("idx_athlete_profiles_left_elo").on(table.leftArmElo),
   searchableDeletedIdx: index("idx_athlete_profiles_searchable_deleted").on(table.isSearchable, table.isDeleted),
+  profileQrCodeIdx: index("idx_athlete_profiles_profile_qr_code").on(table.profileQrCode),
 }));
 
 export const athleteClubs = pgTable("athlete_clubs", {
@@ -254,6 +262,10 @@ export const eventRegistrations = pgTable("event_registrations", {
   approvedBy: uuid("approved_by").references(() => users.id),
   paymentConfirmedByOrganizer: boolean("payment_confirmed_by_organizer").notNull().default(false),
   paymentConfirmedAt: timestamp("payment_confirmed_at"),
+  profileQrCode: varchar("profile_qr_code", { length: 255 }),
+  athleteFullName: varchar("athlete_full_name", { length: 255 }),
+  checkedInAt: timestamp("checked_in_at"),
+  checkedInBy: uuid("checked_in_by").references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -261,6 +273,7 @@ export const eventRegistrations = pgTable("event_registrations", {
   athleteIdIdx: index("idx_event_registrations_athlete_id").on(table.athleteId),
   eventAthleteIdx: index("idx_event_registrations_event_athlete").on(table.eventId, table.athleteId),
   statusIdx: index("idx_event_registrations_status").on(table.status),
+  profileQrCodeIdx: index("idx_event_registrations_profile_qr_code").on(table.profileQrCode),
 }));
 
 export const processedStripeEvents = pgTable("processed_stripe_events", {
@@ -667,16 +680,22 @@ export const notifications = pgTable("notifications", {
 export const refereeCertifications = pgTable("referee_certifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id).notNull(),
+  athleteId: uuid("athlete_id"),
+  issuingOrganizationId: uuid("issuing_organization_id").references(() => organizations.id, { onDelete: "set null" }),
+  issuedByUserId: uuid("issued_by_user_id").references(() => users.id, { onDelete: "set null" }),
   certificationLevel: varchar("certification_level", { length: 100 }).notNull(),
   issuedAt: timestamp("issued_at").notNull(),
   expiresAt: timestamp("expires_at"),
   issuingBody: varchar("issuing_body", { length: 255 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("ACTIVE"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
   userIdIdx: index("idx_referee_certifications_user_id").on(table.userId),
   statusIdx: index("idx_referee_certifications_status").on(table.status),
+  orgIdIdx: index("idx_referee_certifications_org_id").on(table.issuingOrganizationId),
+  athleteIdIdx: index("idx_referee_certifications_athlete_id").on(table.athleteId),
 }));
 
 export const officialCertificates = pgTable("official_certificates", {
@@ -896,6 +915,8 @@ export const userRoleGrants = pgTable("user_role_grants", {
 export const roleApplications = pgTable("role_applications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id).notNull(),
+  athleteId: uuid("athlete_id"),
+  targetOrganizationId: uuid("target_organization_id").references(() => organizations.id, { onDelete: "set null" }),
   role: varchar("role", { length: 50 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("PENDING"),
   experienceDetails: text("experience_details"),
@@ -910,6 +931,7 @@ export const roleApplications = pgTable("role_applications", {
   return {
     userRoleStatusIdx: index("idx_role_applications_user_role_status").on(table.userId, table.role, table.status),
     statusIdx: index("idx_role_applications_status").on(table.status),
+    targetOrgStatusIdx: index("idx_role_applications_target_org_status").on(table.targetOrganizationId, table.status),
   };
 });
 

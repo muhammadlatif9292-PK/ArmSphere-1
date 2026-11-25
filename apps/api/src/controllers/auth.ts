@@ -10,6 +10,7 @@ import env from "../config/env.js";
 
 const ApplyRoleSchema = z.object({
   role: z.nativeEnum(UserRole),
+  targetOrganizationId: z.string().uuid({ message: "Please select a valid organization." }).optional(),
   experienceDetails: z.string().optional(),
   certificationNumber: z.string().optional(),
   documents: z.any().optional(),
@@ -644,6 +645,7 @@ export class AuthController {
         req.user.id,
         parsed.data.role,
         {
+          targetOrganizationId: parsed.data.targetOrganizationId,
           experienceDetails: parsed.data.experienceDetails,
           certificationNumber: parsed.data.certificationNumber,
           documents: parsed.data.documents,

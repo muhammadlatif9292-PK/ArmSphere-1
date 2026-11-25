@@ -26,7 +26,6 @@ import '../../../core/widgets/skeleton_placeholder.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../../core/security/admin_permissions.dart';
 import '../services/tournament_offline_store.dart';
-import 'event_qr_passport_screen.dart';
 import '../widgets/tournament_widgets.dart';
 import '../../../core/widgets/crystal_toast.dart';
 
@@ -93,8 +92,14 @@ class TournamentsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tournamentsAsync = ref.watch(tournamentProvider);
 
+    final bool insideRootShell = MainShellScope.isInsideShell(context);
+    final double bottomDockGap = insideRootShell
+        ? (kFloatingDockTotalHeight - 34.0)
+        : 0.0;
+
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -124,55 +129,71 @@ class TournamentsListScreen extends ConsumerWidget {
           const Positioned.fill(
             child: CrystalStageBackdrop(domain: ArmSphereStageDomain.events),
           ),
-          tournamentsAsync.when(
-            loading: () => const TournamentSkeletonLoadingWidget(),
-            error: (error, _) => AppErrorView(
-              error: error,
-              title: 'Could not load competitions',
-              onRetry: () => ref.invalidate(tournamentProvider),
-              showSecondaryAction: false,
-              onSessionExpired: () => ref.read(authProvider.notifier).logout(),
-            ),
-            data: (events) {
-          final hive = ref.watch(hiveStorageProvider);
-          // Merge released local & server tournaments; strictly exclude unreleased drafts.
-          final visible = TournamentOfflineStore.getAllReleasedTournaments(
-            hive: hive,
-            serverEvents: events,
-          ).where(TournamentOfflineStore.isReleasedTournament).toList();
+          SafeArea(
+            bottom: false,
+            child: CrystalVaporDissolve(
+              bottomMargin: bottomDockGap,
+              child: tournamentsAsync.when(
+                loading: () => const TournamentSkeletonLoadingWidget(),
+                error: (error, _) => AppErrorView(
+                  error: error,
+                  title: 'Could not load competitions',
+                  onRetry: () => ref.invalidate(tournamentProvider),
+                  showSecondaryAction: false,
+                  onSessionExpired: () =>
+                      ref.read(authProvider.notifier).logout(),
+                ),
+                data: (events) {
+                  final hive = ref.watch(hiveStorageProvider);
+                  // Merge released local & server tournaments; strictly exclude unreleased drafts.
+                  final visible = TournamentOfflineStore
+                      .getAllReleasedTournaments(
+                        hive: hive,
+                        serverEvents: events,
+                      )
+                      .where(TournamentOfflineStore.isReleasedTournament)
+                      .toList();
 
-          if (visible.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async => ref.refresh(tournamentProvider.future),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 20, 16, MainShellScope.bottomClearance(context)),
-                children: [
-                  const SizedBox(height: 64),
-                  AppEmptyState(
-                    icon: Icons.emoji_events_outlined,
-                    title: 'No competitions published yet',
-                    subtitle: 'Check back soon for upcoming sanctioned events',
-                    ctaLabel: 'Refresh Events',
-                    onCtaTap: () => ref.invalidate(tournamentProvider),
-                  ),
-                ],
-              ),
-            );
-          }
+                  if (visible.isEmpty) {
+                    return RefreshIndicator(
+                      onRefresh: () async =>
+                          ref.refresh(tournamentProvider.future),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 66),
+                        children: [
+                          const SizedBox(height: 64),
+                          AppEmptyState(
+                            icon: Icons.emoji_events_outlined,
+                            title: 'No competitions published yet',
+                            subtitle:
+                                'Check back soon for upcoming sanctioned events',
+                            ctaLabel: 'Refresh Events',
+                            onCtaTap: () => ref.invalidate(tournamentProvider),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-          return RefreshIndicator(
-            onRefresh: () async => ref.refresh(tournamentProvider.future),
-            child: ListView.separated(
-              key: const PageStorageKey<String>('tournaments_list_view'),
-              padding: EdgeInsets.fromLTRB(
-                16,
-                AppTheme.space16,
-                16,
-                MainShellScope.bottomClearance(context, additionalPadding: 44),
-              ),
-              itemCount: visible.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  return RefreshIndicator(
+                    onRefresh: () async =>
+                        ref.refresh(tournamentProvider.future),
+                    child: ListView.separated(
+                      key: const PageStorageKey<String>('tournaments_list_view'),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        AppTheme.space16,
+                        16,
+                        insideRootShell
+                            ? 66.0
+                            : MainShellScope.bottomClearance(
+                                context,
+                                additionalPadding: 44,
+                              ),
+                      ),
+                      itemCount: visible.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 final t = visible[index];
                 final status = (t['status']?.toString() ?? 'SCHEDULED').toUpperCase();
@@ -258,9 +279,11 @@ class TournamentsListScreen extends ConsumerWidget {
                   ),
                 );
               },
+                    ),
+                  );
+                },
+              ),
             ),
-          );
-            },
           ),
         ],
       ),
@@ -288,15 +311,45 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   Timer? _countdownTimer;
   int _activeAthleteTab = 0; // 0 = Details Tab, 1 = Matchups Tab
   String _selectedCategory = 'ALL';
-  static const _categories = ['ALL', '-75 KG', '-85 KG', '-95 KG', '+105 KG', 'OPEN RIGHT', 'OPEN LEFT'];
 
   // Matchups Read-Only Filter State
   String _selectedMatchupCategoryFilter = 'ALL';
   int _selectedMatchupRoundFilter = 0; // 0 = All Rounds
   Map<String, dynamic>? _localSubmittedApplication;
-  Map<String, dynamic>? _localIssuedSpectatorPass;
-  Map<String, dynamic>? _entranceVerifyResult;
-  final TextEditingController _entranceVerifyCtrl = TextEditingController();
+
+  List<String> _resolveDynamicFilterChips(Map<String, dynamic> event) {
+    final realDivisions =
+        TournamentOfflineStore.extractRealTournamentDivisions(event);
+    final chips = <String>['ALL'];
+    for (final div in realDivisions) {
+      final label = (div['label'] ?? '').trim();
+      if (label.isNotEmpty && !chips.contains(label)) {
+        chips.add(label);
+      }
+    }
+    return chips;
+  }
+
+  Future<void> _openDedicatedApplyScreen(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) async {
+    HapticFeedback.selectionClick();
+    final result = await context.push<Map<String, dynamic>>(
+      '/tournament/${widget.tournamentId}/register',
+      extra: event,
+    );
+    if (!mounted) return;
+    ref.invalidate(eventDetailProvider(widget.tournamentId));
+    ref.invalidate(myRegistrationsProvider);
+    ref.invalidate(eventRegistrationsProvider(widget.tournamentId));
+    ref.invalidate(tournamentProvider);
+    setState(() {
+      if (result != null) {
+        _localSubmittedApplication = result;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -310,7 +363,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _entranceVerifyCtrl.dispose();
     super.dispose();
   }
 
@@ -396,21 +448,35 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         status == 'UPCOMING' ||
         event['isReleased'] == true;
     final auth = ref.watch(authProvider);
+    final hive = ref.watch(hiveStorageProvider);
+    final myRegs = ref.watch(myRegistrationsProvider).valueOrNull;
+    final athleteProf = ref.watch(athleteProfileProvider).valueOrNull;
+    final activeRegistration =
+        TournamentOfflineStore.findAthleteRegistrationForTournament(
+          tournament: event,
+          tournamentIdOverride: widget.tournamentId,
+          userProfile: auth.userProfile,
+          athleteProfile: athleteProf,
+          myRegistrations: myRegs,
+          hive: hive,
+        ) ??
+        _localSubmittedApplication;
+
     final canOperate = AdminPermissions.canOperateEvent(
       activeRole: auth.activeRole,
       userProfile: auth.userProfile,
       event: event,
     );
-        final rawOrgId = event['organizationId']?.toString() ?? '';
-        final isIndependentPromotion = rawOrgId.isEmpty;
-        final hostOrgId = isIndependentPromotion ? 'org_paff_national' : rawOrgId;
-        final hostOrgName = ArmSphereFormatters.formatOrganizationName(
-          (event['organizationName'] ??
-                  (isIndependentPromotion
-                      ? 'Independent Promotion · Verified Organizer'
-                      : 'Pakistan Armwrestling Federation (PAFF)'))
-              .toString(),
-        );
+        final rawOrgName = (event['organizationName'] ??
+                (event['organization'] is Map
+                    ? (event['organization'] as Map)['name']
+                    : null) ??
+                '')
+            .toString()
+            .trim();
+        final sanctioningOrgLabel = rawOrgName.isNotEmpty
+            ? ArmSphereFormatters.formatOrganizationName(rawOrgName)
+            : 'ArmSphere Verified';
         final location = ArmSphereFormatters.formatCleanAddress([
           event['venueName']?.toString(),
           event['city']?.toString(),
@@ -723,7 +789,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         const SizedBox(height: 96),
                       ] else ...[
                         // 2. Weight & Division Tactical Filter Tray (Cat N)
-                        _buildCategoryFilterTray(),
+                        _buildCategoryFilterTray(event),
                         const SizedBox(height: 16),
 
                         // 1. Overview Metrics Strip (Schedule, Entry Fee, Capacity, Sanctioning)
@@ -766,7 +832,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                                     child: _metricColumn(
                                       icon: Icons.verified_outlined,
                                       label: 'Sanctioning',
-                                      value: 'IFA / WAF Certified',
+                                      value: sanctioningOrgLabel,
                                       badgeAsset: ArmSphereAssets.sealFed,
                                     ),
                                   ),
@@ -785,12 +851,12 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                         _buildAthleteCategoriesAndAwardsCard(context, event),
                         const SizedBox(height: 16),
 
-                        // Zero-Error Optimistic Apply / Register Card (with Local Tournament QR Generation)
-                        _buildZeroErrorAthleteApplyCard(context, event),
-                        const SizedBox(height: 16),
-
-                        // Buying / Clicking for Spectating & Verification by QR or Name
-                        _buildOfflineSpectatorPassAndVerificationCard(context, event),
+                        // Athlete Registration Status Card (Single Unified CTA in StickyBottomActionBar)
+                        _buildZeroErrorAthleteApplyCard(
+                          context,
+                          event,
+                          activeRegistration,
+                        ),
                         const SizedBox(height: 16),
 
                         // 2b. Official Spectator & VIP Event Passes
@@ -834,131 +900,6 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                           const SizedBox(height: 16),
                         ],
 
-                        // Host Sanctioning Organization / Independent Promotion Pill
-                        ElevatedActionCard(
-                          borderColor: AppTheme.goldPrimary.withValues(alpha: 0.35),
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            context.push(
-                              isIndependentPromotion
-                                  ? '/organizations'
-                                  : '/organizations/$hostOrgId',
-                            );
-                          },
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.shield_rounded,
-                                color: AppTheme.goldPrimary,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      isIndependentPromotion
-                                          ? 'INDEPENDENT PROMOTION'
-                                          : 'HOST SANCTIONING ORGANIZATION',
-                                      style: const TextStyle(
-                                        fontFamily: AppTheme.fontDisplay,
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.8,
-                                        color: AppTheme.goldPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      hostOrgName,
-                                      style: const TextStyle(
-                                        fontFamily: AppTheme.fontDisplay,
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              StatusChip(
-                                label: isIndependentPromotion
-                                    ? 'INDEPENDENT PROMOTION'
-                                    : 'SANCTIONED',
-                                color: isIndependentPromotion
-                                    ? AppTheme.cyan
-                                    : AppTheme.goldPrimary,
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.chevron_right,
-                                color: AppTheme.textMuted,
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Athlete Event QR Passport Quick-Access Card
-                        ElevatedActionCard(
-                          borderColor: AppTheme.emerald.withValues(alpha: 0.45),
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            context.push('/tournament/${widget.tournamentId}/qr');
-                          },
-                          padding: const EdgeInsets.all(14),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(9),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: AppTheme.emerald.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.qr_code_2_rounded,
-                                  color: AppTheme.emerald,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'My Event QR Passport',
-                                      style: TextStyle(
-                                        fontFamily: AppTheme.fontDisplay,
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 14,
-                                        color: AppTheme.textPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Present your cryptographic QR pass at the weigh-in scale',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        color: AppTheme.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const StatusChip(
-                                label: 'SHOW QR',
-                                color: AppTheme.emerald,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
 
                         // 3. Organizer / Operations Console Access (strictly gated by Invariant 1 & 2)
                         if (canOperate) ...[
@@ -1128,77 +1069,31 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           ),
           bottomNavigationBar: StickyBottomActionBar(
             primaryActionLabel: canRegister
-                ? 'Apply to Compete'
+                ? (activeRegistration != null
+                    ? 'Update Division'
+                    : 'Apply to Compete')
                 : (status == 'ONGOING'
                     ? 'Track Live Matches'
-                    : (status == 'COMPLETED' ? 'View Awards & Ceremony' : 'Apply to Compete')),
-            primaryActionIcon: Icons.bolt_rounded,
+                    : (status == 'COMPLETED'
+                        ? 'View Awards & Ceremony'
+                        : (activeRegistration != null
+                            ? 'Update Division'
+                            : 'Apply to Compete'))),
+            primaryActionIcon: activeRegistration != null
+                ? Icons.edit_note_rounded
+                : Icons.bolt_rounded,
             onPrimaryAction: () {
               HapticFeedback.selectionClick();
-              _openOptimisticApplyModal(context, event);
+              if (!canRegister && status == 'COMPLETED') {
+                context.push('/tournament/${widget.tournamentId}/awards');
+                return;
+              }
+              if (!canRegister && status == 'ONGOING') {
+                setState(() => _activeAthleteTab = 1);
+                return;
+              }
+              _openDedicatedApplyScreen(context, event);
             },
-            secondaryAction: SizedBox(
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () async {
-                  HapticFeedback.mediumImpact();
-                  final auth = ref.read(authProvider);
-                  final profile = auth.userProfile ?? {};
-                  final userId = (profile['id'] ?? 'spec-local-01').toString();
-                  final userName =
-                      (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator').toString();
-                  final hive = ref.read(hiveStorageProvider);
-                  OfflineSyncManager? syncManager;
-                  try {
-                    syncManager = ref.read(offlineSyncManagerProvider);
-                  } catch (_) {}
-                  final passPricePkr =
-                      (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
-                  final issued =
-                      await TournamentOfflineStore.claimOrPurchaseSpectatorPassOfflineSafe(
-                    hive: hive,
-                    syncManager: syncManager,
-                    tournamentId: widget.tournamentId,
-                    userId: userId,
-                    userName: userName,
-                    pricePkr: passPricePkr,
-                  );
-                  if (mounted) {
-                    setState(() => _localIssuedSpectatorPass = issued);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      CrystalSnackBar(
-                        content: Text(
-                          'Official Spectator Pass (${issued['qrCode']}) issued & ready for Gate QR scan!',
-                        ),
-                        backgroundColor: AppTheme.emerald,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.goldPrimary,
-                  side: const BorderSide(color: AppTheme.goldPrimary, width: 1.2),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '🎟 Spectator Pass',
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ),
         );
   }
@@ -1211,28 +1106,76 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     return formatEventFee(event['registrationFeeCents']);
   }
 
+  String _resolveTierPrizeLabel(
+    Map<String, dynamic> awardsConfig, {
+    required int place,
+    required String fallbackKey,
+    required String defaultPrize,
+  }) {
+    final direct = (awardsConfig[fallbackKey] ?? '').toString().trim();
+    if (direct.isNotEmpty) return direct;
+    final tiers = awardsConfig['tiers'];
+    if (tiers is List) {
+      for (final item in tiers) {
+        if (item is! Map) continue;
+        final itemPlace = (item['place'] as num?)?.toInt();
+        if (itemPlace == place) {
+          final cashPkr = (item['cashPrizePkr'] as num?)?.toInt() ?? 0;
+          final customReward = (item['customReward'] ?? '').toString().trim();
+          final parts = <String>[
+            if (cashPkr > 0) 'PKR $cashPkr',
+            if (customReward.isNotEmpty) customReward,
+          ];
+          if (parts.isNotEmpty) return parts.join(' + ');
+        }
+      }
+    }
+    return defaultPrize;
+  }
+
   Widget _buildAthleteCategoriesAndAwardsCard(
     BuildContext context,
     Map<String, dynamic> event,
   ) {
-    final weightCategories = (event['weightCategories'] is List)
-        ? (event['weightCategories'] as List)
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList()
-        : <Map<String, dynamic>>[
-            {'weightLabel': '70 kg', 'arm': 'BOTH'},
-            {'weightLabel': '80 kg', 'arm': 'BOTH'},
-            {'weightLabel': '90 kg', 'arm': 'RIGHT'},
-            {'weightLabel': 'Open', 'arm': 'BOTH'},
-          ];
+    final realDivisions =
+        TournamentOfflineStore.extractRealTournamentDivisions(event);
+    final availableChipLabels = _resolveDynamicFilterChips(event);
+    final activeFilter = availableChipLabels.contains(_selectedCategory)
+        ? _selectedCategory
+        : 'ALL';
+    final visibleDivisions = activeFilter == 'ALL'
+        ? realDivisions
+        : realDivisions
+            .where((d) => (d['label'] ?? '').toString() == activeFilter)
+            .toList();
+
     final awardsConfig = (event['awardsConfig'] is Map)
         ? Map<String, dynamic>.from(event['awardsConfig'] as Map)
-        : <String, dynamic>{
-            'firstPlacePrize': 'PKR 50,000 + Gold Championship Medal',
-            'secondPlacePrize': 'PKR 25,000 + Silver Medal',
-            'thirdPlacePrize': 'PKR 10,000 + Bronze Medal',
-          };
+        : (event['step1Config'] is Map &&
+                (event['step1Config'] as Map)['awardsConfig'] is Map)
+            ? Map<String, dynamic>.from(
+                (event['step1Config'] as Map)['awardsConfig'] as Map,
+              )
+            : <String, dynamic>{};
+
+    final firstPrize = _resolveTierPrizeLabel(
+      awardsConfig,
+      place: 1,
+      fallbackKey: 'firstPlacePrize',
+      defaultPrize: 'PKR 50,000 + Gold Championship Medal',
+    );
+    final secondPrize = _resolveTierPrizeLabel(
+      awardsConfig,
+      place: 2,
+      fallbackKey: 'secondPlacePrize',
+      defaultPrize: 'PKR 25,000 + Silver Medal',
+    );
+    final thirdPrize = _resolveTierPrizeLabel(
+      awardsConfig,
+      place: 3,
+      fallbackKey: 'thirdPlacePrize',
+      defaultPrize: 'PKR 10,000 + Bronze Medal',
+    );
 
     return Container(
       padding: const EdgeInsets.all(15),
@@ -1266,41 +1209,49 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
             ],
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final cat in weightCategories)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.obsidian,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+          if (visibleDivisions.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final div in visibleDivisions)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.obsidian,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.goldPrimary.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: Text(
+                      (div['label'] ?? '').toString(),
+                      style: const TextStyle(
+                        fontFamily: AppTheme.fontDisplay,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                   ),
-                  child: Text(
-                    '${cat['weightLabel'] ?? 'Open'} • ${(cat['arm'] ?? 'BOTH') == 'BOTH' ? 'L & R' : '${cat['arm']}'}',
-                    style: const TextStyle(
-                      fontFamily: AppTheme.fontDisplay,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+              ],
+            )
+          else
+            const Text(
+              'Official divisions configured by tournament host.',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+              ),
+            ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _buildPursePod(
                   medal: '1ST GOLD',
-                  prize: (awardsConfig['firstPlacePrize'] ?? 'PKR 50,000')
-                      .toString(),
+                  prize: firstPrize,
                   color: const Color(0xFFD4AF37),
                 ),
               ),
@@ -1308,8 +1259,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               Expanded(
                 child: _buildPursePod(
                   medal: '2ND SILVER',
-                  prize: (awardsConfig['secondPlacePrize'] ?? 'PKR 25,000')
-                      .toString(),
+                  prize: secondPrize,
                   color: const Color(0xFFE2E8F0),
                 ),
               ),
@@ -1317,8 +1267,7 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
               Expanded(
                 child: _buildPursePod(
                   medal: '3RD BRONZE',
-                  prize: (awardsConfig['thirdPlacePrize'] ?? 'PKR 10,000')
-                      .toString(),
+                  prize: thirdPrize,
                   color: const Color(0xFFCD7F32),
                 ),
               ),
@@ -1370,233 +1319,27 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     );
   }
 
-  Future<void> _openOptimisticApplyModal(
-    BuildContext context,
-    Map<String, dynamic> event,
-  ) async {
-    final weightCategories = (event['weightCategories'] is List &&
-            (event['weightCategories'] as List).isNotEmpty)
-        ? (event['weightCategories'] as List)
-            .whereType<Map>()
-            .map((e) => (e['weightLabel'] ?? '80 kg').toString())
-            .toSet()
-            .toList()
-        : <String>['70 kg', '80 kg', '90 kg', 'Open'];
-
-    String selectedWeight = weightCategories.first;
-    String selectedArm = 'RIGHT';
-    int guestCount = 0;
-    final int maxGuests = ((event['maxGuestsPerAthlete'] ??
-                event['guestsPerCompetingAthlete'] ??
-                event['athleteGuestAllowance'] ??
-                event['step1Config']?['maxGuestsPerAthlete']) as num?)
-            ?.toInt() ??
-        2;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      barrierColor: AppTheme.overlayG6Barrier,
-      backgroundColor: AppTheme.overlayG6Surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-        side: BorderSide(color: AppTheme.overlayG6Border, width: 1.0),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                18,
-                18,
-                18,
-                MediaQuery.viewInsetsOf(ctx).bottom + 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.bolt_rounded,
-                          color: AppTheme.goldPrimary, size: 22),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'APPLY TO COMPETE',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                      ),
-                      const StatusChip(
-                        label: 'OFFLINE-SAFE',
-                        color: AppTheme.emerald,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedWeight,
-                    dropdownColor: AppTheme.overlayG6Surface,
-                    style: const TextStyle(color: AppTheme.textPure, fontSize: 14),
-                    decoration: const InputDecoration(
-                      labelText: 'Select Weight Category',
-                      prefixIcon: Icon(Icons.scale_outlined, size: 18),
-                    ),
-                    items: [
-                      for (final w in weightCategories)
-                        DropdownMenuItem(value: w, child: Text(w)),
-                    ],
-                    onChanged: (v) =>
-                        setSheetState(() => selectedWeight = v ?? selectedWeight),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedArm,
-                    dropdownColor: AppTheme.overlayG6Surface,
-                    style: const TextStyle(color: AppTheme.textPure, fontSize: 14),
-                    decoration: const InputDecoration(
-                      labelText: 'Select Competition Arm / Hand',
-                      prefixIcon: Icon(Icons.front_hand_outlined, size: 18),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'RIGHT', child: Text('Right Arm Division')),
-                      DropdownMenuItem(
-                          value: 'LEFT', child: Text('Left Arm Division')),
-                      DropdownMenuItem(
-                          value: 'BOTH', child: Text('Both Arms (Left & Right)')),
-                    ],
-                    onChanged: (v) =>
-                        setSheetState(() => selectedArm = v ?? 'RIGHT'),
-                  ),
-                  if (maxGuests > 0) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Spectator Guests (Max $maxGuests)',
-                          style:
-                              const TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: guestCount > 0
-                                  ? () => setSheetState(() => guestCount--)
-                                  : null,
-                              icon: const Icon(Icons.remove_circle_outline),
-                            ),
-                            Text(
-                              '$guestCount',
-                              style: const TextStyle(
-                                fontFamily: AppTheme.fontDisplay,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 15,
-                                color: AppTheme.goldPrimary,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: guestCount < maxGuests
-                                  ? () => setSheetState(() => guestCount++)
-                                  : null,
-                              icon: const Icon(Icons.add_circle_outline),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      key: const ValueKey('athlete_optimistic_submit_apply_button'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.emerald,
-                        foregroundColor: Colors.black,
-                      ),
-                      onPressed: () async {
-                        HapticFeedback.heavyImpact();
-                        final auth = ref.read(authProvider);
-                        final profile = auth.userProfile ?? {};
-                        final athleteId =
-                            (profile['id'] ?? profile['userId'] ?? 'ath-pk-local')
-                                .toString();
-                        final athleteName = (profile['displayName'] ??
-                                profile['fullName'] ??
-                                profile['name'] ??
-                                'ArmSphere Athlete')
-                            .toString();
-                        final hive = ref.read(hiveStorageProvider);
-                        OfflineSyncManager? syncManager;
-                        try {
-                          syncManager = ref.read(offlineSyncManagerProvider);
-                        } catch (_) {}
-
-                        final submitted = await TournamentOfflineStore
-                            .submitAthleteApplicationOfflineSafe(
-                          hive: hive,
-                          syncManager: syncManager,
-                          tournamentId: widget.tournamentId,
-                          athleteId: athleteId,
-                          athleteName: athleteName,
-                          weightCategory: selectedWeight,
-                          arm: selectedArm,
-                          guestCount: guestCount,
-                          elo: (profile['eloRating'] as num?)?.toInt() ??
-                              (profile['elo'] as num?)?.toInt() ??
-                              1000,
-                        );
-                        if (!ctx.mounted) return;
-                        Navigator.of(ctx).pop();
-                        if (mounted) {
-                          setState(() {
-                            _localSubmittedApplication = submitted;
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            CrystalSnackBar(
-                              content: Text(
-                                'Registered for $selectedWeight (${ArmSphereFormatters.formatArmLabel(selectedArm)}). Official QR Credential generated!',
-                              ),
-                              backgroundColor: AppTheme.emerald,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.check_circle_rounded),
-                      label: const Text(
-                        'CONFIRM & GENERATE OFFICIAL QR CREDENTIAL',
-                        style: TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _buildZeroErrorAthleteApplyCard(
     BuildContext context,
     Map<String, dynamic> event,
+    Map<String, dynamic>? activeRegistration,
   ) {
-    final app = _localSubmittedApplication;
+    final app = activeRegistration;
+    final weightLabel = (app?['registeredWeightLabel'] ??
+            app?['weightCategory'] ??
+            app?['weightClass'] ??
+            app?['divisionName'] ??
+            '')
+        .toString()
+        .trim();
+    final armRaw = (app?['registeredArm'] ?? app?['arm'] ?? 'RIGHT')
+        .toString()
+        .trim();
+    final formattedArm = ArmSphereFormatters.formatArmLabel(armRaw);
+    final categorySummary = (app?['categoryLabel'] ?? '').toString().trim().isNotEmpty
+        ? (app?['categoryLabel']).toString().trim()
+        : (weightLabel.isNotEmpty ? '$weightLabel • $formattedArm' : formattedArm);
+
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
@@ -1614,12 +1357,15 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
         children: [
           Row(
             children: [
-              const Icon(Icons.qr_code_2_rounded,
-                  color: AppTheme.emerald, size: 18),
+              Icon(
+                app != null ? Icons.verified_rounded : Icons.how_to_reg_rounded,
+                color: AppTheme.emerald,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'OFFICIAL ARMSPHERE QR CREDENTIAL CARD',
+                  'TOURNAMENT REGISTRATION',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontWeight: FontWeight.w900,
@@ -1630,435 +1376,88 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
                 ),
               ),
               StatusChip(
-                label: app != null ? 'CREDENTIAL ACTIVE ✓' : 'READY',
+                label: app != null ? 'CONFIRMED ✓' : 'READY',
                 color: AppTheme.emerald,
               ),
             ],
           ),
           const SizedBox(height: 10),
           if (app != null) ...[
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                final qrData = (app['qrCode'] ?? 'ARMSPHERE-QR').toString();
-                final athleteLabel = (app['athleteName'] ?? 'Athlete').toString();
-                final athleteCopyId =
-                    (app['athleteId'] ?? app['userId'] ?? qrData).toString();
-                showDialog<void>(
-                  context: context,
-                  builder: (dialogCtx) => Dialog(
-                    backgroundColor: const Color(0xFF0C101A),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: AppTheme.goldPrimary.withValues(alpha: 0.6),
-                        width: 1.4,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Row(
-                                children: [
-                                  Icon(
-                                    Icons.qr_code_2_rounded,
-                                    color: AppTheme.goldPrimary,
-                                    size: 20,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'OFFICIAL ATHLETE QR',
-                                    style: TextStyle(
-                                      fontFamily: AppTheme.fontDisplay,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 13,
-                                      color: AppTheme.goldPrimary,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  color: AppTheme.textSecondary,
-                                  size: 20,
-                                ),
-                                onPressed: () => Navigator.of(dialogCtx).pop(),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: ArmSphereQrMatrixView(
-                              data: qrData,
-                              size: 230,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            athleteLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 17,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ID: $athleteCopyId',
-                            style: const TextStyle(
-                              fontFamily: AppTheme.fontMono,
-                              fontSize: 11,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+            Container(
+              padding: const EdgeInsets.all(13),
+              decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Confirmed • $categorySummary',
+                    style: const TextStyle(
+                      fontFamily: AppTheme.fontDisplay,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13.5,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
-                );
-              },
-              onLongPress: () {
-                HapticFeedback.heavyImpact();
-                final athleteCopyId =
-                    (app['athleteId'] ?? app['userId'] ?? app['qrCode'] ?? '')
-                        .toString();
-                if (athleteCopyId.isNotEmpty) {
-                  Clipboard.setData(ClipboardData(text: athleteCopyId));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CrystalSnackBar(
-                      content: const Text('Athlete ID copied to clipboard'),
-                      backgroundColor: AppTheme.emerald,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: AppTheme.recessedObsidianWellDecoration(radius: 14),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: ArmSphereQrMatrixView(
-                        data: (app['qrCode'] ?? 'ARMSPHERE-QR').toString(),
-                        size: 84,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'OFFICIAL ATHLETE CREDENTIAL ✓',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontDisplay,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                              color: AppTheme.emerald,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${app['athleteName']} • ${app['registeredWeightLabel']} (${app['registeredArm']} Arm)',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12.5,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'QR: ${app['qrCode']}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.goldPrimary,
-                            ),
-                          ),
-                        ],
+                  if ((app['athleteName'] ?? '').toString().trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${app['athleteName']}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: AppTheme.goldPrimary,
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _openOptimisticApplyModal(context, event),
-                  child: Container(
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3A1216), Color(0xFF1A090B)],
-                      ),
-                      borderRadius: BorderRadius.circular(11),
-                      border: Border.all(
-                        color: const Color(0xFFE23B3B),
-                        width: 1.3,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        app != null
-                            ? 'Update Division / QR'
-                            : 'Apply to Compete',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 11.5,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOfflineSpectatorPassAndVerificationCard(
-    BuildContext context,
-    Map<String, dynamic> event,
-  ) {
-    final spectatorEnabled = event['spectatorEnabled'] != false;
-    if (!spectatorEnabled) return const SizedBox.shrink();
-
-    final passPricePkr =
-        (event['spectatorTicketPricePkr'] as num?)?.toInt() ?? 0;
-    final pass = _localIssuedSpectatorPass;
-
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: const Color(0xFF131823),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cyan.withValues(alpha: 0.45)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.confirmation_number_rounded,
-                  color: AppTheme.cyan, size: 18),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'SPECTATOR PASS & GATE QR CREDENTIAL',
-                  style: TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11.5,
-                    color: AppTheme.cyan,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              StatusChip(
-                label: passPricePkr <= 0 ? 'FREE PASS' : 'PKR $passPricePkr',
-                color: AppTheme.cyan,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (pass != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: AppTheme.recessedObsidianWellDecoration(radius: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ArmSphereQrMatrixView(
-                      data: (pass['qrCode'] ?? 'ARMSPHERE-SPEC').toString(),
-                      size: 72,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'OFFICIAL SPECTATOR QR PASS ✓',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12.5,
-                            color: AppTheme.emerald,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${pass['holderName']} • ${pass['qrCode']}',
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Present your Profile QR Code at weigh-in, venue entrance, and your assigned table.',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: AppTheme.textSecondary,
+                      height: 1.35,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 10),
-          ],
-          GestureDetector(
-            onTap: () async {
-              HapticFeedback.mediumImpact();
-              final auth = ref.read(authProvider);
-              final profile = auth.userProfile ?? {};
-              final userId = (profile['id'] ?? 'spec-local-01').toString();
-              final userName =
-                  (profile['displayName'] ?? profile['name'] ?? 'Arena Spectator')
-                      .toString();
-              final hive = ref.read(hiveStorageProvider);
-              OfflineSyncManager? syncManager;
-              try {
-                syncManager = ref.read(offlineSyncManagerProvider);
-              } catch (_) {}
-
-              final issued = await TournamentOfflineStore
-                  .claimOrPurchaseSpectatorPassOfflineSafe(
-                hive: hive,
-                syncManager: syncManager,
-                tournamentId: widget.tournamentId,
-                userId: userId,
-                userName: userName,
-                pricePkr: passPricePkr,
-              );
-              if (mounted) {
-                setState(() => _localIssuedSpectatorPass = issued);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CrystalSnackBar(
-                    content: Text(
-                      'Spectator QR Pass (${issued['qrCode']}) saved locally & synced!',
-                    ),
-                    backgroundColor: AppTheme.emerald,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2B2210), Color(0xFF141008)],
-                ),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: AppTheme.goldPrimary, width: 1.3),
-              ),
-              child: Center(
-                child: Text(
-                  passPricePkr <= 0
-                      ? '🎟 Spectator Pass (Free)'
-                      : '🎟 Spectator Pass (PKR $passPricePkr)',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: AppTheme.fontDisplay,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11.5,
-                    color: AppTheme.goldPrimary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _entranceVerifyCtrl,
-            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12.5),
-            decoration: InputDecoration(
-              isDense: true,
-              labelText: 'Quick Gate Check (QR or Puller Name)',
-              prefixIcon: const Icon(Icons.qr_code_scanner_rounded,
-                  color: AppTheme.cyan, size: 18),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.verified_rounded,
-                    color: AppTheme.emerald, size: 18),
-                onPressed: () async {
-                  final hive = ref.read(hiveStorageProvider);
-                  OfflineSyncManager? syncManager;
-                  try {
-                    syncManager = ref.read(offlineSyncManagerProvider);
-                  } catch (_) {}
-                  final res = await TournamentOfflineStore
-                      .verifyEntranceByQrOrNameOfflineSafe(
-                    hive: hive,
-                    syncManager: syncManager,
-                    tournamentId: widget.tournamentId,
-                    query: _entranceVerifyCtrl.text,
-                  );
-                  if (mounted) {
-                    setState(() => _entranceVerifyResult = res);
-                  }
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/settings');
                 },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.goldPrimary,
+                  side: const BorderSide(
+                    color: AppTheme.goldPrimary,
+                    width: 1.2,
+                  ),
+                  minimumSize: const Size(0, 40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                ),
+                icon: const Icon(Icons.qr_code_2_rounded, size: 16),
+                label: const Text(
+                  'Profile QR',
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11.5,
+                  ),
+                ),
               ),
             ),
-          ),
-          if (_entranceVerifyResult != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (_entranceVerifyResult!['verified'] == true)
-                    ? AppTheme.emerald.withValues(alpha: 0.15)
-                    : AppTheme.crimson.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: (_entranceVerifyResult!['verified'] == true)
-                      ? AppTheme.emerald
-                      : AppTheme.crimson,
-                ),
-              ),
-              child: Text(
-                (_entranceVerifyResult!['message'] ?? '').toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: (_entranceVerifyResult!['verified'] == true)
-                      ? AppTheme.emerald
-                      : AppTheme.crimson,
-                ),
+          ] else ...[
+            const Text(
+              'Tap "Apply to Compete" below to select your created division on the official registration screen. Your permanent Profile QR Code is used automatically at weigh-in, venue entrance, and your assigned table.',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: AppTheme.textSecondary,
+                height: 1.35,
               ),
             ),
           ],
@@ -2510,7 +1909,13 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
     );
   }
 
-  Widget _buildCategoryFilterTray() {
+  Widget _buildCategoryFilterTray(Map<String, dynamic> event) {
+    final chips = _resolveDynamicFilterChips(event);
+    final effectiveSelected =
+        chips.contains(_selectedCategory) ? _selectedCategory : 'ALL';
+    if (chips.length <= 1) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2534,11 +1939,11 @@ class _TournamentDetailScreenState extends ConsumerState<TournamentDetailScreen>
           height: 36,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _categories.length,
+            itemCount: chips.length,
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
-              final cat = _categories[index];
-              final isSelected = cat == _selectedCategory;
+              final cat = chips[index];
+              final isSelected = cat == effectiveSelected;
               return TactilePressWrapper(
                 onTap: () {
                   HapticFeedback.selectionClick();

@@ -13,12 +13,12 @@ class OrganizerContactCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String organizer = tournament['organizerName'] ?? 'Pakistan Armwrestling Federation (PAFF)';
-    final String club = tournament['clubName'] ?? 'Lahore Iron Grip Armwrestling Club';
-    final String province = tournament['province'] ?? 'Punjab, Pakistan';
-    final String email = tournament['contactEmail'] ?? 'official@paff.org.pk';
-    final String phone = tournament['officialPhone'] ?? '+92 300 8472910';
-    final String website = tournament['website'] ?? 'www.paff.org.pk';
+    final String organizer = tournament['organizationName'] ?? tournament['organizerName'] ?? 'Host Organization';
+    final String club = tournament['clubName'] ?? 'Host Arena Club';
+    final String province = tournament['province'] ?? 'Pakistan';
+    final String email = tournament['contactEmail'] ?? 'support@armsphere.com';
+    final String phone = tournament['officialPhone'] ?? '+92 300 0000000';
+    final String website = tournament['website'] ?? 'www.armsphere.com';
 
     return Container(
       width: double.infinity,

@@ -64,7 +64,7 @@ class ArmSphereFormatters {
     return [prefix, prov];
   }
 
-  /// Normalizes known federation/organization typos (e.g. `ARMWRESLING`, `PAF`).
+  /// Normalizes known organization spelling typos (e.g. `ARMWRESLING`).
   static String formatOrganizationName(String? raw, {String fallback = 'Organization'}) {
     if (raw == null || raw.trim().isEmpty) return fallback;
     var text = raw.trim();
@@ -72,8 +72,6 @@ class ArmSphereFormatters {
       RegExp(r'ARMWRESLING', caseSensitive: false),
       text == text.toUpperCase() ? 'ARMWRESTLING' : 'Armwrestling',
     );
-    text = text.replaceAll(RegExp(r'\(PAF\)'), '(PAFF)');
-    text = text.replaceAll(RegExp(r'\bPAF\b'), 'PAFF');
     return text;
   }
 

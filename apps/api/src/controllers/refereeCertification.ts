@@ -7,6 +7,8 @@ const issueCertificationSchema = z.object({
   issuedAt: z.string().datetime({ message: "Issued at must be a valid ISO datetime string" }),
   expiresAt: z.string().datetime({ message: "Expires at must be a valid ISO datetime string" }).optional(),
   issuingBody: z.string().min(1, "Issuing body is required"),
+  issuingOrganizationId: z.string().uuid().optional(),
+  notes: z.string().max(1000).optional(),
 });
 
 export class RefereeCertificationController {

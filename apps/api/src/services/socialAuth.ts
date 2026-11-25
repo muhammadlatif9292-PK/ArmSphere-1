@@ -207,12 +207,15 @@ export class SocialAuthService {
         // 3. Create a brand new account for this social profile
         const username = `${profile.provider}_${crypto.randomBytes(4).toString("hex")}`;
         const randomPasswordHash = `SOCIAL_AUTH_ONLY_${crypto.randomBytes(16).toString("hex")}`;
+        const userId = uuidv4();
 
         const insertData: any = {
+          id: userId,
           email: emailLower,
           username,
           fullName: profile.name,
           passwordHash: randomPasswordHash,
+          profileQrCode: `ARMSPHERE-ATHLETE-QR:${userId}`,
           role: "ATHLETE",
           isActive: true,
         };
@@ -270,8 +273,13 @@ export class SocialAuthService {
     });
 
     const { passwordHash, ...userResponse } = user;
+    const profileQrCode =
+      (user as any).profileQrCode || `ARMSPHERE-ATHLETE-QR:${user.id}`;
     return {
-      user: userResponse,
+      user: {
+        ...userResponse,
+        profileQrCode,
+      },
       accessToken,
       refreshToken,
     };

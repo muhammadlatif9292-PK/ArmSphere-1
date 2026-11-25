@@ -1,6 +1,6 @@
 import { eq, and, desc, isNull, or, gt, lte, inArray } from "drizzle-orm";
 import { db } from "../config/db.js";
-import { refereeCertifications, users, notifications } from "@armsphere/db-schema";
+import { refereeCertifications, users, notifications, organizations } from "@armsphere/db-schema";
 import { NotFoundError, BadRequestError, ForbiddenError, logger } from "@armsphere/core";
 
 export interface IssueCertificationInput {
@@ -8,6 +8,8 @@ export interface IssueCertificationInput {
   issuedAt: string;
   expiresAt?: string;
   issuingBody: string;
+  issuingOrganizationId?: string;
+  notes?: string;
 }
 
 export class RefereeCertificationService {
@@ -107,23 +109,44 @@ export class RefereeCertificationService {
       }
     }
 
+    let resolvedOrgName = input.issuingBody.trim();
+    let resolvedOrgId: string | null = input.issuingOrganizationId || null;
+    if (resolvedOrgId) {
+      const [org] = await db
+        .select({ id: organizations.id, name: organizations.name })
+        .from(organizations)
+        .where(eq(organizations.id, resolvedOrgId))
+        .limit(1);
+      if (org) {
+        resolvedOrgId = org.id;
+        resolvedOrgName = org.name;
+      } else {
+        resolvedOrgId = null;
+      }
+    }
+
     const [certification] = await db
       .insert(refereeCertifications)
       .values({
         userId: targetUserId,
+        issuingOrganizationId: resolvedOrgId,
         certificationLevel: input.certificationLevel.trim(),
         issuedAt: issuedDate,
         expiresAt: expiresDate,
-        issuingBody: input.issuingBody.trim(),
+        issuingBody: resolvedOrgName,
+        notes: input.notes?.trim() || null,
         status: "ACTIVE",
       })
       .returning();
 
-    return certification;
+    return {
+      ...certification,
+      issuingOrganizationName: resolvedOrgName,
+    };
   }
 
   /**
-   * List certifications of a specific referee (own user or admin view)
+   * List certifications of a specific referee (own user or admin view) joined with organizations.
    */
   static async listCertifications(actorUserId: string, actorRole: string, targetUserId: string) {
     const isAdmin = ["system_admin", "national_director", "provincial_director"].includes(
@@ -136,11 +159,44 @@ export class RefereeCertificationService {
       throw new ForbiddenError("You are not authorized to view these certifications");
     }
 
-    return await db
-      .select()
+    const rows = await db
+      .select({
+        id: refereeCertifications.id,
+        userId: refereeCertifications.userId,
+        athleteId: refereeCertifications.athleteId,
+        issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+        issuedByUserId: refereeCertifications.issuedByUserId,
+        certificationLevel: refereeCertifications.certificationLevel,
+        issuedAt: refereeCertifications.issuedAt,
+        expiresAt: refereeCertifications.expiresAt,
+        issuingBody: refereeCertifications.issuingBody,
+        status: refereeCertifications.status,
+        notes: refereeCertifications.notes,
+        createdAt: refereeCertifications.createdAt,
+        updatedAt: refereeCertifications.updatedAt,
+        organizationName: organizations.name,
+      })
       .from(refereeCertifications)
+      .leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id))
       .where(eq(refereeCertifications.userId, targetUserId))
       .orderBy(desc(refereeCertifications.issuedAt));
+
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      athleteId: r.athleteId,
+      issuingOrganizationId: r.issuingOrganizationId,
+      issuingOrganizationName: r.organizationName || r.issuingBody,
+      issuedByUserId: r.issuedByUserId,
+      certificationLevel: r.certificationLevel,
+      issuedAt: r.issuedAt,
+      expiresAt: r.expiresAt,
+      issuingBody: r.organizationName || r.issuingBody,
+      status: r.status,
+      notes: r.notes,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+    }));
   }
 
   /**
@@ -318,8 +374,23 @@ export class RefereeCertificationService {
     const userIds = provinceUsers.map((u) => u.id);
 
     const certs = await db
-      .select()
+      .select({
+        id: refereeCertifications.id,
+        userId: refereeCertifications.userId,
+        athleteId: refereeCertifications.athleteId,
+        issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+        certificationLevel: refereeCertifications.certificationLevel,
+        issuedAt: refereeCertifications.issuedAt,
+        expiresAt: refereeCertifications.expiresAt,
+        issuingBody: refereeCertifications.issuingBody,
+        status: refereeCertifications.status,
+        notes: refereeCertifications.notes,
+        createdAt: refereeCertifications.createdAt,
+        updatedAt: refereeCertifications.updatedAt,
+        organizationName: organizations.name,
+      })
       .from(refereeCertifications)
+      .leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id))
       .where(inArray(refereeCertifications.userId, userIds))
       .orderBy(desc(refereeCertifications.issuedAt));
 
@@ -327,6 +398,8 @@ export class RefereeCertificationService {
       .filter((c) => userMap.has(c.userId))
       .map((c) => ({
         ...c,
+        issuingOrganizationName: c.organizationName || c.issuingBody,
+        issuingBody: c.organizationName || c.issuingBody,
         userFullName: userMap.get(c.userId)?.fullName,
         userEmail: userMap.get(c.userId)?.email,
         userProvince: userMap.get(c.userId)?.province,

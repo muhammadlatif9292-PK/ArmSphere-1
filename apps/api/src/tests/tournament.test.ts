@@ -385,6 +385,47 @@ describe("Sprint 5: Tournament & Event Management System Test Suite", () => {
       expect(rows.length).toBe(1);
     });
 
+    it("updates existing registration in-place when athlete changes division or passes allowUpdate without creating duplicates", async () => {
+      const initial = await request(app)
+        .post("/tournaments/registrations")
+        .send({
+          eventId: manualQrEventId,
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "70 kg",
+          arm: "RIGHT"
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+      expect(initial.status).toBe(201);
+
+      const updated = await request(app)
+        .patch(`/tournaments/events/${manualQrEventId}/registrations/me`)
+        .send({
+          athleteId: UUID_ATHLETE_A,
+          division: "SENIOR",
+          weightClass: "80 kg",
+          arm: "LEFT"
+        })
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+      expect(updated.status).toBe(200);
+      expect(updated.body.weightClass).toBe("80 kg");
+      expect(updated.body.arm).toBe("LEFT");
+      expect(updated.body.updated).toBe(true);
+
+      const rows = testDbStore.eventRegistrations.filter((r) => r.eventId === manualQrEventId);
+      expect(rows.length).toBe(1);
+      expect(rows[0].weightClass).toBe("80 kg");
+      expect(rows[0].arm).toBe("LEFT");
+
+      const myRegResp = await request(app)
+        .get(`/tournaments/events/${manualQrEventId}/my-registration`)
+        .set("Authorization", authHeader(UserRole.ATHLETE, "user-a"));
+      expect(myRegResp.status).toBe(200);
+      expect(myRegResp.body.isRegistered).toBe(true);
+      expect(myRegResp.body.registration.weightClass).toBe("80 kg");
+      expect(myRegResp.body.registration.arm).toBe("LEFT");
+    });
+
     it("does not let the athlete confirm payment or approve their own registration", async () => {
       const reg = await request(app)
         .post("/tournaments/registrations")

@@ -101,7 +101,7 @@ class _CreateOrganizationScreenState
         'country': 'PK',
         'province': _selectedProvince,
         'city': _cityCtrl.text.trim().isEmpty ? _selectedProvince : _cityCtrl.text.trim(),
-        'sanctioningBody': 'WAF / IFA Affiliated',
+        'sanctioningBody': 'ArmSphere Verified',
       });
 
       // Submit role application
@@ -353,7 +353,7 @@ class _CreateOrganizationScreenState
                     controller: _nameCtrl,
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: 'e.g. Pakistan Armwrestling Federation',
+                      hintText: 'e.g. Regional Armwrestling League',
                       hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                       filled: true,
                       fillColor: const Color(0x33000000),
@@ -431,7 +431,7 @@ class _CreateOrganizationScreenState
                       letterSpacing: 1.2,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'e.g. PAFF-2026 or CUSTOM_CODE',
+                      hintText: 'e.g. ORG-2026 or CUSTOM_CODE',
                       hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
                       filled: true,
                       fillColor: const Color(0x33000000),

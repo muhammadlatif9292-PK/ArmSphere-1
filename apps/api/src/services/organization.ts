@@ -37,12 +37,6 @@ export class OrganizationService {
     if (orgProvince && orgProvince !== "international" && orgProvince !== "national" && titleName.includes(orgProvince)) {
       return true;
     }
-    if (orgSlug === "paff" && (titleName.includes("national") || titleName.includes("pakistan") || titleName.includes("paff"))) {
-      return true;
-    }
-    if (orgSlug === "east-vs-west" && (titleName.includes("east vs west") || titleName.includes("evw") || titleName.includes("world"))) {
-      return true;
-    }
     return false;
   }
 
@@ -261,15 +255,7 @@ export class OrganizationService {
     const trimmedId = organizationId.trim();
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedId);
 
-    const slugAliasMap: Record<string, string> = {
-      "org_paff_national": "paff",
-      "pakistan-armwrestling-federation": "paff",
-      "org_evw_global": "east-vs-west",
-      "east-vs-west-armwrestling": "east-vs-west",
-      "punjab-armwrestling": "punjab-armwrestling",
-      "kpk-armwrestling": "kpk-armwrestling",
-    };
-    const targetSlug = slugAliasMap[trimmedId.toLowerCase()] || trimmedId.toLowerCase();
+    const targetSlug = trimmedId.toLowerCase();
 
     const [org] = await db
       .select()
@@ -444,7 +430,7 @@ export class OrganizationService {
         contactEmail: data.contactEmail?.trim() || null,
         contactPhone: data.contactPhone?.trim() || null,
         websiteUrl: data.websiteUrl?.trim() || null,
-        sanctioningBody: data.sanctioningBody?.trim() || "WAF / IFA Affiliated",
+        sanctioningBody: data.sanctioningBody?.trim() || "ArmSphere Verified",
         accessCodeHash: codeHash,
         status: "APPROVED",
         isOnboarded: false,
@@ -531,59 +517,42 @@ export class OrganizationService {
   }
 
   /**
-   * Ensures canonical federations exist with pre-seeded access codes,
-   * and backfills legacy tournaments (where organizationId is null) to PAFF.
+   * Ensures baseline test-only organizations exist in isolated test environments.
+   * Never creates unauthorized third-party federation claims or alters real production events.
    */
   static async seedCanonicalOrganizationsIfEmpty() {
+    if (process.env.NODE_ENV !== "test") return;
     const existing = await db.select({ id: organizations.id }).from(organizations).limit(1);
     if (existing.length === 0) {
-      const canonicals = [
+      const testFixtures = [
         {
-          name: "Pakistan Armwrestling Federation (PAFF)",
-          slug: "paff",
-          code: "PAFF-2026-X89K",
+          name: "ArmSphere National League",
+          slug: "armsphere-national-league",
+          code: "ANL-2026-TEST",
           province: "Islamabad",
           city: "Islamabad",
-          presidentName: "Qaiser Khan",
-          sanctioningBody: "WAF / IFA Recognized National Federation",
+          presidentName: "League Director",
+          sanctioningBody: "ArmSphere Verified",
         },
         {
-          name: "East vs West Armwrestling",
-          slug: "east-vs-west",
-          code: "EVW-2026-GOLD",
-          province: "International",
-          city: "Istanbul",
-          presidentName: "Engin Terzi",
-          sanctioningBody: "World Elite Armwrestling Promotion",
-        },
-        {
-          name: "Punjab Armwrestling Federation",
-          slug: "punjab-armwrestling",
-          code: "PUNJAB-2026-ARM",
+          name: "Punjab Armwrestling League",
+          slug: "punjab-armwrestling-league",
+          code: "PAL-2026-TEST",
           province: "Punjab",
           city: "Lahore",
-          presidentName: "Mian Usman",
-          sanctioningBody: "PAFF Provincial Affiliate",
-        },
-        {
-          name: "KPK Armwrestling Federation",
-          slug: "kpk-armwrestling",
-          code: "KPK-2026-ARM",
-          province: "KPK",
-          city: "Peshawar",
-          presidentName: "Fazal Wahab",
-          sanctioningBody: "PAFF Provincial Affiliate",
+          presidentName: "Regional Director",
+          sanctioningBody: "ArmSphere Verified",
         },
       ];
 
-      for (const item of canonicals) {
-        const [existing] = await db
+      for (const item of testFixtures) {
+        const [found] = await db
           .select({ id: organizations.id })
           .from(organizations)
           .where(eq(organizations.slug, item.slug))
           .limit(1);
 
-        if (!existing) {
+        if (!found) {
           const hash = await hashPassword(item.code);
           await db.insert(organizations).values({
             name: item.name,
@@ -599,20 +568,5 @@ export class OrganizationService {
         }
       }
     }
-
-    // Backfill any legacy tournaments with null organizationId to PAFF
-    try {
-      const [paffOrg] = await db
-        .select({ id: organizations.id })
-        .from(organizations)
-        .where(eq(organizations.slug, "paff"))
-        .limit(1);
-      if (paffOrg) {
-        await db
-          .update(events)
-          .set({ organizationId: paffOrg.id })
-          .where(isNull(events.organizationId));
-      }
-    } catch (_) {}
   }
 }

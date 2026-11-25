@@ -262,6 +262,35 @@ class _OrganizationDeckScreenState
           ),
           const SizedBox(width: 6),
 
+          // First-Class Organization Referee Certifications Entry
+          IconButton(
+            key: const ValueKey('org_deck_certifications_button'),
+            tooltip: 'Referee Certifications',
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            style: IconButton.styleFrom(
+              backgroundColor: AppTheme.goldPrimary.withValues(alpha: 0.14),
+              side: BorderSide(
+                color: AppTheme.goldPrimary.withValues(alpha: 0.55),
+                width: 0.9,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              context.push('/organization/certifications');
+            },
+            icon: const Icon(
+              Icons.verified_user_rounded,
+              color: AppTheme.goldPrimary,
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: 6),
+
           // Compact Sync / Refresh Action
           IconButton(
             key: const ValueKey('org_deck_refresh_button'),

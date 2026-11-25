@@ -240,7 +240,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                       decoration: CrystalModalSheet.inputDecoration(
                         labelText: 'Official Arbitration Ruling Notes',
                         hintText:
-                            'Document frame-by-frame evidence and WAF rule citation...',
+                            'Document frame-by-frame evidence and competition rule citation...',
                       ),
                     ),
                     if (status.startsWith('RESOLVED')) ...[
@@ -620,11 +620,12 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
@@ -640,7 +641,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: AdminAuthorityHeader(
-                    title: 'Federation Governance',
+                    title: 'Open Dispute',
                     subtitle:
                         'Arbitration dockets, video moderation, partner gyms, and member helpdesk',
                     activeRole: activeRole,
@@ -663,7 +664,7 @@ class _AdminGovernanceScreenState extends ConsumerState<AdminGovernanceScreen> {
                           16,
                           12,
                           16,
-                          28,
+                          66,
                         ),
                         children: [
                           AdminSegmentedDeck(

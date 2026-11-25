@@ -443,7 +443,7 @@ class _OfficialScorepadScreenState
               ],
             ),
             Text(
-              'PAFF Engine v1.0',
+              'ArmSphere Engine v1.0',
               style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
             ),
           ],
@@ -2180,7 +2180,7 @@ class _OfficialScorepadScreenState
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'PAFF Official • Digital Signature Ready',
+                  'Certified Official • Digital Signature Ready',
                   style: TextStyle(color: AppTheme.textMuted, fontSize: 10),
                 ),
               ],
@@ -2452,7 +2452,7 @@ class _OfficialScorepadScreenState
       await matchRepository.certifyMatchResult(widget.match?['id']?.toString() ?? '', refereeId, winner, score);
       
       final ts = DateTime.now().toIso8601String();
-      final hash = 'PAFF-CERT-2026-${DateTime.now().millisecondsSinceEpoch}';
+      final hash = 'ARM-CERT-2026-${DateTime.now().millisecondsSinceEpoch}';
 
       if (mounted) {
         setState(() {
@@ -2469,7 +2469,7 @@ class _OfficialScorepadScreenState
             context,
             title: 'BOUT RESULT CERTIFIED!',
             subtitle:
-                'Official record published to Pakistan Armwrestling Federation Registry.',
+                'Official record published to the ArmSphere Match Registry.',
             score: score,
             scoreSuffix: ' pts',
             decimalPlaces: 0,

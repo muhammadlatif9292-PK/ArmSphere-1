@@ -67,7 +67,7 @@ class _TournamentEmptyStatesShowcaseWidgetState
       'tabLabel': 'Registration',
       'title': 'Registration Closed',
       'subtitle':
-          'Roster capacity for this tournament has reached its official PAFF athlete cap.',
+          'Roster capacity for this tournament has reached its official athlete cap.',
       'actionText': 'JOIN WAITING LIST',
       'primaryColor': const Color(0xFFFF2A6D),
       'secondaryColor': const Color(0xFFFF5252),
@@ -97,7 +97,7 @@ class _TournamentEmptyStatesShowcaseWidgetState
       'secondaryColor': const Color(0xFF69F0AE),
       'icon': Icons.health_and_safety_rounded,
       'badge': 'IN REVIEW',
-      'toastMessage': '⚕️ Fetching live PAFF medical clearance status...',
+      'toastMessage': '⚕️ Fetching live medical clearance status...',
     },
   };
 

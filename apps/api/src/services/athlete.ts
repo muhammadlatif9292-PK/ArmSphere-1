@@ -14,7 +14,9 @@ import {
   blockedUsers,
   tournamentMatches,
   matches,
-  championshipTitles
+  championshipTitles,
+  refereeCertifications,
+  organizations
 } from "@armsphere/db-schema";
 import { 
   NotFoundError, 
@@ -140,6 +142,7 @@ export class AthleteService {
         longitude: input.longitude ?? null,
         locationVisibility: normalizeLocationVisibility(input.locationVisibility),
         locationFuzzSeed: generateLocationFuzzSeed(userId),
+        profileQrCode: (user as any).profileQrCode || `ARMSPHERE-ATHLETE-QR:${userId}`,
       })
       .returning();
 
@@ -233,6 +236,7 @@ export class AthleteService {
 
     // Fetch all supporting tables + match history in parallel instead of 8 sequential round trips
     const [
+      userRows,
       clubRows,
       verificationRows,
       biometricsRows,
@@ -241,7 +245,15 @@ export class AthleteService {
       verifiedMatches,
       completedTourneyMatches,
       activeTitles,
+      certRows,
     ] = await Promise.all([
+      Promise.resolve(
+        db
+          .select({ profileQrCode: users.profileQrCode, fullName: users.fullName })
+          .from(users)
+          .where(eq(users.id, ownerUserId))
+          .limit(1)
+      ).catch(() => []),
       profile.clubId
         ? Promise.resolve(
             db
@@ -313,6 +325,24 @@ export class AthleteService {
           .from(championshipTitles)
           .where(eq(championshipTitles.activeChampionId, profile.id))
       ).catch(() => []),
+      Promise.resolve(
+        db
+          .select({
+            id: refereeCertifications.id,
+            userId: refereeCertifications.userId,
+            issuingOrganizationId: refereeCertifications.issuingOrganizationId,
+            certificationLevel: refereeCertifications.certificationLevel,
+            issuedAt: refereeCertifications.issuedAt,
+            expiresAt: refereeCertifications.expiresAt,
+            issuingBody: refereeCertifications.issuingBody,
+            status: refereeCertifications.status,
+            organizationName: organizations.name,
+          })
+          .from(refereeCertifications)
+          .leftJoin(organizations, eq(refereeCertifications.issuingOrganizationId, organizations.id))
+          .where(eq(refereeCertifications.userId, ownerUserId))
+          .orderBy(desc(refereeCertifications.issuedAt))
+      ).catch(() => []),
     ]);
 
     const club = clubRows[0] || null;
@@ -320,6 +350,17 @@ export class AthleteService {
     const biometrics = biometricsRows[0] || null;
     const measurements = measurementsRows[0] || null;
     const socials = socialsRows[0] || null;
+    const formattedCertifications = (certRows as any[]).map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      issuingOrganizationId: c.issuingOrganizationId,
+      issuingOrganizationName: c.organizationName || c.issuingBody,
+      issuingBody: c.organizationName || c.issuingBody,
+      certificationLevel: c.certificationLevel,
+      issuedAt: c.issuedAt,
+      expiresAt: c.expiresAt,
+      status: c.status,
+    }));
 
     let wins = 0;
     let losses = 0;
@@ -376,9 +417,14 @@ export class AthleteService {
     if (!isOwner) {
       delete (safeProfile as any).stripeCustomerId;
     }
+    const canonicalQr =
+      (userRows[0] as any)?.profileQrCode ||
+      (profile as any).profileQrCode ||
+      `ARMSPHERE-ATHLETE-QR:${ownerUserId}`;
 
     return {
       ...safeProfile,
+      profileQrCode: canonicalQr,
       wins,
       losses,
       rightArmWins,
@@ -395,6 +441,7 @@ export class AthleteService {
       biometrics: biometrics || null,
       measurements: measurements || null,
       socialLinks: socials || null,
+      refereeCertifications: formattedCertifications,
     };
   }
 
@@ -701,8 +748,10 @@ export class AthleteService {
         locationVisibility: athleteProfiles.locationVisibility,
         locationFuzzSeed: athleteProfiles.locationFuzzSeed,
         verificationStatus: athleteVerifications.status,
+        profileQrCode: sql<string>`COALESCE(${users.profileQrCode}, ${athleteProfiles.profileQrCode}, 'ARMSPHERE-ATHLETE-QR:' || ${athleteProfiles.userId}::text)`,
       })
       .from(athleteProfiles)
+      .leftJoin(users, eq(athleteProfiles.userId, users.id))
       .leftJoin(
         athleteVerifications,
         eq(athleteProfiles.userId, athleteVerifications.athleteId)

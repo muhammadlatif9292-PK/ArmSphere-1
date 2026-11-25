@@ -21,19 +21,19 @@ class _TournamentInformationGlassCardState extends State<TournamentInformationGl
   @override
   Widget build(BuildContext context) {
     final t = widget.tournament;
-    final organizer = t['organizer'] ?? t['organizerName'] ?? 'Pakistan Armwrestling Federation (PAFF)';
-    final hostClub = t['hostClub'] ?? 'Iron Arms Club Lahore';
-    final venue = t['venue'] ?? t['location'] ?? 'Nishtar Sports Complex Indoor Arena';
-    final address = t['address'] ?? 'Ferozepur Road, Nishtar Colony, Lahore, Punjab 54000';
+    final organizer = t['organizationName'] ?? t['organizer'] ?? t['organizerName'] ?? 'Host Organization';
+    final hostClub = t['hostClub'] ?? 'Host Venue Club';
+    final venue = t['venue'] ?? t['location'] ?? 'Sanctioned Competition Arena';
+    final address = t['address'] ?? 'Venue Address TBA';
     final province = t['province'] ?? 'Punjab';
     final dateStr = t['startDate'] != null 
         ? t['startDate'].toString().split('T').first 
-        : 'August 15, 2026 • 09:00 AM PST';
-    final regDeadline = t['registrationDeadline'] ?? 'August 10, 2026 • 11:59 PM';
+        : 'Schedule TBA';
+    final regDeadline = t['registrationDeadline'] ?? 'See Event Schedule';
     final categories = t['categories'] ?? 'Senior Men (-70kg, -80kg, -90kg, 100kg+), Masters (-85kg), Women Open • Left & Right Arm';
     final maxParticipants = t['capacity'] != null ? '${t['capacity']} Athletes Cap' : '100 Athletes Cap';
-    final entryRequirements = t['entryRequirements'] ?? 'Active PAFF Athlete License • Medical Clearance Form • CNIC / Passport ID';
-    final rulesPdfName = t['rulesPdfName'] ?? 'PAFF_Official_Rules_2026.pdf';
+    final entryRequirements = t['entryRequirements'] ?? 'Active ArmSphere Athlete Profile • Medical Clearance Form • Valid Photo ID';
+    final rulesPdfName = t['rulesPdfName'] ?? 'ArmSphere_Official_Rules_2026.pdf';
 
     return Container(
       width: double.infinity,

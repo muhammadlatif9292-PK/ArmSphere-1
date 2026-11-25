@@ -333,7 +333,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                 Icon(Icons.lock_clock_rounded, size: 12, color: Color(0xFF10B981)),
                 SizedBox(width: 4),
                 Text(
-                  'PAFF MARSHAL',
+                  'SCALE MARSHAL',
                   style: TextStyle(
                     fontFamily: 'Space Grotesk',
                     fontSize: 9.5,
@@ -620,7 +620,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
     final regId = selected['id']?.toString() ?? 'REG-001';
     final division = selected['division']?.toString() ?? 'SENIOR';
     final arm = selected['arm']?.toString() ?? 'RIGHT ARM';
-    final license = selected['licenseNumber']?.toString() ?? 'PAFF-LIC-${regId.hashCode.abs().toString().substring(0, 4)}';
+    final license = selected['licenseNumber']?.toString() ?? 'ARM-LIC-${regId.hashCode.abs().toString().substring(0, 4)}';
 
     Widget buildPassportContent(double animValue) {
       final borderColor = isCertified
@@ -757,7 +757,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'PASSPORT ID: PAFF-ATH-$regId',
+                                'PASSPORT ID: ARM-ATH-$regId',
                                 style: const TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 9.5,
@@ -876,7 +876,7 @@ class _TournamentWeighInScreenState extends ConsumerState<TournamentWeighInScree
                   child: Center(
                     child: WeighInClearanceStamp(
                       isApproved: true,
-                      clearanceText: 'PAFF CLEARED',
+                      clearanceText: 'SCALE CLEARED',
                       subText: '${measured?.toStringAsFixed(1) ?? '85.0'} KG • CERTIFIED',
                       size: 1.25,
                     ),

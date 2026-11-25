@@ -49,7 +49,7 @@ class _TournamentFinishedResultsWidgetState
       final athlete = raw['athlete'] is Map<String, dynamic> ? raw['athlete'] : raw;
       final name = athlete['fullName'] ?? athlete['name'] ?? raw['name'] ?? 'TBD';
       final club = athlete['club'] ?? athlete['clubName'] ?? raw['club'] ?? 'Independent';
-      final province = athlete['province'] ?? raw['province'] ?? 'PAFF';
+      final province = athlete['province'] ?? raw['province'] ?? 'Verified';
       final eloGain = raw['eloGain'] != null
           ? '+${raw['eloGain']} ELO'
           : (raw['points'] != null ? '+${raw['points']} Pts' : 'Ranked');
@@ -137,7 +137,7 @@ class _TournamentFinishedResultsWidgetState
             ),
             SizedBox(height: 4),
             Text(
-              'Official verified results are being compiled by PAFF council.',
+              'Official verified results are being compiled by event officials.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
@@ -244,7 +244,7 @@ class _TournamentFinishedResultsWidgetState
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'PAFF Certified Podium & Final Rankings',
+                                'Official Podium & Final Rankings',
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontSize: 10.5,
@@ -374,8 +374,8 @@ class _TournamentFinishedResultsWidgetState
                         ),
                         Expanded(
                           child: _buildResultsStatTile(
-                            'FEDERATION',
-                            'PAFF CERTIFIED',
+                            'SANCTIONING',
+                            'ARMSPHERE VERIFIED',
                             'Verified Record',
                             Icons.verified_rounded,
                             const Color(0xFF00E676),
@@ -873,7 +873,7 @@ class _TournamentFinishedResultsWidgetState
         final rank = item['rank']?.toString() ??
             '${idx + 1}${idx == 0 ? "ST" : (idx == 1 ? "ND" : (idx == 2 ? "RD" : "TH"))}';
         final name = item['name'] ?? item['athleteName'] ?? item['fullName'] ?? 'Athlete';
-        final club = item['club'] ?? item['clubName'] ?? 'PAFF Affiliate';
+        final club = item['club'] ?? item['clubName'] ?? 'Independent';
         final score = item['score'] ?? item['record'] ?? '${item['wins'] ?? 0}-${item['losses'] ?? 0} Bouts';
         final color = idx == 0
             ? AppTheme.goldPrimary

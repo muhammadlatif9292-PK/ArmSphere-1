@@ -45,6 +45,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
       id: decoded.sub,
       email: decoded.email,
       role: decoded.role,
+      orgId: decoded.orgId,
+      orgName: decoded.orgName,
     };
 
     next();
@@ -172,6 +174,8 @@ export function optionalAuthenticate(req: Request, res: Response, next: NextFunc
         id: decoded.sub,
         email: decoded.email,
         role: decoded.role,
+        orgId: decoded.orgId,
+        orgName: decoded.orgName,
       };
     }
     

@@ -678,7 +678,7 @@ class _OrganizationPortalEntryScreenState
                                       ),
                                       decoration: const InputDecoration(
                                         border: InputBorder.none,
-                                        hintText: 'PAFF-2026-XXXX',
+                                        hintText: 'ORG-2026-XXXX',
                                         hintStyle: TextStyle(
                                           fontFamily: 'JetBrains Mono',
                                           fontWeight: FontWeight.w600,

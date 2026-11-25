@@ -250,6 +250,7 @@ class AuthRepository extends BaseRepository {
 
   Future<Map<String, dynamic>> applyForRole({
     required String role,
+    String? targetOrganizationId,
     String? experienceDetails,
     String? certificationNumber,
     dynamic documents,
@@ -258,6 +259,8 @@ class AuthRepository extends BaseRepository {
     try {
       final response = await dioClient.dio.post('/auth/roles/apply', data: {
         'role': role,
+        if (targetOrganizationId != null && targetOrganizationId.trim().isNotEmpty)
+          'targetOrganizationId': targetOrganizationId.trim(),
         if (experienceDetails != null) 'experienceDetails': experienceDetails,
         if (certificationNumber != null) 'certificationNumber': certificationNumber,
         if (documents != null) 'documents': documents,
@@ -845,6 +848,7 @@ class TournamentRepository extends BaseRepository {
     required String weightClass,
     required String arm,
     String? notes,
+    bool allowUpdate = true,
     CancelToken? cancelToken,
   }) async {
     final payload = <String, dynamic>{
@@ -853,17 +857,23 @@ class TournamentRepository extends BaseRepository {
       'division': division,
       'weightClass': weightClass,
       'arm': arm,
+      'allowUpdate': allowUpdate,
       if (notes != null) 'notes': notes,
     };
     try {
-      return await executeRequest(
+      final result = await executeRequest(
         cacheKey: 'tournament_reg_$eventId',
         cancelToken: cancelToken,
         isMutation: true,
         request: (token) => dioClient.dio.post('/tournaments/registrations', data: payload, cancelToken: token),
         parse: _unwrapMap,
       );
+      await hiveStorage.evictCache('tournaments_list');
+      await hiveStorage.evictCache('event_detail_$eventId');
+      return result;
     } on OfflineException catch (_) {
+      await hiveStorage.evictCache('tournaments_list');
+      await hiveStorage.evictCache('event_detail_$eventId');
       final queued = await hiveStorage.enqueueAction(
         actionType: 'SUBMIT_ATHLETE_APPLICATION',
         endpoint: '/tournaments/registrations',
@@ -1570,51 +1580,6 @@ class TournamentRepository extends BaseRepository {
     );
   }
 
-  /// Deterministic HMAC-SHA256 signature generator for Athlete Event QR Passports.
-  static String computeQrSignature({
-    required String registrationId,
-    required String eventId,
-    required String athleteId,
-  }) {
-    const secret = 'armsphere_federation_qr_passport_v1_hmac_key';
-    final message = '$registrationId:$eventId:$athleteId';
-    final hmac = Hmac(sha256, utf8.encode(secret));
-    return hmac.convert(utf8.encode(message)).toString();
-  }
-
-  /// Builds a canonical signed QR Passport payload map and serialized JSON string.
-  static Map<String, dynamic> buildSignedQrPassport({
-    required String registrationId,
-    required String eventId,
-    required String athleteId,
-    required String athleteName,
-    required List<String> categories,
-    String? registeredAt,
-    String? status,
-  }) {
-    final ts = registeredAt ?? DateTime.now().toUtc().toIso8601String();
-    final sig = computeQrSignature(
-      registrationId: registrationId,
-      eventId: eventId,
-      athleteId: athleteId,
-    );
-    final payload = <String, dynamic>{
-      'type': 'ARMSPHERE_EVENT_REGISTRATION',
-      'registrationId': registrationId,
-      'eventId': eventId,
-      'athleteId': athleteId,
-      'athleteName': athleteName,
-      'categories': categories,
-      'registeredAt': ts,
-      'status': status ?? 'PENDING_WEIGH_IN',
-      'signature': 'hmac_sha256_$sig',
-    };
-    return {
-      ...payload,
-      'qrData': jsonEncode(payload),
-    };
-  }
-
   Future<List<Map<String, dynamic>>> getMyRegistrations({
     String? athleteId,
     CancelToken? cancelToken,
@@ -1744,46 +1709,29 @@ class TournamentRepository extends BaseRepository {
     } catch (_) {}
   }
 
-  Future<Map<String, dynamic>> getRegistrationQr({
+  /// Operator / Venue Gate verification using an athlete's single permanent Profile QR Code.
+  Future<Map<String, dynamic>> verifyEntranceQr({
     required String eventId,
-    required String registrationId,
-    String? athleteId,
-    String? athleteName,
-    List<String>? categories,
+    required String profileQrCode,
+    int accompanyingGuests = 0,
     CancelToken? cancelToken,
   }) async {
-    try {
-      return await executeRequest(
-        cacheKey: 'registration_qr_${eventId}_$registrationId',
-        cancelToken: cancelToken,
-        maxRetries: 1,
-        request: (token) => dioClient.dio.get(
-          '/events/$eventId/registrations/$registrationId/qr',
-          cancelToken: token,
-        ),
-        parse: (data) {
-          final payload = (data is Map && data.containsKey('data')) ? data['data'] : data;
-          if (payload is Map) {
-            final map = Map<String, dynamic>.from(payload);
-            if (!map.containsKey('qrData')) {
-              map['qrData'] = jsonEncode(map);
-            }
-            return map;
-          }
-          throw Exception('Invalid QR payload');
-        },
-      );
-    } catch (_) {
-      return buildSignedQrPassport(
-        registrationId: registrationId,
-        eventId: eventId,
-        athleteId: athleteId ?? 'athlete_verified',
-        athleteName: athleteName ?? 'Registered Competitor',
-        categories: categories ?? const ['Senior · Right Arm · -85kg'],
-      );
+    final cleanQr = profileQrCode.trim();
+    if (cleanQr.isEmpty) {
+      throw Exception('Athlete Profile QR Code is required.');
     }
+    final response = await dioClient.dio.post(
+      '/tournaments/events/$eventId/gate/verify-qr',
+      data: {
+        'profileQrCode': cleanQr,
+        'accompanyingGuests': accompanyingGuests,
+      },
+      cancelToken: cancelToken,
+    );
+    return _unwrapMap(response.data);
   }
 
+  /// Weigh-In scanner verification using an athlete's single permanent Profile QR Code.
   Future<Map<String, dynamic>> scanRegistrationQr({
     required String eventId,
     String? qrPayload,
@@ -1792,94 +1740,106 @@ class TournamentRepository extends BaseRepository {
     CancelToken? cancelToken,
   }) async {
     final effectivePayload = (qrPayload ?? qrToken ?? '').trim();
-    Map<String, dynamic>? decoded;
-    try {
-      final raw = jsonDecode(effectivePayload);
-      if (raw is Map) {
-        decoded = Map<String, dynamic>.from(raw);
-      }
-    } catch (_) {
-      // Allow plain registrationId, athleteId, or ARMSPHERE_QR_V1 token scan as well
-      decoded = {
-        'type': 'ARMSPHERE_EVENT_REGISTRATION',
-        'registrationId': effectivePayload,
-        'eventId': eventId,
-      };
-    }
-
-    if (decoded == null ||
-        (decoded['type'] != 'ARMSPHERE_EVENT_REGISTRATION' &&
-            !effectivePayload.startsWith('ARMSPHERE_QR_V1'))) {
-      throw Exception('Invalid QR Code: Not an ArmSphere Event Registration Passport.');
-    }
-
-    final scannedEventId = decoded['eventId']?.toString();
-    if (scannedEventId != null && scannedEventId.isNotEmpty && scannedEventId != eventId) {
-      throw Exception('Event Mismatch: This QR Passport belongs to event "$scannedEventId".');
+    if (effectivePayload.isEmpty) {
+      throw Exception('Please scan or enter an Athlete Profile QR Code.');
     }
 
     try {
       final response = await dioClient.dio.post(
-        '/events/$eventId/weigh-in/scan-qr',
+        '/tournaments/events/$eventId/weigh-in/scan-qr',
         data: {
+          'profileQrCode': effectivePayload,
           'qrPayload': effectivePayload,
-          'registrationId': decoded['registrationId'],
-          'athleteId': decoded['athleteId'],
-          'signature': decoded['signature'],
         },
         cancelToken: cancelToken,
       );
-      final data = response.data;
-      final inner = (data is Map && data.containsKey('data')) ? data['data'] : data;
-      if (inner is Map) {
+      final inner = _unwrapMap(response.data);
+      if (inner.isNotEmpty) {
         return {
-          ...Map<String, dynamic>.from(inner),
+          ...inner,
           'verified': true,
           'verifiedSignature': true,
         };
       }
-    } catch (_) {
-      // Verify HMAC signature locally if present
-      final regId = decoded['registrationId']?.toString() ?? '';
-      final athId = decoded['athleteId']?.toString() ?? '';
-      final sig = decoded['signature']?.toString() ?? '';
-      if (sig.startsWith('hmac_sha256_') && regId.isNotEmpty && athId.isNotEmpty) {
-        final expected =
-            'hmac_sha256_${computeQrSignature(registrationId: regId, eventId: eventId, athleteId: athId)}';
-        if (sig != expected) {
-          throw Exception('QR Signature Verification Failed: Tampered or invalid registration token.');
-        }
+    } on DioException catch (e) {
+      // Surface 4xx validation errors directly instead of masking unregistered athletes
+      final status = e.response?.statusCode ?? 0;
+      if (status >= 400 && status < 500) {
+        if (e.error != null) rethrow;
+        final detail = (e.response?.data is Map)
+            ? (e.response?.data['detail'] ?? e.response?.data['message'])
+            : null;
+        throw Exception(detail?.toString() ?? 'Athlete is not registered in this tournament.');
       }
+    } catch (_) {
+      // Network/offline fallback below
     }
 
-    // Match against event registrations roster if provided
     if (fallbackRegistrations != null && fallbackRegistrations.isNotEmpty) {
-      final regId = decoded['registrationId']?.toString();
-      final athId = decoded['athleteId']?.toString();
+      String? extractedId;
+      String? extractedName;
+      if (effectivePayload.toUpperCase().startsWith('ARMSPHERE-ATHLETE-QR:')) {
+        final parts = effectivePayload.split(':');
+        if (parts.length >= 2) extractedId = parts[1].trim().toLowerCase();
+        if (parts.length >= 3) extractedName = parts.sublist(2).join(':').trim().toLowerCase();
+      }
+      final q = effectivePayload.toLowerCase();
       final matched = fallbackRegistrations.firstWhere(
-        (r) =>
-            (regId != null &&
-                (r['id']?.toString() == regId || r['registrationId']?.toString() == regId)) ||
-            (athId != null && r['athleteId']?.toString() == athId),
+        (r) {
+          final regId = (r['id'] ?? r['registrationId'] ?? '').toString().toLowerCase();
+          final athId = (r['athleteId'] ?? '').toString().toLowerCase();
+          final uId = (r['userId'] ?? '').toString().toLowerCase();
+          final pQr = (r['profileQrCode'] ?? r['settingsIdentityQr'] ?? r['qrCode'] ?? r['qrCodePayload'] ?? '')
+              .toString()
+              .toLowerCase();
+          final name = (r['athleteName'] ?? '').toString().toLowerCase();
+          return pQr == q ||
+              regId == q ||
+              athId == q ||
+              uId == q ||
+              (extractedId != null &&
+                  extractedId.isNotEmpty &&
+                  (athId == extractedId || uId == extractedId || regId == extractedId)) ||
+              (extractedName != null && extractedName.isNotEmpty && name == extractedName);
+        },
         orElse: () => <String, dynamic>{},
       );
       if (matched.isNotEmpty) {
         return {
-          ...decoded,
           ...matched,
-          'registrationId': matched['id'] ?? matched['registrationId'] ?? regId,
+          'registrationId': matched['id'] ?? matched['registrationId'],
           'verified': true,
           'verifiedSignature': true,
         };
       }
     }
 
-    return {
-      ...decoded,
-      'verified': true,
-      'verifiedSignature': true,
-    };
+    throw Exception('Athlete Profile QR Code does not match any registration in this tournament.');
   }
+
+  /// Referee table scanner verification using an athlete's permanent Profile QR Code.
+  Future<Map<String, dynamic>> verifyTableAthleteQr({
+    required String eventId,
+    required String tableId,
+    required String profileQrCode,
+    String? matchId,
+    CancelToken? cancelToken,
+  }) async {
+    final cleanQr = profileQrCode.trim();
+    if (cleanQr.isEmpty) {
+      throw Exception('Athlete Profile QR Code is required.');
+    }
+    final response = await dioClient.dio.post(
+      '/tournaments/events/$eventId/tables/$tableId/verify-athlete-qr',
+      data: {
+        'profileQrCode': cleanQr,
+        if (matchId != null && matchId.isNotEmpty) 'matchId': matchId,
+      },
+      cancelToken: cancelToken,
+    );
+    return _unwrapMap(response.data);
+  }
+
 
   /// Marks an overweight athlete as PENDING_REWEIGH with a 1-hour water-cut window.
   Future<Map<String, dynamic>> markPendingReweigh({
@@ -3602,23 +3562,9 @@ class OrganizationRepository extends BaseRepository {
 
   static bool isLegacyMockOrganization(Map<String, dynamic> o) {
     final slug = (o['slug'] ?? '').toString().toLowerCase();
-    final name = (o['name'] ?? '').toString().toLowerCase();
     final id = (o['id'] ?? '').toString().toLowerCase();
-    return slug == 'paff' ||
-        slug == 'east-vs-west' ||
-        slug == 'king-of-the-table' ||
-        slug == 'world-armwrestling-federation' ||
-        slug == 'punjab-armwrestling' ||
-        slug == 'kpk-armwrestling' ||
-        id == 'c75e2104-f093-4980-a083-c1149f688e2e' ||
-        id == 'e2dda2ba-e9ae-4140-8abf-36666c1d5711' ||
-        id == 'org_kott_arena' ||
-        id == 'org_waf_world' ||
-        id == 'org_paff_national' ||
-        name.contains('pakistan armwrestling federation') ||
-        name.contains('east vs west') ||
-        name.contains('punjab armwrestling') ||
-        name.contains('kpk armwrestling');
+    return slug == 'king-of-the-table' ||
+        id == 'org_kott_arena';
   }
 
   String? _currentSessionUserId() {
@@ -3975,6 +3921,167 @@ class OrganizationRepository extends BaseRepository {
         ...data,
         'isOnboarded': true,
       };
+    }
+  }
+
+  Options? _orgAuthOptions(String? token) {
+    if (token == null || token.trim().isEmpty) return null;
+    return Options(headers: {'Authorization': 'Bearer ${token.trim()}'});
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic payload) {
+    final raw = (payload is Map && payload.containsKey('data')) ? payload['data'] : payload;
+    if (raw is List) {
+      return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  Map<String, dynamic> _extractMap(dynamic payload) {
+    final raw = (payload is Map && payload.containsKey('data')) ? payload['data'] : payload;
+    if (raw is Map) {
+      return Map<String, dynamic>.from(raw);
+    }
+    return <String, dynamic>{};
+  }
+
+  /// GET /organizations/:orgId/certifications/requests
+  Future<List<Map<String, dynamic>>> getCertificationRequests(
+    String orgId, {
+    String? status,
+    String? token,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.get(
+      '/organizations/$orgId/certifications/requests',
+      queryParameters: {
+        if (status != null && status.trim().isNotEmpty) 'status': status.trim(),
+      },
+      options: _orgAuthOptions(token),
+      cancelToken: cancelToken,
+    );
+    return _extractList(response.data);
+  }
+
+  /// POST /organizations/:orgId/certifications/requests/:requestId/review
+  Future<Map<String, dynamic>> reviewCertificationRequest(
+    String orgId,
+    String requestId, {
+    required String decision,
+    String? certificationLevel,
+    String? reviewNotes,
+    String? token,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.post(
+      '/organizations/$orgId/certifications/requests/$requestId/review',
+      data: {
+        'decision': decision,
+        if (certificationLevel != null && certificationLevel.trim().isNotEmpty)
+          'certificationLevel': certificationLevel.trim(),
+        if (reviewNotes != null && reviewNotes.trim().isNotEmpty)
+          'reviewNotes': reviewNotes.trim(),
+      },
+      options: _orgAuthOptions(token),
+      cancelToken: cancelToken,
+    );
+    return _extractMap(response.data);
+  }
+
+  /// GET /organizations/:orgId/certifications/athletes/search?q=...
+  Future<List<Map<String, dynamic>>> searchAthletesForCertification(
+    String orgId, {
+    String query = '',
+    int limit = 25,
+    String? token,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.get(
+      '/organizations/$orgId/certifications/athletes/search',
+      queryParameters: {
+        'q': query.trim(),
+        'limit': limit,
+      },
+      options: _orgAuthOptions(token),
+      cancelToken: cancelToken,
+    );
+    return _extractList(response.data);
+  }
+
+  /// POST /organizations/:orgId/certifications/grant
+  Future<Map<String, dynamic>> grantOfficialCertification(
+    String orgId, {
+    String? athleteId,
+    String? userId,
+    required String certificationLevel,
+    String? notes,
+    String? token,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.post(
+      '/organizations/$orgId/certifications/grant',
+      data: {
+        if (athleteId != null && athleteId.trim().isNotEmpty) 'athleteId': athleteId.trim(),
+        if (userId != null && userId.trim().isNotEmpty) 'userId': userId.trim(),
+        'certificationLevel': certificationLevel.trim(),
+        if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+      },
+      options: _orgAuthOptions(token),
+      cancelToken: cancelToken,
+    );
+    return _extractMap(response.data);
+  }
+
+  /// GET /organizations/:orgId/certifications
+  Future<List<Map<String, dynamic>>> getOrganizationCertifications(
+    String orgId, {
+    String? status,
+    String? token,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.get(
+      '/organizations/$orgId/certifications',
+      queryParameters: {
+        if (status != null && status.trim().isNotEmpty) 'status': status.trim(),
+      },
+      options: _orgAuthOptions(token),
+      cancelToken: cancelToken,
+    );
+    return _extractList(response.data);
+  }
+
+  /// PATCH /organizations/:orgId/certifications/:certId/revoke
+  Future<Map<String, dynamic>> revokeOrganizationCertification(
+    String orgId,
+    String certId, {
+    String? reason,
+    String? token,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await dioClient.dio.patch(
+      '/organizations/$orgId/certifications/$certId/revoke',
+      data: {
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+      },
+      options: _orgAuthOptions(token),
+      cancelToken: cancelToken,
+    );
+    return _extractMap(response.data);
+  }
+
+  /// GET /organizations/:id/officials (public safe list of active certified officials)
+  Future<List<Map<String, dynamic>>> getPublicOrganizationOfficials(
+    String orgIdOrSlug, {
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await dioClient.dio.get(
+        '/organizations/$orgIdOrSlug/officials',
+        cancelToken: cancelToken,
+      );
+      return _extractList(response.data);
+    } catch (_) {
+      return <Map<String, dynamic>>[];
     }
   }
 }

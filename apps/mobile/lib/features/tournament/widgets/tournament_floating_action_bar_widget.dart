@@ -80,7 +80,7 @@ class TournamentFloatingActionBarWidget extends StatelessWidget {
               );
             } else if (status == 'LIVE') {
               ScaffoldMessenger.of(context).showSnackBar(
-                CrystalSnackBar(content: Text('✓ Tuning into PAFF ArmSphere TV HD Stream...'), backgroundColor: Color(0xFFFF2A6D)),
+                CrystalSnackBar(content: Text('✓ Tuning into ArmSphere TV HD Live Stream...'), backgroundColor: Color(0xFFFF2A6D)),
               );
             } else if (status == 'IN_PROGRESS' || status == 'ONGOING') {
               ScaffoldMessenger.of(context).showSnackBar(

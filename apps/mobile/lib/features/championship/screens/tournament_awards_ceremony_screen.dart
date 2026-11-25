@@ -560,7 +560,7 @@ class _TournamentAwardsCeremonyScreenState
                 ),
                 const SizedBox(width: 6),
                 const Text(
-                  'PAKISTAN ARMWRESTLING FEDERATION • OFFICIAL PODIUM',
+                  'ARMSPHERE SANCTIONED • OFFICIAL PODIUM',
                   style: TextStyle(
                     fontFamily: 'Space Grotesk',
                     fontWeight: FontWeight.w800,

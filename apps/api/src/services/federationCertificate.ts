@@ -388,7 +388,7 @@ export class FederationCertificateService {
         venue: event.venue,
         startDate: event.startDate ? event.startDate.toISOString() : null,
         endDate: event.endDate ? event.endDate.toISOString() : null,
-        sanctionNumber: `PAFF-SANC-${eventId.slice(0, 8).toUpperCase()}`,
+        sanctionNumber: `ARM-SANC-${eventId.slice(0, 8).toUpperCase()}`,
       },
       idempotencyKey,
     };
@@ -445,7 +445,7 @@ export class FederationCertificateService {
 
 
     // 8. Record in Database with ISSUED Status
-    const certificateNumber = `PAFF-SANC-${eventId.slice(0, 8).toUpperCase()}`;
+    const certificateNumber = `ARM-SANC-${eventId.slice(0, 8).toUpperCase()}`;
     let certificateRecord: any;
 
     if (existing) {
@@ -610,9 +610,9 @@ export class FederationCertificateService {
     if (documentId === "rulebook") {
       return {
         id: "rulebook",
-        title: "Official PAFF Competition Rulebook",
+        title: "Official Competition Rulebook",
         type: "PDF",
-        url: "https://armsphere.com/docs/rules/PAFF_Official_Rules_2026.pdf",
+        url: "https://armsphere.com/docs/rules/ArmSphere_Official_Rules_2026.pdf",
         status: "AVAILABLE",
       };
     }
@@ -622,7 +622,7 @@ export class FederationCertificateService {
         id: "medical-clearance",
         title: "Athlete Medical Fitness Form",
         type: "PDF",
-        url: "https://armsphere.com/docs/compliance/PAFF_Medical_Clearance_Form.pdf",
+        url: "https://armsphere.com/docs/compliance/ArmSphere_Medical_Clearance_Form.pdf",
         status: "AVAILABLE",
       };
     }
@@ -669,8 +669,8 @@ export class FederationCertificateService {
         id: "sanction-cert",
         title: "Official Sanction Certificate",
         type: "PDF",
-        tag: "PAFF OFFICIAL",
-        size: "Federation Seal",
+        tag: "HOST SANCTIONED",
+        size: "Organization Seal",
         status: sanctionDocStatus,
         isBlocked: sanctionDocStatus === "BLOCKED",
         blockedReason: sanctionReason,
@@ -678,13 +678,13 @@ export class FederationCertificateService {
       },
       {
         id: "rulebook",
-        title: "PAFF Official Rulebook & Technical Standards",
+        title: "Official Competition Rulebook & Technical Standards",
         type: "PDF",
         tag: "OFFICIAL RULES",
         size: "2.4 MB",
         status: "AVAILABLE",
         isBlocked: false,
-        url: "https://armsphere.com/docs/rules/PAFF_Official_Rules_2026.pdf",
+        url: "https://armsphere.com/docs/rules/ArmSphere_Official_Rules_2026.pdf",
       },
       {
         id: "medical-clearance",
@@ -694,7 +694,7 @@ export class FederationCertificateService {
         size: "1.1 MB",
         status: "AVAILABLE",
         isBlocked: false,
-        url: "https://armsphere.com/docs/compliance/PAFF_Medical_Clearance_Form.pdf",
+        url: "https://armsphere.com/docs/compliance/ArmSphere_Medical_Clearance_Form.pdf",
       },
     ];
   }

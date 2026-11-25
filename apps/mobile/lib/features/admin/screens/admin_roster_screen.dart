@@ -116,9 +116,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
     final reasonCtrl = TextEditingController();
     final suspendDaysCtrl = TextEditingController(text: '30');
 
-    final certAuthorityCtrl = TextEditingController(
-      text: 'Pakistan Armwrestling Federation (PAFF)',
-    );
+    final certAuthorityCtrl = TextEditingController();
     final certExpiryCtrl = TextEditingController(text: '2027-12-31');
     final certNotesCtrl = TextEditingController();
     String selectedCertLevel = 'PROVINCIAL';
@@ -948,9 +946,13 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                                 c['certificationLevel']?.toString() ??
                                     c['level']?.toString() ??
                                     'PROVINCIAL';
+                            final rawAuthority = (c['issuingOrganizationName'] ??
+                                    c['issuingAuthority'] ??
+                                    c['issuingBody'])
+                                ?.toString();
                             final authority = ArmSphereFormatters.formatOrganizationName(
-                              c['issuingAuthority']?.toString(),
-                              fallback: 'PAFF',
+                              rawAuthority,
+                              fallback: 'ArmSphere Verified Organization',
                             );
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
@@ -979,10 +981,11 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                                             ),
                                           ),
                                           Text(
-                                            authority,
+                                            'Issued by: $authority',
                                             style: const TextStyle(
                                               fontSize: 11.5,
-                                              color: AppTheme.textSecondary,
+                                              color: AppTheme.goldPrimary,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -1044,7 +1047,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                               ),
                               DropdownMenuItem(
                                 value: 'INTERNATIONAL',
-                                child: Text('WAF International Master (Grade A)'),
+                                child: Text('International Master Referee (Grade A)'),
                               ),
                             ],
                             onChanged: (v) {
@@ -1090,7 +1093,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                                     certificationLevel: selectedCertLevel,
                                     issuingAuthority:
                                         certAuthorityCtrl.text.trim().isEmpty
-                                            ? 'Pakistan Armwrestling Federation'
+                                            ? 'ArmSphere Verified Organization'
                                             : certAuthorityCtrl.text.trim(),
                                     issuedAt: DateTime.now().toUtc().toIso8601String(),
                                     expiresAt: certExpiryCtrl.text.trim().isEmpty
@@ -1288,6 +1291,10 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
     final suspendReasonCtrl = TextEditingController();
     bool isSubmitting = false;
 
+    final String issuingOrg = (referee['issuingOrganizationName'] ?? '')
+        .toString()
+        .trim();
+
     await showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
@@ -1298,7 +1305,9 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
           builder: (ctx, setSheetState) {
             return CrystalModalSheet(
               title: 'REFEREE LICENSE & JURISDICTION',
-              subtitle: '$name • Official Federation Officiating Credential',
+              subtitle: issuingOrg.isNotEmpty
+                  ? '$name • Issued by: $issuingOrg'
+                  : '$name • Official Officiating Credential',
               headerIcon: Icons.sports_rounded,
               primaryActionLabel: 'Save License & Region',
               primaryActionIcon: Icons.verified_rounded,
@@ -1478,11 +1487,12 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
@@ -1498,7 +1508,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: AdminAuthorityHeader(
-                    title: 'Federation Roster',
+                    title: 'Reviews/Applications',
                     subtitle:
                         'Athlete verification, referee licensing, and talent scouting pipeline',
                     activeRole: activeRole,
@@ -1521,7 +1531,7 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                           16,
                           12,
                           16,
-                          28,
+                          66,
                         ),
                         children: [
                           AdminSegmentedDeck(
@@ -1791,6 +1801,9 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
             final region = referee['regionalCoverage']?.toString() ??
                 referee['province']?.toString() ??
                 'National';
+            final issuingOrg = (referee['issuingOrganizationName'] ?? '')
+                .toString()
+                .trim();
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -1834,6 +1847,19 @@ class _AdminRosterScreenState extends ConsumerState<AdminRosterScreen> {
                             ),
                           ),
                           const SizedBox(height: 3),
+                          Text(
+                            issuingOrg.isNotEmpty
+                                ? 'Issued by: $issuingOrg'
+                                : 'No organization certification issued',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: issuingOrg.isNotEmpty
+                                  ? AppTheme.goldPrimary
+                                  : AppTheme.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
                           Text(
                             'Coverage: $region',
                             style: const TextStyle(

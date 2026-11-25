@@ -107,7 +107,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'PAFF ArmSphere TV HD Stream',
+                          'ArmSphere TV HD Stream',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontSize: 10,
@@ -307,7 +307,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '1080p 60FPS • PAFF Official Broadcast',
+                  '1080p 60FPS • Official Broadcast',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 10,
@@ -315,7 +315,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                   ),
                 ),
                 Text(
-                  'PAFF YouTube Channel',
+                  'ArmSphere TV Channel',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 10,
@@ -417,7 +417,7 @@ class _LiveStreamCardWidgetState extends State<LiveStreamCardWidget>
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   CrystalSnackBar(
-                    content: Text('✓ Redirecting to PAFF Official YouTube Channel Live Stream...'),
+                    content: Text('✓ Redirecting to Official YouTube Live Stream...'),
                     backgroundColor: Color(0xFFFF2A6D),
                   ),
                 );

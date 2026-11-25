@@ -150,11 +150,17 @@ export class SyncService {
       }
 
       case "SUBMIT_ATHLETE_APPLICATION":
-      case "REGISTER_ATHLETE": {
+      case "REGISTER_ATHLETE":
+      case "UPDATE_ATHLETE_REGISTRATION": {
         logger.info({ payload, userId }, "Persisting offline athlete tournament application");
         return {
           eventId: payload?.eventId,
           athleteId: payload?.athleteId || userId,
+          division: payload?.division || "SENIOR",
+          weightClass: payload?.weightClass,
+          arm: payload?.arm,
+          categoryLabel: payload?.categoryLabel,
+          profileQrCode: payload?.profileQrCode || payload?.settingsIdentityQr || `ARMSPHERE-ATHLETE-QR:${userId}`,
           outcome: "APPLICATION_RECORDED",
         };
       }
@@ -168,6 +174,7 @@ export class SyncService {
           eventId: payload?.eventId,
           registrationId: payload?.registrationId,
           athleteId: payload?.athleteId,
+          profileQrCode: payload?.profileQrCode || payload?.settingsIdentityQr,
           measuredWeightKg: payload?.measuredWeightKg ?? payload?.weight,
           status: payload?.status || "VERIFIED",
           outcome: "WEIGH_IN_VERIFIED",
@@ -218,6 +225,7 @@ export class SyncService {
         return {
           eventId: payload?.eventId,
           passId: payload?.passId,
+          profileQrCode: payload?.profileQrCode,
           passType: payload?.passType,
           holderName: payload?.holderName,
           checkedInAt: payload?.checkedInAt || new Date().toISOString(),

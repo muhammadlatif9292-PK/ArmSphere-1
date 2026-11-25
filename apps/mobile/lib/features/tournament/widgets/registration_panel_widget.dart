@@ -278,7 +278,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
               const SizedBox(height: 10),
 
               _buildDocRequirementRow(
-                title: 'Official PAFF Pro License',
+                title: 'Verified ArmSphere Athlete Profile',
                 sub: 'PK-2026-0891 • Verified Active',
                 isChecked: _docLicense,
                 onChanged: (val) => setState(() => _docLicense = val ?? true),
@@ -324,7 +324,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
-                        'I acknowledge & agree to PAFF Anti-Doping Regulations, Competition Safety Waiver & Athlete Code of Conduct.',
+                        'I acknowledge & agree to the Event Anti-Doping Regulations, Competition Safety Waiver & Athlete Code of Conduct.',
                         style: TextStyle(
                           fontFamily: AppTheme.fontDisplay,
                           fontSize: 10,
@@ -685,11 +685,11 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
 
   void _showDigitalPassModal(BuildContext context) {
     HapticFeedback.selectionClick();
-    final tournamentName = widget.tournament['name']?.toString() ?? widget.tournament['title']?.toString() ?? 'PAFF Tournament';
+    final tournamentName = widget.tournament['name']?.toString() ?? widget.tournament['title']?.toString() ?? 'ArmSphere Tournament';
     final tournamentId = widget.tournament['id']?.toString() ?? '';
     final passCode = tournamentId.isNotEmpty
-        ? 'PAFF-${tournamentId.length > 8 ? tournamentId.substring(0, 8).toUpperCase() : tournamentId.toUpperCase()}'
-        : 'PAFF-DIGITAL-PASS';
+        ? 'ARM-${tournamentId.length > 8 ? tournamentId.substring(0, 8).toUpperCase() : tournamentId.toUpperCase()}'
+        : 'ARM-DIGITAL-PASS';
 
     showModalBottomSheet(
       context: context,
@@ -719,7 +719,7 @@ class _RegistrationPanelWidgetState extends State<_RegistrationPanelWidget> {
                 Icon(Icons.verified_rounded, color: AppTheme.goldPrimary, size: 18),
                 SizedBox(width: 8),
                 Text(
-                  'PAFF DIGITAL TOURNAMENT PASS',
+                  'ARMSPHERE DIGITAL TOURNAMENT PASS',
                   style: TextStyle(
                     fontFamily: AppTheme.fontDisplay,
                     fontSize: 13,

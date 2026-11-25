@@ -41,13 +41,10 @@ class TournamentOfflineStore {
   static const String _deletedTombstonesKey = 'deleted_tournament_tombstones_v1';
   static const String _submittedMatchLocksKey =
       'referee_submitted_match_locks_v1';
-  static const String _localSpectatorPassesKey = 'local_spectator_passes_v1';
 
   static final Map<String, Map<String, dynamic>> _memoryReleasedTournaments =
       <String, Map<String, dynamic>>{};
   static final Set<String> _memorySubmittedMatchLocks = <String>{};
-  static final List<Map<String, dynamic>> _memorySpectatorPasses =
-      <Map<String, dynamic>>[];
   static final Set<String> _deletedTournamentIds = <String>{};
 
   /// Loads persisted tombstone IDs from Hive cache to permanently filter deleted events.
@@ -73,41 +70,33 @@ class TournamentOfflineStore {
     return _deletedTournamentIds.contains(id.trim());
   }
 
-  /// Generates the official Athlete Identity QR string shown in Settings & Profile.
+  /// Generates the single canonical permanent Profile QR Code string for a user account.
+  /// Format: `ARMSPHERE-ATHLETE-QR:<userId>` (never mutates across renames or events).
   static String buildSettingsAthleteIdentityQr({
     required String athleteId,
-    required String athleteName,
+    String? athleteName,
   }) {
     final cleanId = athleteId.trim().isEmpty ? 'ath-local' : athleteId.trim();
-    final cleanName =
-        athleteName.trim().isEmpty ? 'ArmSphere Athlete' : athleteName.trim();
-    return 'ARMSPHERE-ATHLETE-QR:$cleanId:$cleanName';
+    return 'ARMSPHERE-ATHLETE-QR:$cleanId';
   }
 
-  /// Convenience helper accepting a user profile map directly (used by SettingsHubScreen).
+  /// Resolves the canonical permanent Profile QR Code from a user profile map,
+  /// always prioritizing persisted server `profileQrCode` over derived fallback.
   static String buildSettingsIdentityQr(Map<String, dynamic>? profile) {
+    final persistedQr = profile?['profileQrCode']?.toString().trim();
+    if (persistedQr != null && persistedQr.isNotEmpty) {
+      return persistedQr;
+    }
     final id = (profile?['id'] ??
             profile?['userId'] ??
             profile?['athleteId'] ??
             profile?['sub'] ??
             'ath-local')
         .toString();
-    final name = (profile?['displayName'] ??
-            profile?['fullName'] ??
-            profile?['name'] ??
-            profile?['username'] ??
-            (profile?['email'] != null
-                ? profile!['email'].toString().split('@').first
-                : null) ??
-            'ArmSphere Athlete')
-        .toString();
-    return buildSettingsAthleteIdentityQr(
-      athleteId: id,
-      athleteName: name,
-    );
+    return buildSettingsAthleteIdentityQr(athleteId: id);
   }
 
-  /// Prevents raw local `draft_...` tokens from ever leaking into official QR payloads.
+  /// Prevents raw local `draft_...` tokens from appearing in event references.
   static String sanitizeQrEventCode(String eventId) {
     final trimmed = eventId.trim();
     if (trimmed.isEmpty) return 'EVENT';
@@ -116,31 +105,6 @@ class TournamentOfflineStore {
       return 'PENDING-$tail';
     }
     return trimmed;
-  }
-
-  /// Generates a deterministic Tournament Registration QR string.
-  static String buildTournamentRegistrationQr({
-    required String registrationId,
-    required String eventId,
-    required String athleteId,
-    required String athleteName,
-    required String categoryLabel,
-    int guestCount = 0,
-  }) {
-    final safeEvent = sanitizeQrEventCode(eventId);
-    return 'ARMSPHERE-QR:$registrationId:$athleteId:$categoryLabel:EVENT=$safeEvent:NAME=$athleteName:GUESTS=$guestCount';
-  }
-
-  /// Generates a deterministic Spectator Pass QR string.
-  static String buildSpectatorPassQr({
-    required String passId,
-    required String eventId,
-    required String holderId,
-    required String holderName,
-    required int feePkr,
-  }) {
-    final safeEvent = sanitizeQrEventCode(eventId);
-    return 'ARMSPHERE-SPECTATOR-QR:$passId:$safeEvent:$holderId:$holderName:PKR=$feePkr';
   }
 
   /// Returns true if the tournament is a legacy test/mock tournament that should be removed.
@@ -196,29 +160,122 @@ class TournamentOfflineStore {
     }
   }
 
+  /// Extracts only the real, enabled weight categories created for a tournament
+  /// (from top-level `weightCategories`, `step1Config.weightCategories`, or `brackets`).
+  /// Never returns hardcoded fallback categories.
+  static List<Map<String, dynamic>> extractRealWeightCategories(
+    Map<String, dynamic> raw,
+  ) {
+    final step1 = raw['step1Config'] is Map
+        ? Map<String, dynamic>.from(raw['step1Config'] as Map)
+        : const <String, dynamic>{};
+
+    List<dynamic>? sourceList;
+    if (raw['weightCategories'] is List &&
+        (raw['weightCategories'] as List).isNotEmpty) {
+      sourceList = raw['weightCategories'] as List;
+    } else if (step1['weightCategories'] is List &&
+        (step1['weightCategories'] as List).isNotEmpty) {
+      sourceList = step1['weightCategories'] as List;
+    } else if (raw['brackets'] is List &&
+        (raw['brackets'] as List).isNotEmpty) {
+      sourceList = (raw['brackets'] as List).whereType<Map>().map((b) {
+        final wc =
+            (b['weightClass'] ?? b['weightLabel'] ?? b['label'] ?? b['name'] ?? '')
+                .toString()
+                .trim();
+        return <String, dynamic>{
+          'id': (b['id'] ?? 'wc_${wc.toLowerCase().replaceAll(' ', '_')}').toString(),
+          'label': wc,
+          'weightLabel': wc,
+          'division': (b['division'] ?? 'SENIOR').toString().toUpperCase(),
+          'arm': (b['arm'] ?? 'RIGHT').toString().toUpperCase(),
+          'enabled': true,
+        };
+      }).toList();
+    }
+
+    if (sourceList == null || sourceList.isEmpty) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final result = <Map<String, dynamic>>[];
+    int idx = 0;
+    for (final item in sourceList) {
+      idx++;
+      if (item is Map) {
+        if (item['enabled'] == false) continue;
+        final label = (item['label'] ??
+                item['weightLabel'] ??
+                item['weightClass'] ??
+                item['name'] ??
+                '')
+            .toString()
+            .trim();
+        if (label.isEmpty) continue;
+        final armRaw = (item['arm'] ?? 'RIGHT').toString().trim().toUpperCase();
+        final arm = (armRaw == 'LEFT' || armRaw == 'BOTH' || armRaw == 'RIGHT')
+            ? armRaw
+            : (armRaw.contains('LEFT')
+                ? 'LEFT'
+                : (armRaw.contains('BOTH') ? 'BOTH' : 'RIGHT'));
+        final division = (item['division'] ?? 'SENIOR')
+            .toString()
+            .trim()
+            .toUpperCase();
+        result.add(<String, dynamic>{
+          ...Map<String, dynamic>.from(item),
+          'id': (item['id'] ?? 'wc_$idx').toString(),
+          'label': label,
+          'weightLabel': label,
+          'arm': arm,
+          'division': division.isEmpty ? 'SENIOR' : division,
+          'enabled': true,
+        });
+      } else if (item is String && item.trim().isNotEmpty) {
+        final label = item.trim();
+        result.add(<String, dynamic>{
+          'id': 'wc_$idx',
+          'label': label,
+          'weightLabel': label,
+          'arm': 'RIGHT',
+          'division': 'SENIOR',
+          'enabled': true,
+        });
+      }
+    }
+    return result;
+  }
+
+  /// Expands the real created weight categories of a tournament into concrete
+  /// selectable divisions (`divisionId`, `label`, `weightClass`, `arm`, `armCode`, `division`).
+  static List<Map<String, String>> extractRealTournamentDivisions(
+    Map<String, dynamic> event,
+  ) {
+    final realCategories = extractRealWeightCategories(event);
+    return expandSeparatedDivisions(realCategories);
+  }
+
   static Map<String, dynamic> _ensureNormalizedTournament(
     Map<String, dynamic> raw,
   ) {
-    final id = (raw['id'] ?? 'tourney_released_01').toString();
-    final tableCount = ((raw['tableCount'] ?? raw['tablesCount'] ?? 2) as num)
+    final step1 = raw['step1Config'] is Map
+        ? Map<String, dynamic>.from(raw['step1Config'] as Map)
+        : const <String, dynamic>{};
+    final merged = <String, dynamic>{
+      ...step1,
+      ...raw,
+    };
+
+    final id = (merged['id'] ?? 'tourney_released_01').toString();
+    final tableCount = ((merged['tableCount'] ?? merged['tablesCount'] ?? 2) as num)
         .toInt()
         .clamp(1, 12);
 
-    final weightCategories = (raw['weightCategories'] is List &&
-            (raw['weightCategories'] as List).isNotEmpty)
-        ? (raw['weightCategories'] as List)
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList()
-        : <Map<String, dynamic>>[
-            {'id': 'wc-70', 'label': '70 kg', 'enabled': true, 'arm': 'BOTH'},
-            {'id': 'wc-80', 'label': '80 kg', 'enabled': true, 'arm': 'BOTH'},
-            {'id': 'wc-90', 'label': '90 kg', 'enabled': true, 'arm': 'RIGHT'},
-            {'id': 'wc-open', 'label': 'Open', 'enabled': true, 'arm': 'RIGHT'},
-          ];
+    final weightCategories = extractRealWeightCategories(merged);
 
-    final existingTables = (raw['tables'] is List)
-        ? (raw['tables'] as List)
+    final existingTables = (merged['tables'] is List)
+        ? (merged['tables'] as List)
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList()
@@ -245,8 +302,8 @@ class TournamentOfflineStore {
       });
     }
 
-    final awardsConfig = (raw['awardsConfig'] is Map)
-        ? Map<String, dynamic>.from(raw['awardsConfig'] as Map)
+    final awardsConfig = (merged['awardsConfig'] is Map)
+        ? Map<String, dynamic>.from(merged['awardsConfig'] as Map)
         : <String, dynamic>{
             'isConfigured': true,
             'rewardType': 'CASH_AND_AWARDS',
@@ -274,8 +331,8 @@ class TournamentOfflineStore {
             ],
           };
 
-    final spectatorGateConfig = (raw['spectatorGateConfig'] is Map)
-        ? Map<String, dynamic>.from(raw['spectatorGateConfig'] as Map)
+    final spectatorGateConfig = (merged['spectatorGateConfig'] is Map)
+        ? Map<String, dynamic>.from(merged['spectatorGateConfig'] as Map)
         : <String, dynamic>{
             'spectatorAccessMode': 'PAID', // 'FREE' | 'PAID'
             'spectatorFeePkr': 500,
@@ -286,22 +343,20 @@ class TournamentOfflineStore {
 
     final divisions = expandSeparatedDivisions(weightCategories);
     final divLabels = divisions.map((d) => d['label']!).toList();
-    String pickDiv(int idx) =>
-        divLabels.isNotEmpty ? divLabels[idx % divLabels.length] : '70 kg • Right Arm';
 
-    final appliedAthletes = (raw['appliedAthletes'] is List)
-        ? (raw['appliedAthletes'] as List)
+    final appliedAthletes = (merged['appliedAthletes'] is List)
+        ? (merged['appliedAthletes'] as List)
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList()
         : <Map<String, dynamic>>[];
 
     Map<String, dynamic> card3MatchupsState;
-    if (raw['card3MatchupsState'] is Map &&
-        (raw['card3MatchupsState']['matchesByCategory'] is Map) &&
-        ((raw['card3MatchupsState']['matchesByCategory'] as Map).isNotEmpty)) {
+    if (merged['card3MatchupsState'] is Map &&
+        (merged['card3MatchupsState']['matchesByCategory'] is Map) &&
+        ((merged['card3MatchupsState']['matchesByCategory'] as Map).isNotEmpty)) {
       card3MatchupsState =
-          Map<String, dynamic>.from(raw['card3MatchupsState'] as Map);
+          Map<String, dynamic>.from(merged['card3MatchupsState'] as Map);
     } else {
       card3MatchupsState = _buildDefaultCard3MatchupsState(
         eventId: id,
@@ -311,47 +366,50 @@ class TournamentOfflineStore {
       );
     }
 
-    final feePkr = (raw['entryFeePkr'] as num?)?.toInt();
-    final rawFeeCents = (raw['registrationFeeCents'] as num?)?.toInt();
+    final feePkr = (merged['entryFeePkr'] as num?)?.toInt();
+    final rawFeeCents = (merged['registrationFeeCents'] as num?)?.toInt();
     final effectiveFeeCents = rawFeeCents ?? (feePkr != null ? feePkr * 100 : 0);
+    final effectiveRegisteredCount = appliedAthletes.isNotEmpty
+        ? appliedAthletes.length
+        : ((merged['registeredCount'] as num?)?.toInt() ?? 0);
 
     final baseMap = <String, dynamic>{
-      ...raw,
+      ...merged,
       'id': id,
-      'name': (raw['name'] ?? 'Sanctioned ArmSphere Championship').toString(),
-      'organizationId': (raw['organizationId'] ?? 'org_paff_national').toString(),
-      'organizationName': (raw['organizationName'] ??
-              'Pakistan Armwrestling Federation (PAFF)')
+      'name': (merged['name'] ?? 'Sanctioned ArmSphere Championship').toString(),
+      'organizationId': (merged['organizationId'] ?? '').toString(),
+      'organizationName': (merged['organizationName'] ?? 'Host Organization')
           .toString(),
-      'venue': (raw['venue'] ?? raw['venueName'] ?? 'Titanium Combat Arena')
+      'venue': (merged['venue'] ?? merged['venueName'] ?? 'Titanium Combat Arena')
           .toString(),
       'venueName':
-          (raw['venueName'] ?? raw['venue'] ?? 'Titanium Combat Arena')
+          (merged['venueName'] ?? merged['venue'] ?? 'Titanium Combat Arena')
               .toString(),
-      'city': (raw['city'] ?? 'Lahore').toString(),
-      'province': (raw['province'] ?? 'Punjab').toString(),
+      'city': (merged['city'] ?? 'Lahore').toString(),
+      'province': (merged['province'] ?? 'Punjab').toString(),
       'tableCount': tableCount,
-      'tableAssignmentMode': (raw['tableAssignmentMode'] ??
+      'tableAssignmentMode': (merged['tableAssignmentMode'] ??
               (tableCount > 1
                   ? 'DYNAMIC_FREE_TABLE_QUEUE'
                   : 'SINGLE_TABLE_DEFAULT'))
           .toString(),
       'tables': tables,
-      'formatCategory': (raw['formatCategory'] ?? 'ELIMINATION').toString(),
+      'formatCategory': (merged['formatCategory'] ?? 'ELIMINATION').toString(),
       'eliminationSubFormat':
-          (raw['eliminationSubFormat'] ?? 'DOUBLE_ELIMINATION').toString(),
+          (merged['eliminationSubFormat'] ?? 'DOUBLE_ELIMINATION').toString(),
       'weightCategories': weightCategories,
       if (feePkr != null) 'entryFeePkr': feePkr,
-      'entryFeeConfigured': raw['entryFeeConfigured'] ?? (feePkr != null),
+      'entryFeeConfigured': merged['entryFeeConfigured'] ?? (feePkr != null),
       'registrationFeeCents': effectiveFeeCents,
       'awardsConfig': awardsConfig,
       'spectatorGateConfig': spectatorGateConfig,
       'appliedAthletes': appliedAthletes,
+      'registeredCount': effectiveRegisteredCount,
       'card3MatchupsState': card3MatchupsState,
       'isReleased': true,
-      'status': (raw['status']?.toString().toUpperCase() == 'DRAFT')
+      'status': (merged['status']?.toString().toUpperCase() == 'DRAFT')
           ? 'PUBLISHED'
-          : (raw['status'] ?? 'PUBLISHED').toString(),
+          : (merged['status'] ?? 'PUBLISHED').toString(),
     };
 
     baseMap['matchups'] = flattenAllMatches(baseMap);
@@ -366,8 +424,16 @@ class TournamentOfflineStore {
       if (raw is! Map) continue;
       if (raw['enabled'] == false) continue;
       final id = raw['id']?.toString() ?? 'wc';
-      final label = raw['label']?.toString().trim() ?? '';
+      final label =
+          (raw['label'] ?? raw['weightLabel'] ?? raw['weightClass'] ?? '')
+              .toString()
+              .trim();
       if (label.isEmpty) continue;
+      final division = (raw['division'] ?? 'SENIOR')
+          .toString()
+          .trim()
+          .toUpperCase();
+      final effectiveDivision = division.isEmpty ? 'SENIOR' : division;
       final arm = (raw['arm']?.toString() ?? 'RIGHT').toUpperCase();
       if (arm == 'RIGHT' || arm == 'BOTH') {
         result.add({
@@ -375,6 +441,8 @@ class TournamentOfflineStore {
           'label': '$label • Right Arm',
           'weightClass': label,
           'arm': 'Right Arm',
+          'armCode': 'RIGHT',
+          'division': effectiveDivision,
         });
       }
       if (arm == 'LEFT' || arm == 'BOTH') {
@@ -383,6 +451,8 @@ class TournamentOfflineStore {
           'label': '$label • Left Arm',
           'weightClass': label,
           'arm': 'Left Arm',
+          'armCode': 'LEFT',
+          'division': effectiveDivision,
         });
       }
     }
@@ -605,6 +675,109 @@ class TournamentOfflineStore {
     }
   }
 
+  static bool _isSameAthleteRegistration(
+    Map<String, dynamic> a,
+    Map<String, dynamic> b,
+  ) {
+    final aId = (a['athleteId'] ?? '').toString().trim();
+    final bId = (b['athleteId'] ?? '').toString().trim();
+    if (aId.isNotEmpty && bId.isNotEmpty && aId == bId) return true;
+
+    final aUser = (a['userId'] ?? '').toString().trim();
+    final bUser = (b['userId'] ?? '').toString().trim();
+    if (aUser.isNotEmpty && bUser.isNotEmpty && aUser == bUser) return true;
+    if (aId.isNotEmpty && bUser.isNotEmpty && aId == bUser) return true;
+    if (aUser.isNotEmpty && bId.isNotEmpty && aUser == bId) return true;
+
+    final aQr = (a['profileQrCode'] ?? a['settingsIdentityQr'] ?? '').toString().trim();
+    final bQr = (b['profileQrCode'] ?? b['settingsIdentityQr'] ?? '').toString().trim();
+    if (aQr.isNotEmpty && bQr.isNotEmpty && aQr == bQr) return true;
+
+    final aRegId = (a['id'] ?? a['registrationId'] ?? '').toString().trim();
+    final bRegId = (b['id'] ?? b['registrationId'] ?? '').toString().trim();
+    if (aRegId.isNotEmpty && bRegId.isNotEmpty && aRegId == bRegId) return true;
+
+    return false;
+  }
+
+  static Map<String, dynamic> _mergeTournamentWithLocalState({
+    required String tournamentId,
+    Map<String, dynamic>? existingLocal,
+    required Map<String, dynamic> incoming,
+    HiveStorage? hive,
+  }) {
+    final combined = <String, dynamic>{
+      if (existingLocal != null) ...existingLocal,
+      ...incoming,
+      'id': tournamentId,
+    };
+
+    final incomingCats = extractRealWeightCategories(incoming);
+    final localCats = existingLocal != null
+        ? extractRealWeightCategories(existingLocal)
+        : const <Map<String, dynamic>>[];
+    if (incomingCats.isNotEmpty) {
+      combined['weightCategories'] = incomingCats;
+    } else if (localCats.isNotEmpty) {
+      combined['weightCategories'] = localCats;
+    }
+
+    final mergedAthletes = <Map<String, dynamic>>[];
+    void upsertEntry(Map<String, dynamic> rawEntry) {
+      final entry = Map<String, dynamic>.from(rawEntry);
+      final idx = mergedAthletes.indexWhere(
+        (existing) => _isSameAthleteRegistration(existing, entry),
+      );
+      if (idx != -1) {
+        mergedAthletes[idx] = <String, dynamic>{
+          ...mergedAthletes[idx],
+          ...entry,
+        };
+      } else {
+        mergedAthletes.add(entry);
+      }
+    }
+
+    if (incoming['appliedAthletes'] is List) {
+      for (final item in (incoming['appliedAthletes'] as List).whereType<Map>()) {
+        upsertEntry(Map<String, dynamic>.from(item));
+      }
+    }
+    if (existingLocal != null && existingLocal['appliedAthletes'] is List) {
+      for (final item
+          in (existingLocal['appliedAthletes'] as List).whereType<Map>()) {
+        upsertEntry(Map<String, dynamic>.from(item));
+      }
+    }
+    if (incoming['myRegistration'] is Map) {
+      upsertEntry(Map<String, dynamic>.from(incoming['myRegistration'] as Map));
+    }
+    if (hive != null) {
+      try {
+        final rawLocalRegs = hive.getCachedData('local_my_registrations');
+        if (rawLocalRegs is List) {
+          for (final item in rawLocalRegs.whereType<Map>()) {
+            final map = Map<String, dynamic>.from(item);
+            if ((map['eventId'] ?? map['tournamentId'] ?? '').toString() ==
+                tournamentId) {
+              upsertEntry(map);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    combined['appliedAthletes'] = mergedAthletes;
+    final incomingRegCount = (incoming['registeredCount'] as num?)?.toInt() ?? 0;
+    final localRegCount =
+        (existingLocal?['registeredCount'] as num?)?.toInt() ?? 0;
+    combined['registeredCount'] = mergedAthletes.isNotEmpty
+        ? mergedAthletes.length
+        : (incomingRegCount > localRegCount ? incomingRegCount : localRegCount);
+
+    return _ensureNormalizedTournament(combined);
+  }
+
   /// Returns all Released / Scheduled tournaments (never returning unreleased drafts).
   static List<Map<String, dynamic>> getAllReleasedTournaments({
     HiveStorage? hive,
@@ -617,10 +790,12 @@ class TournamentOfflineStore {
     for (final r in mergedRemote) {
       final id = r['id']?.toString() ?? '';
       if (id.isEmpty || isTournamentDeleted(id) || !isReleasedTournament(r)) continue;
-      // Preserve locally updated tournament state if already present in memory
-      if (!_memoryReleasedTournaments.containsKey(id)) {
-        _memoryReleasedTournaments[id] = _ensureNormalizedTournament(r);
-      }
+      _memoryReleasedTournaments[id] = _mergeTournamentWithLocalState(
+        tournamentId: id,
+        existingLocal: _memoryReleasedTournaments[id],
+        incoming: r,
+        hive: hive,
+      );
     }
     return _memoryReleasedTournaments.values
         .where((t) => !isTournamentDeleted(t['id']?.toString()) && isReleasedTournament(t))
@@ -667,22 +842,39 @@ class TournamentOfflineStore {
       if (!isReleasedTournament(s)) continue;
       final sId = (s['id'] ?? '').toString();
       if (sId.isNotEmpty && !isTournamentDeleted(sId)) {
-        _memoryReleasedTournaments[sId] = _ensureNormalizedTournament(s);
+        _memoryReleasedTournaments[sId] = _mergeTournamentWithLocalState(
+          tournamentId: sId,
+          existingLocal: _memoryReleasedTournaments[sId],
+          incoming: s,
+          hive: hive,
+        );
       }
+    }
+    if (fallbackEvent != null && fallbackEvent.isNotEmpty) {
+      final merged = _mergeTournamentWithLocalState(
+        tournamentId: tournamentId,
+        existingLocal: _memoryReleasedTournaments[tournamentId],
+        incoming: {
+          ...fallbackEvent,
+          'id': tournamentId,
+        },
+        hive: hive,
+      );
+      if (isTournamentDeleted(merged['id']?.toString())) return null;
+      _memoryReleasedTournaments[tournamentId] = merged;
+      return merged;
     }
     if (_memoryReleasedTournaments.containsKey(tournamentId)) {
       final t = _memoryReleasedTournaments[tournamentId]!;
       if (isTournamentDeleted(t['id']?.toString())) return null;
-      return _ensureNormalizedTournament(t);
-    }
-    if (fallbackEvent != null && fallbackEvent.isNotEmpty) {
-      final normalized = _ensureNormalizedTournament({
-        ...fallbackEvent,
-        'id': tournamentId,
-      });
-      if (isTournamentDeleted(normalized['id']?.toString())) return null;
-      _memoryReleasedTournaments[tournamentId] = normalized;
-      return normalized;
+      final merged = _mergeTournamentWithLocalState(
+        tournamentId: tournamentId,
+        existingLocal: t,
+        incoming: t,
+        hive: hive,
+      );
+      _memoryReleasedTournaments[tournamentId] = merged;
+      return merged;
     }
     return null;
   }
@@ -848,8 +1040,8 @@ class TournamentOfflineStore {
           'assignmentId': 'ref_assign_${t['id']}_table_$assignedTableNumber',
           'tournamentId': t['id'].toString(),
           'tournamentName': t['name']?.toString() ?? 'ArmSphere Championship',
-          'organizationName': t['organizationName']?.toString() ??
-              'Pakistan Armwrestling Federation',
+          'organizationName':
+              t['organizationName']?.toString() ?? 'Host Organization',
           'venueName':
               (t['venueName'] ?? t['venue'] ?? 'Combat Arena').toString(),
           'city': (t['city'] ?? 'Lahore').toString(),
@@ -924,7 +1116,9 @@ class TournamentOfflineStore {
       'player1Name': aName,
       'player1Elo': aElo,
       'player1Losses': aLosses,
-      'player1Qr': raw['player1Qr'] ?? 'ARMSPHERE-ATHLETE-QR:$aId:$aName',
+      'player1Qr': raw['player1Qr'] ??
+          raw['player1ProfileQrCode'] ??
+          buildSettingsAthleteIdentityQr(athleteId: aId),
       'athleteBId': bId,
       'athleteBName': bName,
       'athleteBElo': bElo,
@@ -933,7 +1127,9 @@ class TournamentOfflineStore {
       'player2Name': bName,
       'player2Elo': bElo,
       'player2Losses': bLosses,
-      'player2Qr': raw['player2Qr'] ?? 'ARMSPHERE-ATHLETE-QR:$bId:$bName',
+      'player2Qr': raw['player2Qr'] ??
+          raw['player2ProfileQrCode'] ??
+          buildSettingsAthleteIdentityQr(athleteId: bId),
       'assignedTable': assignedTable,
       'tableNumber': parsedTableNum,
       'winnerName': winnerName,
@@ -969,8 +1165,9 @@ class TournamentOfflineStore {
     return result;
   }
 
-  /// Resolves an athlete record in `tournament['appliedAthletes']` from a scanned QR code
-  /// (Settings QR, Event Registration QR, or JSON QR) OR typed Athlete Name / ID number.
+  /// Resolves an athlete record in `tournament['appliedAthletes']` from a scanned
+  /// permanent Profile QR Code (canonical `ARMSPHERE-ATHLETE-QR:<userId>`, legacy
+  /// `ARMSPHERE-ATHLETE-QR:<id>:<name>`, or JSON payload) OR typed Athlete Name / ID.
   static Map<String, dynamic>? resolveAthleteFromQrOrQuery({
     required Map<String, dynamic> tournament,
     required String rawInput,
@@ -986,52 +1183,62 @@ class TournamentOfflineStore {
 
     String? extractedId;
     String? extractedName;
+    String? extractedProfileQr;
 
     // 1. JSON QR payload
     if (query.startsWith('{') && query.endsWith('}')) {
       try {
         final decoded = jsonDecode(query);
         if (decoded is Map) {
-          extractedId = (decoded['registrationId'] ?? decoded['athleteId'])
-              ?.toString();
-          extractedName = decoded['athleteName']?.toString();
+          extractedProfileQr =
+              (decoded['profileQrCode'] ?? decoded['qrCode'])?.toString().trim();
+          extractedId = (decoded['userId'] ??
+                  decoded['athleteId'] ??
+                  decoded['registrationId'])
+              ?.toString()
+              .trim();
+          extractedName = decoded['athleteName']?.toString().trim();
         }
       } catch (_) {}
     }
-    // 2. Settings Identity QR: ARMSPHERE-ATHLETE-QR:<athleteId>:<athleteName>
+    // 2. Canonical Profile QR: ARMSPHERE-ATHLETE-QR:<userId> (or legacy :name)
     else if (query.toUpperCase().startsWith('ARMSPHERE-ATHLETE-QR:')) {
       final parts = query.split(':');
-      if (parts.length >= 2) extractedId = parts[1].trim();
-      if (parts.length >= 3) extractedName = parts[2].trim();
-    }
-    // 3. Tournament Registration QR: ARMSPHERE-QR:<regId>:<athleteId>:<category>...
-    else if (query.toUpperCase().startsWith('ARMSPHERE-QR:')) {
-      final parts = query.split(':');
-      if (parts.length >= 2) extractedId = parts[1].trim();
-      if (parts.length >= 3 && (extractedId == null || extractedId.isEmpty)) {
-        extractedId = parts[2].trim();
+      if (parts.length >= 2) {
+        extractedId = parts[1].trim();
+        extractedProfileQr = 'ARMSPHERE-ATHLETE-QR:${parts[1].trim()}';
       }
-      for (final p in parts) {
-        if (p.toUpperCase().startsWith('NAME=')) {
-          extractedName = p.substring(5).trim();
-        }
+      if (parts.length >= 3) {
+        extractedName = parts.sublist(2).join(':').trim();
       }
     }
 
     final lowerQuery = query.toLowerCase();
     final lowerExtractedId = extractedId?.toLowerCase();
     final lowerExtractedName = extractedName?.toLowerCase();
+    final lowerProfileQr = extractedProfileQr?.toLowerCase();
 
     for (final a in athletes) {
       final regId = (a['id'] ?? a['registrationId'] ?? '').toString().toLowerCase();
       final athId = (a['athleteId'] ?? '').toString().toLowerCase();
+      final userId = (a['userId'] ?? '').toString().toLowerCase();
       final name = (a['athleteName'] ?? '').toString().toLowerCase();
-      final qr = (a['qrCodePayload'] ?? '').toString().toLowerCase();
+      final profileQr = (a['profileQrCode'] ?? '').toString().toLowerCase();
       final settingsQr = (a['settingsIdentityQr'] ?? '').toString().toLowerCase();
+      final qr = (a['qrCodePayload'] ?? a['qrCode'] ?? '').toString().toLowerCase();
 
+      if (lowerProfileQr != null &&
+          lowerProfileQr.isNotEmpty &&
+          (profileQr == lowerProfileQr ||
+              settingsQr == lowerProfileQr ||
+              qr == lowerProfileQr)) {
+        return a;
+      }
       if (lowerExtractedId != null &&
           lowerExtractedId.isNotEmpty &&
-          (regId == lowerExtractedId || athId == lowerExtractedId)) {
+          (userId == lowerExtractedId ||
+              athId == lowerExtractedId ||
+              regId == lowerExtractedId)) {
         return a;
       }
       if (lowerExtractedName != null &&
@@ -1039,12 +1246,14 @@ class TournamentOfflineStore {
           name == lowerExtractedName) {
         return a;
       }
-      if (regId == lowerQuery ||
-          athId == lowerQuery ||
-          qr == lowerQuery ||
+      if (profileQr == lowerQuery ||
           settingsQr == lowerQuery ||
+          qr == lowerQuery ||
+          userId == lowerQuery ||
+          athId == lowerQuery ||
+          regId == lowerQuery ||
           name == lowerQuery ||
-          name.contains(lowerQuery)) {
+          (lowerQuery.length >= 2 && name.contains(lowerQuery))) {
         return a;
       }
     }
@@ -1877,15 +2086,195 @@ class TournamentOfflineStore {
   // 2. ATHLETE & SPECTATOR ROLE: OFFLINE APPLY + QR & SPECTATOR PASS + VERIFY
   // ===========================================================================
 
-  /// Submits an Athlete's application to compete with zero-error optimistic offline persistence,
-  /// immediately generating their local Tournament QR Code and updating the tournament roster.
+  /// Resolves the current athlete's active registration for [tournament] across
+  /// `local_my_registrations` in Hive, `tournament['myRegistration']`,
+  /// `tournament['appliedAthletes']`, and `myRegistrations` from provider state.
+  static Map<String, dynamic>? findAthleteRegistrationForTournament({
+    required Map<String, dynamic> tournament,
+    String? tournamentIdOverride,
+    Map<String, dynamic>? userProfile,
+    Map<String, dynamic>? athleteProfile,
+    List<Map<String, dynamic>>? myRegistrations,
+    HiveStorage? hive,
+  }) {
+    final tournamentId =
+        (tournamentIdOverride ?? tournament['id'] ?? '').toString().trim();
+    if (tournamentId.isEmpty) return null;
+
+    final candidateIds = <String>{};
+    final candidateQrs = <String>{};
+
+    void addCandidateId(dynamic val) {
+      final s = (val ?? '').toString().trim();
+      if (s.isNotEmpty) {
+        candidateIds.add(s);
+        candidateQrs.add(buildSettingsAthleteIdentityQr(athleteId: s));
+      }
+    }
+
+    void addCandidateQr(dynamic val) {
+      final s = (val ?? '').toString().trim();
+      if (s.isNotEmpty) candidateQrs.add(s);
+    }
+
+    if (userProfile != null) {
+      addCandidateId(userProfile['id']);
+      addCandidateId(userProfile['userId']);
+      addCandidateId(userProfile['athleteId']);
+      addCandidateQr(userProfile['profileQrCode']);
+      if (userProfile['user'] is Map) {
+        final u = userProfile['user'] as Map;
+        addCandidateId(u['id']);
+        addCandidateQr(u['profileQrCode']);
+      }
+      if (userProfile['profile'] is Map) {
+        final p = userProfile['profile'] as Map;
+        addCandidateId(p['id']);
+        addCandidateId(p['userId']);
+        addCandidateQr(p['profileQrCode']);
+      }
+    }
+    if (athleteProfile != null) {
+      addCandidateId(athleteProfile['id']);
+      addCandidateId(athleteProfile['userId']);
+      addCandidateId(athleteProfile['athleteId']);
+      addCandidateQr(athleteProfile['profileQrCode']);
+    }
+    if (hive != null) {
+      try {
+        final sessionUser = hive.getCachedData('auth_session_user');
+        if (sessionUser is Map) {
+          addCandidateId(sessionUser['id']);
+          addCandidateId(sessionUser['userId']);
+          addCandidateId(sessionUser['athleteId']);
+          addCandidateQr(sessionUser['profileQrCode']);
+        }
+      } catch (_) {}
+    }
+
+    bool matchesCurrentAthlete(Map<String, dynamic> reg) {
+      final status = (reg['status'] ?? '').toString().toUpperCase();
+      if (status == 'REJECTED' || status == 'CANCELLED') return false;
+      if (candidateIds.isEmpty && candidateQrs.isEmpty) {
+        return true;
+      }
+      final rAthleteId = (reg['athleteId'] ?? '').toString().trim();
+      final rUserId = (reg['userId'] ?? '').toString().trim();
+      final rQr =
+          (reg['profileQrCode'] ?? reg['settingsIdentityQr'] ?? '').toString().trim();
+      if (rAthleteId.isNotEmpty && candidateIds.contains(rAthleteId)) {
+        return true;
+      }
+      if (rUserId.isNotEmpty && candidateIds.contains(rUserId)) {
+        return true;
+      }
+      if (rQr.isNotEmpty && candidateQrs.contains(rQr)) {
+        return true;
+      }
+      if (rAthleteId == 'athlete_me' || rUserId == 'athlete_me') {
+        return true;
+      }
+      return false;
+    }
+
+    Map<String, dynamic> normalizeFound(Map<String, dynamic> raw) {
+      final wc = (raw['weightClass'] ??
+              raw['weightCategory'] ??
+              raw['registeredWeightLabel'] ??
+              '')
+          .toString()
+          .trim();
+      final rawArm =
+          (raw['arm'] ?? raw['registeredArm'] ?? 'RIGHT').toString().trim();
+      final armUpper = rawArm.toUpperCase();
+      final armCode = armUpper.contains('LEFT')
+          ? 'LEFT'
+          : (armUpper.contains('BOTH') ? 'BOTH' : 'RIGHT');
+      final armFormatted = armCode == 'LEFT'
+          ? 'Left Arm'
+          : (armCode == 'BOTH' ? 'Both Arms' : 'Right Arm');
+      final categoryLabel = (raw['categoryLabel'] != null &&
+              raw['categoryLabel'].toString().trim().isNotEmpty)
+          ? raw['categoryLabel'].toString().trim()
+          : (wc.isNotEmpty ? '$wc • $armFormatted' : armFormatted);
+      return <String, dynamic>{
+        ...raw,
+        'eventId': (raw['eventId'] ?? tournamentId).toString(),
+        'weightClass': wc,
+        'weightCategory': wc,
+        'arm': armFormatted,
+        'armCode': armCode,
+        'division': (raw['division'] ?? 'SENIOR').toString().toUpperCase(),
+        'categoryLabel': categoryLabel,
+      };
+    }
+
+    // 1. Check Hive local_my_registrations first (most recent local submission/update)
+    if (hive != null) {
+      try {
+        final rawRegs = hive.getCachedData('local_my_registrations');
+        if (rawRegs is List) {
+          for (final item in rawRegs.whereType<Map>()) {
+            final map = Map<String, dynamic>.from(item);
+            final evtId =
+                (map['eventId'] ?? map['tournamentId'] ?? '').toString().trim();
+            if (evtId == tournamentId && matchesCurrentAthlete(map)) {
+              return normalizeFound(map);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 2. Check tournament['myRegistration'] from server
+    if (tournament['myRegistration'] is Map) {
+      final myReg = Map<String, dynamic>.from(tournament['myRegistration'] as Map);
+      final status = (myReg['status'] ?? '').toString().toUpperCase();
+      if (status != 'REJECTED' && status != 'CANCELLED') {
+        return normalizeFound(myReg);
+      }
+    }
+
+    // 3. Check tournament['appliedAthletes']
+    if (tournament['appliedAthletes'] is List) {
+      for (final item in (tournament['appliedAthletes'] as List).whereType<Map>()) {
+        final map = Map<String, dynamic>.from(item);
+        if (matchesCurrentAthlete(map)) {
+          return normalizeFound(map);
+        }
+      }
+    }
+
+    // 4. Check myRegistrations list from provider
+    if (myRegistrations != null) {
+      for (final reg in myRegistrations) {
+        final evtId =
+            (reg['eventId'] ?? reg['tournamentId'] ?? '').toString().trim();
+        if (evtId == tournamentId && matchesCurrentAthlete(reg)) {
+          return normalizeFound(reg);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Submits an Athlete's application to compete with zero-error optimistic offline persistence.
+  /// Saves or updates an athlete's tournament application locally (and queues background sync)
+  /// linked strictly to the athlete's permanent Profile QR Code — never generating
+  /// a separate tournament QR card or credential, and never creating duplicate entries
+  /// when the athlete updates their division.
   static Future<Map<String, dynamic>> submitAthleteApplicationOfflineSafe({
     required HiveStorage? hive,
     OfflineSyncManager? syncManager,
     required String tournamentId,
     required String athleteId,
+    String? userId,
     required String athleteName,
+    String? profileQrCode,
     String clubName = 'ArmSphere Official Athlete',
+    String? division,
+    String? divisionId,
     String? weightClass,
     String? weightCategory,
     required String arm,
@@ -1899,71 +2288,106 @@ class TournamentOfflineStore {
       getReleasedTournamentById(hive: hive, tournamentId: tournamentId) ??
           <String, dynamic>{'id': tournamentId},
     );
+    final realCats = extractRealWeightCategories(tournament);
+    final fallbackWeight = realCats.isNotEmpty
+        ? (realCats.first['label']?.toString() ?? 'Open')
+        : 'Open';
     final effectiveWeightClass =
-        (weightClass ?? weightCategory ?? '70 kg').trim();
+        (weightClass ?? weightCategory ?? fallbackWeight).trim();
+    final effectiveDivision = (division ?? 'SENIOR').trim().toUpperCase();
     final effectiveElo = eloRating ?? elo ?? 1680;
-    final armFormatted = arm.toUpperCase().contains('LEFT')
+    final armUpper = arm.toUpperCase();
+    final armCode = armUpper.contains('LEFT')
+        ? 'LEFT'
+        : (armUpper.contains('BOTH') ? 'BOTH' : 'RIGHT');
+    final armFormatted = armCode == 'LEFT'
         ? 'Left Arm'
-        : (arm.toUpperCase().contains('BOTH') ? 'Right Arm' : 'Right Arm');
+        : (armCode == 'BOTH' ? 'Both Arms' : 'Right Arm');
     final categoryLabel = '$effectiveWeightClass • $armFormatted';
-    final regId =
-        'reg_${tournamentId}_${athleteId}_${effectiveWeightClass.replaceAll(' ', '')}_${arm.toLowerCase()}';
-    final idempotencyKey = 'idem_apply_$regId';
 
-    final qrPayload = buildTournamentRegistrationQr(
-      registrationId: regId,
-      eventId: tournamentId,
-      athleteId: athleteId,
-      athleteName: athleteName,
-      categoryLabel: categoryLabel,
-      guestCount: guestCount,
-    );
-    final settingsQr = buildSettingsAthleteIdentityQr(
-      athleteId: athleteId,
-      athleteName: athleteName,
-    );
+    final canonicalProfileQr = (profileQrCode != null && profileQrCode.trim().isNotEmpty)
+        ? profileQrCode.trim()
+        : buildSettingsAthleteIdentityQr(
+            athleteId: (userId != null && userId.trim().isNotEmpty)
+                ? userId.trim()
+                : athleteId,
+          );
 
-    final athleteEntry = <String, dynamic>{
-      'id': regId,
-      'registrationId': regId,
-      'eventId': tournamentId,
-      'athleteId': athleteId,
-      'athleteName': athleteName,
-      'clubName': clubName,
-      'categoryLabel': categoryLabel,
-      'weightClass': effectiveWeightClass,
-      'weightCategory': effectiveWeightClass,
-      'arm': armFormatted,
-      'eloRating': effectiveElo,
-      'prKg': prKg,
-      'maxLiftKg': maxLiftKg,
-      'lossesCount': 0,
-      'weighInStatus': 'PENDING',
-      'measuredWeightKg': null,
-      'guestCount': guestCount,
-      'checkedInGuestsCount': 0,
-      'entranceCheckedIn': false,
-      'qrCodePayload': qrPayload,
-      'settingsIdentityQr': settingsQr,
-      'status': 'SUBMITTED_DONE',
-      'registeredAt': DateTime.now().toUtc().toIso8601String(),
-      'offlineQueued': true,
-      'idempotencyKey': idempotencyKey,
-    };
-
-    // Update tournament's appliedAthletes
     final existingAthletes = (tournament['appliedAthletes'] as List?)
             ?.whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList() ??
         <Map<String, dynamic>>[];
 
-    final existingIdx = existingAthletes.indexWhere((a) =>
-        a['id']?.toString() == regId ||
-        (a['athleteId']?.toString() == athleteId &&
-            a['categoryLabel']?.toString() == categoryLabel));
-    if (existingIdx != -1) {
-      existingAthletes[existingIdx] = athleteEntry;
+    final probe = <String, dynamic>{
+      'athleteId': athleteId,
+      if (userId != null && userId.trim().isNotEmpty) 'userId': userId.trim(),
+      'profileQrCode': canonicalProfileQr,
+    };
+
+    final existingMatchIdx = existingAthletes.indexWhere(
+      (a) => _isSameAthleteRegistration(a, probe),
+    );
+    final previousEntry =
+        existingMatchIdx != -1 ? existingAthletes[existingMatchIdx] : null;
+
+    final stableRegId = (previousEntry?['id'] ??
+            previousEntry?['registrationId'] ??
+            'reg_${tournamentId}_$athleteId')
+        .toString();
+    final idempotencyKey =
+        'idem_apply_${stableRegId}_${effectiveWeightClass.replaceAll(' ', '')}_${armCode.toLowerCase()}';
+
+    final athleteEntry = <String, dynamic>{
+      if (previousEntry != null) ...previousEntry,
+      'id': stableRegId,
+      'registrationId': stableRegId,
+      'eventId': tournamentId,
+      'athleteId': athleteId,
+      if (userId != null && userId.trim().isNotEmpty) 'userId': userId.trim(),
+      'athleteName': athleteName,
+      'fullName': athleteName,
+      'clubName': clubName,
+      'division': effectiveDivision,
+      if (divisionId != null && divisionId.trim().isNotEmpty)
+        'divisionId': divisionId.trim(),
+      'categoryLabel': categoryLabel,
+      'weightClass': effectiveWeightClass,
+      'weightCategory': effectiveWeightClass,
+      'registeredWeightLabel': effectiveWeightClass,
+      'arm': armFormatted,
+      'armCode': armCode,
+      'registeredArm': armFormatted,
+      'eloRating': effectiveElo,
+      'prKg': prKg,
+      'maxLiftKg': maxLiftKg,
+      'lossesCount': previousEntry?['lossesCount'] ?? 0,
+      'weighInStatus': previousEntry?['weighInStatus'] ?? 'PENDING',
+      'measuredWeightKg': previousEntry?['measuredWeightKg'],
+      'guestCount': guestCount,
+      'checkedInGuestsCount': previousEntry?['checkedInGuestsCount'] ?? 0,
+      'entranceCheckedIn': previousEntry?['entranceCheckedIn'] ?? false,
+      'profileQrCode': canonicalProfileQr,
+      'settingsIdentityQr': canonicalProfileQr,
+      'qrCodePayload': canonicalProfileQr,
+      'qrCode': canonicalProfileQr,
+      'status': 'CONFIRMED',
+      'registeredAt': previousEntry?['registeredAt'] ??
+          DateTime.now().toUtc().toIso8601String(),
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      'offlineQueued': true,
+      'idempotencyKey': idempotencyKey,
+    };
+
+    // Remove any existing registrations for this athlete in this tournament and insert/update in-place
+    if (existingMatchIdx != -1) {
+      existingAthletes[existingMatchIdx] = athleteEntry;
+      for (int i = existingAthletes.length - 1; i >= 0; i--) {
+        if (i != existingMatchIdx &&
+            _isSameAthleteRegistration(existingAthletes[i], probe)) {
+          existingAthletes.removeAt(i);
+        }
+      }
     } else {
       existingAthletes.insert(0, athleteEntry);
     }
@@ -1972,12 +2396,16 @@ class TournamentOfflineStore {
       ...tournament,
       'appliedAthletes': existingAthletes,
       'registeredCount': existingAthletes.length,
+      'isRegistered': true,
+      'myRegistration': athleteEntry,
     };
     await upsertReleasedTournament(hive, updatedTournament);
 
-    // Also cache in local_my_registrations for EventQrPassportScreen
+    // Also cache in local_my_registrations and evict stale event_detail cache
     if (hive != null) {
       try {
+        await hive.evictCache('event_detail_$tournamentId');
+        await hive.evictCache('tournaments_list');
         final rawRegs = hive.getCachedData('local_my_registrations');
         final regList = rawRegs is List
             ? rawRegs
@@ -1985,8 +2413,13 @@ class TournamentOfflineStore {
                 .map((e) => Map<String, dynamic>.from(e))
                 .toList()
             : <Map<String, dynamic>>[];
-        regList.removeWhere(
-            (r) => (r['id'] ?? r['registrationId']).toString() == regId);
+        regList.removeWhere((r) {
+          final rEvtId =
+              (r['eventId'] ?? r['tournamentId'] ?? '').toString().trim();
+          return rEvtId == tournamentId &&
+              (_isSameAthleteRegistration(r, probe) ||
+                  (r['id'] ?? r['registrationId']).toString() == stableRegId);
+        });
         regList.insert(0, athleteEntry);
         await hive.cacheData('local_my_registrations', regList);
 
@@ -2004,107 +2437,8 @@ class TournamentOfflineStore {
     return athleteEntry;
   }
 
-  /// Claims (Free) or Purchases (Paid) a Spectator Pass with offline-first optimistic queue.
-  static Future<Map<String, dynamic>> claimOrPurchaseSpectatorPassOfflineSafe({
-    required HiveStorage? hive,
-    OfflineSyncManager? syncManager,
-    required String tournamentId,
-    String? holderId,
-    String? userId,
-    String? holderName,
-    String? userName,
-    int? pricePkr,
-    int guestCount = 0,
-  }) async {
-    final effectiveHolderId = (holderId ?? userId ?? 'spec-local-01').trim();
-    final effectiveHolderName =
-        (holderName ?? userName ?? 'Arena Spectator').trim();
-
-    final tournament = Map<String, dynamic>.from(
-      getReleasedTournamentById(hive: hive, tournamentId: tournamentId) ??
-          <String, dynamic>{'id': tournamentId},
-    );
-    final gateConfig = (tournament['spectatorGateConfig'] is Map)
-        ? Map<String, dynamic>.from(tournament['spectatorGateConfig'] as Map)
-        : <String, dynamic>{
-            'spectatorAccessMode': 'FREE',
-            'spectatorFeePkr': 0,
-            'allowedGuestsPerAthlete': 2,
-          };
-
-    final accessMode =
-        (gateConfig['spectatorAccessMode'] ?? 'FREE').toString().toUpperCase();
-    final feePkr = pricePkr ??
-        (accessMode == 'PAID'
-            ? ((gateConfig['spectatorFeePkr'] as num?)?.toInt() ?? 500)
-            : 0);
-    final passId =
-        'SPEC-${tournamentId.hashCode.abs()}-${effectiveHolderId.hashCode.abs()}';
-    final idempotencyKey = 'idem_spec_pass_${tournamentId}_$effectiveHolderId';
-
-    final qrPayload = buildSpectatorPassQr(
-      passId: passId,
-      eventId: tournamentId,
-      holderId: effectiveHolderId,
-      holderName: effectiveHolderName,
-      feePkr: feePkr,
-    );
-
-    final passRecord = <String, dynamic>{
-      'passId': passId,
-      'eventId': tournamentId,
-      'eventName': tournament['name']?.toString() ?? 'ArmSphere Tournament',
-      'holderId': effectiveHolderId,
-      'holderName': effectiveHolderName,
-      'accessMode': accessMode,
-      'feePkr': feePkr,
-      'guestCount': guestCount,
-      'qrPayload': qrPayload,
-      'qrCodePayload': qrPayload,
-      'status': 'ISSUED_ACTIVE',
-      'checkedIn': false,
-      'issuedAt': DateTime.now().toUtc().toIso8601String(),
-      'idempotencyKey': idempotencyKey,
-    };
-
-    _memorySpectatorPasses.removeWhere((p) => p['passId'] == passId);
-    _memorySpectatorPasses.insert(0, passRecord);
-
-    final issuedList = (gateConfig['issuedSpectatorPasses'] is List)
-        ? (gateConfig['issuedSpectatorPasses'] as List)
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList()
-        : <Map<String, dynamic>>[];
-    issuedList.removeWhere((p) => p['passId'] == passId);
-    issuedList.insert(0, passRecord);
-    gateConfig['issuedSpectatorPasses'] = issuedList;
-
-    final updatedTournament = <String, dynamic>{
-      ...tournament,
-      'spectatorGateConfig': gateConfig,
-    };
-    await upsertReleasedTournament(hive, updatedTournament);
-
-    if (hive != null) {
-      try {
-        await hive.cacheData(_localSpectatorPassesKey, _memorySpectatorPasses);
-        await hive.enqueueAction(
-          actionType: 'PURCHASE_SPECTATOR_PASS',
-          endpoint: '/sync/queue',
-          payload: passRecord,
-          method: 'POST',
-          idempotencyKey: idempotencyKey,
-        );
-        syncManager?.syncQueue();
-      } catch (_) {}
-    }
-
-    return passRecord;
-  }
-
-  /// Verifies an Athlete or Spectator for Venue Entrance / Spectating by scanning their QR code
-  /// OR typing their Name / ID number (offline-safe with background sync).
+  /// Verifies a registered athlete at the Venue Entrance Gate using their single
+  /// permanent Profile QR Code or Athlete Name/ID (offline-safe with background sync).
   static Future<Map<String, dynamic>> verifyEntranceByQrOrNameOfflineSafe({
     required HiveStorage? hive,
     OfflineSyncManager? syncManager,
@@ -2129,7 +2463,7 @@ class TournamentOfflineStore {
         ((gateConfig['allowedGuestsPerAthlete'] as num?)?.toInt() ?? 2)
             .clamp(0, 4);
 
-    // 1. Check if it matches a Registered Athlete (by QR, Settings QR, Name, or ID)
+    // 1. Check if it matches a Registered Athlete by permanent Profile QR / Name / ID
     final matchedAthlete = resolveAthleteFromQrOrQuery(
       tournament: tournament,
       rawInput: effectiveQuery,
@@ -2139,6 +2473,11 @@ class TournamentOfflineStore {
       final guestsAllowed = accompanyingGuests <= maxGuestsPerAthlete;
       final holderName = matchedAthlete['athleteName'].toString();
       final regId = matchedAthlete['id'].toString();
+      final profileQr = (matchedAthlete['profileQrCode'] ??
+              matchedAthlete['settingsIdentityQr'] ??
+              matchedAthlete['qrCode'] ??
+              '')
+          .toString();
 
       if (!guestsAllowed) {
         return <String, dynamic>{
@@ -2162,7 +2501,8 @@ class TournamentOfflineStore {
             payload: {
               'eventId': tournamentId,
               'passId': regId,
-              'passType': 'ATHLETE_QR_OR_NAME',
+              'profileQrCode': profileQr,
+              'passType': 'ATHLETE_PROFILE_QR',
               'holderName': holderName,
               'accompanyingGuests': accompanyingGuests,
               'checkedInAt': DateTime.now().toUtc().toIso8601String(),
@@ -2179,74 +2519,25 @@ class TournamentOfflineStore {
         'headline': 'GREEN-LIGHT • VERIFIED ATHLETE & GUESTS ALLOWED ✓',
         'badgeTitle': 'GREEN-LIGHT • VERIFIED ATHLETE & GUESTS ALLOWED ✓',
         'detail':
-            '$holderName (${matchedAthlete['categoryLabel']}) verified by QR/Name with $accompanyingGuests/$maxGuestsPerAthlete allowed guest(s). Saved locally & synced.',
+            '$holderName (${matchedAthlete['categoryLabel']}) verified via Profile QR with $accompanyingGuests/$maxGuestsPerAthlete allowed guest(s).',
         'holderName': holderName,
+        'profileQrCode': profileQr,
         'passType': 'REGISTERED_ATHLETE',
       };
     }
 
-    // 2. Check if it matches an issued Spectator Pass (by QR, Pass ID, or Holder Name)
-    final issuedPasses = <Map<String, dynamic>>[
-      ..._memorySpectatorPasses.where((p) => p['eventId'] == tournamentId),
-      if (gateConfig['issuedSpectatorPasses'] is List)
-        ...(gateConfig['issuedSpectatorPasses'] as List)
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e)),
-    ];
-
-    final lowerQ = effectiveQuery.toLowerCase();
-    final matchedPass = issuedPasses.where((p) {
-      final pId = (p['passId'] ?? '').toString().toLowerCase();
-      final hName = (p['holderName'] ?? '').toString().toLowerCase();
-      final qr = (p['qrPayload'] ?? p['qrCodePayload'] ?? '').toString().toLowerCase();
-      return pId == lowerQ ||
-          qr == lowerQ ||
-          hName == lowerQ ||
-          (lowerQ.length >= 3 && hName.contains(lowerQ));
-    }).firstOrNull;
-
-    if (matchedPass != null) {
-      final holderName = matchedPass['holderName'].toString();
-      final passId = matchedPass['passId'].toString();
-      if (hive != null) {
-        try {
-          await hive.enqueueAction(
-            actionType: 'SCAN_VENUE_ENTRANCE_QR',
-            endpoint: '/sync/queue',
-            payload: {
-              'eventId': tournamentId,
-              'passId': passId,
-              'passType': 'SPECTATOR_PASS',
-              'holderName': holderName,
-              'checkedInAt': DateTime.now().toUtc().toIso8601String(),
-            },
-            method: 'POST',
-            idempotencyKey: 'idem_gate_${tournamentId}_$passId',
-          );
-          syncManager?.syncQueue();
-        } catch (_) {}
-      }
-      return <String, dynamic>{
-        'allowed': true,
-        'headline': 'GREEN-LIGHT • SPECTATOR PASS VERIFIED & ALLOWED ✓',
-        'badgeTitle': 'GREEN-LIGHT • SPECTATOR PASS VERIFIED & ALLOWED ✓',
-        'detail':
-            'Spectator Pass $passId for $holderName (${matchedPass['accessMode']} • PKR ${matchedPass['feePkr']}) verified. Entrance allowed!',
-        'holderName': holderName,
-        'passType': 'SPECTATOR_PASS',
-      };
-    }
-
-    // 3. If Free Spectating is enabled on the tournament, allow walk-in name verification
+    // 2. If Free Spectating is enabled and a walk-in visitor name (not an unrecognized QR) is typed
     final accessMode =
         (gateConfig['spectatorAccessMode'] ?? 'FREE').toString().toUpperCase();
-    if (accessMode == 'FREE' && effectiveQuery.length >= 2) {
+    final looksLikeQrToken =
+        effectiveQuery.toUpperCase().startsWith('ARMSPHERE-');
+    if (accessMode == 'FREE' && !looksLikeQrToken && effectiveQuery.length >= 2) {
       return <String, dynamic>{
         'allowed': true,
         'headline': 'GREEN-LIGHT • FREE SPECTATOR ACCESS ALLOWED ✓',
         'badgeTitle': 'GREEN-LIGHT • FREE SPECTATOR ACCESS ALLOWED ✓',
         'detail':
-            'Spectator "$effectiveQuery" verified for Free Venue Entrance & Spectating.',
+            'Visitor "$effectiveQuery" verified for Free Venue Entrance.',
         'holderName': effectiveQuery,
         'passType': 'FREE_SPECTATOR',
       };
@@ -2254,10 +2545,10 @@ class TournamentOfflineStore {
 
     return <String, dynamic>{
       'allowed': false,
-      'headline': 'RED-LIGHT • UNVERIFIED QR / NAME BLOCKED',
-      'badgeTitle': 'RED-LIGHT • UNVERIFIED QR / NAME BLOCKED',
+      'headline': 'RED-LIGHT • NOT REGISTERED IN TOURNAMENT',
+      'badgeTitle': 'RED-LIGHT • NOT REGISTERED IN TOURNAMENT',
       'detail':
-          'No registered athlete or paid spectator pass matched "$effectiveQuery". Please apply to compete or claim/purchase a Spectator Pass first.',
+          'No registered athlete matched Profile QR "$effectiveQuery" in this tournament.',
       'holderName': effectiveQuery,
       'passType': 'NONE',
     };

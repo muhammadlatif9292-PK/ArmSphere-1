@@ -535,6 +535,96 @@ class PublicAthleteProfileScreen extends ConsumerWidget {
                 ),
 
                 const SizedBox(height: AppTheme.space24),
+                if (p['refereeCertifications'] is List &&
+                    (p['refereeCertifications'] as List).isNotEmpty) ...[
+                  Text(
+                    'REFEREE CERTIFICATIONS',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space10),
+                  ...(p['refereeCertifications'] as List)
+                      .whereType<Map>()
+                      .map((raw) {
+                    final cert = Map<String, dynamic>.from(raw);
+                    final level = (cert['certificationLevel'] ?? 'Certified Referee')
+                        .toString();
+                    final issuer = ArmSphereFormatters.formatOrganizationName(
+                      (cert['issuingOrganizationName'] ?? cert['issuingBody'])
+                          ?.toString(),
+                      fallback: 'ArmSphere Verified Organization',
+                    );
+                    final status =
+                        (cert['status'] ?? 'ACTIVE').toString().toUpperCase();
+                    final issuedRaw = cert['issuedAt']?.toString();
+                    final issuedDate = (issuedRaw != null &&
+                            issuedRaw.isNotEmpty &&
+                            issuedRaw != 'null')
+                        ? issuedRaw.split('T').first
+                        : null;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppTheme.space10),
+                      child: ElevatedActionCard(
+                        padding: const EdgeInsets.all(AppTheme.space14),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: AppTheme.goldPrimary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: AppTheme.space12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    level,
+                                    style: const TextStyle(
+                                      fontFamily: AppTheme.fontDisplay,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Issued by: $issuer',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.goldPrimary,
+                                    ),
+                                  ),
+                                  if (issuedDate != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Issued $issuedDate',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.textMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            StatusChip(
+                              label: status,
+                              type: status == 'ACTIVE'
+                                  ? StatusType.success
+                                  : StatusType.error,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: AppTheme.space14),
+                ],
                 Text(
                   'ATHLETE DOSSIER & RECORDS',
                   style: theme.textTheme.labelMedium?.copyWith(

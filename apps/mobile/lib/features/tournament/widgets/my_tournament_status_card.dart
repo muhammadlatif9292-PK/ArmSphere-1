@@ -546,7 +546,7 @@ class _MyTournamentStatusCardState extends State<MyTournamentStatusCard> with Si
             ],
           ),
           content: const Text(
-            'Official PAFF Live Stream is broadcasting live on YouTube & ArmSphere TV.',
+            'Official Event Live Stream is broadcasting live on YouTube & ArmSphere TV.',
             style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
           ),
           actions: [

@@ -25,7 +25,7 @@ class OfficialFoulRule {
 /// Implements Canonical Referee Precision Mode (Mode 3) & Material 1 (Knurled Steel):
 /// - DraggableScrollableSheet with 16dp rounded top chamfer and knurled steel grip handle.
 /// - Red Corner vs Blue/White Corner designation with 48dp tactile hit targets.
-/// - Official WAF / IFA Categorized Foul Taxonomy:
+/// - Official Armwrestling Categorized Foul Taxonomy:
 ///     1. Elbow Fouls (Lift, Slip, Tricep)
 ///     2. Technical & Position Fouls (Intentional Slip, False Start, Loss of Peg Grip)
 ///     3. Conduct & Disciplinary Fouls (Disobeying Official, Intentional Table Slam)

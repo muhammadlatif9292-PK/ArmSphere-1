@@ -580,7 +580,7 @@ class _ParticipantsCarouselWidgetState extends State<ParticipantsCarouselWidget>
                                               Icon(Icons.verified_rounded, size: 12, color: Color(0xFF00E5FF)),
                                               SizedBox(width: 4),
                                               Text(
-                                                'PAFF VERIFIED',
+                                                'VERIFIED ATHLETE',
                                                 style: TextStyle(
                                                   fontFamily: AppTheme.fontDisplay,
                                                   fontSize: 8.5,

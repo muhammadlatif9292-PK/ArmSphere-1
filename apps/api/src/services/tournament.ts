@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, not, isNull, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, not, isNull, sql, inArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "../config/db.js";
 import crypto from "crypto";
@@ -32,12 +32,193 @@ import { UserRoleService } from "./userRole.js";
 
 const eventStep1ConfigMap = new Map<string, Record<string, any>>();
 
+function buildNormalizedStep1Config(
+  existing: Record<string, any> | undefined,
+  incoming: Record<string, any> | undefined
+): Record<string, any> | undefined {
+  if (!existing && !incoming) return undefined;
+  const base: Record<string, any> = {
+    ...(existing || {}),
+    ...(incoming?.step1Config && typeof incoming.step1Config === "object"
+      ? incoming.step1Config
+      : {}),
+  };
+  const topKeys = [
+    "weightCategories",
+    "formatCategory",
+    "eliminationSubFormat",
+    "entryFeePkr",
+    "awardsConfig",
+    "spectatorGateConfig",
+    "tableCount",
+    "tables",
+    "appliedAthletes",
+  ];
+  if (incoming) {
+    for (const k of topKeys) {
+      if (incoming[k] !== undefined) {
+        base[k] = incoming[k];
+      }
+    }
+  }
+  return Object.keys(base).length > 0 ? base : undefined;
+}
+
+function formatArmDisplayLabel(armRaw: string | null | undefined): string {
+  const upper = (armRaw || "RIGHT").toString().trim().toUpperCase();
+  if (upper === "LEFT" || upper.includes("LEFT")) return "Left Arm";
+  if (upper === "BOTH" || upper.includes("BOTH")) return "Both Arms";
+  return "Right Arm";
+}
+
 export class TournamentService {
+  private static async enrichEventPayload(
+    event: any,
+    viewerUserId?: string
+  ): Promise<any> {
+    if (!event || !event.id) return event;
+    const step1 = eventStep1ConfigMap.get(event.id);
+    if (step1) {
+      event.step1Config = step1;
+      if (Array.isArray(step1.weightCategories) && !Array.isArray(event.weightCategories)) {
+        event.weightCategories = step1.weightCategories;
+      }
+      if (step1.formatCategory !== undefined && event.formatCategory === undefined) {
+        event.formatCategory = step1.formatCategory;
+      }
+      if (step1.eliminationSubFormat !== undefined && event.eliminationSubFormat === undefined) {
+        event.eliminationSubFormat = step1.eliminationSubFormat;
+      }
+      if (step1.entryFeePkr !== undefined && event.entryFeePkr === undefined) {
+        event.entryFeePkr = step1.entryFeePkr;
+      }
+      if (step1.awardsConfig !== undefined && event.awardsConfig === undefined) {
+        event.awardsConfig = step1.awardsConfig;
+      }
+      if (step1.spectatorGateConfig !== undefined && event.spectatorGateConfig === undefined) {
+        event.spectatorGateConfig = step1.spectatorGateConfig;
+      }
+      if (step1.tableCount !== undefined && event.tableCount === undefined) {
+        event.tableCount = step1.tableCount;
+      }
+      if (Array.isArray(step1.tables) && !Array.isArray(event.tables)) {
+        event.tables = step1.tables;
+      }
+    }
+
+    try {
+      if (!Array.isArray(event.weightCategories) || event.weightCategories.length === 0) {
+        const eventBrackets = await db
+          .select()
+          .from(brackets)
+          .where(eq(brackets.eventId, event.id));
+        if (Array.isArray(eventBrackets) && eventBrackets.length > 0) {
+          event.weightCategories = eventBrackets.map((b: any, idx: number) => ({
+            id: b.id?.toString() || `wc-${idx}`,
+            label: b.weightClass?.toString() || b.name?.toString() || `Division ${idx + 1}`,
+            weightLabel: b.weightClass?.toString() || b.name?.toString() || `Division ${idx + 1}`,
+            division: b.division?.toString() || "SENIOR",
+            enabled: true,
+            arm: (b.arm?.toString() || "RIGHT").toUpperCase(),
+            format: b.format?.toString(),
+          }));
+        }
+      }
+    } catch (_) {}
+
+    try {
+      const regRows = await db
+        .select()
+        .from(eventRegistrations)
+        .where(
+          and(
+            eq(eventRegistrations.eventId, event.id),
+            not(eq(eventRegistrations.status, "REJECTED"))
+          )
+        );
+      if (Array.isArray(regRows)) {
+        const athleteIds = Array.from(
+          new Set(
+            regRows
+              .map((r: any) => r.athleteId)
+              .filter((aid): aid is string => typeof aid === "string" && aid.length > 0)
+          )
+        );
+        const profileByAthleteId = new Map<string, any>();
+        if (athleteIds.length > 0) {
+          try {
+            const profiles = await db
+              .select()
+              .from(athleteProfiles)
+              .where(inArray(athleteProfiles.id, athleteIds));
+            for (const p of profiles) {
+              profileByAthleteId.set(p.id, p);
+            }
+          } catch (_) {}
+        }
+
+        const mappedRegs = regRows.map((r: any) => {
+          const prof = profileByAthleteId.get(r.athleteId);
+          const ownerUserId = prof?.userId ?? r.athleteId;
+          const armFormatted = formatArmDisplayLabel(r.arm);
+          const fullName =
+            r.athleteFullName ||
+            prof?.displayName ||
+            "ArmSphere Athlete";
+          const qrCode =
+            r.profileQrCode ||
+            (ownerUserId ? `ARMSPHERE-ATHLETE-QR:${ownerUserId}` : null);
+          return {
+            id: r.id,
+            registrationId: r.id,
+            eventId: r.eventId,
+            athleteId: r.athleteId,
+            userId: ownerUserId,
+            athleteName: fullName,
+            fullName,
+            profileQrCode: qrCode,
+            division: r.division,
+            weightClass: r.weightClass,
+            arm: r.arm,
+            categoryLabel: `${r.weightClass} • ${armFormatted}`,
+            status: r.status,
+            notes: r.notes ?? null,
+            createdAt: r.createdAt,
+            updatedAt: r.updatedAt,
+          };
+        });
+
+        event.registeredCount = mappedRegs.length;
+        if (mappedRegs.length > 0 || !Array.isArray(event.appliedAthletes)) {
+          event.appliedAthletes = mappedRegs;
+        }
+
+        if (viewerUserId) {
+          const myReg = mappedRegs.find(
+            (r) => r.userId === viewerUserId || r.athleteId === viewerUserId
+          );
+          event.isRegistered = Boolean(myReg);
+          event.myRegistration = myReg ?? null;
+        }
+      }
+    } catch (_) {}
+
+    return event;
+  }
+
   // ==========================================
   // 1. Event Management
   // ==========================================
 
-  static async listEvents(filters?: { status?: string; timeframe?: "upcoming" | "past"; organizerId?: string; organizationId?: string }) {
+  static async listEvents(
+    filters?: {
+      status?: string;
+      timeframe?: "upcoming" | "past";
+      organizerId?: string;
+      organizationId?: string;
+    },
+    viewerUserId?: string
+  ) {
     logger.info({ filters }, "Listing tournament events");
     let query = db.select().from(events);
     const conditions = [];
@@ -70,6 +251,24 @@ export class TournamentService {
     }
 
     const eventsList = await query.orderBy(desc(events.startDate));
+    const orgIds = Array.from(
+      new Set(
+        eventsList
+          .map((e) => e.organizationId)
+          .filter((id): id is string => typeof id === "string" && id.length > 0)
+      )
+    );
+    const orgMap = new Map<string, { name: string; slug: string | null }>();
+    if (orgIds.length > 0) {
+      const orgRows = await db
+        .select({ id: organizations.id, name: organizations.name, slug: organizations.slug })
+        .from(organizations)
+        .where(inArray(organizations.id, orgIds));
+      for (const o of orgRows) {
+        orgMap.set(o.id, { name: o.name, slug: o.slug });
+      }
+    }
+
     for (const event of eventsList) {
       if (event.paymentQrImageUrl && !event.paymentQrImageUrl.startsWith("http")) {
         try {
@@ -81,15 +280,15 @@ export class TournamentService {
           logger.error({ err, fileKey: event.paymentQrImageUrl }, "Failed to generate presigned download URL for QR code in listEvents");
         }
       }
-      const step1 = eventStep1ConfigMap.get(event.id);
-      if (step1) {
-        (event as any).step1Config = step1;
-      }
+      const hostOrg = event.organizationId ? orgMap.get(event.organizationId) : null;
+      (event as any).organizationName = hostOrg?.name ?? null;
+      (event as any).organizationSlug = hostOrg?.slug ?? null;
+      await this.enrichEventPayload(event, viewerUserId);
     }
     return eventsList;
   }
 
-  static async getEvent(id: string) {
+  static async getEvent(id: string, viewerUserId?: string) {
     logger.info({ id }, "Getting tournament event by ID");
     const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
     if (!event) {
@@ -105,11 +304,79 @@ export class TournamentService {
         logger.error({ err, fileKey: event.paymentQrImageUrl }, "Failed to generate presigned download URL for QR code in getEvent");
       }
     }
-    const step1 = eventStep1ConfigMap.get(event.id);
-    if (step1) {
-      (event as any).step1Config = step1;
+    if (event.organizationId) {
+      const [hostOrg] = await db
+        .select({ name: organizations.name, slug: organizations.slug })
+        .from(organizations)
+        .where(eq(organizations.id, event.organizationId))
+        .limit(1);
+      (event as any).organizationName = hostOrg?.name ?? null;
+      (event as any).organizationSlug = hostOrg?.slug ?? null;
+    } else {
+      (event as any).organizationName = null;
+      (event as any).organizationSlug = null;
     }
+    await this.enrichEventPayload(event, viewerUserId);
     return event;
+  }
+
+  static async getMyEventRegistration(eventId: string, userId: string) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+    const [profile] = await db
+      .select()
+      .from(athleteProfiles)
+      .where(or(eq(athleteProfiles.userId, userId), eq(athleteProfiles.id, userId)))
+      .limit(1);
+
+    const candidateAthleteIds = Array.from(
+      new Set([userId, profile?.id].filter((v): v is string => typeof v === "string" && v.length > 0))
+    );
+
+    const [reg] = await db
+      .select()
+      .from(eventRegistrations)
+      .where(
+        and(
+          eq(eventRegistrations.eventId, eventId),
+          inArray(eventRegistrations.athleteId, candidateAthleteIds),
+          not(eq(eventRegistrations.status, "REJECTED"))
+        )
+      )
+      .limit(1);
+
+    if (!reg) {
+      return {
+        eventId,
+        isRegistered: false,
+        registration: null,
+      };
+    }
+
+    const armFormatted = formatArmDisplayLabel(reg.arm);
+    return {
+      eventId,
+      isRegistered: true,
+      registration: {
+        id: reg.id,
+        registrationId: reg.id,
+        eventId: reg.eventId,
+        athleteId: reg.athleteId,
+        userId: profile?.userId ?? userId,
+        athleteName: reg.athleteFullName || profile?.displayName || "ArmSphere Athlete",
+        profileQrCode: reg.profileQrCode || `ARMSPHERE-ATHLETE-QR:${profile?.userId ?? userId}`,
+        division: reg.division,
+        weightClass: reg.weightClass,
+        arm: reg.arm,
+        categoryLabel: `${reg.weightClass} • ${armFormatted}`,
+        status: reg.status,
+        notes: reg.notes ?? null,
+        createdAt: reg.createdAt,
+        updatedAt: reg.updatedAt,
+      },
+    };
   }
 
   static async createEvent(data: {
@@ -128,6 +395,12 @@ export class TournamentService {
     paymentQrImageUrl?: string;
     status?: string;
     step1Config?: Record<string, any>;
+    weightCategories?: any[];
+    formatCategory?: string;
+    eliminationSubFormat?: string;
+    entryFeePkr?: number;
+    awardsConfig?: Record<string, any>;
+    spectatorGateConfig?: Record<string, any>;
     idempotencyKey?: string;
     latitude?: number | null;
     longitude?: number | null;
@@ -215,9 +488,10 @@ export class TournamentService {
       })
       .returning();
 
-    if (data.step1Config && newEvent?.id) {
-      eventStep1ConfigMap.set(newEvent.id, data.step1Config);
-      (newEvent as any).step1Config = data.step1Config;
+    const mergedStep1 = buildNormalizedStep1Config(undefined, data as any);
+    if (mergedStep1 && newEvent?.id) {
+      eventStep1ConfigMap.set(newEvent.id, mergedStep1);
+      await this.enrichEventPayload(newEvent, actorId);
     }
 
     return newEvent;
@@ -419,7 +693,20 @@ export class TournamentService {
       throw new BadRequestError("Event start date must be before or equal to the end date.");
     }
 
-    const { step1Config, idempotencyKey: _idemKey, ...dbColumns } = data as any;
+    const {
+      step1Config: _step1Config,
+      idempotencyKey: _idemKey,
+      weightCategories: _weightCategories,
+      formatCategory: _formatCategory,
+      eliminationSubFormat: _eliminationSubFormat,
+      entryFeePkr: _entryFeePkr,
+      awardsConfig: _awardsConfig,
+      spectatorGateConfig: _spectatorGateConfig,
+      tableCount: _tableCount,
+      tables: _tables,
+      appliedAthletes: _appliedAthletes,
+      ...dbColumns
+    } = data as any;
 
     const [updatedEvent] = await db
       .update(events)
@@ -430,11 +717,15 @@ export class TournamentService {
       .where(eq(events.id, id))
       .returning();
 
-    if (step1Config && updatedEvent?.id) {
-      eventStep1ConfigMap.set(updatedEvent.id, step1Config);
-      (updatedEvent as any).step1Config = step1Config;
-    } else if (updatedEvent?.id && eventStep1ConfigMap.has(updatedEvent.id)) {
-      (updatedEvent as any).step1Config = eventStep1ConfigMap.get(updatedEvent.id);
+    const mergedStep1 = buildNormalizedStep1Config(
+      eventStep1ConfigMap.get(id),
+      data as any
+    );
+    if (mergedStep1 && updatedEvent?.id) {
+      eventStep1ConfigMap.set(updatedEvent.id, mergedStep1);
+    }
+    if (updatedEvent?.id) {
+      await this.enrichEventPayload(updatedEvent, actorId);
     }
 
     return updatedEvent;
@@ -643,6 +934,7 @@ export class TournamentService {
     weightClass: string;
     arm: string;
     notes?: string;
+    allowUpdate?: boolean;
   }, caller: { userId: string; role: string }) {
     logger.info({ eventId, athleteId }, "Registering athlete to event");
 
@@ -691,6 +983,19 @@ export class TournamentService {
         throw new BadRequestError("Athlete is not eligible for Female division based on profile gender.");
       }
 
+      const [athleteUser] = await tx
+        .select({ profileQrCode: users.profileQrCode, fullName: users.fullName })
+        .from(users)
+        .where(eq(users.id, athlete.userId))
+        .limit(1);
+
+      const canonicalProfileQr =
+        (athleteUser as any)?.profileQrCode ||
+        (athlete as any).profileQrCode ||
+        `ARMSPHERE-ATHLETE-QR:${athlete.userId}`;
+      const athleteSnapshotName =
+        athlete.displayName || (athleteUser as any)?.fullName || "ArmSphere Athlete";
+
       // Duplicate registration check: partial unique check on (eventId, athleteId) excluding REJECTED
       const [existingReg] = await tx
         .select()
@@ -704,7 +1009,32 @@ export class TournamentService {
         )
         .limit(1);
       if (existingReg) {
-        throw new BadRequestError("Athlete is already registered in this event.");
+        const isSameSelection =
+          existingReg.division === data.division &&
+          existingReg.weightClass === data.weightClass &&
+          existingReg.arm === data.arm;
+        if (isSameSelection && !data.allowUpdate) {
+          throw new BadRequestError("Athlete is already registered in this event.");
+        }
+
+        const [updatedReg] = await tx
+          .update(eventRegistrations)
+          .set({
+            division: data.division,
+            weightClass: data.weightClass,
+            arm: data.arm,
+            notes: data.notes !== undefined ? data.notes : existingReg.notes,
+            profileQrCode: canonicalProfileQr,
+            athleteFullName: athleteSnapshotName,
+            updatedAt: new Date(),
+          })
+          .where(eq(eventRegistrations.id, existingReg.id))
+          .returning();
+
+        return {
+          ...updatedReg,
+          updated: true,
+        };
       }
 
       // Capacity limit check for Waitlist promotion
@@ -733,6 +1063,8 @@ export class TournamentService {
           weightClass: data.weightClass,
           arm: data.arm,
           notes: data.notes,
+          profileQrCode: canonicalProfileQr,
+          athleteFullName: athleteSnapshotName,
           status
         })
         .returning();
@@ -2798,18 +3130,23 @@ export class TournamentService {
         id: eventRegistrations.id,
         eventId: eventRegistrations.eventId,
         athleteId: eventRegistrations.athleteId,
-        athleteName: athleteProfiles.displayName,
+        userId: athleteProfiles.userId,
+        athleteName: sql<string>`COALESCE(NULLIF(btrim(${eventRegistrations.athleteFullName}), ''), ${athleteProfiles.displayName})`,
+        profileQrCode: sql<string>`COALESCE(NULLIF(btrim(${eventRegistrations.profileQrCode}), ''), ${users.profileQrCode}, 'ARMSPHERE-ATHLETE-QR:' || ${athleteProfiles.userId}::text)`,
         division: eventRegistrations.division,
         weightClass: eventRegistrations.weightClass,
         arm: eventRegistrations.arm,
         status: eventRegistrations.status,
         paymentConfirmedByOrganizer: eventRegistrations.paymentConfirmedByOrganizer,
         paymentConfirmedAt: eventRegistrations.paymentConfirmedAt,
+        checkedInAt: eventRegistrations.checkedInAt,
+        checkedInBy: eventRegistrations.checkedInBy,
         createdAt: eventRegistrations.createdAt,
         updatedAt: eventRegistrations.updatedAt
       })
       .from(eventRegistrations)
       .innerJoin(athleteProfiles, eq(athleteProfiles.id, eventRegistrations.athleteId))
+      .leftJoin(users, eq(users.id, athleteProfiles.userId))
       .where(eq(eventRegistrations.eventId, eventId));
   }
 
@@ -2923,5 +3260,402 @@ export class TournamentService {
     });
 
     return updatedReg;
+  }
+
+  // =========================================================================
+  // UNIFIED PROFILE QR RESOLUTION & END-TO-END VERIFICATION CHAIN
+  // =========================================================================
+
+  /**
+   * Parses an athlete's canonical Profile QR payload (or JSON / legacy format / ID)
+   * without trusting client-side roles or mutable fields.
+   */
+  private static parseCanonicalProfileQrInput(rawInput: string): {
+    raw: string;
+    canonicalQr?: string;
+    candidateUuid?: string;
+    candidateName?: string;
+  } {
+    const raw = (rawInput || "").trim();
+    if (!raw) {
+      throw new BadRequestError("Profile QR code payload is required.");
+    }
+
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let candidateUuid: string | undefined;
+    let candidateName: string | undefined;
+    let canonicalQr: string | undefined;
+
+    if (raw.startsWith("{") && raw.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          const qrVal = parsed.profileQrCode ?? parsed.qrCode;
+          if (typeof qrVal === "string" && qrVal.trim()) {
+            canonicalQr = qrVal.trim();
+          }
+          const idVal = parsed.userId ?? parsed.athleteId ?? parsed.registrationId;
+          if (typeof idVal === "string" && UUID_RE.test(idVal.trim())) {
+            candidateUuid = idVal.trim();
+          }
+          if (typeof parsed.athleteName === "string" && parsed.athleteName.trim()) {
+            candidateName = parsed.athleteName.trim();
+          }
+        }
+      } catch {
+        // Fall through to raw matching
+      }
+    }
+
+    const source = canonicalQr || raw;
+    if (source.toUpperCase().startsWith("ARMSPHERE-ATHLETE-QR:")) {
+      const parts = source.split(":");
+      const idPart = parts[1]?.trim();
+      if (idPart) {
+        if (UUID_RE.test(idPart)) {
+          candidateUuid = idPart;
+          canonicalQr = `ARMSPHERE-ATHLETE-QR:${idPart}`;
+        } else {
+          canonicalQr = source;
+        }
+      }
+      if (parts.length >= 3 && parts[2]?.trim()) {
+        candidateName = parts.slice(2).join(":").trim();
+      }
+    } else if (!canonicalQr && UUID_RE.test(raw)) {
+      candidateUuid = raw;
+      canonicalQr = `ARMSPHERE-ATHLETE-QR:${raw}`;
+    } else if (!canonicalQr) {
+      canonicalQr = raw;
+    }
+
+    return { raw, canonicalQr, candidateUuid, candidateName };
+  }
+
+  /**
+   * Resolves an athlete account + active registration in the given event
+   * strictly from the athlete's canonical permanent Profile QR Code.
+   */
+  private static async resolveRegisteredAthleteByProfileQr(
+    eventId: string,
+    rawQrInput: string
+  ) {
+    const parsed = this.parseCanonicalProfileQrInput(rawQrInput);
+
+    // 1. Find user/profile matching the canonical Profile QR (or userId/athleteId UUID)
+    const userConditions: any[] = [];
+    if (parsed.canonicalQr) {
+      userConditions.push(sql`lower(${users.profileQrCode}) = lower(${parsed.canonicalQr})`);
+      userConditions.push(sql`lower(${athleteProfiles.profileQrCode}) = lower(${parsed.canonicalQr})`);
+    }
+    if (parsed.raw !== parsed.canonicalQr) {
+      userConditions.push(sql`lower(${users.profileQrCode}) = lower(${parsed.raw})`);
+      userConditions.push(sql`lower(${eventRegistrations.profileQrCode}) = lower(${parsed.raw})`);
+    }
+    if (parsed.candidateUuid) {
+      userConditions.push(eq(users.id, parsed.candidateUuid));
+      userConditions.push(eq(athleteProfiles.id, parsed.candidateUuid));
+      userConditions.push(eq(eventRegistrations.id, parsed.candidateUuid));
+    }
+
+    const eventRegs = await db
+      .select({
+        registrationId: eventRegistrations.id,
+        eventId: eventRegistrations.eventId,
+        athleteId: eventRegistrations.athleteId,
+        userId: athleteProfiles.userId,
+        athleteName: sql<string>`COALESCE(NULLIF(btrim(${eventRegistrations.athleteFullName}), ''), ${athleteProfiles.displayName}, ${users.fullName})`,
+        profileQrCode: sql<string>`COALESCE(NULLIF(btrim(${users.profileQrCode}), ''), NULLIF(btrim(${eventRegistrations.profileQrCode}), ''), 'ARMSPHERE-ATHLETE-QR:' || ${athleteProfiles.userId}::text)`,
+        division: eventRegistrations.division,
+        weightClass: eventRegistrations.weightClass,
+        arm: eventRegistrations.arm,
+        status: eventRegistrations.status,
+        checkedInAt: eventRegistrations.checkedInAt,
+        checkedInBy: eventRegistrations.checkedInBy,
+      })
+      .from(eventRegistrations)
+      .innerJoin(athleteProfiles, eq(athleteProfiles.id, eventRegistrations.athleteId))
+      .innerJoin(users, eq(users.id, athleteProfiles.userId))
+      .where(
+        and(
+          eq(eventRegistrations.eventId, eventId),
+          userConditions.length > 0 ? or(...userConditions) : eq(eventRegistrations.profileQrCode, parsed.raw)
+        )
+      )
+      .limit(1);
+
+    if (eventRegs.length > 0) {
+      const reg = eventRegs[0];
+      if (reg.status === "REJECTED" || reg.status === "CANCELLED" || reg.status === "WITHDRAWN") {
+        throw new BadRequestError(`Athlete registration is ${reg.status.toLowerCase()} and not eligible for check-in.`);
+      }
+      return reg;
+    }
+
+    // Distinguish invalid QR identity from valid ArmSphere user who simply isn't registered in this tournament
+    const accountMatches = userConditions.length > 0
+      ? await db
+          .select({ id: users.id, fullName: users.fullName })
+          .from(users)
+          .leftJoin(athleteProfiles, eq(athleteProfiles.userId, users.id))
+          .where(
+            or(
+              ...(parsed.canonicalQr ? [sql`lower(${users.profileQrCode}) = lower(${parsed.canonicalQr})`] : []),
+              ...(parsed.candidateUuid ? [eq(users.id, parsed.candidateUuid), eq(athleteProfiles.id, parsed.candidateUuid)] : [])
+            )
+          )
+          .limit(1)
+      : [];
+
+    if (accountMatches.length > 0) {
+      throw new NotFoundError(
+        `${accountMatches[0].fullName} is not registered in this tournament.`
+      );
+    }
+
+    throw new BadRequestError(
+      "Invalid Profile QR Code or athlete is not registered in this tournament."
+    );
+  }
+
+  /**
+   * 1. Operator Registry & Venue Entrance Gate Check-In via Permanent Profile QR Code.
+   */
+  static async verifyEntranceQr(
+    eventId: string,
+    rawQrInput: string,
+    actorId: string,
+    accompanyingGuests: number = 0
+  ) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
+    await this.authorizeEventOfficialOrReferee(event, actorId, "verify venue gate check-in for");
+
+    const reg = await this.resolveRegisteredAthleteByProfileQr(eventId, rawQrInput);
+    const alreadyCheckedIn = reg.checkedInAt != null;
+    let checkedInAt = reg.checkedInAt;
+
+    if (!alreadyCheckedIn) {
+      const now = new Date();
+      const [updated] = await db
+        .update(eventRegistrations)
+        .set({
+          checkedInAt: now,
+          checkedInBy: actorId,
+          updatedAt: now,
+        })
+        .where(eq(eventRegistrations.id, reg.registrationId))
+        .returning({ checkedInAt: eventRegistrations.checkedInAt });
+
+      checkedInAt = updated?.checkedInAt ?? now;
+
+      await db.insert(auditLogs).values({
+        userId: actorId,
+        action: "GATE_CHECKIN_VERIFIED",
+        details: {
+          eventId,
+          registrationId: reg.registrationId,
+          athleteId: reg.athleteId,
+          profileQrCode: reg.profileQrCode,
+          accompanyingGuests,
+        },
+      });
+    }
+
+    return {
+      allowed: true,
+      verified: true,
+      alreadyCheckedIn,
+      registrationId: reg.registrationId,
+      eventId: reg.eventId,
+      athleteId: reg.athleteId,
+      userId: reg.userId,
+      athleteName: reg.athleteName,
+      holderName: reg.athleteName,
+      profileQrCode: reg.profileQrCode,
+      division: reg.division,
+      weightClass: reg.weightClass,
+      arm: reg.arm,
+      status: reg.status,
+      checkedInAt,
+      accompanyingGuests,
+      headline: alreadyCheckedIn
+        ? "ALREADY CHECKED IN • ATHLETE VERIFIED ✓"
+        : "GREEN-LIGHT • VERIFIED ATHLETE & GUESTS ALLOWED ✓",
+      detail: `${reg.athleteName} (${reg.division} • ${reg.weightClass} • ${reg.arm}) verified via permanent Profile QR Code.`,
+    };
+  }
+
+  /**
+   * 2. Stage 04 Weigh-In Scanner via Permanent Profile QR Code.
+   */
+  static async scanWeighInQr(
+    eventId: string,
+    rawQrInput: string,
+    actorId: string
+  ) {
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
+    await this.authorizeEventOfficialOrReferee(event, actorId, "scan weigh-in QR for");
+
+    const reg = await this.resolveRegisteredAthleteByProfileQr(eventId, rawQrInput);
+
+    const priorWeighins = await db
+      .select()
+      .from(officialWeighins)
+      .where(eq(officialWeighins.registrationId, reg.registrationId))
+      .orderBy(desc(officialWeighins.attemptNumber));
+
+    return {
+      verified: true,
+      verifiedSignature: true,
+      id: reg.registrationId,
+      registrationId: reg.registrationId,
+      eventId: reg.eventId,
+      athleteId: reg.athleteId,
+      userId: reg.userId,
+      athleteName: reg.athleteName,
+      profileQrCode: reg.profileQrCode,
+      division: reg.division,
+      weightClass: reg.weightClass,
+      arm: reg.arm,
+      status: reg.status,
+      checkedInAt: reg.checkedInAt,
+      priorWeighins,
+      isLocked: priorWeighins.some((w) => w.isLocked),
+    };
+  }
+
+  /**
+   * 3. Referee Table & Active Match Scanner via Permanent Profile QR Code.
+   */
+  static async verifyTableAthleteQr(params: {
+    eventId: string;
+    tableId: string;
+    rawQrInput: string;
+    matchId?: string;
+    actorId: string;
+  }) {
+    const { eventId, tableId, rawQrInput, matchId, actorId } = params;
+
+    const [event] = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+    if (!event) {
+      throw new NotFoundError("Tournament event not found.");
+    }
+
+    await this.authorizeEventOfficialOrReferee(event, actorId, "verify athlete on table for");
+
+    const [table] = await db
+      .select()
+      .from(matchTables)
+      .where(and(eq(matchTables.id, tableId), eq(matchTables.eventId, eventId)))
+      .limit(1);
+    if (!table) {
+      throw new NotFoundError("Assigned match table not found in this tournament.");
+    }
+
+    const reg = await this.resolveRegisteredAthleteByProfileQr(eventId, rawQrInput);
+    const athleteMatches = await this.getEventMatches(eventId);
+    const matchesInvolvingAthlete = athleteMatches.filter(
+      (m) =>
+        m.athleteAId === reg.athleteId ||
+        m.athleteBId === reg.athleteId
+    );
+
+    if (matchesInvolvingAthlete.length === 0) {
+      throw new NotFoundError(`${reg.athleteName} does not have a scheduled bout in this tournament yet.`);
+    }
+
+    // Check specific matchId if supplied
+    let candidateBout = matchId
+      ? matchesInvolvingAthlete.find((m) => m.id === matchId)
+      : undefined;
+
+    if (matchId && !candidateBout) {
+      throw new ConflictError(`${reg.athleteName} is not assigned to the selected bout.`);
+    }
+
+    if (!candidateBout) {
+      // Prioritize active/called/ready bout on THIS table
+      candidateBout = matchesInvolvingAthlete.find(
+        (m) =>
+          m.tableId === tableId &&
+          !["COMPLETED", "VERIFIED", "CANCELLED"].includes((m.status || "").toUpperCase())
+      );
+
+      if (!candidateBout) {
+        // Check if athlete has an active bout on a DIFFERENT table
+        const wrongTableBout = matchesInvolvingAthlete.find(
+          (m) =>
+            m.tableId &&
+            m.tableId !== tableId &&
+            !["COMPLETED", "VERIFIED", "CANCELLED"].includes((m.status || "").toUpperCase())
+        );
+        if (wrongTableBout) {
+          throw new ConflictError(
+            `Wrong table assignment: ${reg.athleteName}'s active bout is assigned to another table, not ${table.name}.`
+          );
+        }
+
+        const completedOnly = matchesInvolvingAthlete.some(
+          (m) => ["COMPLETED", "VERIFIED"].includes((m.status || "").toUpperCase())
+        );
+        if (completedOnly) {
+          throw new ConflictError(`${reg.athleteName}'s bout has already been completed.`);
+        }
+
+        throw new BadRequestError(`${reg.athleteName} has no active bout assigned to ${table.name}.`);
+      }
+    }
+
+    if (candidateBout.tableId && candidateBout.tableId !== tableId) {
+      throw new ConflictError(
+        `Wrong table assignment: this bout is assigned to another table, not ${table.name}.`
+      );
+    }
+
+    if (["COMPLETED", "VERIFIED"].includes((candidateBout.status || "").toUpperCase())) {
+      throw new ConflictError("This bout is already completed and locked.");
+    }
+
+    const corner = candidateBout.athleteAId === reg.athleteId ? "A" : "B";
+
+    await db.insert(auditLogs).values({
+      userId: actorId,
+      action: "REFEREE_TABLE_ATHLETE_QR_VERIFIED",
+      details: {
+        eventId,
+        tableId,
+        matchId: candidateBout.id,
+        athleteId: reg.athleteId,
+        corner,
+        profileQrCode: reg.profileQrCode,
+      },
+    });
+
+    return {
+      verified: true,
+      eventId,
+      tableId,
+      tableName: table.name,
+      corner,
+      athlete: {
+        registrationId: reg.registrationId,
+        athleteId: reg.athleteId,
+        userId: reg.userId,
+        athleteName: reg.athleteName,
+        profileQrCode: reg.profileQrCode,
+        division: reg.division,
+        weightClass: reg.weightClass,
+        arm: reg.arm,
+      },
+      bout: candidateBout,
+    };
   }
 }

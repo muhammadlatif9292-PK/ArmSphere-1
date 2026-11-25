@@ -30,10 +30,10 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
     {
       'title': 'Competition Rules',
       'icon': Icons.gavel_rounded,
-      'badge': 'IFA / WAF STANDARDS',
+      'badge': 'PRO STANDARDS',
       'accentColor': AppTheme.goldPrimary,
       'content': [
-        '• Standard IFA / WAF double-elimination bracket format applied to all weight classes.',
+        '• Standard double-elimination bracket format applied to all weight classes.',
         '• Matches are best-of-3 pins for Finals; single pin for preliminary qualifiers.',
         '• Competitors must line up wrists in center position with thumb knuckle visible.',
         '• Ready-Go signal by referee must be met without pre-pressure or false starts.',
@@ -43,10 +43,10 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
     {
       'title': 'Equipment Specifications',
       'icon': Icons.straighten_rounded,
-      'badge': 'PAFF CERTIFIED',
+      'badge': 'PRO SPEC',
       'accentColor': const Color(0xFF00E5FF),
       'content': [
-        '• Official PAFF Tournament Tables: 28-inch pin lines, 7x7 inch elbow pads.',
+        '• Official Competition Tables: 28-inch pin lines, 7x7 inch elbow pads.',
         '• Touch pad height 4 inches above table level; standard 1-inch diameter hand pegs.',
         '• Official competition wrist straps provided by referee at table.',
         '• Magnesium carbonate liquid chalk provided at athlete prep stations.',
@@ -95,7 +95,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
       'content': [
         '• Strict compliance with WADA Prohibited List for competitive armwrestling.',
         '• Random urine sample testing conducted on podium medalists post-event.',
-        '• Refusal to submit to testing leads to automatic 2-year PAFF suspension.',
+        '• Refusal to submit to testing leads to automatic 2-year competition suspension.',
       ],
     },
     {
@@ -106,7 +106,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
       'content': [
         '• Formal protest must be lodged within 15 minutes of match conclusion.',
         '• Protest Fee: PKR 5,000 refundable if appeal is upheld by jury panel.',
-        '• Jury consists of Head Referee, PAFF Technical Delegate, and Neutral Official.',
+        '• Jury consists of Head Referee, Technical Delegate, and Neutral Official.',
       ],
     },
   ];
@@ -189,7 +189,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                     border: Border.all(color: AppTheme.goldPrimary.withValues(alpha: 0.5)),
                   ),
                   child: const Text(
-                    'IFA 2026',
+                    '2026 RULES',
                     style: TextStyle(
                       fontFamily: AppTheme.fontDisplay,
                       fontSize: 8.5,
@@ -320,7 +320,7 @@ class _RulebookAccordionWidgetState extends State<RulebookAccordionWidget> {
                 HapticFeedback.mediumImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   CrystalSnackBar(
-                    content: Text('✓ Downloading PAFF Official Tournament Rulebook 2026 (PDF - 2.4 MB)...'),
+                    content: Text('✓ Downloading Official Tournament Rulebook 2026 (PDF - 2.4 MB)...'),
                     backgroundColor: AppTheme.goldPrimary,
                   ),
                 );

@@ -47,13 +47,13 @@ class TournamentNotifier extends AutoDisposeAsyncNotifier<List<Map<String, dynam
       });
       await repo.emitLifecycleNotification(
         title: "You're locked in for Competition!",
-        body: 'Registration confirmed for $division · $weightClass · $arm Arm. Your Event QR Passport is ready.',
+        body: 'Registration confirmed for $division · $weightClass · $arm Arm. Present your Profile QR Code at weigh-in, venue entrance, and your assigned table.',
         type: 'REGISTRATION_CONFIRMED',
         eventId: eventId,
       );
       await repo.emitLifecycleNotification(
         title: '24-Hour Weigh-In Reminder',
-        body: 'Present your Event QR Passport at the official digital scale window (08:00–10:00).',
+        body: 'Present your Profile QR Code at the official digital scale window (08:00–10:00).',
         type: 'WEIGH_IN_REMINDER',
         eventId: eventId,
       );
@@ -482,8 +482,14 @@ final organizationChampionsProvider = FutureProvider.autoDispose.family<List<Map
   return repo.getOrganizationChampions(orgId);
 });
 
+final organizationOfficialsProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, orgId) async {
+  ref.watch(authSessionScopeProvider);
+  final repo = ref.watch(organizationRepositoryProvider);
+  return repo.getPublicOrganizationOfficials(orgId);
+});
+
 // =============================================================================
-// ATHLETE COMPETITIONS & EVENT QR PASSPORT PROVIDERS
+// ATHLETE COMPETITIONS PROVIDER
 // =============================================================================
 
 final myRegistrationsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -492,20 +498,3 @@ final myRegistrationsProvider = FutureProvider.autoDispose<List<Map<String, dyna
   final athleteId = auth.userProfile?['id']?.toString();
   return repo.getMyRegistrations(athleteId: athleteId);
 });
-
-final eventQrProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, ({String eventId, String registrationId})>((ref, args) async {
-  final repo = ref.watch(tournamentRepositoryProvider);
-  final auth = ref.watch(authProvider);
-  final athleteId = auth.userProfile?['id']?.toString() ?? 'athlete_verified';
-  final athleteName = (auth.userProfile?['displayName'] ??
-          auth.userProfile?['fullName'] ??
-          'Registered Competitor')
-      .toString();
-  return repo.getRegistrationQr(
-    eventId: args.eventId,
-    registrationId: args.registrationId,
-    athleteId: athleteId,
-    athleteName: athleteName,
-  );
-});
-

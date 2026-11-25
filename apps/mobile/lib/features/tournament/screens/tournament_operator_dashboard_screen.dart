@@ -883,11 +883,17 @@ class _TournamentOperatorDashboardScreenState
                 'registrationFeeCents': feePkr * 100,
                 'startDate': startDt.toUtc().toIso8601String(),
                 'endDate': endDt.toUtc().toIso8601String(),
+                'weightCategories': releasedRecord['weightCategories'],
+                'formatCategory': releasedRecord['formatCategory'],
+                'eliminationSubFormat': releasedRecord['eliminationSubFormat'],
+                'entryFeePkr': feePkr,
+                'awardsConfig': releasedRecord['awardsConfig'],
+                'spectatorGateConfig': releasedRecord['spectatorGateConfig'],
                 'step1Config': releasedRecord,
               },
             );
       } else {
-        await ref.read(tournamentProvider.notifier).createEvent(
+        final created = await ref.read(tournamentProvider.notifier).createEvent(
               data: {
                 'name': releasedRecord['name'],
                 'organizationName': releasedRecord['organizationName'],
@@ -906,10 +912,27 @@ class _TournamentOperatorDashboardScreenState
                 'startDate': startDt.toUtc().toIso8601String(),
                 'endDate': endDt.toUtc().toIso8601String(),
                 'status': 'REGISTRATION_OPEN',
+                'weightCategories': releasedRecord['weightCategories'],
+                'formatCategory': releasedRecord['formatCategory'],
+                'eliminationSubFormat': releasedRecord['eliminationSubFormat'],
+                'entryFeePkr': feePkr,
+                'awardsConfig': releasedRecord['awardsConfig'],
+                'spectatorGateConfig': releasedRecord['spectatorGateConfig'],
                 'step1Config': releasedRecord,
               },
               publishImmediately: true,
             );
+        final serverId = created?['id']?.toString().trim() ?? '';
+        if (serverId.isNotEmpty) {
+          final hive = ref.read(hiveStorageProvider);
+          await TournamentOfflineStore.upsertReleasedTournament(hive, {
+            ...releasedRecord,
+            ...?created,
+            'id': serverId,
+            'weightCategories': releasedRecord['weightCategories'],
+            'step1Config': releasedRecord,
+          });
+        }
       }
     } catch (_) {
       // Offline outbox already queued or saved locally — never show a blocking error
@@ -1172,7 +1195,7 @@ class _TournamentOperatorDashboardScreenState
                 child: CrystalVaporDissolve(
                   bottomMargin: (_activeView == _OperatorSubView.mainList &&
                           MainShellScope.isInsideShell(context))
-                      ? (kFloatingDockTotalHeight + 6.0)
+                      ? (kFloatingDockTotalHeight - 34.0)
                       : 0.0,
                   child: tournamentsAsync.when(
                     loading: () => ListView.separated(
@@ -1180,7 +1203,7 @@ class _TournamentOperatorDashboardScreenState
                         AppTheme.space16,
                         16,
                         AppTheme.space16,
-                        28,
+                        72,
                       ),
                       itemCount: 3,
                       separatorBuilder: (_, __) =>
@@ -1260,10 +1283,6 @@ class _TournamentOperatorDashboardScreenState
             if (activeOrgName != null &&
                 activeOrgName.isNotEmpty &&
                 eventOrgName.contains(activeOrgName.toLowerCase())) {
-              return true;
-            }
-            // Legacy PAFF events with null organizationId match org_paff_national
-            if (eventOrgId.isEmpty && activeOrgId == 'org_paff_national') {
               return true;
             }
             return false;
@@ -2186,7 +2205,7 @@ class _TournamentOperatorDashboardScreenState
         AppTheme.space16,
         10,
         AppTheme.space16,
-        36,
+        74,
       ),
       children: [
         // Prominent Forged 24k Gold & Crimson-Obsidian Crystal Button
@@ -3630,7 +3649,7 @@ class _Card1BasicDetailsViewState extends ConsumerState<_Card1BasicDetailsView> 
                         style: const TextStyle(fontSize: 14.5),
                         decoration: const InputDecoration(
                           labelText: 'Organization *',
-                          hintText: 'e.g. Pakistan Arm-Wrestling Federation',
+                          hintText: 'e.g. Regional Armwrestling League',
                           prefixIcon: Icon(Icons.shield_outlined, size: 18),
                         ),
                         onChanged: (val) =>

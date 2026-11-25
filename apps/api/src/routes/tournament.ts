@@ -45,6 +45,18 @@ tournamentRouter.get(
   TournamentController.getEventRegistrations
 );
 
+tournamentRouter.get(
+  "/events/:id/my-registration",
+  authenticate,
+  TournamentController.getMyEventRegistration
+);
+
+tournamentRouter.patch(
+  "/events/:id/registrations/me",
+  authenticate,
+  TournamentController.updateMyEventRegistration
+);
+
 tournamentRouter.post(
   "/events/:id/cancel",
   authenticate,
@@ -121,6 +133,28 @@ tournamentRouter.post(
   authenticate,
   requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
   TournamentController.certifyWeighIn
+);
+
+// --- Unified Permanent Profile QR Verification Chain ---
+tournamentRouter.post(
+  "/events/:id/gate/verify-qr",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.verifyEntranceQr
+);
+
+tournamentRouter.post(
+  "/events/:id/weigh-in/scan-qr",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.scanWeighInQr
+);
+
+tournamentRouter.post(
+  "/events/:id/tables/:tableId/verify-athlete-qr",
+  authenticate,
+  requireRole(UserRole.REFEREE, UserRole.TOURNAMENT_OPERATOR, UserRole.PROVINCIAL_DIRECTOR, UserRole.NATIONAL_DIRECTOR, UserRole.SYSTEM_ADMIN),
+  TournamentController.verifyTableAthleteQr
 );
 
 // --- Seeding & Brackets ---

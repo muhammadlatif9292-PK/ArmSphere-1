@@ -479,11 +479,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -539,7 +540,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               AppTheme.space16,
                               0.0,
                               AppTheme.space16,
-                              28.0,
+                              66.0,
                             ),
                             sliver: SliverToBoxAdapter(
                               child: _activeQuery.isNotEmpty
@@ -1203,7 +1204,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final org = orgs[index];
-                final id = (org['id'] ?? 'org_paff_national').toString();
+                final id = (org['id'] ?? '').toString();
                 final name = ArmSphereFormatters.formatOrganizationName(
                   org['name']?.toString(),
                   fallback: 'Organization',

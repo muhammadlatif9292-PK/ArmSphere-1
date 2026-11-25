@@ -129,7 +129,7 @@ export async function seedStaging() {
       status: "ACTIVE",
       issuedAt: new Date(Date.now() - 86400000 * 30),
       expiresAt: new Date(Date.now() + 86400000 * 365),
-      issuingBody: "Pakistan Armwrestling Federation",
+      issuingBody: "ArmSphere Staging Organization",
     }).onConflictDoNothing();
     console.log("  ✓ Provisioned active National Referee Certification for referee.");
 

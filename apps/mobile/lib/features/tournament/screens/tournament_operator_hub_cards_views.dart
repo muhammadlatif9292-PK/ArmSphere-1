@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/crystal_horizontal_chip_strip.dart';
 import '../../../core/widgets/crystal_toast.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../services/tournament_offline_store.dart';
 
 // =============================================================================
 // SHARED HOLD-TO-READ (LONG PRESS FULL TEXT PREVIEW) & WEIGHT/DIVISION HELPERS
@@ -175,11 +176,24 @@ String resolveAthleteClub(Map<String, dynamic> athlete) {
 }
 
 String resolveAthleteQr(Map<String, dynamic> athlete) {
-  final qr =
-      (athlete['qrCode'] ?? athlete['qrCodePayload'] ?? athlete['id'] ?? '')
+  final explicit = (athlete['profileQrCode'] ??
+          athlete['settingsIdentityQr'] ??
+          athlete['qrCode'] ??
+          athlete['qrCodePayload'] ??
+          '')
+      .toString()
+      .trim();
+  if (explicit.isNotEmpty) return explicit;
+  final uid =
+      (athlete['userId'] ?? athlete['athleteId'] ?? athlete['id'] ?? '')
           .toString()
           .trim();
-  return qr;
+  if (uid.isNotEmpty) {
+    return TournamentOfflineStore.buildSettingsAthleteIdentityQr(
+      athleteId: uid,
+    );
+  }
+  return '';
 }
 
 String eloTierBadgeForRating(int elo) {
@@ -245,6 +259,7 @@ class Card2AppliedAthletesView extends StatefulWidget {
     final prCtrl = TextEditingController(text: '60 kg Max Lift');
     final maxLiftCtrl = TextEditingController(text: '60');
     String? selectedAthleteId;
+    String? selectedProfileQrCode;
     List<Map<String, dynamic>> searchMatches = [];
     bool isSearching = false;
     Timer? debounceTimer;
@@ -440,7 +455,13 @@ class Card2AppliedAthletesView extends StatefulWidget {
                                     nameCtrl.text = aName;
                                     clubCtrl.text = aClub;
                                     eloCtrl.text = aElo;
-                                    selectedAthleteId = (athlete['id'] ?? athlete['userId'] ?? athlete['athleteId'] ?? '').toString();
+                                    selectedAthleteId = (athlete['userId'] ??
+                                            athlete['id'] ??
+                                            athlete['athleteId'] ??
+                                            '')
+                                        .toString();
+                                    selectedProfileQrCode =
+                                        athlete['profileQrCode']?.toString();
                                     searchMatches = [];
                                   });
                                 },
@@ -664,8 +685,6 @@ class Card2AppliedAthletesView extends StatefulWidget {
                           final prSummary = prCtrl.text.trim().isEmpty
                               ? '${maxLiftKg.toStringAsFixed(0)} kg Max Lift'
                               : prCtrl.text.trim();
-                          final idx = appliedAthletes.length + 1;
-                          final tId = (tournament['id'] ?? 'TRN').toString();
                           final rawDivLabel =
                               selectedDiv['label'] ?? '80 kg • Right Arm';
                           final weightPart =
@@ -675,12 +694,21 @@ class Card2AppliedAthletesView extends StatefulWidget {
                               (rawDivLabel.toUpperCase().contains('LEFT')
                                   ? 'LEFT'
                                   : 'RIGHT');
-                          final qrStr =
-                              'ARMSPHERE-$tId-ATH-${idx.toString().padLeft(3, '0')}';
-                          final effectiveAthleteId = selectedAthleteId ??
-                              'ath-reg-${DateTime.now().millisecondsSinceEpoch}';
+                          final effectiveAthleteId = (selectedAthleteId != null &&
+                                  selectedAthleteId!.trim().isNotEmpty)
+                              ? selectedAthleteId!.trim()
+                              : 'ath-reg-${DateTime.now().millisecondsSinceEpoch}';
+                          final canonicalProfileQr = (selectedProfileQrCode !=
+                                      null &&
+                                  selectedProfileQrCode!.trim().isNotEmpty)
+                              ? selectedProfileQrCode!.trim()
+                              : TournamentOfflineStore
+                                  .buildSettingsAthleteIdentityQr(
+                                  athleteId: effectiveAthleteId,
+                                );
                           final newAthlete = <String, dynamic>{
                             'id': effectiveAthleteId,
+                            'userId': effectiveAthleteId,
                             'athleteId': effectiveAthleteId,
                             'athleteName': name,
                             'club': clubCtrl.text.trim().isEmpty
@@ -699,8 +727,10 @@ class Card2AppliedAthletesView extends StatefulWidget {
                             'registeredArm': armPart,
                             'arm': armPart,
                             'categoryLabel': rawDivLabel,
-                            'qrCode': qrStr,
-                            'qrCodePayload': qrStr,
+                            'profileQrCode': canonicalProfileQr,
+                            'settingsIdentityQr': canonicalProfileQr,
+                            'qrCode': canonicalProfileQr,
+                            'qrCodePayload': canonicalProfileQr,
                             'appliedAt': DateTime.now().toIso8601String(),
                             'weighInStatus': 'PENDING',
                             'measuredWeightKg': null,
@@ -740,13 +770,13 @@ class Card2AppliedAthletesView extends StatefulWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.qr_code_2_rounded,
+                                Icons.person_add_alt_1_rounded,
                                 color: AppTheme.goldPrimary,
                                 size: 18,
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'ADD ATHLETE & GENERATE QR PASS',
+                                'ADD ATHLETE TO REGISTRY',
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontWeight: FontWeight.w900,
@@ -1621,17 +1651,25 @@ class _Card4WeighInVerificationViewState
     final query = rawInput.trim().toLowerCase();
     if (query.isEmpty) return;
 
-    Map<String, dynamic>? matched;
-    for (final a in _athletesList) {
-      final qr = resolveAthleteQr(a).toLowerCase();
-      final id = (a['id'] ?? '').toString().toLowerCase();
-      final name = (a['athleteName'] ?? '').toString().toLowerCase();
-      if (qr == query ||
-          id == query ||
-          qr.contains(query) ||
-          name.contains(query)) {
-        matched = a;
-        break;
+    Map<String, dynamic>? matched =
+        TournamentOfflineStore.resolveAthleteFromQrOrQuery(
+      tournament: <String, dynamic>{'appliedAthletes': _athletesList},
+      rawInput: rawInput,
+    );
+    if (matched == null) {
+      for (final a in _athletesList) {
+        final qr = resolveAthleteQr(a).toLowerCase();
+        final id = (a['id'] ?? '').toString().toLowerCase();
+        final userId = (a['userId'] ?? '').toString().toLowerCase();
+        final name = (a['athleteName'] ?? '').toString().toLowerCase();
+        if (qr == query ||
+            id == query ||
+            userId == query ||
+            qr.contains(query) ||
+            name.contains(query)) {
+          matched = a;
+          break;
+        }
       }
     }
 
@@ -1641,7 +1679,7 @@ class _Card4WeighInVerificationViewState
       if (showToast && mounted) {
         CrystalToast.show(
           context,
-          title: 'QR Verified on Scale',
+          title: 'Profile QR Verified on Scale',
           message:
               'Loaded ${matched['athleteName']} (${matched['categoryLabel']}) for scale verification.',
           type: CrystalToastType.success,
@@ -1962,7 +2000,7 @@ class _Card4WeighInVerificationViewState
                                 ),
                                 SizedBox(height: 2),
                                 Text(
-                                  'Scan athlete QR pass or select puller below',
+                                  'Scan Athlete Profile QR Code or select puller below',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: AppTheme.textSecondary,
@@ -2023,8 +2061,8 @@ class _Card4WeighInVerificationViewState
                         ),
                         decoration: InputDecoration(
                           isDense: true,
-                          labelText: 'Athlete QR Code or Name',
-                          hintText: 'Scan QR or type athlete name...',
+                          labelText: 'Athlete Profile QR Code or Name',
+                          hintText: 'Scan Profile QR or type athlete name...',
                           prefixIcon: const Icon(
                             Icons.qr_code_2_rounded,
                             size: 18,
@@ -2070,7 +2108,7 @@ class _Card4WeighInVerificationViewState
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'SCAN ATHLETE QR PASS',
+                                'SCAN PROFILE QR CODE',
                                 style: TextStyle(
                                   fontFamily: AppTheme.fontDisplay,
                                   fontWeight: FontWeight.w900,
@@ -2916,6 +2954,53 @@ class _SpectatorEntranceQrGateViewState
       }
     }
 
+    final matchedAthlete =
+        TournamentOfflineStore.resolveAthleteFromQrOrQuery(
+      tournament: <String, dynamic>{'appliedAthletes': _athletes},
+      rawInput: rawQr,
+    );
+    if (matchedAthlete != null) {
+      HapticFeedback.heavyImpact();
+      final updatedAthletes = _athletes.map((a) {
+        if (a['id'] != matchedAthlete['id']) return a;
+        return <String, dynamic>{
+          ...a,
+          'checkedInAtGate': true,
+          'entranceCheckedIn': true,
+          'gateCheckedInAt': DateTime.now().toIso8601String(),
+        };
+      }).toList();
+      setState(() {
+        _athletes = updatedAthletes;
+        _gateScanStatus = 'ALLOWED';
+        _lastVerifiedGateEntry = {
+          'holderName': matchedAthlete['athleteName'],
+          'roleBadge': 'COMPETING ATHLETE (${matchedAthlete['categoryLabel']})',
+          'qrCode': resolveAthleteQr(matchedAthlete),
+          'guestsIncluded': _athleteGuestAllowance,
+          'feeStatus':
+              'PROFILE QR VERIFIED • + $_athleteGuestAllowance GUEST(S)',
+        };
+      });
+      if (widget.onUpdateAthletes != null) {
+        widget.onUpdateAthletes!(updatedAthletes);
+      }
+      _pushConfigUpdate(
+        actionType: 'CHECK_IN_ATHLETE_GATE_QR',
+        bannerMessage: 'Athlete Admitted at Gate',
+      );
+      if (showToast && mounted) {
+        CrystalToast.show(
+          context,
+          title: 'VERIFIED — ALLOWED TO ENTER ✓',
+          message:
+              'Athlete ${matchedAthlete['athleteName']} (+$_athleteGuestAllowance guest allowance) checked in.',
+          type: CrystalToastType.success,
+        );
+      }
+      return;
+    }
+
     for (final ath in _athletes) {
       final qr = resolveAthleteQr(ath).toLowerCase();
       final name = (ath['athleteName'] ?? '').toString().toLowerCase();
@@ -2939,7 +3024,7 @@ class _SpectatorEntranceQrGateViewState
             'qrCode': resolveAthleteQr(ath),
             'guestsIncluded': _athleteGuestAllowance,
             'feeStatus':
-                'REGISTERED ATHLETE + $_athleteGuestAllowance GUEST(S)',
+                'PROFILE QR VERIFIED • + $_athleteGuestAllowance GUEST(S)',
           };
         });
         if (widget.onUpdateAthletes != null) {
@@ -2966,48 +3051,14 @@ class _SpectatorEntranceQrGateViewState
       _gateScanStatus = 'NOT_FOUND';
       _lastVerifiedGateEntry = null;
     });
-  }
-
-  void _issueInstantSpectatorQrPass() {
-    FocusManager.instance.primaryFocus?.unfocus();
-    final idx = _passes.length + 1;
-    final rawId = (widget.tournament['id'] ?? 'TRN').toString().trim();
-    final status = (widget.tournament['status'] ?? '').toString().toUpperCase();
-    if (status == 'DRAFT' || rawId.toLowerCase().startsWith('draft_')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        CrystalSnackBar(
-          content: const Text('Publish this tournament before issuing official spectator QR passes.'),
-          backgroundColor: AppTheme.warning,
-          behavior: SnackBarBehavior.floating,
-        ),
+    if (showToast && mounted) {
+      CrystalToast.show(
+        context,
+        title: 'Profile QR Not Registered',
+        message: 'No registered athlete matched "$rawQr" in this tournament.',
+        type: CrystalToastType.warning,
       );
-      return;
     }
-    final tId = rawId.isEmpty ? 'TRN' : rawId;
-    final price = _spectatorMode == 'FREE'
-        ? 0
-        : (int.tryParse(_ticketPricePkrController.text.trim()) ?? 1000);
-    final newPass = <String, dynamic>{
-      'id': 'spec-pass-${DateTime.now().millisecondsSinceEpoch}',
-      'holderName': 'Arena Spectator #$idx',
-      'passType': _spectatorMode == 'FREE'
-          ? 'FREE SPECTATOR QR PASS'
-          : 'PAID SPECTATOR TICKET',
-      'pricePaidPkr': price,
-      'guestsIncluded': 0,
-      'qrCode': 'ARMSPHERE-$tId-SPEC-${idx.toString().padLeft(3, '0')}',
-      'checkedInAtGate': false,
-      'issuedAt': DateTime.now().toIso8601String(),
-    };
-    final next = [newPass, ..._passes];
-    setState(() {
-      _passes = next;
-    });
-    if (widget.onUpdateSpectatorPasses != null) {
-      widget.onUpdateSpectatorPasses!(next);
-    }
-    _gateScanQrController.text = newPass['qrCode'] as String;
-    _verifyEntranceQr(newPass['qrCode'] as String);
   }
 
   @override
@@ -3094,34 +3145,6 @@ class _SpectatorEntranceQrGateViewState
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: _issueInstantSpectatorQrPass,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2B2210), Color(0xFF141008)],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppTheme.goldPrimary,
-                            width: 1.1,
-                          ),
-                        ),
-                        child: const Text(
-                          '+ ISSUE PASS',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontDisplay,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w900,
-                            color: AppTheme.goldPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -3137,8 +3160,8 @@ class _SpectatorEntranceQrGateViewState
                   ),
                   decoration: InputDecoration(
                     isDense: true,
-                    labelText: 'Spectator or Athlete QR Pass',
-                    hintText: 'Scan QR Pass or type Holder Name...',
+                    labelText: 'Athlete Profile QR Code or Name',
+                    hintText: 'Scan Profile QR Code or type Athlete Name...',
                     prefixIcon: const Icon(
                       Icons.qr_code_2_rounded,
                       size: 18,
@@ -3179,7 +3202,7 @@ class _SpectatorEntranceQrGateViewState
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'SCAN QR PASS',
+                          'VERIFY PROFILE QR AT GATE',
                           style: TextStyle(
                             fontFamily: AppTheme.fontDisplay,
                             fontWeight: FontWeight.w900,

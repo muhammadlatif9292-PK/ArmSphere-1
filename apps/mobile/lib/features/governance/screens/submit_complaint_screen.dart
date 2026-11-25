@@ -133,7 +133,7 @@ class _SubmitComplaintScreenState extends ConsumerState<SubmitComplaintScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Disputes are reviewed by the WAF ethics committee. Provide clear references to matches, tables, or officials.',
+                        'Disputes are reviewed by the ArmSphere governance & ethics committee. Provide clear references to matches, tables, or officials.',
                         style: TextStyle(
                           fontFamily: AppTheme.fontBody,
                           fontSize: 12,

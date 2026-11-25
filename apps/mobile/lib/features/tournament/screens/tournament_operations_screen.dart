@@ -237,7 +237,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
     const allWeights = ['-70kg', '-75kg', '-85kg', '-95kg', '+95kg', 'OPEN'];
     const allArms = ['RIGHT', 'LEFT'];
     const allFormats = [
-      ('DOUBLE_ELIMINATION', 'Double Elimination (WAF / PAL Standard)'),
+      ('DOUBLE_ELIMINATION', 'Double Elimination (Standard)'),
       ('SINGLE_ELIMINATION', 'Single Elimination Knockout'),
       ('ROUND_ROBIN', 'Round Robin Pool'),
       ('SUPERMATCH', '6-Round Supermatch'),
@@ -2645,7 +2645,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
       text: (event['weighInWindow'] ?? '08:00 - 10:00 (Venue Digital Scale)').toString(),
     );
     final rulesetCtrl = TextEditingController(
-      text: (event['ruleset'] ?? 'WAF Pro Rules • Running Fouls • Double Elimination').toString(),
+      text: (event['ruleset'] ?? 'Pro Rules • Running Fouls • Double Elimination').toString(),
     );
 
     final saved = await showDialog<bool>(
@@ -2906,7 +2906,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                             ),
                             const SizedBox(width: 8),
                             const Text(
-                              'OPTICAL QR VIEWFINDER READY • HMAC-SHA256 VERIFIER',
+                              'OPTICAL PROFILE QR VIEWFINDER READY',
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 10,
@@ -2922,7 +2922,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'TAP REGISTERED ATHLETE PASS OR PASTE QR PAYLOAD:',
+                              'TAP REGISTERED ATHLETE OR PASTE PROFILE QR CODE:',
                               style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
                             ),
                           ),
@@ -2956,7 +2956,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                                       scaleWeightCtrl.text =
                                           (c < 300 ? (c - 0.6) : 98.5).toStringAsFixed(1);
                                       scanMessage =
-                                          'HMAC-SHA256 QR Signature Verified for ${r['athleteName'] ?? 'Athlete'}.';
+                                          'Profile QR Verified for ${r['athleteName'] ?? 'Athlete'}.';
                                     });
                                   },
                                 ),
@@ -2972,7 +2972,7 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                                 style: const TextStyle(fontSize: 12),
                                 decoration: const InputDecoration(
                                   isDense: true,
-                                  hintText: 'Paste ARMSPHERE_QR_V1 token...',
+                                  hintText: 'Scan or paste Athlete Profile QR Code...',
                                 ),
                               ),
                             ),
@@ -2981,19 +2981,41 @@ class _TournamentOperationsScreenState extends ConsumerState<TournamentOperation
                               onPressed: () async {
                                 final raw = qrTokenCtrl.text.trim();
                                 if (raw.isEmpty) return;
-                                final res = await ref
-                                    .read(tournamentRepositoryProvider)
-                                    .scanRegistrationQr(
-                                      eventId: widget.tournamentId,
-                                      qrToken: raw,
-                                      fallbackRegistrations: regs,
-                                    );
-                                setModalState(() {
-                                  signatureVerified = res['verified'] == true;
-                                  scanMessage = res['verified'] == true
-                                      ? 'Cryptographic QR signature verified.'
-                                      : 'QR token parsed.';
-                                });
+                                try {
+                                  final res = await ref
+                                      .read(tournamentRepositoryProvider)
+                                      .scanRegistrationQr(
+                                        eventId: widget.tournamentId,
+                                        qrToken: raw,
+                                        fallbackRegistrations: regs,
+                                      );
+                                  final matched = res['registration'] is Map
+                                      ? Map<String, dynamic>.from(
+                                          res['registration'] as Map,
+                                        )
+                                      : null;
+                                  final wc = matched?['weightClass']?.toString() ??
+                                      '-85kg';
+                                  final c = parseCeiling(wc);
+                                  setModalState(() {
+                                    signatureVerified = res['verified'] == true;
+                                    if (matched != null) {
+                                      scannedReg = matched;
+                                      scaleWeightCtrl.text = (c < 300 ? (c - 0.6) : 98.5)
+                                          .toStringAsFixed(1);
+                                    }
+                                    scanMessage = res['verified'] == true
+                                        ? 'Profile QR Verified for ${matched?['athleteName'] ?? 'Athlete'}.'
+                                        : 'Athlete registration not matched.';
+                                  });
+                                } catch (e) {
+                                  setModalState(() {
+                                    signatureVerified = false;
+                                    scanMessage = e
+                                        .toString()
+                                        .replaceFirst('Exception: ', '');
+                                  });
+                                }
                               },
                               child: const Text('VERIFY', style: TextStyle(fontSize: 11)),
                             ),

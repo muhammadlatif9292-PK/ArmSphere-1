@@ -66,7 +66,8 @@ import '../../features/organization/screens/create_organization_screen.dart';
 import '../../features/organization/screens/organization_portal_entry_screen.dart';
 import '../../features/organization/screens/organization_onboarding_screen.dart';
 import '../../features/organization/screens/organization_deck_screen.dart';
-import '../../features/tournament/screens/event_qr_passport_screen.dart';
+import '../../features/organization/screens/organization_certifications_screen.dart';
+import '../../features/tournament/screens/my_competitions_screen.dart';
 import '../../features/radar/screens/radar_screen.dart';
 import '../providers/organization_session_provider.dart';
 import '../security/admin_permissions.dart';
@@ -248,6 +249,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/organization/portal',
         '/organization/onboarding',
         '/organization/deck',
+        '/organization/certifications',
       };
 
       final orgSession = ref.read(organizationSessionProvider);
@@ -712,9 +714,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'tournament_registration',
         pageBuilder: (context, state) {
           final tournamentId = state.pathParameters['tournamentId'] ?? '';
+          final initialEvent = state.extra is Map
+              ? Map<String, dynamic>.from(state.extra as Map)
+              : null;
           return AppTransitionPage(
             key: state.pageKey,
-            child: EventRegistrationScreen(tournamentId: tournamentId),
+            child: EventRegistrationScreen(
+              tournamentId: tournamentId,
+              initialEvent: initialEvent,
+            ),
           );
         },
       ),
@@ -794,21 +802,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AppTransitionPage(
             key: state.pageKey,
             child: TournamentOperationsScreen(tournamentId: tournamentId),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/tournament/:tournamentId/qr',
-        name: 'tournament_qr_passport',
-        pageBuilder: (context, state) {
-          final tournamentId = state.pathParameters['tournamentId'] ?? '';
-          final regId = state.uri.queryParameters['registrationId'];
-          return AppTransitionPage(
-            key: state.pageKey,
-            child: EventQrPassportScreen(
-              tournamentId: tournamentId,
-              registrationId: regId,
-            ),
           );
         },
       ),
@@ -1077,9 +1070,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'event_registration_legacy',
         pageBuilder: (context, state) {
           final eventId = state.pathParameters['eventId'] ?? '';
+          final initialEvent = state.extra is Map
+              ? Map<String, dynamic>.from(state.extra as Map)
+              : null;
           return AppTransitionPage(
             key: state.pageKey,
-            child: EventRegistrationScreen(tournamentId: eventId),
+            child: EventRegistrationScreen(
+              tournamentId: eventId,
+              initialEvent: initialEvent,
+            ),
           );
         },
       ),
@@ -1581,10 +1580,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/organization/certifications',
+        name: 'organization_certifications',
+        pageBuilder: (context, state) => AppTransitionPage(
+          key: state.pageKey,
+          child: const OrganizationCertificationsScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/organizations/:organizationId',
         name: 'organization_profile',
         pageBuilder: (context, state) {
-          final orgId = state.pathParameters['organizationId'] ?? 'org_paff_national';
+          final orgId = state.pathParameters['organizationId'] ?? '';
           return AppTransitionPage(
             key: state.pageKey,
             child: OrganizationProfileScreen(organizationId: orgId),

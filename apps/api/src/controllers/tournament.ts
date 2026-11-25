@@ -21,6 +21,15 @@ const createEventSchema = z.object({
   organizerId: z.string().uuid().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: z.record(z.any()).optional(),
+  weightCategories: z.array(z.any()).optional(),
+  formatCategory: z.string().optional(),
+  eliminationSubFormat: z.string().optional(),
+  entryFeePkr: z.number().nonnegative().optional(),
+  awardsConfig: z.record(z.any()).optional(),
+  spectatorGateConfig: z.record(z.any()).optional(),
+  tableCount: z.number().int().optional(),
+  tables: z.array(z.any()).optional(),
+  appliedAthletes: z.array(z.any()).optional(),
   idempotencyKey: z.string().optional(),
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
@@ -42,6 +51,15 @@ const editEventSchema = z.object({
   organizerId: z.string().uuid().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"]).optional(),
   step1Config: z.record(z.any()).optional(),
+  weightCategories: z.array(z.any()).optional(),
+  formatCategory: z.string().optional(),
+  eliminationSubFormat: z.string().optional(),
+  entryFeePkr: z.number().nonnegative().optional(),
+  awardsConfig: z.record(z.any()).optional(),
+  spectatorGateConfig: z.record(z.any()).optional(),
+  tableCount: z.number().int().optional(),
+  tables: z.array(z.any()).optional(),
+  appliedAthletes: z.array(z.any()).optional(),
   idempotencyKey: z.string().optional(),
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
@@ -53,12 +71,29 @@ const registerAthleteSchema = z.object({
   division: z.string().min(2, "Division is required"),
   weightClass: z.string().min(2, "Weight class is required"),
   arm: z.enum(["LEFT", "RIGHT", "BOTH"]),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  allowUpdate: z.boolean().optional(),
+});
+
+const updateMyEventRegistrationSchema = z.object({
+  athleteId: z.string().uuid().optional(),
+  division: z.string().min(2, "Division is required"),
+  weightClass: z.string().min(2, "Weight class is required"),
+  arm: z.enum(["LEFT", "RIGHT", "BOTH"]),
+  notes: z.string().optional(),
 });
 
 const recordWeighInSchema = z.object({
   registrationId: z.string().uuid("Registration ID must be a valid UUID"),
   weight: z.number().positive("Weight must be positive")
+});
+
+const verifyProfileQrSchema = z.object({
+  profileQrCode: z.string().min(1).optional(),
+  qrPayload: z.string().min(1).optional(),
+  qrCode: z.string().min(1).optional(),
+  accompanyingGuests: z.number().int().min(0).max(20).optional(),
+  matchId: z.string().uuid().optional(),
 });
 
 const reassignSchema = z.object({
@@ -129,12 +164,15 @@ export class TournamentController {
     try {
       const { status, timeframe, organizerId, organizationId } = req.query;
       const parsedTimeframe = timeframe === "upcoming" || timeframe === "past" ? timeframe : undefined;
-      const eventsList = await TournamentService.listEvents({
-        status: status?.toString(),
-        timeframe: parsedTimeframe,
-        organizerId: organizerId?.toString(),
-        organizationId: organizationId?.toString(),
-      });
+      const eventsList = await TournamentService.listEvents(
+        {
+          status: status?.toString(),
+          timeframe: parsedTimeframe,
+          organizerId: organizerId?.toString(),
+          organizationId: organizationId?.toString(),
+        },
+        req.user?.id
+      );
       res.json(eventsList);
     } catch (error) {
       next(error);
@@ -144,8 +182,40 @@ export class TournamentController {
   static async getEvent(req: Request, res: Response, next: NextFunction) {
     try {
       const id = eventIdParamSchema.parse(req.params.id);
-      const event = await TournamentService.getEvent(id);
+      const event = await TournamentService.getEvent(id, req.user?.id);
       res.json(event);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getMyEventRegistration(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = eventIdParamSchema.parse(req.params.id);
+      const result = await TournamentService.getMyEventRegistration(id, req.user!.id);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateMyEventRegistration(req: Request, res: Response, next: NextFunction) {
+    try {
+      const eventId = eventIdParamSchema.parse(req.params.id);
+      const validated = updateMyEventRegistrationSchema.parse(req.body);
+      const registration = await TournamentService.registerAthlete(
+        eventId,
+        validated.athleteId || req.user!.id,
+        {
+          division: validated.division,
+          weightClass: validated.weightClass,
+          arm: validated.arm,
+          notes: validated.notes,
+          allowUpdate: true,
+        },
+        { userId: req.user!.id, role: req.user!.role }
+      );
+      res.json(registration);
     } catch (error) {
       next(error);
     }
@@ -230,7 +300,8 @@ export class TournamentController {
           division: validated.division,
           weightClass: validated.weightClass,
           arm: validated.arm,
-          notes: validated.notes
+          notes: validated.notes,
+          allowUpdate: validated.allowUpdate,
         },
         { userId: req.user!.id, role: req.user!.role }
       );
@@ -631,6 +702,70 @@ export class TournamentController {
       const { id } = req.params;
       const status = await FederationCertificateService.getEventSanctionCertificate(id);
       res.json({ success: true, data: status });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async verifyEntranceQr(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const parsed = verifyProfileQrSchema.parse(req.body ?? {});
+      const qrInput = (parsed.profileQrCode ?? parsed.qrPayload ?? parsed.qrCode ?? "").trim();
+      if (!qrInput) {
+        throw new BadRequestError("profileQrCode or qrPayload is required.");
+      }
+      const result = await TournamentService.verifyEntranceQr(
+        eventId,
+        qrInput,
+        req.user!.id,
+        parsed.accompanyingGuests ?? 0
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async scanWeighInQr(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const parsed = verifyProfileQrSchema.parse(req.body ?? {});
+      const qrInput = (parsed.profileQrCode ?? parsed.qrPayload ?? parsed.qrCode ?? "").trim();
+      if (!qrInput) {
+        throw new BadRequestError("profileQrCode or qrPayload is required.");
+      }
+      const result = await TournamentService.scanWeighInQr(
+        eventId,
+        qrInput,
+        req.user!.id
+      );
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async verifyTableAthleteQr(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id, tableId } = req.params;
+      const eventId = eventIdParamSchema.parse(id);
+      const parsedTableId = z.string().uuid("Table ID must be a valid UUID").parse(tableId);
+      const parsed = verifyProfileQrSchema.parse(req.body ?? {});
+      const qrInput = (parsed.profileQrCode ?? parsed.qrPayload ?? parsed.qrCode ?? "").trim();
+      if (!qrInput) {
+        throw new BadRequestError("profileQrCode or qrPayload is required.");
+      }
+      const result = await TournamentService.verifyTableAthleteQr({
+        eventId,
+        tableId: parsedTableId,
+        rawQrInput: qrInput,
+        matchId: parsed.matchId,
+        actorId: req.user!.id,
+      });
+      res.json({ success: true, data: result });
     } catch (error) {
       next(error);
     }

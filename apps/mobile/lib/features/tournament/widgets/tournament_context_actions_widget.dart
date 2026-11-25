@@ -510,7 +510,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
             ),
             const SizedBox(height: 8),
             const Text(
-              'Upload official doctor fit clearance for PAFF competitive armwrestling.',
+              'Upload official doctor fit clearance for competitive armwrestling.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
@@ -802,7 +802,7 @@ class _TournamentContextActionsWidgetState extends State<TournamentContextAction
             ],
           ),
           content: const Text(
-            'Official PAFF Live Stream is broadcasting live on YouTube & ArmSphere TV.',
+            'Official Event Live Stream is broadcasting live on YouTube & ArmSphere TV.',
             style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
           ),
           actions: [

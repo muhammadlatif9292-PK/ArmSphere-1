@@ -33,7 +33,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
     final officer = widget.tournament['chiefReferee']?.toString() ?? widget.tournament['weighMaster']?.toString() ?? 'Head Referee Desk';
     final scale = widget.tournament['scaleId']?.toString() ?? 'Calibrated Arena Digital Scale';
     final license = reg?['licenseNumber']?.toString() ?? reg?['license']?.toString() ?? 'National Athlete License';
-    final hash = reg?['signatureHash']?.toString() ?? 'PAFF-${widget.tournament['id'] ?? 'VERIFIED'}-SCALE';
+    final hash = reg?['signatureHash']?.toString() ?? 'ARM-${widget.tournament['id'] ?? 'VERIFIED'}-SCALE';
 
     return {
       'submittedWeight': '$submitted kg',
@@ -184,7 +184,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                   if (isApprovedAndLocked)
                     const WeighInClearanceStamp(
                       isApproved: true,
-                      clearanceText: 'PAFF VERIFIED',
+                      clearanceText: 'SCALE VERIFIED',
                     )
                   else
                     ScaleTransition(
@@ -710,7 +710,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
     final verificationData = _resolveVerificationData();
     final reg = (widget.tournament['userRegistration'] ?? widget.tournament['myRegistration']) as Map<String, dynamic>?;
     final athleteName = reg?['athleteName']?.toString() ?? reg?['userName']?.toString() ?? widget.tournament['athleteName']?.toString() ?? 'Registered Athlete';
-    final regId = reg?['id']?.toString() ?? reg?['registrationNumber']?.toString() ?? widget.tournament['registrationId']?.toString() ?? 'PAFF-REG';
+    final regId = reg?['id']?.toString() ?? reg?['registrationNumber']?.toString() ?? widget.tournament['registrationId']?.toString() ?? 'ARM-REG';
     final tournamentTitle = widget.tournament['name']?.toString() ?? widget.tournament['title']?.toString() ?? 'Official Championship';
     final division = reg?['categoryName']?.toString() ?? widget.tournament['category']?.toString() ?? 'Championship Division';
 
@@ -729,7 +729,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'PAFF Official Weigh-In Certificate',
+                  'Official Weigh-In Certificate',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -757,7 +757,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'CERTIFIED & LOCKED BY PAKISTAN ARMWRESTLING FEDERATION',
+                          'CERTIFIED & LOCKED BY EVENT SCALE OFFICIALS',
                           style: TextStyle(
                             color: Color(0xFF00E676),
                             fontSize: 10,
@@ -772,7 +772,7 @@ class _WeighInVerificationWidgetState extends State<WeighInVerificationWidget>
                 const Center(
                   child: WeighInClearanceStamp(
                     isApproved: true,
-                    clearanceText: 'OFFICIALLY CLEARED • PAFF',
+                    clearanceText: 'OFFICIALLY CLEARED',
                   ),
                 ),
                 const SizedBox(height: 14),

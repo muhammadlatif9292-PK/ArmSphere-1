@@ -745,11 +745,11 @@ class StageScrollContrastVeil extends StatelessWidget {
 /// 3D Vapor Dissolve scroll edge wrapper.
 ///
 /// Uses matched Top & Bottom smooth 3D Vapor-Dissolve stops:
-/// - `stops: const [0.0, 0.032, 0.955, 1.0]`
+/// - `stops: const [0.0, 0.015, 0.965, 1.0]`
 /// - `colors: const [Color(0x00FFFFFF), Color(0xFFFFFFFF), Color(0xFFFFFFFF), Color(0x00FFFFFF)]`
-/// Keeping 92.3% (`0.032` to `0.955`) of the scroll viewport at 100% full brightness (`0xFFFFFFFF`),
-/// and calibrating the bottom boundary to sit `18px` above the top border of the
-/// floating Bottom Navigation Pill.
+/// Keeping 95% (`0.015` to `0.965`) of the scroll viewport at 100% full brightness (`0xFFFFFFFF`),
+/// and calibrating the bottom boundary to dissolve right at the top rim of the
+/// floating Bottom Navigation Pill with zero blank gap.
 class CrystalVaporDissolve extends StatelessWidget {
   final Widget child;
   final bool enabled;
@@ -785,7 +785,7 @@ class CrystalVaporDissolve extends StatelessWidget {
         return const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          stops: <double>[0.0, 0.015, 0.985, 1.0],
+          stops: <double>[0.0, 0.015, 0.965, 1.0],
           colors: <Color>[
             Color(0x00FFFFFF),
             Color(0xFFFFFFFF),

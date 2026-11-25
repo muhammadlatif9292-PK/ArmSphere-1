@@ -25,7 +25,7 @@ import { generateAccessToken } from "@armsphere/cryptography";
 import env from "../config/env.js";
 
 // Helper to create a valid minimal PDF buffer for testing
-function createValidPdfBuffer(content = "PAFF Official Certificate Test"): Buffer {
+function createValidPdfBuffer(content = "ArmSphere Official Certificate Test"): Buffer {
   const header = "%PDF-1.4\n";
   const body = `1 0 obj\n<< /Title (${content}) >>\nendobj\n`;
   const padding = "%\n".repeat(30); // Ensure size > 100 bytes
@@ -342,7 +342,7 @@ describe("Federation Certificate & Sanction Closure Subsystem", () => {
   });
 
   describe("4. End-to-End Success & Idempotency (with verified test provider)", () => {
-    const validPdf = createValidPdfBuffer("PAFF Official Sanction Certificate 2026");
+    const validPdf = createValidPdfBuffer("ArmSphere Official Sanction Certificate 2026");
     const expectedHash = crypto.createHash("sha256").update(validPdf).digest("hex");
 
     const mockProvider: IFederationCertificateProvider = {
@@ -368,7 +368,7 @@ describe("Federation Certificate & Sanction Closure Subsystem", () => {
       );
 
       expect(result.status).toBe("ISSUED");
-      expect(result.certificateNumber).toMatch(/^PAFF-SANC-/);
+      expect(result.certificateNumber).toMatch(/^ARMS-SANC-/);
       expect(result.sha256Hash).toBe(expectedHash);
       expect(result.fileKey).toBe(`documents/certificates/sanction-${mockEventId}.pdf`);
 

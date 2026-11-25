@@ -1,7 +1,7 @@
 import { eq, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../config/db.js";
-import { users, userRoleGrants, roleApplications } from "@armsphere/db-schema";
+import { users, userRoleGrants, roleApplications, organizations, athleteProfiles } from "@armsphere/db-schema";
 import { BadRequestError, ForbiddenError, NotFoundError, ConflictError } from "@armsphere/core";
 import { UserRole } from "@armsphere/types";
 
@@ -308,6 +308,7 @@ export class UserRoleService {
     userId: string,
     role: string,
     details: {
+      targetOrganizationId?: string;
       experienceDetails?: string;
       certificationNumber?: string;
       documents?: any;
@@ -330,45 +331,94 @@ export class UserRoleService {
       );
     }
 
-    // Check if user already holds an ACTIVE grant
-    const existingGrants = await db
-      .select()
-      .from(userRoleGrants)
-      .where(
-        and(
-          eq(userRoleGrants.userId, userId),
-          eq(userRoleGrants.role, role),
-          eq(userRoleGrants.status, "ACTIVE")
-        )
-      )
-      .limit(1);
-
-    if (existingGrants.length > 0) {
-      throw new BadRequestError(`You already have an active verified grant for the role of ${role}.`);
+    let resolvedOrgId: string | null = null;
+    let resolvedOrgName: string | null = null;
+    if (role === UserRole.REFEREE) {
+      if (!details.targetOrganizationId) {
+        throw new BadRequestError(
+          "Please select a registered ArmSphere organization to apply for Referee certification."
+        );
+      }
+      const [org] = await db
+        .select({ id: organizations.id, name: organizations.name })
+        .from(organizations)
+        .where(eq(organizations.id, details.targetOrganizationId))
+        .limit(1);
+      if (!org) {
+        throw new NotFoundError("Selected certifying organization was not found.");
+      }
+      resolvedOrgId = org.id;
+      resolvedOrgName = org.name;
+    } else if (details.targetOrganizationId) {
+      const [org] = await db
+        .select({ id: organizations.id, name: organizations.name })
+        .from(organizations)
+        .where(eq(organizations.id, details.targetOrganizationId))
+        .limit(1);
+      if (!org) {
+        throw new NotFoundError("Selected organization was not found.");
+      }
+      resolvedOrgId = org.id;
+      resolvedOrgName = org.name;
     }
 
-    // Check for pending application
+    // For non-referee roles, prevent duplicate active grant.
+    // For REFEREE, an athlete may apply for certification with a different organization even if already a referee elsewhere,
+    // unless they already have a PENDING request for that same organization.
+    if (role !== UserRole.REFEREE) {
+      const existingGrants = await db
+        .select()
+        .from(userRoleGrants)
+        .where(
+          and(
+            eq(userRoleGrants.userId, userId),
+            eq(userRoleGrants.role, role),
+            eq(userRoleGrants.status, "ACTIVE")
+          )
+        )
+        .limit(1);
+
+      if (existingGrants.length > 0) {
+        throw new BadRequestError(`You already have an active verified grant for the role of ${role}.`);
+      }
+    }
+
+    // Check for pending application (scoped by org when applying to an organization)
+    const pendingConditions = [
+      eq(roleApplications.userId, userId),
+      eq(roleApplications.role, role),
+      eq(roleApplications.status, "PENDING"),
+    ];
+    if (resolvedOrgId) {
+      pendingConditions.push(eq(roleApplications.targetOrganizationId, resolvedOrgId));
+    }
+
     const existingApp = await db
       .select()
       .from(roleApplications)
-      .where(
-        and(
-          eq(roleApplications.userId, userId),
-          eq(roleApplications.role, role),
-          eq(roleApplications.status, "PENDING")
-        )
-      )
+      .where(and(...pendingConditions))
       .limit(1);
 
     if (existingApp.length > 0) {
       throw new ConflictError(
-        `An application for the role of ${role} is already pending review.`
+        resolvedOrgName
+          ? `A referee certification request to ${resolvedOrgName} is already pending review.`
+          : `An application for the role of ${role} is already pending review.`
       );
     }
+
+    // Resolve athlete profile ID if available
+    const [athleteProfile] = await db
+      .select({ id: athleteProfiles.id })
+      .from(athleteProfiles)
+      .where(eq(athleteProfiles.userId, userId))
+      .limit(1);
 
     const applicationRecord = {
       id: uuidv4(),
       userId,
+      athleteId: athleteProfile?.id || null,
+      targetOrganizationId: resolvedOrgId,
       role,
       status: "PENDING",
       experienceDetails: details.experienceDetails || null,
@@ -379,7 +429,10 @@ export class UserRoleService {
     };
 
     const [inserted] = await db.insert(roleApplications).values(applicationRecord as any).returning();
-    return inserted || applicationRecord;
+    return {
+      ...(inserted || applicationRecord),
+      targetOrganizationName: resolvedOrgName,
+    };
   }
 
   /**
@@ -451,14 +504,33 @@ export class UserRoleService {
   }
 
   /**
-   * Retrieves applications for a specific user.
+   * Retrieves applications for a specific user with target organization names.
    */
   static async getUserApplications(userId: string): Promise<any[]> {
-    return await db
-      .select()
+    const rows = await db
+      .select({
+        id: roleApplications.id,
+        userId: roleApplications.userId,
+        athleteId: roleApplications.athleteId,
+        targetOrganizationId: roleApplications.targetOrganizationId,
+        targetOrganizationName: organizations.name,
+        role: roleApplications.role,
+        status: roleApplications.status,
+        experienceDetails: roleApplications.experienceDetails,
+        certificationNumber: roleApplications.certificationNumber,
+        documents: roleApplications.documents,
+        reviewerId: roleApplications.reviewerId,
+        reviewedAt: roleApplications.reviewedAt,
+        reviewNotes: roleApplications.reviewNotes,
+        createdAt: roleApplications.createdAt,
+        updatedAt: roleApplications.updatedAt,
+      })
       .from(roleApplications)
+      .leftJoin(organizations, eq(roleApplications.targetOrganizationId, organizations.id))
       .where(eq(roleApplications.userId, userId))
       .orderBy(desc(roleApplications.createdAt));
+
+    return rows;
   }
 
   /**

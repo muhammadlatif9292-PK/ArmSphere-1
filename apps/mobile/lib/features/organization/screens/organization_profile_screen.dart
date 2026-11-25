@@ -133,7 +133,7 @@ class _OrganizationsDirectoryScreenState
                             ),
                             SizedBox(height: 3),
                             Text(
-                              'Official governing bodies recognized by PAFF / IFA. Tournament operations are managed through the Organization Portal.',
+                              'Verified ArmSphere sanctioning organizations. Tournament operations and official referee certifications are managed through the Organization Portal.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.textSecondary,
@@ -333,7 +333,7 @@ class _OrganizationDirectoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final id = (org['id'] ?? org['slug'] ?? 'org_paff_national').toString();
+    final id = (org['id'] ?? org['slug'] ?? '').toString();
     final name = ArmSphereFormatters.formatOrganizationName(
       org['name']?.toString(),
       fallback: 'Sanctioning Organization',
@@ -487,7 +487,8 @@ class _OrganizationProfileScreenState
         ref.watch(organizationEventsProvider(widget.organizationId));
     final championsAsync =
         ref.watch(organizationChampionsProvider(widget.organizationId));
-    final refereesAsync = ref.watch(refereeDirectoryProvider);
+    final refereesAsync =
+        ref.watch(organizationOfficialsProvider(widget.organizationId));
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
@@ -863,6 +864,19 @@ class _OrganizationProfileScreenState
     BuildContext context,
     List<Map<String, dynamic>> upcoming,
   ) {
+    final hive = ref.watch(hiveStorageProvider);
+    final auth = ref.watch(authProvider);
+    final profile = auth.userProfile ?? const <String, dynamic>{};
+    final nestedUser = profile['user'];
+    final currentUserId = (profile['id'] ??
+            profile['userId'] ??
+            (nestedUser is Map ? nestedUser['id'] : null) ??
+            'ath-pk-local')
+        .toString();
+    final currentQr = TournamentOfflineStore.buildSettingsIdentityQr(profile);
+    final myRegsAsync = ref.watch(myRegistrationsProvider);
+    final myRegs = myRegsAsync.valueOrNull ?? const <Map<String, dynamic>>[];
+
     return Column(
       children: upcoming.map((evt) {
         final evtId = evt['id']?.toString() ?? 'tourney_1';
@@ -875,11 +889,21 @@ class _OrganizationProfileScreenState
         final appliedList = (evt['appliedAthletes'] is List) ? (evt['appliedAthletes'] as List) : const [];
         final registered = appliedList.isNotEmpty
             ? appliedList.length
-            : ((evt['registeredCount'] as num?)?.toInt() ?? 32);
+            : ((evt['registeredCount'] as num?)?.toInt() ?? 0);
         final capacity = (evt['capacity'] as num?)?.toInt() ?? 64;
         final feePkr = (evt['entryFeePkr'] as num?)?.toInt() ??
             (((evt['registrationFeeCents'] as num?)?.toInt() ?? 0) ~/ 100);
         final feeLabel = feePkr <= 0 ? 'FREE ENTRY' : 'PKR $feePkr';
+        final existingRegistration =
+            TournamentOfflineStore.findAthleteRegistrationForTournament(
+          hive: hive,
+          tournamentId: evtId,
+          tournament: evt,
+          athleteId: currentUserId,
+          userId: currentUserId,
+          profileQrCode: currentQr,
+          myRegistrations: myRegs,
+        );
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -887,9 +911,12 @@ class _OrganizationProfileScreenState
             borderColor: isLive
                 ? AppTheme.crimson.withValues(alpha: 0.6)
                 : AppTheme.goldPrimary.withValues(alpha: 0.4),
-            onTap: () {
+            onTap: () async {
               HapticFeedback.selectionClick();
-              context.push('/tournament/$evtId');
+              await context.push('/tournament/$evtId');
+              if (mounted) {
+                setState(() {});
+              }
             },
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -943,9 +970,12 @@ class _OrganizationProfileScreenState
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
                           HapticFeedback.selectionClick();
-                          context.push('/tournament/$evtId');
+                          await context.push('/tournament/$evtId');
+                          if (mounted) {
+                            setState(() {});
+                          }
                         },
                         icon: const Icon(Icons.visibility_outlined, size: 16),
                         label: const Text('DETAILS & MATCHUPS'),
@@ -958,14 +988,30 @@ class _OrganizationProfileScreenState
                           backgroundColor: AppTheme.goldPrimary,
                           foregroundColor: Colors.black,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           HapticFeedback.mediumImpact();
-                          context.push('/tournament/$evtId/register');
+                          await context.push(
+                            '/tournament/$evtId/register',
+                            extra: evt,
+                          );
+                          ref.invalidate(eventDetailProvider(evtId));
+                          ref.invalidate(myRegistrationsProvider);
+                          ref.invalidate(tournamentProvider);
+                          if (mounted) {
+                            setState(() {});
+                          }
                         },
-                        icon: const Icon(Icons.how_to_reg_rounded, size: 16),
-                        label: const Text(
-                          'APPLY / REGISTER',
-                          style: TextStyle(fontWeight: FontWeight.w900),
+                        icon: Icon(
+                          existingRegistration != null
+                              ? Icons.edit_note_rounded
+                              : Icons.how_to_reg_rounded,
+                          size: 16,
+                        ),
+                        label: Text(
+                          existingRegistration != null
+                              ? 'UPDATE DIVISION'
+                              : 'APPLY / REGISTER',
+                          style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                       ),
                     ),
@@ -1277,78 +1323,149 @@ class _OrganizationProfileScreenState
     AsyncValue<List<Map<String, dynamic>>> refereesAsync,
     Map<String, dynamic> org,
   ) {
-    final fallbackOfficials = <Map<String, dynamic>>[
-      {
-        'fullName': 'Umar Farooq',
-        'level': 'WAF Master Referee',
-        'region': org['city'] ?? 'National Panel',
-      },
-      {
-        'fullName': 'Tariq Javed',
-        'level': 'Senior Head Referee',
-        'region': org['province'] ?? 'International Panel',
-      },
-      {
-        'fullName': 'Rashid Minhas',
-        'level': 'Certified Down Referee',
-        'region': org['country'] ?? 'Federation Panel',
-      },
-    ];
+    final orgName = ArmSphereFormatters.formatOrganizationName(
+      org['name']?.toString(),
+      fallback: 'Registered Organization',
+    );
 
-    final list = refereesAsync.valueOrNull != null &&
-            refereesAsync.valueOrNull!.isNotEmpty
-        ? refereesAsync.valueOrNull!
-        : fallbackOfficials;
-
-    return Column(
-      children: list.map((referee) {
-        final name = (referee['fullName'] ??
-                referee['displayName'] ??
-                'Certified Referee')
-            .toString();
-        final level =
-            (referee['level'] ?? referee['certificationLevel'] ?? 'WAF Certified')
-                .toString();
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: ElevatedActionCard(
-            child: Row(
-              children: [
-                const Icon(Icons.sports_rounded, color: AppTheme.cyan, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontFamily: AppTheme.fontDisplay,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14.5,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        level,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
+    return refereesAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(
+          child: CircularProgressIndicator(color: AppTheme.goldPrimary),
+        ),
+      ),
+      error: (err, _) => ElevatedActionCard(
+        padding: const EdgeInsets.all(18),
+        child: Text(
+          'Could not load certified officials: $err',
+          style: const TextStyle(fontSize: 12.5, color: AppTheme.textSecondary),
+        ),
+      ),
+      data: (list) {
+        if (list.isEmpty) {
+          return ElevatedActionCard(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              children: const [
+                Icon(
+                  Icons.workspace_premium_outlined,
+                  size: 32,
+                  color: AppTheme.goldPrimary,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'No organization-issued certifications yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontDisplay,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14.5,
+                    color: AppTheme.textPrimary,
                   ),
                 ),
-                const StatusChip(
-                  label: 'CERTIFIED PANEL',
-                  color: AppTheme.cyan,
+                SizedBox(height: 6),
+                Text(
+                  'Officials certified by this organization through the Organization Portal will appear here.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
-          ),
+          );
+        }
+
+        return Column(
+          children: list.map((referee) {
+            final name = (referee['fullName'] ??
+                    referee['displayName'] ??
+                    'Certified Official')
+                .toString();
+            final level = (referee['certificationLevel'] ??
+                    referee['level'] ??
+                    'Certified Referee')
+                .toString();
+            final issuer = ArmSphereFormatters.formatOrganizationName(
+              (referee['issuingOrganizationName'] ?? orgName).toString(),
+              fallback: orgName,
+            );
+            final issuedRaw = referee['issuedAt']?.toString();
+            final issuedDate = (issuedRaw != null &&
+                    issuedRaw.isNotEmpty &&
+                    issuedRaw != 'null')
+                ? issuedRaw.split('T').first
+                : null;
+            final status =
+                (referee['status'] ?? 'ACTIVE').toString().toUpperCase();
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ElevatedActionCard(
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_rounded,
+                        color: AppTheme.goldPrimary, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontFamily: AppTheme.fontDisplay,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14.5,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            level,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Issued by: $issuer',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.goldPrimary,
+                            ),
+                          ),
+                          if (issuedDate != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Issued $issuedDate',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    StatusChip(
+                      label: status,
+                      color: status == 'ACTIVE'
+                          ? AppTheme.emerald
+                          : AppTheme.crimson,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 }

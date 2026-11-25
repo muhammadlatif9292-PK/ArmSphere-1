@@ -274,11 +274,12 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
     final feedAsync = ref.watch(communityFeedProvider);
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
@@ -525,7 +526,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                           child: feedAsync.when(
                             loading: () => ListView.separated(
                               padding:
-                                  const EdgeInsets.fromLTRB(16, 10, 16, 28),
+                                  const EdgeInsets.fromLTRB(16, 10, 16, 66),
                               itemCount: 4,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 16),
@@ -554,7 +555,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                               if (posts.isEmpty) {
                                 return SingleChildScrollView(
                                   padding: const EdgeInsets.fromLTRB(
-                                      8, 24, 8, 28),
+                                      8, 24, 8, 66),
                                   child: AppEmptyState(
                                     icon: Icons.videocam_off_outlined,
                                     title: 'No clips found',
@@ -596,7 +597,7 @@ class _CommunityFeedScreenState extends ConsumerState<CommunityFeedScreen> {
                                     key: const PageStorageKey<String>(
                                         'community_feed_list_view'),
                                     padding: const EdgeInsets.fromLTRB(
-                                        16, 10, 16, 28),
+                                        16, 10, 16, 66),
                                     itemCount: posts.length,
                                     separatorBuilder: (_, __) =>
                                         const SizedBox(height: 16),

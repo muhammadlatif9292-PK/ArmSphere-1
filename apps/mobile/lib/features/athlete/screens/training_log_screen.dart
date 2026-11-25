@@ -1090,7 +1090,7 @@ class _AthleteTrainingLogScreenState
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Individual gym training logs and personal record telemetry are restricted to the athlete and authorized PAFF federation officials.',
+                  'Individual gym training logs and personal record telemetry are restricted to the athlete and authorized ArmSphere officials.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,

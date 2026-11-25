@@ -533,7 +533,7 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
                   Text(
                     isEventMatch
                         ? eventName!
-                        : 'PAFF Official Ranked Match • $province Jurisdiction',
+                        : 'Official Ranked Match • $province Jurisdiction',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontFamily: AppTheme.fontDisplay, 
@@ -1194,9 +1194,9 @@ class _MatchDetailScreenState extends ConsumerState<MatchDetailScreen> {
 
   Widget _buildOfficialTelemetryGrid(Map<String, dynamic> data) {
     final dateStr = _formatDateTime(data['verifiedAt'] ?? data['createdAt']);
-    final venueName = (data['venueName'] ?? 'PAFF Sanctioned Championship Arena').toString();
+    final venueName = (data['venueName'] ?? 'Sanctioned Championship Arena').toString();
     final city = (data['city'] ?? data['province'] ?? 'Pakistan').toString();
-    final refereeName = (data['refereeName'] ?? 'PAFF Certified Referee').toString();
+    final refereeName = (data['refereeName'] ?? 'Certified Official').toString();
     final refereeRole = (data['refereeRole'] ?? 'REFEREE').toString().replaceAll('_', ' ');
     final eventName = (data['eventName'] ?? data['tournamentName'])?.toString().trim();
     final tableName = data['tableName']?.toString().trim();

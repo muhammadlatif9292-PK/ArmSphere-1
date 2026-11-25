@@ -40,7 +40,7 @@ class _OrganizationOnboardingScreenState extends ConsumerState<OrganizationOnboa
 
   DateTime? _foundationDate;
   String _selectedProvince = 'Punjab';
-  final String _sanctioningBody = 'WAF / IFA Affiliated';
+  final String _sanctioningBody = 'ArmSphere Verified';
   bool _isSubmitting = false;
 
   @override
@@ -409,7 +409,7 @@ class _OrganizationOnboardingScreenState extends ConsumerState<OrganizationOnboa
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: _buildInputDecoration(
                 label: 'Official Contact Email',
-                hint: 'e.g. sanctions@paff.org.pk',
+                hint: 'e.g. contact@yourorganization.org',
                 icon: Icons.email_outlined,
               ),
             ),

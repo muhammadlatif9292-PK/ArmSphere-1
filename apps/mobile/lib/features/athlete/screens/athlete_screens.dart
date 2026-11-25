@@ -168,11 +168,12 @@ class _AthleteDashboardScreenState
 
     final bool insideRootShell = MainShellScope.isInsideShell(context);
     final double bottomDockGap = insideRootShell
-        ? (kFloatingDockTotalHeight + 4.0)
+        ? (kFloatingDockTotalHeight - 34.0)
         : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.voidBackground,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       body: Stack(
         fit: StackFit.expand,
@@ -213,7 +214,7 @@ class _AthleteDashboardScreenState
                         key: const PageStorageKey<String>(
                             'athlete_dashboard_scroll_view'),
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 66),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1029,7 +1030,7 @@ class _AthleteDashboardScreenState
                                 size: 12, color: AppTheme.goldPrimary),
                             SizedBox(width: 4),
                             Text(
-                              'PAFF COMPETITOR',
+                              'ARMSPHERE ATHLETE',
                               style: TextStyle(
                                 fontFamily: AppTheme.fontDisplay,
                                 fontSize: 8.5,
@@ -3812,9 +3813,7 @@ class AthleteProfileScreen extends ConsumerWidget {
             bottom: false,
             child: CrystalVaporDissolve(
               bottomMargin: MainShellScope.isInsideShell(context)
-                  ? (kFloatingDockTotalHeight +
-                      MediaQuery.paddingOf(context).bottom +
-                      10.0)
+                  ? (kFloatingDockTotalHeight - 34.0)
                   : 0.0,
               child: SingleChildScrollView(
                 key: const PageStorageKey<String>('athlete_profile_scroll_view'),
@@ -3823,7 +3822,7 @@ class AthleteProfileScreen extends ConsumerWidget {
                   8,
                   16,
                   MainShellScope.isInsideShell(context)
-                      ? 28.0
+                      ? (66.0 + MediaQuery.paddingOf(context).bottom)
                       : kFloatingDockTotalHeight +
                           MediaQuery.paddingOf(context).bottom +
                           44,
@@ -3965,13 +3964,13 @@ class AthleteProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Text(
                     isOfficial
-                        ? 'Certified Federation Official'
+                        ? 'Certified Organization Official'
                         : (mergedProfile['weightClass'] != null &&
                                 mergedProfile['weightClass']
                                     .toString()
                                     .isNotEmpty
-                            ? 'Official PAFF • ${mergedProfile['weightClass']}'
-                            : 'Official PAFF Competitor'),
+                            ? 'Verified Competitor • ${mergedProfile['weightClass']}'
+                            : 'Verified ArmSphere Competitor'),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 11.5,
@@ -4043,6 +4042,94 @@ class AthleteProfileScreen extends ConsumerWidget {
               data: (p) => _buildBiometricsCard(p),
             ),
             const SizedBox(height: 22),
+
+            // 4b. Organization-Issued Referee Certifications (only real DB records)
+            if (mergedProfile['refereeCertifications'] is List &&
+                (mergedProfile['refereeCertifications'] as List).isNotEmpty) ...[
+              const Text(
+                'REFEREE CERTIFICATIONS',
+                style: TextStyle(
+                  fontFamily: AppTheme.fontDisplay,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  color: AppTheme.textMuted,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...(mergedProfile['refereeCertifications'] as List)
+                  .whereType<Map>()
+                  .map((raw) {
+                final cert = Map<String, dynamic>.from(raw);
+                final level = (cert['certificationLevel'] ?? 'CERTIFIED OFFICIAL')
+                    .toString();
+                final issuer = (cert['issuingOrganizationName'] ??
+                        cert['issuingBody'] ??
+                        'ArmSphere Verified Organization')
+                    .toString();
+                final status = (cert['status'] ?? 'ACTIVE').toString().toUpperCase();
+                final issuedAt = cert['issuedAt']?.toString();
+                final issuedDate = (issuedAt != null && issuedAt.isNotEmpty && issuedAt != 'null')
+                    ? issuedAt.split('T').first
+                    : null;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ElevatedActionCard(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.verified_rounded,
+                          color: AppTheme.goldPrimary,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                level,
+                                style: const TextStyle(
+                                  fontFamily: AppTheme.fontDisplay,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  color: AppTheme.textPure,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Issued by: $issuer',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.goldPrimary,
+                                ),
+                              ),
+                              if (issuedDate != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Issued $issuedDate',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        StatusChip(
+                          label: status,
+                          color: status == 'ACTIVE' ? AppTheme.emerald : AppTheme.crimson,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 12),
+            ],
 
             // 5. Account & Federation Workspaces
             const Text(
@@ -4373,7 +4460,7 @@ class AthleteProfileScreen extends ConsumerWidget {
 
             return CrystalModalSheet(
               title: 'EDIT PROFILE & BIOMETRICS',
-              subtitle: 'Official PAFF Competitor Dossier & Scale Measurements',
+              subtitle: 'Official Competitor Dossier & Scale Measurements',
               headerIcon: Icons.tune_rounded,
               secondaryActionLabel: 'Cancel',
               primaryActionLabel: 'Save Changes',
