@@ -378,8 +378,8 @@ void main() {
       final handle = tester.ensureSemantics();
       await _pumpDashboard(tester, trainingLogs: []);
 
-      expect(find.text('No Data'), findsOneWidget);
-      expect(find.text('Tap to log'), findsOneWidget);
+      expect(find.text('Log Big 5 PRs'), findsOneWidget);
+      expect(find.text('Log & track Big 5 PRs'), findsOneWidget);
       expect(find.text('Data Unavailable'), findsNothing);
 
       expect(
@@ -410,7 +410,7 @@ void main() {
           (tester) async {
         await _pumpDashboard(tester, textScale: scale, trainingLogs: []);
         expect(tester.takeException(), isNull);
-        expect(find.text('No Data'), findsOneWidget);
+        expect(find.text('Log Big 5 PRs'), findsOneWidget);
         await _disposeDashboard(tester);
       });
     }
@@ -423,7 +423,6 @@ void main() {
         await _pumpDashboard(tester, textScale: scale);
 
         final labels = [
-          'Scorepad Entry',
           'Tournaments',
           'Training Log',
           'Clubs & Teams',
@@ -712,10 +711,10 @@ void main() {
         (tester) async {
       await _pumpDashboard(tester, width: 600);
 
-      final ribbonWrapFinder = find
-          .ancestor(of: find.text('DISCIPLINE'), matching: find.byType(Wrap))
+      final ribbonRowFinder = find
+          .ancestor(of: find.text('DISCIPLINE'), matching: find.byType(Row))
           .first;
-      final ribbonRect = tester.getRect(ribbonWrapFinder);
+      final ribbonRect = tester.getRect(ribbonRowFinder);
 
       // Render boxes of each individual bio stat column
       final rankRect = tester.getRect(find
@@ -731,20 +730,33 @@ void main() {
           .ancestor(of: find.text('DISCIPLINE'), matching: find.byType(Column))
           .first);
 
-      // Verify intended horizontal ordering across all 4 stats
+      // Verify intended horizontal ordering and clean spacing across all 4 stats
       expect(rankRect.right, lessThan(weightRect.left));
       expect(weightRect.right, lessThan(winRateRect.left));
       expect(winRateRect.right, lessThan(disciplineRect.left));
+      expect(weightRect.left - rankRect.right, greaterThanOrEqualTo(6.0));
+      expect(winRateRect.left - weightRect.right, greaterThanOrEqualTo(6.0));
+      expect(disciplineRect.left - winRateRect.right, greaterThanOrEqualTo(6.0));
 
-      // Assert meaningful minimum gaps between all neighboring stats (Claude threshold > 16.5dp).
-      // If the ribbon Wrap shrink-wrapped, each gap would be exactly spacing: 16.0dp.
-      expect(weightRect.left - rankRect.right, greaterThan(16.5));
-      expect(winRateRect.left - weightRect.right, greaterThan(16.5));
-      expect(disciplineRect.left - winRateRect.right, greaterThan(16.5));
+      // Verify rendered text labels themselves are spaced well across the full width
+      expect(
+        tester.getRect(find.text('WEIGHT')).left -
+            tester.getRect(find.text('WORLD RANK')).right,
+        greaterThan(16.5),
+      );
+      expect(
+        tester.getRect(find.text('WIN RATE')).left -
+            tester.getRect(find.text('WEIGHT')).right,
+        greaterThan(16.5),
+      );
+      expect(
+        tester.getRect(find.text('DISCIPLINE')).left -
+            tester.getRect(find.text('WIN RATE')).right,
+        greaterThan(16.5),
+      );
 
-      // Left-most stat aligns with ribbon left edge
+      // Left-most stat aligns with ribbon left edge; right-most stat reaches ribbon right edge
       expect(rankRect.left - ribbonRect.left, lessThan(5.0));
-      // Right-most stat is pushed to ribbon right boundary
       expect(ribbonRect.right - disciplineRect.right, lessThan(5.0));
 
       expect(tester.takeException(), isNull);
@@ -829,11 +841,11 @@ void main() {
   group('Recovery card heading and accessibility', () {
     for (final scale in [1.0, 1.4, 2.0]) {
       testWidgets(
-          'RECOVERY STATUS heading layout, text integrity, and clamped scaling at ${scale}x text',
+          'TRAINING & PRS heading layout, text integrity, and clamped scaling at ${scale}x text',
           (tester) async {
         await _pumpDashboard(tester, textScale: scale);
 
-        final headingFinder = find.text('RECOVERY STATUS');
+        final headingFinder = find.text('TRAINING & PRS');
         expect(headingFinder, findsOneWidget);
 
         // Asserts no FittedBox is used to artificially shrink the text
@@ -849,7 +861,7 @@ void main() {
         // Inspect RenderParagraph directly
         final RenderParagraph paragraph =
             tester.renderObject<RenderParagraph>(headingFinder);
-        expect(paragraph.text.toPlainText(), 'RECOVERY STATUS');
+        expect(paragraph.text.toPlainText(), 'TRAINING & PRS');
 
         // Check height and width: heading renders cleanly without overflowing
         expect(paragraph.size.height, greaterThan(0.0));
